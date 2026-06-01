@@ -73,6 +73,7 @@ body {
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 @keyframes voople-action-pop {

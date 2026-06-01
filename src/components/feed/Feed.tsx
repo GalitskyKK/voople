@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 
+import { useScrollContainerRef } from "@/components/layout/ScrollContainerContext";
 import type { FeedTabId } from "@/lib/constants/copy";
 import { trpc } from "@/lib/trpc/client";
 import { useRealtimeFeed } from "@/hooks/useRealtimeFeed";
@@ -27,6 +28,7 @@ export function Feed({
   const searchParams = useSearchParams();
   const tab = (searchParams.get("tab") as FeedTabId) || "overview";
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useScrollContainerRef();
   useRealtimeFeed(tab, viewerId);
 
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -43,12 +45,15 @@ export function Feed({
     );
 
   const posts = data?.pages.flatMap((p) => p.items) ?? [];
-  const { parentRef, virtualizer, virtualItems, paddingTop, paddingBottom } = useVirtualFeed(posts.length);
+  const { listAnchorRef, virtualizer, virtualItems, paddingTop, paddingBottom } = useVirtualFeed(
+    posts.length,
+    scrollRef,
+  );
 
   useEffect(() => {
-    const el = loadMoreRef.current;
-    const root = parentRef.current;
-    if (!el || !root || !hasNextPage || isFetchingNextPage) return;
+    const sentinel = loadMoreRef.current;
+    const root = scrollRef.current;
+    if (!sentinel || !root || !hasNextPage || isFetchingNextPage) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -56,12 +61,12 @@ export function Feed({
       },
       { root, rootMargin: "240px" },
     );
-    observer.observe(el);
+    observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, parentRef]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, scrollRef]);
 
   return (
-    <div className="voople-feed flex min-h-0 flex-1 flex-col gap-4">
+    <div className="voople-feed flex flex-col gap-4">
       {canPost && <CreatePostBlock canPost />}
       {isLoading && posts.length === 0 && (
         <div className="h-40 animate-pulse rounded-2xl bg-white/5" aria-hidden />
@@ -83,7 +88,7 @@ export function Feed({
       )}
 
       {posts.length > 0 && (
-        <div ref={parentRef} className="voople-scroll min-h-0 flex-1 overflow-y-auto pr-1">
+        <div ref={listAnchorRef}>
           <div style={{ paddingTop, paddingBottom }}>
             {virtualItems.map((virtualRow) => {
               const post = posts[virtualRow.index];

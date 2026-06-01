@@ -23,7 +23,7 @@ export default async function HashtagPage({ params }: HashtagPageProps) {
   const initialPage = await getHashtagFeedPage({ tag, viewerId, limit: 20 })
 
   return (
-    <div className="voople-hashtag-page flex h-full min-h-0 flex-col gap-4 py-4">
+    <div className="voople-hashtag-page flex flex-col gap-4 py-4">
       <header className="rounded-2xl border border-white/10 bg-[#1c1c1e] px-4 py-4 text-white">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">

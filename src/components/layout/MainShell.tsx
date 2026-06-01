@@ -1,17 +1,20 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useRef } from "react";
 import { usePathname } from "next/navigation";
 
+import { useDocumentScrollWheelForward } from "@/hooks/useDocumentScrollWheelForward";
 import { cn } from "@/lib/utils";
 import { AppTopBar } from "./AppTopBar";
 import { BottomNav } from "./BottomNav";
 import { CreatePostFab } from "./CreatePostFab";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { FeedHeader } from "./FeedHeader";
+import { ScrollContainerProvider } from "./ScrollContainerContext";
 
 export function MainShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const shellScrollRef = useRef<HTMLDivElement>(null);
   const reserved = new Set([
     "feed",
     "messages",
@@ -24,7 +27,6 @@ export function MainShell({ children }: { children: React.ReactNode }) {
     "register",
   ]);
   const slug = pathname.slice(1);
-  const isFeedRoute = pathname === "/feed" || pathname.startsWith("/hashtag/");
   const isProfileRoute = /^\/[a-z0-9_]+$/i.test(pathname) && !reserved.has(slug);
   const showFab =
     !pathname.startsWith("/messages") &&
@@ -32,6 +34,8 @@ export function MainShell({ children }: { children: React.ReactNode }) {
 
   /** Лента — узкая колонка; профиль — две колонки (карточка + посты). */
   const contentMaxWidth = isProfileRoute ? "max-w-6xl" : "max-w-2xl";
+
+  useDocumentScrollWheelForward();
 
   return (
     <div
@@ -58,24 +62,24 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           <Suspense fallback={null}>
             <FeedHeader />
           </Suspense>
-          <div
-            className={cn(
-              "voople-shell__scroll voople-scroll min-h-0 flex-1 pb-24 lg:pb-6",
-              isFeedRoute && "overflow-hidden",
-              isProfileRoute && "overflow-y-auto lg:flex lg:flex-col lg:overflow-hidden",
-              !isFeedRoute && !isProfileRoute && "overflow-y-auto",
-            )}
-          >
+          <ScrollContainerProvider scrollRef={shellScrollRef}>
             <div
+              ref={shellScrollRef}
               className={cn(
-                "voople-shell__page w-full px-4 lg:px-6",
-                isFeedRoute && "h-full",
-                isProfileRoute && "flex min-h-0 flex-1 flex-col lg:min-h-0 lg:py-0",
+                "voople-shell__scroll voople-scroll min-h-0 flex-1 overflow-y-auto pb-24 lg:pb-6",
+                isProfileRoute && "lg:flex lg:flex-col lg:overflow-hidden",
               )}
             >
-              {children}
+              <div
+                className={cn(
+                  "voople-shell__page w-full px-4 lg:px-6",
+                  isProfileRoute && "flex min-h-0 flex-1 flex-col lg:min-h-0 lg:py-0",
+                )}
+              >
+                {children}
+              </div>
             </div>
-          </div>
+          </ScrollContainerProvider>
           {showFab && <CreatePostFab />}
           <BottomNav />
         </div>

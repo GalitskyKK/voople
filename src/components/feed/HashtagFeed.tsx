@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
+import { useScrollContainerRef } from "@/components/layout/ScrollContainerContext";
 import type { FeedPageResult } from "@/server/services/feed.service";
 import { trpc } from "@/lib/trpc/client";
 import { useVirtualFeed } from "@/hooks/useVirtualFeed";
@@ -15,6 +16,7 @@ type HashtagFeedProps = {
 
 export function HashtagFeed({ tag, viewerId = null, initialPage }: HashtagFeedProps) {
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useScrollContainerRef();
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
     trpc.feed.getHashtagPage.useInfiniteQuery(
       { tag, limit: 20 },
@@ -26,12 +28,15 @@ export function HashtagFeed({ tag, viewerId = null, initialPage }: HashtagFeedPr
     );
 
   const posts = data?.pages.flatMap((page) => page.items) ?? [];
-  const { parentRef, virtualizer, virtualItems, paddingTop, paddingBottom } = useVirtualFeed(posts.length);
+  const { listAnchorRef, virtualizer, virtualItems, paddingTop, paddingBottom } = useVirtualFeed(
+    posts.length,
+    scrollRef,
+  );
 
   useEffect(() => {
-    const el = loadMoreRef.current;
-    const root = parentRef.current;
-    if (!el || !root || !hasNextPage || isFetchingNextPage) return;
+    const sentinel = loadMoreRef.current;
+    const root = scrollRef.current;
+    if (!sentinel || !root || !hasNextPage || isFetchingNextPage) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -39,9 +44,9 @@ export function HashtagFeed({ tag, viewerId = null, initialPage }: HashtagFeedPr
       },
       { root, rootMargin: "240px" },
     );
-    observer.observe(el);
+    observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, parentRef]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, scrollRef]);
 
   if (error) {
     return (
@@ -64,7 +69,7 @@ export function HashtagFeed({ tag, viewerId = null, initialPage }: HashtagFeedPr
   }
 
   return (
-    <div ref={parentRef} className="voople-scroll min-h-0 flex-1 overflow-y-auto pr-1">
+    <div ref={listAnchorRef}>
       <div style={{ paddingTop, paddingBottom }}>
         {virtualItems.map((virtualRow) => {
           const post = posts[virtualRow.index];

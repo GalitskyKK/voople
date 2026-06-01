@@ -28,7 +28,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
   })
 
   return (
-    <div className="voople-feed-page flex h-full min-h-0 flex-col py-4">
+    <div className="voople-feed-page py-4">
       <Suspense fallback={<div className="h-40 animate-pulse rounded-2xl bg-white/5" />}>
         <Feed
           canPost={Boolean(user)}

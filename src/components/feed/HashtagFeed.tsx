@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-import { useScrollContainerRef } from "@/components/layout/ScrollContainerContext";
+import { useScrollContainer } from "@/components/layout/ScrollContainerContext";
 import type { FeedPageResult } from "@/server/services/feed.service";
 import { trpc } from "@/lib/trpc/client";
 import { useVirtualFeed } from "@/hooks/useVirtualFeed";
@@ -16,7 +16,7 @@ type HashtagFeedProps = {
 
 export function HashtagFeed({ tag, viewerId = null, initialPage }: HashtagFeedProps) {
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useScrollContainerRef();
+  const { scrollRef, mode } = useScrollContainer();
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
     trpc.feed.getHashtagPage.useInfiniteQuery(
       { tag, limit: 20 },
@@ -31,12 +31,15 @@ export function HashtagFeed({ tag, viewerId = null, initialPage }: HashtagFeedPr
   const { listAnchorRef, virtualizer, virtualItems, paddingTop, paddingBottom } = useVirtualFeed(
     posts.length,
     scrollRef,
+    mode,
   );
 
   useEffect(() => {
     const sentinel = loadMoreRef.current;
-    const root = scrollRef.current;
-    if (!sentinel || !root || !hasNextPage || isFetchingNextPage) return;
+    if (!sentinel || !hasNextPage || isFetchingNextPage) return;
+
+    const root = mode === "window" ? null : scrollRef.current;
+    if (mode === "element" && !root) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -46,7 +49,7 @@ export function HashtagFeed({ tag, viewerId = null, initialPage }: HashtagFeedPr
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, scrollRef]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, mode, scrollRef]);
 
   if (error) {
     return (

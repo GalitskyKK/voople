@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { useScrollContainerRef } from "@/components/layout/ScrollContainerContext";
+import { useScrollContainer } from "@/components/layout/ScrollContainerContext";
 import type { FeedTabId } from "@/lib/constants/copy";
 import { trpc } from "@/lib/trpc/client";
 import { useRealtimeFeed } from "@/hooks/useRealtimeFeed";
@@ -28,7 +28,7 @@ export function Feed({
   const searchParams = useSearchParams();
   const tab = (searchParams.get("tab") as FeedTabId) || "overview";
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useScrollContainerRef();
+  const { scrollRef, mode } = useScrollContainer();
   useRealtimeFeed(tab, viewerId);
 
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -48,12 +48,15 @@ export function Feed({
   const { listAnchorRef, virtualizer, virtualItems, paddingTop, paddingBottom } = useVirtualFeed(
     posts.length,
     scrollRef,
+    mode,
   );
 
   useEffect(() => {
     const sentinel = loadMoreRef.current;
-    const root = scrollRef.current;
-    if (!sentinel || !root || !hasNextPage || isFetchingNextPage) return;
+    if (!sentinel || !hasNextPage || isFetchingNextPage) return;
+
+    const root = mode === "window" ? null : scrollRef.current;
+    if (mode === "element" && !root) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -63,7 +66,7 @@ export function Feed({
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, scrollRef]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, mode, scrollRef]);
 
   return (
     <div className="voople-feed flex flex-col gap-4">

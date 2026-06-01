@@ -27,8 +27,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" className={`${geistSans.variable} ${geistMono.variable} h-full`}>
-      <body className="min-h-full bg-background text-foreground antialiased">
+    <html lang="ru" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className="min-h-dvh bg-background text-foreground antialiased">
         <AppThemeProvider>
           <TRPCReactProvider>
             {children}

@@ -2,24 +2,40 @@
 
 import { createContext, useContext, type RefObject } from "react";
 
-const ScrollContainerContext = createContext<RefObject<HTMLElement | null> | null>(null);
+export type ScrollContainerMode = "window" | "element";
+
+type ScrollContainerContextValue = {
+  scrollRef: RefObject<HTMLElement | null>;
+  mode: ScrollContainerMode;
+};
+
+const ScrollContainerContext = createContext<ScrollContainerContextValue | null>(null);
 
 export function ScrollContainerProvider({
   scrollRef,
+  mode,
   children,
 }: {
   scrollRef: RefObject<HTMLElement | null>;
+  mode: ScrollContainerMode;
   children: React.ReactNode;
 }) {
   return (
-    <ScrollContainerContext.Provider value={scrollRef}>{children}</ScrollContainerContext.Provider>
+    <ScrollContainerContext.Provider value={{ scrollRef, mode }}>
+      {children}
+    </ScrollContainerContext.Provider>
   );
 }
 
-export function useScrollContainerRef() {
-  const scrollRef = useContext(ScrollContainerContext);
-  if (!scrollRef) {
-    throw new Error("useScrollContainerRef must be used within ScrollContainerProvider");
+export function useScrollContainer() {
+  const value = useContext(ScrollContainerContext);
+  if (!value) {
+    throw new Error("useScrollContainer must be used within ScrollContainerProvider");
   }
-  return scrollRef;
+  return value;
+}
+
+/** @deprecated use useScrollContainer */
+export function useScrollContainerRef() {
+  return useScrollContainer().scrollRef;
 }

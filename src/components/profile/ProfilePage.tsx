@@ -145,7 +145,10 @@ export function ProfilePage({
           />
         </div>
 
-        <section className="voople-profile-page__posts voople-scroll min-h-0 min-w-0 flex-1 space-y-4 lg:overflow-y-auto lg:pr-1">
+        <section
+          data-voople-scroll=""
+          className="voople-profile-page__posts voople-scroll min-h-0 min-w-0 flex-1 space-y-4 lg:overflow-y-auto lg:pr-1"
+        >
           {canPost && (
             <div className="hidden lg:block">
               <CreatePostBlock profile={profile} canPost />

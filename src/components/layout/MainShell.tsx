@@ -10,11 +10,20 @@ import { BottomNav } from "./BottomNav";
 import { CreatePostFab } from "./CreatePostFab";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { FeedHeader } from "./FeedHeader";
-import { ScrollContainerProvider } from "./ScrollContainerContext";
+import { ScrollContainerProvider, type ScrollContainerMode } from "./ScrollContainerContext";
+
+function resolveScrollMode(pathname: string): ScrollContainerMode {
+  if (pathname === "/feed" || pathname.startsWith("/hashtag/")) {
+    return "window";
+  }
+  return "element";
+}
 
 export function MainShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const shellScrollRef = useRef<HTMLDivElement>(null);
+  const scrollMode = resolveScrollMode(pathname);
+  const usesWindowScroll = scrollMode === "window";
   const reserved = new Set([
     "feed",
     "messages",
@@ -35,7 +44,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   /** Лента — узкая колонка; профиль — две колонки (карточка + посты). */
   const contentMaxWidth = isProfileRoute ? "max-w-6xl" : "max-w-2xl";
 
-  useDocumentScrollWheelForward();
+  useDocumentScrollWheelForward(!usesWindowScroll);
 
   return (
     <div
@@ -53,8 +62,9 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       >
         <div
           className={cn(
-            "voople-shell__main mx-auto flex w-full min-h-0 flex-1 flex-col",
+            "voople-shell__main mx-auto flex w-full flex-col",
             contentMaxWidth,
+            !usesWindowScroll && "min-h-0 flex-1",
             isProfileRoute && "lg:h-full",
           )}
         >
@@ -62,18 +72,22 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           <Suspense fallback={null}>
             <FeedHeader />
           </Suspense>
-          <ScrollContainerProvider scrollRef={shellScrollRef}>
+          <ScrollContainerProvider scrollRef={shellScrollRef} mode={scrollMode}>
             <div
               ref={shellScrollRef}
+              data-voople-scroll={usesWindowScroll ? undefined : ""}
               className={cn(
-                "voople-shell__scroll voople-scroll min-h-0 flex-1 overflow-y-auto pb-24 lg:pb-6",
-                isProfileRoute && "lg:flex lg:flex-col lg:overflow-hidden",
+                "voople-shell__scroll pb-24 lg:pb-6",
+                !usesWindowScroll && "voople-scroll min-h-0 flex-1 overflow-y-auto",
+                isProfileRoute && !usesWindowScroll && "lg:flex lg:flex-col lg:overflow-hidden",
               )}
             >
               <div
                 className={cn(
                   "voople-shell__page w-full px-4 lg:px-6",
-                  isProfileRoute && "flex min-h-0 flex-1 flex-col lg:min-h-0 lg:py-0",
+                  isProfileRoute &&
+                    !usesWindowScroll &&
+                    "flex min-h-0 flex-1 flex-col lg:min-h-0 lg:py-0",
                 )}
               >
                 {children}

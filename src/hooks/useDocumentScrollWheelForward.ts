@@ -2,32 +2,37 @@
 
 import { useEffect } from "react";
 
+function isScrollableOverflow(overflowY: string) {
+  return overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay";
+}
+
 function findScrollContainer(target: EventTarget | null): HTMLElement | null {
   let element =
     target instanceof HTMLElement ? target : target instanceof Node ? target.parentElement : null;
 
-  while (element) {
-    if (!element.classList.contains("voople-scroll")) {
-      element = element.parentElement;
-      continue;
-    }
+  let fallback: HTMLElement | null = null;
 
+  while (element && element !== document.documentElement) {
     const { overflowY } = getComputedStyle(element);
-    const scrollable =
-      overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay";
-    if (scrollable && element.scrollHeight > element.clientHeight) {
-      return element;
+    const canScroll =
+      isScrollableOverflow(overflowY) && element.scrollHeight > element.clientHeight + 1;
+
+    if (canScroll) {
+      if (element.dataset.voopleScroll !== undefined) {
+        return element;
+      }
+      fallback ??= element;
     }
 
     element = element.parentElement;
   }
 
-  return null;
+  return fallback;
 }
 
 /**
- * Firefox не прокручивает nested overflow колёсиком над дочерними узлами.
- * Ищем ближайший .voople-scroll от event.target и скроллим его явно.
+ * Явный wheel-scroll для nested overflow (Firefox desktop, колонка постов на профиле).
+ * Лента использует window scroll — этот хук ей не нужен.
  */
 export function useDocumentScrollWheelForward(enabled = true) {
   useEffect(() => {
@@ -35,6 +40,7 @@ export function useDocumentScrollWheelForward(enabled = true) {
 
     const onWheel = (event: WheelEvent) => {
       if (event.ctrlKey || event.metaKey) return;
+      if (event.defaultPrevented) return;
 
       const scrollContainer = findScrollContainer(event.target);
       if (!scrollContainer) return;
@@ -52,6 +58,7 @@ export function useDocumentScrollWheelForward(enabled = true) {
 
       scrollContainer.scrollTop = nextScrollTop;
       event.preventDefault();
+      event.stopPropagation();
     };
 
     document.addEventListener("wheel", onWheel, { passive: false, capture: true });

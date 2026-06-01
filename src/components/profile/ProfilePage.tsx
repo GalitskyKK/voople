@@ -134,7 +134,7 @@ export function ProfilePage({
         isOwner={isOwner}
         canFollow={canFollow}
       />
-      <div className="voople-profile-page flex w-full min-h-0 flex-1 flex-col gap-4 py-4 lg:flex-row lg:gap-6 lg:py-6">
+      <div className="voople-profile-page flex w-full flex-col gap-4 py-4 lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-6 lg:py-6">
         <div ref={cardRef} className="voople-profile-page__card w-full shrink-0 lg:w-[320px]">
           <ProfileFlipCard
             profile={profile}
@@ -147,7 +147,7 @@ export function ProfilePage({
 
         <section
           data-voople-scroll=""
-          className="voople-profile-page__posts voople-scroll min-h-0 min-w-0 flex-1 space-y-4 lg:overflow-y-auto lg:pr-1"
+          className="voople-profile-page__posts voople-scroll min-w-0 space-y-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1"
         >
           {canPost && (
             <div className="hidden lg:block">

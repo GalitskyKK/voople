@@ -4,6 +4,7 @@ import { Suspense, useRef } from "react";
 import { usePathname } from "next/navigation";
 
 import { useDocumentScrollWheelForward } from "@/hooks/useDocumentScrollWheelForward";
+import { useIsLgViewport } from "@/hooks/useIsLgViewport";
 import { cn } from "@/lib/utils";
 import { AppTopBar } from "./AppTopBar";
 import { BottomNav } from "./BottomNav";
@@ -12,31 +13,43 @@ import { DesktopSidebar } from "./DesktopSidebar";
 import { FeedHeader } from "./FeedHeader";
 import { ScrollContainerProvider, type ScrollContainerMode } from "./ScrollContainerContext";
 
-function resolveScrollMode(pathname: string): ScrollContainerMode {
+const RESERVED_SLUGS = new Set([
+  "feed",
+  "messages",
+  "notifications",
+  "explore",
+  "shop",
+  "me",
+  "post",
+  "login",
+  "register",
+]);
+
+function isProfilePath(pathname: string) {
+  const slug = pathname.slice(1);
+  return /^\/[a-z0-9_]+$/i.test(pathname) && !RESERVED_SLUGS.has(slug);
+}
+
+function useScrollMode(pathname: string): ScrollContainerMode {
+  const isLg = useIsLgViewport();
+
   if (pathname === "/feed" || pathname.startsWith("/hashtag/")) {
     return "window";
   }
+
+  if (isProfilePath(pathname) && !isLg) {
+    return "window";
+  }
+
   return "element";
 }
 
 export function MainShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const shellScrollRef = useRef<HTMLDivElement>(null);
-  const scrollMode = resolveScrollMode(pathname);
+  const scrollMode = useScrollMode(pathname);
   const usesWindowScroll = scrollMode === "window";
-  const reserved = new Set([
-    "feed",
-    "messages",
-    "notifications",
-    "explore",
-    "shop",
-    "me",
-    "post",
-    "login",
-    "register",
-  ]);
-  const slug = pathname.slice(1);
-  const isProfileRoute = /^\/[a-z0-9_]+$/i.test(pathname) && !reserved.has(slug);
+  const isProfileRoute = isProfilePath(pathname);
   const showFab =
     !pathname.startsWith("/messages") &&
     (pathname === "/feed" || pathname === "/me" || isProfileRoute);

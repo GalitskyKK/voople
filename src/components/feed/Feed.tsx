@@ -43,7 +43,7 @@ export function Feed({
     );
 
   const posts = data?.pages.flatMap((p) => p.items) ?? [];
-  const { parentRef, virtualizer } = useVirtualFeed(posts.length);
+  const { parentRef, virtualizer, virtualItems, paddingTop, paddingBottom } = useVirtualFeed(posts.length);
 
   useEffect(() => {
     const el = loadMoreRef.current;
@@ -84,14 +84,8 @@ export function Feed({
 
       {posts.length > 0 && (
         <div ref={parentRef} className="voople-scroll min-h-0 flex-1 overflow-y-auto pr-1">
-          <div
-            style={{
-              height: virtualizer.getTotalSize(),
-              width: "100%",
-              position: "relative",
-            }}
-          >
-            {virtualizer.getVirtualItems().map((virtualRow) => {
+          <div style={{ paddingTop, paddingBottom }}>
+            {virtualItems.map((virtualRow) => {
               const post = posts[virtualRow.index];
               if (!post) return null;
               return (
@@ -99,8 +93,7 @@ export function Feed({
                   key={post.id}
                   data-index={virtualRow.index}
                   ref={virtualizer.measureElement}
-                  className="absolute left-0 top-0 w-full pb-4"
-                  style={{ transform: `translateY(${virtualRow.start}px)` }}
+                  className="pb-4"
                 >
                   <PostCard
                     post={post}

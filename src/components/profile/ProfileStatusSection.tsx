@@ -98,7 +98,7 @@ export function ProfileStatusSection({
   const busy = saveMutation.isPending || publishMutation.isPending;
 
   return (
-    <div className="voople-profile-status flex flex-col gap-2">
+    <div className="voople-profile-status relative">
       <ProfileStatusBlock
         status={statusForDisplay}
         editable={isOwner && !busy}

@@ -8,36 +8,39 @@ type PublishStatusBannerProps = {
   visible: boolean;
   onPublish: () => void;
   disabled?: boolean;
+  className?: string;
 };
 
-/** Под блоком статуса — раскрытие вниз, без сдвига слайдера */
+/** Поверх карточки — без сдвига layout при появлении */
 export function PublishStatusBanner({
   visible,
   onPublish,
   disabled = false,
+  className,
 }: PublishStatusBannerProps) {
   return (
     <div
       className={cn(
-        "voople-status-publish-banner grid transition-[grid-template-rows,opacity] duration-200 ease-out",
-        visible ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+        "voople-status-publish-banner absolute inset-x-0 top-full z-30 pt-2 transition-[opacity,transform] duration-200 ease-out",
+        visible
+          ? "pointer-events-auto translate-y-0 opacity-100"
+          : "pointer-events-none -translate-y-1 opacity-0",
+        className,
       )}
       aria-hidden={!visible}
     >
-      <div className="overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--theme-accent)]/35 bg-[var(--theme-accent)]/12 px-3 py-2">
-          <p className="text-sm text-white/85">{COPY.statusChanged}</p>
-          <Button
-            size="sm"
-            variant="primary"
-            onClick={onPublish}
-            disabled={disabled}
-            className="shrink-0"
-            tabIndex={visible ? 0 : -1}
-          >
-            {COPY.publishStatus}
-          </Button>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--theme-accent)]/35 bg-[var(--theme-accent)]/12 px-3 py-2 shadow-lg shadow-black/30 backdrop-blur-sm">
+        <p className="text-sm text-white/85">{COPY.statusChanged}</p>
+        <Button
+          size="sm"
+          variant="primary"
+          onClick={onPublish}
+          disabled={disabled}
+          className="shrink-0"
+          tabIndex={visible ? 0 : -1}
+        >
+          {COPY.publishStatus}
+        </Button>
       </div>
     </div>
   );

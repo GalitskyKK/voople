@@ -15,5 +15,12 @@ export function useVirtualFeed(count: number) {
     overscan: 5,
   });
 
-  return { parentRef, virtualizer };
+  const virtualItems = virtualizer.getVirtualItems();
+  const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
+  const paddingBottom =
+    virtualItems.length > 0
+      ? virtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end
+      : 0;
+
+  return { parentRef, virtualizer, virtualItems, paddingTop, paddingBottom };
 }

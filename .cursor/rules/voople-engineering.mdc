@@ -1,0 +1,50 @@
+---
+description: Senior engineering standards for Voople
+alwaysApply: true
+---
+
+# Voople Engineering Rules
+
+## Baseline
+
+- Read the existing implementation before changing it. Match local patterns unless they are clearly wrong.
+- Keep changes small, typed, and reversible. Do not add abstractions unless they remove real complexity.
+- TypeScript must stay strict. Do not use `any`; use `unknown` plus narrowing or explicit domain types.
+- No committed `console.*`, `TODO`, `FIXME`, dead code, silent catches, or placeholder implementations.
+
+## Next.js And React
+
+- Prefer Server Components. Add `"use client"` only for state, effects, browser APIs, event handlers, or React Query hooks.
+- Avoid client-side waterfalls. First meaningful data for feed/profile/messages should come from server prefetch or server-loaded initial data.
+- Keep client islands narrow. Navigation, forms, realtime, optimistic actions, and interactive controls can be client components; static layout should not be.
+- Keep JSX readable: derive values above `return`, extract repeated UI, and avoid deep conditional markup.
+- Use accessible controls: semantic elements, labels, keyboard support, focus states, and ARIA only when semantics are not enough.
+
+## Data Flow
+
+- Server Components and tRPC routers call `src/server/services/*`.
+- Services delegate IO to `src/server/data/*-rest.ts` or explicit SQL functions. Do not put business logic directly in routers.
+- Client Components use tRPC for server-state. Do not call app API routes from client when a tRPC procedure exists.
+- Browser Supabase client is for Auth session and Realtime only. Do not expose service role behavior to the browser.
+- Drizzle is the schema/migration source of truth. Runtime hot paths use Supabase REST until the DB connection strategy changes.
+
+## Realtime And Optimistic UI
+
+- Realtime must be event-driven first. Polling is allowed only as a visible degraded fallback, not as the normal path.
+- `SUBSCRIBED` is not proof that Postgres events are delivered. Keep channel status and event receipt as separate concepts.
+- Optimistic mutations must dedupe server and realtime echoes by stable IDs.
+- React Query updates should patch precise cache entries where practical. Avoid full invalidation after every optimistic action unless correctness requires it.
+
+## Database And Security
+
+- Enforce invariants in the database: unique direct chats, unique inventory ownership, valid foreign keys, and atomic counters.
+- RLS protects browser and Realtime access. Service role bypasses RLS, so server code must check ownership and membership before reads/writes.
+- Do not allow browser clients to create chat memberships, inventory, purchases, or privileged records directly.
+- Prefer idempotent migrations for hand-applied Supabase SQL. Do not require destructive resets unless explicitly approved.
+
+## Performance
+
+- Measure or inspect the hot path before optimizing. Remove duplicate requests before adding caching.
+- Avoid global providers or client bundles on routes that do not need them.
+- Virtualized lists must have a single clear scroll container and the load sentinel inside that container.
+- Use stable query keys, sensible `staleTime`, and `refetchOnWindowFocus: false` unless freshness is more important than network cost.

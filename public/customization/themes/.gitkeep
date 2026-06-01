@@ -1,0 +1,30 @@
+# App theme backgrounds
+
+Положите ассеты сюда; в проде — CDN/R2 с теми же путями.
+
+## Форматы
+
+| Тип | Формат | Рекомендация |
+|-----|--------|--------------|
+| Static background | WebP/PNG | 1920×1080 или 1440×2560, ≤ 500 KB |
+| Animated background | WebP/APNG | loop 4–8s, ≤ 1.5 MB |
+| Overlay | WebP/APNG transparent | лёгкая текстура/блики, ≤ 300 KB |
+
+Если расширения нет — подставляется `.webp` (`violet` → `violet.webp`). Можно указать id с расширением: `gold.apng`.
+
+## Имена в каталоге (`src/lib/app-themes.ts`)
+
+| Theme id | backgroundId | backgroundStaticId | overlayId |
+|----------|----------------|--------------------|-----------|
+| `violet` | `violet` | `violet-static` | — |
+| `rose` | `rose` | `rose-static` | `rose-overlay` |
+| `emerald` | `emerald` | — | — |
+| `gold` | `gold.apng` | `gold-static` | — |
+
+`void` использует только color tokens без растрового фона.
+
+## Поведение UI
+
+- При `prefers-reduced-motion: reduce` берётся `backgroundStaticId`, если задан.
+- Если файл не найден — остаются CSS tokens, без ошибок в UI.
+- Scrim поверх фона сохраняет читаемость текста.

@@ -1,0 +1,129 @@
+"use client";
+
+import { useState } from "react";
+import { Lock } from "lucide-react";
+
+import { resolveAppThemeAssets } from "@/lib/app-theme-assets";
+import { APP_THEMES, type AppThemeId } from "@/lib/app-themes";
+import { cn } from "@/lib/utils";
+import { useAppTheme } from "./AppThemeProvider";
+
+type AppThemeSelectorProps = {
+  unlockedThemeIds?: AppThemeId[];
+};
+
+function ThemePreviewSwatches({
+  background,
+  surface,
+  accent,
+}: {
+  background: string;
+  surface: string;
+  accent: string;
+}) {
+  return (
+    <span className="flex gap-1">
+      <span className="h-4 w-8 rounded-full" style={{ background }} aria-hidden />
+      <span className="h-4 w-8 rounded-full" style={{ background: surface }} aria-hidden />
+      <span className="h-4 w-8 rounded-full" style={{ background: accent }} aria-hidden />
+    </span>
+  );
+}
+
+export function AppThemeSelector({
+  unlockedThemeIds = ["void", "violet", "emerald"],
+}: AppThemeSelectorProps) {
+  const { themeId, setThemeId } = useAppTheme();
+  const unlocked = new Set<AppThemeId>(unlockedThemeIds);
+
+  return (
+    <section className="space-y-3">
+      <div>
+        <h3 className="text-sm font-semibold text-white">Тема приложения</h3>
+        {/* <p className="text-xs text-white/50">
+          Меняет общий фон, карточки и акцент. Поддерживаются WebP/APNG-фоны из{" "}
+          <code className="text-white/70">/customization/themes/</code>.
+        </p> */}
+      </div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {APP_THEMES.map((theme) => {
+          const available = !theme.paid || unlocked.has(theme.id);
+          const active = theme.id === themeId;
+          const previewUrl = resolveAppThemeAssets(theme, { preferStaticBackground: true }).backgroundUrl;
+
+          return (
+            <ThemeOptionButton
+              key={theme.id}
+              theme={theme}
+              active={active}
+              available={available}
+              previewUrl={previewUrl}
+              onSelect={() => setThemeId(theme.id)}
+            />
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+type ThemeOptionButtonProps = {
+  theme: (typeof APP_THEMES)[number];
+  active: boolean;
+  available: boolean;
+  previewUrl: string | null;
+  onSelect: () => void;
+};
+
+function ThemeOptionButton({
+  theme,
+  active,
+  available,
+  previewUrl,
+  onSelect,
+}: ThemeOptionButtonProps) {
+  const [previewFailed, setPreviewFailed] = useState(false);
+  const showAssetPreview = Boolean(previewUrl) && !previewFailed;
+
+  return (
+    <button
+      type="button"
+      disabled={!available}
+      onClick={onSelect}
+      className={cn(
+        "rounded-xl border p-3 text-left transition disabled:cursor-default disabled:opacity-55",
+        active ? "border-(--theme-accent) bg-white/10" : "border-white/10 bg-white/5 hover:bg-white/8",
+      )}
+      aria-pressed={active}
+    >
+      <span className="mb-2 flex items-center justify-between gap-2">
+        <span className="font-medium text-white">{theme.name}</span>
+        {!available && <Lock className="h-4 w-4 text-white/40" />}
+      </span>
+      <span className="mb-3 block text-xs text-white/50">{theme.description}</span>
+      {showAssetPreview ? (
+        <span className="relative block h-10 overflow-hidden rounded-lg border border-white/10">
+          {/* eslint-disable-next-line @next/next/no-img-element -- local theme preview thumbnails */}
+          <img
+            src={previewUrl!}
+            alt=""
+            aria-hidden
+            className="h-full w-full object-cover"
+            onError={() => setPreviewFailed(true)}
+          />
+          <span
+            className="absolute inset-0"
+            style={{ background: `linear-gradient(90deg, ${theme.tokens.background}cc, transparent)` }}
+            aria-hidden
+          />
+        </span>
+      ) : (
+        <ThemePreviewSwatches
+          background={theme.tokens.background}
+          surface={theme.tokens.surface}
+          accent={theme.tokens.accent}
+        />
+      )}
+    </button>
+  );
+}

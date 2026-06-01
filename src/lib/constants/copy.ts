@@ -1,0 +1,42 @@
+export const COPY = {
+  appName: "вупл.",
+  feed: "Лента",
+  explore: "Обзор",
+  following: "Подписки",
+  search: "Поиск",
+  messages: "Сообщения",
+  notifications: "Уведомления",
+  shop: "Магазин",
+  profile: "Профиль",
+  newPost: "Новый пост",
+  composePlaceholder: "Что нового?",
+  publish: "Опубликовать",
+  statusChanged: "Состояние изменилось",
+  publishStatus: "Опубликовать",
+  save: "Сохранить",
+  logout: "Выйти",
+  subscribe: "Подписаться",
+  subscribeBack: "Подписаться в ответ",
+  followsYou: "Подписан на вас",
+  unsubscribe: "Отписаться",
+  message: "Написать",
+  like: "Нравится",
+  comment: "Комментарий",
+  share: "Поделиться",
+  posts: "Посты",
+  replies: "Ответы",
+  media: "Медиа",
+  login: "Войти",
+  register: "Регистрация",
+  username: "Имя пользователя",
+  usernameHint: "Латиница, цифры, _ — от 3 до 30 символов",
+  registeredAt: "На Voople с",
+  subscriptionSince: "Voople+ с",
+} as const;
+
+export const FEED_TABS = [
+  { id: "overview", label: "Для вас" },
+  { id: "following", label: "Подписки" },
+] as const;
+
+export type FeedTabId = (typeof FEED_TABS)[number]["id"];

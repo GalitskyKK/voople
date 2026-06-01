@@ -1,8 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0f;
+  --foreground: #ededed;
+  --theme-primary: #0a0a0f;
+  --theme-accent: #7b3aed;
+  --app-surface: #1c1c1e;
+  --app-surface-soft: rgba(255, 255, 255, 0.05);
+  --app-border: rgba(255, 255, 255, 0.1);
+  --app-accent-soft: rgba(123, 58, 237, 0.18);
+  --voople-scrollbar-size: 8px;
+  --voople-scrollbar-thumb: rgba(255, 255, 255, 0.16);
+  --voople-scrollbar-thumb-hover: rgba(255, 255, 255, 0.28);
+  --voople-scrollbar-thumb-active: rgba(123, 58, 237, 0.55);
+  --voople-scrollbar-track: transparent;
 }
 
 @theme inline {
@@ -12,15 +23,175 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--voople-scrollbar-thumb) var(--voople-scrollbar-track);
+  }
+
+  *::-webkit-scrollbar {
+    width: var(--voople-scrollbar-size);
+    height: var(--voople-scrollbar-size);
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--voople-scrollbar-track);
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--voople-scrollbar-thumb);
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background-clip: padding-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--voople-scrollbar-thumb-hover);
+  }
+
+  *::-webkit-scrollbar-thumb:active {
+    background-color: var(--voople-scrollbar-thumb-active);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+/** Scroll containers: stable gutter + no scroll chaining to the page. */
+.voople-scroll {
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+@keyframes voople-action-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.24);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes voople-count-bump {
+  0% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  45% {
+    transform: translateY(-2px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .voople-action-pop {
+    animation: voople-action-pop 260ms ease-out;
+  }
+
+  .voople-count-bump {
+    animation: voople-count-bump 220ms ease-out;
+  }
+}
+
+.voople-app-theme-bg__image,
+.voople-app-theme-bg__overlay {
+  transform: scale(1.02);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voople-app-theme-bg__overlay {
+    display: none;
+  }
+}
+
+/* Profile */
+.profile-card,
+.voople-profile-card {
+  --theme-primary: #0a0a0f;
+  --theme-accent: #7b3aed;
+}
+
+.voople-profile-sticky {
+  /* compact header after card scroll — see StickyProfileHeader */
+}
+
+/* Feed post */
+.voople-post-card {
+  /* outer post wrapper */
+}
+
+.voople-post-card__surface {
+  /* card body */
+}
+
+.voople-post-card__author-chip {
+  /* themed author strip (replaces default header) */
+}
+
+.voople-post-card__header {
+  /* default author row */
+}
+
+.voople-post-card__body {
+}
+
+.voople-post-card__actions {
+}
+
+.voople-status-post {
+  /* published status snapshot in feed */
+}
+
+/* Compose (desktop) */
+.voople-compose-block {
+}
+
+.voople-compose-block__toolbar {
+}
+
+/* Layout */
+.voople-feed {
+}
+
+.voople-profile-page {
+}
+
+/* Shell */
+.voople-shell {
+  /* desktop: h-dvh + overflow hidden — aside fixed height, main scrolls */
+}
+
+.voople-sidebar {
+  /* left column: brand / nav / footer pinned in viewport */
+}
+
+.voople-shell__scroll {
+  /* feed + profile scroll area */
+}
+
+.voople-sidebar__link {
+}
+
+.voople-feed-header {
+}
+
+.voople-status-publish-banner {
 }

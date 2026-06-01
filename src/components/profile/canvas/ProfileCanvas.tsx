@@ -122,14 +122,13 @@ export function ProfileCanvas({
   );
 
   const handleIncomingDrawing = useCallback(
-    (strokeId: string, userId: string, points: Point[]) => {
+    (strokeId: string, userId: string, points: Point[], color: string, size: number) => {
       if (userId === viewerId) return;
-      const existing = remoteDraftsRef.current.get(strokeId);
       remoteDraftsRef.current.set(strokeId, {
         userId,
         points,
-        color: existing?.color ?? "#ffffff",
-        size: existing?.size ?? BRUSH_SIZE_DEFAULT,
+        color,
+        size,
       });
       redrawCanvas();
     },
@@ -233,7 +232,12 @@ export function ProfileCanvas({
     };
 
     drawStroke(activeStrokeRef.current);
-    emitDrawing(activeStrokeRef.current.id, activePointsRef.current);
+    emitDrawing(
+      activeStrokeRef.current.id,
+      activePointsRef.current,
+      activeStrokeRef.current.color,
+      activeStrokeRef.current.size,
+    );
   };
 
   const handlePointerUp = (event: React.PointerEvent<HTMLCanvasElement>) => {

@@ -30,18 +30,19 @@ function isProfilePath(pathname: string) {
   return /^\/[a-z0-9_]+$/i.test(pathname) && !RESERVED_SLUGS.has(slug);
 }
 
+/**
+ * Window scroll — нативный скролл документа (работает на Chrome mobile, Firefox и т.д.).
+ * Element scroll — nested overflow внутри flex; ломает touch/wheel над контентом.
+ * Nested нужен только профилю на desktop (две колонки, посты скроллятся отдельно).
+ */
 function useScrollMode(pathname: string): ScrollContainerMode {
   const isLg = useIsLgViewport();
 
-  if (pathname === "/feed" || pathname.startsWith("/hashtag/")) {
-    return "window";
+  if (isLg && isProfilePath(pathname)) {
+    return "element";
   }
 
-  if (isProfilePath(pathname) && !isLg) {
-    return "window";
-  }
-
-  return "element";
+  return "window";
 }
 
 export function MainShell({ children }: { children: React.ReactNode }) {

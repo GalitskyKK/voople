@@ -9,7 +9,14 @@ import type { Point, Stroke } from "@/types/canvas"
 const EMIT_DRAWING_INTERVAL_MS = 50
 
 type CanvasBroadcastPayload =
-  | { type: "drawing"; strokeId: string; userId: string; points: Point[] }
+  | {
+      type: "drawing"
+      strokeId: string
+      userId: string
+      points: Point[]
+      color: string
+      size: number
+    }
   | { type: "stroke_end"; stroke: Stroke }
   | { type: "clear"; ownerId: string }
   | { type: "stroke_undo"; strokeId: string; userId: string }
@@ -32,7 +39,13 @@ type UseCanvasRealtimeOptions = {
   profileOwnerId: string
   viewerId: string | null | undefined
   onIncomingStroke: (stroke: Stroke) => void
-  onIncomingDrawing?: (strokeId: string, userId: string, points: Point[]) => void
+  onIncomingDrawing?: (
+    strokeId: string,
+    userId: string,
+    points: Point[],
+    color: string,
+    size: number,
+  ) => void
   onRemoveStroke?: (strokeId: string) => void
   /** После broadcast clear — перечитать холст из БД (защита от поддельного clear) */
   onSyncFromServer?: () => void
@@ -58,11 +71,14 @@ export function useCanvasRealtime({
   onSyncFromServer
 }: UseCanvasRealtimeOptions) {
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null)
+  const channelReadyRef = useRef(false)
   const onIncomingStrokeRef = useRef(onIncomingStroke)
   const onIncomingDrawingRef = useRef(onIncomingDrawing)
   const onRemoveStrokeRef = useRef(onRemoveStroke)
   const onSyncFromServerRef = useRef(onSyncFromServer)
-  const emitDrawingRef = useRef<(strokeId: string, points: Point[]) => void>(() => {})
+  const emitDrawingRef = useRef<
+    (strokeId: string, points: Point[], color: string, size: number) => void
+  >(() => {})
 
   const isProfileOwner = Boolean(viewerId && viewerId === profileOwnerId)
 
@@ -84,9 +100,9 @@ export function useCanvasRealtime({
 
   useEffect(() => {
     const supabase = createClient()
-    const channelId = crypto.randomUUID()
+    channelReadyRef.current = false
     const channel = supabase
-      .channel(`profile-canvas:${profileUserId}:${channelId}`, {
+      .channel(`profile-canvas:${profileUserId}`, {
         config: { broadcast: { self: false } }
       })
       .on("broadcast", { event: "canvas" }, ({ payload }) => {
@@ -94,7 +110,13 @@ export function useCanvasRealtime({
         if (!data) return
 
         if (data.type === "drawing") {
-          onIncomingDrawingRef.current?.(data.strokeId, data.userId, data.points)
+          onIncomingDrawingRef.current?.(
+            data.strokeId,
+            data.userId,
+            data.points,
+            data.color,
+            data.size
+          )
           return
         }
 
@@ -141,11 +163,21 @@ export function useCanvasRealtime({
           onRemoveStrokeRef.current?.(row.id)
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          channelReadyRef.current = true
+          void onSyncFromServerRef.current?.()
+          return
+        }
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          channelReadyRef.current = false
+        }
+      })
 
     channelRef.current = channel
 
     return () => {
+      channelReadyRef.current = false
       void supabase.removeChannel(channel)
       channelRef.current = null
     }
@@ -155,19 +187,25 @@ export function useCanvasRealtime({
     (payload: CanvasBroadcastPayload) => {
       const channel = channelRef.current
       if (!channel || !viewerId) return
-      void channel.send({
-        type: "broadcast",
-        event: "canvas",
-        payload
-      })
+
+      if (channelReadyRef.current) {
+        void channel.send({
+          type: "broadcast",
+          event: "canvas",
+          payload
+        })
+        return
+      }
+
+      void channel.httpSend("canvas", payload).catch(() => undefined)
     },
     [viewerId]
   )
 
   const emitDrawingRaw = useCallback(
-    (strokeId: string, points: Point[]) => {
+    (strokeId: string, points: Point[], color: string, size: number) => {
       if (!viewerId || points.length === 0) return
-      broadcast({ type: "drawing", strokeId, userId: viewerId, points })
+      broadcast({ type: "drawing", strokeId, userId: viewerId, points, color, size })
     },
     [broadcast, viewerId]
   )
@@ -176,9 +214,12 @@ export function useCanvasRealtime({
     emitDrawingRef.current = throttle(emitDrawingRaw, EMIT_DRAWING_INTERVAL_MS)
   }, [emitDrawingRaw])
 
-  const emitDrawing = useCallback((strokeId: string, points: Point[]) => {
-    emitDrawingRef.current(strokeId, points)
-  }, [])
+  const emitDrawing = useCallback(
+    (strokeId: string, points: Point[], color: string, size: number) => {
+      emitDrawingRef.current(strokeId, points, color, size)
+    },
+    []
+  )
 
   const emitStrokeEnd = useCallback(
     (stroke: Stroke) => {

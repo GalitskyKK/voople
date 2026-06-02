@@ -268,11 +268,9 @@ export function ProfileEditSheet({ profile }: ProfileEditSheetProps) {
         <div className="mb-4 border-t border-white/10 pt-4">
           <AppThemeSelector />
           <p className="mt-3 text-sm text-white/50">
-            Больше оформления — в{" "}
-            <Link href="/shop" className="text-(--theme-accent) underline-offset-2 hover:underline">
-              магазине
+            <Link href="/shop?tab=customize" className="text-(--theme-accent) underline-offset-2 hover:underline">
+              Оформление профиля
             </Link>
-            .
           </p>
         </div>
         {error && <p className="mb-3 text-sm text-red-400">{error}</p>}

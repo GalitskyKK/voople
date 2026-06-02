@@ -89,9 +89,6 @@ function BannerCropGuide() {
         className="absolute inset-y-0 left-1/2 h-full -translate-x-1/2 border-x border-dashed border-white/25"
         style={{ width: `${BANNER_SAFE_WIDTH_RATIO * 100}%` }}
       />
-      <span className="absolute bottom-1 left-1/2 max-w-[90%] -translate-x-1/2 rounded bg-black/55 px-2 py-0.5 text-center text-[10px] text-white/70">
-        Центр {Math.round(BANNER_SAFE_WIDTH_RATIO * 100)}% — края могут обрезаться
-      </span>
     </div>
   );
 }
@@ -340,10 +337,6 @@ export function BannerDrawEditor({
 
   return (
     <div className={cn("space-y-3", className)}>
-      <p className="text-xs text-white/50">
-        Холст {BANNER_EXPORT_WIDTH}×{BANNER_EXPORT_HEIGHT}px — пропорции карточки. Крайние 15% с каждой
-        стороны могут не попасть в кадр на узком экране.
-      </p>
       {!expandedOpen && (
         <>
           <div className="flex justify-end">

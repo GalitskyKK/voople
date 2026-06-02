@@ -11,6 +11,8 @@ import { BottomNav } from "./BottomNav";
 import { CreatePostFab } from "./CreatePostFab";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { FeedHeader } from "./FeedHeader";
+import { LegalAside } from "./LegalAside";
+// import { LegalMobileStrip } from "./LegalMobileStrip";
 import { ScrollContainerProvider, type ScrollContainerMode } from "./ScrollContainerContext";
 
 const RESERVED_SLUGS = new Set([
@@ -55,6 +57,8 @@ export function MainShell({ children }: { children: React.ReactNode }) {
     !pathname.startsWith("/messages") &&
     (pathname === "/feed" || pathname === "/me" || isProfileRoute);
 
+  const showLegalAside = !pathname.startsWith("/messages");
+
   /** Лента — узкая колонка; профиль — две колонки (карточка + посты). */
   const contentMaxWidth = isProfileRoute ? "max-w-6xl" : "max-w-2xl";
 
@@ -76,42 +80,53 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       >
         <div
           className={cn(
-            "voople-shell__main mx-auto flex w-full flex-col",
-            contentMaxWidth,
-            !usesWindowScroll && "min-h-0 flex-1",
-            isProfileRoute && "lg:h-full",
+            "mx-auto flex w-full flex-1 justify-center gap-6 lg:gap-8",
+            isProfileRoute && "min-h-0 lg:h-full lg:min-h-0",
           )}
         >
-          <AppTopBar />
-          <Suspense fallback={null}>
-            <FeedHeader />
-          </Suspense>
-          <ScrollContainerProvider scrollRef={shellScrollRef} mode={scrollMode}>
-            <div
-              ref={shellScrollRef}
-              data-voople-scroll={usesWindowScroll ? undefined : ""}
-              className={cn(
-                "voople-shell__scroll pb-24 lg:pb-6",
-                !usesWindowScroll && "voople-scroll min-h-0 flex-1 overflow-y-auto",
-                isProfileRoute && !usesWindowScroll && "lg:flex lg:flex-col lg:overflow-hidden",
-              )}
-            >
+          <div
+            className={cn(
+              "voople-shell__main flex min-w-0 flex-1 flex-col",
+              contentMaxWidth,
+              !usesWindowScroll && "min-h-0 flex-1",
+              isProfileRoute && "lg:h-full lg:min-h-0",
+            )}
+          >
+            <AppTopBar />
+            <Suspense fallback={null}>
+              <FeedHeader />
+            </Suspense>
+            <ScrollContainerProvider scrollRef={shellScrollRef} mode={scrollMode}>
               <div
-                id="main-content"
+                ref={shellScrollRef}
+                data-voople-scroll={usesWindowScroll ? undefined : ""}
                 className={cn(
-                  "voople-shell__page w-full px-4 lg:px-6",
-                  isProfileRoute &&
-                    !usesWindowScroll &&
-                    "flex min-h-0 flex-1 flex-col lg:min-h-0 lg:py-0",
+                  "voople-shell__scroll pb-24 lg:pb-6",
+                  !usesWindowScroll && "voople-scroll min-h-0 flex-1 overflow-y-auto",
+                  isProfileRoute && !usesWindowScroll && "lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden",
                 )}
               >
-                {children}
+                <div
+                  id="main-content"
+                  className={cn(
+                    "voople-shell__page w-full px-4 lg:px-6",
+                    isProfileRoute &&
+                      !usesWindowScroll &&
+                      "flex min-h-0 flex-1 flex-col lg:min-h-0 lg:py-0",
+                  )}
+                >
+                  {children}
+                </div>
               </div>
-            </div>
-          </ScrollContainerProvider>
-          {showFab && <CreatePostFab />}
-          <BottomNav />
+            </ScrollContainerProvider>
+            {showFab && <CreatePostFab />}
+            <BottomNav />
+          </div>
+          {showLegalAside && <LegalAside />}
         </div>
+        {/* Mobile legal strip — hidden for now; re-enable when placement is decided
+        {showLegalAside && <LegalMobileStrip />}
+        */}
       </div>
     </div>
   );

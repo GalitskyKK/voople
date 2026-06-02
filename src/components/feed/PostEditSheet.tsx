@@ -55,9 +55,6 @@ export function PostEditSheet({
   return (
     <Sheet open={open} onClose={onClose}>
       <h2 className="mb-4 pe-10 text-lg font-semibold">Редактировать пост</h2>
-      <p className="mb-3 text-xs text-white/50">
-        Доступно только в первые 24 часа после публикации.
-      </p>
       <PostComposer value={text} onChange={setText} disabled={update.isPending} />
       {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
       <Button

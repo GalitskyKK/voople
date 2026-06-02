@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { Package, Palette, ShoppingBag } from "lucide-react";
 
 import { trpc } from "@/lib/trpc/client";
@@ -20,10 +21,22 @@ const TABS: { id: ShopTab; label: string; icon: typeof ShoppingBag }[] = [
   { id: "customize", label: "Настройка", icon: Palette },
 ];
 
+const TAB_IDS = new Set<ShopTab>(["catalog", "inventory", "customize"]);
+
 export function ShopPage() {
-  const [tab, setTab] = useState<ShopTab>("catalog");
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get("tab");
+  const initialTab: ShopTab =
+    tabFromUrl && TAB_IDS.has(tabFromUrl as ShopTab) ? (tabFromUrl as ShopTab) : "catalog";
+  const [tab, setTab] = useState<ShopTab>(initialTab);
   const [donationMessage, setDonationMessage] = useState<string | null>(null);
   const utils = trpc.useUtils();
+
+  useEffect(() => {
+    if (tabFromUrl && TAB_IDS.has(tabFromUrl as ShopTab)) {
+      setTab(tabFromUrl as ShopTab);
+    }
+  }, [tabFromUrl]);
 
   const overviewQuery = trpc.shop.overview.useQuery(undefined, {
     retry: false,

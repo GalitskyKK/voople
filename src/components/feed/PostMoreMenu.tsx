@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Flag, Link2, MoreHorizontal, Pencil } from "lucide-react";
 
 import { canEditPostByAge } from "@/lib/posts/edit-window";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
-import { useDismissOnOutsideClick } from "@/hooks/useDismissOnOutsideClick";
+import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { PostEditSheet } from "./PostEditSheet";
 
 type PostMoreMenuProps = {
@@ -39,7 +39,6 @@ export function PostMoreMenu({
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   const isOwner = Boolean(viewerUsername && viewerUsername === authorUsername);
   const editableText = repostComment ?? text ?? "";
@@ -57,8 +56,6 @@ export function PostMoreMenu({
     },
     onError: (err) => setToast(err.message),
   });
-
-  useDismissOnOutsideClick(menuRef, () => setOpen(false), open);
 
   useEffect(() => {
     if (!toast) return;
@@ -82,66 +79,64 @@ export function PostMoreMenu({
     reportPost.mutate({ postId });
   };
 
+  const menuItemClass =
+    "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white/90 hover:bg-white/10 disabled:opacity-50";
+
   return (
     <>
-      <div ref={menuRef} className={cn("relative shrink-0", className)}>
-        <button
-          type="button"
-          className="text-white/50 hover:text-white"
-          aria-label="Действия с постом"
-          aria-expanded={open}
-          aria-haspopup="menu"
-          onClick={() => setOpen((value) => !value)}
-        >
-          <MoreHorizontal className="h-5 w-5" />
-        </button>
-        {open && (
-          <div
-            role="menu"
-            className="absolute end-0 top-full z-20 mt-1 min-w-[200px] overflow-hidden rounded-xl border border-white/10 bg-[#1a1a24] py-1 shadow-xl"
+      <DropdownMenu
+        open={open}
+        onOpenChange={setOpen}
+        align="end"
+        className={className}
+        trigger={
+          <button
+            type="button"
+            className="text-white/50 hover:text-white"
+            aria-label="Действия с постом"
+            aria-expanded={open}
+            aria-haspopup="menu"
+            onClick={() => setOpen((value) => !value)}
           >
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white/90 hover:bg-white/10"
-              onClick={() => void copyLink()}
-            >
-              <Link2 className="h-4 w-4 shrink-0 text-white/50" />
-              Скопировать ссылку
-            </button>
-            {canEdit && (
-              <button
-                type="button"
-                role="menuitem"
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white/90 hover:bg-white/10"
-                onClick={() => {
-                  setEditOpen(true);
-                  setOpen(false);
-                }}
-              >
-                <Pencil className="h-4 w-4 shrink-0 text-white/50" />
-                Редактировать
-              </button>
-            )}
-            {viewerUsername && !isOwner && (
-              <button
-                type="button"
-                role="menuitem"
-                disabled={reportPost.isPending}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white/90 hover:bg-white/10 disabled:opacity-50"
-                onClick={handleReport}
-              >
-                <Flag className="h-4 w-4 shrink-0 text-white/50" />
-                Пожаловаться
-              </button>
-            )}
-          </div>
+            <MoreHorizontal className="h-5 w-5" />
+          </button>
+        }
+      >
+        <button type="button" role="menuitem" className={menuItemClass} onClick={() => void copyLink()}>
+          <Link2 className="h-4 w-4 shrink-0 text-white/50" />
+          Скопировать ссылку
+        </button>
+        {canEdit && (
+          <button
+            type="button"
+            role="menuitem"
+            className={menuItemClass}
+            onClick={() => {
+              setEditOpen(true);
+              setOpen(false);
+            }}
+          >
+            <Pencil className="h-4 w-4 shrink-0 text-white/50" />
+            Редактировать
+          </button>
         )}
-      </div>
+        {viewerUsername && !isOwner && (
+          <button
+            type="button"
+            role="menuitem"
+            disabled={reportPost.isPending}
+            className={cn(menuItemClass)}
+            onClick={handleReport}
+          >
+            <Flag className="h-4 w-4 shrink-0 text-white/50" />
+            Пожаловаться
+          </button>
+        )}
+      </DropdownMenu>
       {toast && (
         <p
           role="status"
-          className="pointer-events-none fixed bottom-24 left-1/2 z-[110] -translate-x-1/2 rounded-full bg-black/80 px-4 py-2 text-xs text-white shadow-lg"
+          className="pointer-events-none fixed bottom-24 left-1/2 z-[120] -translate-x-1/2 rounded-full bg-black/80 px-4 py-2 text-xs text-white shadow-lg"
         >
           {toast}
         </p>

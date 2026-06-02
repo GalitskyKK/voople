@@ -22,13 +22,14 @@
 
 ## Жалобы
 
-- Таблица: `post_reports` (`drizzle/16-post-edit-reports.sql`).
-- Поля: `post_id`, `reporter_user_id`, `reason` (опционально), `created_at`.
-- Уникальность: один reporter на один post.
-- Запись только через service role (`post-reports-rest.ts`); RLS блокирует браузер.
-- tRPC: `post.report` (rate limit как у create post).
+- tRPC: `post.report` → таблица `post_reports`.
+- UI: пункт в меню ⋯, toast «Жалоба отправлена».
 
-Модерация / inbox для жалоб — вне текущего UI.
+**Куда:** только БД (`post_reports`), без админки и без автоматических санкций.
+
+**Последствия сейчас:** пост остаётся видимым; автор не получает уведомление; повторная жалоба с того же аккаунта блокируется.
+
+Подробно: [moderation.md](./moderation.md).
 
 ## Миграция
 

@@ -1,9 +1,10 @@
 "use client";
 
-import { UserMinus, UserPlus } from "lucide-react";
+import { UserCheck, UserMinus, UserPlus } from "lucide-react";
 
 import { COPY } from "@/lib/constants/copy";
 import { trpc } from "@/lib/trpc/client";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 
 type ProfileFollowButtonProps = {
@@ -12,6 +13,32 @@ type ProfileFollowButtonProps = {
   layout?: "default" | "compact";
 };
 
+function FollowStatusBadge({
+  following,
+  followsYou,
+}: {
+  following: boolean;
+  followsYou: boolean;
+}) {
+  if (!following && !followsYou) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {following && (
+        <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-xs font-medium text-white/90">
+          <UserCheck className="h-3.5 w-3.5 text-(--theme-accent)" aria-hidden />
+          {COPY.subscribed}
+        </span>
+      )}
+      {followsYou && (
+        <span className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5 text-xs text-white/55">
+          {following ? COPY.mutualFollow : COPY.followsYou}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function ProfileFollowButton({
   username,
   canFollow,
@@ -19,7 +46,7 @@ export function ProfileFollowButton({
 }: ProfileFollowButtonProps) {
   const utils = trpc.useUtils();
 
-  const { data: followState } = trpc.profile.getFollowState.useQuery(
+  const { data: followState, isLoading } = trpc.profile.getFollowState.useQuery(
     { username },
     { enabled: canFollow, staleTime: 30_000 },
   );
@@ -36,6 +63,13 @@ export function ProfileFollowButton({
   const following = followState?.following ?? false;
   const followsYou = followState?.followsYou ?? false;
   const showFollowBack = followsYou && !following;
+  const pending = mutation.isPending || isLoading;
+
+  const actionLabel = following
+    ? COPY.unsubscribe
+    : showFollowBack
+      ? COPY.subscribeBack
+      : COPY.subscribe;
 
   if (layout === "compact") {
     return (
@@ -44,34 +78,28 @@ export function ProfileFollowButton({
         variant={following ? "secondary" : "primary"}
         size="sm"
         className="shrink-0"
-        disabled={mutation.isPending || !followState}
+        disabled={pending}
+        aria-label={actionLabel}
         onClick={() => mutation.mutate({ username })}
       >
         {following ? (
-          <>
-            <UserMinus className="h-4 w-4" />
-            <span className="sr-only">{COPY.unsubscribe}</span>
-          </>
+          <UserMinus className="h-4 w-4" />
         ) : (
-          <>
-            <UserPlus className="h-4 w-4" />
-            <span className="sr-only">{showFollowBack ? COPY.subscribeBack : COPY.subscribe}</span>
-          </>
+          <UserPlus className="h-4 w-4" />
         )}
       </Button>
     );
   }
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-      {showFollowBack && (
-        <p className="text-xs text-white/55">{COPY.followsYou}</p>
-      )}
+    <div className={cn("flex min-w-0 flex-1 flex-col gap-2")}>
+      <FollowStatusBadge following={following} followsYou={followsYou} />
       <Button
         type="button"
         variant={following ? "secondary" : "primary"}
         className="w-full"
-        disabled={mutation.isPending || !followState}
+        disabled={pending}
+        aria-pressed={following}
         onClick={() => mutation.mutate({ username })}
       >
         {following ? (
@@ -82,7 +110,7 @@ export function ProfileFollowButton({
         ) : (
           <>
             <UserPlus className="h-4 w-4" />
-            {showFollowBack ? COPY.subscribeBack : COPY.subscribe}
+            {actionLabel}
           </>
         )}
       </Button>

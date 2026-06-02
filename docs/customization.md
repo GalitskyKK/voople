@@ -147,6 +147,20 @@ NEXT_PUBLIC_ASSETS_CDN_URL=https://cdn.voople.ru
 
 Dev: omit CDN env → files served from `public/customization/`.
 
+## User-created assets
+
+**Сейчас (MVP):**
+
+| Слот | Свой контент |
+|------|----------------|
+| Баннер | Загрузка / рисование в `ProfileEditSheet` (`setCustomBanner`) |
+| Аватар | Загрузка фото (`setAvatarPhoto`) |
+| Эффект, кольцо, декор, стиль ленты, тема | Только предметы из **магазина** → экипировка на `/shop?tab=customize` |
+
+**Не путать** с холстом на обороте карточки (`profile_canvas_strokes`) — это совместное рисование, не equip-слот.
+
+**Планируется:** загрузка/рисование пользовательских ассетов по слотам (effect, ring, feed card) с safe area и модерацией — отдельный upload pipeline по аналогии с `banner`, без подмены shop catalog id.
+
 ## Acceptance Checklist
 
 - Mobile и desktop previews экспортированы.

@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { cn } from "@/lib/utils";
 import type { ProfileViewModel } from "@/types/domain";
 import { ProfileAvatar } from "./ProfileAvatar";
@@ -99,15 +97,6 @@ export function ProfileCard({
           <ProfileReactions profileUserId={profile.id} canReact={!isOwner} />
           <ProfileStats {...profile.stats} />
         </div>
-        {isOwner && (
-          <p className="mt-4 border-t border-white/10 pt-3 text-xs text-white/45">
-            Свой баннер — в редактировании. Эффекты и стили — в{" "}
-            <Link href="/shop" className="text-(--theme-accent) underline-offset-2 hover:underline">
-              магазине
-            </Link>
-            . Оборот карточки — общий холст.
-          </p>
-        )}
       </div>
     </article>
   );

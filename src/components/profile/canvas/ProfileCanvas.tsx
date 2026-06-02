@@ -290,7 +290,7 @@ export function ProfileCanvas({
           "profile-canvas__surface block h-full w-full touch-none rounded-2xl",
           !canDraw && "cursor-not-allowed opacity-90",
         )}
-        aria-label="Интерактивный холст профиля"
+        aria-label="Интерактивный холст на обороте карточки"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}

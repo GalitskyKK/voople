@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { BarChart2, Paperclip, Palette, Smile } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
+import { Paperclip } from "lucide-react";
 
 import { COPY } from "@/lib/constants/copy";
 import { trpc } from "@/lib/trpc/client";
@@ -10,6 +10,7 @@ import { MediaUploadControl } from "@/components/media/MediaUploadControl";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { Button } from "@/components/ui/Button";
 import type { UploadedMedia } from "@/hooks/useMediaUpload";
+import { useDismissOnOutsideClick } from "@/hooks/useDismissOnOutsideClick";
 import { PostComposer } from "./PostComposer";
 
 type CreatePostBlockProps = {
@@ -30,7 +31,17 @@ export function CreatePostBlock({
   const [media, setMedia] = useState<UploadedMedia | null>(null);
   const [uploadResetKey, setUploadResetKey] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
+  const blockRef = useRef<HTMLElement>(null);
   const utils = trpc.useUtils();
+
+  const collapseIfEmpty = useCallback(() => {
+    if (!text.trim() && !media) {
+      setExpanded(false);
+      setFormError(null);
+    }
+  }, [media, text]);
+
+  useDismissOnOutsideClick(blockRef, collapseIfEmpty, expanded);
 
   const createPost = trpc.post.create.useMutation({
     onSuccess: (newPost) => {
@@ -73,7 +84,10 @@ export function CreatePostBlock({
   if (!canPost) return null;
 
   return (
-    <section className={className ?? "voople-compose-block hidden rounded-2xl border border-white/10 bg-[#1c1c1e] p-4 lg:block"}>
+    <section
+      ref={blockRef}
+      className={className ?? "voople-compose-block voople-panel hidden p-4 lg:block"}
+    >
       <div className="voople-compose-block__row flex items-start gap-3">
         <ProfileAvatar
           displayName={displayName}
@@ -118,15 +132,6 @@ export function CreatePostBlock({
               <Paperclip className="h-5 w-5" />
             </button>
           )}
-          <button type="button" className="rounded-lg p-2 hover:bg-white/10 hover:text-white/70" aria-label="Эмодзи">
-            <Smile className="h-5 w-5" />
-          </button>
-          <button type="button" className="rounded-lg p-2 hover:bg-white/10 hover:text-white/70" aria-label="Оформление">
-            <Palette className="h-5 w-5" />
-          </button>
-          <button type="button" className="rounded-lg p-2 hover:bg-white/10 hover:text-white/70" aria-label="Опрос">
-            <BarChart2 className="h-5 w-5" />
-          </button>
         </div>
         <Button
           type="button"

@@ -92,7 +92,7 @@ function ThemeOptionButton({
       onClick={onSelect}
       className={cn(
         "rounded-xl border p-3 text-left transition disabled:cursor-default disabled:opacity-55",
-        active ? "border-(--theme-accent) bg-white/10" : "border-white/10 bg-white/5 hover:bg-white/8",
+        active ? "border-[var(--theme-accent)] bg-[var(--app-accent-soft)]" : "border-[var(--app-border)] bg-[var(--app-surface-soft)] hover:border-[var(--app-border-strong)] hover:bg-[color-mix(in_srgb,var(--app-surface-soft)_80%,white)]",
       )}
       aria-pressed={active}
     >

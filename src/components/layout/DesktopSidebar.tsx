@@ -13,14 +13,17 @@ export function DesktopSidebar() {
 
   return (
     <aside className="voople-sidebar fixed left-0 top-0 hidden h-full w-[260px] shrink-0 flex-col lg:flex">
-      <div className="voople-sidebar__brand shrink-0 px-4 pb-6 pt-6">
-        <Link href="/feed" className="text-lg font-bold tracking-tight text-white">
+      <div className="voople-sidebar__brand shrink-0 px-5 pb-7 pt-7">
+        <Link
+          href="/feed"
+          className="text-[1.125rem] font-semibold tracking-[-0.02em] text-[var(--foreground)] transition-opacity hover:opacity-85"
+        >
           {COPY.appName}
         </Link>
       </div>
 
       <nav
-        className="voople-sidebar__nav voople-scroll flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3"
+        className="voople-sidebar__nav voople-scroll flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3"
         aria-label="Основная навигация"
       >
         {MAIN_NAV_ITEMS.map(({ href, label, icon: Icon, match }) => {
@@ -30,15 +33,22 @@ export function DesktopSidebar() {
             <Link
               key={href}
               href={href}
+              aria-current={active ? "page" : undefined}
               className={cn(
-                "voople-sidebar__link flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors",
+                "voople-sidebar__link relative flex items-center gap-3 rounded-[var(--app-radius-lg)] px-3 py-2.5 text-sm font-medium transition-all duration-200",
                 active
-                  ? "bg-white/12 text-white"
-                  : "text-white/50 hover:bg-white/6 hover:text-white/80",
+                  ? "bg-[var(--app-accent-soft)] text-[var(--foreground)]"
+                  : "text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[color-mix(in_srgb,var(--foreground)_88%,transparent)]",
               )}
             >
+              {active && (
+                <span
+                  aria-hidden
+                  className="absolute bottom-2 left-0 top-2 w-[3px] rounded-full bg-[var(--theme-accent)]"
+                />
+              )}
               <span className="relative inline-flex shrink-0">
-                <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
+                <Icon className="h-5 w-5" strokeWidth={active ? 2.25 : 1.75} />
                 {isNotifications && <NotificationNavBadge />}
               </span>
               {label}
@@ -47,14 +57,14 @@ export function DesktopSidebar() {
         })}
       </nav>
 
-      <div className="voople-sidebar__footer shrink-0 border-t border-white/10 px-3 pb-6 pt-4">
+      <div className="voople-sidebar__footer shrink-0 border-t border-[var(--app-border)] px-3 pb-7 pt-5">
         {SIDEBAR_FOOTER_ITEMS.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
             href={href}
-            className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-white/50 transition-colors hover:bg-white/6 hover:text-white/80"
+            className="flex items-center gap-3 rounded-[var(--app-radius-lg)] px-3 py-2.5 text-sm text-[var(--app-muted)] transition-all duration-200 hover:bg-[var(--app-surface-soft)] hover:text-[color-mix(in_srgb,var(--foreground)_88%,transparent)]"
           >
-            <Icon className="h-5 w-5 shrink-0" />
+            <Icon className="h-5 w-5 shrink-0" strokeWidth={1.75} />
             {label}
           </Link>
         ))}

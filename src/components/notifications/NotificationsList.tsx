@@ -47,7 +47,7 @@ export function NotificationsList() {
           type="button"
           onClick={() => markRead.mutate()}
           disabled={markRead.isPending}
-          className="text-sm text-[var(--theme-accent,#7B3AED)] hover:underline disabled:opacity-50"
+          className="voople-link text-sm hover:underline disabled:opacity-50"
         >
           Отметить все прочитанными
         </button>
@@ -65,10 +65,10 @@ export function NotificationsList() {
                 className={`flex items-start gap-3 rounded-xl border px-3 py-3 transition-colors hover:bg-white/5 ${
                   notification.read
                     ? "border-white/5 bg-white/[0.02]"
-                    : "border-[var(--theme-accent,#7B3AED)]/30 bg-[var(--theme-accent,#7B3AED)]/10"
+                    : "border-[color-mix(in_srgb,var(--theme-accent)_30%,transparent)] bg-[var(--app-accent-soft)]"
                 }`}
               >
-                <span className="mt-0.5 text-[var(--theme-accent,#7B3AED)]">
+                <span className="mt-0.5 text-[var(--theme-accent)]">
                   <Icon className="h-5 w-5" />
                 </span>
                 <div className="min-w-0 flex-1">

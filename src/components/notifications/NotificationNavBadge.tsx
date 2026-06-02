@@ -23,7 +23,7 @@ export function NotificationNavBadge({ className }: NotificationNavBadgeProps) {
   return (
     <span
       className={cn(
-        "absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--theme-accent,#7B3AED)] px-1 text-[10px] font-semibold leading-none text-white",
+        "absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--theme-accent)] px-1 text-[10px] font-semibold leading-none text-white",
         className
       )}
       aria-hidden>

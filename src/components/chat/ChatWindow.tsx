@@ -102,7 +102,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         <div className="min-w-0">
           <p className="truncate font-semibold">{other?.displayName ?? "Чат"}</p>
           {other && (
-            <Link href={`/${other.username}`} className="text-sm text-[#7B3AED] hover:underline">
+            <Link href={`/${other.username}`} className="voople-link text-sm hover:underline">
               @{other.username}
             </Link>
           )}
@@ -132,7 +132,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
           onChange={(e) => setText(e.target.value)}
           placeholder="Сообщение…"
           maxLength={1000}
-          className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none focus:border-[#7B3AED]/50"
+          className="voople-input min-w-0 flex-1 py-2 text-sm"
         />
         <Button type="submit" variant="primary" disabled={!text.trim()}>
           →

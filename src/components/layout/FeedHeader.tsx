@@ -22,7 +22,7 @@ export function FeedHeader() {
   return (
     <header className="voople-feed-header sticky top-12 z-20 shrink-0 px-4 py-3 lg:static lg:top-auto lg:z-auto lg:px-6">
       <nav
-        className="voople-feed-header__tabs mx-auto flex w-full max-w-2xl gap-1 rounded-2xl bg-[#1c1c1e] p-1"
+        className="voople-feed-header__tabs voople-panel mx-auto flex w-full max-w-2xl gap-1 p-1"
         aria-label="Разделы ленты"
       >
         {FEED_TABS.map(({ id, label }) => (
@@ -31,10 +31,10 @@ export function FeedHeader() {
             type="button"
             onClick={() => setTab(id)}
             className={cn(
-              "voople-feed-header__tab min-w-0 flex-1 rounded-xl px-3 py-2.5 text-center text-sm font-medium transition-colors",
+              "voople-feed-header__tab min-w-0 flex-1 rounded-[var(--app-radius-md)] px-3 py-2.5 text-center text-sm font-medium transition-all duration-200",
               activeTab === id
-                ? "bg-white/12 text-white shadow-sm"
-                : "text-white/50 hover:text-white/75",
+                ? "bg-[var(--app-accent-soft)] text-[var(--foreground)] shadow-[var(--app-shadow-sm)]"
+                : "text-[var(--app-muted)] hover:text-[color-mix(in_srgb,var(--foreground)_82%,transparent)]",
             )}
           >
             {label}

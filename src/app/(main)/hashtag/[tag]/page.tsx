@@ -24,7 +24,7 @@ export default async function HashtagPage({ params }: HashtagPageProps) {
 
   return (
     <div className="voople-hashtag-page flex flex-col gap-4 py-4">
-      <header className="rounded-2xl border border-white/10 bg-[#1c1c1e] px-4 py-4 text-white">
+      <header className="voople-panel px-4 py-4 text-[var(--foreground)]">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
             <Hash className="h-5 w-5" />

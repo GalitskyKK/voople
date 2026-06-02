@@ -29,7 +29,7 @@ function RepostPreview({ post, depth = 0 }: { post: PostViewModel; depth?: numbe
   const hasNestedRepost = Boolean(post.repost?.target);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/15 p-3">
+    <div className="voople-panel--inset p-3">
       <div className="mb-3">
         <p className="text-xs font-medium text-white/70">{post.author.displayName}</p>
         <p className="text-xs text-white/40">@{post.author.username}</p>
@@ -73,6 +73,14 @@ export function PostCard({
   const [repostCount, setRepostCount] = useState(post.repostCount);
   const [viewerReposted, setViewerReposted] = useState(post.repostedByViewer ?? false);
   const [repostPulseKey, setRepostPulseKey] = useState(0);
+  const [displayText, setDisplayText] = useState(post.text);
+  const [displayRepostComment, setDisplayRepostComment] = useState(post.repostComment);
+
+  const { data: viewer } = trpc.user.me.useQuery(undefined, {
+    enabled: Boolean(viewerId),
+    staleTime: 60_000,
+    retry: false,
+  });
 
   const plainRepost = trpc.post.repost.useMutation({
     onMutate: () => {
@@ -112,7 +120,7 @@ export function PostCard({
   return (
     <article className={cn("voople-post-card text-white", className)}>
       <div
-        className="voople-post-card__surface overflow-hidden rounded-2xl bg-[#1c1c1e]"
+        className="voople-post-card__surface voople-panel overflow-hidden rounded-[var(--app-radius-xl)]"
         style={
           c
             ? ({
@@ -127,15 +135,25 @@ export function PostCard({
           displayName={post.author.displayName}
           createdAt={post.createdAt}
           customization={c}
+          postKind={post.kind}
+          postText={displayText}
+          repostComment={displayRepostComment}
+          hasRepostTarget={Boolean(post.repost?.target)}
+          viewerUsername={viewer?.username ?? null}
+          profileUsername={profileUsername}
+          onTextUpdated={(text, isRepostComment) => {
+            if (isRepostComment) setDisplayRepostComment(text);
+            else setDisplayText(text);
+          }}
         />
         <div className={cn("voople-post-card__body px-4 pb-4", chipHeader ? "pt-3" : "pt-3")}>
-          {post.repostComment && (
+          {displayRepostComment && (
             <p className="voople-post-card__text mb-3 text-sm leading-relaxed text-white/90">
-              {post.repostComment}
+              {displayRepostComment}
             </p>
           )}
-          {post.text && (
-            <p className="voople-post-card__text text-sm leading-relaxed text-white/90">{post.text}</p>
+          {displayText && (
+            <p className="voople-post-card__text text-sm leading-relaxed text-white/90">{displayText}</p>
           )}
           {post.mediaUrl && (
             <PostMedia url={post.mediaUrl} mediaType={post.mediaType} className="mt-3" />
@@ -219,14 +237,14 @@ export function PostCard({
             </button>
           </footer>
           {repostPanelOpen && (
-            <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3">
+            <div className="voople-panel--inset mt-3 p-3">
               <textarea
                 value={quoteText}
                 onChange={(event) => setQuoteText(event.target.value)}
                 maxLength={280}
                 rows={3}
                 placeholder="Добавить комментарий к репосту"
-                className="min-h-20 w-full resize-none rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm outline-none focus:border-[#7B3AED]/60"
+                className="min-h-20 w-full resize-none voople-input"
               />
               <div className="mt-3 flex flex-wrap justify-end gap-2">
                 <Button

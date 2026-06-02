@@ -1,9 +1,7 @@
-import { MoreHorizontal } from "lucide-react";
+import Link from "next/link";
 
-import { COPY } from "@/lib/constants/copy";
 import { cn } from "@/lib/utils";
 import type { ProfileViewModel } from "@/types/domain";
-import { Button } from "@/components/ui/Button";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ProfileBadges } from "./ProfileBadges";
 import { ProfileBanner } from "./ProfileBanner";
@@ -83,9 +81,6 @@ export function ProfileCard({
               <ProfileMessageButton username={profile.username} />
             </>
           )}
-          <Button variant="secondary" size="md" aria-label="Ещё">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
         </div>
         <div className="mt-4">
           <ProfileMeta
@@ -104,13 +99,15 @@ export function ProfileCard({
           <ProfileReactions profileUserId={profile.id} canReact={!isOwner} />
           <ProfileStats {...profile.stats} />
         </div>
-        <nav className="mt-4 flex gap-4 border-t border-white/10 pt-3 text-sm text-white/60">
-          <span className="border-b-2 border-(--theme-accent) pb-1 text-white">
-            {COPY.posts}
-          </span>
-          <span>{COPY.replies}</span>
-          <span>{COPY.media}</span>
-        </nav>
+        {isOwner && (
+          <p className="mt-4 border-t border-white/10 pt-3 text-xs text-white/45">
+            Свой баннер — в редактировании. Эффекты и стили — в{" "}
+            <Link href="/shop" className="text-(--theme-accent) underline-offset-2 hover:underline">
+              магазине
+            </Link>
+            . Оборот карточки — общий холст.
+          </p>
+        )}
       </div>
     </article>
   );

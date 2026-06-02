@@ -7,6 +7,8 @@ import type { PostViewModel } from "@/types/domain";
 import type { PostMediaType } from "@/lib/object-storage/types";
 
 export { getPostByIdRest as getPostById, searchPostsRest as searchPosts } from "@/server/data/posts-rest";
+export { updatePostTextRest as updatePostText } from "@/server/data/post-update-rest";
+export { createPostReportRest as createPostReport } from "@/server/data/post-reports-rest";
 
 export async function createPost(
   authorId: string,

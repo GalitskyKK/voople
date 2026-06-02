@@ -1,12 +1,14 @@
 "use client";
 
+import { Button } from "@/components/ui/Button";
+
 export default function ProfileError({ reset }: { reset: () => void }) {
   return (
-    <div className="p-8 text-center">
-      <p className="text-white/70">Не удалось загрузить профиль</p>
-      <button type="button" onClick={reset} className="mt-4 text-[#7B3AED]">
+    <div className="flex flex-col items-center gap-4 p-8 text-center">
+      <p className="text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">Не удалось загрузить профиль</p>
+      <Button type="button" onClick={reset} variant="ghost">
         Повторить
-      </button>
+      </Button>
     </div>
   );
 }

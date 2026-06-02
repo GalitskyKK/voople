@@ -97,6 +97,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
               )}
             >
               <div
+                id="main-content"
                 className={cn(
                   "voople-shell__page w-full px-4 lg:px-6",
                   isProfileRoute &&

@@ -79,7 +79,7 @@ export function CustomizationEditor({
           if (slotItems.length === 0) return null;
 
           return (
-            <section key={slot} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <section key={slot} className="voople-panel p-4">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <h3 className="text-sm font-semibold text-white">{title}</h3>
                 {slotItems.some((item) => item.equipped) && (

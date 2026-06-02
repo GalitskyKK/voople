@@ -11,7 +11,7 @@ export const uploadRouter = createTRPCRouter({
   createPresigned: protectedProcedure
     .input(
       z.object({
-        purpose: z.enum(["post", "comment", "avatar"]),
+        purpose: z.enum(["post", "comment", "avatar", "banner"]),
         contentType: z.string().min(3).max(100),
         sizeBytes: z.number().int().min(1).max(15 * 1024 * 1024),
       }),

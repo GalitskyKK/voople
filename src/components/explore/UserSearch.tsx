@@ -51,7 +51,7 @@ export function UserSearch() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Люди, #хэштеги или текст поста"
-          className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-[var(--theme-accent,#7B3AED)]/50"
+          className="voople-input min-w-0 flex-1 py-2.5 pl-10 pr-3 text-sm"
         />
       </label>
 
@@ -161,7 +161,7 @@ function SearchSection({
   return (
     <section className="space-y-2">
       <h2 className="flex items-center gap-2 text-sm font-semibold text-white/80">
-        <Icon className="h-4 w-4 text-[var(--theme-accent,#7B3AED)]" />
+        <Icon className="h-4 w-4 text-[var(--theme-accent)]" />
         {title}
       </h2>
       {children}

@@ -6,6 +6,7 @@ import {
   equipShopItem,
   getEquippedCustomization,
   setAvatarPhoto,
+  setCustomBanner,
   updateCustomization,
 } from "@/server/services/customization.service";
 
@@ -33,6 +34,20 @@ export const customizationRouter = createTRPCRouter({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: e instanceof Error ? e.message : "Не удалось обновить аватар",
+        });
+      }
+    }),
+
+  setCustomBanner: protectedProcedure
+    .input(z.object({ mediaKey: z.string().min(1).max(512) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        await setCustomBanner(ctx.user.id, input.mediaKey);
+        return getEquippedCustomization(ctx.user.id);
+      } catch (e) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: e instanceof Error ? e.message : "Не удалось обновить баннер",
         });
       }
     }),

@@ -23,7 +23,7 @@ export function FlipCard({
   front,
   renderBack,
   className,
-  flipLabel = "Перевернуть карточку",
+  flipLabel = "Оборот карточки — рисование",
   flipped: flippedProp,
   onFlippedChange,
 }: FlipCardProps) {
@@ -47,8 +47,8 @@ export function FlipCard({
 
       <p id={flipHintId} className="sr-only">
         {flipped
-          ? "Режим рисования на обратной стороне"
-          : "Лицевая сторона профиля; оборот — превью холста"}
+          ? "Режим рисования на обратной стороне карточки"
+          : "Лицевая сторона — профиль; оборот — общий холст для рисования"}
       </p>
 
       <div className="flip-card__scene" style={{ perspective: "1000px" }}>

@@ -1,4 +1,4 @@
-export type UploadPurpose = "post" | "comment" | "avatar";
+export type UploadPurpose = "post" | "comment" | "avatar" | "banner";
 
 export type PostMediaType = "image" | "gif" | "meme";
 

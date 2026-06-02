@@ -2,6 +2,7 @@ export {
   clearEquipSlotRest as clearEquipSlot,
   equipShopItemRest as equipShopItem,
   setAvatarPhotoRest as setAvatarPhoto,
+  setCustomBannerRest as setCustomBanner,
   updateProfileCustomizationRest as updateCustomization,
 } from "@/server/data/customization-rest";
 

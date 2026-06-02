@@ -28,8 +28,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body className="min-h-dvh bg-background text-foreground antialiased">
+      <body className="relative min-h-dvh bg-background text-foreground antialiased">
+        <a href="#main-content" className="voople-skip-link">
+          Перейти к содержимому
+        </a>
         <AppThemeProvider>
+          <div aria-hidden className="voople-grain fixed inset-0 -z-[5]" />
           <TRPCReactProvider>
             {children}
           </TRPCReactProvider>

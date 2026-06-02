@@ -91,7 +91,7 @@ export function StickyProfileHeader({
 
   return (
     <header
-      className="voople-profile-sticky fixed left-0 right-0 top-12 z-40 flex h-[52px] items-center gap-3 border-b border-white/10 bg-[#0A0A0F]/90 px-3 backdrop-blur-md lg:hidden"
+      className="voople-profile-sticky fixed left-0 right-0 top-12 z-40 flex h-[52px] items-center gap-3 border-b border-[var(--app-border)] bg-[color-mix(in_srgb,var(--background)_90%,transparent)] px-3 backdrop-blur-md lg:hidden"
       style={themeStyle}
     >
       <Link href="/feed" className="shrink-0 text-white/80" aria-label="Назад">

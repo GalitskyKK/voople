@@ -103,7 +103,7 @@ export function PostComments({ postId, open, canComment, onCountChange }: PostCo
             disabled={!canComment}
             maxLength={280}
             placeholder={canComment ? "Комментарий" : "Войдите, чтобы комментировать"}
-            className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none focus:border-[#7B3AED]/60 disabled:cursor-default disabled:opacity-60"
+            className="voople-input min-w-0 flex-1 py-2 text-sm disabled:cursor-default disabled:opacity-60"
           />
           <Button
             type="submit"

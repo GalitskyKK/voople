@@ -12,17 +12,17 @@ export function AppTopBar() {
   const hideShop = pathname.startsWith("/shop");
 
   return (
-    <header className="voople-topbar sticky top-0 z-20 flex h-12 items-center justify-between border-b border-white/10 bg-[#0A0A0F]/95 px-4 backdrop-blur lg:hidden">
-      <Link href="/feed" className="text-sm font-bold tracking-tight text-white">
+    <header className="voople-topbar sticky top-0 z-20 flex h-12 items-center justify-between border-b border-[var(--app-border)] bg-[color-mix(in_srgb,var(--background)_92%,transparent)] px-4 backdrop-blur-md lg:hidden">
+      <Link href="/feed" className="text-sm font-semibold tracking-[-0.02em] text-[var(--foreground)]">
         {COPY.appName}
       </Link>
       {!hideShop && (
         <Link
           href="/shop"
-          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex items-center gap-1.5 rounded-[var(--app-radius-sm)] px-2 py-1.5 text-sm text-[var(--app-muted)] transition-all duration-200 hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
           aria-label={COPY.shop}
         >
-          <ShoppingBag className="h-5 w-5" />
+          <ShoppingBag className="h-5 w-5" strokeWidth={1.75} />
         </Link>
       )}
     </header>

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, Pencil, Upload } from "lucide-react";
+import { ImagePlus, Loader2, Pencil, Trash2, Upload } from "lucide-react";
 
 import { COPY } from "@/lib/constants/copy";
 import { trpc } from "@/lib/trpc/client";
@@ -12,7 +12,9 @@ import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { AppThemeSelector } from "@/components/theme/AppThemeSelector";
+import { BannerDrawEditor } from "@/components/profile/BannerDrawEditor";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
+import { ProfileBanner } from "@/components/profile/ProfileBanner";
 
 type ProfileEditSheetProps = {
   profile: ProfileViewModel;
@@ -26,10 +28,18 @@ export function ProfileEditSheet({ profile }: ProfileEditSheetProps) {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
     profile.customization.assets.animatedAvatarUrl ?? null,
   );
+  const [bannerMode, setBannerMode] = useState<"upload" | "draw">("upload");
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const utils = trpc.useUtils();
   const { uploadFile, isUploading, error: uploadError, setError: setUploadError } = useMediaUpload("avatar");
+  const {
+    uploadFile: uploadBannerFile,
+    isUploading: isBannerUploading,
+    error: bannerUploadError,
+    setError: setBannerUploadError,
+  } = useMediaUpload("banner");
 
   const update = trpc.profile.update.useMutation({
     onSuccess: async () => {
@@ -39,6 +49,23 @@ export function ProfileEditSheet({ profile }: ProfileEditSheetProps) {
       setError(null);
     },
     onError: (err) => setError(err.message),
+  });
+
+  const setCustomBanner = trpc.customization.setCustomBanner.useMutation({
+    onSuccess: async () => {
+      await utils.profile.getByUsername.invalidate({ username: profile.username });
+      router.refresh();
+      setBannerUploadError(null);
+    },
+    onError: (err) => setBannerUploadError(err.message),
+  });
+
+  const clearBanner = trpc.customization.clearSlot.useMutation({
+    onSuccess: async () => {
+      await utils.profile.getByUsername.invalidate({ username: profile.username });
+      router.refresh();
+    },
+    onError: (err) => setBannerUploadError(err.message),
   });
 
   const setAvatarPhoto = trpc.customization.setAvatarPhoto.useMutation({
@@ -74,7 +101,31 @@ export function ProfileEditSheet({ profile }: ProfileEditSheetProps) {
     if (avatarInputRef.current) avatarInputRef.current.value = "";
   };
 
+  const handleBannerPick = () => {
+    if (isBannerUploading || setCustomBanner.isPending) return;
+    bannerInputRef.current?.click();
+  };
+
+  const handleBannerFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setBannerUploadError(null);
+    const uploaded = await uploadBannerFile(file);
+    if (!uploaded) return;
+    setCustomBanner.mutate({ mediaKey: uploaded.mediaKey });
+    if (bannerInputRef.current) bannerInputRef.current.value = "";
+  };
+
+  const handleBannerDrawExport = async (file: File) => {
+    setBannerUploadError(null);
+    const uploaded = await uploadBannerFile(file);
+    if (!uploaded) return;
+    setCustomBanner.mutate({ mediaKey: uploaded.mediaKey });
+  };
+
   const avatarBusy = isUploading || setAvatarPhoto.isPending;
+  const bannerBusy = isBannerUploading || setCustomBanner.isPending || clearBanner.isPending;
+  const hasBanner = profile.customization.flags.hasBanner;
 
   return (
     <>
@@ -143,6 +194,77 @@ export function ProfileEditSheet({ profile }: ProfileEditSheetProps) {
             className="mt-1 w-full resize-none rounded-lg border border-white/10 bg-black/30 px-3 py-2"
           />
         </label>
+        <div className="mb-4 border-t border-white/10 pt-4">
+          <h3 className="mb-2 text-sm font-medium text-white">Баннер профиля</h3>
+          <div className="overflow-hidden rounded-xl border border-white/10">
+            <ProfileBanner customization={profile.customization} />
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant={bannerMode === "upload" ? "primary" : "secondary"}
+              size="md"
+              disabled={bannerBusy}
+              onClick={() => setBannerMode("upload")}
+            >
+              Загрузить
+            </Button>
+            <Button
+              type="button"
+              variant={bannerMode === "draw" ? "primary" : "secondary"}
+              size="md"
+              disabled={bannerBusy}
+              onClick={() => setBannerMode("draw")}
+            >
+              Нарисовать
+            </Button>
+            {hasBanner && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="md"
+                disabled={bannerBusy}
+                aria-label="Убрать баннер"
+                onClick={() => clearBanner.mutate({ slot: "banner" })}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          {bannerMode === "upload" ? (
+            <div className="mt-3">
+              <Button
+                type="button"
+                variant="secondary"
+                size="md"
+                disabled={bannerBusy}
+                onClick={handleBannerPick}
+              >
+                {bannerBusy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ImagePlus className="h-4 w-4" />
+                )}
+                {bannerBusy ? "Загрузка…" : "Выбрать изображение"}
+              </Button>
+              <input
+                ref={bannerInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={handleBannerFile}
+              />
+            </div>
+          ) : (
+            <BannerDrawEditor
+              className="mt-3"
+              backgroundColor={profile.customization.themePrimary}
+              busy={bannerBusy}
+              onExport={handleBannerDrawExport}
+            />
+          )}
+          {bannerUploadError && <p className="mt-2 text-xs text-red-400">{bannerUploadError}</p>}
+        </div>
         <div className="mb-4 border-t border-white/10 pt-4">
           <AppThemeSelector />
           <p className="mt-3 text-sm text-white/50">

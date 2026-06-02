@@ -27,8 +27,9 @@
 - Форматы: WebP/PNG для static, animated WebP/APNG только если вес в лимите.
 - Export mobile: 750x220.
 - Export desktop: 640x240.
-- Object fit в UI: `cover`.
-- Safe area: центр 70% ширины должен читаться без важных элементов под avatar.
+- Object fit в UI: `cover`, `object-position: center` на контейнере `aspect-[8/3]`.
+- Custom upload / draw export: **640×240** WebP (`BannerDrawEditor`, `setCustomBanner`).
+- Safe area при рисовании: центр **70%** ширины (на узкой карточке боковые поля обрезаются).
 - Не закладывать текст, логотипы брендов, мелкие UI-детали.
 
 ## Avatar

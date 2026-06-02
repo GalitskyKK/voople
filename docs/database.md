@@ -71,6 +71,7 @@ Hot path приложения **не зависит** от `DATABASE_URL`, ес�
 13. **`drizzle/12-shop-currency.sql`** — voops, payment intents, equip columns, seed `shop_items`
 14. **`drizzle/14-profile-canvas.sql`** — штрихи холста `profile_canvas_strokes`, RLS, realtime (см. [profile-canvas.md](./profile-canvas.md))
 15. **`drizzle/15-profile-canvas-notification.sql`** — enum `profile_canvas_draw` для уведомлений
+16. **`drizzle/16-post-edit-reports.sql`** — `post_reports`, редактирование постов в app (см. [posts.md](./posts.md))
 
 ## Profile canvas
 

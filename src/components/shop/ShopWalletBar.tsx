@@ -14,7 +14,7 @@ export function ShopWalletBar({ wallet, className }: ShopWalletBarProps) {
   return (
     <div
       className={cn(
-        "flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3",
+        "voople-panel flex items-center justify-between px-4 py-3",
         className,
       )}
     >
@@ -44,7 +44,7 @@ const DONATION_PRESETS = [100, 300, 500] as const;
 
 export function DonationPanel({ onDonate, pending, message }: DonationPanelProps) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-violet-950/40 to-black/20 p-4">
+    <section className="voople-panel border border-[color-mix(in_srgb,var(--theme-accent)_18%,transparent)] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--theme-accent)_12%,var(--app-surface)),var(--app-surface))] p-4">
       <div className="mb-3 flex items-center gap-2">
         <Heart className="h-4 w-4 text-pink-300" aria-hidden />
         <h2 className="text-sm font-semibold text-white">Поддержать Voople</h2>
@@ -59,7 +59,7 @@ export function DonationPanel({ onDonate, pending, message }: DonationPanelProps
             type="button"
             disabled={pending}
             onClick={() => onDonate(amount)}
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition hover:bg-white/10 disabled:opacity-50"
+            className="rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-4 py-2 text-sm text-[var(--foreground)] transition-all duration-200 hover:border-[var(--app-border-strong)] hover:bg-[color-mix(in_srgb,var(--app-surface-soft)_75%,white)] disabled:opacity-50"
           >
             {amount} ₽
           </button>

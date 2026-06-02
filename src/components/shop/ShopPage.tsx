@@ -90,7 +90,7 @@ export function ShopPage() {
 
   if (overviewQuery.error) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+      <div className="voople-panel p-6 text-center">
         <p className="text-white/70">Войдите, чтобы открыть магазин и кастомизацию.</p>
         <Link
           href="/login"

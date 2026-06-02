@@ -152,6 +152,25 @@ export async function equipShopItemRest(userId: string, itemId: string) {
   return patch;
 }
 
+export async function setCustomBannerRest(userId: string, mediaKey: string) {
+  const key = resolvePublicMediaKey(mediaKey, userId, "banner");
+  const url = publicAssetUrl(key);
+  if (!url) throw new Error("Не удалось сохранить баннер");
+
+  const admin = getAdminClient();
+  const { error } = await admin
+    .from("profile_customization")
+    .update({
+      banner_type: "animated",
+      banner_value: { url, key },
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId);
+
+  if (error) throw new Error(error.message);
+  return { url, key };
+}
+
 export async function setAvatarPhotoRest(userId: string, mediaKey: string) {
   const key = resolvePublicMediaKey(mediaKey, userId, "avatar");
   const url = publicAssetUrl(key);

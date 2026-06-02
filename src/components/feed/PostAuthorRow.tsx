@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { MoreHorizontal } from "lucide-react";
 
 import type { ProfileCustomizationView } from "@/types/domain";
 import { FeedAuthorChipBackdrop } from "@/components/feed/FeedAuthorChipBackdrop";
+import { PostMoreMenu } from "@/components/feed/PostMoreMenu";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,13 @@ type PostAuthorRowProps = {
   createdAt: string;
   postId?: string;
   customization?: ProfileCustomizationView;
+  postKind?: "text" | "status";
+  postText?: string;
+  repostComment?: string;
+  hasRepostTarget?: boolean;
+  viewerUsername?: string | null;
+  profileUsername?: string;
+  onTextUpdated?: (text: string, isRepostComment: boolean) => void;
 };
 
 /** Author row in post: default header or themed feed chip (replaces name block, not above post). */
@@ -22,6 +29,13 @@ export function PostAuthorRow({
   createdAt,
   postId,
   customization,
+  postKind = "text",
+  postText,
+  repostComment,
+  hasRepostTarget = false,
+  viewerUsername = null,
+  profileUsername,
+  onTextUpdated,
 }: PostAuthorRowProps) {
   const c = customization;
   const useFeedChip = Boolean(c?.flags.hasFeedCardStyle);
@@ -65,13 +79,21 @@ export function PostAuthorRow({
           </Link>
           {timeNode}
         </div>
-        <button
-          type="button"
-          className="relative z-10 shrink-0 text-white/50 hover:text-white"
-          aria-label="Меню"
-        >
-          <MoreHorizontal className="h-5 w-5" />
-        </button>
+        {postId && (
+          <PostMoreMenu
+            className="relative z-10"
+            postId={postId}
+            createdAt={createdAt}
+            authorUsername={username}
+            kind={postKind}
+            text={postText}
+            repostComment={repostComment}
+            hasRepostTarget={hasRepostTarget}
+            viewerUsername={viewerUsername}
+            profileUsername={profileUsername}
+            onTextUpdated={onTextUpdated}
+          />
+        )}
       </header>
     );
   }
@@ -91,9 +113,20 @@ export function PostAuthorRow({
         </Link>
         {timeNode}
       </div>
-      <button type="button" className="shrink-0 text-white/50 hover:text-white" aria-label="Меню">
-        <MoreHorizontal className="h-5 w-5" />
-      </button>
+      {postId && (
+        <PostMoreMenu
+          postId={postId}
+          createdAt={createdAt}
+          authorUsername={username}
+          kind={postKind}
+          text={postText}
+          repostComment={repostComment}
+          hasRepostTarget={hasRepostTarget}
+          viewerUsername={viewerUsername}
+          profileUsername={profileUsername}
+          onTextUpdated={onTextUpdated}
+        />
+      )}
     </header>
   );
 }

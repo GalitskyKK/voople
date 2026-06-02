@@ -58,53 +58,48 @@ export default function RegisterPage() {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="w-full max-w-sm space-y-4 rounded-2xl border border-white/10 bg-white/5 p-6"
+      className="voople-panel w-full max-w-sm space-y-4 p-6"
     >
-      <h1 className="text-xl font-bold">{COPY.register}</h1>
-      <label className="block text-sm">
+      <h1 className="voople-display">{COPY.register}</h1>
+      <label className="voople-label">
         Email
-        <input
-          type="email"
-          autoComplete="email"
-          className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2"
-          {...register("email")}
-        />
-        {errors.email && <span className="text-xs text-red-400">{errors.email.message}</span>}
+        <input type="email" autoComplete="email" className="voople-input mt-1.5" {...register("email")} />
+        {errors.email && <span className="mt-1 block text-xs text-red-400">{errors.email.message}</span>}
       </label>
-      <label className="block text-sm">
+      <label className="voople-label">
         {COPY.username}
         <input
           type="text"
           autoComplete="username"
           spellCheck={false}
           placeholder="username"
-          className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 lowercase"
+          className="voople-input mt-1.5 lowercase"
           {...register("username")}
         />
-        <span className="mt-1 block text-xs text-white/40">{COPY.usernameHint}</span>
+        <span className="mt-1.5 block text-xs text-[var(--app-muted)]">{COPY.usernameHint}</span>
         {errors.username && (
-          <span className="text-xs text-red-400">{errors.username.message}</span>
+          <span className="mt-1 block text-xs text-red-400">{errors.username.message}</span>
         )}
       </label>
-      <label className="block text-sm">
+      <label className="voople-label">
         Пароль
         <input
           type="password"
           autoComplete="new-password"
-          className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2"
+          className="voople-input mt-1.5"
           {...register("password")}
         />
         {errors.password && (
-          <span className="text-xs text-red-400">{errors.password.message}</span>
+          <span className="mt-1 block text-xs text-red-400">{errors.password.message}</span>
         )}
       </label>
       {errors.root && <p className="text-sm text-red-400">{errors.root.message}</p>}
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {COPY.register}
       </Button>
-      <p className="text-center text-sm text-white/50">
+      <p className="text-center text-sm text-[var(--app-muted)]">
         Уже есть аккаунт?{" "}
-        <Link href="/login" className="text-[#7B3AED]">
+        <Link href="/login" className="voople-link">
           {COPY.login}
         </Link>
       </p>

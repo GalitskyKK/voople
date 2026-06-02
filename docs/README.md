@@ -13,3 +13,4 @@
 | [shop.md](./shop.md) | Магазин, voops, экипировка, payment intents |
 | [deploy.md](./deploy.md) | Production deploy через GitHub, Vercel, Supabase |
 | [comments-reposts.md](./comments-reposts.md) | План реализации комментариев и репостов |
+| [posts.md](./posts.md) | Меню поста, редактирование (24ч), жалобы |

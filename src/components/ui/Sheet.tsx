@@ -65,7 +65,7 @@ export function Sheet({
         role="dialog"
         aria-modal="true"
         className={cn(
-          "relative z-[101] voople-scroll max-h-[min(90dvh,720px)] w-full max-w-lg overflow-y-auto border border-white/10 bg-[#0A0A0F] p-4 pt-5 shadow-2xl",
+          "relative z-[101] voople-scroll max-h-[min(90dvh,720px)] w-full max-w-lg overflow-y-auto border border-[var(--app-border)] bg-[var(--background)] p-4 pt-5 shadow-[var(--app-shadow-md)]",
           isBottom ? "rounded-t-2xl pb-6" : "rounded-2xl",
           className,
         )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { CreatePostBlock } from "@/components/feed/CreatePostBlock";
 import { PostCard } from "@/components/feed/PostCard";
@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { trpc } from "@/lib/trpc/client";
 import type { PostViewModel, ProfileViewModel } from "@/types/domain";
 import type { Stroke } from "@/types/canvas";
+import { ProfileFeedTabs, type ProfileFeedTab } from "./ProfileFeedTabs";
 import { ProfileFlipCard } from "./canvas/ProfileFlipCard";
 import { StickyProfileHeader } from "./StickyProfileHeader";
 
@@ -31,6 +32,7 @@ export function ProfilePage({
 }: ProfilePageProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [profile, setProfile] = useState(initialProfile);
+  const [feedTab, setFeedTab] = useState<ProfileFeedTab>("posts");
   const stickyVisible = useElementScrolledPast(cardRef, { edgeTop: 48 });
   const isOwner = Boolean(viewerId && viewerId === profile.id);
   const utils = trpc.useUtils();
@@ -126,6 +128,14 @@ export function ProfilePage({
     };
   }, [profile.id, profile.username, utils]);
 
+  const filteredPosts = useMemo(() => {
+    if (feedTab === "media") return posts.filter((post) => Boolean(post.mediaUrl));
+    return posts;
+  }, [feedTab, posts]);
+
+  const emptyFeedMessage =
+    feedTab === "media" ? "Пока нет постов с медиа" : "Пока нет постов";
+
   return (
     <>
       <StickyProfileHeader
@@ -154,10 +164,11 @@ export function ProfilePage({
               <CreatePostBlock profile={profile} canPost />
             </div>
           )}
-          {posts.length === 0 ? (
-            <p className="text-center text-sm text-white/50">Пока нет постов</p>
+          <ProfileFeedTabs active={feedTab} onChange={setFeedTab} />
+          {filteredPosts.length === 0 ? (
+            <p className="text-center text-sm text-white/50">{emptyFeedMessage}</p>
           ) : (
-            posts.map((post) => (
+            filteredPosts.map((post) => (
               <PostCard
                 key={post.id}
                 post={post}

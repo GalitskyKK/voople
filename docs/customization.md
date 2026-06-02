@@ -81,7 +81,7 @@
 
 - App theme меняет весь shell: `--background`, `--foreground`, `--app-surface`, `--app-border`, `--theme-accent`.
 - Profile customization остаётся отдельной: карточка профиля может иметь собственные `themePrimary/themeAccent`.
-- Default themes доступны сразу; shop themes (`theme-violet`, `theme-emerald`, `theme-rose`, `theme-gold`) — через `user_inventory` + equip в `/shop`.
+- Default theme `void` доступна сразу; темы в магазине (`app_theme`) работают на CSS-токенах из `app-themes.ts`; фоны в CDN опциональны (см. [shop-catalog.md](./shop-catalog.md)).
 - Theme preview: color swatches или static preview из `/customization/themes/` (CDN in prod).
 - Растровые фоны: WebP/PNG static, animated WebP/APNG до 1.5 MB; при `prefers-reduced-motion` используется `backgroundStaticId`.
 - Optional overlay: transparent WebP/APNG поверх фона, под scrim.
@@ -130,12 +130,25 @@ avatar_<layer>_<slug>.svg
 feedcard_<season>_<slug>.webp
 ```
 
+## Shop slots vs assets
+
+| Слот | Назначение |
+|------|------------|
+| `profile_effect_id` | Анимация **поверх всей** карточки профиля |
+| `animated_avatar_id` | Анимация **внутри круга** аватара (вместо буквы) |
+| `avatar_decoration_id` | Декор вокруг аватара |
+| `app_theme_id` | Тема **приложения** (shell), не карточки |
+
+Подробно и чеклист добавления: [shop-catalog.md](./shop-catalog.md).
+
 ## Runtime Paths
 
 ```text
 src/lib/customization/asset-path.ts   → resolve URL (CDN or /public)
 src/lib/customization/resolve.ts      → flags + asset URLs for profile/feed
-src/lib/shop/catalog.ts               → shop item metadata + equip slots
+src/lib/shop/catalog.ts               → единый каталог магазина (см. shop-catalog.md)
+src/lib/app-themes.ts                 → токены тем shell для app_theme
+src/components/theme/AppThemeSync.tsx → app_theme_id из БД → CSS variables
 src/server/mappers/customization.ts   → DB row → ProfileCustomizationView
 ```
 
@@ -153,7 +166,7 @@ Dev: omit CDN env → files served from `public/customization/`.
 
 | Слот | Свой контент |
 |------|----------------|
-| Баннер | Загрузка / рисование в `ProfileEditSheet` (`setCustomBanner`) |
+| Баннер | Свой файл / рисование — **только Voople+** (`setCustomBanner`). Готовые баннеры — магазин (`equip` banner) |
 | Аватар | Загрузка фото (`setAvatarPhoto`) |
 | Эффект, кольцо, декор, стиль ленты, тема | Только предметы из **магазина** → экипировка на `/shop?tab=customize` |
 

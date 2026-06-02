@@ -17,8 +17,22 @@ export type UserRow = {
   created_at: string;
   profile_customization?: CustomizationRow | CustomizationRow[] | null;
   user_status?: StatusRow | StatusRow[] | null;
-  subscriptions?: { started_at: string } | { started_at: string }[] | null;
+  subscriptions?: { started_at: string; expires_at: string } | { started_at: string; expires_at: string }[] | null;
 };
+
+export function mapSubscriptionFields(
+  subscription: { started_at: string; expires_at: string } | null | undefined,
+): { subscriptionStartedAt: string | null; hasVooplePlus: boolean } {
+  if (!subscription) {
+    return { subscriptionStartedAt: null, hasVooplePlus: false };
+  }
+  const expiresAt = new Date(subscription.expires_at);
+  const active = expiresAt > new Date();
+  return {
+    subscriptionStartedAt: active ? subscription.started_at : null,
+    hasVooplePlus: active,
+  };
+}
 
 type StatusRow = {
   mood_value?: number | null;
@@ -78,6 +92,7 @@ export function mapUserToProfile(
   const customizationRow = first(user.profile_customization);
   const statusRow = first(user.user_status);
   const subscription = first(user.subscriptions);
+  const { subscriptionStartedAt, hasVooplePlus } = mapSubscriptionFields(subscription);
 
   return {
     id: user.id,
@@ -85,7 +100,8 @@ export function mapUserToProfile(
     displayName: user.display_name,
     bio: user.bio,
     createdAt: user.created_at,
-    subscriptionStartedAt: subscription?.started_at ?? null,
+    subscriptionStartedAt,
+    hasVooplePlus,
     customization: toProfileCustomizationView(customizationRow),
     status: mapStatus(statusRow),
     stats,

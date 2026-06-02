@@ -2,14 +2,19 @@
 
 import { useMemo } from "react";
 
-import { isAppThemeId } from "@/lib/shop/catalog";
+import { SHOP_CATALOG_BY_ID, catalogAppThemeId } from "@/lib/shop/catalog";
+import { CUSTOMIZE_SLOT_SECTIONS, SHOP_DISPLAY_SECTIONS } from "@/lib/shop/categories";
+import { applyEquippedAppTheme } from "@/lib/shop/app-theme-client";
 import { cn } from "@/lib/utils";
 import type { EquippedCustomizationView, ShopItemView } from "@/types/shop";
 import { useAppTheme } from "@/components/theme/AppThemeProvider";
 import { Button } from "@/components/ui/Button";
-import { ProfileBanner } from "@/components/profile/ProfileBanner";
-import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
-import { ProfileEffect } from "@/components/profile/ProfileEffect";
+import { ShopCatalogPreview } from "@/components/shop/ShopCatalogPreview";
+import {
+  ProfileCardEffectLayer,
+  ProfileCardHeader,
+  profileCardThemeStyle,
+} from "@/components/profile/ProfileCardHeader";
 import { resolveCustomization } from "@/lib/customization/resolve";
 
 type CustomizationEditorProps = {
@@ -19,17 +24,6 @@ type CustomizationEditorProps = {
   onEquip: (itemId: string) => void;
   onClearSlot: (slot: string) => void;
 };
-
-const SLOT_GROUPS: { slot: ShopItemView["equipSlot"]; title: string }[] = [
-  { slot: "banner", title: "Баннер профиля" },
-  { slot: "profile_effect_id", title: "Эффект профиля" },
-  { slot: "avatar_decoration_id", title: "Украшение аватара" },
-  { slot: "animated_avatar_id", title: "Анимированный аватар" },
-  { slot: "avatar_ring_id", title: "Кольцо аватара" },
-  { slot: "feed_card_style_id", title: "Стиль поста в ленте" },
-  { slot: "nickname_style", title: "Стиль имени" },
-  { slot: "app_theme_id", title: "Тема приложения" },
-];
 
 export function CustomizationEditor({
   items,
@@ -63,22 +57,36 @@ export function CustomizationEditor({
 
   const handleEquip = (item: ShopItemView) => {
     onEquip(item.id);
-    if (item.equipSlot === "app_theme_id" && item.id.startsWith("theme-")) {
-      const themeId = item.id.replace("theme-", "");
-      if (isAppThemeId(themeId)) {
-        setThemeId(themeId);
-      }
-    }
+    const catalog = SHOP_CATALOG_BY_ID.get(item.id);
+    const themeId = catalog ? catalogAppThemeId(catalog) : null;
+    if (themeId) setThemeId(themeId);
   };
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="space-y-5">
-        {SLOT_GROUPS.map(({ slot, title }) => {
-          const slotItems = items.filter((item) => item.equipSlot === slot);
-          if (slotItems.length === 0) return null;
+      <div className="space-y-6">
+        {SHOP_DISPLAY_SECTIONS.map((displaySection) => {
+          const slotsInSection = CUSTOMIZE_SLOT_SECTIONS.filter(
+            (s) => s.sectionId === displaySection.id,
+          );
+          const sectionHasItems = slotsInSection.some((s) =>
+            items.some((item) => item.equipSlot === s.slot),
+          );
+          if (!sectionHasItems) return null;
 
           return (
+            <div key={displaySection.id} className="space-y-3">
+              <header>
+                <h2 className="text-base font-semibold text-white">{displaySection.title}</h2>
+                {displaySection.hint ? (
+                  <p className="mt-0.5 text-sm text-white/45">{displaySection.hint}</p>
+                ) : null}
+              </header>
+              {slotsInSection.map(({ slot, title }) => {
+                const slotItems = items.filter((item) => item.equipSlot === slot);
+                if (slotItems.length === 0) return null;
+
+                return (
             <section key={slot} className="voople-panel p-4">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <h3 className="text-sm font-semibold text-white">{title}</h3>
@@ -90,7 +98,7 @@ export function CustomizationEditor({
                     disabled={busy}
                     onClick={() => {
                       onClearSlot(slot);
-                      if (slot === "app_theme_id") setThemeId("void");
+                      if (slot === "app_theme_id") applyEquippedAppTheme(setThemeId, null);
                     }}
                   >
                     Снять
@@ -112,7 +120,12 @@ export function CustomizationEditor({
                     )}
                   >
                     <div className="aspect-square bg-black/30">
-                      {item.previewUrl ? (
+                      {SHOP_CATALOG_BY_ID.get(item.id) ? (
+                        <ShopCatalogPreview
+                          catalog={SHOP_CATALOG_BY_ID.get(item.id)!}
+                          previewUrl={item.previewUrl}
+                        />
+                      ) : item.previewUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={item.previewUrl} alt="" className="h-full w-full object-cover" />
                       ) : (
@@ -126,56 +139,26 @@ export function CustomizationEditor({
                 ))}
               </div>
             </section>
+                );
+              })}
+            </div>
           );
         })}
       </div>
 
-      <aside className="space-y-3">
+      <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
         <h3 className="text-sm font-semibold text-white">Превью профиля</h3>
         <article
-          className="relative overflow-hidden rounded-2xl border border-white/10"
-          style={
-            {
-              "--theme-primary": previewCustomization.themePrimary,
-              "--theme-accent": previewCustomization.themeAccent,
-              background: "var(--theme-primary)",
-            } as React.CSSProperties
-          }
+          className="profile-card voople-profile-card relative w-full max-w-[320px] rounded-2xl border border-white/10"
+          style={profileCardThemeStyle(previewCustomization)}
         >
-          <ProfileBanner customization={previewCustomization} />
-          {previewCustomization.flags.hasProfileEffect && previewCustomization.assets.profileEffectUrl && (
-            <ProfileEffect effectUrl={previewCustomization.assets.profileEffectUrl} />
-          )}
-          <div className="relative z-10 px-4 pb-4">
-            <div className="-mt-9">
-              <ProfileAvatar
-                displayName="Preview"
-                ring={previewCustomization.flags.hasAvatarRing}
-                decorationUrl={previewCustomization.assets.avatarDecorationUrl}
-                animatedAvatarUrl={previewCustomization.assets.animatedAvatarUrl}
-              />
-            </div>
-            <p
-              className={cn(
-                "mt-3 text-lg font-bold text-white",
-                previewCustomization.displayName.gradient &&
-                  previewCustomization.flags.hasDisplayNameStyle &&
-                  "bg-clip-text text-transparent",
-              )}
-              style={
-                previewCustomization.flags.hasDisplayNameStyle
-                  ? previewCustomization.displayName.gradient
-                    ? {
-                        backgroundImage: `linear-gradient(90deg, ${previewCustomization.displayName.color ?? "#e5e5e5"}, #fff)`,
-                      }
-                    : { color: previewCustomization.displayName.color ?? undefined }
-                  : undefined
-              }
-            >
-              Твоё имя
-            </p>
-            <p className="text-sm text-white/50">@username</p>
-          </div>
+          <ProfileCardEffectLayer customization={previewCustomization} />
+          <ProfileCardHeader
+            customization={previewCustomization}
+            displayName="Твоё имя"
+            username="username"
+            compact
+          />
         </article>
       </aside>
     </div>

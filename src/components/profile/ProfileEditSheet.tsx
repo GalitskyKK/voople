@@ -102,7 +102,7 @@ export function ProfileEditSheet({ profile }: ProfileEditSheetProps) {
   };
 
   const handleBannerPick = () => {
-    if (isBannerUploading || setCustomBanner.isPending) return;
+    if (!canUseCustomBanner || isBannerUploading || setCustomBanner.isPending) return;
     bannerInputRef.current?.click();
   };
 
@@ -117,6 +117,7 @@ export function ProfileEditSheet({ profile }: ProfileEditSheetProps) {
   };
 
   const handleBannerDrawExport = async (file: File) => {
+    if (!canUseCustomBanner) return;
     setBannerUploadError(null);
     const uploaded = await uploadBannerFile(file);
     if (!uploaded) return;
@@ -124,6 +125,8 @@ export function ProfileEditSheet({ profile }: ProfileEditSheetProps) {
   };
 
   const avatarBusy = isUploading || setAvatarPhoto.isPending;
+  const hasVooplePlus = profile.hasVooplePlus === true;
+  const canUseCustomBanner = hasVooplePlus;
   const bannerBusy = isBannerUploading || setCustomBanner.isPending || clearBanner.isPending;
   const hasBanner = profile.customization.flags.hasBanner;
 
@@ -196,72 +199,93 @@ export function ProfileEditSheet({ profile }: ProfileEditSheetProps) {
         </label>
         <div className="mb-4 border-t border-white/10 pt-4">
           <h3 className="mb-2 text-sm font-medium text-white">Баннер профиля</h3>
+          <p className="mb-2 text-sm text-white/50">
+            <Link href="/shop?tab=customize" className="text-(--theme-accent) hover:underline">
+              {COPY.shopBannersHint}
+            </Link>
+          </p>
           <div className="overflow-hidden rounded-xl border border-white/10">
             <ProfileBanner customization={profile.customization} />
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant={bannerMode === "upload" ? "primary" : "secondary"}
-              size="md"
-              disabled={bannerBusy}
-              onClick={() => setBannerMode("upload")}
-            >
-              Загрузить
-            </Button>
-            <Button
-              type="button"
-              variant={bannerMode === "draw" ? "primary" : "secondary"}
-              size="md"
-              disabled={bannerBusy}
-              onClick={() => setBannerMode("draw")}
-            >
-              Нарисовать
-            </Button>
-            {hasBanner && (
-              <Button
-                type="button"
-                variant="secondary"
-                size="md"
-                disabled={bannerBusy}
-                aria-label="Убрать баннер"
-                onClick={() => clearBanner.mutate({ slot: "banner" })}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-          {bannerMode === "upload" ? (
-            <div className="mt-3">
-              <Button
-                type="button"
-                variant="secondary"
-                size="md"
-                disabled={bannerBusy}
-                onClick={handleBannerPick}
-              >
-                {bannerBusy ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ImagePlus className="h-4 w-4" />
+          {canUseCustomBanner ? (
+            <>
+              <p className="mt-3 text-sm text-white/45">Своё изображение или рисунок.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant={bannerMode === "upload" ? "primary" : "secondary"}
+                  size="md"
+                  disabled={bannerBusy}
+                  onClick={() => setBannerMode("upload")}
+                >
+                  Загрузить
+                </Button>
+                <Button
+                  type="button"
+                  variant={bannerMode === "draw" ? "primary" : "secondary"}
+                  size="md"
+                  disabled={bannerBusy}
+                  onClick={() => setBannerMode("draw")}
+                >
+                  Нарисовать
+                </Button>
+                {hasBanner && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="md"
+                    disabled={bannerBusy}
+                    aria-label="Убрать баннер"
+                    onClick={() => clearBanner.mutate({ slot: "banner" })}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 )}
-                {bannerBusy ? "Загрузка…" : "Выбрать изображение"}
-              </Button>
-              <input
-                ref={bannerInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                className="hidden"
-                onChange={handleBannerFile}
-              />
-            </div>
+              </div>
+              {bannerMode === "upload" ? (
+                <div className="mt-3">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="md"
+                    disabled={bannerBusy}
+                    onClick={handleBannerPick}
+                  >
+                    {bannerBusy ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <ImagePlus className="h-4 w-4" />
+                    )}
+                    {bannerBusy ? "Загрузка…" : "Выбрать изображение"}
+                  </Button>
+                  <input
+                    ref={bannerInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={handleBannerFile}
+                  />
+                </div>
+              ) : (
+                <BannerDrawEditor
+                  className="mt-3"
+                  backgroundColor={profile.customization.themePrimary}
+                  busy={bannerBusy}
+                  onExport={handleBannerDrawExport}
+                />
+              )}
+            </>
           ) : (
-            <BannerDrawEditor
-              className="mt-3"
-              backgroundColor={profile.customization.themePrimary}
-              busy={bannerBusy}
-              onExport={handleBannerDrawExport}
-            />
+            <p className="mt-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/60">
+              Свой баннер (фото, GIF или рисунок) — с подпиской Voople+.{" "}
+              <Link href="/shop?tab=plus" className="text-(--theme-accent) hover:underline">
+                Оформить Voople+
+              </Link>
+              {" · "}
+              <Link href="/shop?tab=customize" className="text-(--theme-accent) hover:underline">
+                магазин
+              </Link>
+            </p>
           )}
           {bannerUploadError && <p className="mt-2 text-xs text-red-400">{bannerUploadError}</p>}
         </div>

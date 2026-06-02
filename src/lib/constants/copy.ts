@@ -34,6 +34,8 @@ export const COPY = {
   usernameHint: "Латиница, цифры, _ — от 3 до 30 символов",
   registeredAt: "На Voople с",
   subscriptionSince: "Voople+ с",
+  shopBannersHint: "Баннеры из магазина — в разделе «Оформление».",
+  customBannerVooplePlus: "Свой баннер (фото или рисунок) — с подпиской Voople+.",
 } as const;
 
 export const FEED_TABS = [

@@ -3,25 +3,31 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Package, Palette, ShoppingBag } from "lucide-react";
+import { Crown, Package, Palette, ShoppingBag } from "lucide-react";
 
 import { trpc } from "@/lib/trpc/client";
+import { applyEquippedAppTheme } from "@/lib/shop/app-theme-client";
 import { cn } from "@/lib/utils";
+import { useAppTheme } from "@/components/theme/AppThemeProvider";
+import type { PromoPreviewView } from "@/types/promo";
 import type { ShopItemView } from "@/types/shop";
 import { Button } from "@/components/ui/Button";
 import { CustomizationEditor } from "@/components/customization/CustomizationEditor";
+import { applyPaymentIntentResult } from "@/lib/payments/checkout-redirect";
 import { DonationPanel, ShopWalletBar } from "@/components/shop/ShopWalletBar";
-import { ShopItemCard } from "@/components/shop/ShopItemCard";
+import { ShopCatalogSections } from "@/components/shop/ShopCatalogSections";
+import { VooplePlusPanel } from "@/components/shop/VooplePlusPanel";
 
-type ShopTab = "catalog" | "inventory" | "customize";
+type ShopTab = "catalog" | "inventory" | "customize" | "plus";
 
 const TABS: { id: ShopTab; label: string; icon: typeof ShoppingBag }[] = [
+  { id: "plus", label: "Voople+", icon: Crown },
   { id: "catalog", label: "Каталог", icon: ShoppingBag },
   { id: "inventory", label: "Инвентарь", icon: Package },
   { id: "customize", label: "Настройка", icon: Palette },
 ];
 
-const TAB_IDS = new Set<ShopTab>(["catalog", "inventory", "customize"]);
+const TAB_IDS = new Set<ShopTab>(["catalog", "inventory", "customize", "plus"]);
 
 export function ShopPage() {
   const searchParams = useSearchParams();
@@ -30,7 +36,11 @@ export function ShopPage() {
     tabFromUrl && TAB_IDS.has(tabFromUrl as ShopTab) ? (tabFromUrl as ShopTab) : "catalog";
   const [tab, setTab] = useState<ShopTab>(initialTab);
   const [donationMessage, setDonationMessage] = useState<string | null>(null);
+  const [plusPaymentError, setPlusPaymentError] = useState<string | null>(null);
+  const [promoDiscount, setPromoDiscount] = useState<PromoPreviewView | null>(null);
+  const [promoMessage, setPromoMessage] = useState<string | null>(null);
   const utils = trpc.useUtils();
+  const { setThemeId } = useAppTheme();
 
   useEffect(() => {
     if (tabFromUrl && TAB_IDS.has(tabFromUrl as ShopTab)) {
@@ -40,6 +50,11 @@ export function ShopPage() {
 
   const overviewQuery = trpc.shop.overview.useQuery(undefined, {
     retry: false,
+  });
+
+  const subscriptionQuery = trpc.shop.subscriptionStatus.useQuery(undefined, {
+    retry: false,
+    enabled: overviewQuery.isSuccess,
   });
 
   const claimFree = trpc.shop.claimFree.useMutation({
@@ -60,21 +75,61 @@ export function ShopPage() {
     },
   });
 
+  const applyPromo = trpc.shop.applyPromo.useMutation({
+    onSuccess: (data) => {
+      setPromoMessage(null);
+      setPromoDiscount(null);
+      if (data.action === "discount") {
+        setPromoDiscount(data.preview);
+        setPromoMessage(data.preview.message);
+        return;
+      }
+      setPromoMessage(data.result.message);
+      if (data.subscription) {
+        void utils.shop.subscriptionStatus.invalidate();
+      }
+      if (data.overview) {
+        utils.shop.overview.setData(undefined, data.overview);
+      }
+    },
+    onError: (error) => {
+      setPromoMessage(error.message);
+      setPromoDiscount(null);
+    },
+  });
+
   const createPayment = trpc.shop.createPaymentIntent.useMutation({
-    onSuccess: (intent) => {
-      setDonationMessage(intent.message);
+    onSuccess: (intent, variables) => {
+      if (variables.kind === "subscription") {
+        setPlusPaymentError(null);
+        applyPaymentIntentResult(intent, setPlusPaymentError);
+        return;
+      }
+      applyPaymentIntentResult(intent, setDonationMessage);
+    },
+    onError: (error, variables) => {
+      const message = error.message;
+      if (variables.kind === "subscription") {
+        setPlusPaymentError(message);
+      } else {
+        setDonationMessage(message);
+      }
     },
   });
 
   const equip = trpc.customization.equip.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (equipped) => {
+      applyEquippedAppTheme(setThemeId, equipped.appThemeId);
       await utils.shop.overview.invalidate();
       await utils.customization.getEquipped.invalidate();
     },
   });
 
   const clearSlot = trpc.customization.clearSlot.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (equipped, variables) => {
+      if (variables.slot === "app_theme_id") {
+        applyEquippedAppTheme(setThemeId, equipped.appThemeId);
+      }
       await utils.shop.overview.invalidate();
       await utils.customization.getEquipped.invalidate();
     },
@@ -85,6 +140,7 @@ export function ShopPage() {
     claimAllFree.isPending ||
     purchaseCoins.isPending ||
     createPayment.isPending ||
+    applyPromo.isPending ||
     equip.isPending ||
     clearSlot.isPending;
 
@@ -146,6 +202,29 @@ export function ShopPage() {
         ))}
       </div>
 
+      {tab === "plus" && (
+        <VooplePlusPanel
+          status={subscriptionQuery.data}
+          statusLoading={subscriptionQuery.isLoading}
+          paymentPending={createPayment.isPending}
+          paymentError={plusPaymentError}
+          promoPending={applyPromo.isPending}
+          promoMessage={promoMessage}
+          promoDiscount={promoDiscount}
+          onApplyPromo={(code) => {
+            setPromoMessage(null);
+            applyPromo.mutate({ code });
+          }}
+          onSubscribe={(promoCode) => {
+            setPlusPaymentError(null);
+            createPayment.mutate({
+              kind: "subscription",
+              promoCode: promoCode || undefined,
+            });
+          }}
+        />
+      )}
+
       {tab === "catalog" && (
         <section className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -162,14 +241,12 @@ export function ShopPage() {
               Забрать всё бесплатное
             </Button>
           </div>
-          <ItemGrid
+          <ShopCatalogSections
             items={catalogItems}
             busy={busy}
             onClaimFree={(itemId) => claimFree.mutate({ itemId })}
             onBuyCoins={(itemId) => purchaseCoins.mutate({ itemId })}
-            onBuyRub={(itemId, priceRub) =>
-              createPayment.mutate({ kind: "shop_item", amountRub: priceRub, itemId })
-            }
+            onBuyRub={(itemId) => createPayment.mutate({ kind: "shop_item", itemId })}
             onEquip={handleEquip}
             onUnequip={handleUnequip}
           />
@@ -191,7 +268,7 @@ export function ShopPage() {
               Инвентарь пуст. Загляни в каталог и забирай предметы.
             </p>
           ) : (
-            <ItemGrid
+            <ShopCatalogSections
               items={inventoryItems}
               busy={busy}
               onEquip={handleEquip}
@@ -210,43 +287,6 @@ export function ShopPage() {
           busy={busy}
         />
       )}
-    </div>
-  );
-}
-
-type ItemGridProps = {
-  items: ShopItemView[];
-  busy?: boolean;
-  onClaimFree?: (itemId: string) => void;
-  onBuyCoins?: (itemId: string) => void;
-  onBuyRub?: (itemId: string, priceRub: number) => void;
-  onEquip?: (item: ShopItemView) => void;
-  onUnequip?: (item: ShopItemView) => void;
-};
-
-function ItemGrid({
-  items,
-  busy,
-  onClaimFree,
-  onBuyCoins,
-  onBuyRub,
-  onEquip,
-  onUnequip,
-}: ItemGridProps) {
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      {items.map((item) => (
-        <ShopItemCard
-          key={item.id}
-          item={item}
-          busy={busy}
-          onClaimFree={onClaimFree ? () => onClaimFree(item.id) : undefined}
-          onBuyCoins={onBuyCoins ? () => onBuyCoins(item.id) : undefined}
-          onBuyRub={onBuyRub ? () => onBuyRub(item.id, item.priceRub) : undefined}
-          onEquip={onEquip ? () => onEquip(item) : undefined}
-          onUnequip={onUnequip ? () => onUnequip(item) : undefined}
-        />
-      ))}
     </div>
   );
 }

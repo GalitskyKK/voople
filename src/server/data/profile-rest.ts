@@ -38,7 +38,7 @@ async function fetchUserRowByUsername(username: string): Promise<UserRow | null>
       id, username, display_name, bio, pinned_thought, created_at,
       profile_customization (*),
       user_status (*),
-      subscriptions (started_at)
+      subscriptions (started_at, expires_at)
     `
     )
     .eq("username", username)

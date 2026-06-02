@@ -23,6 +23,9 @@ export const itemTypeEnum = pgEnum("item_type", [
   "nameplate",
   "badge",
   "reaction_pack",
+  "decoration",
+  "feed_card",
+  "app_theme",
 ]);
 export const chatTypeEnum = pgEnum("chat_type", ["direct", "group"]);
 export const notifTypeEnum = pgEnum("notif_type", [

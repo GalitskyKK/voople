@@ -29,24 +29,19 @@
 
 ## Каталог предметов
 
-Source of truth для метаданных (имена, слоты, asset paths, будущие цены):
+**Источник правды:** `src/lib/shop/catalog.ts` → SQL: `drizzle/shop-catalog-upsert.sql` (вставить в Supabase SQL Editor).
 
-```text
-src/lib/shop/catalog.ts
-```
+Пошагово: [shop-catalog.md](./shop-catalog.md). Терминал не обязателен.
 
-Seed в БД: `drizzle/12-shop-currency.sql` (таблица `shop_items`).
-
-| ID (пример) | Слот equip | Asset |
-|-------------|------------|-------|
-| `banner-minti` | banner | `customization/banners/minti.webp` |
-| `effect-ladybugs` | profile_effect_id | `customization/effects/ladybugs.webp` |
-| `decoration-sparkle` | avatar_decoration_id | `customization/decorations/sparkle.webp` |
-| `feed-sakura` | feed_card_style_id | `customization/feed-cards/sakura.webp` |
-| `animated-minti` | animated_avatar_id | `customization/animated/minti.webp` |
-| `ring-glow-purple` | avatar_ring_id | CSS ring |
-| `style-neon-pink` | nickname_style | gradient color |
-| `theme-violet` … `theme-gold` | app_theme_id | `customization/themes/*` |
+| ID | Слот equip | Asset (CDN) |
+|----|------------|-------------|
+| `banner-minti` | banner | `banners/minti.webp` |
+| `effect-ladybugs` | profile_effect_id | `effects/ladybugs.webp` |
+| `decoration-sparkle` | avatar_decoration_id | `decorations/sparkle.webp` |
+| `feed-sakura` | feed_card_style_id | `feed-cards/sakura.webp` |
+| `animated-minti` | animated_avatar_id | `animated/minti.apng` — круг аватара |
+| `ring-glow-purple`, `style-neon-pink` | ring / nickname | CSS |
+| `theme-violet` … `theme-gold` | app_theme_id | shell (`app-themes.ts`) |
 
 ## Экипировка
 
@@ -62,7 +57,7 @@ tRPC:
 
 Рендер профиля: `src/server/mappers/customization.ts` → `resolveCustomization()`.
 
-App theme при equip также синхронизируется в `AppThemeProvider` на клиенте; в БД — `app_theme_id`.
+App theme: в БД `app_theme_id`; на клиенте `AppThemeSync` читает equip и вызывает `applyEquippedAppTheme` (localStorage + CSS variables). Equip из каталога/инвентаря тоже вызывает тот же helper.
 
 ## Ассеты и CDN
 
@@ -79,24 +74,27 @@ App theme при equip также синхронизируется в `AppThemeP
 
 | Поле | Назначение |
 |------|------------|
-| `kind` | `shop_item` \| `coin_pack` \| `donation` |
+| `kind` | `shop_item` \| `coin_pack` \| `donation` \| `subscription` |
 | `amount_rub` | сумма в копейках/рублях (integer rub) |
 | `status` | `pending` \| `succeeded` \| `canceled` \| `failed` |
 | `provider` | `yookassa` |
 | `external_id` | ID платежа YooKassa после создания |
 | `metadata` | `{ itemId?, … }` |
 
-tRPC `shop.createPaymentIntent` создаёт pending intent. Checkout URL и fulfillment — следующий шаг.
+tRPC `shop.createPaymentIntent` для `shop_item` принимает только `itemId` — сумма из БД. Для доната — `amountRub` с клиента.
 
-Webhook: `POST /api/webhooks/yookassa` — каркас обновления статуса intent по `metadata.paymentIntentId` (полная интеграция после подключения SDK).
+Webhook: `POST /api/webhooks/yookassa` — при `payment.succeeded` проверяет платёж через API ЮKassa и вызывает `fulfillSucceededPaymentIntent` (инвентарь для `shop_item`, продление `subscriptions` для `subscription`).
 
 Env:
 
 ```bash
-YOOKASSA_SHOP_ID=
-YOOKASSA_SECRET_KEY=
-YOOKASSA_WEBHOOK_SECRET=
+YOO_KASSA_SHOP_ID=
+YOO_KASSA_SECRET_KEY=
+# или YOOKASSA_SHOP_ID / YOOKASSA_SECRET_KEY
+NEXT_PUBLIC_APP_URL=https://your-domain  # return_url оплаты
 ```
+
+В личном кабинете ЮKassa: HTTP-уведомления на `https://<домен>/api/webhooks/yookassa`, событие `payment.succeeded`.
 
 ## tRPC API
 
@@ -106,7 +104,8 @@ YOOKASSA_WEBHOOK_SECRET=
 | `shop.claimFree` | protected | бесплатное получение одного предмета |
 | `shop.claimAllFree` | protected | все `is_free` предметы |
 | `shop.purchaseWithCoins` | protected | покупка за voops |
-| `shop.createPaymentIntent` | protected | intent для ₽ (shop/donation/coin_pack) |
+| `shop.createPaymentIntent` | protected | intent + redirect checkout (shop/donation/subscription) |
+| `shop.subscriptionStatus` | protected | активна ли Voople+ |
 | `customization.equip` | protected | надеть из инвентаря |
 | `customization.clearSlot` | protected | снять слот |
 | `customization.getEquipped` | protected | текущая экипировка |
@@ -129,6 +128,7 @@ Inventory INSERT только через server path — browser RLS не раз
 
 1. **`drizzle/12-shop-currency-enums.sql`** — Run отдельно (enum labels commit).
 2. **`drizzle/12-shop-currency.sql`** — Run вторым.
+3. **`drizzle/shop-catalog-upsert.sql`** — upsert каталога (CDN + CSS-предметы).
 
 Добавляет: колонки `shop_items`, equip-поля `profile_customization`, `user_wallets`, `wallet_transactions`, `payment_intents`, seed каталога Launch.
 

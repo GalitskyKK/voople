@@ -45,7 +45,10 @@ export function userToRow(user: UserWithRelations): UserRow {
         }
       : null,
     subscriptions: user.subscription
-      ? { started_at: user.subscription.startedAt.toISOString() }
+      ? {
+          started_at: user.subscription.startedAt.toISOString(),
+          expires_at: user.subscription.expiresAt.toISOString(),
+        }
       : null,
   };
 }

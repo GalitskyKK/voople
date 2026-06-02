@@ -7,9 +7,6 @@ const mintiCustomization = resolveCustomization({
   themeAccent: "#b0367a",
   bannerId: "minti",
   bannerValue: { color: "#2d1b4e" },
-  avatarRingId: "glow-purple",
-  nicknameColor: "#f9a8d4",
-  nicknameGradient: true,
   profileEffectId: "ladybugs",
   feedCardStyleId: "sakura",
   avatarDecorationId: "sparkle",
@@ -24,6 +21,7 @@ export const MOCK_PROFILE: ProfileViewModel = {
   bio: "Профиль с купленной темой (для теста assets из /public/customization)",
   createdAt: "2017-11-19T00:00:00.000Z",
   subscriptionStartedAt: "2026-04-11T00:00:00.000Z",
+  hasVooplePlus: true,
   customization: {
     ...mintiCustomization,
     bannerValue: {

@@ -52,6 +52,7 @@ type CustomizationEquipRow = {
 
 type PaymentIntentRow = {
   id: string;
+  user_id: string;
   kind: string;
   amount_rub: number;
   status: string;
@@ -251,6 +252,39 @@ export async function grantInventoryItemRest(
   return { alreadyOwned: false as const };
 }
 
+export async function creditWalletRest(
+  userId: string,
+  amount: number,
+  reference: { type: string; id: string; note?: string },
+): Promise<WalletView> {
+  if (amount <= 0) throw new Error("Сумма начисления должна быть больше нуля");
+
+  const wallet = await getOrCreateWalletRest(userId);
+  const balanceAfter = wallet.balanceCoins + amount;
+  const admin = getAdminClient();
+
+  const { error: updateErr } = await admin
+    .from("user_wallets")
+    .update({ balance_coins: balanceAfter, updated_at: new Date().toISOString() })
+    .eq("user_id", userId);
+
+  if (updateErr) throw new Error(updateErr.message);
+
+  const { error: txErr } = await admin.from("wallet_transactions").insert({
+    user_id: userId,
+    amount,
+    balance_after: balanceAfter,
+    kind: "earn",
+    reference_type: reference.type,
+    reference_id: reference.id,
+    note: reference.note ?? null,
+  });
+
+  if (txErr) throw new Error(txErr.message);
+
+  return { balanceCoins: balanceAfter };
+}
+
 export async function debitWalletRest(
   userId: string,
   amount: number,
@@ -312,6 +346,18 @@ export async function createPaymentIntentRest(input: {
   return data as PaymentIntentRow;
 }
 
+export async function getPaymentIntentRest(intentId: string): Promise<PaymentIntentRow | null> {
+  const admin = getAdminClient();
+  const { data, error } = await admin
+    .from("payment_intents")
+    .select("id, user_id, kind, amount_rub, status, external_id, metadata")
+    .eq("id", intentId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data as PaymentIntentRow | null;
+}
+
 export async function updatePaymentIntentStatusRest(
   intentId: string,
   status: PaymentIntentStatus,
@@ -325,6 +371,16 @@ export async function updatePaymentIntentStatusRest(
   if (externalId) patch.external_id = externalId;
 
   const { error } = await admin.from("payment_intents").update(patch).eq("id", intentId);
+  if (error) throw new Error(error.message);
+}
+
+export async function linkPaymentIntentExternalRest(intentId: string, externalId: string) {
+  const admin = getAdminClient();
+  const { error } = await admin
+    .from("payment_intents")
+    .update({ external_id: externalId, updated_at: new Date().toISOString() })
+    .eq("id", intentId);
+
   if (error) throw new Error(error.message);
 }
 

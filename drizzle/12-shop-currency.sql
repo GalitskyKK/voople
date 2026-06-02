@@ -78,6 +78,7 @@ CREATE POLICY "payment_intents_select_own"
   ON public.payment_intents FOR SELECT
   USING (auth.uid() = user_id);
 
+-- Seed: keep in sync with src/lib/shop/catalog.ts (see drizzle/13-shop-catalog-sync.sql)
 INSERT INTO public.shop_items (
   id, season_id, type, name, description, price_rub, price_coins, is_free,
   preview_url, sort_order, asset_folder, asset_id, equip_slot, equip_value
@@ -86,13 +87,7 @@ INSERT INTO public.shop_items (
   ('effect-ladybugs', 'launch', 'effect', 'Ladybugs', 'Анимированные божьи коровки поверх профиля.', 79, 180, true, NULL, 20, 'effects', 'ladybugs', 'profile_effect_id', 'ladybugs'),
   ('decoration-sparkle', 'launch', 'decoration', 'Sparkle', 'Сияние вокруг аватара.', 69, 150, true, NULL, 30, 'decorations', 'sparkle', 'avatar_decoration_id', 'sparkle'),
   ('feed-sakura', 'launch', 'feed_card', 'Sakura', 'Фон полоски поста в ленте.', 59, 100, true, NULL, 40, 'feed-cards', 'sakura', 'feed_card_style_id', 'sakura'),
-  ('animated-minti', 'launch', 'effect', 'Minti APNG', 'Анимированный аватар вместо буквы.', 99, 220, true, NULL, 50, 'animated', 'minti', 'animated_avatar_id', 'minti'),
-  ('ring-glow-purple', 'launch', 'ring', 'Glow Purple', 'Кольцо акцентного цвета вокруг аватара.', 39, 80, true, NULL, 60, NULL, NULL, 'avatar_ring_id', 'glow-purple'),
-  ('style-neon-pink', 'launch', 'nameplate', 'Neon Pink', 'Градиентное имя в профиле.', 45, 90, true, NULL, 70, NULL, NULL, 'nickname_style', '#f9a8d4'),
-  ('theme-violet', 'launch', 'app_theme', 'Violet Pulse', 'Фиолетовая тема приложения.', 89, 200, true, NULL, 80, 'themes', 'violet', 'app_theme_id', 'violet'),
-  ('theme-emerald', 'launch', 'app_theme', 'Emerald', 'Спокойная зелёная тема.', 89, 200, true, NULL, 90, 'themes', 'emerald', 'app_theme_id', 'emerald'),
-  ('theme-rose', 'launch', 'app_theme', 'Neon Rose', 'Яркая розовая тема с оверлеем.', 149, 350, true, NULL, 100, 'themes', 'rose', 'app_theme_id', 'rose'),
-  ('theme-gold', 'launch', 'app_theme', 'Gold', 'Тёплая золотая тема с APNG-фоном.', 149, 350, true, NULL, 110, 'themes', 'gold.apng', 'app_theme_id', 'gold')
+  ('animated-minti', 'launch', 'effect', 'Minti APNG', 'Анимированный аватар вместо буквы.', 99, 220, true, NULL, 50, 'animated', 'minti.apng', 'animated_avatar_id', 'minti')
 ON CONFLICT (id) DO UPDATE SET
   season_id = EXCLUDED.season_id,
   type = EXCLUDED.type,

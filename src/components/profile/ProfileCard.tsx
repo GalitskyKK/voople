@@ -1,9 +1,10 @@
 import { cn } from "@/lib/utils";
 import type { ProfileViewModel } from "@/types/domain";
-import { ProfileAvatar } from "./ProfileAvatar";
-import { ProfileBadges } from "./ProfileBadges";
-import { ProfileBanner } from "./ProfileBanner";
-import { ProfileEffect } from "./ProfileEffect";
+import {
+  ProfileCardEffectLayer,
+  ProfileCardHeader,
+  profileCardThemeStyle,
+} from "./ProfileCardHeader";
 import { ProfileMeta } from "./ProfileMeta";
 import { ProfileReactions } from "./ProfileReactions";
 import { ProfileStats } from "./ProfileStats";
@@ -26,49 +27,21 @@ export function ProfileCard({
   className,
 }: ProfileCardProps) {
   const { customization } = profile;
-  const { displayName: nameStyle, flags, assets } = customization;
-
-  const nicknameStyle = nameStyle.gradient
-    ? {
-        backgroundImage: `linear-gradient(90deg, ${nameStyle.color ?? "#e5e5e5"}, #fff)`,
-      }
-    : { color: nameStyle.color ?? undefined };
 
   return (
     <article
-      className={cn("profile-card voople-profile-card relative overflow-hidden rounded-2xl", className)}
-      style={
-        {
-          "--theme-primary": customization.themePrimary,
-          "--theme-accent": customization.themeAccent,
-          background: "var(--theme-primary)",
-        } as React.CSSProperties
-      }
+      className={cn("profile-card voople-profile-card relative rounded-2xl", className)}
+      style={profileCardThemeStyle(customization)}
     >
-      <ProfileBanner customization={customization} />
-      {flags.hasProfileEffect && assets.profileEffectUrl && (
-        <ProfileEffect effectUrl={assets.profileEffectUrl} />
-      )}
+      <ProfileCardEffectLayer customization={customization} />
+      <ProfileCardHeader
+        customization={customization}
+        displayName={profile.displayName}
+        username={profile.username}
+        showBadges
+        subscriptionStartedAt={profile.subscriptionStartedAt}
+      />
       <div className="relative z-10 px-4 pb-4">
-        <div className="-mt-9 flex items-end justify-between gap-2">
-          <ProfileAvatar
-            displayName={profile.displayName}
-            ring={flags.hasAvatarRing}
-            decorationUrl={assets.avatarDecorationUrl}
-            animatedAvatarUrl={assets.animatedAvatarUrl}
-          />
-          <ProfileBadges subscriptionStartedAt={profile.subscriptionStartedAt} />
-        </div>
-        <h1
-          className={cn(
-            "mt-3 text-xl font-bold text-white",
-            nameStyle.gradient && flags.hasDisplayNameStyle && "bg-clip-text text-transparent",
-          )}
-          style={flags.hasDisplayNameStyle ? nicknameStyle : undefined}
-        >
-          {profile.displayName}
-        </h1>
-        <p className="text-sm text-white/50">@{profile.username}</p>
         {profile.bio && <p className="mt-2 text-sm text-white/70">{profile.bio}</p>}
         <div className="mt-4 flex gap-2">
           {isOwner ? (

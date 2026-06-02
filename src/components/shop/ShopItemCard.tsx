@@ -3,23 +3,11 @@
 import { Check, Lock } from "lucide-react";
 
 import { SHOP_CATALOG_BY_ID } from "@/lib/shop/catalog";
+import { shopKindLabel } from "@/lib/shop/categories";
 import { cn } from "@/lib/utils";
 import type { ShopItemView } from "@/types/shop";
 import { Button } from "@/components/ui/Button";
-
-const KIND_LABELS: Record<ShopItemView["kind"], string> = {
-  effect: "Эффект",
-  ring: "Кольцо",
-  banner: "Баннер",
-  nameplate: "Табличка",
-  badge: "Значок",
-  reaction_pack: "Реакции",
-  decoration: "Украшение",
-  feed_card: "Лента",
-  animated_avatar: "Аватар",
-  app_theme: "Тема",
-  nickname_style: "Имя",
-};
+import { ShopCatalogPreview } from "@/components/shop/ShopCatalogPreview";
 
 type ShopItemCardProps = {
   item: ShopItemView;
@@ -51,19 +39,16 @@ export function ShopItemCard({
       )}
     >
       <div className="relative aspect-[4/3] bg-black/30">
-        {item.previewUrl ? (
+        {catalog ? (
+          <ShopCatalogPreview catalog={catalog} previewUrl={item.previewUrl} />
+        ) : item.previewUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- CDN customization previews
-          <img
-            src={item.previewUrl}
-            alt=""
-            className="h-full w-full object-cover"
-            loading="lazy"
-          />
+          <img src={item.previewUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-white/30">Нет превью</div>
         )}
         <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[11px] text-white/80">
-          {KIND_LABELS[item.kind]}
+          {shopKindLabel(item.kind)}
         </span>
         {item.equipped && (
           <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-(--theme-accent) px-2 py-0.5 text-[11px] text-white">

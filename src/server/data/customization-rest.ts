@@ -2,6 +2,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { publicAssetUrl } from "@/lib/object-storage";
 import { customizationAssetPath } from "@/lib/customization/asset-path";
 import { SHOP_CATALOG_BY_ID } from "@/lib/shop/catalog";
+import { assertActiveSubscriptionRest } from "@/server/data/subscription-rest";
 import { getInventoryItemIdsRest, getShopItemRowRest } from "@/server/data/shop-rest";
 import { resolvePublicMediaKey } from "@/server/services/upload.service";
 
@@ -82,6 +83,10 @@ export async function updateProfileCustomizationRest(userId: string, patch: Cust
   }
   if (patch.animatedAvatarId !== undefined) {
     update.animated_avatar_id = patch.animatedAvatarId;
+    if (patch.animatedAvatarId) {
+      update.avatar_type = "constructor";
+      update.avatar_data = {};
+    }
   }
   if (patch.appThemeId !== undefined) {
     update.app_theme_id = patch.appThemeId;
@@ -153,6 +158,8 @@ export async function equipShopItemRest(userId: string, itemId: string) {
 }
 
 export async function setCustomBannerRest(userId: string, mediaKey: string) {
+  await assertActiveSubscriptionRest(userId);
+
   const key = resolvePublicMediaKey(mediaKey, userId, "banner");
   const url = publicAssetUrl(key);
   if (!url) throw new Error("Не удалось сохранить баннер");

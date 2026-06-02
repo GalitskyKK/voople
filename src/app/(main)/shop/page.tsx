@@ -8,7 +8,7 @@ export default function ShopRoutePage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Магазин</h1>
         <p className="mt-1 text-sm text-white/50">
-          Кастомизация профиля, voops и будущие донаты через YooKassa.
+          Кастомизация профиля, voops и поддержка проекта.
         </p>
       </div>
       <ShopPage />

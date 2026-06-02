@@ -28,7 +28,7 @@ export type WalletTransactionView = {
   createdAt: string;
 };
 
-export type PaymentIntentKind = "shop_item" | "coin_pack" | "donation";
+export type PaymentIntentKind = "shop_item" | "coin_pack" | "donation" | "subscription";
 
 export type PaymentIntentStatus = "pending" | "succeeded" | "canceled" | "failed";
 

@@ -49,9 +49,6 @@ export function DonationPanel({ onDonate, pending, message }: DonationPanelProps
         <Heart className="h-4 w-4 text-pink-300" aria-hidden />
         <h2 className="text-sm font-semibold text-white">Поддержать Voople</h2>
       </div>
-      <p className="mb-4 text-sm text-white/55">
-        Донат через YooKassa скоро. Intent уже сохраняется — подключим оплату без переделки UI.
-      </p>
       <div className="flex flex-wrap gap-2">
         {DONATION_PRESETS.map((amount) => (
           <button

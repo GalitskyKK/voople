@@ -31,7 +31,7 @@ PostgREST (`/rest/v1/`) доступен с `anon` key — RLS обязател�
 - Вставка inventory, wallet mutations и payment fulfillment напрямую из браузера запрещена; только server tRPC / webhook path.
 - `customization.equip` проверяет ownership перед записью в `profile_customization`.
 - Уникальность `(user_id, item_id)` enforced в БД.
-- YooKassa webhook требует `YOOKASSA_WEBHOOK_SECRET`; fulfillment inventory/wallet — server-only после verify signature.
+- YooKassa webhook: `POST /api/webhooks/yookassa`; платёж перепроверяется через API ЮKassa по `payment.id`; fulfillment (inventory, Voople+) — только server path.
 
 См. [shop.md](./shop.md).
 

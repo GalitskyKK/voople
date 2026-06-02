@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import { TRPCReactProvider } from "@/lib/trpc/client";
 import { AppThemeProvider } from "@/components/theme/AppThemeProvider";
+import { AppThemeSync } from "@/components/theme/AppThemeSync";
 
 import "./globals.css";
 
@@ -32,12 +33,13 @@ export default function RootLayout({
         <a href="#main-content" className="voople-skip-link">
           Перейти к содержимому
         </a>
-        <AppThemeProvider>
-          <div aria-hidden className="voople-grain fixed inset-0 -z-[5]" />
-          <TRPCReactProvider>
+        <TRPCReactProvider>
+          <AppThemeProvider>
+            <div aria-hidden className="voople-grain fixed inset-0 -z-[5]" />
+            <AppThemeSync />
             {children}
-          </TRPCReactProvider>
-        </AppThemeProvider>
+          </AppThemeProvider>
+        </TRPCReactProvider>
       </body>
     </html>
   );

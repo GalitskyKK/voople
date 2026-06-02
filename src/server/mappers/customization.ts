@@ -28,6 +28,7 @@ function rowToInput(row: CustomizationRow | null | undefined): CustomizationInpu
     | undefined;
 
   const avatarData = row.avatar_data as { url?: string } | null | undefined;
+  const hasUploadedPhoto = row.avatar_type === "photo" && Boolean(avatarData?.url);
 
   return {
     themePrimary: row.theme_primary,
@@ -41,8 +42,9 @@ function rowToInput(row: CustomizationRow | null | undefined): CustomizationInpu
     animatedAvatarId: row.animated_avatar_id,
     nicknameColor: row.nickname_color,
     nicknameGradient: row.nickname_gradient,
+    /** Загруженное фото — только если нет shop-ассета в `animated_avatar_id`. */
     animatedAvatarUrl:
-      row.avatar_type === "photo" && avatarData?.url ? avatarData.url : null,
+      row.animated_avatar_id || !hasUploadedPhoto ? null : (avatarData?.url ?? null),
   };
 }
 

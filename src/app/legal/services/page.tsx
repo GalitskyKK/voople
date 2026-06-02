@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { LegalDocument } from "@/components/legal/LegalDocument";
 import { MERCHANT } from "@/lib/constants/legal";
+import { VOOPLUS_PERIOD_DAYS, VOOPLUS_PRICE_RUB } from "@/lib/constants/subscription";
 import { SHOP_CATALOG, type ShopCatalogItem, type ShopItemKind } from "@/lib/shop/catalog";
 
 export const metadata: Metadata = {
@@ -51,6 +52,17 @@ export default function LegalServicesPage() {
         На сайте {MERCHANT.serviceName} ({MERCHANT.siteUrl}) принимается оплата за цифровые товары и услуги,
         связанные с кастомизацией профиля и поддержкой проекта. Все цены указаны в российских рублях и являются
         фиксированными на момент оформления заказа.
+      </p>
+
+      <h2>Подписка Voople+</h2>
+      <p>
+        Подписка даёт доступ к загрузке и рисованию собственного баннера профиля и отображает бейдж Voople+.
+        Срок действия — {VOOPLUS_PERIOD_DAYS} календарных дней с момента успешной оплаты. Повторная оплата
+        продлевает срок от текущей даты окончания, если подписка ещё активна.
+      </p>
+      <p className="font-medium">
+        Стоимость: {formatRub(VOOPLUS_PRICE_RUB)} за {VOOPLUS_PERIOD_DAYS} дней. Разовая оплата, без автопродления.
+        Промокоды могут давать пробный период или скидку (см. условия акции).
       </p>
 
       <h2>Цифровые товары для профиля</h2>

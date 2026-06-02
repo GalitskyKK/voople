@@ -12,7 +12,8 @@
     "db:apply": "node scripts/apply-migration.mjs",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:check": "node scripts/db-check.mjs"
+    "db:check": "node scripts/db-check.mjs",
+    "shop:seed:sql": "npx tsx scripts/generate-shop-seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1052.0",

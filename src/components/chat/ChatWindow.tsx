@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+
+import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { ArrowLeft } from "lucide-react";
 
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
@@ -100,7 +102,13 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="min-w-0">
-          <p className="truncate font-semibold">{other?.displayName ?? "Чат"}</p>
+          {other ? (
+            <DisplayNameWithPin hasVooplePlus={other.hasVooplePlus} className="font-semibold text-white">
+              {other.displayName}
+            </DisplayNameWithPin>
+          ) : (
+            <p className="truncate font-semibold">Чат</p>
+          )}
           {other && (
             <Link href={`/${other.username}`} className="voople-link text-sm hover:underline">
               @{other.username}

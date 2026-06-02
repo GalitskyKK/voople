@@ -6,6 +6,7 @@ import {
   toProfileCustomizationView,
   type CustomizationRow,
 } from "@/server/mappers/customization";
+import { mapUserToAuthor, type UserRow } from "@/server/mappers/profile";
 import type { CommentViewModel, PostMediaType } from "@/types/domain";
 
 type CommentRow = {
@@ -17,16 +18,8 @@ type CommentRow = {
   media_type?: PostMediaType | null;
   created_at: string;
   users?:
-    | {
-    username: string;
-    display_name: string;
-    profile_customization?: CustomizationRow | CustomizationRow[] | null;
-      }
-    | Array<{
-        username: string;
-        display_name: string;
-        profile_customization?: CustomizationRow | CustomizationRow[] | null;
-      }>
+    | (Pick<UserRow, "username" | "display_name" | "profile_customization" | "subscriptions">)
+    | Array<Pick<UserRow, "username" | "display_name" | "profile_customization" | "subscriptions">>
     | null;
 };
 
@@ -38,9 +31,14 @@ function readCommentId(result: RpcCommentResult) {
 
 function mapComment(row: CommentRow, viewerId?: string | null): CommentViewModel {
   const user = Array.isArray(row.users) ? row.users[0] : row.users;
-  const customization = Array.isArray(user?.profile_customization)
-    ? user?.profile_customization[0]
-    : user?.profile_customization;
+  const author = user
+    ? mapUserToAuthor(user)
+    : {
+        username: "unknown",
+        displayName: "Unknown",
+        hasVooplePlus: false,
+        customization: toProfileCustomizationView(null),
+      };
   return {
     id: row.id,
     postId: row.post_id,
@@ -49,11 +47,7 @@ function mapComment(row: CommentRow, viewerId?: string | null): CommentViewModel
     mediaType: row.media_type ?? null,
     createdAt: row.created_at,
     canDelete: Boolean(viewerId && viewerId === row.author_id),
-    author: {
-      username: user?.username ?? "unknown",
-      displayName: user?.display_name ?? "Unknown",
-      customization: toProfileCustomizationView(customization ?? null),
-    },
+    author,
   };
 }
 
@@ -63,7 +57,9 @@ export async function listCommentsRest(
 ): Promise<CommentViewModel[]> {
   const { data, error } = await getAdminClient()
     .from("post_comments")
-    .select("id, post_id, author_id, text, media_url, media_type, created_at, users (username, display_name, profile_customization (*))")
+    .select(
+      "id, post_id, author_id, text, media_url, media_type, created_at, users (username, display_name, profile_customization (*), subscriptions (started_at, expires_at))",
+    )
     .eq("post_id", postId)
     .is("deleted_at", null)
     .order("created_at", { ascending: true })
@@ -103,7 +99,9 @@ export async function createCommentRest(
 
   const { data: row, error: rowErr } = await admin
     .from("post_comments")
-    .select("id, post_id, author_id, text, media_url, media_type, created_at, users (username, display_name, profile_customization (*))")
+    .select(
+      "id, post_id, author_id, text, media_url, media_type, created_at, users (username, display_name, profile_customization (*), subscriptions (started_at, expires_at))",
+    )
     .eq("id", commentId)
     .single();
 

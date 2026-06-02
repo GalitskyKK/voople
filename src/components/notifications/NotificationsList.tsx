@@ -5,7 +5,9 @@ import Link from "next/link";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { trpc } from "@/lib/trpc/client";
+import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import {
+  notificationActionText,
   notificationHref,
   notificationIcon,
   notificationText,
@@ -73,9 +75,15 @@ export function NotificationsList() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-white/90">
-                    {notificationText(
-                      notification.type,
-                      actor?.displayName ?? "",
+                    {notification.type === "profile_canvas_draw" || !actor ? (
+                      notificationText(notification.type, actor?.displayName ?? "")
+                    ) : (
+                      <span className="inline-flex flex-wrap items-center gap-x-1 gap-y-0.5">
+                        <DisplayNameWithPin hasVooplePlus={actor.hasVooplePlus} size="xs">
+                          {actor.displayName}
+                        </DisplayNameWithPin>
+                        <span>{notificationActionText(notification.type)}</span>
+                      </span>
                     )}
                   </p>
                   <RelativeTime iso={notification.createdAt} className="mt-1 block text-xs text-white/40" />

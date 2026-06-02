@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { RelativeTime } from "@/components/ui/RelativeTime";
+import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { useRealtimeInbox } from "@/hooks/useRealtimeChat";
 import { trpc } from "@/lib/trpc/client";
@@ -46,8 +47,14 @@ export function ChatList() {
             >
               <ProfileAvatar displayName={title} size="sm" />
               <div className="min-w-0 flex-1">
-                <div className="flex items-baseline justify-between gap-2">
-                  <p className="truncate font-medium text-white">{title}</p>
+                <div className="flex min-w-0 items-baseline justify-between gap-2">
+                  <DisplayNameWithPin
+                    hasVooplePlus={chat.otherUser?.hasVooplePlus}
+                    size="sm"
+                    className="min-w-0 font-medium text-white"
+                  >
+                    {title}
+                  </DisplayNameWithPin>
                   {chat.lastMessage && (
                     <RelativeTime
                       iso={chat.lastMessage.createdAt}

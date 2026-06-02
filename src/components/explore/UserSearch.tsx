@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FileText, Hash, Search, UserRound } from "lucide-react";
 
 import { RelativeTime } from "@/components/ui/RelativeTime";
+import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { trpc } from "@/lib/trpc/client";
 import { TrendingHashtags } from "./TrendingHashtags";
@@ -103,7 +104,12 @@ export function UserSearch() {
                     >
                       <ProfileAvatar displayName={item.displayName} size="sm" />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium text-white">{item.displayName}</p>
+                        <DisplayNameWithPin
+                          hasVooplePlus={item.hasVooplePlus}
+                          className="font-medium text-white"
+                        >
+                          {item.displayName}
+                        </DisplayNameWithPin>
                         <p className="truncate text-sm text-white/50">@{item.username}</p>
                         {item.bio && (
                           <p className="mt-1 line-clamp-1 text-xs text-white/40">{item.bio}</p>
@@ -128,9 +134,12 @@ export function UserSearch() {
                       <div className="mb-2 flex items-center gap-2">
                         <ProfileAvatar displayName={post.author.displayName} size="sm" />
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-white">
+                          <DisplayNameWithPin
+                            hasVooplePlus={post.author.hasVooplePlus}
+                            className="text-sm font-medium text-white"
+                          >
                             {post.author.displayName}
-                          </p>
+                          </DisplayNameWithPin>
                           <RelativeTime iso={post.createdAt} className="text-xs text-white/45" />
                         </div>
                       </div>

@@ -1,4 +1,5 @@
 import { getAdminClient } from "@/lib/supabase/admin";
+import { mapSubscriptionFields } from "@/server/mappers/profile";
 import { searchPostsRest } from "@/server/data/posts-rest";
 import {
   getTrendingHashtagsRest,
@@ -15,6 +16,7 @@ export type UserSearchHit = {
   username: string;
   displayName: string;
   bio: string | null;
+  hasVooplePlus?: boolean;
 };
 
 export type SearchHit =
@@ -34,13 +36,17 @@ function mapRow(row: {
   username: string;
   display_name: string;
   bio: string | null;
+  subscriptions?: { started_at: string; expires_at: string } | { started_at: string; expires_at: string }[] | null;
 }): UserSearchHit {
+  const sub = Array.isArray(row.subscriptions) ? row.subscriptions[0] : row.subscriptions;
+  const { hasVooplePlus } = mapSubscriptionFields(sub ?? undefined);
   return {
     type: "user",
     id: row.id,
     username: row.username,
     displayName: row.display_name,
     bio: row.bio,
+    hasVooplePlus,
   };
 }
 
@@ -55,13 +61,13 @@ export async function searchUsers(query: string, limit = 20): Promise<UserSearch
   const [byUsername, byDisplayName] = await Promise.all([
     admin
       .from("users")
-      .select("id, username, display_name, bio")
+      .select("id, username, display_name, bio, subscriptions (started_at, expires_at)")
       .ilike("username", pattern)
       .order("username")
       .limit(perQuery),
     admin
       .from("users")
-      .select("id, username, display_name, bio")
+      .select("id, username, display_name, bio, subscriptions (started_at, expires_at)")
       .ilike("display_name", pattern)
       .order("username")
       .limit(perQuery),

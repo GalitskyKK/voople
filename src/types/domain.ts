@@ -34,6 +34,7 @@ export type ProfileViewModel = {
 export type PostAuthorView = {
   username: string;
   displayName: string;
+  hasVooplePlus?: boolean;
   avatarUrl?: string;
   customization?: ProfileCustomizationView;
 };

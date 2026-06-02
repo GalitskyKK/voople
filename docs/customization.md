@@ -12,14 +12,14 @@
 
 ## Profile Card Geometry
 
-| Surface | Mobile | Desktop |
-|---|---:|---:|
-| Card width | 100% viewport minus 32px | 320px sidebar card |
-| Banner visible area | 100% x 110px | 320px x 120px |
-| Avatar | 72px | 88px |
-| Avatar overlap | 36px over banner | 44px over banner |
-| Effect overlay | full card, clipped by card radius | full card, clipped by card radius |
-| Card radius | 16px | 16px |
+| Surface             |                            Mobile |                           Desktop |
+| ------------------- | --------------------------------: | --------------------------------: |
+| Card width          |          100% viewport minus 32px |                320px sidebar card |
+| Banner visible area |                      100% x 110px |                     320px x 120px |
+| Avatar              |                              72px |                              88px |
+| Avatar overlap      |                  36px over banner |                  44px over banner |
+| Effect overlay      | full card, clipped by card radius | full card, clipped by card radius |
+| Card radius         |                              16px |                              16px |
 
 ## Banner
 
@@ -89,11 +89,11 @@
 
 ### App Theme Asset Specs
 
-| Asset | Mobile export | Desktop export | Formats | Max weight |
-|---|---:|---:|---|---:|
-| Shell background | 750×1334 | 1920×1080 | WebP/PNG static, WebP/APNG animated | 500 KB / 1.5 MB |
-| Shell overlay | 750×1334 | 1920×1080 | WebP/APNG transparent | 300 KB |
-| Static fallback | same as background | same | WebP/PNG | 500 KB |
+| Asset            |      Mobile export | Desktop export | Formats                             |      Max weight |
+| ---------------- | -----------------: | -------------: | ----------------------------------- | --------------: |
+| Shell background |           750×1334 |      1920×1080 | WebP/PNG static, WebP/APNG animated | 500 KB / 1.5 MB |
+| Shell overlay    |           750×1334 |      1920×1080 | WebP/APNG transparent               |          300 KB |
+| Static fallback  | same as background |           same | WebP/PNG                            |          500 KB |
 
 Naming:
 
@@ -109,7 +109,7 @@ theme_<slug>.apng
 - Бейджи — часть системы кастомизации/инвентаря, если они покупаются или экипируются.
 - Earned/system badges хранятся отдельно в `user_badges`.
 - Purchased badges хранятся как `shop_items.type = 'badge'` и владение через `user_inventory`.
-- UI профиля не должен содержать хардкод декоративных бейджей. Исключение: системный Voople+ badge по активной подписке.
+- UI профиля не должен содержать хардкод декоративных бейджей. Исключение: системный Voople+ badge по активной подписке (`pins/vooplus.gif` на CDN).
 
 ### Badge Asset Specs
 
@@ -132,12 +132,12 @@ feedcard_<season>_<slug>.webp
 
 ## Shop slots vs assets
 
-| Слот | Назначение |
-|------|------------|
-| `profile_effect_id` | Анимация **поверх всей** карточки профиля |
-| `animated_avatar_id` | Анимация **внутри круга** аватара (вместо буквы) |
-| `avatar_decoration_id` | Декор вокруг аватара |
-| `app_theme_id` | Тема **приложения** (shell), не карточки |
+| Слот                   | Назначение                                       |
+| ---------------------- | ------------------------------------------------ |
+| `profile_effect_id`    | Анимация **поверх всей** карточки профиля        |
+| `animated_avatar_id`   | Анимация **внутри круга** аватара (вместо буквы) |
+| `avatar_decoration_id` | Декор вокруг аватара                             |
+| `app_theme_id`         | Тема **приложения** (shell), не карточки         |
 
 Подробно и чеклист добавления: [shop-catalog.md](./shop-catalog.md).
 
@@ -164,11 +164,11 @@ Dev: omit CDN env → files served from `public/customization/`.
 
 **Сейчас (MVP):**
 
-| Слот | Свой контент |
-|------|----------------|
-| Баннер | Свой файл / рисование — **только Voople+** (`setCustomBanner`). Готовые баннеры — магазин (`equip` banner) |
-| Аватар | Загрузка фото (`setAvatarPhoto`) |
-| Эффект, кольцо, декор, стиль ленты, тема | Только предметы из **магазина** → экипировка на `/shop?tab=customize` |
+| Слот                                     | Свой контент                                                                                               |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Баннер                                   | Свой файл / рисование — **только Voople+** (`setCustomBanner`). Готовые баннеры — магазин (`equip` banner) |
+| Аватар                                   | Загрузка фото (`setAvatarPhoto`)                                                                           |
+| Эффект, кольцо, декор, стиль ленты, тема | Только предметы из **магазина** → экипировка на `/shop?tab=customize`                                      |
 
 **Не путать** с холстом на обороте карточки (`profile_canvas_strokes`) — это совместное рисование, не equip-слот.
 

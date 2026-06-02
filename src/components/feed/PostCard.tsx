@@ -9,6 +9,7 @@ import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import type { PostViewModel } from "@/types/domain";
 import { PostMedia } from "@/components/media/PostMedia";
+import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { PostAuthorRow } from "./PostAuthorRow";
 import { PostComments } from "./PostComments";
 import { PostLikeButton } from "./PostLikeButton";
@@ -31,7 +32,13 @@ function RepostPreview({ post, depth = 0 }: { post: PostViewModel; depth?: numbe
   return (
     <div className="voople-panel--inset p-3">
       <div className="mb-3">
-        <p className="text-xs font-medium text-white/70">{post.author.displayName}</p>
+        <DisplayNameWithPin
+          hasVooplePlus={post.author.hasVooplePlus}
+          size="xs"
+          className="text-xs font-medium text-white/70"
+        >
+          {post.author.displayName}
+        </DisplayNameWithPin>
         <p className="text-xs text-white/40">@{post.author.username}</p>
       </div>
 
@@ -133,6 +140,7 @@ export function PostCard({
           postId={post.id}
           username={post.author.username}
           displayName={post.author.displayName}
+          hasVooplePlus={post.author.hasVooplePlus}
           createdAt={post.createdAt}
           customization={c}
           postKind={post.kind}

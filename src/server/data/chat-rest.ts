@@ -1,4 +1,5 @@
 import { getAdminClient } from "@/lib/supabase/admin";
+import { mapSubscriptionFields } from "@/server/mappers/profile";
 
 export type ChatListItem = {
   id: string;
@@ -7,6 +8,7 @@ export type ChatListItem = {
     id: string;
     username: string;
     displayName: string;
+    hasVooplePlus?: boolean;
   } | null;
   lastMessage: {
     text: string | null;
@@ -118,24 +120,36 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
     otherUserIds.add(uid);
   }
 
-  const othersByChat = new Map<string, { id: string; username: string; displayName: string }>();
+  const othersByChat = new Map<
+    string,
+    { id: string; username: string; displayName: string; hasVooplePlus: boolean }
+  >();
   if (otherUserIds.size > 0) {
     const { data: users, error: usersErr } = await admin
       .from("users")
-      .select("id, username, display_name")
+      .select("id, username, display_name, subscriptions (started_at, expires_at)")
       .in("id", [...otherUserIds]);
 
     if (usersErr) throw new Error(usersErr.message);
 
     const userById = new Map(
-      (users ?? []).map((u) => [
-        u.id as string,
-        {
-          id: u.id as string,
-          username: u.username as string,
-          displayName: u.display_name as string,
-        },
-      ]),
+      (users ?? []).map((u) => {
+        const subs = u.subscriptions as
+          | { started_at: string; expires_at: string }
+          | { started_at: string; expires_at: string }[]
+          | null;
+        const sub = Array.isArray(subs) ? subs[0] : subs;
+        const { hasVooplePlus } = mapSubscriptionFields(sub ?? undefined);
+        return [
+          u.id as string,
+          {
+            id: u.id as string,
+            username: u.username as string,
+            displayName: u.display_name as string,
+            hasVooplePlus,
+          },
+        ] as const;
+      }),
     );
 
     for (const [cid, oid] of otherIdByChat) {
@@ -203,7 +217,7 @@ export async function listMessagesRest(
       .limit(100),
     admin
       .from("chat_members")
-      .select("user_id, users (id, username, display_name)")
+      .select("user_id, users (id, username, display_name, subscriptions (started_at, expires_at))")
       .eq("chat_id", chatId),
   ]);
 
@@ -215,15 +229,29 @@ export async function listMessagesRest(
     const uid = row.user_id as string;
     if (uid === userId) continue;
     const u = row.users as
-      | { id: string; username: string; display_name: string }
-      | { id: string; username: string; display_name: string }[]
+      | {
+          id: string;
+          username: string;
+          display_name: string;
+          subscriptions?: { started_at: string; expires_at: string } | { started_at: string; expires_at: string }[];
+        }
+      | Array<{
+          id: string;
+          username: string;
+          display_name: string;
+          subscriptions?: { started_at: string; expires_at: string } | { started_at: string; expires_at: string }[];
+        }>
       | null;
     const user = Array.isArray(u) ? u[0] : u;
     if (user) {
+      const subs = user.subscriptions;
+      const sub = Array.isArray(subs) ? subs[0] : subs;
+      const { hasVooplePlus } = mapSubscriptionFields(sub ?? undefined);
       otherUser = {
         id: user.id,
         username: user.username,
         displayName: user.display_name,
+        hasVooplePlus,
       };
       break;
     }

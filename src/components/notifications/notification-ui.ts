@@ -5,21 +5,30 @@ import { Heart, MessageCircle, Palette, Repeat2, UserPlus } from "lucide-react";
 
 import type { NotificationView } from "@/server/services/notifications.service";
 
-export function notificationText(type: string, actorName: string) {
+/** Текст после имени актёра (для inline-пина в UI). */
+export function notificationActionText(type: string): string {
   switch (type) {
     case "like":
-      return `${actorName} оценил(а) ваш пост`;
+      return "оценил(а) ваш пост";
     case "follow":
-      return `${actorName} подписался(ась) на вас`;
+      return "подписался(ась) на вас";
     case "reply":
-      return `${actorName} прокомментировал(а) ваш пост`;
+      return "прокомментировал(а) ваш пост";
     case "repost":
-      return `${actorName} сделал(а) репост вашего поста`;
+      return "сделал(а) репост вашего поста";
     case "profile_canvas_draw":
       return "Кто-то оставил рисунок на вашей карточке";
     default:
-      return actorName ? `${actorName} — новое уведомление` : "Новое уведомление";
+      return "— новое уведомление";
   }
+}
+
+export function notificationText(type: string, actorName: string) {
+  if (type === "profile_canvas_draw") {
+    return notificationActionText(type);
+  }
+  const action = notificationActionText(type);
+  return actorName ? `${actorName} ${action}` : action;
 }
 
 export function notificationHref(notification: NotificationView) {

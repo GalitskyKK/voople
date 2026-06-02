@@ -91,7 +91,7 @@ export async function publishStatusToFeedRest(
 
   const { data: user, error: userErr } = await admin
     .from("users")
-    .select("id, username, display_name, profile_customization (*)")
+    .select("id, username, display_name, profile_customization (*), subscriptions (started_at, expires_at)")
     .eq("id", userId)
     .single();
 

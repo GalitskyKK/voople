@@ -1,4 +1,5 @@
 import { getAdminClient } from "@/lib/supabase/admin";
+import { mapSubscriptionFields } from "@/server/mappers/profile";
 
 export type NotifType = "like" | "follow" | "reply" | "repost" | "profile_canvas_draw";
 
@@ -66,6 +67,7 @@ export type NotificationView = {
     id: string;
     username: string;
     displayName: string;
+    hasVooplePlus?: boolean;
   } | null;
   referenceId: string | null;
   /** Ссылка на профиль получателя (для анонимных уведомлений о холсте) */
@@ -102,20 +104,30 @@ export async function listNotifications(userId: string, limit = 40) {
     ),
   ] as string[];
 
-  const actorsById = new Map<string, { id: string; username: string; displayName: string }>();
+  const actorsById = new Map<
+    string,
+    { id: string; username: string; displayName: string; hasVooplePlus: boolean }
+  >();
 
   if (actorIds.length > 0) {
     const { data: actors, error: actorsErr } = await admin
       .from("users")
-      .select("id, username, display_name")
+      .select("id, username, display_name, subscriptions (started_at, expires_at)")
       .in("id", actorIds);
 
     if (actorsErr) throw new Error(actorsErr.message);
     for (const a of actors ?? []) {
+      const subs = a.subscriptions as
+        | { started_at: string; expires_at: string }
+        | { started_at: string; expires_at: string }[]
+        | null;
+      const sub = Array.isArray(subs) ? subs[0] : subs;
+      const { hasVooplePlus } = mapSubscriptionFields(sub ?? undefined);
       actorsById.set(a.id as string, {
         id: a.id as string,
         username: a.username as string,
         displayName: a.display_name as string,
+        hasVooplePlus,
       });
     }
   }

@@ -75,12 +75,14 @@ function mapStatus(row: StatusRow | null): ProfileStatus {
 }
 
 export function mapUserToAuthor(
-  user: Pick<UserRow, "username" | "display_name" | "profile_customization">,
+  user: Pick<UserRow, "username" | "display_name" | "profile_customization" | "subscriptions">,
 ): PostAuthorView {
   const customizationRow = first(user.profile_customization);
+  const { hasVooplePlus } = mapSubscriptionFields(first(user.subscriptions));
   return {
     username: user.username,
     displayName: user.display_name,
+    hasVooplePlus,
     customization: toProfileCustomizationView(customizationRow),
   };
 }

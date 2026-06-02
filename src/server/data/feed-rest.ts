@@ -67,7 +67,7 @@ export async function getFeedPageRest(options?: {
   const authorIds = [...new Set(slice.map((p) => p.author_id))]
   const { data: users, error: usersErr } = await admin
     .from("users")
-    .select("id, username, display_name, profile_customization (*)")
+    .select("id, username, display_name, profile_customization (*), subscriptions (started_at, expires_at)")
     .in("id", authorIds)
 
   if (usersErr) throw new Error(usersErr.message)
@@ -140,7 +140,7 @@ export async function getHashtagFeedPageRest(options: {
   const authorIds = [...new Set(slice.map((post) => post.author_id))]
   const { data: users, error: usersErr } = await admin
     .from("users")
-    .select("id, username, display_name, profile_customization (*)")
+    .select("id, username, display_name, profile_customization (*), subscriptions (started_at, expires_at)")
     .in("id", authorIds)
 
   if (usersErr) throw new Error(usersErr.message)

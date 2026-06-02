@@ -7,6 +7,7 @@ import type { CSSProperties } from "react";
 import { FeedAuthorChipBackdrop } from "@/components/feed/FeedAuthorChipBackdrop";
 import { cn } from "@/lib/utils";
 import type { ProfileViewModel } from "@/types/domain";
+import { DisplayNameWithPin } from "./DisplayNameWithPin";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ProfileEditSheet } from "./ProfileEditSheet";
 import { ProfileFollowButton } from "./ProfileFollowButton";
@@ -31,6 +32,7 @@ export function StickyProfileHeader({
   const { displayName: nameStyle, flags, assets } = customization;
   const useFeedChip = flags.hasFeedCardStyle;
 
+  const useGradientName = nameStyle.gradient && flags.hasDisplayNameStyle;
   const nicknameStyle = nameStyle.gradient
     ? { backgroundImage: `linear-gradient(90deg, ${nameStyle.color ?? "#e5e5e5"}, #fff)` }
     : { color: nameStyle.color ?? undefined };
@@ -72,15 +74,18 @@ export function StickyProfileHeader({
             animatedAvatarUrl={assets.animatedAvatarUrl}
           />
           <div className="min-w-0 flex-1">
-            <p
-              className={cn(
-                "truncate text-sm font-semibold text-white",
-                nameStyle.gradient && flags.hasDisplayNameStyle && "bg-clip-text text-transparent",
+            <DisplayNameWithPin
+              hasVooplePlus={profile.hasVooplePlus}
+              size="sm"
+              className="w-full"
+              nameClassName={cn(
+                "text-sm font-semibold",
+                useGradientName ? "bg-clip-text text-transparent" : "text-white",
               )}
-              style={flags.hasDisplayNameStyle ? nicknameStyle : undefined}
+              style={useGradientName ? nicknameStyle : undefined}
             >
               {displayName}
-            </p>
+            </DisplayNameWithPin>
             <span className="sr-only">@{username}</span>
           </div>
           {actions}
@@ -105,15 +110,18 @@ export function StickyProfileHeader({
         animatedAvatarUrl={assets.animatedAvatarUrl}
       />
       <div className="min-w-0 flex-1">
-        <p
-          className={cn(
-            "truncate text-sm font-medium text-white",
-            nameStyle.gradient && flags.hasDisplayNameStyle && "bg-clip-text text-transparent",
+        <DisplayNameWithPin
+          hasVooplePlus={profile.hasVooplePlus}
+          size="sm"
+          className="w-full"
+          nameClassName={cn(
+            "text-sm font-medium",
+            useGradientName ? "bg-clip-text text-transparent" : "text-white",
           )}
-          style={flags.hasDisplayNameStyle ? nicknameStyle : undefined}
+          style={useGradientName ? nicknameStyle : undefined}
         >
           {displayName}
-        </p>
+        </DisplayNameWithPin>
         <span className="sr-only">@{username}</span>
       </div>
       {actions}

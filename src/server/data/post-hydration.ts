@@ -16,7 +16,7 @@ async function loadAuthors(authorIds: string[]) {
 
   const { data, error } = await getAdminClient()
     .from("users")
-    .select("id, username, display_name, profile_customization (*)")
+    .select("id, username, display_name, profile_customization (*), subscriptions (started_at, expires_at)")
     .in("id", [...new Set(authorIds)])
 
   if (error) throw new Error(error.message)
@@ -50,8 +50,9 @@ function fallbackAuthor() {
   return {
     username: "unknown",
     displayName: "Unknown",
-    customization: toProfileCustomizationView(null)
-  }
+    hasVooplePlus: false,
+    customization: toProfileCustomizationView(null),
+  };
 }
 
 export async function mapPostRowsWithReposts(

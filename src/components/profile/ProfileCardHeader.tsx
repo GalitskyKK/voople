@@ -2,8 +2,8 @@ import type { CSSProperties } from "react";
 
 import { cn } from "@/lib/utils";
 import type { ProfileCustomizationView } from "@/types/domain";
+import { DisplayNameWithPin } from "./DisplayNameWithPin";
 import { ProfileAvatar } from "./ProfileAvatar";
-import { ProfileBadges } from "./ProfileBadges";
 import { ProfileBanner } from "./ProfileBanner";
 import { ProfileEffect } from "./ProfileEffect";
 
@@ -11,8 +11,7 @@ export type ProfileCardHeaderProps = {
   customization: ProfileCustomizationView;
   displayName: string;
   username: string;
-  showBadges?: boolean;
-  subscriptionStartedAt?: string | null;
+  hasVooplePlus?: boolean;
   /** Нижний отступ блока имени (превью в магазине). */
   compact?: boolean;
 };
@@ -25,8 +24,7 @@ export function ProfileCardHeader({
   customization,
   displayName,
   username,
-  showBadges = false,
-  subscriptionStartedAt,
+  hasVooplePlus = false,
   compact = false,
 }: ProfileCardHeaderProps) {
   const { displayName: nameStyle, flags, assets } = customization;
@@ -37,6 +35,8 @@ export function ProfileCardHeader({
       }
     : { color: nameStyle.color ?? undefined };
 
+  const useGradientName = nameStyle.gradient && flags.hasDisplayNameStyle;
+
   return (
     <>
       <div className="relative z-0 overflow-hidden rounded-t-2xl">
@@ -44,28 +44,28 @@ export function ProfileCardHeader({
       </div>
 
       <div className={cn("relative z-10 px-4", compact ? "pb-4" : "pb-0")}>
-        <div className="-mt-9 flex items-end justify-between gap-2">
+        <div className="-mt-9 flex items-end justify-between gap-2 overflow-visible">
           <ProfileAvatar
             displayName={displayName}
             ring={flags.hasAvatarRing}
             decorationUrl={assets.avatarDecorationUrl}
             animatedAvatarUrl={assets.animatedAvatarUrl}
           />
-          {showBadges ? (
-            <ProfileBadges subscriptionStartedAt={subscriptionStartedAt ?? null} />
-          ) : (
-            <span className="h-[72px] w-0 shrink-0" aria-hidden />
-          )}
+          <span className="h-[72px] w-0 shrink-0" aria-hidden />
         </div>
-        <h1
-          className={cn(
-            "mt-3 text-xl font-bold text-white",
-            nameStyle.gradient && flags.hasDisplayNameStyle && "bg-clip-text text-transparent",
+        <DisplayNameWithPin
+          as="div"
+          hasVooplePlus={hasVooplePlus}
+          size="md"
+          className="mt-3"
+          nameClassName={cn(
+            "text-xl font-bold",
+            useGradientName ? "bg-clip-text text-transparent" : "text-white",
           )}
-          style={flags.hasDisplayNameStyle ? nicknameStyle : undefined}
+          style={useGradientName ? nicknameStyle : undefined}
         >
           {displayName}
-        </h1>
+        </DisplayNameWithPin>
         <p className="text-sm text-white/50">@{username}</p>
       </div>
     </>

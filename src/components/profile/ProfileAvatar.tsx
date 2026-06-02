@@ -27,7 +27,7 @@ export function ProfileAvatar({
   const s = sizes[size];
 
   return (
-    <div className="relative shrink-0">
+    <div className="relative shrink-0 overflow-visible">
       {decorationUrl && (
         <img
           src={decorationUrl}

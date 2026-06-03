@@ -12,6 +12,7 @@ export type ProfileCardHeaderProps = {
   displayName: string;
   username: string;
   hasVooplePlus?: boolean;
+  subscriptionExpiresAt?: string | null;
   /** Нижний отступ блока имени (превью в магазине). */
   compact?: boolean;
 };
@@ -25,6 +26,7 @@ export function ProfileCardHeader({
   displayName,
   username,
   hasVooplePlus = false,
+  subscriptionExpiresAt,
   compact = false,
 }: ProfileCardHeaderProps) {
   const { displayName: nameStyle, flags, assets } = customization;
@@ -56,6 +58,7 @@ export function ProfileCardHeader({
         <DisplayNameWithPin
           as="div"
           hasVooplePlus={hasVooplePlus}
+          subscriptionExpiresAt={subscriptionExpiresAt}
           size="md"
           className="mt-3"
           nameClassName={cn(

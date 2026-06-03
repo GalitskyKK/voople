@@ -25,6 +25,7 @@ export type ProfileViewModel = {
   bio?: string | null;
   createdAt: string;
   subscriptionStartedAt?: string | null;
+  subscriptionExpiresAt?: string | null;
   /** Активная подписка Voople+ (для своего баннера и др. premium). */
   hasVooplePlus?: boolean;
   customization: ProfileCustomizationView;

@@ -39,6 +39,7 @@ export function ProfileCard({
         displayName={profile.displayName}
         username={profile.username}
         hasVooplePlus={profile.hasVooplePlus}
+        subscriptionExpiresAt={profile.subscriptionExpiresAt}
       />
       <div className="relative z-10 px-4 pb-4">
         {profile.bio && <p className="mt-2 text-sm text-white/70">{profile.bio}</p>}

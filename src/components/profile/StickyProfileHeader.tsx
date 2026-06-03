@@ -76,6 +76,7 @@ export function StickyProfileHeader({
           <div className="min-w-0 flex-1">
             <DisplayNameWithPin
               hasVooplePlus={profile.hasVooplePlus}
+              subscriptionExpiresAt={profile.subscriptionExpiresAt}
               size="sm"
               className="w-full"
               nameClassName={cn(
@@ -112,6 +113,7 @@ export function StickyProfileHeader({
       <div className="min-w-0 flex-1">
         <DisplayNameWithPin
           hasVooplePlus={profile.hasVooplePlus}
+          subscriptionExpiresAt={profile.subscriptionExpiresAt}
           size="sm"
           className="w-full"
           nameClassName={cn(

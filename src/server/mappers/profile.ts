@@ -97,6 +97,8 @@ export function mapUserToProfile(
   const statusRow = first(user.user_status);
   const subscription = first(user.subscriptions);
   const { subscriptionStartedAt, hasVooplePlus } = mapSubscriptionFields(subscription);
+  const subscriptionExpiresAt =
+    hasVooplePlus && subscription?.expires_at ? subscription.expires_at : null;
 
   return {
     id: user.id,
@@ -105,6 +107,7 @@ export function mapUserToProfile(
     bio: user.bio,
     createdAt: user.created_at,
     subscriptionStartedAt,
+    subscriptionExpiresAt,
     hasVooplePlus,
     customization: toProfileCustomizationView(customizationRow),
     status: mapStatus(statusRow),

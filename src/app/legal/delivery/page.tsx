@@ -4,7 +4,7 @@ import { LegalDocument } from "@/components/legal/LegalDocument";
 import { MERCHANT } from "@/lib/constants/legal";
 
 export const metadata: Metadata = {
-  title: "Получение заказа — Voople",
+  title: "Получение заказа",
   description: "Как получить цифровые товары Voople после оплаты.",
 };
 

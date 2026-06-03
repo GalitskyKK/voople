@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { WebsiteJsonLd } from "@/components/seo/WebsiteJsonLd";
 import { TRPCReactProvider } from "@/lib/trpc/client";
+import { createRootMetadata } from "@/lib/seo/metadata";
 import { AppThemeProvider } from "@/components/theme/AppThemeProvider";
 import { AppThemeSync } from "@/components/theme/AppThemeSync";
 
@@ -17,10 +18,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Voople",
-  description: "Социальная сеть с живыми профилями",
-};
+export const metadata = createRootMetadata();
 
 export default function RootLayout({
   children,
@@ -30,6 +28,7 @@ export default function RootLayout({
   return (
     <html lang="ru" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="relative min-h-dvh bg-background text-foreground antialiased">
+        <WebsiteJsonLd />
         <a href="#main-content" className="voople-skip-link">
           Перейти к содержимому
         </a>

@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { COPY } from "@/lib/constants/copy";
+
+export const metadata: Metadata = {
+  title: "Вход и регистрация",
+  description: "Войдите в Voople или создайте аккаунт.",
+  robots: { index: true, follow: true },
+};
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (

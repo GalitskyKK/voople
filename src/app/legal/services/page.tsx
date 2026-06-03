@@ -6,7 +6,7 @@ import { VOOPLUS_PERIOD_DAYS, VOOPLUS_PRICE_RUB } from "@/lib/constants/subscrip
 import { SHOP_CATALOG, type ShopCatalogItem, type ShopItemKind } from "@/lib/shop/catalog";
 
 export const metadata: Metadata = {
-  title: "Услуги и цены — Voople",
+  title: "Услуги и цены",
   description: "Цифровые товары и услуги Voople с фиксированными ценами в рублях.",
 };
 

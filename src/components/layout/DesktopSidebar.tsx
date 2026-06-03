@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { COPY } from "@/lib/constants/copy";
 import { MAIN_NAV_ITEMS, SIDEBAR_FOOTER_ITEMS } from "@/lib/constants/nav";
 import { cn } from "@/lib/utils";
+import { GlobalPlayer } from "@/components/player/GlobalPlayer";
 import { NotificationNavBadge } from "@/components/notifications/NotificationNavBadge";
 
 export function DesktopSidebar() {
@@ -56,6 +57,8 @@ export function DesktopSidebar() {
           );
         })}
       </nav>
+
+      <GlobalPlayer variant="desktop" />
 
       <div className="voople-sidebar__footer shrink-0 border-t border-[var(--app-border)] px-3 pb-7 pt-5">
         {SIDEBAR_FOOTER_ITEMS.map(({ href, label, icon: Icon }) => (

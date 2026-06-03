@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle, Music } from "lucide-react";
+import { ChevronRight, MessageCircle, Music } from "lucide-react";
 
 import type { ProfileStatus } from "@/types/domain";
 import { MoodSlider } from "./MoodSlider";
@@ -9,22 +9,45 @@ type ProfileStatusBlockProps = {
   status: ProfileStatus;
   editable?: boolean;
   showEmptyFields?: boolean;
+  showMusicForOwner?: boolean;
   onMoodChange?: (value: number) => void;
   onThoughtChange?: (thought: string) => void;
-  onTrackChange?: (title: string, artist: string) => void;
+  onMusicClick?: () => void;
 };
 
 function StatusRow({
   icon,
   children,
+  onClick,
 }: {
   icon: React.ReactNode;
   children: React.ReactNode;
+  onClick?: () => void;
 }) {
+  const interactive = Boolean(onClick);
+
   return (
-    <div className="voople-status-row flex items-start gap-3 rounded-xl bg-white/5 px-3 py-2.5">
+    <div
+      className="voople-status-row flex items-start gap-3 rounded-xl bg-white/5 px-3 py-2.5"
+      {...(interactive
+        ? {
+            role: "button" as const,
+            tabIndex: 0,
+            onClick,
+            onKeyDown: (e: React.KeyboardEvent) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick?.();
+              }
+            },
+          }
+        : {})}
+    >
       <span className="mt-0.5 shrink-0 text-white/60">{icon}</span>
       <div className="min-w-0 flex-1">{children}</div>
+      {interactive && (
+        <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-white/40" aria-hidden />
+      )}
     </div>
   );
 }
@@ -33,18 +56,26 @@ export function ProfileStatusBlock({
   status,
   editable = false,
   showEmptyFields = false,
+  showMusicForOwner = false,
   onMoodChange,
   onThoughtChange,
-  onTrackChange,
+  onMusicClick,
 }: ProfileStatusBlockProps) {
   const hasMood = status.moodValue != null && status.moodValue > 0;
   const hasThought = Boolean(status.thought?.trim());
-  const hasTrack = Boolean(status.trackTitle?.trim() || status.trackArtist?.trim());
+  const hasTrack = Boolean(
+    status.trackId || status.trackTitle?.trim() || status.trackArtist?.trim(),
+  );
 
   const showThought = hasThought || (editable && showEmptyFields);
-  const showTrack = hasTrack || (editable && showEmptyFields);
+  const showTrack = hasTrack || showMusicForOwner;
 
   if (!hasMood && !showThought && !showTrack && !editable) return null;
+
+  const trackLabel =
+    status.trackArtist && status.trackTitle
+      ? `${status.trackArtist} – ${status.trackTitle}`
+      : status.trackTitle || status.trackArtist || "Музыка";
 
   return (
     <div className="voople-profile-status__fields flex flex-col gap-2">
@@ -74,37 +105,10 @@ export function ProfileStatusBlock({
         </StatusRow>
       )}
       {showTrack && (
-        <StatusRow icon={<Music className="h-4 w-4" />}>
-          {editable ? (
-            <div className="flex flex-col gap-1">
-              <input
-                type="text"
-                value={status.trackTitle ?? ""}
-                onChange={(e) =>
-                  onTrackChange?.(e.target.value, status.trackArtist ?? "")
-                }
-                placeholder="Трек"
-                maxLength={100}
-                className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/30"
-                aria-label="Трек"
-              />
-              <input
-                type="text"
-                value={status.trackArtist ?? ""}
-                onChange={(e) =>
-                  onTrackChange?.(status.trackTitle ?? "", e.target.value)
-                }
-                placeholder="Исполнитель"
-                maxLength={100}
-                className="w-full bg-transparent text-xs text-white/50 outline-none placeholder:text-white/30"
-                aria-label="Исполнитель"
-              />
-            </div>
-          ) : (
-            <p className="text-sm text-white/60">
-              {status.trackArtist} — {status.trackTitle}
-            </p>
-          )}
+        <StatusRow icon={<Music className="h-4 w-4" />} onClick={onMusicClick}>
+          <p className={hasTrack ? "text-sm text-white/80" : "text-sm text-white/40"}>
+            {hasTrack ? trackLabel : "Добавить музыку"}
+          </p>
         </StatusRow>
       )}
     </div>

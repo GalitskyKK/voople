@@ -13,6 +13,7 @@ import { createTRPCRouter, protectedProcedure } from "../init";
 const statusSchema = z.object({
   moodValue: z.number().int().min(1).max(10).nullable().optional(),
   thought: z.string().max(80).nullable().optional(),
+  trackId: z.string().uuid().nullable().optional(),
   trackTitle: z.string().max(100).nullable().optional(),
   trackArtist: z.string().max(100).nullable().optional(),
 });

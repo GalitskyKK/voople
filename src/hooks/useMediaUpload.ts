@@ -53,6 +53,10 @@ export function useMediaUpload(purpose: UploadPurpose) {
           throw new Error("Не удалось загрузить файл");
         }
 
+        if (!presigned.mediaType) {
+          throw new Error("Неподдерживаемый тип файла");
+        }
+
         const result: UploadedMedia = {
           mediaKey: presigned.key,
           mediaType: presigned.mediaType,

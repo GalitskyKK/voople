@@ -50,7 +50,13 @@ function RepostPreview({ post, depth = 0 }: { post: PostViewModel; depth?: numbe
       {post.mediaUrl && (
         <PostMedia url={post.mediaUrl} mediaType={post.mediaType} className="mt-3" />
       )}
-      {isStatus && <StatusPostBody status={post.status!} className={post.text ? "mt-3" : undefined} />}
+      {isStatus && (
+        <StatusPostBody
+          status={post.status!}
+          authorUsername={post.author.username}
+          className={post.text ? "mt-3" : undefined}
+        />
+      )}
 
       {hasNestedRepost && depth < 4 && (
         <div className="mt-3">
@@ -167,7 +173,11 @@ export function PostCard({
             <PostMedia url={post.mediaUrl} mediaType={post.mediaType} className="mt-3" />
           )}
           {isStatus && (
-            <StatusPostBody status={post.status!} className={post.text ? "mt-3" : undefined} />
+            <StatusPostBody
+              status={post.status!}
+              authorUsername={post.author.username}
+              className={post.text ? "mt-3" : undefined}
+            />
           )}
           {post.repost?.target && (
             <div className="mt-3">

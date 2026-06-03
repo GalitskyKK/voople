@@ -89,6 +89,7 @@ export const userStatus = pgTable("user_status", {
   thought: varchar("thought", { length: 80 }),
   trackTitle: varchar("track_title", { length: 100 }),
   trackArtist: varchar("track_artist", { length: 100 }),
+  trackId: uuid("track_id").references(() => playlistTracks.id, { onDelete: "set null" }),
   trackFileUrl: varchar("track_file_url", { length: 500 }),
   watchingTitle: varchar("watching_title", { length: 100 }),
   watchingTmdbId: varchar("watching_tmdb_id", { length: 20 }),

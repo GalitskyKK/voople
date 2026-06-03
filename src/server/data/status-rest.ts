@@ -7,6 +7,7 @@ import type { PostViewModel, ProfileStatus } from "@/types/domain";
 export type StatusInput = {
   moodValue?: number | null;
   thought?: string | null;
+  trackId?: string | null;
   trackTitle?: string | null;
   trackArtist?: string | null;
 };
@@ -15,6 +16,7 @@ function toSnapshot(input: StatusInput) {
   return {
     moodValue: input.moodValue ?? null,
     thought: input.thought?.trim() || null,
+    trackId: input.trackId ?? null,
     trackTitle: input.trackTitle?.trim() || null,
     trackArtist: input.trackArtist?.trim() || null,
   };
@@ -23,12 +25,14 @@ function toSnapshot(input: StatusInput) {
 export function mapRowToStatus(row: {
   mood_value?: number | null;
   thought?: string | null;
+  track_id?: string | null;
   track_title?: string | null;
   track_artist?: string | null;
 }): ProfileStatus {
   return {
     moodValue: row.mood_value ?? null,
     thought: row.thought ?? null,
+    trackId: row.track_id ?? null,
     trackTitle: row.track_title ?? null,
     trackArtist: row.track_artist ?? null,
   };
@@ -40,6 +44,7 @@ export async function saveUserStatusRest(userId: string, input: StatusInput) {
     user_id: userId,
     mood_value: input.moodValue ?? null,
     thought: input.thought?.trim() || null,
+    track_id: input.trackId ?? null,
     track_title: input.trackTitle?.trim() || null,
     track_artist: input.trackArtist?.trim() || null,
     updated_at: new Date().toISOString(),
@@ -59,6 +64,7 @@ export async function publishStatusToFeedRest(
   const hasContent =
     snapshot.moodValue != null ||
     Boolean(snapshot.thought) ||
+    Boolean(snapshot.trackId) ||
     Boolean(snapshot.trackTitle) ||
     Boolean(snapshot.trackArtist);
 

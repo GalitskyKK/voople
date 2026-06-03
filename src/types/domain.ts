@@ -3,6 +3,7 @@ import type { CustomizationFlags, CustomizationAssets, DisplayNameStyle } from "
 export type ProfileStatus = {
   moodValue?: number | null;
   thought?: string | null;
+  trackId?: string | null;
   trackTitle?: string | null;
   trackArtist?: string | null;
 };
@@ -42,6 +43,7 @@ export type PostAuthorView = {
 export type StatusPostPayload = {
   moodValue?: number | null;
   thought?: string | null;
+  trackId?: string | null;
   trackTitle?: string | null;
   trackArtist?: string | null;
 };

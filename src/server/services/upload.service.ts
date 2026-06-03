@@ -10,6 +10,7 @@ import {
   type PresignedUploadView,
   type UploadPurpose,
 } from "@/lib/object-storage";
+import { extensionForAudioMime } from "@/lib/object-storage/audio-mime";
 
 export async function createPresignedUpload(input: {
   userId: string;
@@ -27,8 +28,11 @@ export async function createPresignedUpload(input: {
     throw new Error(`Файл больше ${Math.round(limit.maxBytes / (1024 * 1024))} МБ`);
   }
 
-  const extension = extensionForMime(input.contentType);
-  const mediaType = mediaTypeForMime(input.contentType);
+  const extension =
+    input.purpose === "track"
+      ? extensionForAudioMime(input.contentType)
+      : extensionForMime(input.contentType);
+  const mediaType = input.purpose === "track" ? null : mediaTypeForMime(input.contentType);
   const key = buildUploadKey(input.purpose, input.userId, extension);
 
   const { uploadUrl, expiresIn } = await createPresignedPutUrl({

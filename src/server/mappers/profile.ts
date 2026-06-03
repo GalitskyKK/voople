@@ -37,6 +37,7 @@ export function mapSubscriptionFields(
 type StatusRow = {
   mood_value?: number | null;
   thought?: string | null;
+  track_id?: string | null;
   track_title?: string | null;
   track_artist?: string | null;
 };
@@ -69,6 +70,7 @@ function mapStatus(row: StatusRow | null): ProfileStatus {
   return {
     moodValue: row.mood_value,
     thought: row.thought,
+    trackId: row.track_id,
     trackTitle: row.track_title,
     trackArtist: row.track_artist,
   };
@@ -116,6 +118,7 @@ function snapshotToStatus(snapshot: unknown): StatusPostPayload | null {
   return {
     moodValue: (s.moodValue ?? s.mood_value) as number | null | undefined,
     thought: (s.thought as string | null) ?? null,
+    trackId: (s.trackId ?? s.track_id) as string | null | undefined,
     trackTitle: (s.trackTitle ?? s.track_title) as string | null | undefined,
     trackArtist: (s.trackArtist ?? s.track_artist) as string | null | undefined,
   };

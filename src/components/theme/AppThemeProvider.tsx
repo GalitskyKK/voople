@@ -36,12 +36,15 @@ function applyTheme(themeId: AppThemeId) {
 }
 
 export function AppThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeId, setThemeIdState] = useState<AppThemeId>(() => {
-    if (typeof window === "undefined") return DEFAULT_APP_THEME_ID;
-    return getAppTheme(window.localStorage.getItem(STORAGE_KEY)).id;
-  });
+  const [themeId, setThemeIdState] = useState<AppThemeId>(DEFAULT_APP_THEME_ID);
+  const [themeReady, setThemeReady] = useState(false);
 
   const theme = useMemo(() => getAppTheme(themeId), [themeId]);
+
+  useEffect(() => {
+    setThemeIdState(getAppTheme(window.localStorage.getItem(STORAGE_KEY)).id);
+    setThemeReady(true);
+  }, []);
 
   useEffect(() => {
     applyTheme(themeId);
@@ -62,7 +65,7 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppThemeContext.Provider value={value}>
-      <AppThemeBackground />
+      {themeReady ? <AppThemeBackground /> : null}
       {children}
     </AppThemeContext.Provider>
   );

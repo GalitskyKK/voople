@@ -4,7 +4,9 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 
 import { COPY } from "@/lib/constants/copy";
+import { mobileFabBottomWithPlayer, MOBILE_FAB_BOTTOM_DEFAULT } from "@/lib/layout/mobile-chrome";
 import { trpc } from "@/lib/trpc/client";
+import { usePlayerStore } from "@/stores/player.store";
 import { MediaUploadControl } from "@/components/media/MediaUploadControl";
 import { PostComposer } from "@/components/feed/PostComposer";
 import { Button } from "@/components/ui/Button";
@@ -43,6 +45,8 @@ export function CreatePostFab() {
   });
 
   const canPost = Boolean(sessionUser);
+  const playerActive = usePlayerStore((s) => s.current != null);
+  const mobilePlayerExpanded = usePlayerStore((s) => s.mobilePlayerExpanded);
 
   const handlePublish = () => {
     setFormError(null);
@@ -65,7 +69,12 @@ export function CreatePostFab() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="voople-fab-create fixed bottom-22 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-white text-black shadow-lg transition-transform hover:scale-105 active:scale-95 lg:hidden"
+        className="voople-fab-create fixed right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-white text-black shadow-lg transition-[bottom] duration-200 hover:scale-105 active:scale-95 lg:hidden"
+        style={{
+          bottom: playerActive
+            ? mobileFabBottomWithPlayer(mobilePlayerExpanded)
+            : MOBILE_FAB_BOTTOM_DEFAULT,
+        }}
         aria-label={COPY.newPost}
       >
         <Plus className="h-6 w-6" strokeWidth={2.5} />

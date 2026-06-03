@@ -13,6 +13,7 @@ import { DesktopSidebar } from "./DesktopSidebar";
 import { FeedHeader } from "./FeedHeader";
 import { LegalAside } from "./LegalAside";
 // import { LegalMobileStrip } from "./LegalMobileStrip";
+import { PlayerShell } from "@/components/player/PlayerShell";
 import { ScrollContainerProvider, type ScrollContainerMode } from "./ScrollContainerContext";
 
 const RESERVED_SLUGS = new Set([
@@ -72,6 +73,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       )}
     >
       <DesktopSidebar />
+      <PlayerShell />
       <div
         className={cn(
           "voople-shell__column flex min-h-screen min-w-0 flex-1 flex-col lg:ml-[260px]",

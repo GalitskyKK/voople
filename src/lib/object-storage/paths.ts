@@ -1,8 +1,12 @@
 import type { UploadPurpose } from "./types";
 
 export function buildUploadKey(purpose: UploadPurpose, userId: string, extension: string) {
-  const safeExt = extension.replace(/[^a-z0-9]/gi, "").slice(0, 5) || "webp";
+  const safeExt = extension.replace(/[^a-z0-9]/gi, "").slice(0, 8) || "bin";
   return `uploads/${purpose}/${userId}/${crypto.randomUUID()}.${safeExt}`;
+}
+
+export function isPrivateChatMediaKey(key: string | null | undefined): key is string {
+  return Boolean(key?.startsWith("uploads/chat/"));
 }
 
 export function assertOwnedUploadKey(key: string, userId: string, purpose: UploadPurpose) {

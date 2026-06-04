@@ -1,5 +1,10 @@
+import {
+  buildUploadKey,
+  chatAttachmentKindFromKey,
+  copyObject,
+  publicAssetUrl,
+} from "@/lib/object-storage";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { publicAssetUrl } from "@/lib/object-storage";
 import { resolvePublicMediaKey } from "@/server/services/upload.service";
 import type { PlaylistTrackView, UserPlaylistView } from "@/types/playlist";
 
@@ -184,6 +189,117 @@ export async function createTrackFromUploadRest(
   }
 
   return track;
+}
+
+export async function addTrackFromChatRest(
+  userId: string,
+  sourceTrackId: string,
+  metadata?: { title: string; artist: string },
+) {
+  const admin = getAdminClient();
+
+  const { data: source, error: sourceErr } = await admin
+    .from("playlist_tracks")
+    .select("id, user_id, title, artist, file_url, duration_seconds")
+    .eq("id", sourceTrackId)
+    .maybeSingle();
+
+  if (sourceErr) throw new Error(sourceErr.message);
+  if (!source) throw new Error("Трек не найден");
+
+  const row = source as PlaylistTrackRow;
+  if (row.user_id === userId) {
+    return mapTrackRow(row);
+  }
+
+  const { data: duplicate, error: dupErr } = await admin
+    .from("playlist_tracks")
+    .select("id, user_id, title, artist, file_url, duration_seconds")
+    .eq("user_id", userId)
+    .eq("file_url", row.file_url)
+    .maybeSingle();
+
+  if (dupErr) throw new Error(dupErr.message);
+  if (duplicate) {
+    return mapTrackRow(duplicate as PlaylistTrackRow);
+  }
+
+  const id = crypto.randomUUID();
+  const { data, error } = await admin
+    .from("playlist_tracks")
+    .insert({
+      id,
+      user_id: userId,
+      title: metadata?.title.trim() || row.title,
+      artist: metadata?.artist.trim() || row.artist,
+      file_url: row.file_url,
+      duration_seconds: row.duration_seconds,
+      added_from: "chat",
+    })
+    .select("id, user_id, title, artist, file_url, duration_seconds")
+    .single();
+
+  if (error) throw new Error(error.message);
+  return mapTrackRow(data as PlaylistTrackRow);
+}
+
+export async function addTrackFromChatMessageRest(
+  recipientUserId: string,
+  messageId: string,
+  metadata: { title: string; artist: string },
+) {
+  const admin = getAdminClient();
+
+  const title = metadata.title.trim();
+  const artist = metadata.artist.trim();
+  if (!title || !artist) throw new Error("Укажите название и исполнителя");
+
+  const { data: message, error: msgErr } = await admin
+    .from("messages")
+    .select("id, chat_id, sender_id, media_url, media_title, media_artist, shared_track_id")
+    .eq("id", messageId)
+    .maybeSingle();
+
+  if (msgErr) throw new Error(msgErr.message);
+  if (!message) throw new Error("Сообщение не найдено");
+
+  const { data: membership, error: memErr } = await admin
+    .from("chat_members")
+    .select("user_id")
+    .eq("chat_id", message.chat_id as string)
+    .eq("user_id", recipientUserId)
+    .maybeSingle();
+
+  if (memErr) throw new Error(memErr.message);
+  if (!membership) throw new Error("Нет доступа к чату");
+
+  const sharedTrackId = message.shared_track_id as string | null;
+  if (sharedTrackId) {
+    return addTrackFromChatRest(recipientUserId, sharedTrackId, { title, artist });
+  }
+
+  const mediaKey = message.media_url as string | null;
+  if (!mediaKey || chatAttachmentKindFromKey(mediaKey) !== "audio") {
+    throw new Error("В сообщении нет музыки для плейлиста");
+  }
+
+  const extension = mediaKey.split(".").pop() ?? "mp3";
+  const destKey = buildUploadKey("track", recipientUserId, extension);
+
+  await copyObject({
+    sourceBucket: "private",
+    sourceKey: mediaKey,
+    destBucket: "public",
+    destKey,
+  });
+
+  return insertPlaylistTrackRest({
+    userId: recipientUserId,
+    title,
+    artist,
+    fileKey: destKey,
+    durationSeconds: null,
+  });
 }
 
 export async function getTrackByIdRest(

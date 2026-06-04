@@ -1,14 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { useRealtimeInbox } from "@/hooks/useRealtimeChat";
+import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 import { trpc } from "@/lib/trpc/client";
+import { cn } from "@/lib/utils";
 
-export function ChatList() {
+type ChatListProps = {
+  activeChatId?: string | null;
+};
+
+export function ChatList({ activeChatId = null }: ChatListProps) {
+  const pathname = usePathname();
+  const { onlineUserIds } = useOnlineUsers();
   const { data: me } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
   useRealtimeInbox(me?.id);
 
@@ -18,52 +27,61 @@ export function ChatList() {
   });
 
   if (isLoading) {
-    return <div className="mt-4 h-32 animate-pulse rounded-2xl bg-white/5" />;
+    return <div className="h-32 animate-pulse rounded-2xl bg-white/5" />;
   }
 
   if (error) {
-    return <p className="mt-4 text-sm text-red-400">{error.message}</p>;
+    return <p className="text-sm text-red-400">{error.message}</p>;
   }
 
   if (!data?.length) {
     return (
-      <p className="mt-4 text-sm text-white/50">
+      <p className="text-sm text-[var(--app-muted)]">
         Пока нет диалогов. Найдите человека в поиске и нажмите «Написать» на профиле.
       </p>
     );
   }
 
   return (
-    <ul className="voople-chat-list mt-4 space-y-2">
+    <ul className="voople-chat-list space-y-1">
       {data.map((chat) => {
         const title = chat.otherUser?.displayName ?? "Чат";
-        const preview = chat.lastMessage?.text ?? "Нет сообщений";
+        const preview = chat.lastMessage?.text?.trim() || (chat.lastMessage ? "Вложение" : "Нет сообщений");
+        const isActive = activeChatId === chat.id || pathname === `/messages/${chat.id}`;
+        const isOnline = Boolean(chat.otherUser?.id && onlineUserIds.has(chat.otherUser.id));
 
         return (
           <li key={chat.id}>
             <Link
               href={`/messages/${chat.id}`}
-              className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/3 px-3 py-3 hover:bg-white/5"
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-3 py-3 transition-colors",
+                isActive
+                  ? "bg-[var(--app-accent-soft)]"
+                  : "hover:bg-[var(--app-surface-soft)]",
+              )}
             >
-              <ProfileAvatar displayName={title} size="sm" />
+              <ProfileAvatar displayName={title} size="sm" isOnline={isOnline} />
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-baseline justify-between gap-2">
                   <DisplayNameWithPin
                     hasVooplePlus={chat.otherUser?.hasVooplePlus}
                     size="sm"
-                    className="min-w-0 font-medium text-white"
+                    className="min-w-0 font-medium"
                   >
                     {title}
                   </DisplayNameWithPin>
                   {chat.lastMessage && (
                     <RelativeTime
                       iso={chat.lastMessage.createdAt}
-                      className="shrink-0 text-xs text-white/40"
+                      className="shrink-0 text-xs text-[var(--app-muted)]"
                     />
                   )}
                 </div>
-                <p className="truncate text-sm text-white/50">@{chat.otherUser?.username}</p>
-                <p className="mt-1 truncate text-sm text-white/60">{preview}</p>
+                <p className="truncate text-xs text-[var(--app-muted)]">@{chat.otherUser?.username}</p>
+                <p className="mt-0.5 truncate text-sm text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+                  {preview}
+                </p>
               </div>
             </Link>
           </li>

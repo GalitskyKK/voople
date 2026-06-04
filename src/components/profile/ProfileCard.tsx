@@ -35,6 +35,7 @@ export function ProfileCard({
     >
       <ProfileCardEffectLayer customization={customization} />
       <ProfileCardHeader
+        userId={profile.id}
         customization={customization}
         displayName={profile.displayName}
         username={profile.username}

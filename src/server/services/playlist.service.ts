@@ -1,5 +1,7 @@
 import { getProfileByUsername } from "@/server/services/profile.service";
 import {
+  addTrackFromChatMessageRest,
+  addTrackFromChatRest,
   createTrackFromUploadRest,
   deletePlaylistTrackRest,
   listPlaylistForUserRest,
@@ -17,6 +19,8 @@ export async function getPlaylistForUser(userId: string) {
 }
 
 export {
+  addTrackFromChatMessageRest as addTrackFromChatMessage,
+  addTrackFromChatRest as addTrackFromChat,
   createTrackFromUploadRest as createTrackFromUpload,
   deletePlaylistTrackRest as deleteTrack,
   setUserAnthemRest as setAnthem,

@@ -4,29 +4,16 @@ import { useEffect, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
 import { trpc } from "@/lib/trpc/client";
-import type { ChatListItem, ChatMessageView } from "@/server/services/chat.service";
-
 type RealtimeRow = {
   id: string;
   chat_id: string;
   sender_id: string;
   text: string | null;
+  media_url: string | null;
+  shared_track_id: string | null;
+  reply_to_message_id: string | null;
   created_at: string;
-};
-
-function rowToMessage(row: RealtimeRow, viewerId: string): ChatMessageView {
-  return {
-    id: row.id,
-    senderId: row.sender_id,
-    text: row.text,
-    createdAt: row.created_at,
-    isMine: row.sender_id === viewerId,
-  };
-}
-
-type MessagesCache = {
-  messages: ChatMessageView[];
-  otherUser: ChatListItem["otherUser"];
+  read_at: string | null;
 };
 
 type RealtimeStatus = "idle" | "connecting" | "subscribed" | "degraded";
@@ -36,18 +23,7 @@ type RealtimeState = {
   lastEventAt: string | null;
 };
 
-function mergeMessage(current: MessagesCache | undefined, incoming: ChatMessageView) {
-  if (!current) return { messages: [incoming], otherUser: null };
-  if (current.messages.some((m) => m.id === incoming.id)) return current;
-  return {
-    ...current,
-    messages: [...current.messages, incoming].sort((a, b) =>
-      a.createdAt.localeCompare(b.createdAt),
-    ),
-  };
-}
-
-/** Подписка на INSERT в `messages` для чата (нужны RLS + `03-realtime-messages.sql`). */
+/** Подписка на INSERT/UPDATE в `messages` для чата. */
 export function useRealtimeChat(chatId: string, viewerId: string | null | undefined) {
   const utils = trpc.useUtils();
   const subscriptionKey = chatId && viewerId ? `${chatId}:${viewerId}` : null;
@@ -80,20 +56,37 @@ export function useRealtimeChat(chatId: string, viewerId: string | null | undefi
           table: "messages",
           filter: `chat_id=eq.${chatId}`,
         },
-        (payload) => {
-          const row = payload.new as RealtimeRow;
-          const incoming = rowToMessage(row, viewerId);
-
+        () => {
           setRealtimeState({
             key: subscriptionKey,
             status: "subscribed",
             lastEventAt: new Date().toISOString(),
           });
-          utils.chat.getMessages.setData({ chatId }, (current) =>
-            mergeMessage(current, incoming),
-          );
-
+          void utils.chat.getMessages.invalidate({ chatId });
           void utils.chat.list.invalidate();
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `chat_id=eq.${chatId}`,
+        },
+        (payload) => {
+          const row = payload.new as RealtimeRow;
+          if (!row.read_at) return;
+
+          utils.chat.getMessages.setData({ chatId }, (current) => {
+            if (!current) return current;
+            return {
+              ...current,
+              messages: current.messages.map((message) =>
+                message.isMine ? { ...message, readAt: row.read_at } : message,
+              ),
+            };
+          });
         },
       )
       .subscribe((status) => {
@@ -139,7 +132,7 @@ export function useRealtimeChat(chatId: string, viewerId: string | null | undefi
   };
 }
 
-/** Обновление списка диалогов при новых сообщениях (RLS отдаёт только свои чаты). */
+/** Обновление списка диалогов при новых сообщениях. */
 export function useRealtimeInbox(viewerId: string | null | undefined) {
   const utils = trpc.useUtils();
 

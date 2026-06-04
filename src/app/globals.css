@@ -334,6 +334,27 @@ body {
   /* feed + profile scroll area */
 }
 
+/* Messages: fixed viewport; list / thread scroll inside data-voople-scroll regions */
+.voople-messages-page {
+}
+
+.voople-chat-window {
+  /* header + messages + composer in flex column */
+}
+
+.voople-chat-window__messages {
+  touch-action: pan-y;
+}
+
+.voople-chat-bubble__body {
+  box-shadow: var(--app-shadow-sm);
+}
+
+.voople-chat-audio__player {
+  width: min(100%, 16rem);
+  height: 2.25rem;
+}
+
 .voople-sidebar__link {
 }
 

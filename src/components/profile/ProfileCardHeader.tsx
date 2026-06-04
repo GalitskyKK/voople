@@ -3,11 +3,12 @@ import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import type { ProfileCustomizationView } from "@/types/domain";
 import { DisplayNameWithPin } from "./DisplayNameWithPin";
-import { ProfileAvatar } from "./ProfileAvatar";
+import { ProfileAvatarWithPresence } from "./ProfileAvatarWithPresence";
 import { ProfileBanner } from "./ProfileBanner";
 import { ProfileEffect } from "./ProfileEffect";
 
 export type ProfileCardHeaderProps = {
+  userId?: string;
   customization: ProfileCustomizationView;
   displayName: string;
   username: string;
@@ -22,6 +23,7 @@ export type ProfileCardHeaderProps = {
  * Рендерится внутри `<article class="profile-card">` — см. ProfileCard, CustomizationEditor.
  */
 export function ProfileCardHeader({
+  userId,
   customization,
   displayName,
   username,
@@ -47,7 +49,8 @@ export function ProfileCardHeader({
 
       <div className={cn("relative z-10 px-4", compact ? "pb-4" : "pb-0")}>
         <div className="-mt-9 flex items-end justify-between gap-2 overflow-visible">
-          <ProfileAvatar
+          <ProfileAvatarWithPresence
+            userId={userId}
             displayName={displayName}
             ring={flags.hasAvatarRing}
             decorationUrl={assets.avatarDecorationUrl}

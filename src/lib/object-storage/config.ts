@@ -6,7 +6,12 @@ export const UPLOAD_LIMITS: Record<UploadPurpose, { maxBytes: number }> = {
   avatar: { maxBytes: 5 * 1024 * 1024 },
   banner: { maxBytes: 5 * 1024 * 1024 },
   track: { maxBytes: 30 * 1024 * 1024 },
+  chat: { maxBytes: 15 * 1024 * 1024 },
 };
+
+export function bucketForPurpose(purpose: UploadPurpose): "public" | "private" {
+  return purpose === "chat" ? "private" : "public";
+}
 
 export function getObjectStorageConfig() {
   const endpoint = process.env.S3_ENDPOINT;
@@ -28,5 +33,14 @@ export function getObjectStorageConfig() {
     publicBucket,
     privateBucket,
     cdnBase,
+    forcePathStyle: resolveForcePathStyle(endpoint),
   };
+}
+
+/** Selectel S3 требует path-style URL; иначе presigned PUT часто даёт 403. */
+export function resolveForcePathStyle(endpoint: string) {
+  const override = process.env.S3_FORCE_PATH_STYLE?.trim().toLowerCase();
+  if (override === "true" || override === "1") return true;
+  if (override === "false" || override === "0") return false;
+  return endpoint.includes("selcloud") || endpoint.includes("selectel");
 }

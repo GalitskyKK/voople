@@ -2,12 +2,13 @@ import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 
-type ProfileAvatarProps = {
+export type ProfileAvatarProps = {
   displayName: string;
   size?: "sm" | "md" | "lg";
   ring?: boolean;
   decorationUrl?: string | null;
   animatedAvatarUrl?: string | null;
+  isOnline?: boolean;
 };
 
 const sizes = {
@@ -16,12 +17,19 @@ const sizes = {
   lg: { box: "h-20 w-20 text-xl", img: 80 },
 };
 
+const onlineDotSize = {
+  sm: "h-2.5 w-2.5 border",
+  md: "h-3 w-3 border-2",
+  lg: "h-3.5 w-3.5 border-2",
+} as const;
+
 export function ProfileAvatar({
   displayName,
   size = "md",
   ring = false,
   decorationUrl,
   animatedAvatarUrl,
+  isOnline = false,
 }: ProfileAvatarProps) {
   const initial = displayName.charAt(0).toUpperCase();
   const s = sizes[size];
@@ -56,6 +64,15 @@ export function ProfileAvatar({
           initial
         )}
       </div>
+      {isOnline && (
+        <span
+          className={cn(
+            "absolute bottom-0 right-0 z-30 rounded-full border-[var(--background)] bg-emerald-500",
+            onlineDotSize[size],
+          )}
+          aria-label="В сети"
+        />
+      )}
     </div>
   );
 }

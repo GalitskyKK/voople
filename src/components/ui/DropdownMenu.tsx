@@ -1,6 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type HTMLAttributes,
+  type MouseEvent,
+} from "react";
 import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/utils";
@@ -110,10 +120,22 @@ export function DropdownMenu({
         )
       : null;
 
+  const triggerNode = isValidElement<{ onClick?: (event: MouseEvent<HTMLElement>) => void }>(trigger)
+    ? cloneElement(trigger, {
+        onClick: (event: MouseEvent<HTMLElement>) => {
+          trigger.props.onClick?.(event);
+          if (!event.defaultPrevented) {
+            event.stopPropagation();
+            onOpenChange(!open);
+          }
+        },
+      } as HTMLAttributes<HTMLElement>)
+    : trigger;
+
   return (
     <>
       <div ref={triggerRef} className={cn("inline-flex", className)}>
-        {trigger}
+        {triggerNode}
       </div>
       {menu}
     </>

@@ -1,11 +1,15 @@
 import { NotificationsList } from "@/components/notifications/NotificationsList";
+import { SectionFrame } from "@/components/layout/SectionFrame";
+import { SectionPageHeader } from "@/components/layout/SectionPageHeader";
 import { COPY } from "@/lib/constants/copy";
 
 export default function NotificationsPage() {
   return (
-    <div className="voople-notifications-page mx-auto max-w-xl px-4 py-6">
-      <h1 className="text-2xl font-bold">{COPY.notifications}</h1>
-      <NotificationsList />
-    </div>
+    <SectionFrame className="py-4 lg:py-6">
+      <SectionPageHeader title={COPY.notifications} />
+      <div className="px-4 pb-4 lg:px-6">
+        <NotificationsList />
+      </div>
+    </SectionFrame>
   );
 }

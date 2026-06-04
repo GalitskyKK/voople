@@ -5,6 +5,8 @@ import { assertRateLimit } from "@/lib/ratelimit-guard";
 import { rateLimits } from "@/lib/ratelimit";
 import { getProfileByUsername } from "@/server/services/profile.service";
 import {
+  addTrackFromChat,
+  addTrackFromChatMessage,
   createTrackFromUpload,
   deleteTrack,
   getPlaylistByUsername,
@@ -29,6 +31,41 @@ export const playlistRouter = createTRPCRouter({
     }),
 
   listMine: protectedProcedure.query(({ ctx }) => getPlaylistForUser(ctx.user.id)),
+
+  addFromChat: protectedProcedure
+    .input(z.object({ trackId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await addTrackFromChat(ctx.user.id, input.trackId);
+      } catch (e) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: e instanceof Error ? e.message : "Не удалось добавить трек",
+        });
+      }
+    }),
+
+  addFromChatMessage: protectedProcedure
+    .input(
+      z.object({
+        messageId: z.string().uuid(),
+        title: z.string().min(1).max(100),
+        artist: z.string().min(1).max(100),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await addTrackFromChatMessage(ctx.user.id, input.messageId, {
+          title: input.title,
+          artist: input.artist,
+        });
+      } catch (e) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: e instanceof Error ? e.message : "Не удалось добавить в плейлист",
+        });
+      }
+    }),
 
   createFromUpload: protectedProcedure
     .input(

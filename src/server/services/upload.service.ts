@@ -1,10 +1,14 @@
 import {
   assertOwnedUploadKey,
   buildUploadKey,
+  bucketForPurpose,
+  createPresignedGetUrl,
   createPresignedPutUrl,
   extensionForMime,
   getObjectStorageConfig,
+  isPrivateChatMediaKey,
   mediaTypeForMime,
+  parseChatUploadMime,
   publicAssetUrl,
   UPLOAD_LIMITS,
   type PresignedUploadView,
@@ -31,19 +35,37 @@ export async function createPresignedUpload(input: {
   const extension =
     input.purpose === "track"
       ? extensionForAudioMime(input.contentType)
-      : extensionForMime(input.contentType);
-  const mediaType = input.purpose === "track" ? null : mediaTypeForMime(input.contentType);
+      : input.purpose === "chat"
+        ? parseChatUploadMime(input.contentType).extension
+        : extensionForMime(input.contentType);
+  const mediaType =
+    input.purpose === "track" || input.purpose === "chat"
+      ? null
+      : mediaTypeForMime(input.contentType);
   const key = buildUploadKey(input.purpose, input.userId, extension);
+  const bucketKind = bucketForPurpose(input.purpose);
 
   const { uploadUrl, expiresIn } = await createPresignedPutUrl({
     key,
     contentType: input.contentType,
+    purpose: input.purpose,
   });
 
-  const publicUrl = publicAssetUrl(key);
-  if (!publicUrl) throw new Error("Не удалось сформировать URL файла");
+  const publicUrl = bucketKind === "public" ? publicAssetUrl(key) : null;
+  if (bucketKind === "public" && !publicUrl) {
+    throw new Error("Не удалось сформировать URL файла");
+  }
 
-  return { key, uploadUrl, publicUrl, mediaType, expiresIn };
+  return { key, uploadUrl, publicUrl, mediaType, expiresIn, bucket: bucketKind };
+}
+
+export async function resolveChatMediaUrl(key: string, userId: string) {
+  assertOwnedUploadKey(key, userId, "chat");
+  if (!isPrivateChatMediaKey(key)) {
+    throw new Error("Недопустимый файл чата");
+  }
+  const { downloadUrl } = await createPresignedGetUrl({ key, bucket: "private" });
+  return downloadUrl;
 }
 
 export function resolvePublicMediaKey(

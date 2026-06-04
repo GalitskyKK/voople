@@ -1,34 +1,90 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-
-import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { ArrowLeft } from "lucide-react";
 
+import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
+import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
+import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
+import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
+import type { PendingChatUpload } from "@/hooks/useChatUpload";
 import { trpc } from "@/lib/trpc/client";
-import type { ChatMessageView } from "@/server/services/chat.service";
-import { Button } from "@/components/ui/Button";
-import { MessageBubble } from "./MessageBubble";
+import type { ChatMessageView } from "@/types/chat";
+import type { PlaylistTrackView } from "@/types/playlist";
+
+import { playlistMetadataDefaultsFromMessage } from "@/lib/chat/playlist-from-message";
+import { Toast } from "@/components/ui/Toast";
+import { ChatComposer } from "./ChatComposer";
+import { ChatTrackMetadataDialog } from "./ChatTrackMetadataDialog";
+import { ChatDateDivider } from "./ChatDateDivider";
+import { ChatMediaLightbox } from "./ChatMediaLightbox";
+import { ChatMessageBubble } from "./ChatMessageBubble";
 
 type ChatWindowProps = {
   chatId: string;
 };
 
-function createOptimisticMessage(id: string, text: string): ChatMessageView {
+function buildOptimisticMessage(
+  input: {
+    messageId: string;
+    senderId: string;
+    text?: string;
+    replyTo?: ChatMessageView | null;
+    pendingUpload?: PendingChatUpload | null;
+    pendingTrack?: PlaylistTrackView | null;
+  },
+): ChatMessageView {
+  const attachment = input.pendingTrack
+    ? {
+        kind: "track" as const,
+        track: input.pendingTrack,
+        ownerId: input.senderId,
+      }
+    : input.pendingUpload?.kind === "audio"
+      ? {
+          kind: "audio" as const,
+          url: "",
+          title: input.pendingUpload.title ?? "Трек",
+          artist: input.pendingUpload.artist ?? "…",
+          fileName: input.pendingUpload.fileName,
+        }
+      : input.pendingUpload?.previewUrl
+        ? { kind: "image" as const, url: input.pendingUpload.previewUrl }
+        : null;
+
   return {
-    id,
-    senderId: "me",
-    text,
+    id: input.messageId,
+    senderId: input.senderId,
+    text: input.text?.trim() || null,
     createdAt: new Date().toISOString(),
     isMine: true,
+    readAt: null,
+    replyTo: input.replyTo
+      ? {
+          id: input.replyTo.id,
+          senderId: input.replyTo.senderId,
+          text: input.replyTo.text,
+          isMine: input.replyTo.isMine,
+        }
+      : null,
+    attachment,
   };
 }
 
 export function ChatWindow({ chatId }: ChatWindowProps) {
   const [text, setText] = useState("");
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [replyTo, setReplyTo] = useState<ChatMessageView | null>(null);
+  const [pendingUpload, setPendingUpload] = useState<PendingChatUpload | null>(null);
+  const [pendingTrack, setPendingTrack] = useState<PlaylistTrackView | null>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [playlistConfirmMessage, setPlaylistConfirmMessage] = useState<ChatMessageView | null>(
+    null,
+  );
+  const { onlineUserIds } = useOnlineUsers();
   const utils = trpc.useUtils();
 
   const { data: me } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
@@ -45,10 +101,21 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
 
   const send = trpc.chat.send.useMutation({
     onMutate: async (input) => {
-      const trimmed = input.text.trim();
       await utils.chat.getMessages.cancel({ chatId });
       const prev = utils.chat.getMessages.getData({ chatId });
-      const optimistic = createOptimisticMessage(input.messageId, trimmed);
+      const replyMessage = input.replyToMessageId
+        ? prev?.messages.find((m) => m.id === input.replyToMessageId) ?? replyTo
+        : null;
+
+      const optimistic = buildOptimisticMessage({
+        messageId: input.messageId,
+        senderId: me?.id ?? "me",
+        text: input.text,
+        replyTo: replyMessage,
+        pendingUpload,
+        pendingTrack,
+      });
+
       utils.chat.getMessages.setData({ chatId }, (current) =>
         current?.messages.some((message) => message.id === optimistic.id)
           ? current
@@ -56,7 +123,11 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
             ? { ...current, messages: [...current.messages, optimistic] }
             : { messages: [optimistic], otherUser: null },
       );
+
       setText("");
+      setReplyTo(null);
+      setPendingUpload(null);
+      setPendingTrack(null);
       return { prev };
     },
     onError: (_err, _input, ctx) => {
@@ -75,77 +146,181 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     },
   });
 
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    const el = messagesRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior });
+  }, []);
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [data?.messages.length]);
+    scrollToBottom();
+  }, [data?.messages.length, scrollToBottom]);
+
+  const removeMessage = trpc.chat.deleteMessage.useMutation({
+    onSuccess: (_data, variables) => {
+      utils.chat.getMessages.setData({ chatId }, (current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          messages: current.messages.filter((m) => m.id !== variables.messageId),
+        };
+      });
+      void utils.chat.list.invalidate();
+    },
+    onError: (err) => {
+      setToast(err.message);
+      window.setTimeout(() => setToast(null), 3500);
+    },
+  });
+
+  const addToPlaylist = trpc.playlist.addFromChatMessage.useMutation({
+    onSuccess: () => {
+      setPlaylistConfirmMessage(null);
+      setToast("Добавлено в плейлист");
+      void utils.playlist.listMine.invalidate();
+      window.setTimeout(() => setToast(null), 2500);
+    },
+    onError: (err) => {
+      setToast(err.message);
+      window.setTimeout(() => setToast(null), 3500);
+    },
+  });
 
   const handleSend = () => {
     const trimmed = text.trim();
-    if (!trimmed) return;
-    send.mutate({ chatId, messageId: crypto.randomUUID(), text: trimmed });
+    if (!trimmed && !pendingUpload && !pendingTrack) return;
+
+    const isAudio = pendingUpload?.kind === "audio";
+    send.mutate({
+      chatId,
+      messageId: crypto.randomUUID(),
+      text: trimmed || undefined,
+      mediaKey: pendingUpload?.mediaKey,
+      mediaTitle: isAudio ? pendingUpload?.title : undefined,
+      mediaArtist: isAudio ? pendingUpload?.artist : undefined,
+      sharedTrackId: pendingTrack?.id,
+      replyToMessageId: replyTo?.id,
+    });
   };
 
   if (isLoading) {
-    return <div className="h-64 animate-pulse rounded-2xl bg-white/5" />;
+    return (
+      <div className="voople-chat-window flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 animate-pulse rounded-2xl bg-white/5" />
+      </div>
+    );
   }
 
   if (error) {
-    return <p className="text-sm text-red-400">{error.message}</p>;
+    return (
+      <div className="voople-chat-window flex min-h-0 flex-1 flex-col justify-center">
+        <p className="text-sm text-red-400">{error.message}</p>
+      </div>
+    );
   }
 
   const other = data?.otherUser;
+  const timeline = buildChatTimeline(data?.messages ?? []);
+  const viewerId = me?.id ?? null;
+  const otherOnline = Boolean(other?.id && onlineUserIds.has(other.id));
+  const playlistDefaults = playlistConfirmMessage
+    ? playlistMetadataDefaultsFromMessage(playlistConfirmMessage)
+    : null;
 
   return (
-    <div className="voople-chat-window flex h-[calc(100dvh-8rem)] flex-col">
-      <header className="mb-4 flex items-center gap-3 border-b border-white/10 pb-3">
-        <Link href="/messages" className="text-white/60 hover:text-white">
+    <div className="voople-chat-window flex min-h-0 flex-1 flex-col">
+      <header className="voople-chat-window__header flex shrink-0 items-center gap-3 border-b border-[var(--app-border)] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] lg:px-4 lg:pt-3">
+        <Link
+          href="/messages"
+          className="shrink-0 rounded-[var(--app-radius-sm)] p-1 text-[var(--app-muted)] transition-colors hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] lg:hidden"
+          aria-label="К списку сообщений"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <div className="min-w-0">
+        {other && <ProfileAvatar displayName={other.displayName} size="sm" isOnline={otherOnline} />}
+        <div className="min-w-0 flex-1">
           {other ? (
-            <DisplayNameWithPin hasVooplePlus={other.hasVooplePlus} className="font-semibold text-white">
+            <DisplayNameWithPin hasVooplePlus={other.hasVooplePlus} className="font-semibold">
               {other.displayName}
             </DisplayNameWithPin>
           ) : (
             <p className="truncate font-semibold">Чат</p>
           )}
           {other && (
-            <Link href={`/${other.username}`} className="voople-link text-sm hover:underline">
-              @{other.username}
-            </Link>
+            <p className="text-xs text-[var(--app-muted)]">
+              {otherOnline ? (
+                <span className="text-emerald-500">в сети</span>
+              ) : (
+                <Link href={`/${other.username}`} className="voople-link hover:underline">
+                  @{other.username}
+                </Link>
+              )}
+            </p>
           )}
         </div>
       </header>
 
-      <div className="voople-chat-window__messages voople-scroll min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-        {data?.messages.length === 0 && (
+      <div
+        ref={messagesRef}
+        data-voople-scroll=""
+        className="voople-chat-window__messages voople-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-1 py-3"
+      >
+        {timeline.length === 0 && (
           <p className="text-center text-sm text-white/40">Напишите первое сообщение</p>
         )}
-        {data?.messages.map((m) => (
-          <MessageBubble key={m.id} text={m.text ?? ""} isMine={m.isMine} />
-        ))}
-        <div ref={bottomRef} />
+        <div className="flex flex-col gap-1">
+          {timeline.map((item) =>
+            item.type === "date" ? (
+              <ChatDateDivider key={item.key} label={item.label} />
+            ) : (
+              <ChatMessageBubble
+                key={item.message.id}
+                message={item.message}
+                viewerId={viewerId}
+                onReply={setReplyTo}
+                onDelete={(msg) => removeMessage.mutate({ messageId: msg.id })}
+                onAddToPlaylist={(msg) => setPlaylistConfirmMessage(msg)}
+                onOpenImage={setLightboxUrl}
+              />
+            ),
+          )}
+        </div>
       </div>
 
-      <form
-        className="mt-3 flex gap-2 border-t border-white/10 pt-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSend();
-        }}
-      >
-        <input
-          type="text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Сообщение…"
-          maxLength={1000}
-          className="voople-input min-w-0 flex-1 py-2 text-sm"
+      <div className="px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:px-4 lg:pb-3">
+        <ChatComposer
+          text={text}
+          onTextChange={setText}
+          replyTo={replyTo}
+          onReplyCancel={() => setReplyTo(null)}
+          pendingUpload={pendingUpload}
+          onPendingUploadChange={setPendingUpload}
+          pendingTrack={pendingTrack}
+          onPendingTrackChange={setPendingTrack}
+          onSend={handleSend}
+          isSending={send.isPending}
         />
-        <Button type="submit" variant="primary" disabled={!text.trim()}>
-          →
-        </Button>
-      </form>
+      </div>
+
+      <ChatMediaLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+      {playlistConfirmMessage && playlistDefaults && (
+        <ChatTrackMetadataDialog
+          open
+          initialTitle={playlistDefaults.title}
+          initialArtist={playlistDefaults.artist}
+          isSubmitting={addToPlaylist.isPending}
+          error={addToPlaylist.error?.message ?? null}
+          onClose={() => setPlaylistConfirmMessage(null)}
+          onConfirm={(draft) =>
+            addToPlaylist.mutate({
+              messageId: playlistConfirmMessage.id,
+              title: draft.title,
+              artist: draft.artist,
+            })
+          }
+        />
+      )}
+      {toast && <Toast message={toast} className="z-[130]" />}
     </div>
   );
 }

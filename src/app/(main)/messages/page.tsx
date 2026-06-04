@@ -1,12 +1,4 @@
-"use client";
-
-import { ChatList } from "@/components/chat/ChatList";
-
+/** Список диалогов рендерится в MessagesLayout; эта страница — только мобильный inbox. */
 export default function MessagesPage() {
-  return (
-    <div className="mx-auto max-w-xl px-4 py-6">
-      <h1 className="mb-6 text-2xl font-bold">Сообщения</h1>
-      <ChatList />
-    </div>
-  );
+  return null;
 }

@@ -5,6 +5,10 @@ export const MOBILE_BOTTOM_NAV_HEIGHT = "3.625rem";
 export const MOBILE_PLAYER_BOTTOM =
   `calc(${MOBILE_BOTTOM_NAV_HEIGHT} + max(1rem, env(safe-area-inset-bottom)) + 0.5rem)`;
 
+/** Плеер без bottom nav (полноэкранный чат на мобилке). */
+export const MOBILE_PLAYER_BOTTOM_COMPACT =
+  "max(0.75rem, env(safe-area-inset-bottom))";
+
 /** Высота развёрнутой карточки плеера. */
 export const MOBILE_PLAYER_HEIGHT_EXPANDED = "5.75rem";
 

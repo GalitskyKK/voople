@@ -53,7 +53,7 @@ export function useMediaUpload(purpose: UploadPurpose) {
           throw new Error("Не удалось загрузить файл");
         }
 
-        if (!presigned.mediaType) {
+        if (!presigned.mediaType || !presigned.publicUrl) {
           throw new Error("Неподдерживаемый тип файла");
         }
 

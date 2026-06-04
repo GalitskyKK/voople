@@ -35,6 +35,8 @@ Upstash, TMDB, YooKassa — опционально до соответствую
 
 **Загрузка медиа (посты, комментарии, аватар):** нужны `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT`, `S3_BUCKET_PUBLIC`, `NEXT_PUBLIC_ASSETS_CDN_URL`. Без них presigned upload вернёт ошибку «Загрузка файлов не настроена».
 
+**Чат (фото/аудио во вложениях):** дополнительно `S3_BUCKET_PRIVATE=voople-uploads` и CORS на бакете. Подробно: [chat-uploads.md](./chat-uploads.md).
+
 ## Миграции (один раз)
 
 ```bash
@@ -60,6 +62,7 @@ npm run db:migrate    # или SQL Editor ниже
 13. **`drizzle/12-shop-currency-enums.sql`** — enum values (**отдельный Run**)
 14. **`drizzle/12-shop-currency.sql`** — shop, voops, payment intents
 15. **`drizzle/13-upload-media.sql`** — media в постах и комментариях
+16. **`drizzle/18-chat-messages-reply.sql`** — ответы на сообщения в чате
 
 ## Проверка магазина
 

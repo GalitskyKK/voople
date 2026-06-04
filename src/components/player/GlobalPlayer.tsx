@@ -10,9 +10,13 @@ import {
   X,
 } from "lucide-react";
 
+import { usePathname } from "next/navigation";
+
+import { useIsLgViewport } from "@/hooks/useIsLgViewport";
 import { useMobilePlayerAutoCollapse } from "@/hooks/useMobilePlayerAutoCollapse";
 import { formatPlaybackTime } from "@/lib/player/format";
-import { MOBILE_PLAYER_BOTTOM } from "@/lib/layout/mobile-chrome";
+import { MOBILE_PLAYER_BOTTOM, MOBILE_PLAYER_BOTTOM_COMPACT } from "@/lib/layout/mobile-chrome";
+import { isMessagesThreadPath } from "@/lib/layout/messages-path";
 import { cn } from "@/lib/utils";
 import { usePlayerStore } from "@/stores/player.store";
 import { usePlaylistUiStore } from "@/stores/playlist-ui.store";
@@ -56,6 +60,13 @@ type GlobalPlayerProps = {
 };
 
 export function GlobalPlayer({ variant }: GlobalPlayerProps) {
+  const pathname = usePathname();
+  const isLg = useIsLgViewport();
+  const mobilePlayerBottom =
+    variant === "mobile" && !isLg && isMessagesThreadPath(pathname)
+      ? MOBILE_PLAYER_BOTTOM_COMPACT
+      : MOBILE_PLAYER_BOTTOM;
+
   const current = usePlayerStore((s) => s.current);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const currentTime = usePlayerStore((s) => s.currentTime);
@@ -93,7 +104,7 @@ export function GlobalPlayer({ variant }: GlobalPlayerProps) {
     return (
       <div
         className="pointer-events-none fixed left-0 right-0 z-[29] flex justify-center px-3 lg:hidden"
-        style={{ bottom: MOBILE_PLAYER_BOTTOM }}
+        style={{ bottom: mobilePlayerBottom }}
       >
         <div
           role="presentation"

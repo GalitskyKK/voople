@@ -40,10 +40,10 @@ NEXT_PUBLIC_APP_URL=https://<prod-domain>
 NEXT_PUBLIC_ASSETS_CDN_URL=https://cdn.voople.ru
 S3_ENDPOINT=https://s3.ru-3.storage.selcloud.ru
 S3_BUCKET_PUBLIC=voople-assets
+S3_BUCKET_PRIVATE=voople-uploads
 S3_REGION=ru-3
-# Server upload keys — when upload flow is implemented
-# S3_ACCESS_KEY_ID=
-# S3_SECRET_ACCESS_KEY=
+S3_ACCESS_KEY_ID=
+S3_SECRET_ACCESS_KEY=
 
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=

@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   boolean,
   index,
   integer,
@@ -382,8 +383,13 @@ export const messages = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     text: varchar("text", { length: 1000 }),
     mediaUrl: varchar("media_url", { length: 500 }),
+    mediaTitle: varchar("media_title", { length: 100 }),
+    mediaArtist: varchar("media_artist", { length: 100 }),
     sharedPostId: uuid("shared_post_id").references(() => posts.id),
     sharedTrackId: uuid("shared_track_id").references(() => playlistTracks.id),
+    replyToMessageId: uuid("reply_to_message_id").references((): AnyPgColumn => messages.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     readAt: timestamp("read_at"),
   },

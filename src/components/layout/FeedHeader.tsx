@@ -20,7 +20,7 @@ export function FeedHeader() {
   };
 
   return (
-    <header className="voople-feed-header sticky top-12 z-20 shrink-0 px-4 py-3 lg:static lg:top-auto lg:z-auto lg:px-6">
+    <header className="voople-feed-header sticky top-12 z-20 shrink-0 bg-[color-mix(in_srgb,var(--background)_92%,transparent)] px-4 py-3 backdrop-blur-md lg:top-0 lg:px-6">
       <nav
         className="voople-feed-header__tabs voople-panel mx-auto flex w-full max-w-2xl gap-1 p-1"
         aria-label="Разделы ленты"

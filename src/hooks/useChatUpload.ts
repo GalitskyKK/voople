@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 
+import { readJsonResponse } from "@/lib/http/json-response";
 import { chatAttachmentKindFromKey } from "@/lib/object-storage";
 import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
 import type { ChatUploadKind } from "@/lib/object-storage/chat-mime";
@@ -33,14 +34,14 @@ async function uploadViaServer(file: File): Promise<string> {
     credentials: "include",
   });
 
-  const payload = (await response.json().catch(() => null)) as { key?: string; error?: string } | null;
+  const payload = await readJsonResponse<{ key?: string; error?: string }>(response);
 
   if (!response.ok) {
     throw new Error(payload?.error ?? `Ошибка загрузки (${response.status})`);
   }
 
   if (!payload?.key) {
-    throw new Error("Сервер не вернул ключ файла");
+    throw new Error(payload?.error ?? "Сервер не вернул ключ файла");
   }
 
   return payload.key;

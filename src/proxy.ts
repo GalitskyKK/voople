@@ -4,6 +4,9 @@ import { NextResponse, type NextRequest } from "next/server"
 const PUBLIC_PATHS = ["/login", "/register", "/feed", "/explore", "/shop", "/api"]
 
 function isPublicPath(pathname: string) {
+  if (pathname === "/favicon.ico" || pathname.startsWith("/favicon/")) {
+    return true
+  }
   if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     return true
   }
@@ -59,5 +62,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"]
+  matcher: [
+    "/((?!_next/static|_next/image|favicon/|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|webmanifest|ico)$).*)",
+  ],
 }

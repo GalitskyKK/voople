@@ -6,6 +6,7 @@ import { createTRPCReact } from "@trpc/react-query";
 import superjson from "superjson";
 import { useState } from "react";
 
+import { assertJsonResponse } from "@/lib/http/json-response";
 import type { AppRouter } from "@/server/trpc/root";
 
 export const trpc = createTRPCReact<AppRouter>();
@@ -37,6 +38,13 @@ export function TRPCReactProvider({ children }: { children: React.ReactNode }) {
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
           transformer: superjson,
+          fetch: async (url, options) => {
+            const response = await fetch(url, {
+              ...options,
+              credentials: "include",
+            });
+            return assertJsonResponse(response);
+          },
         }),
       ],
     }),

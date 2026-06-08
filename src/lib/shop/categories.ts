@@ -22,37 +22,37 @@ export const SHOP_DISPLAY_SECTIONS: ShopDisplaySection[] = [
   {
     id: "profile_banner",
     title: "Баннер профиля",
-    hint: "Верх карточки профиля",
+    hint: "Украсьте свой баннер",
     kinds: ["banner"],
   },
   {
     id: "profile_effect",
     title: "Эффект профиля",
-    hint: "Анимация поверх всей карточки",
+    hint: "Впечатляйте эффектом профиля",
     kinds: ["effect"],
   },
   {
     id: "avatar",
     title: "Аватар",
-    hint: "Анимация, украшение и кольцо вокруг круга",
+    hint: "Преобразите свой аватар",
     kinds: ["animated_avatar", "decoration", "ring"],
   },
   {
     id: "profile_name",
     title: "Имя в профиле",
-    hint: "Цвет и стиль display name",
+    hint: "Выделите своё имя эффектом",
     kinds: ["nickname_style"],
   },
   {
     id: "feed",
     title: "Лента",
-    hint: "Полоска автора в постах",
+    hint: "Выделите свою карточку среди других",
     kinds: ["feed_card"],
   },
   {
     id: "app_shell",
     title: "Тема приложения",
-    hint: "Фон и акценты всего Voople, не карточки профиля",
+    hint: "Измените тему интерфейса Voople",
     kinds: ["app_theme"],
   },
 ];

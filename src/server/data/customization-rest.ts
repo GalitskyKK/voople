@@ -18,17 +18,33 @@ export type CustomizationEquipPatch = {
   nicknameGradient?: boolean | null;
 };
 
-function itemGrantsEquipValue(itemId: string, equipValue: string): boolean {
+function catalogGrantsEquipValue(itemId: string, equipValue: string): boolean {
   const catalog = SHOP_CATALOG_BY_ID.get(itemId);
   return catalog?.equipValue === equipValue;
 }
 
-async function assertOwnsEquipValue(userId: string, itemIds: Set<string>, equipValue: string | null | undefined) {
+async function itemGrantsEquipValue(itemId: string, equipValue: string): Promise<boolean> {
+  if (catalogGrantsEquipValue(itemId, equipValue)) return true;
+  const row = await getShopItemRowRest(itemId);
+  return row?.equip_value === equipValue;
+}
+
+async function assertOwnsEquipValue(
+  itemIds: Set<string>,
+  equipValue: string | null | undefined,
+  trustedItemId?: string,
+) {
   if (!equipValue) return;
-  const owns = [...itemIds].some((id) => itemGrantsEquipValue(id, equipValue));
-  if (!owns) {
-    throw new Error("Предмет не куплен");
+
+  if (trustedItemId && itemIds.has(trustedItemId) && (await itemGrantsEquipValue(trustedItemId, equipValue))) {
+    return;
   }
+
+  for (const id of itemIds) {
+    if (await itemGrantsEquipValue(id, equipValue)) return;
+  }
+
+  throw new Error("Предмет не куплен");
 }
 
 async function resolveBannerPatch(bannerId: string | null | undefined) {
@@ -46,16 +62,21 @@ async function resolveBannerPatch(bannerId: string | null | undefined) {
   };
 }
 
-export async function updateProfileCustomizationRest(userId: string, patch: CustomizationEquipPatch) {
+export async function updateProfileCustomizationRest(
+  userId: string,
+  patch: CustomizationEquipPatch,
+  options?: { trustedItemId?: string },
+) {
   const ownedIds = await getInventoryItemIdsRest(userId);
+  const trustedItemId = options?.trustedItemId;
 
-  await assertOwnsEquipValue(userId, ownedIds, patch.profileEffectId);
-  await assertOwnsEquipValue(userId, ownedIds, patch.avatarRingId);
-  await assertOwnsEquipValue(userId, ownedIds, patch.bannerId);
-  await assertOwnsEquipValue(userId, ownedIds, patch.avatarDecorationId);
-  await assertOwnsEquipValue(userId, ownedIds, patch.feedCardStyleId);
-  await assertOwnsEquipValue(userId, ownedIds, patch.animatedAvatarId);
-  await assertOwnsEquipValue(userId, ownedIds, patch.appThemeId);
+  await assertOwnsEquipValue(ownedIds, patch.profileEffectId, trustedItemId);
+  await assertOwnsEquipValue(ownedIds, patch.avatarRingId, trustedItemId);
+  await assertOwnsEquipValue(ownedIds, patch.bannerId, trustedItemId);
+  await assertOwnsEquipValue(ownedIds, patch.avatarDecorationId, trustedItemId);
+  await assertOwnsEquipValue(ownedIds, patch.feedCardStyleId, trustedItemId);
+  await assertOwnsEquipValue(ownedIds, patch.animatedAvatarId, trustedItemId);
+  await assertOwnsEquipValue(ownedIds, patch.appThemeId, trustedItemId);
 
   if (patch.nicknameColor) {
     const ownsStyle = [...ownedIds].some((id) => {
@@ -153,7 +174,7 @@ export async function equipShopItemRest(userId: string, itemId: string) {
       throw new Error("Неизвестный слот экипировки");
   }
 
-  await updateProfileCustomizationRest(userId, patch);
+  await updateProfileCustomizationRest(userId, patch, { trustedItemId: itemId });
   return patch;
 }
 

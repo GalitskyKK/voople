@@ -39,6 +39,7 @@ export function ShopPage() {
   const [plusPaymentError, setPlusPaymentError] = useState<string | null>(null);
   const [promoDiscount, setPromoDiscount] = useState<PromoPreviewView | null>(null);
   const [promoMessage, setPromoMessage] = useState<string | null>(null);
+  const [equipMessage, setEquipMessage] = useState<string | null>(null);
   const utils = trpc.useUtils();
   const { setThemeId } = useAppTheme();
 
@@ -119,9 +120,13 @@ export function ShopPage() {
 
   const equip = trpc.customization.equip.useMutation({
     onSuccess: async (equipped) => {
+      setEquipMessage(null);
       applyEquippedAppTheme(setThemeId, equipped.appThemeId);
       await utils.shop.overview.invalidate();
       await utils.customization.getEquipped.invalidate();
+    },
+    onError: (error) => {
+      setEquipMessage(error.message);
     },
   });
 
@@ -184,6 +189,12 @@ export function ShopPage() {
   return (
     <div className="space-y-6">
       <ShopWalletBar wallet={overview.wallet} />
+
+      {equipMessage ? (
+        <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          {equipMessage}
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap gap-2">
         {TABS.map(({ id, label, icon: Icon }) => (

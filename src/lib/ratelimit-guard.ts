@@ -18,3 +18,23 @@ export async function assertRateLimit(
     // Redis недоступен — не блокируем пользователя
   }
 }
+
+/**
+ * Вариант для не-tRPC контекстов (route handlers, вебхуки): не бросает, а
+ * возвращает `false` при превышении лимита. Fail-open, если Redis не настроен
+ * или недоступен.
+ */
+export async function checkRateLimit(
+  limiter: () => Ratelimit,
+  key: string,
+): Promise<boolean> {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return true;
+  }
+  try {
+    const { success } = await limiter().limit(key);
+    return success;
+  } catch {
+    return true;
+  }
+}

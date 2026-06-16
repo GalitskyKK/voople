@@ -18,7 +18,7 @@
 | Banner visible area |                      100% x 110px |                     320px x 120px |
 | Avatar              |                              72px |                              88px |
 | Avatar overlap      |                  36px over banner |                  44px over banner |
-| Effect overlay      | full card, clipped by card radius | full card, clipped by card radius |
+| Effect overlay      | full card (z-25), clipped by radius | full card (z-25), clipped by radius |
 | Card radius         |                              16px |                              16px |
 
 ## Banner
@@ -41,21 +41,77 @@
 
 ## Avatar Ring
 
-- Форматы: CSS ring preferred; image ring только SVG/WebP transparent.
-- Canvas: 128x128 для mobile, 160x160 для desktop.
-- Внутренний прозрачный круг: минимум 72px mobile / 88px desktop в CSS scale.
+Кольца — **CSS-обводки**, не картинки. Каждое кольцо — запись в
+`src/lib/customization/rings.ts` (`ring id → CSS-класс`) + класс `.voople-ring--<id>`
+в `globals.css`. Один источник правды для профиля и превью магазина.
+
+- Хранится в `avatar_ring_id` как `equipValue` предмета (например `glow-purple`).
+- Реализация: `box-shadow` поверх круглого аватара (рамка + опциональное свечение).
 - Толщина видимой рамки: 3-6px mobile, 4-8px desktop.
-- Animation: CSS transform/gradient, duration >= 2.4s, без rapid flashing.
+- Animation: CSS, duration >= 2.4s, без rapid flashing; обязательно под `@media (prefers-reduced-motion: no-preference)`.
+- Неизвестный id → дефолтное кольцо (акцент темы), чтобы купленное кольцо не пропадало.
+- Image ring (SVG/WebP transparent) — только как исключение; по умолчанию используйте CSS.
+
+### Как добавить кольцо
+
+1. `rings.ts`: `"<id>": { className: "voople-ring voople-ring--<id>" }`.
+2. `globals.css`: `.voople-ring--<id> { box-shadow: … }` (+ keyframes при анимации).
+3. Каталог: `kind: "ring"`, `equipSlot: "avatar_ring_id"`, `equipValue: "<id>"`, без `assetFolder`.
 
 ## Profile Effect
 
-- Назначение: декоративный overlay поверх всей карточки.
+Эффект — декоративный overlay поверх **всей** карточки. Бывает двух видов:
+
+1. **Картиночный** (APNG / animated WebP) — файл в `customization/effects/`.
+2. **Code-driven (CSS)** — частицы рисуются кодом из пресета, **файл не нужен** (см. ниже «Animated Effects (CSS)»).
+
+Рендер выбирает вид автоматически: если `equipValue` совпадает с id пресета в
+`src/lib/customization/effects-registry.ts` — рисуется CSS-эффект; иначе грузится
+картинка `customization/effects/{equipValue}.webp`.
+
+### Картиночный эффект
+
 - Форматы: APNG/animated WebP для lightweight effects; Lottie не использовать без отдельного решения по runtime cost.
 - Export mobile: 750x900.
 - Export desktop: 640x900.
-- UI placement: `position:absolute; inset:0; object-fit:cover; pointer-events:none`.
-- Alpha coverage: не перекрывать более 25% площади непрозрачными пикселями.
-- Motion: loop 3-8s, без резких вспышек, уважать `prefers-reduced-motion`.
+- UI placement: `position:absolute; inset:0; object-fit:cover; pointer-events:none`. Слой над контентом карточки (`z-25`), но `pointer-events-none` не мешает кликам.
+- Alpha coverage: не перекрывать более 25% площади непрозрачными пикселями — иначе нечитаемы имя/био.
+- Motion: loop 3-8s, без резких вспышек.
+- `prefers-reduced-motion`: для картиночных эффектов статичного fallback нет — закладывайте «спокойный» first frame; для движущихся эффектов предпочитайте CSS-вид, он полностью отключается при reduced-motion.
+
+## Animated Effects (CSS / code-driven)
+
+«Как в Discord»: частицы (снег, конфетти, искры, светлячки) генерируются кодом, а
+не тяжёлым APNG. Это дешевле по весу и трафику и автоматически уважает
+`prefers-reduced-motion`.
+
+### Как добавить новый CSS-эффект
+
+1. **Пресет** — запись в `src/lib/customization/effects-registry.ts`:
+   `{ id, name, kind, count, colors[], durationSec }`.
+   - `kind`: `snow | confetti | sparkles | fireflies` (форма/траектория частицы).
+   - `count`: число частиц на десктопе (на мобиле рендерер не увеличивает; держите ≤ 48, иначе CPU).
+   - `colors`: палитра CSS-цветов; держите ≤ 5.
+   - `durationSec`: длительность цикла, 4–8 с.
+2. **Keyframes** — если вводите новый `kind`, добавьте класс `.voople-fx__p--<kind>` и `@keyframes voople-fx-<kind>` в `src/app/globals.css`. Существующие 4 вида уже описаны.
+3. **Каталог** — предмет `kind: "effect"` **без** `assetFolder`/`assetId`, `equipValue` = id пресета (см. `effect-css-*` в `catalog.ts`).
+
+### Технические требования к CSS-эффектам
+
+| Параметр | Значение |
+| --- | --- |
+| Контейнер | весь card, `position:absolute; inset:0; pointer-events:none`, clip по `rounded-2xl` |
+| Stacking | `z-25` (над контентом, под модалями) |
+| Частиц на десктоп | рекомендовано 18–40, жёсткий потолок 48 |
+| Длительность цикла | 4–8 с, `animation-iteration-count: infinite` |
+| Координаты | в `%` (горизонталь) и `cqh`/`cqw` (контейнерные единицы для падения) — независимы от размера карточки |
+| Alpha / читаемость | суммарная площадь частиц не должна перекрывать > 20% карточки; без вспышек |
+| Пауза | автоматически при скрытой вкладке (`visibilitychange`) и вне вьюпорта (`IntersectionObserver`) |
+| Reduced motion | эффект **не рендерится** (и в JS, и CSS-гейтом) |
+| Детерминизм | раскладка частиц seeded по id пресета → нет hydration mismatch |
+
+Рендерер: `src/components/profile/effects/CssEffectLayer.tsx`. Превью в магазине
+показывает реальные частицы (`ShopCatalogPreview`).
 
 ## Nameplate / Display Name Style
 
@@ -144,12 +200,15 @@ feedcard_<season>_<slug>.webp
 ## Runtime Paths
 
 ```text
-src/lib/customization/asset-path.ts   → resolve URL (CDN or /public)
-src/lib/customization/resolve.ts      → flags + asset URLs for profile/feed
-src/lib/shop/catalog.ts               → единый каталог магазина (см. shop-catalog.md)
-src/lib/app-themes.ts                 → токены тем shell для app_theme
-src/components/theme/AppThemeSync.tsx → app_theme_id из БД → CSS variables
-src/server/mappers/customization.ts   → DB row → ProfileCustomizationView
+src/lib/customization/asset-path.ts        → resolve URL (CDN or /public)
+src/lib/customization/resolve.ts           → flags + asset URLs/preset id для профиля/ленты
+src/lib/customization/effects-registry.ts  → пресеты CSS-эффектов (частицы)
+src/lib/customization/rings.ts             → CSS-кольца аватара (id → класс)
+src/components/profile/effects/CssEffectLayer.tsx → рендер CSS-эффектов (RAF/observer/reduced-motion)
+src/lib/shop/catalog.ts                    → единый каталог магазина (см. shop-catalog.md)
+src/lib/app-themes.ts                      → токены тем shell для app_theme
+src/components/theme/AppThemeSync.tsx      → app_theme_id из БД → CSS variables
+src/server/mappers/customization.ts        → DB row → ProfileCustomizationView
 ```
 
 Prod env:

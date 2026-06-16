@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { rateLimits } from "@/lib/ratelimit";
+import { checkRateLimit } from "@/lib/ratelimit-guard";
 import { isYooKassaConfigured } from "@/lib/payments/yookassa-config";
 import { updatePaymentIntentStatusRest } from "@/server/data/shop-rest";
 import { getYooKassaPayment } from "@/server/integrations/yookassa-client";
@@ -30,6 +32,17 @@ function mapPaymentStatus(status: string | undefined): "pending" | "succeeded" |
 export async function POST(request: Request) {
   if (!isYooKassaConfigured()) {
     return NextResponse.json({ error: "YooKassa is not configured" }, { status: 503 });
+  }
+
+  // Эндпоинт неаутентифицирован (YooKassa не подписывает вебхуки), поэтому
+  // троттлим по IP до обращения к внешнему API. Платёж всё равно повторно
+  // верифицируется ниже через getYooKassaPayment.
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip")?.trim() ||
+    "unknown";
+  if (!(await checkRateLimit(rateLimits.webhook, `yookassa:${ip}`))) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
   let payload: YooKassaWebhookPayload;

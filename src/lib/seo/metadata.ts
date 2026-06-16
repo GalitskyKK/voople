@@ -9,6 +9,51 @@ import {
   SITE_OG_IMAGE,
 } from "@/lib/seo/site";
 
+/** OG-картинка через динамический /api/og. Возвращает относительный URL (резолвится metadataBase). */
+export function ogImageUrl(params: { title: string; subtitle?: string; badge?: string }): string {
+  const query = new URLSearchParams({ title: params.title });
+  if (params.subtitle) query.set("subtitle", params.subtitle);
+  if (params.badge) query.set("badge", params.badge);
+  return `/api/og?${query.toString()}`;
+}
+
+/** Метаданные страницы профиля с динамической OG-картинкой (важно для виральности ask-ссылок). */
+export function createProfileMetadata(input: {
+  displayName: string;
+  username: string;
+  bio?: string | null;
+  ask?: boolean;
+}): Metadata {
+  const title = input.ask ? `Спроси ${input.displayName} анонимно` : input.displayName;
+  const description = input.ask
+    ? `Задай ${input.displayName} (@${input.username}) анонимный вопрос в Voople`
+    : (input.bio?.trim() || `Профиль @${input.username} в Voople`);
+  const image = ogImageUrl({
+    title: input.ask ? `Спроси меня анонимно` : input.displayName,
+    subtitle: `@${input.username}`,
+    badge: input.ask ? "Анонимные вопросы" : undefined,
+  });
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/${input.username}` },
+    openGraph: {
+      type: "profile",
+      title,
+      description,
+      url: `/${input.username}`,
+      images: [{ url: image, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image],
+    },
+  };
+}
+
 function siteVerification(): Metadata["verification"] | undefined {
   const google = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
   const yandex = process.env.NEXT_PUBLIC_YANDEX_VERIFICATION?.trim();

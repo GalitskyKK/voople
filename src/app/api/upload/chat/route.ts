@@ -5,6 +5,7 @@ import {
   getObjectStorageConfig,
   parseChatUploadMime,
   putObject,
+  sniffUploadKind,
   UPLOAD_LIMITS,
 } from "@/lib/object-storage";
 import { formatStorageError } from "@/lib/object-storage/errors";
@@ -35,9 +36,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Неизвестный тип файла" }, { status: 400 });
     }
 
-    let extension: string;
+    let parsed: ReturnType<typeof parseChatUploadMime>;
     try {
-      extension = parseChatUploadMime(contentType).extension;
+      parsed = parseChatUploadMime(contentType);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Формат не поддерживается";
       return NextResponse.json({ error: message }, { status: 400 });
@@ -51,8 +52,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const key = buildUploadKey("chat", user.id, extension);
     const body = new Uint8Array(await file.arrayBuffer());
+
+    // Не доверяем заявленному Content-Type: сверяем магические байты.
+    const sniffed = sniffUploadKind(body);
+    if (sniffed !== parsed.kind) {
+      return NextResponse.json(
+        { error: "Содержимое файла не соответствует его типу" },
+        { status: 400 },
+      );
+    }
+
+    const key = buildUploadKey("chat", user.id, parsed.extension);
 
     await putObject({
       key,

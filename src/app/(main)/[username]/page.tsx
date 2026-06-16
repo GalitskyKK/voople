@@ -1,17 +1,34 @@
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { ProfilePage } from "@/components/profile/ProfilePage"
+import { createProfileMetadata } from "@/lib/seo/metadata"
 import { createClient } from "@/lib/supabase/server"
-import { getProfilePageData } from "@/server/services/profile.service"
+import { getProfileByUsername, getProfilePageData } from "@/server/services/profile.service"
 
 export const revalidate = 60
 
 type PageProps = {
   params: Promise<{ username: string }>
+  searchParams: Promise<{ ask?: string }>
 }
 
-export default async function UserProfilePage({ params }: PageProps) {
+export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
   const { username } = await params
+  const { ask } = await searchParams
+  const profile = await getProfileByUsername(username)
+  if (!profile) return {}
+  return createProfileMetadata({
+    displayName: profile.displayName,
+    username: profile.username,
+    bio: profile.bio,
+    ask: ask === "1"
+  })
+}
+
+export default async function UserProfilePage({ params, searchParams }: PageProps) {
+  const { username } = await params
+  const { ask } = await searchParams
   const supabase = await createClient()
   const {
     data: { user }
@@ -34,6 +51,7 @@ export default async function UserProfilePage({ params }: PageProps) {
       viewerId={viewerId}
       canPost={Boolean(viewerId && viewerId === profile.id)}
       canFollow={canFollow}
+      askDeepLink={ask === "1"}
     />
   )
 }

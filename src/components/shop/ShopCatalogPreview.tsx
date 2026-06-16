@@ -1,5 +1,8 @@
 "use client";
 
+import { getEffectPreset } from "@/lib/customization/effects-registry";
+import { resolveRingStyle } from "@/lib/customization/rings";
+import { CssEffectLayer } from "@/components/profile/effects/CssEffectLayer";
 import { cn } from "@/lib/utils";
 import {
   catalogItemUsesCdn,
@@ -21,6 +24,20 @@ export function ShopCatalogPreview({ catalog, previewUrl, className }: ShopCatal
     );
   }
 
+  // CSS-эффект: показываем реальные частицы вместо статичной заглушки.
+  const effectPreset =
+    catalog.kind === "effect" ? getEffectPreset(catalog.equipValue) : null;
+  if (effectPreset) {
+    return (
+      <div
+        className={cn("relative h-full w-full overflow-hidden bg-[#0a0a0f]", className)}
+        aria-hidden
+      >
+        <CssEffectLayer preset={effectPreset.id} />
+      </div>
+    );
+  }
+
   const cssPreview = getCssCatalogPreviewStyle(catalog);
   if (!cssPreview) {
     return (
@@ -34,7 +51,10 @@ export function ShopCatalogPreview({ catalog, previewUrl, className }: ShopCatal
     <div className={cn("relative h-full w-full", className)} style={cssPreview}>
       {catalog.kind === "ring" && (
         <div
-          className="absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-[var(--theme-accent)] ring-offset-2 ring-offset-[#0a0a0f]"
+          className={cn(
+            "absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full",
+            resolveRingStyle(catalog.equipValue)?.className,
+          )}
           aria-hidden
         />
       )}

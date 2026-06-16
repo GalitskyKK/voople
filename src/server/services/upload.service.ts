@@ -6,6 +6,7 @@ import {
   createPresignedPutUrl,
   extensionForMime,
   getObjectStorageConfig,
+  headObject,
   isPrivateChatMediaKey,
   mediaTypeForMime,
   parseChatUploadMime,
@@ -68,13 +69,29 @@ export async function resolveChatMediaUrl(key: string, userId: string) {
   return downloadUrl;
 }
 
-export function resolvePublicMediaKey(
+/**
+ * Проверяет, что presigned-загруженный объект принадлежит пользователю и не
+ * превышает лимит для своего назначения. Размер проверяется через HeadObject,
+ * потому что presigned PUT не умеет ограничивать размер на стороне S3
+ * (клиент мог запросить URL с маленьким sizeBytes, а залить большой файл).
+ */
+export async function resolvePublicMediaKey(
   key: string | null | undefined,
   userId: string,
   purpose: UploadPurpose,
 ) {
   if (!key) return null;
   assertOwnedUploadKey(key, userId, purpose);
+
+  const meta = await headObject({ key, bucket: bucketForPurpose(purpose) });
+  if (!meta) throw new Error("Файл не найден в хранилище");
+
+  const limit = UPLOAD_LIMITS[purpose];
+  if (meta.contentLength <= 0) throw new Error("Пустой файл");
+  if (meta.contentLength > limit.maxBytes) {
+    throw new Error(`Файл больше ${Math.round(limit.maxBytes / (1024 * 1024))} МБ`);
+  }
+
   return key;
 }
 

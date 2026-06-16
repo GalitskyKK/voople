@@ -106,7 +106,9 @@ export function CustomizationEditor({
                 )}
               </div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {slotItems.map((item) => (
+                {slotItems.map((item) => {
+                  const catalog = SHOP_CATALOG_BY_ID.get(item.id);
+                  return (
                   <button
                     key={item.id}
                     type="button"
@@ -120,11 +122,8 @@ export function CustomizationEditor({
                     )}
                   >
                     <div className="aspect-square bg-black/30">
-                      {SHOP_CATALOG_BY_ID.get(item.id) ? (
-                        <ShopCatalogPreview
-                          catalog={SHOP_CATALOG_BY_ID.get(item.id)!}
-                          previewUrl={item.previewUrl}
-                        />
+                      {catalog ? (
+                        <ShopCatalogPreview catalog={catalog} previewUrl={item.previewUrl} />
                       ) : item.previewUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={item.previewUrl} alt="" className="h-full w-full object-cover" />
@@ -136,7 +135,8 @@ export function CustomizationEditor({
                     </div>
                     <span className="block px-2 py-2 text-xs text-white/75">{item.name}</span>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </section>
                 );

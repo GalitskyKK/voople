@@ -181,7 +181,7 @@ export async function equipShopItemRest(userId: string, itemId: string) {
 export async function setCustomBannerRest(userId: string, mediaKey: string) {
   await assertActiveSubscriptionRest(userId);
 
-  const key = resolvePublicMediaKey(mediaKey, userId, "banner");
+  const key = await resolvePublicMediaKey(mediaKey, userId, "banner");
   const url = publicAssetUrl(key);
   if (!url) throw new Error("Не удалось сохранить баннер");
 
@@ -200,7 +200,7 @@ export async function setCustomBannerRest(userId: string, mediaKey: string) {
 }
 
 export async function setAvatarPhotoRest(userId: string, mediaKey: string) {
-  const key = resolvePublicMediaKey(mediaKey, userId, "avatar");
+  const key = await resolvePublicMediaKey(mediaKey, userId, "avatar");
   const url = publicAssetUrl(key);
   if (!url) throw new Error("Не удалось сохранить аватар");
 

@@ -1,6 +1,7 @@
 import { createTRPCRouter } from "./init";
 import { chatRouter } from "./routers/chat";
 import { customizationRouter } from "./routers/customization";
+import { engagementRouter } from "./routers/engagement";
 import { feedRouter } from "./routers/feed";
 import { healthRouter } from "./routers/health";
 import { notificationsRouter } from "./routers/notifications";
@@ -8,6 +9,7 @@ import { playlistRouter } from "./routers/playlist";
 import { postRouter } from "./routers/post";
 import { profileCanvasRouter } from "./routers/profile-canvas";
 import { profileRouter } from "./routers/profile";
+import { questionsRouter } from "./routers/questions";
 import { searchRouter } from "./routers/search";
 import { shopRouter } from "./routers/shop";
 import { statusRouter } from "./routers/status";
@@ -21,11 +23,13 @@ export const appRouter = createTRPCRouter({
   feed: feedRouter,
   profile: profileRouter,
   profileCanvas: profileCanvasRouter,
+  questions: questionsRouter,
   search: searchRouter,
   status: statusRouter,
   playlist: playlistRouter,
   chat: chatRouter,
   customization: customizationRouter,
+  engagement: engagementRouter,
   shop: shopRouter,
   upload: uploadRouter,
   notifications: notificationsRouter,

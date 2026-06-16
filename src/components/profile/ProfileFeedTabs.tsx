@@ -3,7 +3,7 @@
 import { COPY } from "@/lib/constants/copy";
 import { cn } from "@/lib/utils";
 
-export type ProfileFeedTab = "posts" | "media";
+export type ProfileFeedTab = "posts" | "media" | "questions";
 
 type ProfileFeedTabsProps = {
   active: ProfileFeedTab;
@@ -14,6 +14,7 @@ type ProfileFeedTabsProps = {
 const TABS: { id: ProfileFeedTab; label: string }[] = [
   { id: "posts", label: COPY.posts },
   { id: "media", label: COPY.media },
+  { id: "questions", label: "Вопросы" },
 ];
 
 /** Tabs above profile feed (posts vs media-only). Replies are comments on posts — no separate feed yet. */

@@ -44,6 +44,22 @@ PostgREST (`/rest/v1/`) доступен с `anon` key — RLS обязател�
 
 Не использовать `01-rls-users-dev.sql`.
 
+## Rate limiting
+
+`assertRateLimit` (tRPC) / `checkRateLimit` (route handlers) поверх Upstash, ключ — `userId` (или IP для вебхуков). **Fail-open**: если Upstash env не задан или Redis недоступен — запрос пропускается (доступность важнее). Покрыты: `post.create/comment/repost/quoteRepost`, `post.like`, `chat.send`, `profile.toggleFollow`, `profileCanvas.saveStroke`, `shop.applyPromo` (анти-перебор промокодов), `questions.ask`, `upload.createPresigned`, webhook YooKassa (по IP). Лимиты — `src/lib/ratelimit.ts`.
+
+## Загрузка файлов
+
+- Public-бакет (post/avatar/banner/track): presigned PUT не ограничивает размер на стороне S3, поэтому после загрузки сервер проверяет реальный размер через `HeadObject` (`resolvePublicMediaKey`) против `UPLOAD_LIMITS`.
+- Chat-бакет (private): `POST /api/upload/chat` сверяет **магические байты** содержимого с заявленным Content-Type (`sniffUploadKind`) — нельзя залить HTML/скрипт под видом `image/png`.
+- Ключи привязаны к `uploads/{purpose}/{userId}/` и проверяются на ownership/traversal (`assertOwnedUploadKey`).
+
+## Анонимные вопросы
+
+- `profile_questions`: `asker_id` хранится (анти-абьюз/модерация), но **никогда** не отдаётся владельцу — анонимность на сервере (`questions-rest.ts`), как у `profile_canvas_draw`. Уведомление типа `question` скрывает актора (`ANONYMOUS_NOTIF_TYPES`).
+- RLS включён без permissive-политик: доступ только через service-role на сервере, прямого клиентского доступа (PostgREST/Realtime) к таблице нет.
+- Спрашивать могут только залогиненные; rate-limit `questions.ask`; запрет вопроса самому себе.
+
 ## Auth → users
 
 `POST /api/auth/sync-user` → `users-rest.ts` (REST), `id = auth.users.id`.

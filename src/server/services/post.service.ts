@@ -16,7 +16,7 @@ export async function createPost(
 ): Promise<PostViewModel> {
   const trimmed = input.text?.trim() ?? "";
   const mediaKey = input.mediaKey
-    ? resolvePublicMediaKey(input.mediaKey, authorId, "post")
+    ? await resolvePublicMediaKey(input.mediaKey, authorId, "post")
     : null;
 
   if (!trimmed && !mediaKey) throw new Error("Добавьте текст или изображение");

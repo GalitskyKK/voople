@@ -13,7 +13,8 @@ export const uploadRouter = createTRPCRouter({
       z.object({
         purpose: z.enum(["post", "comment", "avatar", "banner", "track", "chat"]),
         contentType: z.string().min(3).max(100),
-        sizeBytes: z.number().int().min(1).max(15 * 1024 * 1024),
+        // Абсолютный потолок; точный лимит на назначение проверяет createPresignedUpload.
+        sizeBytes: z.number().int().min(1).max(30 * 1024 * 1024),
       }),
     )
     .mutation(async ({ ctx, input }) => {

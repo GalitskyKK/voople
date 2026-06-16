@@ -73,12 +73,19 @@ Hot path приложения **не зависит** от `DATABASE_URL`, ес�
 15. **`drizzle/15-profile-canvas-notification.sql`** — enum `profile_canvas_draw` для уведомлений
 16. **`drizzle/16-post-edit-reports.sql`** — `post_reports`, редактирование постов в app (см. [posts.md](./posts.md))
 17. **`drizzle/17-promo-codes.sql`** — `promo_codes`, `promo_redemptions` (см. [promo-codes.md](./promo-codes.md))
+18. **`drizzle/18-anonymous-questions.sql`** — `profile_questions` (анонимные вопросы) + enum `question` для уведомлений. `ALTER TYPE ... ADD VALUE` — запустить **отдельным** Run перед использованием значения.
 
 ## Profile canvas
 
 - `profile_canvas_strokes` — векторные штрихи (`points` jsonb, координаты 0–1).
 - Запись/удаление — service role (`profile-canvas-rest.ts`); браузер только SELECT (RLS).
 - Очистка всего холста — только `profile_user_id === actor_id`.
+
+## Anonymous questions
+
+- `profile_questions` — анонимные вопросы профилю (ngl-стиль): `profile_user_id` (адресат), `asker_id` (хранится, владельцу **не отдаётся**), `question_text`, `answer_text`/`answered_at` (ответ), `is_hidden`.
+- Доступ только через service role (`questions-rest.ts`); RLS без permissive-политик — прямого клиентского доступа нет (анонимность не утечёт через PostgREST/Realtime).
+- Спрашивать — только залогиненные (`questions.ask`, rate-limited); ответ/удаление — только владелец профиля. См. [security.md](./security.md).
 
 ## Shop and wallets
 
@@ -128,7 +135,7 @@ Hot path приложения **не зависит** от `DATABASE_URL`, ес�
 
 ## Notifications
 
-- `notifications.type` использует enum `notif_type`; для social loop сейчас активны `like`, `follow`, `reply`, `repost`.
+- `notifications.type` использует enum `notif_type`; сейчас активны `like`, `follow`, `reply`, `repost`, `profile_canvas_draw`, `question`. Для `profile_canvas_draw` и `question` актор анонимен (не отдаётся в API).
 - `reference_id` для post events (`like`, `reply`, `repost`) указывает на `posts.id`.
 - Создание уведомлений — только server path (`createNotification` из data layer); browser insert запрещён RLS.
 - `drizzle/10-notifications-realtime.sql` публикует `notifications` в Supabase Realtime для live inbox/badge.

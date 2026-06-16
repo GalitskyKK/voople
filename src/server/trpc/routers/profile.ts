@@ -1,6 +1,8 @@
 import { TRPCError } from "@trpc/server"
 import { z } from "zod"
 
+import { assertRateLimit } from "@/lib/ratelimit-guard"
+import { rateLimits } from "@/lib/ratelimit"
 import { getFollowState, toggleFollow } from "@/server/services/follow.service"
 import {
   PROFILE_REACTION_EMOJIS,
@@ -70,6 +72,7 @@ export const profileRouter = createTRPCRouter({
       if (!profile) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Профиль не найден" })
       }
+      await assertRateLimit(rateLimits.follow, ctx.user.id)
       try {
         return await toggleFollow(ctx.user.id, profile.id)
       } catch (e) {

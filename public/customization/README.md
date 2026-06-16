@@ -6,13 +6,13 @@ URL резолвится в `src/lib/customization/asset-path.ts`. Катало�
 
 ## Launch (файлы в бакете)
 
-| Папка | assetId | Формат |
-|-------|---------|--------|
-| `banners/` | `minti` | WebP баннер профиля |
-| `effects/` | `ladybugs` | WebP/APNG поверх карточки |
-| `decorations/` | `sparkle` | WebP вокруг аватара |
-| `feed-cards/` | `sakura` | WebP фон полоски в ленте |
-| `animated/` | `minti.apng` | Зацикленный аватар **в круге** (слот `animated_avatar_id`) |
+| Папка          | assetId      | Формат                                                     |
+| -------------- | ------------ | ---------------------------------------------------------- |
+| `banners/`     | `minti`      | WebP баннер профиля                                        |
+| `effects/`     | `ladybugs`   | WebP/APNG поверх карточки                                  |
+| `decorations/` | `sparkle`    | WebP вокруг аватара                                        |
+| `feed-cards/`  | `sakura`     | WebP фон полоски в ленте                                   |
+| `animated/`    | `minti.apng` | Зацикленный аватар **в круге** (слот `animated_avatar_id`) |
 
 Имена: `id` из мока/БД. Если расширения нет — подставляется `.webp` (`ladybugs` → `ladybugs.webp`). Можно указать id с расширением: `ladybugs.webp`.
 
@@ -26,4 +26,11 @@ URL резолвится в `src/lib/customization/asset-path.ts`. Катало�
 - `/customization/themes/violet`
 - `/customization/themes/gold.apng`
 
-Если файла нет, эффект скрывается (`onError` на `<img>`), профиль остаётся с дефолтной тёмной темой.
+Если файла нет, картиночный эффект скрывается (`onError` на `<img>`), профиль остаётся с дефолтной тёмной темой.
+
+## CSS-эффекты (без файла)
+
+Часть эффектов рисуется кодом (снег, конфетти, искры, светлячки) — для них **файл не нужен**.
+Они объявляются в `src/lib/customization/effects-registry.ts`, а в каталоге это предмет
+`kind: "effect"` без `assetFolder`/`assetId` (`equipValue` = id пресета). Требования и
+инструкция: [docs/customization.md](../../docs/customization.md) → «Animated Effects (CSS)».

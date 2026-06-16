@@ -1,6 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { assertRateLimit } from "@/lib/ratelimit-guard";
+import { rateLimits } from "@/lib/ratelimit";
 import {
   deleteMessage,
   getDirectChatByUsername,
@@ -94,6 +96,7 @@ export const chatRouter = createTRPCRouter({
     }),
 
   send: protectedProcedure.input(sendInputSchema).mutation(async ({ ctx, input }) => {
+    await assertRateLimit(rateLimits.sendMessage, ctx.user.id);
     try {
       return await sendMessage({
         chatId: input.chatId,

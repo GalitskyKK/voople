@@ -1,6 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { assertRateLimit } from "@/lib/ratelimit-guard";
+import { rateLimits } from "@/lib/ratelimit";
 import {
   clearProfileCanvas,
   listProfileCanvasStrokes,
@@ -16,7 +18,7 @@ const strokeInputSchema = z.object({
   id: z.string().uuid(),
   color: z.string().min(1).max(20),
   size: z.number().int().min(1).max(20),
-  points: z.array(pointSchema).min(1),
+  points: z.array(pointSchema).min(1).max(1000),
 });
 
 export const profileCanvasRouter = createTRPCRouter({
@@ -32,6 +34,7 @@ export const profileCanvasRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.canvasStroke, ctx.user.id);
       try {
         return await saveProfileCanvasStroke(input.profileUserId, ctx.user.id, {
           ...input.stroke,

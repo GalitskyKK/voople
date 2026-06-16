@@ -1,34 +1,32 @@
-"use client";
+"use client"
 
-import { useEffect, useRef } from "react";
+import { useState } from "react"
 
 type ProfileEffectProps = {
-  effectUrl: string;
-};
+  effectUrl: string
+}
 
+/**
+ * Картиночный эффект профиля (APNG / animated-WebP) поверх карточки.
+ * Анимация живёт внутри самого файла, поэтому JS её не контролирует.
+ * При ошибке загрузки слой скрывается через state (а не inline display:none).
+ * Сброс при смене URL обеспечивает родитель через `key={effectUrl}`,
+ * поэтому новый рабочий эффект не остаётся скрытым.
+ */
 export function ProfileEffect({ effectUrl }: ProfileEffectProps) {
-  const ref = useRef<HTMLImageElement>(null);
+  const [failed, setFailed] = useState(false)
 
-  useEffect(() => {
-    const handler = () => {
-      if (!ref.current) return;
-      ref.current.style.animationPlayState = document.hidden ? "paused" : "running";
-    };
-    document.addEventListener("visibilitychange", handler);
-    return () => document.removeEventListener("visibilitychange", handler);
-  }, []);
+  if (failed) return null
 
   return (
+    // eslint-disable-next-line @next/next/no-img-element -- анимированные WebP/APNG не подходят для next/image
     <img
-      ref={ref}
       src={effectUrl}
       alt=""
       aria-hidden
       loading="lazy"
-      className="pointer-events-none absolute inset-0 z-[15] h-full w-full object-cover"
-      onError={(e) => {
-        e.currentTarget.style.display = "none";
-      }}
+      className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+      onError={() => setFailed(true)}
     />
-  );
+  )
 }

@@ -2,12 +2,14 @@ import { relations, sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
   boolean,
+  date,
   index,
   integer,
   jsonb,
   pgEnum,
   pgTable,
   primaryKey,
+  text,
   timestamp,
   uniqueIndex,
   uuid,
@@ -38,6 +40,7 @@ export const notifTypeEnum = pgEnum("notif_type", [
   "match",
   "mystery_drop",
   "profile_canvas_draw",
+  "question",
 ]);
 export const acquiredViaEnum = pgEnum("acquired_via", [
   "purchase",
@@ -246,6 +249,30 @@ export const profileCanvasStrokes = pgTable(
       t.createdAt,
     ),
     authorIdx: index("profile_canvas_strokes_author_idx").on(t.authorId),
+  }),
+);
+
+/**
+ * Анонимные вопросы профилю. `askerId` хранится для анти-абьюза, но никогда не
+ * раскрывается владельцу (анонимность обеспечивается на сервере).
+ */
+export const profileQuestions = pgTable(
+  "profile_questions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    profileUserId: uuid("profile_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    askerId: uuid("asker_id").references(() => users.id, { onDelete: "set null" }),
+    questionText: text("question_text").notNull(),
+    answerText: text("answer_text"),
+    answeredAt: timestamp("answered_at"),
+    isHidden: boolean("is_hidden").notNull().default(false),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    inboxIdx: index("profile_questions_inbox_idx").on(t.profileUserId, t.createdAt),
+    answeredIdx: index("profile_questions_answered_idx").on(t.profileUserId, t.answeredAt),
   }),
 );
 
@@ -475,6 +502,17 @@ export const notifications = pgTable(
     userUnreadIdx: index("notif_user_unread_idx").on(t.userId, t.read),
   }),
 );
+
+/** Ежедневный стрик активности (ретеншн). Одна строка на пользователя. */
+export const userStreaks = pgTable("user_streaks", {
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  currentStreak: integer("current_streak").notNull().default(0),
+  longestStreak: integer("longest_streak").notNull().default(0),
+  lastActiveDate: date("last_active_date"),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   customization: one(profileCustomization, {

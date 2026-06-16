@@ -120,6 +120,7 @@ export const postRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.comment, ctx.user.id)
       try {
         return await createComment(input.postId, ctx.user.id, input)
       } catch (e) {
@@ -146,6 +147,7 @@ export const postRouter = createTRPCRouter({
   repost: protectedProcedure
     .input(z.object({ postId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.repost, ctx.user.id)
       try {
         return await toggleRepost(input.postId, ctx.user.id)
       } catch (e) {
@@ -164,6 +166,7 @@ export const postRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.repost, ctx.user.id)
       try {
         return await createRepost(input.postId, ctx.user.id, input.comment)
       } catch (e) {

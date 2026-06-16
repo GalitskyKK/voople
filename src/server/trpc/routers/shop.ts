@@ -1,6 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { assertRateLimit } from "@/lib/ratelimit-guard";
+import { rateLimits } from "@/lib/ratelimit";
 import { applyPromoCode } from "@/server/services/promo.service";
 import {
   claimAllFreeItems,
@@ -77,6 +79,7 @@ export const shopRouter = createTRPCRouter({
   applyPromo: protectedProcedure
     .input(z.object({ code: z.string().min(1).max(50) }))
     .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.applyPromo, ctx.user.id);
       try {
         const result = await applyPromoCode(ctx.user.id, input.code);
         if (result.action === "redeemed") {

@@ -87,8 +87,16 @@ Production admin should be a role-protected route, not a public dashboard. First
 ## tRPC
 
 - Endpoint: `/api/trpc`
-- Rate limits: Upstash (если `UPSTASH_*` в env), иначе пропуск
+- Rate limits: Upstash (если `UPSTASH_*` в env), иначе пропуск (fail-open). Покрытие — см. [security.md](./security.md).
 - Лента: cursor pagination, `getNextPageParam: nextCursor`
+
+## Anonymous Questions
+
+Q&A в духе ngl/curiouscat: посетитель (только залогиненный) задаёт анонимный вопрос профилю, владелец отвечает публично.
+
+- Роутер `questions` (`ask` / `listAnswered` / `listInbox` / `inboxCount` / `answer` / `hide`), данные — `questions-rest.ts`, таблица `profile_questions`.
+- Анонимность на сервере: `asker_id` хранится, но не отдаётся; уведомление `question` скрывает актора (как `profile_canvas_draw`).
+- UI — вкладка «Вопросы» в `ProfilePage` (`ProfileQuestions.tsx`): форма вопроса, инбокс владельца, лента ответов.
 
 ## Realtime (чат)
 

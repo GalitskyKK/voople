@@ -76,7 +76,7 @@ export async function createCommentRest(
 ) {
   const trimmed = input.text?.trim() ?? "";
   const mediaKey = input.mediaKey
-    ? resolvePublicMediaKey(input.mediaKey, authorId, "comment")
+    ? await resolvePublicMediaKey(input.mediaKey, authorId, "comment")
     : null;
 
   if (!trimmed && !mediaKey) throw new Error("Введите комментарий или прикрепите изображение");

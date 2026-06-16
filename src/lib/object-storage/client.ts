@@ -1,4 +1,10 @@
-import { CopyObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  CopyObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import { bucketForPurpose, getObjectStorageConfig } from "./config";
@@ -93,6 +99,34 @@ export async function createPresignedPutUrl(input: {
 
   const uploadUrl = await getSignedUrl(s3, command, { expiresIn });
   return { uploadUrl, expiresIn, bucket: bucketName, bucketKind };
+}
+
+/**
+ * Метаданные загруженного объекта. `null`, если объект не найден.
+ * Используется для серверной верификации размера после presigned PUT
+ * (presigned PUT не умеет ограничивать размер на стороне S3).
+ */
+export async function headObject(input: {
+  key: string;
+  bucket: StorageBucketKind;
+}): Promise<{ contentLength: number; contentType: string | null } | null> {
+  const { client: s3, config } = getS3Client();
+  const bucketName = resolveBucketName(config, input.bucket);
+
+  try {
+    const result = await s3.send(
+      new HeadObjectCommand({ Bucket: bucketName, Key: input.key }),
+    );
+    return {
+      contentLength: result.ContentLength ?? 0,
+      contentType: result.ContentType ?? null,
+    };
+  } catch (e) {
+    if (e instanceof Error && (e.name === "NotFound" || e.name === "NoSuchKey")) {
+      return null;
+    }
+    throw e;
+  }
 }
 
 export async function createPresignedGetUrl(input: {

@@ -65,6 +65,7 @@ export function PostAuthorRow({
               displayName={displayName}
               size="sm"
               ring={c.flags.hasAvatarRing}
+              ringId={c.avatarRingId}
               decorationUrl={c.assets.avatarDecorationUrl}
               animatedAvatarUrl={c.assets.animatedAvatarUrl}
             />
@@ -112,6 +113,7 @@ export function PostAuthorRow({
         displayName={displayName}
         size="sm"
         ring={c?.flags.hasAvatarRing}
+        ringId={c?.avatarRingId}
         decorationUrl={c?.assets.avatarDecorationUrl}
         animatedAvatarUrl={c?.assets.animatedAvatarUrl}
       />

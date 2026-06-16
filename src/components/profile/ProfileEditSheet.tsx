@@ -153,6 +153,7 @@ export function ProfileEditSheet({ profile }: ProfileEditSheetProps) {
             displayName={displayName}
             size="lg"
             ring={profile.customization.flags.hasAvatarRing}
+            ringId={profile.customization.avatarRingId}
             decorationUrl={profile.customization.assets.avatarDecorationUrl}
             animatedAvatarUrl={avatarPreview}
           />

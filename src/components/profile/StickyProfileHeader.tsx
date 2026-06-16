@@ -107,6 +107,7 @@ export function StickyProfileHeader({
         displayName={displayName}
         size="sm"
         ring={flags.hasAvatarRing}
+        ringId={customization.avatarRingId}
         decorationUrl={assets.avatarDecorationUrl}
         animatedAvatarUrl={assets.animatedAvatarUrl}
       />

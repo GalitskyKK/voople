@@ -276,8 +276,167 @@ body {
   --theme-accent: #8b7ec8;
 }
 
+/* Avatar rings — CSS-кольца вокруг аватара (см. lib/customization/rings.ts) */
+.voople-ring {
+  position: relative;
+}
+
+.voople-ring--default {
+  box-shadow:
+    0 0 0 2px var(--theme-primary),
+    0 0 0 4px var(--theme-accent);
+}
+
+.voople-ring--glow-purple {
+  box-shadow:
+    0 0 0 2px #0c0c11,
+    0 0 0 4px #a855f7,
+    0 0 12px 2px rgba(168, 85, 247, 0.55);
+}
+
+@keyframes voople-ring-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px #0c0c11,
+      0 0 0 4px #a855f7,
+      0 0 8px 1px rgba(168, 85, 247, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px #0c0c11,
+      0 0 0 4px #c084fc,
+      0 0 16px 4px rgba(168, 85, 247, 0.75);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .voople-ring--glow-purple {
+    animation: voople-ring-glow 2.8s ease-in-out infinite;
+  }
+}
+
 .voople-profile-sticky {
   /* compact header after card scroll — see StickyProfileHeader */
+}
+
+/* Code-driven эффекты профиля (частицы на CSS) — см. effects-registry.ts.
+   Падение анимируется через top в % (относительно карточки) — без container-queries,
+   поэтому работает в любом контексте, в т.ч. внутри 3D-переворота FlipCard. */
+.voople-fx[data-paused="true"] .voople-fx__p {
+  animation-play-state: paused;
+}
+
+.voople-fx__p {
+  position: absolute;
+  top: var(--y, 0%);
+  left: var(--x);
+  width: var(--size);
+  height: var(--size);
+  background: var(--color);
+  opacity: 0;
+  will-change: transform, top, opacity;
+  animation-duration: var(--dur);
+  animation-delay: var(--delay);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.voople-fx__p--snow {
+  border-radius: 9999px;
+  filter: blur(0.3px);
+  animation-name: voople-fx-snow;
+}
+
+.voople-fx__p--confetti {
+  border-radius: 1px;
+  animation-name: voople-fx-confetti;
+}
+
+.voople-fx__p--sparkle {
+  border-radius: 9999px;
+  box-shadow: 0 0 6px 1px var(--color);
+  animation-name: voople-fx-sparkle;
+  animation-timing-function: ease-in-out;
+}
+
+.voople-fx__p--firefly {
+  border-radius: 9999px;
+  box-shadow: 0 0 8px 2px var(--color);
+  animation-name: voople-fx-firefly;
+  animation-timing-function: ease-in-out;
+}
+
+@keyframes voople-fx-snow {
+  0% {
+    top: -10%;
+    opacity: 0;
+    transform: translateX(0);
+  }
+  10% {
+    opacity: 0.9;
+  }
+  100% {
+    top: 110%;
+    opacity: 0.9;
+    transform: translateX(var(--drift));
+  }
+}
+
+@keyframes voople-fx-confetti {
+  0% {
+    top: -10%;
+    opacity: 0;
+    transform: translateX(0) rotate(0deg);
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    top: 110%;
+    opacity: 1;
+    transform: translateX(var(--drift)) rotate(720deg);
+  }
+}
+
+@keyframes voople-fx-sparkle {
+  0%,
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes voople-fx-firefly {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.15;
+  }
+  25% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate3d(var(--dx), var(--dy), 0);
+    opacity: 0.4;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.15;
+  }
+}
+
+/* reduced-motion: оставляем декор, но без анимации (статичная раскладка). */
+.voople-fx[data-static="true"] .voople-fx__p {
+  top: var(--y, 50%);
+  opacity: 0.65;
+  animation: none;
 }
 
 /* Feed post */

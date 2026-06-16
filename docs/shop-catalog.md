@@ -33,9 +33,10 @@
 | Владение предметом | `user_inventory.item_id` | claim / покупка |
 | Баннер (магазин) | CDN `customization/banners/{id}` | `banner_type`, `banner_value` через `equip` |
 | Свой баннер | upload storage | `banner_value` через `setCustomBanner`, **нужен Voople+** (`subscriptions.expires_at`) |
-| Эффект карточки | CDN `customization/effects/{id}` | `profile_effect_id` |
+| Эффект карточки (картинка) | CDN `customization/effects/{id}` | `profile_effect_id` |
+| Эффект карточки (CSS) | пресет в `effects-registry.ts` | `profile_effect_id` (= id пресета) |
 | Украшение аватара | CDN `customization/decorations/{id}` | `avatar_decoration_id` |
-| Кольцо (CSS-обводка) | код UI | `avatar_ring_id` |
+| Кольцо (CSS-обводка) | `src/lib/customization/rings.ts` + `globals.css` | `avatar_ring_id` |
 | Анимация в круге | CDN `customization/animated/{id}` | `animated_avatar_id` |
 | Стиль имени | hex в каталоге | `nickname_color`, `nickname_gradient` |
 | Лента | CDN `customization/feed-cards/{id}` | `feed_card_style_id` |
@@ -50,7 +51,7 @@
 | Shop `kind` | Equip-поле в БД | Что меняется в UI |
 |-------------|-----------------|-------------------|
 | `banner` | `banner_value` | Верх карточки профиля |
-| `effect` | `profile_effect_id` | Оверлей **на всю карточку** (божьи коровки и т.п.) |
+| `effect` | `profile_effect_id` | Оверлей **на всю карточку**: картинка (CDN) **или** CSS-частицы (пресет) |
 | `decoration` | `avatar_decoration_id` | Картинка **вокруг** круга аватара |
 | `animated_avatar` | `animated_avatar_id` | **Круг аватара**: зацикленный WebP/APNG вместо буквы |
 | `feed_card` | `feed_card_style_id` | Полоска автора в ленте |
@@ -135,7 +136,8 @@ ON CONFLICT (id) DO UPDATE SET
 
 | id | CDN |
 |----|-----|
-| banner-minti, effect-ladybugs, decoration-sparkle, feed-sakura, animated-minti | да |
+| banner-minti, effect-ladybugs, effect-fireflies, effect-snowfall, effect-glitch-sparks, effect-petal-fall, decoration-sparkle, feed-sakura, animated-minti | да |
+| effect-css-snow, effect-css-confetti, effect-css-sparkles, effect-css-fireflies | CSS (пресеты частиц) |
 | ring-glow-purple, style-neon-pink | CSS |
 | theme-violet, theme-emerald, theme-rose, theme-gold | CSS (+ опционально themes/*) |
 

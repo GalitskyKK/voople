@@ -1,11 +1,15 @@
 import Image from "next/image";
 
+import { DEFAULT_RING, resolveRingStyle } from "@/lib/customization/rings";
 import { cn } from "@/lib/utils";
 
 export type ProfileAvatarProps = {
   displayName: string;
   size?: "sm" | "md" | "lg";
+  /** Включает дефолтное кольцо (акцент темы). Игнорируется, если задан `ringId`. */
   ring?: boolean;
+  /** Конкретное кольцо из магазина (`avatar_ring_id`); приоритетнее `ring`. */
+  ringId?: string | null;
   decorationUrl?: string | null;
   animatedAvatarUrl?: string | null;
   isOnline?: boolean;
@@ -27,12 +31,14 @@ export function ProfileAvatar({
   displayName,
   size = "md",
   ring = false,
+  ringId,
   decorationUrl,
   animatedAvatarUrl,
   isOnline = false,
 }: ProfileAvatarProps) {
   const initial = displayName.charAt(0).toUpperCase();
   const s = sizes[size];
+  const ringStyle = ringId ? resolveRingStyle(ringId) : ring ? DEFAULT_RING : null;
 
   return (
     <div className="relative shrink-0 overflow-visible">
@@ -48,7 +54,7 @@ export function ProfileAvatar({
         className={cn(
           "relative flex items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-violet-600 to-violet-400 font-semibold text-white",
           s.box,
-          ring && "ring-2 ring-[var(--theme-accent)] ring-offset-2 ring-offset-[var(--theme-primary)]",
+          ringStyle?.className,
         )}
       >
         {animatedAvatarUrl ? (

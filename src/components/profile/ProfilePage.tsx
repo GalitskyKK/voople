@@ -10,6 +10,7 @@ import { trpc } from "@/lib/trpc/client";
 import type { PostViewModel, ProfileViewModel } from "@/types/domain";
 import type { Stroke } from "@/types/canvas";
 import { ProfileFeedTabs, type ProfileFeedTab } from "./ProfileFeedTabs";
+import { ProfileQuestions } from "./ProfileQuestions";
 import { ProfileFlipCard } from "./canvas/ProfileFlipCard";
 import { StickyProfileHeader } from "./StickyProfileHeader";
 
@@ -20,6 +21,8 @@ type ProfilePageProps = {
   viewerId?: string | null;
   canPost?: boolean;
   canFollow?: boolean;
+  /** Заход по ask-ссылке (`?ask=1`): открыть вкладку вопросов и сфокусировать форму. */
+  askDeepLink?: boolean;
 };
 
 export function ProfilePage({
@@ -29,10 +32,11 @@ export function ProfilePage({
   viewerId = null,
   canPost = false,
   canFollow = false,
+  askDeepLink = false,
 }: ProfilePageProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [profile, setProfile] = useState(initialProfile);
-  const [feedTab, setFeedTab] = useState<ProfileFeedTab>("posts");
+  const [feedTab, setFeedTab] = useState<ProfileFeedTab>(askDeepLink ? "questions" : "posts");
   const stickyVisible = useElementScrolledPast(cardRef, { edgeTop: 48 });
   const isOwner = Boolean(viewerId && viewerId === profile.id);
   const utils = trpc.useUtils();
@@ -159,13 +163,21 @@ export function ProfilePage({
           data-voople-scroll=""
           className="voople-profile-page__posts voople-scroll min-w-0 space-y-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1"
         >
-          {canPost && (
+          {canPost && feedTab !== "questions" && (
             <div className="hidden lg:block">
               <CreatePostBlock profile={profile} canPost />
             </div>
           )}
           <ProfileFeedTabs active={feedTab} onChange={setFeedTab} />
-          {filteredPosts.length === 0 ? (
+          {feedTab === "questions" ? (
+            <ProfileQuestions
+              profileUserId={profile.id}
+              username={profile.username}
+              isOwner={isOwner}
+              canAsk={Boolean(viewerId) && !isOwner}
+              autoFocusAsk={askDeepLink}
+            />
+          ) : filteredPosts.length === 0 ? (
             <p className="text-center text-sm text-white/50">{emptyFeedMessage}</p>
           ) : (
             filteredPosts.map((post) => (

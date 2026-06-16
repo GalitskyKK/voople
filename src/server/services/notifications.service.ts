@@ -1,7 +1,16 @@
 import { getAdminClient } from "@/lib/supabase/admin";
 import { mapSubscriptionFields } from "@/server/mappers/profile";
 
-export type NotifType = "like" | "follow" | "reply" | "repost" | "profile_canvas_draw";
+export type NotifType =
+  | "like"
+  | "follow"
+  | "reply"
+  | "repost"
+  | "profile_canvas_draw"
+  | "question";
+
+/** Типы уведомлений, в которых автор скрыт от получателя (анонимность). */
+const ANONYMOUS_NOTIF_TYPES = new Set<string>(["profile_canvas_draw", "question"]);
 
 const PROFILE_CANVAS_NOTIF_COOLDOWN_MS = 30 * 60 * 1000;
 
@@ -58,6 +67,31 @@ export async function notifyProfileCanvasDraw(profileUserId: string, actorId: st
   }
 }
 
+/**
+ * Уведомление владельцу: пришёл новый анонимный вопрос.
+ * actor_id пишется в БД (анти-абьюз/модерация), но в API не отдаётся.
+ * Best-effort: ошибка уведомления не должна откатывать сам вопрос.
+ */
+export async function notifyQuestionAsked(
+  profileUserId: string,
+  askerId: string | null,
+  questionId: string,
+) {
+  if (askerId && profileUserId === askerId) return;
+
+  try {
+    const { error } = await getAdminClient().from("notifications").insert({
+      user_id: profileUserId,
+      type: "question",
+      actor_id: askerId,
+      reference_id: questionId,
+    });
+    if (error) return;
+  } catch {
+    return;
+  }
+}
+
 export type NotificationView = {
   id: string;
   type: string;
@@ -98,7 +132,7 @@ export async function listNotifications(userId: string, limit = 40) {
   const actorIds = [
     ...new Set(
       (rows ?? [])
-        .filter((r) => r.type !== "profile_canvas_draw")
+        .filter((r) => !ANONYMOUS_NOTIF_TYPES.has(r.type as string))
         .map((r) => r.actor_id as string | null)
         .filter(Boolean),
     ),
@@ -135,7 +169,7 @@ export async function listNotifications(userId: string, limit = 40) {
   return (rows ?? []).map((row) => {
     const type = row.type as string;
     const actorId = row.actor_id as string | null;
-    const hideActor = type === "profile_canvas_draw";
+    const hideActor = ANONYMOUS_NOTIF_TYPES.has(type);
     const actor =
       !hideActor && actorId ? (actorsById.get(actorId) ?? null) : null;
 
@@ -146,7 +180,7 @@ export async function listNotifications(userId: string, limit = 40) {
       createdAt: row.created_at as string,
       referenceId: (row.reference_id as string | null) ?? null,
       actor,
-      profileUsername: type === "profile_canvas_draw" ? profileUsername : null,
+      profileUsername: hideActor ? profileUsername : null,
     } satisfies NotificationView;
   });
 }

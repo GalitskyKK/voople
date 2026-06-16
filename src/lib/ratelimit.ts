@@ -14,4 +14,16 @@ export const rateLimits = {
   like: () => createLimit(100, "10 m"),
   updateStatus: () => createLimit(20, "1 h"),
   uploadTrack: () => createLimit(10, "24 h"),
+  // Жёсткий лимит против перебора промокодов.
+  applyPromo: () => createLimit(10, "1 h"),
+  // Анти-спам для записи-тяжёлых мутаций (сообщения, комментарии, репосты, подписки, штрихи холста).
+  sendMessage: () => createLimit(60, "1 m"),
+  comment: () => createLimit(40, "10 m"),
+  repost: () => createLimit(40, "10 m"),
+  follow: () => createLimit(60, "10 m"),
+  canvasStroke: () => createLimit(120, "1 m"),
+  // Анонимные вопросы — низкий лимит против спама в инбоксе.
+  askQuestion: () => createLimit(15, "1 h"),
+  // Входящие вебхуки (ключ — IP источника): троттлинг до обращения к внешнему API.
+  webhook: () => createLimit(120, "1 m"),
 };

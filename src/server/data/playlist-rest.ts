@@ -175,7 +175,7 @@ export async function createTrackFromUploadRest(
     pinToProfile: boolean;
   },
 ) {
-  resolvePublicMediaKey(input.fileKey, userId, "track");
+  await resolvePublicMediaKey(input.fileKey, userId, "track");
   const track = await insertPlaylistTrackRest({
     userId,
     title: input.title,

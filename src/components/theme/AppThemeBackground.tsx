@@ -1,34 +1,33 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "react"
 
-import { resolveAppThemeAssets } from "@/lib/app-theme-assets";
-import { getAppTheme } from "@/lib/app-themes";
-import { useAppTheme } from "./AppThemeProvider";
+import { resolveAppThemeAssets } from "@/lib/app-theme-assets"
+import { useAppTheme } from "./AppThemeProvider"
 
 function usePrefersReducedMotion() {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setPrefersReducedMotion(mediaQuery.matches);
-    update();
-    mediaQuery.addEventListener("change", update);
-    return () => mediaQuery.removeEventListener("change", update);
-  }, []);
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const update = () => setPrefersReducedMotion(mediaQuery.matches)
+    update()
+    mediaQuery.addEventListener("change", update)
+    return () => mediaQuery.removeEventListener("change", update)
+  }, [])
 
-  return prefersReducedMotion;
+  return prefersReducedMotion
 }
 
 type ThemeImageLayerProps = {
-  url: string;
-  className?: string;
-};
+  url: string
+  className?: string
+}
 
 function ThemeImageLayer({ url, className }: ThemeImageLayerProps) {
-  const [hidden, setHidden] = useState(false);
+  const [hidden, setHidden] = useState(false)
 
-  if (hidden) return null;
+  if (hidden) return null
 
   return (
     // eslint-disable-next-line @next/next/no-img-element -- animated WebP/APNG backgrounds are not a good fit for next/image
@@ -40,26 +39,24 @@ function ThemeImageLayer({ url, className }: ThemeImageLayerProps) {
       className={className}
       onError={() => setHidden(true)}
     />
-  );
+  )
 }
 
 export function AppThemeBackground() {
-  const { themeId } = useAppTheme();
-  const prefersReducedMotion = usePrefersReducedMotion();
-  const theme = getAppTheme(themeId);
+  const { themeId, theme } = useAppTheme()
+  const prefersReducedMotion = usePrefersReducedMotion()
   const assets = resolveAppThemeAssets(theme, {
-    preferStaticBackground: prefersReducedMotion,
-  });
-  const hasLayers = Boolean(assets.backgroundUrl || assets.overlayUrl);
+    preferStaticBackground: prefersReducedMotion
+  })
+  const hasLayers = Boolean(assets.backgroundUrl || assets.overlayUrl)
 
-  if (!hasLayers) return null;
+  if (!hasLayers) return null
 
   return (
     <div
       key={themeId}
       aria-hidden
-      className="voople-app-theme-bg pointer-events-none fixed inset-0 -z-10 overflow-hidden"
-    >
+      className="voople-app-theme-bg pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       {assets.backgroundUrl && (
         <ThemeImageLayer
           url={assets.backgroundUrl}
@@ -74,5 +71,5 @@ export function AppThemeBackground() {
       )}
       <div className="voople-app-theme-bg__scrim absolute inset-0 bg-background/78" />
     </div>
-  );
+  )
 }

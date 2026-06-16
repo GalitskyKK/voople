@@ -10,7 +10,9 @@ import {
   hideQuestion,
   listAnsweredQuestions,
   listQuestionInbox,
+  listQuestionReactions,
   shareAnswerToFeed,
+  toggleQuestionReaction,
   QUESTION_MAX_LENGTH,
   ANSWER_MAX_LENGTH,
 } from "@/server/services/questions.service";
@@ -98,6 +100,25 @@ export const questionsRouter = createTRPCRouter({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: e instanceof Error ? e.message : "Не удалось удалить вопрос",
+        });
+      }
+    }),
+
+  /** Сводка реакций по всем отвеченным вопросам профиля (публично). */
+  listReactions: publicProcedure
+    .input(z.object({ profileUserId: z.string().uuid() }))
+    .query(({ ctx, input }) => listQuestionReactions(input.profileUserId, ctx.user?.id ?? null)),
+
+  /** Переключить реакцию на отвеченный вопрос. Только залогиненные. */
+  toggleReaction: protectedProcedure
+    .input(z.object({ questionId: z.string().uuid(), emoji: z.string().min(1).max(10) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await toggleQuestionReaction(input.questionId, ctx.user.id, input.emoji);
+      } catch (e) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: e instanceof Error ? e.message : "Не удалось поставить реакцию",
         });
       }
     }),

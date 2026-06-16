@@ -11,3 +11,11 @@ export {
   type AnsweredQuestionView,
   type InboxQuestionView,
 } from "@/server/data/questions-rest";
+
+export {
+  QUESTION_REACTION_EMOJIS,
+  listQuestionReactionsRest as listQuestionReactions,
+  toggleQuestionReactionRest as toggleQuestionReaction,
+  type QuestionReactionSummary,
+  type QuestionReactionsByQuestion,
+} from "@/server/data/question-reactions-rest";

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { HelpCircle, Send } from "lucide-react";
 
 import { trpc } from "@/lib/trpc/client";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { ShareButton } from "@/components/ui/ShareButton";
@@ -12,12 +13,16 @@ import { ShareButton } from "@/components/ui/ShareButton";
 const QUESTION_MAX_LENGTH = 500;
 const ANSWER_MAX_LENGTH = 1000;
 
+type QuestionReaction = { emoji: string; count: number; reactedByViewer: boolean };
+
 type ProfileQuestionsProps = {
   profileUserId: string;
   username: string;
   isOwner: boolean;
   /** Залогиненный посетитель (не владелец) может задавать вопросы. */
   canAsk: boolean;
+  /** Любой залогиненный пользователь может ставить реакции на ответы. */
+  canReact: boolean;
   /** Сфокусировать форму вопроса при заходе по ask-ссылке. */
   autoFocusAsk?: boolean;
 };
@@ -27,11 +32,13 @@ export function ProfileQuestions({
   username,
   isOwner,
   canAsk,
+  canReact,
   autoFocusAsk = false,
 }: ProfileQuestionsProps) {
   const utils = trpc.useUtils();
 
   const answered = trpc.questions.listAnswered.useQuery({ profileUserId });
+  const reactions = trpc.questions.listReactions.useQuery({ profileUserId });
   const inbox = trpc.questions.listInbox.useQuery(undefined, { enabled: isOwner });
 
   return (
@@ -83,6 +90,9 @@ export function ProfileQuestions({
         items={answered.data ?? []}
         loading={answered.isLoading}
         isOwner={isOwner}
+        profileUserId={profileUserId}
+        canReact={canReact}
+        reactionsByQuestion={reactions.data ?? {}}
         onShared={() => void utils.questions.listAnswered.invalidate({ profileUserId })}
       />
     </div>
@@ -259,11 +269,17 @@ function AnsweredList({
   items,
   loading,
   isOwner,
+  profileUserId,
+  canReact,
+  reactionsByQuestion,
   onShared,
 }: {
   items: { id: string; question: string; answer: string; answeredAt: string }[];
   loading: boolean;
   isOwner: boolean;
+  profileUserId: string;
+  canReact: boolean;
+  reactionsByQuestion: Record<string, QuestionReaction[]>;
   onShared: () => void;
 }) {
   if (loading) {
@@ -278,7 +294,15 @@ function AnsweredList({
   return (
     <ul className="space-y-3">
       {items.map((q) => (
-        <AnsweredItem key={q.id} item={q} isOwner={isOwner} onShared={onShared} />
+        <AnsweredItem
+          key={q.id}
+          item={q}
+          isOwner={isOwner}
+          profileUserId={profileUserId}
+          canReact={canReact}
+          reactions={reactionsByQuestion[q.id] ?? []}
+          onShared={onShared}
+        />
       ))}
     </ul>
   );
@@ -287,13 +311,28 @@ function AnsweredList({
 function AnsweredItem({
   item,
   isOwner,
+  profileUserId,
+  canReact,
+  reactions,
   onShared,
 }: {
   item: { id: string; question: string; answer: string; answeredAt: string };
   isOwner: boolean;
+  profileUserId: string;
+  canReact: boolean;
+  reactions: QuestionReaction[];
   onShared: () => void;
 }) {
+  const utils = trpc.useUtils();
   const share = trpc.questions.shareToFeed.useMutation({ onSuccess: onShared });
+  const react = trpc.questions.toggleReaction.useMutation({
+    onSuccess: (next) => {
+      utils.questions.listReactions.setData({ profileUserId }, (prev) => ({
+        ...(prev ?? {}),
+        [item.id]: next,
+      }));
+    },
+  });
 
   return (
     <li className="voople-panel space-y-2 p-4">
@@ -304,6 +343,38 @@ function AnsweredItem({
       <p className="whitespace-pre-wrap border-l-2 border-(--theme-accent) pl-3 text-sm text-white">
         {item.answer}
       </p>
+
+      {reactions.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {reactions.map((reaction) => {
+            const active = reaction.reactedByViewer;
+            const empty = reaction.count === 0;
+            if (empty && !canReact) return null;
+            return (
+              <button
+                key={reaction.emoji}
+                type="button"
+                disabled={!canReact || react.isPending}
+                onClick={() => react.mutate({ questionId: item.id, emoji: reaction.emoji })}
+                aria-pressed={active}
+                aria-label={`Реакция ${reaction.emoji}`}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition disabled:cursor-default",
+                  active
+                    ? "bg-(--theme-accent)/20 text-white"
+                    : "bg-white/5 text-white/70 hover:bg-white/10",
+                )}
+              >
+                <span aria-hidden>{reaction.emoji}</span>
+                {reaction.count > 0 && (
+                  <span className="tabular-nums text-white/60">{reaction.count}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-2">
         <RelativeTime iso={item.answeredAt} className="text-xs text-white/50" />
         {isOwner && (

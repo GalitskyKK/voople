@@ -175,6 +175,7 @@ export function ProfilePage({
               username={profile.username}
               isOwner={isOwner}
               canAsk={Boolean(viewerId) && !isOwner}
+              canReact={Boolean(viewerId)}
               autoFocusAsk={askDeepLink}
             />
           ) : filteredPosts.length === 0 ? (

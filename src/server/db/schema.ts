@@ -276,6 +276,25 @@ export const profileQuestions = pgTable(
   }),
 );
 
+/** Эмодзи-реакции на отвеченные вопросы. */
+export const questionReactions = pgTable(
+  "question_reactions",
+  {
+    questionId: uuid("question_id")
+      .notNull()
+      .references(() => profileQuestions.id, { onDelete: "cascade" }),
+    reactorUserId: uuid("reactor_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    emoji: varchar("emoji", { length: 10 }).notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.questionId, t.reactorUserId, t.emoji] }),
+    questionIdx: index("question_reactions_question_idx").on(t.questionId),
+  }),
+);
+
 export const follows = pgTable(
   "follows",
   {

@@ -13,6 +13,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 
+import { useIsClient } from "@/hooks/useIsClient";
 import { cn } from "@/lib/utils";
 
 type DropdownMenuProps = {
@@ -38,12 +39,8 @@ export function DropdownMenu({
 }: DropdownMenuProps) {
   const triggerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
   const [position, setPosition] = useState<MenuPosition | null>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const updatePosition = useCallback(() => {
     const triggerEl = triggerRef.current;

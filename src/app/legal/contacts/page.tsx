@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { LegalDocument } from "@/components/legal/LegalDocument";
 import { MERCHANT } from "@/lib/constants/legal";
@@ -50,16 +51,16 @@ export default function LegalContactsPage() {
       <h2>Документы</h2>
       <ul>
         <li>
-          <a href="/legal/services">Услуги и цены</a>
+          <Link href="/legal/services">Услуги и цены</Link>
         </li>
         <li>
-          <a href="/legal/delivery">Получение заказа</a>
+          <Link href="/legal/delivery">Получение заказа</Link>
         </li>
         <li>
-          <a href="/legal/offer">Публичная оферта</a>
+          <Link href="/legal/offer">Публичная оферта</Link>
         </li>
         <li>
-          <a href="/legal/terms">Условия использования</a>
+          <Link href="/legal/terms">Условия использования</Link>
         </li>
       </ul>
     </LegalDocument>

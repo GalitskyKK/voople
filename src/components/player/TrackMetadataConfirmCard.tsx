@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -33,10 +33,14 @@ export function TrackMetadataConfirmCard({
   const [title, setTitle] = useState(initialTitle);
   const [artist, setArtist] = useState(initialArtist);
 
-  useEffect(() => {
+  // Подхватываем новые initial-значения (смена распознанного трека) во время
+  // рендера, без эффекта — паттерн «сравнение с предыдущими пропсами».
+  const [prevInitial, setPrevInitial] = useState({ initialTitle, initialArtist });
+  if (prevInitial.initialTitle !== initialTitle || prevInitial.initialArtist !== initialArtist) {
+    setPrevInitial({ initialTitle, initialArtist });
     setTitle(initialTitle);
     setArtist(initialArtist);
-  }, [initialTitle, initialArtist]);
+  }
 
   const canConfirm = title.trim().length > 0 && artist.trim().length > 0;
 

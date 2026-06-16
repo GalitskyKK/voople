@@ -8,6 +8,7 @@ import {
   type AppTheme,
   type AppThemeId,
 } from "@/lib/app-themes";
+import { useIsClient } from "@/hooks/useIsClient";
 
 import { AppThemeBackground } from "./AppThemeBackground";
 
@@ -36,15 +37,16 @@ function applyTheme(themeId: AppThemeId) {
 }
 
 export function AppThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeId, setThemeIdState] = useState<AppThemeId>(DEFAULT_APP_THEME_ID);
-  const [themeReady, setThemeReady] = useState(false);
+  // Признак клиента: на сервере и в первом рендере держим тему по умолчанию,
+  // чтобы не было рассинхрона гидрации; после монтирования читаем localStorage.
+  const isClient = useIsClient();
+  const [override, setOverride] = useState<AppThemeId | null>(null);
+
+  const themeId: AppThemeId =
+    override ??
+    (isClient ? getAppTheme(window.localStorage.getItem(STORAGE_KEY)).id : DEFAULT_APP_THEME_ID);
 
   const theme = useMemo(() => getAppTheme(themeId), [themeId]);
-
-  useEffect(() => {
-    setThemeIdState(getAppTheme(window.localStorage.getItem(STORAGE_KEY)).id);
-    setThemeReady(true);
-  }, []);
 
   useEffect(() => {
     applyTheme(themeId);
@@ -57,7 +59,7 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
       setThemeId: (nextThemeId) => {
         const nextTheme = getAppTheme(nextThemeId);
         window.localStorage.setItem(STORAGE_KEY, nextTheme.id);
-        setThemeIdState(nextTheme.id);
+        setOverride(nextTheme.id);
       },
     }),
     [theme, themeId],
@@ -65,7 +67,7 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppThemeContext.Provider value={value}>
-      {themeReady ? <AppThemeBackground /> : null}
+      {isClient ? <AppThemeBackground /> : null}
       {children}
     </AppThemeContext.Provider>
   );

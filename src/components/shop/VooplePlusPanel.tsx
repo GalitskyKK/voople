@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Crown } from "lucide-react";
 
 import {
@@ -138,9 +139,9 @@ export function VooplePlusPanel({
           </Button>
           <p className="text-xs text-white/40">
             Нажимая кнопку, вы соглашаетесь с{" "}
-            <a href="/legal/offer" className="underline hover:text-white/60">
+            <Link href="/legal/offer" className="underline hover:text-white/60">
               офертой
-            </a>
+            </Link>
             .
           </p>
         </div>

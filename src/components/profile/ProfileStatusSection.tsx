@@ -40,30 +40,28 @@ export function ProfileStatusSection({
     { enabled: isOwner, staleTime: 5_000 },
   );
 
-  useEffect(() => {
-    if (!isOwner || !liveProfile?.status) return;
-    const server = liveProfile.status;
-    setDraft((prev) => {
-      if (
-        prev.trackId === server.trackId &&
-        prev.trackTitle === server.trackTitle &&
-        prev.trackArtist === server.trackArtist
-      ) {
-        return prev;
-      }
-      return {
-        ...prev,
-        trackId: server.trackId,
-        trackTitle: server.trackTitle,
-        trackArtist: server.trackArtist,
-      };
-    });
-  }, [
-    isOwner,
-    liveProfile?.status?.trackId,
-    liveProfile?.status?.trackTitle,
-    liveProfile?.status?.trackArtist,
-  ]);
+  // Подтягиваем серверный трек статуса в черновик при его изменении — во время
+  // рендера (без эффекта): сравниваем ключ серверных значений с предыдущим.
+  const server = isOwner ? liveProfile?.status : undefined;
+  const serverTrackKey = server
+    ? `${server.trackId ?? ""}|${server.trackTitle ?? ""}|${server.trackArtist ?? ""}`
+    : null;
+  const [prevServerTrackKey, setPrevServerTrackKey] = useState<string | null>(null);
+  if (server && serverTrackKey !== prevServerTrackKey) {
+    setPrevServerTrackKey(serverTrackKey);
+    setDraft((prev) =>
+      prev.trackId === server.trackId &&
+      prev.trackTitle === server.trackTitle &&
+      prev.trackArtist === server.trackArtist
+        ? prev
+        : {
+            ...prev,
+            trackId: server.trackId,
+            trackTitle: server.trackTitle,
+            trackArtist: server.trackArtist,
+          },
+    );
+  }
 
   const dirty = isOwner && !statusEquals(draft, feedPublished);
 

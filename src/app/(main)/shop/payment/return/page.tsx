@@ -12,10 +12,17 @@ export default function ShopPaymentReturnPage() {
   const [synced, setSynced] = useState(false);
 
   useEffect(() => {
-    void utils.shop.subscriptionStatus.invalidate();
-    void utils.shop.overview.invalidate();
-    void utils.profile.invalidate();
-    setSynced(true);
+    let cancelled = false;
+    void Promise.all([
+      utils.shop.subscriptionStatus.invalidate(),
+      utils.shop.overview.invalidate(),
+      utils.profile.invalidate(),
+    ]).finally(() => {
+      if (!cancelled) setSynced(true);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [utils]);
 
   const hint = searchParams.get("hint");

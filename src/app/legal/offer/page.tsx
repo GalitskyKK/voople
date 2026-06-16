@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { LegalDocument } from "@/components/legal/LegalDocument";
 import { MERCHANT } from "@/lib/constants/legal";
@@ -35,7 +36,7 @@ export default function LegalOfferPage() {
       <p>
         Исполнитель предоставляет Заказчику доступ к цифровым товарам и услугам, перечень и стоимость которых
         опубликованы на странице{" "}
-        <a href="/legal/services">«Услуги и цены»</a>. Акцептом оферты считается оплата Заказчиком выбранного
+        <Link href="/legal/services">«Услуги и цены»</Link>. Акцептом оферты считается оплата Заказчиком выбранного
         товара или услуги через платёжный сервис ЮKassa.
       </p>
 
@@ -49,7 +50,7 @@ export default function LegalOfferPage() {
       <h2>4. Порядок предоставления услуг</h2>
       <p>
         Цифровые товары предоставляются в электронном виде путём зачисления в инвентарь аккаунта Заказчика.
-        Подробности — на странице <a href="/legal/delivery">«Получение заказа»</a>.
+        Подробности — на странице <Link href="/legal/delivery">«Получение заказа»</Link>.
       </p>
 
       <h2>5. Возврат средств</h2>

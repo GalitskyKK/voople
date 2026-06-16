@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { LegalDocument } from "@/components/legal/LegalDocument";
 import { MERCHANT } from "@/lib/constants/legal";
@@ -40,8 +41,8 @@ export default function LegalTermsPage() {
       <h2>4. Магазин и оплата</h2>
       <p>
         Покупка цифровых товаров и добровольные платежи регулируются также{" "}
-        <a href="/legal/offer">публичной офертой</a>. Актуальные цены опубликованы на странице{" "}
-        <a href="/legal/services">«Услуги и цены»</a>.
+        <Link href="/legal/offer">публичной офертой</Link>. Актуальные цены опубликованы на странице{" "}
+        <Link href="/legal/services">«Услуги и цены»</Link>.
       </p>
 
       <h2>5. Ограничение ответственности</h2>
@@ -67,7 +68,7 @@ export default function LegalTermsPage() {
       <p>
         По вопросам работы Сервиса:{" "}
         <a href={`mailto:${MERCHANT.email}`}>{MERCHANT.email}</a>. Реквизиты исполнителя — на странице{" "}
-        <a href="/legal/contacts">«Контакты и реквизиты»</a>.
+        <Link href="/legal/contacts">«Контакты и реквизиты»</Link>.
       </p>
     </LegalDocument>
   );

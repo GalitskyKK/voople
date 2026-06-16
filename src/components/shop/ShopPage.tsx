@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Crown, Package, Palette, ShoppingBag } from "lucide-react";
 
 import { trpc } from "@/lib/trpc/client";
@@ -43,11 +43,14 @@ export function ShopPage() {
   const utils = trpc.useUtils();
   const { setThemeId } = useAppTheme();
 
-  useEffect(() => {
+  // Синхронизация активной вкладки с ?tab=... во время рендера (без эффекта).
+  const [prevTabFromUrl, setPrevTabFromUrl] = useState(tabFromUrl);
+  if (tabFromUrl !== prevTabFromUrl) {
+    setPrevTabFromUrl(tabFromUrl);
     if (tabFromUrl && TAB_IDS.has(tabFromUrl as ShopTab)) {
       setTab(tabFromUrl as ShopTab);
     }
-  }, [tabFromUrl]);
+  }
 
   const overviewQuery = trpc.shop.overview.useQuery(undefined, {
     retry: false,

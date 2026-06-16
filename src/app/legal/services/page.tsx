@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { LegalDocument } from "@/components/legal/LegalDocument";
 import { MERCHANT } from "@/lib/constants/legal";
@@ -70,7 +71,7 @@ export default function LegalServicesPage() {
         Предметы магазина — это цифровые активы: темы, эффекты, баннеры, декорации аватара и другие
         элементы оформления профиля и интерфейса. После оплаты предмет зачисляется в инвентарь аккаунта и
         становится доступен для экипировки в разделе{" "}
-        <a href="/shop">«Магазин»</a>.
+        <Link href="/shop">«Магазин»</Link>.
       </p>
 
       <div className="voople-legal__table-wrap">

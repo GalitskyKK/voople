@@ -21,7 +21,11 @@ export function ProfileCanvasPreview({ strokes, className }: ProfileCanvasPrevie
   const containerRef = useRef<HTMLDivElement>(null);
   const strokesRef = useRef(strokes);
 
-  strokesRef.current = strokes;
+  // Держим актуальные штрихи для redraw при ресайзе (useCanvasSize). Пишем ref
+  // в эффекте, а не во время рендера (react-hooks/refs).
+  useEffect(() => {
+    strokesRef.current = strokes;
+  }, [strokes]);
 
   const redraw = useCallback((size: { width: number; height: number }) => {
     const canvas = canvasRef.current;

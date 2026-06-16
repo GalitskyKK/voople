@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { trpc } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/Button";
@@ -28,12 +28,16 @@ export function PostEditSheet({
   const [error, setError] = useState<string | null>(null);
   const utils = trpc.useUtils();
 
-  useEffect(() => {
+  // Сброс черновика при открытии (и при смене редактируемого поста) — без эффекта:
+  // корректируем состояние во время рендера по изменению входных пропсов.
+  const [prev, setPrev] = useState({ open, initialText });
+  if (open !== prev.open || (open && initialText !== prev.initialText)) {
+    setPrev({ open, initialText });
     if (open) {
       setText(initialText);
       setError(null);
     }
-  }, [initialText, open]);
+  }
 
   const update = trpc.post.update.useMutation({
     onSuccess: (_data, variables) => {

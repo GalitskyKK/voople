@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
+import { useIsClient } from "@/hooks/useIsClient";
 import { cn } from "@/lib/utils";
 
 type SheetPlacement = "center" | "bottom";
@@ -21,12 +22,8 @@ export function Sheet({
   className?: string;
   placement?: SheetPlacement;
 }) {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
   const isBottom = placement === "bottom";
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!open) return;

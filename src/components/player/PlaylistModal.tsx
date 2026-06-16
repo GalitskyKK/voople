@@ -98,6 +98,9 @@ export function PlaylistModal() {
   }, [setError]);
 
   useEffect(() => {
+    // Сброс при закрытии — настоящий побочный эффект (URL.revokeObjectURL),
+    // поэтому остаётся в эффекте; правило здесь даёт ложное срабатывание.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!open) clearPending();
   }, [open, clearPending]);
 

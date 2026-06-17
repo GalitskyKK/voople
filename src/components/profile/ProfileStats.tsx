@@ -23,7 +23,7 @@ export function ProfileStats({ posts, followers, following, views, className }: 
   return (
     <div
       className={cn(
-        "voople-profile-stats grid grid-cols-4 gap-1 text-white/70",
+        "voople-profile-stats grid grid-cols-4 gap-1 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]",
         className,
       )}
       aria-label="Статистика профиля"
@@ -34,8 +34,8 @@ export function ProfileStats({ posts, followers, following, views, className }: 
           className="flex min-w-0 flex-col items-center gap-0.5 rounded-lg px-1 py-1 text-center"
           title={`${values[key]} ${label.toLowerCase()}`}
         >
-          <Icon className="h-4 w-4 shrink-0 text-white/50" aria-hidden />
-          <span className="w-full truncate text-sm font-semibold tabular-nums text-white">
+          <Icon className="h-4 w-4 shrink-0 text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]" aria-hidden />
+          <span className="w-full truncate text-sm font-semibold tabular-nums text-[var(--foreground)]">
             {formatStat(values[key])}
           </span>
           <span className="sr-only">{label}</span>

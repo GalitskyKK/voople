@@ -43,7 +43,7 @@ export function ProfileCard({
         subscriptionExpiresAt={profile.subscriptionExpiresAt}
       />
       <div className="relative z-10 px-4 pb-4">
-        {profile.bio && <p className="mt-2 text-sm text-white/70">{profile.bio}</p>}
+        {profile.bio && <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">{profile.bio}</p>}
         <div className="mt-4 flex gap-2">
           {isOwner ? (
             <ProfileEditSheet profile={profile} />

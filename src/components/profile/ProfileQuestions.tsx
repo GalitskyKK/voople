@@ -56,7 +56,7 @@ export function ProfileQuestions({
       {!isOwner && !canAsk && (
         <Link
           href="/login"
-          className="voople-panel flex items-center gap-2 p-4 text-sm text-white/70 transition hover:text-white"
+          className="voople-panel flex items-center gap-2 p-4 text-sm text-[color-mix(in_srgb,var(--foreground)_70%,transparent)] transition hover:text-[var(--foreground)]"
         >
           <HelpCircle className="h-4 w-4 text-(--theme-accent)" />
           Войдите, чтобы задать анонимный вопрос
@@ -65,7 +65,7 @@ export function ProfileQuestions({
 
       {isOwner && inbox.data && inbox.data.length > 0 && (
         <section className="voople-panel space-y-3 p-4">
-          <h3 className="text-sm font-semibold text-white">
+          <h3 className="text-sm font-semibold text-[var(--foreground)]">
             Новые вопросы · {inbox.data.length}
           </h3>
           <ul className="space-y-3">
@@ -103,8 +103,8 @@ function AskLinkBanner({ username }: { username: string }) {
   return (
     <div className="voople-panel flex flex-wrap items-center justify-between gap-2 p-4">
       <div>
-        <p className="text-sm font-semibold text-white">Собирай анонимные вопросы</p>
-        <p className="text-xs text-white/50">Кинь ссылку в сторис, Roblox или чат — спросят анонимно</p>
+        <p className="text-sm font-semibold text-[var(--foreground)]">Собирай анонимные вопросы</p>
+        <p className="text-xs text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">Кинь ссылку в сторис, Roblox или чат — спросят анонимно</p>
       </div>
       <ShareButton
         url={`/${username}?ask=1`}
@@ -151,7 +151,7 @@ function AskQuestionForm({
         ask.mutate({ profileUserId, text: trimmed });
       }}
     >
-      <label className="flex items-center gap-2 text-sm font-semibold text-white">
+      <label className="flex items-center gap-2 text-sm font-semibold text-[var(--foreground)]">
         <HelpCircle className="h-4 w-4 text-(--theme-accent)" />
         Задать анонимный вопрос
       </label>
@@ -164,10 +164,10 @@ function AskQuestionForm({
         }}
         rows={3}
         placeholder="Спросите что угодно — автор не увидит, кто спрашивает"
-        className="w-full resize-none rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-(--theme-accent) focus:outline-none"
+        className="voople-input resize-none"
       />
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-white/40">
+        <span className="text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">
           {sent ? "Вопрос отправлен" : `${trimmed.length}/${QUESTION_MAX_LENGTH}`}
         </span>
         <Button type="submit" size="sm" disabled={!trimmed || ask.isPending}>
@@ -199,9 +199,9 @@ function InboxQuestionItem({
   const busy = answerMutation.isPending || hideMutation.isPending;
 
   return (
-    <li className="rounded-xl border border-white/10 bg-black/20 p-3">
-      <p className="text-sm text-white/90">{question}</p>
-      <div className="mt-1 flex items-center gap-3 text-xs text-white/40">
+    <li className="rounded-xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-black/20 p-3">
+      <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">{question}</p>
+      <div className="mt-1 flex items-center gap-3 text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">
         <RelativeTime iso={createdAt} />
         {!answering && (
           <>
@@ -214,7 +214,7 @@ function InboxQuestionItem({
             </button>
             <button
               type="button"
-              className="text-white/40 hover:text-red-400"
+              className="text-[color-mix(in_srgb,var(--foreground)_40%,transparent)] hover:text-red-400"
               disabled={busy}
               onClick={() => hideMutation.mutate({ questionId: id })}
             >
@@ -232,7 +232,7 @@ function InboxQuestionItem({
             rows={2}
             autoFocus
             placeholder="Ваш публичный ответ"
-            className="w-full resize-none rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-(--theme-accent) focus:outline-none"
+            className="voople-input resize-none"
           />
           <div className="flex items-center justify-end gap-2">
             <Button
@@ -283,11 +283,11 @@ function AnsweredList({
   onShared: () => void;
 }) {
   if (loading) {
-    return <p className="text-center text-sm text-white/50">Загрузка…</p>;
+    return <p className="text-center text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">Загрузка…</p>;
   }
   if (items.length === 0) {
     return (
-      <p className="text-center text-sm text-white/50">Пока нет отвеченных вопросов</p>
+      <p className="text-center text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">Пока нет отвеченных вопросов</p>
     );
   }
 
@@ -337,10 +337,10 @@ function AnsweredItem({
   return (
     <li className="voople-panel space-y-2 p-4">
       <div className="flex items-start gap-2">
-        <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-white/30" />
-        <p className="text-sm text-white/70">{item.question}</p>
+        <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-[color-mix(in_srgb,var(--foreground)_30%,transparent)]" />
+        <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">{item.question}</p>
       </div>
-      <p className="whitespace-pre-wrap border-l-2 border-(--theme-accent) pl-3 text-sm text-white">
+      <p className="whitespace-pre-wrap border-l-2 border-(--theme-accent) pl-3 text-sm text-[var(--foreground)]">
         {item.answer}
       </p>
 
@@ -359,15 +359,15 @@ function AnsweredItem({
                 aria-pressed={active}
                 aria-label={`Реакция ${reaction.emoji}`}
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition disabled:cursor-default",
+                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors disabled:cursor-default",
                   active
-                    ? "bg-(--theme-accent)/20 text-white"
-                    : "bg-white/5 text-white/70 hover:bg-white/10",
+                    ? "border-[color-mix(in_srgb,var(--theme-accent)_45%,transparent)] bg-[var(--app-accent-soft)] text-[var(--foreground)]"
+                    : "border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] hover:border-[var(--app-border-strong)] enabled:hover:text-[var(--foreground)]",
                 )}
               >
                 <span aria-hidden>{reaction.emoji}</span>
                 {reaction.count > 0 && (
-                  <span className="tabular-nums text-white/60">{reaction.count}</span>
+                  <span className="tabular-nums text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">{reaction.count}</span>
                 )}
               </button>
             );
@@ -376,7 +376,7 @@ function AnsweredItem({
       )}
 
       <div className="flex items-center justify-between gap-2">
-        <RelativeTime iso={item.answeredAt} className="text-xs text-white/50" />
+        <RelativeTime iso={item.answeredAt} className="text-xs text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]" />
         {isOwner && (
           <button
             type="button"

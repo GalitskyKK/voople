@@ -37,7 +37,7 @@ export function VooplePlusPinButton({
           setOpen(true);
         }}
         className={cn(
-          "inline-flex shrink-0 cursor-pointer rounded-md p-0.5 transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--theme-accent)",
+          "inline-flex shrink-0 cursor-pointer rounded-md p-0.5 transition hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--theme-accent)",
           className,
         )}
         aria-label="Подробнее о Voople+"

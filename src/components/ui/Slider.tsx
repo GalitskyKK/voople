@@ -26,7 +26,7 @@ export function Slider({
 
   return (
     <div className={cn("relative h-8 w-full", className)}>
-      <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-white/10">
+      <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)]">
         <div
           className="h-full rounded-full bg-[var(--theme-accent)]"
           style={{ width: `${percent}%` }}

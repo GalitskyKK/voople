@@ -48,8 +48,8 @@ export function VooplePlusInfoModal({ open, onClose, expiresAt }: VooplePlusInfo
           <Crown className="h-4 w-4" aria-hidden />
           Voople+
         </p>
-        <h2 className="mt-1 text-xl font-semibold text-white">Премиум оформление</h2>
-        <p className="mt-2 text-sm text-white/55">
+        <h2 className="mt-1 text-xl font-semibold text-[var(--foreground)]">Премиум оформление</h2>
+        <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--foreground)_55%,transparent)]">
           Подписка на {VOOPLUS_PERIOD_DAYS} дней за разовую оплату{" "}
           {VOOPLUS_PRICE_RUB} ₽.
           {!VOOPLUS_IS_RECURRING && " Автопродление не подключено."}
@@ -60,10 +60,10 @@ export function VooplePlusInfoModal({ open, onClose, expiresAt }: VooplePlusInfo
             Активна до {formatDate(expiresAt)}
           </p>
         ) : (
-          <p className="mt-3 text-sm text-white/45">У пользователя активна подписка Voople+.</p>
+          <p className="mt-3 text-sm text-[color-mix(in_srgb,var(--foreground)_45%,transparent)]">У пользователя активна подписка Voople+.</p>
         )}
 
-        <ul className="mt-4 w-full space-y-2 text-left text-sm text-white/70">
+        <ul className="mt-4 w-full space-y-2 text-left text-sm text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
           {VOOPLUS_BENEFITS.map((benefit) => (
             <li key={benefit} className="flex gap-2">
               <span className="text-(--theme-accent)" aria-hidden>

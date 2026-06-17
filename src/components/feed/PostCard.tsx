@@ -35,18 +35,18 @@ function RepostPreview({ post, depth = 0 }: { post: PostViewModel; depth?: numbe
         <DisplayNameWithPin
           hasVooplePlus={post.author.hasVooplePlus}
           size="xs"
-          className="text-xs font-medium text-white/70"
+          className="text-xs font-medium text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]"
         >
           {post.author.displayName}
         </DisplayNameWithPin>
-        <p className="text-xs text-white/40">@{post.author.username}</p>
+        <p className="text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">@{post.author.username}</p>
       </div>
 
       {post.repostComment && (
-        <p className="mb-3 text-sm leading-relaxed text-white/90">{post.repostComment}</p>
+        <p className="mb-3 text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">{post.repostComment}</p>
       )}
 
-      {post.text && <p className="text-sm leading-relaxed text-white/85">{post.text}</p>}
+      {post.text && <p className="text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_85%,transparent)]">{post.text}</p>}
       {post.mediaUrl && (
         <PostMedia url={post.mediaUrl} mediaType={post.mediaType} className="mt-3" />
       )}
@@ -131,7 +131,7 @@ export function PostCard({
   });
 
   return (
-    <article className={cn("voople-post-card text-white", className)}>
+    <article className={cn("voople-post-card text-[var(--foreground)]", className)}>
       <div
         className="voople-post-card__surface voople-panel overflow-hidden rounded-[var(--app-radius-xl)]"
         style={
@@ -162,12 +162,12 @@ export function PostCard({
         />
         <div className={cn("voople-post-card__body px-4 pb-4", chipHeader ? "pt-3" : "pt-3")}>
           {displayRepostComment && (
-            <p className="voople-post-card__text mb-3 text-sm leading-relaxed text-white/90">
+            <p className="voople-post-card__text mb-3 text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">
               {displayRepostComment}
             </p>
           )}
           {displayText && (
-            <p className="voople-post-card__text text-sm leading-relaxed text-white/90">{displayText}</p>
+            <p className="voople-post-card__text text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">{displayText}</p>
           )}
           {post.mediaUrl && (
             <PostMedia url={post.mediaUrl} mediaType={post.mediaType} className="mt-3" />
@@ -190,14 +190,14 @@ export function PostCard({
                 <Link
                   key={tag}
                   href={`/hashtag/${encodeURIComponent(tag)}`}
-                  className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/80"
+                  className="rounded-full bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] px-2 py-0.5 text-xs text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]"
                 >
                   #{tag}
                 </Link>
               ))}
             </div>
           )}
-          <footer className="voople-post-card__actions mt-4 flex items-center gap-5 border-t border-white/10 pt-3 text-white/60">
+          <footer className="voople-post-card__actions mt-4 flex items-center gap-5 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] pt-3 text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">
             <PostViewCounter
               key={`${post.id}:${post.viewCount}`}
               postId={post.id}
@@ -219,8 +219,8 @@ export function PostCard({
                   setCommentsOpen((open) => !open);
                 }}
                 className={cn(
-                  "inline-flex items-center hover:text-white",
-                  (commentsOpen || commentsAlwaysOpen) && "text-white",
+                  "inline-flex items-center hover:text-[var(--foreground)]",
+                  (commentsOpen || commentsAlwaysOpen) && "text-[var(--foreground)]",
                 )}
                 aria-expanded={commentsOpen || commentsAlwaysOpen}
                 aria-label={commentsAlwaysOpen ? "Комментарии" : "Показать комментарии"}
@@ -229,7 +229,7 @@ export function PostCard({
               </button>
               <Link
                 href={`/post/${post.id}`}
-                className="text-sm tabular-nums hover:text-white hover:underline"
+                className="text-sm tabular-nums hover:text-[var(--foreground)] hover:underline"
               >
                 {replyCount}
               </Link>
@@ -239,8 +239,8 @@ export function PostCard({
               disabled={!viewerId || plainRepost.isPending || quoteRepost.isPending}
               onClick={() => setRepostPanelOpen((open) => !open)}
               className={cn(
-                "inline-flex items-center gap-1.5 hover:text-white disabled:cursor-default disabled:opacity-50",
-                viewerReposted && "text-white",
+                "inline-flex items-center gap-1.5 hover:text-[var(--foreground)] disabled:cursor-default disabled:opacity-50",
+                viewerReposted && "text-[var(--foreground)]",
               )}
               aria-pressed={viewerReposted}
               aria-label="Репост"

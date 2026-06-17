@@ -1,6 +1,6 @@
 import type { AppThemeAssetIds } from "@/lib/app-theme-assets";
 
-export type AppThemeId = "void" | "violet" | "rose" | "emerald" | "gold";
+export type AppThemeId = "void" | "light" | "violet" | "rose" | "emerald" | "gold";
 
 export type AppTheme = {
   id: AppThemeId;
@@ -35,9 +35,24 @@ export const APP_THEMES: AppTheme[] = [
     },
   },
   {
+    id: "light",
+    name: "Light",
+    description: "Базовая светлая тема Voople",
+    tokens: {
+      background: "#F6F6F9",
+      foreground: "#191921",
+      surface: "#FFFFFF",
+      surfaceSoft: "rgba(20,20,32,0.045)",
+      border: "rgba(20,20,32,0.10)",
+      accent: "#6F5FB8",
+      accentSoft: "rgba(111,95,184,0.14)",
+    },
+  },
+  {
     id: "violet",
     name: "Violet Pulse",
     description: "Контрастная фиолетовая тема",
+    paid: true,
     tokens: {
       background: "#10091F",
       foreground: "#F5F0FF",
@@ -46,10 +61,6 @@ export const APP_THEMES: AppTheme[] = [
       border: "rgba(196,181,253,0.16)",
       accent: "#A78BFA",
       accentSoft: "rgba(167,139,250,0.22)",
-    },
-    assets: {
-      backgroundId: "violet",
-      backgroundStaticId: "violet-static",
     },
   },
   {
@@ -66,16 +77,12 @@ export const APP_THEMES: AppTheme[] = [
       accent: "#F472B6",
       accentSoft: "rgba(244,114,182,0.22)",
     },
-    assets: {
-      backgroundId: "rose",
-      backgroundStaticId: "rose-static",
-      overlayId: "rose-overlay",
-    },
   },
   {
     id: "emerald",
     name: "Emerald",
     description: "Спокойная зелёная тема",
+    paid: true,
     tokens: {
       background: "#061410",
       foreground: "#ECFDF5",
@@ -84,9 +91,6 @@ export const APP_THEMES: AppTheme[] = [
       border: "rgba(110,231,183,0.16)",
       accent: "#34D399",
       accentSoft: "rgba(52,211,153,0.22)",
-    },
-    assets: {
-      backgroundId: "emerald",
     },
   },
   {
@@ -102,10 +106,6 @@ export const APP_THEMES: AppTheme[] = [
       border: "rgba(251,191,36,0.18)",
       accent: "#FBBF24",
       accentSoft: "rgba(251,191,36,0.24)",
-    },
-    assets: {
-      backgroundId: "gold.apng",
-      backgroundStaticId: "gold-static",
     },
   },
 ];

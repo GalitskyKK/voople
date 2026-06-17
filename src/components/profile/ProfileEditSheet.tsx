@@ -185,7 +185,7 @@ export function ProfileEditSheet({ profile }: ProfileEditSheetProps) {
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             maxLength={50}
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2"
+            className="mt-1 w-full rounded-lg border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-black/30 px-3 py-2"
           />
         </label>
         <label className="mb-4 block text-sm">
@@ -195,22 +195,22 @@ export function ProfileEditSheet({ profile }: ProfileEditSheetProps) {
             onChange={(e) => setBio(e.target.value)}
             maxLength={100}
             rows={3}
-            className="mt-1 w-full resize-none rounded-lg border border-white/10 bg-black/30 px-3 py-2"
+            className="mt-1 w-full resize-none rounded-lg border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-black/30 px-3 py-2"
           />
         </label>
-        <div className="mb-4 border-t border-white/10 pt-4">
-          <h3 className="mb-2 text-sm font-medium text-white">Баннер профиля</h3>
-          <p className="mb-2 text-sm text-white/50">
+        <div className="mb-4 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] pt-4">
+          <h3 className="mb-2 text-sm font-medium text-[var(--foreground)]">Баннер профиля</h3>
+          <p className="mb-2 text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">
             <Link href="/shop?tab=customize" className="text-(--theme-accent) hover:underline">
               {COPY.shopBannersHint}
             </Link>
           </p>
-          <div className="overflow-hidden rounded-xl border border-white/10">
+          <div className="overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)]">
             <ProfileBanner customization={profile.customization} />
           </div>
           {canUseCustomBanner ? (
             <>
-              <p className="mt-3 text-sm text-white/45">Своё изображение или рисунок.</p>
+              <p className="mt-3 text-sm text-[color-mix(in_srgb,var(--foreground)_45%,transparent)]">Своё изображение или рисунок.</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button
                   type="button"
@@ -277,7 +277,7 @@ export function ProfileEditSheet({ profile }: ProfileEditSheetProps) {
               )}
             </>
           ) : (
-            <p className="mt-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/60">
+            <p className="mt-3 rounded-xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2 text-sm text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">
               Свой баннер (фото, GIF или рисунок) — с подпиской Voople+.{" "}
               <Link href="/shop?tab=plus" className="text-(--theme-accent) hover:underline">
                 Оформить Voople+
@@ -290,9 +290,9 @@ export function ProfileEditSheet({ profile }: ProfileEditSheetProps) {
           )}
           {bannerUploadError && <p className="mt-2 text-xs text-red-400">{bannerUploadError}</p>}
         </div>
-        <div className="mb-4 border-t border-white/10 pt-4">
+        <div className="mb-4 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] pt-4">
           <AppThemeSelector />
-          <p className="mt-3 text-sm text-white/50">
+          <p className="mt-3 text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">
             <Link href="/shop?tab=customize" className="text-(--theme-accent) underline-offset-2 hover:underline">
               Оформление профиля
             </Link>

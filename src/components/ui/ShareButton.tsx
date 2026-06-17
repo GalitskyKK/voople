@@ -48,7 +48,7 @@ export function ShareButton({ url, title, text, label = "Поделиться", 
       type="button"
       onClick={handleShare}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/80 transition hover:bg-white/10",
+        "inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--foreground)_15%,transparent)] bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-1.5 text-xs font-medium text-[color-mix(in_srgb,var(--foreground)_80%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)]",
         className,
       )}
     >

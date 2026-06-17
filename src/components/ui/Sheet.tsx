@@ -70,7 +70,7 @@ export function Sheet({
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-3 top-3 z-10 rounded-lg p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+          className="absolute right-3 top-3 z-10 rounded-lg p-2 text-[color-mix(in_srgb,var(--foreground)_50%,transparent)] transition-colors hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:text-[var(--foreground)]"
           aria-label="Закрыть"
         >
           <X className="h-5 w-5" />

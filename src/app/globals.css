@@ -8,9 +8,9 @@
   --app-surface: #18181d;
   --app-surface-soft: rgba(255, 255, 255, 0.045);
   --app-border: rgba(255, 255, 255, 0.08);
-  --app-border-strong: rgba(255, 255, 255, 0.12);
+  --app-border-strong: color-mix(in srgb, var(--foreground) 14%, transparent);
   --app-accent-soft: rgba(139, 126, 200, 0.14);
-  --app-muted: rgba(255, 255, 255, 0.52);
+  --app-muted: color-mix(in srgb, var(--foreground) 52%, transparent);
   --app-shadow-sm: 0 1px 3px rgba(8, 8, 14, 0.45);
   --app-shadow-md: 0 8px 28px rgba(8, 8, 18, 0.42);
   --app-shadow-nav: 0 12px 40px rgba(6, 6, 16, 0.55);
@@ -19,8 +19,8 @@
   --app-radius-lg: 1rem;
   --app-radius-xl: 1.25rem;
   --voople-scrollbar-size: 8px;
-  --voople-scrollbar-thumb: rgba(255, 255, 255, 0.14);
-  --voople-scrollbar-thumb-hover: rgba(255, 255, 255, 0.24);
+  --voople-scrollbar-thumb: color-mix(in srgb, var(--foreground) 14%, transparent);
+  --voople-scrollbar-thumb-hover: color-mix(in srgb, var(--foreground) 24%, transparent);
   --voople-scrollbar-thumb-active: color-mix(in srgb, var(--theme-accent) 55%, transparent);
   --voople-scrollbar-track: transparent;
   --voople-z-grain: 0;
@@ -272,7 +272,7 @@ body {
 /* Profile */
 .profile-card,
 .voople-profile-card {
-  --theme-primary: #0c0c11;
+  --theme-primary: var(--app-surface);
   --theme-accent: #8b7ec8;
 }
 

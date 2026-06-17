@@ -29,7 +29,7 @@ export function NotificationsList() {
   });
 
   if (isLoading) {
-    return <div className="mt-6 h-32 animate-pulse rounded-2xl bg-white/5" />;
+    return <div className="mt-6 h-32 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]" />;
   }
 
   if (error) {
@@ -37,7 +37,7 @@ export function NotificationsList() {
   }
 
   if (!data?.length) {
-    return <p className="mt-6 text-white/50">Пока пусто</p>;
+    return <p className="mt-6 text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">Пока пусто</p>;
   }
 
   const hasUnread = data.some((notification) => !notification.read);
@@ -64,9 +64,9 @@ export function NotificationsList() {
             <li key={notification.id}>
               <Link
                 href={href}
-                className={`flex items-start gap-3 rounded-xl border px-3 py-3 transition-colors hover:bg-white/5 ${
+                className={`flex items-start gap-3 rounded-xl border px-3 py-3 transition-colors hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] ${
                   notification.read
-                    ? "border-white/5 bg-white/[0.02]"
+                    ? "border-[color-mix(in_srgb,var(--foreground)_5%,transparent)] bg-[color-mix(in_srgb,var(--foreground)_2%,transparent)]"
                     : "border-[color-mix(in_srgb,var(--theme-accent)_30%,transparent)] bg-[var(--app-accent-soft)]"
                 }`}
               >
@@ -74,7 +74,7 @@ export function NotificationsList() {
                   <Icon className="h-5 w-5" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-white/90">
+                  <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">
                     {notification.type === "profile_canvas_draw" || !actor ? (
                       notificationText(notification.type, actor?.displayName ?? "")
                     ) : (
@@ -86,7 +86,7 @@ export function NotificationsList() {
                       </span>
                     )}
                   </p>
-                  <RelativeTime iso={notification.createdAt} className="mt-1 block text-xs text-white/40" />
+                  <RelativeTime iso={notification.createdAt} className="mt-1 block text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]" />
                 </div>
               </Link>
             </li>

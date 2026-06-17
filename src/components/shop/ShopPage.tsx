@@ -162,16 +162,16 @@ export function ShopPage() {
   );
 
   if (overviewQuery.isLoading) {
-    return <p className="text-white/50">Загрузка магазина…</p>;
+    return <p className="text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">Загрузка магазина…</p>;
   }
 
   if (overviewQuery.error) {
     return (
       <div className="voople-panel p-6 text-center">
-        <p className="text-white/70">Войдите, чтобы открыть магазин и кастомизацию.</p>
+        <p className="text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">Войдите, чтобы открыть магазин и кастомизацию.</p>
         <Link
           href="/login"
-          className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-white/10 px-4 text-sm font-medium text-white hover:bg-white/15"
+          className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] px-4 text-sm font-medium text-[var(--foreground)] hover:bg-[color-mix(in_srgb,var(--foreground)_15%,transparent)]"
         >
           Войти
         </Link>
@@ -207,7 +207,7 @@ export function ShopPage() {
             onClick={() => setTab(id)}
             className={cn(
               "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm transition",
-              tab === id ? "bg-white/15 text-white" : "bg-white/5 text-white/60 hover:bg-white/10",
+              tab === id ? "bg-[color-mix(in_srgb,var(--foreground)_15%,transparent)] text-[var(--foreground)]" : "bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] text-[color-mix(in_srgb,var(--foreground)_60%,transparent)] hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)]",
             )}
           >
             <Icon className="h-4 w-4" aria-hidden />
@@ -242,7 +242,7 @@ export function ShopPage() {
       {tab === "catalog" && (
         <section className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-white/55">
+            <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_55%,transparent)]">
               Сейчас весь сезон Launch можно забрать бесплатно. Voops копятся на будущие покупки.
             </p>
             <Button
@@ -278,7 +278,7 @@ export function ShopPage() {
       {tab === "inventory" && (
         <section className="space-y-4">
           {inventoryItems.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-white/50">
+            <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] p-8 text-center text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">
               Инвентарь пуст. Загляни в каталог и забирай предметы.
             </p>
           ) : (
@@ -296,6 +296,7 @@ export function ShopPage() {
         <CustomizationEditor
           items={inventoryItems}
           equipped={overview.equipped}
+          isPlus={Boolean(subscriptionQuery.data?.active)}
           onEquip={(itemId) => equip.mutate({ itemId })}
           onClearSlot={(slot) => clearSlot.mutate({ slot })}
           busy={busy}

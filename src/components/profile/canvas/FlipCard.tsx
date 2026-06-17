@@ -39,7 +39,7 @@ export function FlipCard({
         aria-label={flipLabel}
         aria-pressed={flipped}
         aria-describedby={flipHintId}
-        className="flip-card__toggle absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/50"
+        className="flip-card__toggle absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--foreground)_15%,transparent)] bg-black/40 text-[var(--foreground)] backdrop-blur-sm transition hover:bg-black/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color-mix(in_srgb,var(--foreground)_50%,transparent)]"
         onClick={() => setFlipped(!flipped)}
       >
         <FlipHorizontal className="h-4 w-4" aria-hidden />

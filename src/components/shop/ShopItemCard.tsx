@@ -34,8 +34,8 @@ export function ShopItemCard({
   return (
     <article
       className={cn(
-        "flex flex-col overflow-hidden rounded-2xl border bg-white/5 transition",
-        item.equipped ? "border-(--theme-accent)" : "border-white/10",
+        "flex flex-col overflow-hidden rounded-2xl border bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] transition",
+        item.equipped ? "border-(--theme-accent)" : "border-[color-mix(in_srgb,var(--foreground)_10%,transparent)]",
       )}
     >
       <div className="relative aspect-[4/3] bg-black/30">
@@ -45,13 +45,13 @@ export function ShopItemCard({
           // eslint-disable-next-line @next/next/no-img-element -- CDN customization previews
           <img src={item.previewUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-white/30">Нет превью</div>
+          <div className="flex h-full items-center justify-center text-sm text-[color-mix(in_srgb,var(--foreground)_30%,transparent)]">Нет превью</div>
         )}
-        <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[11px] text-white/80">
+        <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[11px] text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]">
           {shopKindLabel(item.kind)}
         </span>
         {item.equipped && (
-          <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-(--theme-accent) px-2 py-0.5 text-[11px] text-white">
+          <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-(--theme-accent) px-2 py-0.5 text-[11px] text-[var(--foreground)]">
             <Check className="h-3 w-3" aria-hidden />
             Надето
           </span>
@@ -59,24 +59,24 @@ export function ShopItemCard({
       </div>
 
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="font-semibold text-white">{item.name}</h3>
-        {item.description && <p className="mt-1 text-sm text-white/50">{item.description}</p>}
+        <h3 className="font-semibold text-[var(--foreground)]">{item.name}</h3>
+        {item.description && <p className="mt-1 text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">{item.description}</p>}
 
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
           {item.isFree ? (
             <span className="rounded-full bg-emerald-500/15 px-2 py-1 text-emerald-200">Сейчас бесплатно</span>
           ) : (
             <>
-              <span className="rounded-full bg-white/10 px-2 py-1 text-white/70">
+              <span className="rounded-full bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] px-2 py-1 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
                 {item.priceCoins} voops
               </span>
-              <span className="rounded-full bg-white/10 px-2 py-1 text-white/70">{item.priceRub} ₽</span>
+              <span className="rounded-full bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] px-2 py-1 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">{item.priceRub} ₽</span>
             </>
           )}
           {item.isFree && catalog && catalog.priceCoins > 0 && (
-            <span className="text-white/35 line-through">{catalog.priceCoins} voops потом</span>
+            <span className="text-[color-mix(in_srgb,var(--foreground)_35%,transparent)] line-through">{catalog.priceCoins} voops потом</span>
           )}
-          {futurePrice && <Lock className="h-3.5 w-3.5 text-white/35" aria-hidden />}
+          {futurePrice && <Lock className="h-3.5 w-3.5 text-[color-mix(in_srgb,var(--foreground)_35%,transparent)]" aria-hidden />}
         </div>
 
         <div className="mt-auto flex flex-wrap gap-2 pt-4">
@@ -106,7 +106,7 @@ export function ShopItemCard({
             </Button>
           )}
           {item.owned && !item.equipped && (
-            <span className="self-center text-xs text-white/40">В инвентаре</span>
+            <span className="self-center text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">В инвентаре</span>
           )}
         </div>
       </div>

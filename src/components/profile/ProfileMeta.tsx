@@ -17,7 +17,7 @@ export function ProfileMeta({ createdAt, subscriptionStartedAt }: ProfileMetaPro
   if (!createdAt && !subscriptionStartedAt) return null;
 
   return (
-    <div className="flex flex-col gap-1 text-xs text-white/50">
+    <div className="flex flex-col gap-1 text-xs text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">
       {createdAt && (
         <p>
           {COPY.registeredAt} {formatDate(createdAt)}

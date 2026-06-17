@@ -16,7 +16,7 @@ export function PostDetailView({ post, viewerId }: PostDetailViewProps) {
     <div className="voople-post-detail py-4">
       <Link
         href="/feed"
-        className="mb-4 inline-flex items-center gap-2 text-sm text-white/60 transition hover:text-white"
+        className="mb-4 inline-flex items-center gap-2 text-sm text-[color-mix(in_srgb,var(--foreground)_60%,transparent)] transition hover:text-[var(--foreground)]"
       >
         <ArrowLeft className="h-4 w-4" />
         Назад к ленте

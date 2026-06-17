@@ -261,7 +261,7 @@ export function PlaylistModal() {
                   <button
                     type="button"
                     onClick={() => handlePlay(track)}
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--theme-accent)] text-white"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--theme-accent)] text-[var(--foreground)]"
                     aria-label={playing ? "Пауза" : "Воспроизвести"}
                   >
                     {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 translate-x-0.5" />}

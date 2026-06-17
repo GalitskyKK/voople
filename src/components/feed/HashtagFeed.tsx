@@ -60,12 +60,12 @@ export function HashtagFeed({ tag, viewerId = null, initialPage }: HashtagFeedPr
   }
 
   if (isLoading && posts.length === 0) {
-    return <div className="h-40 animate-pulse rounded-2xl bg-white/5" aria-hidden />;
+    return <div className="h-40 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]" aria-hidden />;
   }
 
   if (posts.length === 0) {
     return (
-      <p className="rounded-xl bg-white/5 px-4 py-3 text-center text-sm text-white/50">
+      <p className="rounded-xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-4 py-3 text-center text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">
         Пока нет постов с этим хэштегом
       </p>
     );
@@ -96,7 +96,7 @@ export function HashtagFeed({ tag, viewerId = null, initialPage }: HashtagFeedPr
       </div>
       <div ref={loadMoreRef} className="h-2" aria-hidden />
       {isFetchingNextPage && (
-        <div className="mt-2 h-12 animate-pulse rounded-2xl bg-white/5" aria-hidden />
+        <div className="mt-2 h-12 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]" aria-hidden />
       )}
     </div>
   );

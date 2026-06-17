@@ -1,5 +1,7 @@
 export type CustomizationFlags = {
   hasCustomTheme: boolean
+  /** Заданы цвета темы профиля (градиент карточки), без учёта баннера. */
+  hasProfileTheme: boolean
   hasBanner: boolean
   hasProfileEffect: boolean
   hasAvatarDecoration: boolean

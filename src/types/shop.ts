@@ -51,6 +51,9 @@ export type EquippedCustomizationView = {
   appThemeId: string | null;
   nicknameColor: string | null;
   nicknameGradient: boolean;
+  /** Тема профиля (два цвета градиента карточки). Доступна с Voople+. */
+  themePrimary: string | null;
+  themeAccent: string | null;
 };
 
 export type ShopOverviewView = {

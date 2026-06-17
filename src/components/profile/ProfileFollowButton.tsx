@@ -25,13 +25,13 @@ function FollowStatusBadge({
   return (
     <div className="flex flex-wrap gap-1.5">
       {following && (
-        <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-xs font-medium text-white/90">
+        <span className="inline-flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--foreground)_15%,transparent)] bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] px-2 py-0.5 text-xs font-medium text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">
           <UserCheck className="h-3.5 w-3.5 text-(--theme-accent)" aria-hidden />
           {COPY.subscribed}
         </span>
       )}
       {followsYou && (
-        <span className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5 text-xs text-white/55">
+        <span className="inline-flex items-center rounded-full bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-2 py-0.5 text-xs text-[color-mix(in_srgb,var(--foreground)_55%,transparent)]">
           {following ? COPY.mutualFollow : COPY.followsYou}
         </span>
       )}

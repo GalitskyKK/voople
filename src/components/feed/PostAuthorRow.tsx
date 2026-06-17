@@ -43,11 +43,11 @@ export function PostAuthorRow({
   const c = customization;
   const useFeedChip = Boolean(c?.flags.hasFeedCardStyle);
   const timeNode = postId ? (
-    <Link href={`/post/${postId}`} className="text-xs text-white/50 hover:text-white/70 hover:underline">
+    <Link href={`/post/${postId}`} className="text-xs text-[color-mix(in_srgb,var(--foreground)_50%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_70%,transparent)] hover:underline">
       <RelativeTime iso={createdAt} />
     </Link>
   ) : (
-    <RelativeTime iso={createdAt} className="text-xs text-white/50" />
+    <RelativeTime iso={createdAt} className="text-xs text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]" />
   );
 
   if (useFeedChip && c) {
@@ -77,7 +77,7 @@ export function PostAuthorRow({
                 "text-sm font-semibold",
                 nameStyle.gradient && c.flags.hasDisplayNameStyle
                   ? "bg-clip-text text-transparent"
-                  : "text-white",
+                  : "text-[var(--foreground)]",
               )}
               style={
                 nameStyle.gradient && c.flags.hasDisplayNameStyle ? nicknameStyle : undefined
@@ -118,7 +118,7 @@ export function PostAuthorRow({
         animatedAvatarUrl={c?.assets.animatedAvatarUrl}
       />
       <div className="min-w-0 flex-1">
-        <Link href={`/${username}`} className="block min-w-0 text-sm font-medium text-white hover:underline">
+        <Link href={`/${username}`} className="block min-w-0 text-sm font-medium text-[var(--foreground)] hover:underline">
           <DisplayNameWithPin hasVooplePlus={hasVooplePlus} size="sm">
             {displayName}
           </DisplayNameWithPin>

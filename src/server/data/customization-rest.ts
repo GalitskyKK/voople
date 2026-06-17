@@ -16,6 +16,8 @@ export type CustomizationEquipPatch = {
   appThemeId?: string | null;
   nicknameColor?: string | null;
   nicknameGradient?: boolean | null;
+  themePrimary?: string | null;
+  themeAccent?: string | null;
 };
 
 function catalogGrantsEquipValue(itemId: string, equipValue: string): boolean {
@@ -117,6 +119,15 @@ export async function updateProfileCustomizationRest(
   }
   if (patch.nicknameGradient !== undefined) {
     update.nickname_gradient = patch.nicknameGradient;
+  }
+  // Тема профиля (градиент карточки) — премиум-фича: установка цветов требует Voople+.
+  // Сброс (null) разрешён всегда.
+  if (patch.themePrimary !== undefined || patch.themeAccent !== undefined) {
+    if (patch.themePrimary || patch.themeAccent) {
+      await assertActiveSubscriptionRest(userId);
+    }
+    if (patch.themePrimary !== undefined) update.theme_primary = patch.themePrimary;
+    if (patch.themeAccent !== undefined) update.theme_accent = patch.themeAccent;
   }
   if (patch.bannerId !== undefined) {
     const bannerPatch = await resolveBannerPatch(patch.bannerId);

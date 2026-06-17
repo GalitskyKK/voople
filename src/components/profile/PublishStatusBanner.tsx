@@ -30,7 +30,7 @@ export function PublishStatusBanner({
       aria-hidden={!visible}
     >
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--theme-accent)]/35 bg-[var(--theme-accent)]/12 px-3 py-2 shadow-lg shadow-black/30 backdrop-blur-sm">
-        <p className="text-sm text-white/85">{COPY.statusChanged}</p>
+        <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_85%,transparent)]">{COPY.statusChanged}</p>
         <Button
           size="sm"
           variant="primary"

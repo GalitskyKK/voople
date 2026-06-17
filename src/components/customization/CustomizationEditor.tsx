@@ -5,10 +5,12 @@ import { useMemo } from "react";
 import { SHOP_CATALOG_BY_ID, catalogAppThemeId } from "@/lib/shop/catalog";
 import { CUSTOMIZE_SLOT_SECTIONS, SHOP_DISPLAY_SECTIONS } from "@/lib/shop/categories";
 import { applyEquippedAppTheme } from "@/lib/shop/app-theme-client";
+import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import type { EquippedCustomizationView, ShopItemView } from "@/types/shop";
 import { useAppTheme } from "@/components/theme/AppThemeProvider";
 import { Button } from "@/components/ui/Button";
+import { ProfileThemePicker } from "@/components/customization/ProfileThemePicker";
 import { ShopCatalogPreview } from "@/components/shop/ShopCatalogPreview";
 import {
   ProfileCardEffectLayer,
@@ -21,6 +23,8 @@ type CustomizationEditorProps = {
   items: ShopItemView[];
   equipped: EquippedCustomizationView;
   busy?: boolean;
+  /** Активна ли подписка Voople+ (для темы профиля). */
+  isPlus?: boolean;
   onEquip: (itemId: string) => void;
   onClearSlot: (slot: string) => void;
 };
@@ -29,10 +33,12 @@ export function CustomizationEditor({
   items,
   equipped,
   busy,
+  isPlus = false,
   onEquip,
   onClearSlot,
 }: CustomizationEditorProps) {
   const { setThemeId } = useAppTheme();
+  const utils = trpc.useUtils();
 
   const previewCustomization = useMemo(() => {
     const resolved = resolveCustomization({
@@ -44,6 +50,8 @@ export function CustomizationEditor({
       animatedAvatarId: equipped.animatedAvatarId,
       nicknameColor: equipped.nicknameColor,
       nicknameGradient: equipped.nicknameGradient,
+      themePrimary: equipped.themePrimary,
+      themeAccent: equipped.themeAccent,
     });
 
     return {
@@ -77,9 +85,9 @@ export function CustomizationEditor({
           return (
             <div key={displaySection.id} className="space-y-3">
               <header>
-                <h2 className="text-base font-semibold text-white">{displaySection.title}</h2>
+                <h2 className="text-base font-semibold text-[var(--foreground)]">{displaySection.title}</h2>
                 {displaySection.hint ? (
-                  <p className="mt-0.5 text-sm text-white/45">{displaySection.hint}</p>
+                  <p className="mt-0.5 text-sm text-[color-mix(in_srgb,var(--foreground)_45%,transparent)]">{displaySection.hint}</p>
                 ) : null}
               </header>
               {slotsInSection.map(({ slot, title }) => {
@@ -89,7 +97,7 @@ export function CustomizationEditor({
                 return (
             <section key={slot} className="voople-panel p-4">
               <div className="mb-3 flex items-center justify-between gap-2">
-                <h3 className="text-sm font-semibold text-white">{title}</h3>
+                <h3 className="text-sm font-semibold text-[var(--foreground)]">{title}</h3>
                 {slotItems.some((item) => item.equipped) && (
                   <Button
                     type="button"
@@ -117,8 +125,8 @@ export function CustomizationEditor({
                     className={cn(
                       "overflow-hidden rounded-xl border text-left transition",
                       item.equipped
-                        ? "border-(--theme-accent) bg-white/10"
-                        : "border-white/10 bg-black/20 hover:bg-white/5",
+                        ? "border-(--theme-accent) bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)]"
+                        : "border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-black/20 hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]",
                     )}
                   >
                     <div className="aspect-square bg-black/30">
@@ -128,12 +136,12 @@ export function CustomizationEditor({
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={item.previewUrl} alt="" className="h-full w-full object-cover" />
                       ) : (
-                        <div className="flex h-full items-center justify-center text-xs text-white/30">
+                        <div className="flex h-full items-center justify-center text-xs text-[color-mix(in_srgb,var(--foreground)_30%,transparent)]">
                           {item.name}
                         </div>
                       )}
                     </div>
-                    <span className="block px-2 py-2 text-xs text-white/75">{item.name}</span>
+                    <span className="block px-2 py-2 text-xs text-[color-mix(in_srgb,var(--foreground)_75%,transparent)]">{item.name}</span>
                   </button>
                   );
                 })}
@@ -147,9 +155,9 @@ export function CustomizationEditor({
       </div>
 
       <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
-        <h3 className="text-sm font-semibold text-white">Превью профиля</h3>
+        <h3 className="text-sm font-semibold text-[var(--foreground)]">Превью профиля</h3>
         <article
-          className="profile-card voople-profile-card relative w-full max-w-[320px] rounded-2xl border border-white/10"
+          className="profile-card voople-profile-card relative w-full max-w-[320px] rounded-2xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)]"
           style={profileCardThemeStyle(previewCustomization)}
         >
           <ProfileCardEffectLayer customization={previewCustomization} />
@@ -160,6 +168,18 @@ export function CustomizationEditor({
             compact
           />
         </article>
+
+        <div className="voople-panel p-4">
+          <ProfileThemePicker
+            themePrimary={equipped.themePrimary}
+            themeAccent={equipped.themeAccent}
+            isPlus={isPlus}
+            onSaved={() => {
+              void utils.customization.getEquipped.invalidate();
+              void utils.shop.overview.invalidate();
+            }}
+          />
+        </div>
       </aside>
     </div>
   );

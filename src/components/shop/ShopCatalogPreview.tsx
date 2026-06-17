@@ -41,7 +41,7 @@ export function ShopCatalogPreview({ catalog, previewUrl, className }: ShopCatal
   const cssPreview = getCssCatalogPreviewStyle(catalog);
   if (!cssPreview) {
     return (
-      <div className={cn("flex h-full items-center justify-center text-sm text-white/30", className)}>
+      <div className={cn("flex h-full items-center justify-center text-sm text-[color-mix(in_srgb,var(--foreground)_30%,transparent)]", className)}>
         Нет превью
       </div>
     );
@@ -70,7 +70,7 @@ export function ShopCatalogPreview({ catalog, previewUrl, className }: ShopCatal
         </span>
       )}
       {catalog.kind === "app_theme" && (
-        <span className="absolute bottom-3 left-3 rounded-full bg-black/40 px-2 py-0.5 text-[11px] text-white/80">
+        <span className="absolute bottom-3 left-3 rounded-full bg-black/40 px-2 py-0.5 text-[11px] text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]">
           {catalog.name}
         </span>
       )}

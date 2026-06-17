@@ -27,7 +27,7 @@ export function ChatList({ activeChatId = null }: ChatListProps) {
   });
 
   if (isLoading) {
-    return <div className="h-32 animate-pulse rounded-2xl bg-white/5" />;
+    return <div className="h-32 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]" />;
   }
 
   if (error) {

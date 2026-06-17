@@ -41,7 +41,7 @@ export function PostMedia({
     <>
       <div
         className={cn(
-          "relative overflow-hidden rounded-xl border border-white/10 bg-black/20",
+          "relative overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-black/20",
           className,
         )}
       >

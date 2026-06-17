@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react"
 
+import { readableForeground } from "@/lib/customization/readable-foreground"
 import { cn } from "@/lib/utils"
 import type { ProfileCustomizationView } from "@/types/domain"
 import { DisplayNameWithPin } from "./DisplayNameWithPin"
@@ -69,12 +70,12 @@ export function ProfileCardHeader({
           className="mt-3"
           nameClassName={cn(
             "text-xl font-bold",
-            useGradientName ? "bg-clip-text text-transparent" : "text-white"
+            useGradientName ? "bg-clip-text text-transparent" : "text-[var(--foreground)]"
           )}
           style={useGradientName ? nicknameStyle : undefined}>
           {displayName}
         </DisplayNameWithPin>
-        <p className="text-sm text-white/50">@{username}</p>
+        <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">@{username}</p>
         {userId && !compact && <ProfileBadges userId={userId} />}
       </div>
     </>
@@ -110,10 +111,28 @@ export function ProfileCardEffectLayer({
   )
 }
 
+/**
+ * Стиль карточки профиля.
+ * - Без темы профиля (и при баннере без своей темы): карточка следует теме
+ *   приложения (фон/текст из токенов) — читаема на светлой и тёмной теме, эффекты
+ *   и баннер при этом работают как обычно.
+ * - С темой профиля (Voople+): фон — диагональный градиент двух цветов, а
+ *   `--foreground` переопределяется на читаемый по средней яркости (весь текст
+ *   внутри карточки завязан на этот токен).
+ */
 export function profileCardThemeStyle(customization: ProfileCustomizationView): CSSProperties {
+  if (!customization.flags.hasProfileTheme) {
+    return {
+      "--theme-accent": customization.themeAccent,
+      background: "var(--app-surface)"
+    } as React.CSSProperties
+  }
+
+  const { themePrimary, themeAccent } = customization
   return {
-    "--theme-primary": customization.themePrimary,
-    "--theme-accent": customization.themeAccent,
-    background: "var(--theme-primary)"
+    "--theme-primary": themePrimary,
+    "--theme-accent": themeAccent,
+    "--foreground": readableForeground(themePrimary, themeAccent),
+    background: `linear-gradient(135deg, ${themePrimary} 0%, ${themeAccent} 100%)`
   } as React.CSSProperties
 }

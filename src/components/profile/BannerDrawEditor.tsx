@@ -86,7 +86,7 @@ function BannerCropGuide() {
   return (
     <div className="pointer-events-none absolute inset-0" aria-hidden>
       <div
-        className="absolute inset-y-0 left-1/2 h-full -translate-x-1/2 border-x border-dashed border-white/25"
+        className="absolute inset-y-0 left-1/2 h-full -translate-x-1/2 border-x border-dashed border-[color-mix(in_srgb,var(--foreground)_25%,transparent)]"
         style={{ width: `${BANNER_SAFE_WIDTH_RATIO * 100}%` }}
       />
     </div>
@@ -116,12 +116,12 @@ function BannerDrawToolbar({
 }: BannerDrawToolbarProps) {
   return (
     <div
-      className="flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-black/40 p-2"
+      className="flex flex-wrap items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-black/40 p-2"
       role="toolbar"
       aria-label="Инструменты баннера"
     >
       <div className="flex items-center gap-1">
-        <Palette className="h-4 w-4 text-white/50" aria-hidden />
+        <Palette className="h-4 w-4 text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]" aria-hidden />
         {CANVAS_BRUSH_COLORS.map((color) => (
           <button
             key={color}
@@ -131,7 +131,7 @@ function BannerDrawToolbar({
             aria-label={`Цвет ${color}`}
             className={cn(
               "h-6 w-6 rounded-full border-2",
-              brushColor === color ? "border-white" : "border-transparent",
+              brushColor === color ? "border-[var(--foreground)]" : "border-transparent",
             )}
             style={{ backgroundColor: color }}
             onClick={() => onColorChange(color)}
@@ -151,7 +151,7 @@ function BannerDrawToolbar({
         type="button"
         disabled={!canUndo || busy}
         aria-label="Отменить штрих"
-        className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white disabled:opacity-40"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] text-[var(--foreground)] disabled:opacity-40"
         onClick={onUndo}
       >
         <Undo2 className="h-4 w-4" />
@@ -160,7 +160,7 @@ function BannerDrawToolbar({
         type="button"
         disabled={busy}
         aria-label="Очистить"
-        className="inline-flex h-8 items-center gap-1 rounded-lg bg-white/10 px-2 text-xs text-white"
+        className="inline-flex h-8 items-center gap-1 rounded-lg bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] px-2 text-xs text-[var(--foreground)]"
         onClick={onClear}
       >
         <Eraser className="h-3.5 w-3.5" />
@@ -233,7 +233,7 @@ function BannerDrawSurface({
   };
 
   return (
-    <div className={cn("relative overflow-hidden rounded-xl border border-white/10", displayClassName)}>
+    <div className={cn("relative overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)]", displayClassName)}>
       <canvas
         ref={canvasRef}
         width={BANNER_EXPORT_WIDTH}

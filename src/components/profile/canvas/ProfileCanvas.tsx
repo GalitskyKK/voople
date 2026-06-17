@@ -299,12 +299,12 @@ export function ProfileCanvas({
       />
 
       <div
-        className="profile-canvas__toolbar pointer-events-auto absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-black/60 p-3 backdrop-blur-sm"
+        className="profile-canvas__toolbar pointer-events-auto absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-3 rounded-xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-black/60 p-3 backdrop-blur-sm"
         role="toolbar"
         aria-label="Инструменты рисования"
       >
         <div className="flex items-center gap-1.5" role="group" aria-label="Цвет кисти">
-          <Palette className="h-4 w-4 shrink-0 text-white/60" aria-hidden />
+          <Palette className="h-4 w-4 shrink-0 text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]" aria-hidden />
           {CANVAS_BRUSH_COLORS.map((color) => (
             <button
               key={color}
@@ -315,9 +315,9 @@ export function ProfileCanvas({
               className={cn(
                 "h-7 w-7 rounded-full border-2 transition-transform",
                 brushColor === color
-                  ? "scale-110 border-white"
+                  ? "scale-110 border-[var(--foreground)]"
                   : "border-transparent hover:scale-105",
-                color === "#ffffff" && "ring-1 ring-white/30",
+                color === "#ffffff" && "ring-1 ring-[color-mix(in_srgb,var(--foreground)_30%,transparent)]",
               )}
               style={{ backgroundColor: color }}
               onClick={() => setBrushColor(color)}
@@ -339,7 +339,7 @@ export function ProfileCanvas({
           type="button"
           disabled={!canUndo}
           aria-label="Отменить последний свой штрих"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white transition hover:bg-white/20 disabled:opacity-40"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] text-[var(--foreground)] transition hover:bg-[color-mix(in_srgb,var(--foreground)_20%,transparent)] disabled:opacity-40"
           onClick={handleUndoClick}
         >
           <Undo2 className="h-4 w-4" aria-hidden />
@@ -349,7 +349,7 @@ export function ProfileCanvas({
           <button
             type="button"
             aria-label="Очистить весь холст (только владелец профиля)"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/20"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] px-3 py-1.5 text-xs font-medium text-[var(--foreground)] transition hover:bg-[color-mix(in_srgb,var(--foreground)_20%,transparent)]"
             onClick={handleClearClick}
           >
             <Eraser className="h-3.5 w-3.5" aria-hidden />
@@ -359,7 +359,7 @@ export function ProfileCanvas({
       </div>
 
       {!canDraw && (
-        <p className="pointer-events-none absolute left-3 top-12 rounded-lg bg-black/50 px-2 py-1 text-xs text-white/70">
+        <p className="pointer-events-none absolute left-3 top-12 rounded-lg bg-black/50 px-2 py-1 text-xs text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
           Войдите, чтобы рисовать
         </p>
       )}

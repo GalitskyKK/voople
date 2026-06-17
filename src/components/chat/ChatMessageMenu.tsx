@@ -56,7 +56,7 @@ export function ChatMessageMenu({
       <button
         type="button"
         role="menuitem"
-        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-white/5"
+        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]"
         onClick={() => {
           onReply(message);
           onOpenChange(false);
@@ -70,7 +70,7 @@ export function ChatMessageMenu({
         <button
           type="button"
           role="menuitem"
-          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-white/5"
+          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]"
           onClick={() => {
             onAddToPlaylist(message);
             onOpenChange(false);
@@ -85,7 +85,7 @@ export function ChatMessageMenu({
         <button
           type="button"
           role="menuitem"
-          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-400 hover:bg-white/5"
+          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-400 hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]"
           onClick={() => {
             onDelete(message);
             onOpenChange(false);

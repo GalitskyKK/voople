@@ -45,7 +45,7 @@ export function PostViewCounter({ postId, liveCount, initialCount, canTrack }: P
   }, [canTrack, postId, recordView]);
 
   return (
-    <span ref={ref} className="inline-flex items-center gap-1.5 text-white/60" aria-label="Просмотры">
+    <span ref={ref} className="inline-flex items-center gap-1.5 text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]" aria-label="Просмотры">
       <Eye className="h-4 w-4" />
       <span key={`${postId}:${count}`} className="voople-count-bump text-sm tabular-nums">
         {count}

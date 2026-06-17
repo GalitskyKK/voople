@@ -30,7 +30,7 @@ export function resolveCustomization(input: CustomizationInput = {}): ResolvedCu
   const bannerUrl =
     input.bannerValue?.url ?? (bannerId ? customizationAssetPath("banners", bannerId) : null)
   const hasBanner = Boolean(bannerUrl)
-  const hasCustomTheme =
+  const hasProfileTheme =
     Boolean(input.themePrimary && input.themePrimary !== DEFAULT_THEME.themePrimary) ||
     Boolean(input.themeAccent && input.themeAccent !== DEFAULT_THEME.themeAccent)
   const profileEffectId = input.profileEffectId ?? null
@@ -39,7 +39,8 @@ export function resolveCustomization(input: CustomizationInput = {}): ResolvedCu
   const animatedAvatarId = input.animatedAvatarId ?? null
 
   const flags: CustomizationFlags = {
-    hasCustomTheme: hasCustomTheme || hasBanner,
+    hasCustomTheme: hasProfileTheme || hasBanner,
+    hasProfileTheme,
     hasBanner,
     hasProfileEffect: Boolean(profileEffectId),
     hasAvatarDecoration: Boolean(avatarDecorationId),
@@ -76,10 +77,10 @@ export function resolveCustomization(input: CustomizationInput = {}): ResolvedCu
   }
 
   return {
-    themePrimary: flags.hasCustomTheme
+    themePrimary: hasProfileTheme
       ? (input.themePrimary ?? DEFAULT_THEME.themePrimary)
       : DEFAULT_THEME.themePrimary,
-    themeAccent: flags.hasCustomTheme
+    themeAccent: hasProfileTheme
       ? (input.themeAccent ?? DEFAULT_THEME.themeAccent)
       : DEFAULT_THEME.themeAccent,
     flags,

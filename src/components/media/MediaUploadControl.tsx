@@ -54,7 +54,7 @@ export function MediaUploadControl({
           onClick={handlePick}
           disabled={disabled || isUploading}
           className={cn(
-            "rounded-lg p-2 text-white/40 hover:bg-white/10 hover:text-white/70 disabled:cursor-default disabled:opacity-50",
+            "rounded-lg p-2 text-[color-mix(in_srgb,var(--foreground)_40%,transparent)] hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_70%,transparent)] disabled:cursor-default disabled:opacity-50",
             buttonClassName,
           )}
           aria-label="Прикрепить изображение"
@@ -68,7 +68,7 @@ export function MediaUploadControl({
           className="hidden"
           onChange={handleFileChange}
         />
-        {isUploading && <span className="text-xs text-white/50">Загрузка…</span>}
+        {isUploading && <span className="text-xs text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">Загрузка…</span>}
       </div>
 
       {uploaded && (
@@ -78,7 +78,7 @@ export function MediaUploadControl({
             type="button"
             onClick={handleRemove}
             disabled={disabled || isUploading}
-            className="absolute right-2 top-2 rounded-full bg-black/70 p-1 text-white hover:bg-black"
+            className="absolute right-2 top-2 rounded-full bg-black/70 p-1 text-[var(--foreground)] hover:bg-black"
             aria-label="Убрать вложение"
           >
             <X className="h-4 w-4" />
@@ -99,7 +99,7 @@ function PostMediaPreview({
   mediaType: UploadedMedia["mediaType"];
 }) {
   return (
-    <div className="relative max-h-40 overflow-hidden rounded-xl border border-white/10 bg-black/20">
+    <div className="relative max-h-40 overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-black/20">
       <Image
         src={url}
         alt="Превью"

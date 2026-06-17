@@ -179,7 +179,7 @@ export function ProfilePage({
               autoFocusAsk={askDeepLink}
             />
           ) : filteredPosts.length === 0 ? (
-            <p className="text-center text-sm text-white/50">{emptyFeedMessage}</p>
+            <p className="text-center text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">{emptyFeedMessage}</p>
           ) : (
             filteredPosts.map((post) => (
               <PostCard

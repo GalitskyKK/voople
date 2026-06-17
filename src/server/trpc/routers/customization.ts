@@ -92,6 +92,16 @@ export const customizationRouter = createTRPCRouter({
         appThemeId: z.string().nullable().optional(),
         nicknameColor: z.string().nullable().optional(),
         nicknameGradient: z.boolean().nullable().optional(),
+        themePrimary: z
+          .string()
+          .regex(/^#[0-9a-fA-F]{6}$/, "Ожидается HEX-цвет вида #RRGGBB")
+          .nullable()
+          .optional(),
+        themeAccent: z
+          .string()
+          .regex(/^#[0-9a-fA-F]{6}$/, "Ожидается HEX-цвет вида #RRGGBB")
+          .nullable()
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

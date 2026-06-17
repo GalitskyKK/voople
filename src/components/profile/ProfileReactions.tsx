@@ -57,14 +57,14 @@ export function ProfileReactions({ profileUserId, canReact }: ProfileReactionsPr
           disabled={!canReact || toggle.isPending}
           onClick={() => toggle.mutate({ profileUserId, emoji })}
           className={cn(
-            "rounded-lg bg-white/5 px-2 py-1 hover:bg-white/10 disabled:cursor-default disabled:opacity-60",
-            reactedByViewer && "bg-white/15 text-white",
+            "rounded-lg bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-2 py-1 hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] disabled:cursor-default disabled:opacity-60",
+            reactedByViewer && "bg-[color-mix(in_srgb,var(--foreground)_15%,transparent)] text-[var(--foreground)]",
           )}
           aria-pressed={reactedByViewer}
           aria-label={`Реакция ${emoji}`}
         >
           <span aria-hidden>{emoji}</span>
-          <span className="ml-1 text-xs tabular-nums text-white/60">{count}</span>
+          <span className="ml-1 text-xs tabular-nums text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">{count}</span>
         </button>
       ))}
     </div>

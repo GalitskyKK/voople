@@ -89,7 +89,7 @@ export function PostComments({ postId, open, canComment, onCountChange }: PostCo
   };
 
   return (
-    <section className="mt-4 space-y-3 border-t border-white/10 pt-3">
+    <section className="mt-4 space-y-3 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] pt-3">
       <form
         className="space-y-2"
         onSubmit={(event) => {
@@ -124,19 +124,19 @@ export function PostComments({ postId, open, canComment, onCountChange }: PostCo
         )}
       </form>
 
-      {isLoading && <div className="h-12 animate-pulse rounded-xl bg-white/5" />}
+      {isLoading && <div className="h-12 animate-pulse rounded-xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]" />}
 
       {comments.map((comment) => (
-        <article key={comment.id} className="rounded-xl bg-white/5 px-3 py-2">
+        <article key={comment.id} className="rounded-xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <DisplayNameWithPin
                 hasVooplePlus={comment.author.hasVooplePlus}
-                className="text-sm font-medium text-white"
+                className="text-sm font-medium text-[var(--foreground)]"
               >
                 {comment.author.displayName}
               </DisplayNameWithPin>
-              {comment.text && <p className="text-sm text-white/80">{comment.text}</p>}
+              {comment.text && <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]">{comment.text}</p>}
               {comment.mediaUrl && (
                 <PostMedia
                   url={comment.mediaUrl}
@@ -144,13 +144,13 @@ export function PostComments({ postId, open, canComment, onCountChange }: PostCo
                   className="mt-2 max-w-xs"
                 />
               )}
-              <RelativeTime iso={comment.createdAt} className="mt-1 block text-xs text-white/40" />
+              <RelativeTime iso={comment.createdAt} className="mt-1 block text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]" />
             </div>
             {comment.canDelete && (
               <button
                 type="button"
                 onClick={() => remove.mutate({ commentId: comment.id })}
-                className="rounded-lg p-1.5 text-white/40 hover:bg-white/10 hover:text-white"
+                className="rounded-lg p-1.5 text-[color-mix(in_srgb,var(--foreground)_40%,transparent)] hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:text-[var(--foreground)]"
                 aria-label="Удалить комментарий"
               >
                 <Trash2 className="h-4 w-4" />

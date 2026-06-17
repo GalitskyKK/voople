@@ -22,7 +22,7 @@ export function ProfileFeedTabs({ active, onChange, className }: ProfileFeedTabs
   return (
     <nav
       className={cn(
-        "voople-profile-feed-tabs flex gap-1 border-b border-white/10 text-sm",
+        "voople-profile-feed-tabs flex gap-1 border-b border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] text-sm",
         className,
       )}
       aria-label="Разделы ленты профиля"
@@ -36,7 +36,7 @@ export function ProfileFeedTabs({ active, onChange, className }: ProfileFeedTabs
             onClick={() => onChange(tab.id)}
             className={cn(
               "relative px-4 py-2.5 font-medium transition-colors",
-              isActive ? "text-white" : "text-white/50 hover:text-white/80",
+              isActive ? "text-[var(--foreground)]" : "text-[color-mix(in_srgb,var(--foreground)_50%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]",
             )}
             aria-current={isActive ? "page" : undefined}
           >

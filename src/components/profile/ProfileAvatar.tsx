@@ -52,7 +52,7 @@ export function ProfileAvatar({
       )}
       <div
         className={cn(
-          "relative flex items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-violet-600 to-violet-400 font-semibold text-white",
+          "relative flex items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-violet-600 to-violet-400 font-semibold text-[var(--foreground)]",
           s.box,
           ringStyle?.className,
         )}

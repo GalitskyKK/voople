@@ -48,6 +48,8 @@ type CustomizationEquipRow = {
   app_theme_id: string | null;
   nickname_color: string | null;
   nickname_gradient: boolean | null;
+  theme_primary: string | null;
+  theme_accent: string | null;
 };
 
 type PaymentIntentRow = {
@@ -104,7 +106,7 @@ export async function getEquippedCustomizationRest(userId: string): Promise<Equi
   const { data, error } = await admin
     .from("profile_customization")
     .select(
-      "profile_effect_id, avatar_ring_id, banner_value, avatar_decoration_id, feed_card_style_id, animated_avatar_id, app_theme_id, nickname_color, nickname_gradient",
+      "profile_effect_id, avatar_ring_id, banner_value, avatar_decoration_id, feed_card_style_id, animated_avatar_id, app_theme_id, nickname_color, nickname_gradient, theme_primary, theme_accent",
     )
     .eq("user_id", userId)
     .maybeSingle();
@@ -122,6 +124,8 @@ export async function getEquippedCustomizationRest(userId: string): Promise<Equi
     appThemeId: row?.app_theme_id ?? null,
     nicknameColor: row?.nickname_color ?? null,
     nicknameGradient: Boolean(row?.nickname_gradient),
+    themePrimary: row?.theme_primary ?? null,
+    themeAccent: row?.theme_accent ?? null,
   };
 }
 

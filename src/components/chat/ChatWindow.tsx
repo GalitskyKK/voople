@@ -206,7 +206,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   if (isLoading) {
     return (
       <div className="voople-chat-window flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 animate-pulse rounded-2xl bg-white/5" />
+        <div className="min-h-0 flex-1 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]" />
       </div>
     );
   }
@@ -266,7 +266,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         className="voople-chat-window__messages voople-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-1 py-3"
       >
         {timeline.length === 0 && (
-          <p className="text-center text-sm text-white/40">Напишите первое сообщение</p>
+          <p className="text-center text-sm text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">Напишите первое сообщение</p>
         )}
         <div className="flex flex-col gap-1">
           {timeline.map((item) =>

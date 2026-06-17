@@ -26,12 +26,12 @@ export default async function HashtagPage({ params }: HashtagPageProps) {
     <div className="voople-hashtag-page flex flex-col gap-4 py-4">
       <header className="voople-panel px-4 py-4 text-[var(--foreground)]">
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)]">
             <Hash className="h-5 w-5" />
           </span>
           <div>
             <h1 className="text-2xl font-bold">#{tag}</h1>
-            <p className="text-sm text-white/50">Посты с этим хэштегом</p>
+            <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">Посты с этим хэштегом</p>
           </div>
         </div>
       </header>

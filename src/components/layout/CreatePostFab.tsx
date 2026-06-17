@@ -69,7 +69,7 @@ export function CreatePostFab() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="voople-fab-create fixed right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-white text-black shadow-lg transition-[bottom] duration-200 hover:scale-105 active:scale-95 lg:hidden"
+        className="voople-fab-create fixed right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--foreground)] text-[var(--background)] shadow-lg transition-[bottom] duration-200 hover:scale-105 active:scale-95 lg:hidden"
         style={{
           bottom: playerActive
             ? mobileFabBottomWithPlayer(mobilePlayerExpanded)

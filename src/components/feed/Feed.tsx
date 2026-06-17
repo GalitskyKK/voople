@@ -72,7 +72,7 @@ export function Feed({
     <div className="voople-feed flex flex-col gap-4">
       {canPost && <CreatePostBlock canPost />}
       {isLoading && posts.length === 0 && (
-        <div className="h-40 animate-pulse rounded-2xl bg-white/5" aria-hidden />
+        <div className="h-40 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]" aria-hidden />
       )}
       {error && (
         <p className="rounded-xl bg-red-500/10 px-4 py-3 text-center text-sm text-red-300">
@@ -80,12 +80,12 @@ export function Feed({
         </p>
       )}
       {tab === "following" && !isLoading && posts.length === 0 && (
-        <p className="rounded-xl bg-white/5 px-4 py-3 text-center text-sm text-white/50">
+        <p className="rounded-xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-4 py-3 text-center text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">
           Подпишитесь на кого-нибудь — здесь появятся их посты
         </p>
       )}
       {tab === "overview" && !isLoading && posts.length === 0 && (
-        <p className="rounded-xl bg-white/5 px-4 py-3 text-center text-sm text-white/50">
+        <p className="rounded-xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-4 py-3 text-center text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">
           Лента пуста — создайте первый пост
         </p>
       )}
@@ -115,7 +115,7 @@ export function Feed({
           </div>
           <div ref={loadMoreRef} className="h-2" aria-hidden />
           {isFetchingNextPage && (
-            <div className="mt-2 h-12 animate-pulse rounded-2xl bg-white/5" aria-hidden />
+            <div className="mt-2 h-12 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]" aria-hidden />
           )}
         </div>
       )}

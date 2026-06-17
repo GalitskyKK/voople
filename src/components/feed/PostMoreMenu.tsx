@@ -80,7 +80,7 @@ export function PostMoreMenu({
   };
 
   const menuItemClass =
-    "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white/90 hover:bg-white/10 disabled:opacity-50";
+    "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[color-mix(in_srgb,var(--foreground)_90%,transparent)] hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] disabled:opacity-50";
 
   return (
     <>
@@ -92,7 +92,7 @@ export function PostMoreMenu({
         trigger={
           <button
             type="button"
-            className="text-white/50 hover:text-white"
+            className="text-[color-mix(in_srgb,var(--foreground)_50%,transparent)] hover:text-[var(--foreground)]"
             aria-label="Действия с постом"
             aria-expanded={open}
             aria-haspopup="menu"
@@ -103,7 +103,7 @@ export function PostMoreMenu({
         }
       >
         <button type="button" role="menuitem" className={menuItemClass} onClick={() => void copyLink()}>
-          <Link2 className="h-4 w-4 shrink-0 text-white/50" />
+          <Link2 className="h-4 w-4 shrink-0 text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]" />
           Скопировать ссылку
         </button>
         {canEdit && (
@@ -116,7 +116,7 @@ export function PostMoreMenu({
               setOpen(false);
             }}
           >
-            <Pencil className="h-4 w-4 shrink-0 text-white/50" />
+            <Pencil className="h-4 w-4 shrink-0 text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]" />
             Редактировать
           </button>
         )}
@@ -128,7 +128,7 @@ export function PostMoreMenu({
             className={cn(menuItemClass)}
             onClick={handleReport}
           >
-            <Flag className="h-4 w-4 shrink-0 text-white/50" />
+            <Flag className="h-4 w-4 shrink-0 text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]" />
             Пожаловаться
           </button>
         )}
@@ -136,7 +136,7 @@ export function PostMoreMenu({
       {toast && (
         <p
           role="status"
-          className="pointer-events-none fixed bottom-24 left-1/2 z-[120] -translate-x-1/2 rounded-full bg-black/80 px-4 py-2 text-xs text-white shadow-lg"
+          className="pointer-events-none fixed bottom-24 left-1/2 z-[120] -translate-x-1/2 rounded-full bg-black/80 px-4 py-2 text-xs text-[var(--foreground)] shadow-lg"
         >
           {toast}
         </p>

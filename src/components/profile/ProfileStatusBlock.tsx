@@ -28,7 +28,7 @@ function StatusRow({
 
   return (
     <div
-      className="voople-status-row flex items-start gap-3 rounded-xl bg-white/5 px-3 py-2.5"
+      className="voople-status-row flex items-start gap-3 rounded-xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2.5"
       {...(interactive
         ? {
             role: "button" as const,
@@ -43,10 +43,10 @@ function StatusRow({
           }
         : {})}
     >
-      <span className="mt-0.5 shrink-0 text-white/60">{icon}</span>
+      <span className="mt-0.5 shrink-0 text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">{icon}</span>
       <div className="min-w-0 flex-1">{children}</div>
       {interactive && (
-        <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-white/40" aria-hidden />
+        <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]" aria-hidden />
       )}
     </div>
   );
@@ -80,7 +80,7 @@ export function ProfileStatusBlock({
   return (
     <div className="voople-profile-status__fields flex flex-col gap-2">
       {(hasMood || editable) && (
-        <div className="voople-profile-status__mood rounded-xl bg-white/5 px-3 py-2.5">
+        <div className="voople-profile-status__mood rounded-xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2.5">
           <MoodSlider
             value={status.moodValue ?? 5}
             onChange={editable ? onMoodChange : undefined}
@@ -96,17 +96,17 @@ export function ProfileStatusBlock({
               onChange={(e) => onThoughtChange?.(e.target.value)}
               placeholder="О чём думаешь?"
               maxLength={80}
-              className="w-full bg-transparent text-sm italic text-white/70 outline-none placeholder:text-white/30"
+              className="w-full bg-transparent text-sm italic text-[color-mix(in_srgb,var(--foreground)_70%,transparent)] outline-none placeholder:text-[color-mix(in_srgb,var(--foreground)_30%,transparent)]"
               aria-label="Мысль"
             />
           ) : (
-            <p className="text-sm italic text-white/70">{status.thought}</p>
+            <p className="text-sm italic text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">{status.thought}</p>
           )}
         </StatusRow>
       )}
       {showTrack && (
         <StatusRow icon={<Music className="h-4 w-4" />} onClick={onMusicClick}>
-          <p className={hasTrack ? "text-sm text-white/80" : "text-sm text-white/40"}>
+          <p className={hasTrack ? "text-sm text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]" : "text-sm text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]"}>
             {hasTrack ? trackLabel : "Добавить музыку"}
           </p>
         </StatusRow>

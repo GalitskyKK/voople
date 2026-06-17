@@ -29,7 +29,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
 
   return (
     <div className="voople-feed-page py-4">
-      <Suspense fallback={<div className="h-40 animate-pulse rounded-2xl bg-white/5" />}>
+      <Suspense fallback={<div className="h-40 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]" />}>
         <Feed
           canPost={Boolean(user)}
           viewerId={viewerId}

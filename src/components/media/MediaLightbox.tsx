@@ -35,7 +35,7 @@ export function MediaLightbox({ url, alt = "Изображение", onClose }: 
     >
       <button
         type="button"
-        className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+        className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-10 rounded-full bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] p-2 text-[var(--foreground)] hover:bg-[color-mix(in_srgb,var(--foreground)_20%,transparent)]"
         aria-label="Закрыть"
         onClick={onClose}
       >

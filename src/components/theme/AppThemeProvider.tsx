@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import {
   DEFAULT_APP_THEME_ID,
@@ -52,17 +52,17 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
     applyTheme(themeId);
   }, [themeId]);
 
+  // Стабильная ссылка: иначе эффект синка из БД (AppThemeSync) перезапускался бы
+  // на каждый клик и откатывал только что выбранную тему.
+  const setThemeId = useCallback((nextThemeId: AppThemeId) => {
+    const nextTheme = getAppTheme(nextThemeId);
+    window.localStorage.setItem(STORAGE_KEY, nextTheme.id);
+    setOverride(nextTheme.id);
+  }, []);
+
   const value = useMemo<AppThemeContextValue>(
-    () => ({
-      themeId,
-      theme,
-      setThemeId: (nextThemeId) => {
-        const nextTheme = getAppTheme(nextThemeId);
-        window.localStorage.setItem(STORAGE_KEY, nextTheme.id);
-        setOverride(nextTheme.id);
-      },
-    }),
-    [theme, themeId],
+    () => ({ themeId, theme, setThemeId }),
+    [theme, themeId, setThemeId],
   );
 
   return (

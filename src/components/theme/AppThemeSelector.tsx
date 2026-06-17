@@ -30,25 +30,23 @@ function ThemePreviewSwatches({
   );
 }
 
-export function AppThemeSelector({
-  unlockedThemeIds = ["void", "violet", "emerald"],
-}: AppThemeSelectorProps) {
+export function AppThemeSelector({ unlockedThemeIds = [] }: AppThemeSelectorProps) {
   const { themeId, setThemeId } = useAppTheme();
   const unlocked = new Set<AppThemeId>(unlockedThemeIds);
 
   return (
     <section className="space-y-3">
       <div>
-        <h3 className="text-sm font-semibold text-white">Тема приложения</h3>
-        {/* <p className="text-xs text-white/50">
+        <h3 className="text-sm font-semibold text-[var(--foreground)]">Тема приложения</h3>
+        {/* <p className="text-xs text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">
           Меняет общий фон, карточки и акцент. Поддерживаются WebP/APNG-фоны из{" "}
-          <code className="text-white/70">/customization/themes/</code>.
+          <code className="text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">/customization/themes/</code>.
         </p> */}
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {APP_THEMES.map((theme) => {
-          const available = !theme.paid || unlocked.has(theme.id);
           const active = theme.id === themeId;
+          const available = !theme.paid || unlocked.has(theme.id) || active;
           const previewUrl = resolveAppThemeAssets(theme, { preferStaticBackground: true }).backgroundUrl;
 
           return (
@@ -97,12 +95,12 @@ function ThemeOptionButton({
       aria-pressed={active}
     >
       <span className="mb-2 flex items-center justify-between gap-2">
-        <span className="font-medium text-white">{theme.name}</span>
-        {!available && <Lock className="h-4 w-4 text-white/40" />}
+        <span className="font-medium text-[var(--foreground)]">{theme.name}</span>
+        {!available && <Lock className="h-4 w-4 text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]" />}
       </span>
-      <span className="mb-3 block text-xs text-white/50">{theme.description}</span>
+      <span className="mb-3 block text-xs text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">{theme.description}</span>
       {showAssetPreview ? (
-        <span className="relative block h-10 overflow-hidden rounded-lg border border-white/10">
+        <span className="relative block h-10 overflow-hidden rounded-lg border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)]">
           {/* eslint-disable-next-line @next/next/no-img-element -- local theme preview thumbnails */}
           <img
             src={previewUrl!}

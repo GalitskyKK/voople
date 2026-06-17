@@ -99,13 +99,13 @@ export function CreatePostBlock({
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="voople-compose-block__trigger mt-1 flex-1 text-left text-sm text-white/40 hover:text-white/60"
+          className="voople-compose-block__trigger mt-1 flex-1 text-left text-sm text-[color-mix(in_srgb,var(--foreground)_40%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]"
         >
           {COPY.composePlaceholder}
         </button>
       </div>
       {expanded && (
-        <div className="voople-compose-block__editor mt-3 border-t border-white/10 pt-3">
+        <div className="voople-compose-block__editor mt-3 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] pt-3">
           <PostComposer
             value={text}
             onChange={setText}
@@ -120,13 +120,13 @@ export function CreatePostBlock({
           />
         </div>
       )}
-      <div className="voople-compose-block__toolbar mt-3 flex items-center justify-between gap-2 border-t border-white/10 pt-3">
-        <div className="flex gap-1 text-white/40">
+      <div className="voople-compose-block__toolbar mt-3 flex items-center justify-between gap-2 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] pt-3">
+        <div className="flex gap-1 text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">
           {!expanded && (
             <button
               type="button"
               onClick={() => setExpanded(true)}
-              className="rounded-lg p-2 hover:bg-white/10 hover:text-white/70"
+              className="rounded-lg p-2 hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]"
               aria-label="Вложение"
             >
               <Paperclip className="h-5 w-5" />

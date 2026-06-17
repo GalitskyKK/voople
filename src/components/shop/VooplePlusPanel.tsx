@@ -50,34 +50,34 @@ export function VooplePlusPanel({
   const displayPrice = promoDiscount?.finalAmountRub ?? VOOPLUS_PRICE_RUB;
 
   return (
-    <section className="voople-panel overflow-hidden border-(--theme-accent)/30 bg-linear-to-br from-(--theme-accent)/15 via-white/5 to-transparent p-6">
+    <section className="voople-panel overflow-hidden border-(--theme-accent)/30 bg-linear-to-br from-(--theme-accent)/15 via-[color-mix(in_srgb,var(--foreground)_5%,transparent)] to-transparent p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
           <p className="inline-flex items-center gap-2 text-sm font-medium text-(--theme-accent)">
             <Crown className="h-4 w-4" aria-hidden />
             Voople+
           </p>
-          <h2 className="text-xl font-semibold text-white">Премиум оформление профиля</h2>
-          <p className="max-w-lg text-sm text-white/55">
+          <h2 className="text-xl font-semibold text-[var(--foreground)]">Премиум оформление профиля</h2>
+          <p className="max-w-lg text-sm text-[color-mix(in_srgb,var(--foreground)_55%,transparent)]">
             {VOOPLUS_PERIOD_DAYS} дней за разовую оплату.
             {!VOOPLUS_IS_RECURRING && " Автопродление не подключено — продлить можно вручную."} Оплата через
             ЮKassa.
           </p>
         </div>
         <div className="text-right">
-          <p className="text-2xl font-bold text-white">
+          <p className="text-2xl font-bold text-[var(--foreground)]">
             {displayPrice} ₽
             {promoDiscount && promoDiscount.finalAmountRub < VOOPLUS_PRICE_RUB && (
-              <span className="ml-2 text-base font-normal text-white/35 line-through">
+              <span className="ml-2 text-base font-normal text-[color-mix(in_srgb,var(--foreground)_35%,transparent)] line-through">
                 {VOOPLUS_PRICE_RUB} ₽
               </span>
             )}
           </p>
-          <p className="text-sm text-white/45">на {VOOPLUS_PERIOD_DAYS} дн.</p>
+          <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_45%,transparent)]">на {VOOPLUS_PERIOD_DAYS} дн.</p>
         </div>
       </div>
 
-      <ul className="mt-4 space-y-2 text-sm text-white/70">
+      <ul className="mt-4 space-y-2 text-sm text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
         {VOOPLUS_BENEFITS.map((benefit) => (
           <li key={benefit} className="flex gap-2">
             <span className="text-(--theme-accent)" aria-hidden>
@@ -90,7 +90,7 @@ export function VooplePlusPanel({
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end">
         <label className="flex-1">
-          <span className="mb-1 block text-xs text-white/45">Промокод</span>
+          <span className="mb-1 block text-xs text-[color-mix(in_srgb,var(--foreground)_45%,transparent)]">Промокод</span>
           <input
             type="text"
             value={promoInput}
@@ -98,7 +98,7 @@ export function VooplePlusPanel({
             placeholder="VOOPLE7"
             autoComplete="off"
             spellCheck={false}
-            className="h-10 w-full rounded-xl border border-white/10 bg-black/20 px-3 text-sm text-white placeholder:text-white/25 focus:border-(--theme-accent) focus:outline-none"
+            className="h-10 w-full rounded-xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-black/20 px-3 text-sm text-[var(--foreground)] placeholder:text-[color-mix(in_srgb,var(--foreground)_25%,transparent)] focus:border-(--theme-accent) focus:outline-none"
           />
         </label>
         <Button
@@ -115,10 +115,10 @@ export function VooplePlusPanel({
       {promoDiscount && (
         <p className="mt-2 text-sm text-emerald-300/90">{promoDiscount.message}</p>
       )}
-      {promoMessage && <p className="mt-2 text-sm text-white/60">{promoMessage}</p>}
+      {promoMessage && <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">{promoMessage}</p>}
 
       {statusLoading ? (
-        <p className="mt-4 text-sm text-white/45">Проверяем подписку…</p>
+        <p className="mt-4 text-sm text-[color-mix(in_srgb,var(--foreground)_45%,transparent)]">Проверяем подписку…</p>
       ) : active && status?.expiresAt ? (
         <p className="mt-4 rounded-xl bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
           Подписка активна до {formatDate(status.expiresAt)}.
@@ -137,9 +137,9 @@ export function VooplePlusPanel({
           >
             {paymentPending ? "Переход к оплате…" : `Оплатить ${displayPrice} ₽`}
           </Button>
-          <p className="text-xs text-white/40">
+          <p className="text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">
             Нажимая кнопку, вы соглашаетесь с{" "}
-            <Link href="/legal/offer" className="underline hover:text-white/60">
+            <Link href="/legal/offer" className="underline hover:text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">
               офертой
             </Link>
             .
@@ -148,7 +148,7 @@ export function VooplePlusPanel({
       )}
 
       {active && (
-        <p className="mt-3 text-xs text-white/40">
+        <p className="mt-3 text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">
           Продление: снова нажмите «Оплатить» до или после окончания срока — дни добавятся к дате окончания.
         </p>
       )}

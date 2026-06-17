@@ -22,9 +22,9 @@ export function PostComposer({
         maxLength={maxLength}
         placeholder="Что нового?"
         rows={4}
-        className="w-full resize-none rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-white/40 disabled:opacity-50"
+        className="w-full resize-none rounded-xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-black/30 px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[color-mix(in_srgb,var(--foreground)_40%,transparent)] disabled:opacity-50"
       />
-      <p className="mt-1 text-right text-xs text-white/40">
+      <p className="mt-1 text-right text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">
         {value.length}/{maxLength}
       </p>
     </div>

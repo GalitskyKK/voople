@@ -4,12 +4,18 @@ import { getAppTheme, type AppThemeId } from "@/lib/app-themes";
 
 import type { ShopCatalogItem, ShopItemKind } from "./catalog";
 
+/** Поля, нужные для превью и CDN/CSS delivery. */
+export type ShopPreviewFields = Pick<
+  ShopCatalogItem,
+  "kind" | "name" | "assetFolder" | "assetId" | "equipValue"
+>;
+
 /** Предмет без файла в CDN — только CSS / токены в коде. */
-export function catalogItemUsesCdn(item: ShopCatalogItem): boolean {
+export function catalogItemUsesCdn(item: ShopPreviewFields): boolean {
   return Boolean(item.assetFolder && item.assetId);
 }
 
-export function catalogItemUsesCss(item: ShopCatalogItem): boolean {
+export function catalogItemUsesCss(item: ShopPreviewFields): boolean {
   return !catalogItemUsesCdn(item);
 }
 
@@ -20,7 +26,7 @@ export function isCssOnlyShopKind(kind: ShopItemKind): boolean {
 }
 
 /** Превью для карточки магазина, когда `previewUrl` из CDN нет. */
-export function getCssCatalogPreviewStyle(item: ShopCatalogItem): CSSProperties | null {
+export function getCssCatalogPreviewStyle(item: ShopPreviewFields): CSSProperties | null {
   if (catalogItemUsesCdn(item)) return null;
 
   switch (item.kind) {

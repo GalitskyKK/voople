@@ -47,7 +47,7 @@
 
 Equipped state хранится в `profile_customization`:
 
-- `profile_effect_id`, `avatar_ring_id`, `banner_value`, `avatar_decoration_id`, `feed_card_style_id`, `animated_avatar_id`, `app_theme_id`, `nickname_color`, `nickname_gradient`.
+- `profile_effect_id`, `profile_background_id`, `avatar_ring_id`, `banner_value`, `avatar_decoration_id`, `feed_card_style_id`, `animated_avatar_id`, `app_theme_id`, `nickname_color`, `nickname_gradient`.
 
 tRPC:
 
@@ -57,7 +57,12 @@ tRPC:
 
 Рендер профиля: `src/server/mappers/customization.ts` → `resolveCustomization()`.
 
-App theme: в БД `app_theme_id`; на клиенте `AppThemeSync` читает equip и вызывает `applyEquippedAppTheme` (localStorage + CSS variables). Equip из каталога/инвентаря тоже вызывает тот же helper.
+App theme — два источника:
+
+1. **Бесплатные темы** (`void`, `light`) — `AppThemeSelector` в настройках профиля, только `localStorage` (`voople:app-theme`).
+2. **Shop-темы** (`violet`, `emerald`, …) — `app_theme_id` в БД; `AppThemeSync` применяет их при загрузке и **не сбрасывает** localStorage, если в БД слот пуст.
+
+`applyEquippedAppTheme` срабатывает только при ненулевом `app_theme_id`. Clear слота `app_theme_id` → `clearEquippedAppTheme` (void).
 
 ## Ассеты и CDN
 

@@ -19,6 +19,8 @@ export type ProfileCardHeaderProps = {
   subscriptionExpiresAt?: string | null
   /** Нижний отступ блока имени (превью в магазине). */
   compact?: boolean
+  /** Не рендерить баннер (если вынесен выше для z-index). */
+  showBanner?: boolean
 }
 
 /**
@@ -32,7 +34,8 @@ export function ProfileCardHeader({
   username,
   hasVooplePlus = false,
   subscriptionExpiresAt,
-  compact = false
+  compact = false,
+  showBanner = true
 }: ProfileCardHeaderProps) {
   const { displayName: nameStyle, flags, assets } = customization
 
@@ -46,9 +49,11 @@ export function ProfileCardHeader({
 
   return (
     <>
-      <div className="relative z-0 overflow-hidden rounded-t-2xl">
-        <ProfileBanner customization={customization} />
-      </div>
+      {showBanner ? (
+        <div className="relative z-[2] overflow-hidden rounded-t-2xl">
+          <ProfileBanner customization={customization} />
+        </div>
+      ) : null}
 
       <div className={cn("relative z-10 px-4", compact ? "pb-4" : "pb-0")}>
         <div className="-mt-9 flex items-end justify-between gap-2 overflow-visible">
@@ -121,6 +126,15 @@ export function ProfileCardEffectLayer({
  *   внутри карточки завязан на этот токен).
  */
 export function profileCardThemeStyle(customization: ProfileCustomizationView): CSSProperties {
+  // Любой медиа-баннер (картинка/видео) → split-layout: фон карточки прозрачный,
+  // читаемость держат scrim/glass секций (не только видео-фон, как раньше).
+  if (customization.flags.hasBannerMedia) {
+    return {
+      "--theme-accent": customization.themeAccent,
+      background: "transparent"
+    } as CSSProperties
+  }
+
   if (!customization.flags.hasProfileTheme) {
     return {
       "--theme-accent": customization.themeAccent,

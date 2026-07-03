@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { Crown, Package, Palette, ShoppingBag } from "lucide-react";
 
 import { trpc } from "@/lib/trpc/client";
-import { applyEquippedAppTheme } from "@/lib/shop/app-theme-client";
+import { applyEquippedAppTheme, clearEquippedAppTheme } from "@/lib/shop/app-theme-client";
 import { cn } from "@/lib/utils";
 import { useAppTheme } from "@/components/theme/AppThemeProvider";
 import type { PromoPreviewView } from "@/types/promo";
@@ -136,7 +136,7 @@ export function ShopPage() {
   const clearSlot = trpc.customization.clearSlot.useMutation({
     onSuccess: async (equipped, variables) => {
       if (variables.slot === "app_theme_id") {
-        applyEquippedAppTheme(setThemeId, equipped.appThemeId);
+        clearEquippedAppTheme(setThemeId);
       }
       await utils.shop.overview.invalidate();
       await utils.customization.getEquipped.invalidate();

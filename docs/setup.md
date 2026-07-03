@@ -27,11 +27,15 @@ S3_ENDPOINT=
 S3_BUCKET_PUBLIC=
 S3_BUCKET_PRIVATE=
 S3_REGION=ru-3
+# vHosted бакет (Selectel): false — presigned PUT из браузера + CORS. Path-style: true.
+S3_FORCE_PATH_STYLE=false
 S3_ACCESS_KEY_ID=
 S3_SECRET_ACCESS_KEY=
 ```
 
 Upstash, TMDB, YooKassa — опционально до соответствующих фич.
+
+**Админка каталога:** `VOOPLE_ADMIN_USER_IDS=<uuid>` — доступ к `/admin/assets`. См. [admin.md](./admin.md).
 
 **Загрузка медиа (посты, комментарии, аватар):** нужны `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT`, `S3_BUCKET_PUBLIC`, `NEXT_PUBLIC_ASSETS_CDN_URL`. Без них presigned upload вернёт ошибку «Загрузка файлов не настроена».
 

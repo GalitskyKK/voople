@@ -8,6 +8,10 @@ export type CustomizationRow = {
   avatar_data?: unknown;
   avatar_ring_id?: string | null;
   profile_effect_id?: string | null;
+  profile_background_id?: string | null;
+  profile_frame_id?: string | null;
+  frame_color?: string | null;
+  card_base_mode?: string | null;
   nameplate_id?: string | null;
   avatar_decoration_id?: string | null;
   feed_card_style_id?: string | null;
@@ -37,6 +41,10 @@ function rowToInput(row: CustomizationRow | null | undefined): CustomizationInpu
     bannerId: bannerValue?.id ?? (row.banner_type && row.banner_type !== "color" ? row.banner_type : null),
     avatarRingId: row.avatar_ring_id,
     profileEffectId: row.profile_effect_id,
+    profileBackgroundId: row.profile_background_id,
+    profileFrameId: row.profile_frame_id,
+    frameColor: row.frame_color,
+    cardBaseMode: row.card_base_mode,
     avatarDecorationId: row.avatar_decoration_id,
     feedCardStyleId: row.feed_card_style_id,
     animatedAvatarId: row.animated_avatar_id,

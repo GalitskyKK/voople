@@ -4,6 +4,7 @@ import type { ShopItemView } from "@/types/shop";
 /** Секции магазина / настройки — как у Discord (профиль → аватар → лента → интерфейс). */
 export type ShopDisplaySectionId =
   | "profile_banner"
+  | "profile_card_bg"
   | "profile_effect"
   | "avatar"
   | "profile_name"
@@ -24,6 +25,12 @@ export const SHOP_DISPLAY_SECTIONS: ShopDisplaySection[] = [
     title: "Баннер профиля",
     hint: "Украсьте свой баннер",
     kinds: ["banner"],
+  },
+  {
+    id: "profile_card_bg",
+    title: "Фон карточки",
+    hint: "Анимированный фон профиля",
+    kinds: ["profile_background"],
   },
   {
     id: "profile_effect",
@@ -64,7 +71,8 @@ export const CUSTOMIZE_SLOT_SECTIONS: {
   sectionId: ShopDisplaySectionId;
 }[] = [
   { slot: "banner", title: "Баннер профиля", sectionId: "profile_banner" },
-  { slot: "profile_effect_id", title: "Эффект профиля", sectionId: "profile_effect" },
+  { slot: "profile_background_id", title: "Фон карточки", sectionId: "profile_card_bg" },
+  // Эффекты профиля заменены рамкой карточки (панель «Рамка» в редакторе) — слот скрыт.
   { slot: "animated_avatar_id", title: "Анимированный аватар", sectionId: "avatar" },
   { slot: "avatar_decoration_id", title: "Украшение аватара", sectionId: "avatar" },
   { slot: "avatar_ring_id", title: "Кольцо", sectionId: "avatar" },
@@ -75,6 +83,7 @@ export const CUSTOMIZE_SLOT_SECTIONS: {
 
 const KIND_LABEL: Record<ShopItemKind, string> = {
   banner: "Баннер",
+  profile_background: "Фон карточки",
   effect: "Эффект профиля",
   decoration: "Украшение аватара",
   animated_avatar: "Анимированный аватар",

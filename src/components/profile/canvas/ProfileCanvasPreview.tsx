@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 
 import { renderStrokesOnCanvas } from "@/lib/canvas/render-strokes";
 import { useCanvasSize } from "@/lib/canvas/use-canvas-size";
+import { useAppTheme } from "@/components/theme/AppThemeProvider";
 import { cn } from "@/lib/utils";
 import type { Stroke } from "@/types/canvas";
 
@@ -17,6 +18,8 @@ type ProfileCanvasPreviewProps = {
  * Показывается на обратной стороне карточки, пока режим рисования выключен.
  */
 export function ProfileCanvasPreview({ strokes, className }: ProfileCanvasPreviewProps) {
+  const { theme } = useAppTheme();
+  const canvasBg = theme.tokens.surface;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const strokesRef = useRef(strokes);
@@ -32,8 +35,8 @@ export function ProfileCanvasPreview({ strokes, className }: ProfileCanvasPrevie
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    renderStrokesOnCanvas(ctx, strokesRef.current, size);
-  }, []);
+    renderStrokesOnCanvas(ctx, strokesRef.current, size, null, canvasBg);
+  }, [canvasBg]);
 
   useCanvasSize(containerRef, canvasRef, redraw);
 
@@ -47,8 +50,8 @@ export function ProfileCanvasPreview({ strokes, className }: ProfileCanvasPrevie
       width: Math.max(1, Math.floor(rect.width)),
       height: Math.max(1, Math.floor(rect.height)),
     };
-    renderStrokesOnCanvas(ctx, strokes, size);
-  }, [strokes]);
+    renderStrokesOnCanvas(ctx, strokes, size, null, canvasBg);
+  }, [strokes, canvasBg]);
 
   return (
     <div

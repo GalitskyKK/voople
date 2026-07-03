@@ -8,10 +8,10 @@ import {
   catalogItemUsesCdn,
   getCssCatalogPreviewStyle,
 } from "@/lib/shop/catalog-delivery";
-import type { ShopCatalogItem } from "@/lib/shop/catalog";
+import type { ShopPreviewFields } from "@/lib/shop/catalog-delivery";
 
 type ShopCatalogPreviewProps = {
-  catalog: ShopCatalogItem;
+  catalog: ShopPreviewFields;
   previewUrl: string | null;
   className?: string;
 };
@@ -71,7 +71,7 @@ export function ShopCatalogPreview({ catalog, previewUrl, className }: ShopCatal
       )}
       {catalog.kind === "app_theme" && (
         <span className="absolute bottom-3 left-3 rounded-full bg-black/40 px-2 py-0.5 text-[11px] text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]">
-          {catalog.name}
+          {"name" in catalog && catalog.name ? catalog.name : "Тема"}
         </span>
       )}
     </div>

@@ -5,7 +5,6 @@ import { ChevronLeft } from "lucide-react";
 import type { CSSProperties } from "react";
 
 import { FeedAuthorChipBackdrop } from "@/components/feed/FeedAuthorChipBackdrop";
-import { readableForeground } from "@/lib/customization/readable-foreground";
 import { cn } from "@/lib/utils";
 import type { ProfileViewModel } from "@/types/domain";
 import { DisplayNameWithPin } from "./DisplayNameWithPin";
@@ -45,9 +44,7 @@ export function StickyProfileHeader({
   // Чип-вариант рисует кастомный (обычно тёмный) фон — переопределяем фон-токены
   // и читаемый текст; обычный вариант следует теме приложения.
   const chipStyle = {
-    "--theme-primary": customization.themePrimary,
     "--theme-accent": customization.themeAccent,
-    "--foreground": readableForeground(customization.themePrimary),
   } as CSSProperties;
 
   const actions = (

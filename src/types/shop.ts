@@ -1,4 +1,7 @@
+import type { ShopPreviewFields } from "@/lib/shop/catalog-delivery";
 import type { ShopEquipSlot, ShopItemKind } from "@/lib/shop/catalog";
+
+export type ShopItemPreviewMeta = ShopPreviewFields;
 
 export type ShopItemView = {
   id: string;
@@ -6,13 +9,17 @@ export type ShopItemView = {
   name: string;
   description: string | null;
   previewUrl: string | null;
+  previewMeta: ShopItemPreviewMeta;
   priceCoins: number;
   priceRub: number;
   isFree: boolean;
   owned: boolean;
   equipped: boolean;
   equipSlot: ShopEquipSlot;
+  equipValue: string | null;
   seasonId: string | null;
+  assetFolder: string | null;
+  assetId: string | null;
 };
 
 export type WalletView = {
@@ -43,6 +50,13 @@ export type PaymentIntentView = {
 
 export type EquippedCustomizationView = {
   profileEffectId: string | null;
+  profileBackgroundId: string | null;
+  /** Рамка карточки (id пресета frames-registry / картиночной рамки). */
+  profileFrameId: string | null;
+  /** Кастомный цвет рамки (Voople+), HEX. */
+  frameColor: string | null;
+  /** Режим основы карточки: mirror | theme | plain. */
+  cardBaseMode: string | null;
   avatarRingId: string | null;
   bannerId: string | null;
   avatarDecorationId: string | null;

@@ -7,6 +7,7 @@
 | Секция Voople | Аналог Discord | Предметы Launch |
 |---------------|----------------|-----------------|
 | Баннер профиля | Баннер профиля | Minti |
+| Фон карточки | — (Steam-style video bg) | Blue Flowers |
 | Эффект профиля | Сменить эффект профиля | Ladybugs |
 | Аватар | Украшение + анимированный аватар (+ кольцо) | Sparkle, Minti, Glow Purple |
 | Имя в профиле | Стиль отображаемого имени | Neon Pink |
@@ -17,11 +18,9 @@
 
 Описания в каталоге — короткий теглайн (1 строка), без форматов и технических пояснений.
 
-### «Тема карточки профиля» (пока не в магазине)
+**Тема карточки профиля** (`theme_primary` / `theme_accent`, Voople+): влияет только на **градиент карточки**, не на feed chip и не на shell приложения.
 
-В Discord в настройках профиля есть **два цвета** — фон и акцент **самой карточки** (не всего приложения).
-
-У Voople это поля `profile_customization.theme_primary` и `theme_accent` (дефолт из `src/lib/constants/theme.ts`). Сейчас их **нет** в каталоге магазина: карточка берёт дефолт, плюс визуал от баннера. Отдельные «темы профиля» в shop — на потом.
+**Feed chip** (`feed_card_style_id`): фон полоски автора — только ассет `feed-cards/*` + нейтральный scrim из `--app-surface`. Цвета темы карточки сюда не попадают.
 
 **Тема приложения** (`app_theme_id`) — другое: меняет весь shell (лента, сайдбар, фон страницы), см. `src/lib/app-themes.ts`.
 
@@ -40,6 +39,7 @@
 | Анимация в круге | CDN `customization/animated/{id}` | `animated_avatar_id` |
 | Стиль имени | hex в каталоге | `nickname_color`, `nickname_gradient` |
 | Лента | CDN `customization/feed-cards/{id}` | `feed_card_style_id` |
+| Фон карточки | CDN `customization/backgrounds/{base}-*` | `profile_background_id` |
 | Тема приложения | `src/lib/app-themes.ts` | `app_theme_id` + localStorage `voople:app-theme` |
 | Свой аватар (фото) | upload → storage | `avatar_type=photo`, `avatar_data` |
 | Цвета карточки (дефолт) | `theme.ts` / колонки БД | не из магазина пока |
@@ -51,6 +51,7 @@
 | Shop `kind` | Equip-поле в БД | Что меняется в UI |
 |-------------|-----------------|-------------------|
 | `banner` | `banner_value` | Верх карточки профиля |
+| `profile_background` | `profile_background_id` | Video bg всей карточки (баннер поверх) |
 | `effect` | `profile_effect_id` | Оверлей **на всю карточку**: картинка (CDN) **или** CSS-частицы (пресет) |
 | `decoration` | `avatar_decoration_id` | Картинка **вокруг** круга аватара |
 | `animated_avatar` | `animated_avatar_id` | **Круг аватара**: зацикленный WebP/APNG вместо буквы |
@@ -90,11 +91,11 @@
 ## Источник правды
 
 ```text
-src/lib/shop/catalog.ts
-drizzle/shop-catalog-upsert.sql   → копируешь в Supabase SQL Editor
+shop_items (Supabase)     → runtime (админка /admin/assets)
+catalog.ts + seed SQL     → legacy bootstrap Launch-каталога
 ```
 
-Терминал не обязателен.
+Подробно: [admin.md](./admin.md). Раньше: правка TS + SQL вручную — теперь предпочтительно админка.
 
 ## Supabase: обновить каталог
 
@@ -136,7 +137,7 @@ ON CONFLICT (id) DO UPDATE SET
 
 | id | CDN |
 |----|-----|
-| banner-minti, effect-ladybugs, effect-fireflies, effect-snowfall, effect-glitch-sparks, effect-petal-fall, decoration-sparkle, feed-sakura, animated-minti | да |
+| banner-minti, bg-blue-flowers, effect-ladybugs, effect-fireflies, effect-snowfall, effect-glitch-sparks, effect-petal-fall, decoration-sparkle, feed-sakura, animated-minti | да |
 | effect-css-snow, effect-css-confetti, effect-css-sparkles, effect-css-fireflies | CSS (пресеты частиц) |
 | ring-glow-purple, style-neon-pink | CSS |
 | theme-violet, theme-emerald, theme-rose, theme-gold | CSS (+ опционально themes/*) |

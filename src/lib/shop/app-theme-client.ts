@@ -1,14 +1,16 @@
-import { DEFAULT_APP_THEME_ID, type AppThemeId } from "@/lib/app-themes";
-import { isAppThemeId } from "@/lib/shop/catalog";
+import { DEFAULT_APP_THEME_ID, getAppTheme, isAppThemeId, type AppThemeId } from "@/lib/app-themes";
 
-/** Применить тему shell после equip/clear или синка с `profile_customization.app_theme_id`. */
+/** Применить shop-тему shell после equip (только если в БД есть `app_theme_id`). */
 export function applyEquippedAppTheme(
   setThemeId: (themeId: AppThemeId) => void,
   appThemeId: string | null | undefined,
 ) {
   if (appThemeId && isAppThemeId(appThemeId)) {
     setThemeId(appThemeId);
-    return;
   }
+}
+
+/** Сброс shop-темы после clear слота `app_theme_id`. */
+export function clearEquippedAppTheme(setThemeId: (themeId: AppThemeId) => void) {
   setThemeId(DEFAULT_APP_THEME_ID);
 }

@@ -5,6 +5,16 @@ import {
   WELCOME_VOOOPS_BONUS,
   type ShopCatalogItem,
 } from "@/lib/shop/catalog";
+import {
+  resolveRowAssetFolder,
+  resolveRowAssetId,
+  resolveRowEquipSlot,
+  resolveRowEquipValue,
+  resolveRowKind,
+  SHOP_ITEM_SELECT,
+  shopPreviewItemFromRow,
+  type ShopItemRow,
+} from "@/lib/shop/item-row";
 import type {
   EquippedCustomizationView,
   PaymentIntentKind,
@@ -12,23 +22,6 @@ import type {
   ShopItemView,
   WalletView,
 } from "@/types/shop";
-
-type ShopItemRow = {
-  id: string;
-  season_id: string | null;
-  type: string;
-  name: string;
-  description: string | null;
-  price_rub: number;
-  price_coins: number;
-  is_free: boolean;
-  preview_url: string | null;
-  sort_order: number;
-  asset_folder: string | null;
-  asset_id: string | null;
-  equip_slot: string | null;
-  equip_value: string | null;
-};
 
 type InventoryRow = {
   item_id: string;
@@ -40,6 +33,10 @@ type WalletRow = {
 
 type CustomizationEquipRow = {
   profile_effect_id: string | null;
+  profile_background_id: string | null;
+  profile_frame_id: string | null;
+  frame_color: string | null;
+  card_base_mode: string | null;
   avatar_ring_id: string | null;
   banner_value: unknown;
   avatar_decoration_id: string | null;
@@ -65,8 +62,8 @@ type PaymentIntentRow = {
 function resolvePreviewUrl(row: ShopItemRow): string | null {
   if (row.preview_url) return row.preview_url;
   const catalog = SHOP_CATALOG_BY_ID.get(row.id);
-  const folder = row.asset_folder ?? catalog?.assetFolder;
-  const assetId = row.asset_id ?? catalog?.assetId;
+  const folder = resolveRowAssetFolder(row, catalog);
+  const assetId = resolveRowAssetId(row, catalog);
   if (!folder || !assetId) return null;
   return customizationAssetPath(folder, assetId);
 }
@@ -81,9 +78,7 @@ export async function listShopItemsRest(): Promise<ShopItemRow[]> {
   const admin = getAdminClient();
   const { data, error } = await admin
     .from("shop_items")
-    .select(
-      "id, season_id, type, name, description, price_rub, price_coins, is_free, preview_url, sort_order, asset_folder, asset_id, equip_slot, equip_value",
-    )
+    .select(SHOP_ITEM_SELECT)
     .order("sort_order", { ascending: true });
 
   if (error) throw new Error(error.message);
@@ -106,7 +101,7 @@ export async function getEquippedCustomizationRest(userId: string): Promise<Equi
   const { data, error } = await admin
     .from("profile_customization")
     .select(
-      "profile_effect_id, avatar_ring_id, banner_value, avatar_decoration_id, feed_card_style_id, animated_avatar_id, app_theme_id, nickname_color, nickname_gradient, theme_primary, theme_accent",
+      "profile_effect_id, profile_background_id, profile_frame_id, frame_color, card_base_mode, avatar_ring_id, banner_value, avatar_decoration_id, feed_card_style_id, animated_avatar_id, app_theme_id, nickname_color, nickname_gradient, theme_primary, theme_accent",
     )
     .eq("user_id", userId)
     .maybeSingle();
@@ -116,6 +111,10 @@ export async function getEquippedCustomizationRest(userId: string): Promise<Equi
 
   return {
     profileEffectId: row?.profile_effect_id ?? null,
+    profileBackgroundId: row?.profile_background_id ?? null,
+    profileFrameId: row?.profile_frame_id ?? null,
+    frameColor: row?.frame_color ?? null,
+    cardBaseMode: row?.card_base_mode ?? null,
     avatarRingId: row?.avatar_ring_id ?? null,
     bannerId: bannerIdFromValue(row?.banner_value),
     avatarDecorationId: row?.avatar_decoration_id ?? null,
@@ -131,13 +130,15 @@ export async function getEquippedCustomizationRest(userId: string): Promise<Equi
 
 function isEquipped(row: ShopItemRow, equipped: EquippedCustomizationView): boolean {
   const catalog = SHOP_CATALOG_BY_ID.get(row.id);
-  const slot = row.equip_slot ?? catalog?.equipSlot;
-  const value = row.equip_value ?? catalog?.equipValue;
+  const slot = resolveRowEquipSlot(row, catalog);
+  const value = resolveRowEquipValue(row, catalog);
   if (!slot || !value) return false;
 
   switch (slot) {
     case "profile_effect_id":
       return equipped.profileEffectId === value;
+    case "profile_background_id":
+      return equipped.profileBackgroundId === value;
     case "avatar_ring_id":
       return equipped.avatarRingId === value;
     case "banner":
@@ -163,7 +164,8 @@ export function mapShopItemRow(
   equipped: EquippedCustomizationView,
 ): ShopItemView {
   const catalog = SHOP_CATALOG_BY_ID.get(row.id);
-  const kind = (catalog?.kind ?? row.type) as ShopItemView["kind"];
+  const kind = resolveRowKind(row, catalog?.kind);
+  const previewMeta = shopPreviewItemFromRow(row, catalog);
 
   return {
     id: row.id,
@@ -171,13 +173,17 @@ export function mapShopItemRow(
     name: row.name,
     description: row.description,
     previewUrl: resolvePreviewUrl(row),
+    previewMeta,
     priceCoins: row.price_coins,
     priceRub: row.price_rub,
     isFree: row.is_free,
     owned: ownedIds.has(row.id),
     equipped: isEquipped(row, equipped),
-    equipSlot: (row.equip_slot ?? catalog?.equipSlot ?? "profile_effect_id") as ShopItemView["equipSlot"],
+    equipSlot: resolveRowEquipSlot(row, catalog),
+    equipValue: resolveRowEquipValue(row, catalog),
     seasonId: row.season_id,
+    assetFolder: resolveRowAssetFolder(row, catalog),
+    assetId: resolveRowAssetId(row, catalog),
   };
 }
 
@@ -220,9 +226,7 @@ export async function getShopItemRowRest(itemId: string): Promise<ShopItemRow | 
   const admin = getAdminClient();
   const { data, error } = await admin
     .from("shop_items")
-    .select(
-      "id, season_id, type, name, description, price_rub, price_coins, is_free, preview_url, sort_order, asset_folder, asset_id, equip_slot, equip_value",
-    )
+    .select(SHOP_ITEM_SELECT)
     .eq("id", itemId)
     .maybeSingle();
 

@@ -2,7 +2,6 @@
 
 import { Check, Lock } from "lucide-react";
 
-import { SHOP_CATALOG_BY_ID } from "@/lib/shop/catalog";
 import { shopKindLabel } from "@/lib/shop/categories";
 import { cn } from "@/lib/utils";
 import type { ShopItemView } from "@/types/shop";
@@ -28,7 +27,6 @@ export function ShopItemCard({
   onEquip,
   onUnequip,
 }: ShopItemCardProps) {
-  const catalog = SHOP_CATALOG_BY_ID.get(item.id);
   const futurePrice = !item.isFree && item.priceCoins > 0;
 
   return (
@@ -39,14 +37,7 @@ export function ShopItemCard({
       )}
     >
       <div className="relative aspect-[4/3] bg-black/30">
-        {catalog ? (
-          <ShopCatalogPreview catalog={catalog} previewUrl={item.previewUrl} />
-        ) : item.previewUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- CDN customization previews
-          <img src={item.previewUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-        ) : (
-          <div className="flex h-full items-center justify-center text-sm text-[color-mix(in_srgb,var(--foreground)_30%,transparent)]">Нет превью</div>
-        )}
+        <ShopCatalogPreview catalog={item.previewMeta} previewUrl={item.previewUrl} />
         <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[11px] text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]">
           {shopKindLabel(item.kind)}
         </span>
@@ -73,8 +64,8 @@ export function ShopItemCard({
               <span className="rounded-full bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] px-2 py-1 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">{item.priceRub} ₽</span>
             </>
           )}
-          {item.isFree && catalog && catalog.priceCoins > 0 && (
-            <span className="text-[color-mix(in_srgb,var(--foreground)_35%,transparent)] line-through">{catalog.priceCoins} voops потом</span>
+          {item.isFree && item.priceCoins > 0 && (
+            <span className="text-[color-mix(in_srgb,var(--foreground)_35%,transparent)] line-through">{item.priceCoins} voops потом</span>
           )}
           {futurePrice && <Lock className="h-3.5 w-3.5 text-[color-mix(in_srgb,var(--foreground)_35%,transparent)]" aria-hidden />}
         </div>

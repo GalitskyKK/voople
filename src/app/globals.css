@@ -215,6 +215,7 @@ body {
 .voople-scroll {
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  scroll-behavior: smooth;
 }
 
 @keyframes voople-action-pop {
@@ -274,6 +275,112 @@ body {
 .voople-profile-card {
   --theme-primary: var(--app-surface);
   --theme-accent: #8b7ec8;
+}
+
+/** Split-layout (любой медиа-баннер: картинка/видео): читаемый текст + база для glass-подложки.
+    `--video-bg` оставлен как алиас для обратной совместимости. */
+.profile-card--split,
+.profile-card--video-bg {
+  --profile-banner-height: 10.25rem;
+  --profile-section-gap: 3rem;
+  --profile-section-radius: 0.9375rem;
+  --profile-scrim-base: #0a0a12;
+  --foreground: #f4f4f7;
+  background: transparent;
+}
+
+html[data-app-theme="light"] .profile-card--split,
+html[data-app-theme="light"] .profile-card--video-bg {
+  --profile-scrim-base: #ffffff;
+  --foreground: #191921;
+}
+
+/* Рамка карточки = подложка-matte — см. ProfileCardFrame.tsx / frames-registry.ts.
+   Реализована как padding + background на <article>: заливка видна в кольце по периметру
+   и в зазоре между баннером и основой. Баннер/основа лежат сверху (непрозрачны) → matte не
+   заходит на их площадь. background-image покрывает и градиент, и картиночную подложку. */
+.profile-card--framed {
+  padding: var(--profile-frame-width, 10px);
+  background-color: var(--profile-frame-color, transparent);
+  background-image: var(--profile-frame-image, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: var(--profile-frame-shadow, none);
+  border-radius: calc(var(--profile-section-radius, 1rem) + var(--profile-frame-width, 10px));
+}
+
+.profile-card--framed-glass {
+  backdrop-filter: blur(6px) saturate(1.05);
+  -webkit-backdrop-filter: blur(6px) saturate(1.05);
+}
+
+/* Внутренняя поверхность для плоской (не-split) карточки с рамкой: держит фон карточки
+   и скругление, чтобы matte был виден только в кольце. */
+.profile-card__surface {
+  position: relative;
+  border-radius: var(--profile-section-radius, 0.9375rem);
+  overflow: hidden;
+}
+
+.profile-card__banner {
+  position: relative;
+  z-index: 2;
+  height: var(--profile-banner-height);
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: var(--profile-section-radius);
+}
+
+.profile-card__body {
+  position: relative;
+  z-index: 10;
+  /* overflow: hidden; */
+  border-radius: var(--profile-section-radius);
+}
+
+.profile-card-video--body .profile-card-video__media {
+  transform: scale(1.1);
+}
+
+.profile-card-video--body .profile-card-video__media video,
+.profile-card-video--body .profile-card-video__media img {
+  filter: blur(22px) saturate(1.08);
+}
+
+.profile-card-video__body-scrim {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--profile-scrim-base) 18%, transparent) 0%,
+    color-mix(in srgb, var(--profile-scrim-base) 42%, transparent) 100%
+  );
+}
+
+.profile-card-content-backdrop {
+  backdrop-filter: blur(20px) saturate(1.12);
+  -webkit-backdrop-filter: blur(20px) saturate(1.12);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--profile-scrim-base) 22%, transparent) 0%,
+    color-mix(in srgb, var(--profile-scrim-base) 58%, transparent) 32%,
+    color-mix(in srgb, var(--profile-scrim-base) 76%, transparent) 100%
+  );
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
+}
+
+html[data-app-theme="light"] .profile-card-content-backdrop {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--profile-scrim-base) 38%, transparent) 0%,
+    color-mix(in srgb, var(--profile-scrim-base) 72%, transparent) 32%,
+    color-mix(in srgb, var(--profile-scrim-base) 86%, transparent) 100%
+  );
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 55%, transparent);
+}
+
+.voople-profile-canvas-back {
+  background: var(--app-surface);
 }
 
 /* Avatar rings — CSS-кольца вокруг аватара (см. lib/customization/rings.ts) */

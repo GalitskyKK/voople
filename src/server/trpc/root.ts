@@ -1,4 +1,5 @@
 import { createTRPCRouter } from "./init";
+import { adminRouter } from "./routers/admin";
 import { chatRouter } from "./routers/chat";
 import { customizationRouter } from "./routers/customization";
 import { engagementRouter } from "./routers/engagement";
@@ -17,6 +18,7 @@ import { uploadRouter } from "./routers/upload";
 import { userRouter } from "./routers/user";
 
 export const appRouter = createTRPCRouter({
+  admin: adminRouter,
   health: healthRouter,
   user: userRouter,
   post: postRouter,

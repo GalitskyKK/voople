@@ -15,6 +15,7 @@ const KIND_LABELS: Record<ShopItemKind, string> = {
   effect: "Эффект профиля",
   ring: "Кольцо аватара",
   banner: "Баннер профиля",
+  profile_background: "Фон карточки",
   nameplate: "Стиль имени",
   badge: "Бейдж",
   reaction_pack: "Набор реакций",

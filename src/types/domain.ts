@@ -1,4 +1,9 @@
-import type { CustomizationFlags, CustomizationAssets, DisplayNameStyle } from "@/lib/customization/types";
+import type {
+  CustomizationFlags,
+  CustomizationAssets,
+  DisplayNameStyle,
+  CardBaseMode,
+} from "@/lib/customization/types";
 
 export type ProfileStatus = {
   moodValue?: number | null;
@@ -16,6 +21,7 @@ export type ProfileCustomizationView = {
   assets: CustomizationAssets;
   displayName: DisplayNameStyle;
   avatarRingId?: string | null;
+  cardBaseMode: CardBaseMode;
 };
 
 export type ProfileViewModel = {

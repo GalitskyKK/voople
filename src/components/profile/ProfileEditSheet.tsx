@@ -132,11 +132,11 @@ export function ProfileEditSheet({ profile }: ProfileEditSheetProps) {
 
   return (
     <>
-      <Button
+      <button
         type="button"
-        variant="secondary"
-        size="md"
         aria-label="Редактировать профиль"
+        title="Редактировать профиль"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white/85 backdrop-blur-sm transition hover:bg-black/55 hover:text-white"
         onClick={() => {
           setDisplayName(profile.displayName);
           setBio(profile.bio ?? "");
@@ -145,7 +145,7 @@ export function ProfileEditSheet({ profile }: ProfileEditSheetProps) {
         }}
       >
         <Pencil className="h-4 w-4" />
-      </Button>
+      </button>
       <Sheet open={open} onClose={() => setOpen(false)}>
         <h2 className="mb-4 pe-10 text-lg font-semibold">Редактировать профиль</h2>
         <div className="mb-4 flex items-center gap-4">

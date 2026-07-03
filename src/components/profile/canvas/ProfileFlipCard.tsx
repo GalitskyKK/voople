@@ -50,7 +50,7 @@ export function ProfileFlipCard({
   }, [refetchStrokes]);
 
   const backShellClassName =
-    "voople-profile-canvas-back h-full overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[#12121f]";
+    "voople-profile-canvas-back h-full overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)]";
 
   return (
     <FlipCard

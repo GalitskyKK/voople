@@ -1,9 +1,19 @@
+import type { ResolvedMediaAssets } from "@/lib/customization/profile-background-assets"
+import type { FrameKind } from "@/lib/customization/frames-registry"
+
 export type CustomizationFlags = {
   hasCustomTheme: boolean
   /** Заданы цвета темы профиля (градиент карточки), без учёта баннера. */
   hasProfileTheme: boolean
   hasBanner: boolean
+  /** У баннера есть медиа (картинка ИЛИ видео) → включается split-layout. */
+  hasBannerMedia: boolean
+  /** @deprecated отдельный video-слот; используйте hasBannerMedia. */
+  hasProfileBackground: boolean
+  /** @deprecated эффекты заменены рамкой; данные остаются, рендер выключен. */
   hasProfileEffect: boolean
+  /** Задана рамка карточки (пресет frames-registry или картиночная). */
+  hasFrame: boolean
   hasAvatarDecoration: boolean
   hasAnimatedAvatar: boolean
   hasFeedCardStyle: boolean
@@ -11,8 +21,36 @@ export type CustomizationFlags = {
   hasAvatarRing: boolean
 }
 
+/** Единый медиа-источник баннера: картинка, видео или ничего (плоский цвет). */
+export type ResolvedBannerMedia =
+  | { kind: "image"; imageUrl: string }
+  | ({ kind: "video" } & ResolvedMediaAssets)
+  | { kind: "none" }
+
+/** Разрешённая рамка карточки (кольцо-паддинг вокруг баннер+основа). */
+export type ResolvedFrame = {
+  id: string
+  kind: FrameKind
+  /** Толщина кольца, px. */
+  width: number
+  /** Итоговые CSS-цвета (после подстановки кастомного цвета Voople+). */
+  colors: string[]
+  /** URL картиночной рамки (border-image), если kind === "image". */
+  imageUrl?: string | null
+  imageSlice?: number | null
+}
+
+/** Режим основы карточки (подложки под контентом). */
+export type CardBaseMode = "mirror" | "theme" | "plain"
+
 export type CustomizationAssets = {
   bannerUrl?: string | null
+  /** Единый медиа-источник баннера (image/video/none). */
+  bannerMedia: ResolvedBannerMedia
+  /** @deprecated используйте bannerMedia (video); оставлено на время миграции. */
+  profileBackground?: ResolvedMediaAssets | null
+  /** Рамка карточки (замена эффектов). Null — без рамки. */
+  frame: ResolvedFrame | null
   /** URL картиночного эффекта (APNG/animated-WebP). Null, если эффект CSS-пресет. */
   profileEffectUrl?: string | null
   /** id CSS-пресета эффекта (см. effects-registry). Null, если эффект картиночный. */
@@ -34,4 +72,6 @@ export type ResolvedCustomization = {
   assets: CustomizationAssets
   displayName: DisplayNameStyle
   avatarRingId?: string | null
+  /** Режим основы карточки. */
+  cardBaseMode: CardBaseMode
 }

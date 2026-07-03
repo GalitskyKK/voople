@@ -112,6 +112,18 @@ export const APP_THEMES: AppTheme[] = [
 
 export const DEFAULT_APP_THEME_ID: AppThemeId = "void";
 
+const APP_THEME_ID_SET = new Set<string>(APP_THEMES.map((theme) => theme.id));
+
+export const FREE_APP_THEME_IDS = ["void", "light"] as const satisfies readonly AppThemeId[];
+
+export function isAppThemeId(value: string): value is AppThemeId {
+  return APP_THEME_ID_SET.has(value);
+}
+
+export function isFreeAppThemeId(value: string): value is AppThemeId {
+  return (FREE_APP_THEME_IDS as readonly string[]).includes(value);
+}
+
 export function getAppTheme(themeId: string | null | undefined): AppTheme {
   return APP_THEMES.find((theme) => theme.id === themeId) ?? APP_THEMES[0]!;
 }

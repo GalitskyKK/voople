@@ -1,6 +1,8 @@
 import { getAdminClient } from "@/lib/supabase/admin";
 import { publicAssetUrl } from "@/lib/object-storage";
 import { customizationAssetPath } from "@/lib/customization/asset-path";
+import { isAppThemeId, isFreeAppThemeId } from "@/lib/app-themes";
+import { getFramePreset } from "@/lib/customization/frames-registry";
 import { SHOP_CATALOG_BY_ID } from "@/lib/shop/catalog";
 import { assertActiveSubscriptionRest } from "@/server/data/subscription-rest";
 import { getInventoryItemIdsRest, getShopItemRowRest } from "@/server/data/shop-rest";
@@ -8,6 +10,10 @@ import { resolvePublicMediaKey } from "@/server/services/upload.service";
 
 export type CustomizationEquipPatch = {
   profileEffectId?: string | null;
+  profileBackgroundId?: string | null;
+  profileFrameId?: string | null;
+  frameColor?: string | null;
+  cardBaseMode?: string | null;
   avatarRingId?: string | null;
   bannerId?: string | null;
   avatarDecorationId?: string | null;
@@ -49,6 +55,17 @@ async function assertOwnsEquipValue(
   throw new Error("Предмет не куплен");
 }
 
+async function assertAppThemeAllowed(
+  ownedIds: Set<string>,
+  appThemeId: string | null | undefined,
+  trustedItemId?: string,
+) {
+  if (!appThemeId) return;
+  if (!isAppThemeId(appThemeId)) throw new Error("Неизвестная тема приложения");
+  if (isFreeAppThemeId(appThemeId)) return;
+  await assertOwnsEquipValue(ownedIds, appThemeId, trustedItemId);
+}
+
 async function resolveBannerPatch(bannerId: string | null | undefined) {
   if (!bannerId) {
     return {
@@ -73,18 +90,22 @@ export async function updateProfileCustomizationRest(
   const trustedItemId = options?.trustedItemId;
 
   await assertOwnsEquipValue(ownedIds, patch.profileEffectId, trustedItemId);
+  await assertOwnsEquipValue(ownedIds, patch.profileBackgroundId, trustedItemId);
   await assertOwnsEquipValue(ownedIds, patch.avatarRingId, trustedItemId);
   await assertOwnsEquipValue(ownedIds, patch.bannerId, trustedItemId);
   await assertOwnsEquipValue(ownedIds, patch.avatarDecorationId, trustedItemId);
   await assertOwnsEquipValue(ownedIds, patch.feedCardStyleId, trustedItemId);
   await assertOwnsEquipValue(ownedIds, patch.animatedAvatarId, trustedItemId);
-  await assertOwnsEquipValue(ownedIds, patch.appThemeId, trustedItemId);
+  await assertAppThemeAllowed(ownedIds, patch.appThemeId, trustedItemId);
 
   if (patch.nicknameColor) {
-    const ownsStyle = [...ownedIds].some((id) => {
-      const catalog = SHOP_CATALOG_BY_ID.get(id);
-      return catalog?.equipSlot === "nickname_style" && catalog.equipValue === patch.nicknameColor;
-    });
+    const ownsStyle = await Promise.all(
+      [...ownedIds].map(async (id) => {
+        const row = await getShopItemRowRest(id);
+        if (!row) return false;
+        return row.equip_slot === "nickname_style" && row.equip_value === patch.nicknameColor;
+      }),
+    ).then((results) => results.some(Boolean));
     if (!ownsStyle) throw new Error("Стиль имени не куплен");
   }
 
@@ -94,6 +115,32 @@ export async function updateProfileCustomizationRest(
 
   if (patch.profileEffectId !== undefined) {
     update.profile_effect_id = patch.profileEffectId;
+  }
+  if (patch.profileBackgroundId !== undefined) {
+    update.profile_background_id = patch.profileBackgroundId;
+  }
+  // Рамка: премиум-пресеты, кастомный цвет и картиночные рамки требуют Voople+.
+  // Бесплатные пресеты (isPremium=false, без usesCustomColor) доступны всем.
+  if (patch.profileFrameId) {
+    const preset = getFramePreset(patch.profileFrameId);
+    const requiresPlus = !preset || preset.isPremium || preset.usesCustomColor;
+    if (requiresPlus) await assertActiveSubscriptionRest(userId);
+  }
+  if (patch.profileFrameId !== undefined) {
+    update.profile_frame_id = patch.profileFrameId;
+  }
+  if (patch.frameColor) {
+    await assertActiveSubscriptionRest(userId);
+  }
+  if (patch.frameColor !== undefined) {
+    update.frame_color = patch.frameColor;
+  }
+  // Основа карточки: mirror — дефолт (бесплатно); theme/plain (оверрайд) требуют Voople+.
+  if (patch.cardBaseMode && patch.cardBaseMode !== "mirror") {
+    await assertActiveSubscriptionRest(userId);
+  }
+  if (patch.cardBaseMode !== undefined) {
+    update.card_base_mode = patch.cardBaseMode;
   }
   if (patch.avatarRingId !== undefined) {
     update.avatar_ring_id = patch.avatarRingId;
@@ -158,6 +205,9 @@ export async function equipShopItemRest(userId: string, itemId: string) {
   switch (slot) {
     case "profile_effect_id":
       patch.profileEffectId = value;
+      break;
+    case "profile_background_id":
+      patch.profileBackgroundId = value;
       break;
     case "avatar_ring_id":
       patch.avatarRingId = value;
@@ -236,6 +286,16 @@ export async function clearEquipSlotRest(userId: string, slot: string) {
   switch (slot) {
     case "profile_effect_id":
       patch.profileEffectId = null;
+      break;
+    case "profile_background_id":
+      patch.profileBackgroundId = null;
+      break;
+    case "profile_frame_id":
+      patch.profileFrameId = null;
+      patch.frameColor = null;
+      break;
+    case "card_base_mode":
+      patch.cardBaseMode = "mirror";
       break;
     case "avatar_ring_id":
       patch.avatarRingId = null;

@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import {
   DEFAULT_APP_THEME_ID,
@@ -8,11 +16,13 @@ import {
   type AppTheme,
   type AppThemeId,
 } from "@/lib/app-themes";
-import { useIsClient } from "@/hooks/useIsClient";
+import {
+  readStoredAppThemeId,
+  subscribeAppThemeStorage,
+  writeStoredAppThemeId,
+} from "@/lib/shop/app-theme-storage";
 
 import { AppThemeBackground } from "./AppThemeBackground";
-
-const STORAGE_KEY = "voople:app-theme";
 
 type AppThemeContextValue = {
   themeId: AppThemeId;
@@ -37,27 +47,23 @@ function applyTheme(themeId: AppThemeId) {
 }
 
 export function AppThemeProvider({ children }: { children: React.ReactNode }) {
-  // Признак клиента: на сервере и в первом рендере держим тему по умолчанию,
-  // чтобы не было рассинхрона гидрации; после монтирования читаем localStorage.
-  const isClient = useIsClient();
+  const storedThemeId = useSyncExternalStore(
+    subscribeAppThemeStorage,
+    readStoredAppThemeId,
+    () => DEFAULT_APP_THEME_ID,
+  );
   const [override, setOverride] = useState<AppThemeId | null>(null);
 
-  const themeId: AppThemeId =
-    override ??
-    (isClient ? getAppTheme(window.localStorage.getItem(STORAGE_KEY)).id : DEFAULT_APP_THEME_ID);
-
+  const themeId: AppThemeId = override ?? storedThemeId;
   const theme = useMemo(() => getAppTheme(themeId), [themeId]);
 
   useEffect(() => {
     applyTheme(themeId);
   }, [themeId]);
 
-  // Стабильная ссылка: иначе эффект синка из БД (AppThemeSync) перезапускался бы
-  // на каждый клик и откатывал только что выбранную тему.
   const setThemeId = useCallback((nextThemeId: AppThemeId) => {
-    const nextTheme = getAppTheme(nextThemeId);
-    window.localStorage.setItem(STORAGE_KEY, nextTheme.id);
-    setOverride(nextTheme.id);
+    writeStoredAppThemeId(nextThemeId);
+    setOverride(nextThemeId);
   }, []);
 
   const value = useMemo<AppThemeContextValue>(
@@ -67,7 +73,7 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppThemeContext.Provider value={value}>
-      {isClient ? <AppThemeBackground /> : null}
+      <AppThemeBackground />
       {children}
     </AppThemeContext.Provider>
   );

@@ -10,6 +10,7 @@ function catalogRowSql(item: ShopCatalogItem): string {
     sqlString(item.id),
     sqlString(item.seasonId ?? "launch"),
     sqlString(shopItemDbType(item.kind)),
+    sqlString(item.kind),
     sqlString(item.name),
     sqlString(item.description),
     String(item.priceRub),
@@ -30,13 +31,14 @@ export function buildShopCatalogUpsertSql(): string {
   const values = SHOP_CATALOG.map(catalogRowSql).join(",\n");
   return `-- Generated from src/lib/shop/catalog.ts — do not edit by hand
 INSERT INTO public.shop_items (
-  id, season_id, type, name, description, price_rub, price_coins, is_free,
+  id, season_id, type, kind, name, description, price_rub, price_coins, is_free,
   preview_url, sort_order, asset_folder, asset_id, equip_slot, equip_value
 ) VALUES
 ${values}
 ON CONFLICT (id) DO UPDATE SET
   season_id = EXCLUDED.season_id,
   type = EXCLUDED.type,
+  kind = EXCLUDED.kind,
   name = EXCLUDED.name,
   description = EXCLUDED.description,
   price_rub = EXCLUDED.price_rub,

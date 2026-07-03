@@ -37,7 +37,7 @@ export function getObjectStorageConfig() {
   };
 }
 
-/** Selectel S3 требует path-style URL; иначе presigned PUT часто даёт 403. */
+/** vHosted (Selectel): `false` — CORS + presigned PUT из браузера. Path-style: `true`. */
 export function resolveForcePathStyle(endpoint: string) {
   const override = process.env.S3_FORCE_PATH_STYLE?.trim().toLowerCase();
   if (override === "true" || override === "1") return true;

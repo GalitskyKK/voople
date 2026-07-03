@@ -81,3 +81,12 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
     }
   })
 })
+
+export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  const { isAdminUserId, assertAdminConfigured } = await import("@/lib/admin/auth")
+  assertAdminConfigured()
+  if (!isAdminUserId(ctx.user.id)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Нет доступа к админке" })
+  }
+  return next({ ctx })
+})

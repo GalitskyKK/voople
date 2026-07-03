@@ -84,6 +84,14 @@ export const customizationRouter = createTRPCRouter({
     .input(
       z.object({
         profileEffectId: z.string().nullable().optional(),
+        profileBackgroundId: z.string().nullable().optional(),
+        profileFrameId: z.string().max(100).nullable().optional(),
+        frameColor: z
+          .string()
+          .regex(/^#[0-9a-fA-F]{6}$/, "Ожидается HEX-цвет вида #RRGGBB")
+          .nullable()
+          .optional(),
+        cardBaseMode: z.enum(["mirror", "theme", "plain"]).nullable().optional(),
         avatarRingId: z.string().nullable().optional(),
         bannerId: z.string().nullable().optional(),
         avatarDecorationId: z.string().nullable().optional(),

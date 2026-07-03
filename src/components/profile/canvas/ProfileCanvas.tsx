@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Eraser, Palette, Undo2 } from "lucide-react";
 
 import { CanvasSaveStatusBar } from "@/components/profile/canvas/CanvasSaveStatus";
+import { useAppTheme } from "@/components/theme/AppThemeProvider";
 import { useCanvasRealtime } from "@/hooks/useCanvasRealtime";
 import type { CanvasSaveStatus } from "@/hooks/useProfileCanvasStrokes";
 import {
@@ -72,6 +73,8 @@ export function ProfileCanvas({
   canUndo = false,
   className,
 }: ProfileCanvasProps) {
+  const { theme } = useAppTheme();
+  const canvasBg = theme.tokens.surface;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -91,7 +94,13 @@ export function ProfileCanvas({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    renderStrokesOnCanvas(ctx, strokesRef.current, pixelSizeRef.current, activeStrokeRef.current);
+    renderStrokesOnCanvas(
+      ctx,
+      strokesRef.current,
+      pixelSizeRef.current,
+      activeStrokeRef.current,
+      canvasBg,
+    );
 
     for (const draft of remoteDraftsRef.current.values()) {
       drawStrokeOnContext(
@@ -106,7 +115,7 @@ export function ProfileCanvas({
         { size: pixelSizeRef.current },
       );
     }
-  }, []);
+  }, [canvasBg]);
 
   useEffect(() => {
     strokesRef.current = strokes;

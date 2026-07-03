@@ -1,4 +1,6 @@
 import type { AppThemeId } from "@/lib/app-themes";
+import { isAppThemeId } from "@/lib/app-themes";
+import { profileBackgroundPosterPath } from "@/lib/customization/profile-background-assets";
 
 export type ShopItemKind =
   | "effect"
@@ -11,7 +13,8 @@ export type ShopItemKind =
   | "feed_card"
   | "animated_avatar"
   | "app_theme"
-  | "nickname_style";
+  | "nickname_style"
+  | "profile_background";
 
 export type ShopEquipSlot =
   | "profile_effect_id"
@@ -21,7 +24,8 @@ export type ShopEquipSlot =
   | "feed_card_style_id"
   | "animated_avatar_id"
   | "app_theme_id"
-  | "nickname_style";
+  | "nickname_style"
+  | "profile_background_id";
 
 export type ShopCatalogItem = {
   id: string;
@@ -68,6 +72,21 @@ export const SHOP_CATALOG: ShopCatalogItem[] = [
     equipSlot: "banner",
     equipValue: "minti",
     sortOrder: 10,
+    seasonId: "launch",
+  },
+  {
+    id: "bg-blue-flowers",
+    kind: "profile_background",
+    name: "Blue Flowers",
+    description: "Впечатляйте анимированным фоном карточки",
+    assetFolder: "backgrounds",
+    assetId: "background_blue_flowers-static.jpg",
+    priceCoins: 150,
+    priceRub: 69,
+    isFree: true,
+    equipSlot: "profile_background_id",
+    equipValue: "background_blue_flowers",
+    sortOrder: 15,
     seasonId: "launch",
   },
   {
@@ -329,17 +348,18 @@ export function catalogAppThemeId(item: ShopCatalogItem): AppThemeId | null {
   return isAppThemeId(item.equipValue) ? item.equipValue : null;
 }
 
+export { isAppThemeId } from "@/lib/app-themes";
+
 export const SHOP_CATALOG_BY_ID = new Map(SHOP_CATALOG.map((item) => [item.id, item]));
 
 export const SHOP_CATALOG_IDS = SHOP_CATALOG.map((item) => item.id);
 
 export const WELCOME_VOOOPS_BONUS = 500;
 
-export function isAppThemeId(value: string): value is AppThemeId {
-  return ["void", "violet", "rose", "emerald", "gold"].includes(value);
-}
-
 export function getCatalogPreviewPath(item: ShopCatalogItem): string | null {
+  if (item.kind === "profile_background" && item.equipValue) {
+    return profileBackgroundPosterPath(item.equipValue);
+  }
   if (!item.assetFolder || !item.assetId) return null;
   return `/customization/${item.assetFolder}/${item.assetId}`;
 }

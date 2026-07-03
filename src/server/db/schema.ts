@@ -29,6 +29,7 @@ export const itemTypeEnum = pgEnum("item_type", [
   "decoration",
   "feed_card",
   "app_theme",
+  "profile_background",
 ]);
 export const chatTypeEnum = pgEnum("chat_type", ["direct", "group"]);
 export const notifTypeEnum = pgEnum("notif_type", [
@@ -76,7 +77,15 @@ export const profileCustomization = pgTable("profile_customization", {
   avatarType: avatarTypeEnum("avatar_type").notNull().default("constructor"),
   avatarData: jsonb("avatar_data").notNull().default({}),
   avatarRingId: varchar("avatar_ring_id", { length: 100 }),
+  /** @deprecated Эффекты профиля заменены рамкой (profile_frame_id). Данные не удаляются. */
   profileEffectId: varchar("profile_effect_id", { length: 100 }),
+  profileBackgroundId: varchar("profile_background_id", { length: 100 }),
+  /** Рамка вокруг всей карточки (баннер+основа). Id пресета из frames-registry. */
+  profileFrameId: varchar("profile_frame_id", { length: 100 }),
+  /** Кастомный цвет рамки (Voople+), HEX. Аналог nickname_color. */
+  frameColor: varchar("frame_color", { length: 20 }),
+  /** Режим основы карточки: mirror (дефолт) · theme (градиент) · plain (не дублировать баннер). */
+  cardBaseMode: varchar("card_base_mode", { length: 20 }),
   nameplateId: varchar("nameplate_id", { length: 100 }),
   nicknameColor: varchar("nickname_color", { length: 20 }),
   nicknameGradient: boolean("nickname_gradient").default(false),
@@ -450,10 +459,19 @@ export const shopItems = pgTable("shop_items", {
   id: varchar("id", { length: 100 }).primaryKey(),
   seasonId: varchar("season_id", { length: 50 }),
   type: itemTypeEnum("type").notNull(),
+  kind: varchar("kind", { length: 50 }),
   name: varchar("name", { length: 100 }).notNull(),
-  priceRub: integer("price_rub").notNull(),
-  apngUrl: varchar("apng_url", { length: 500 }),
+  description: text("description"),
+  priceRub: integer("price_rub").notNull().default(0),
+  priceCoins: integer("price_coins").notNull().default(0),
+  isFree: boolean("is_free").notNull().default(false),
   previewUrl: varchar("preview_url", { length: 500 }),
+  sortOrder: integer("sort_order").notNull().default(0),
+  assetFolder: varchar("asset_folder", { length: 100 }),
+  assetId: varchar("asset_id", { length: 200 }),
+  equipSlot: varchar("equip_slot", { length: 50 }),
+  equipValue: varchar("equip_value", { length: 200 }),
+  apngUrl: varchar("apng_url", { length: 500 }),
   isLimited: boolean("is_limited").default(false),
   stock: integer("stock"),
   soldCount: integer("sold_count").notNull().default(0),

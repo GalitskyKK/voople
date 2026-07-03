@@ -5,11 +5,14 @@ import { Lock } from "lucide-react";
 
 import { resolveAppThemeAssets } from "@/lib/app-theme-assets";
 import { APP_THEMES, type AppThemeId } from "@/lib/app-themes";
+import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { useAppTheme } from "./AppThemeProvider";
 
 type AppThemeSelectorProps = {
   unlockedThemeIds?: AppThemeId[];
+  /** Сохранять выбор в БД (для авторизованных). */
+  persistToAccount?: boolean;
 };
 
 function ThemePreviewSwatches({
@@ -30,18 +33,30 @@ function ThemePreviewSwatches({
   );
 }
 
-export function AppThemeSelector({ unlockedThemeIds = [] }: AppThemeSelectorProps) {
+export function AppThemeSelector({
+  unlockedThemeIds = [],
+  persistToAccount = true,
+}: AppThemeSelectorProps) {
   const { themeId, setThemeId } = useAppTheme();
   const unlocked = new Set<AppThemeId>(unlockedThemeIds);
+  const utils = trpc.useUtils();
+  const updateTheme = trpc.customization.update.useMutation({
+    onSuccess: () => {
+      void utils.customization.getEquipped.invalidate();
+    },
+  });
+
+  const handleSelect = (nextThemeId: AppThemeId) => {
+    setThemeId(nextThemeId);
+    if (persistToAccount) {
+      updateTheme.mutate({ appThemeId: nextThemeId });
+    }
+  };
 
   return (
     <section className="space-y-3">
       <div>
         <h3 className="text-sm font-semibold text-[var(--foreground)]">Тема приложения</h3>
-        {/* <p className="text-xs text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">
-          Меняет общий фон, карточки и акцент. Поддерживаются WebP/APNG-фоны из{" "}
-          <code className="text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">/customization/themes/</code>.
-        </p> */}
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {APP_THEMES.map((theme) => {
@@ -56,7 +71,7 @@ export function AppThemeSelector({ unlockedThemeIds = [] }: AppThemeSelectorProp
               active={active}
               available={available}
               previewUrl={previewUrl}
-              onSelect={() => setThemeId(theme.id)}
+              onSelect={() => handleSelect(theme.id)}
             />
           );
         })}

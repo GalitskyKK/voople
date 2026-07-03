@@ -7,7 +7,10 @@ const mintiCustomization = resolveCustomization({
   themeAccent: "#b0367a",
   bannerId: "minti",
   bannerValue: { color: "#2d1b4e" },
-  profileEffectId: "ladybugs",
+  // Единый медиа-баннер (картинка) → split-layout; основа зеркалит баннер под blur.
+  cardBaseMode: "mirror",
+  // Рамка вместо эффекта профиля (кольцо вокруг всей карточки).
+  profileFrameId: "frame-gold-glow",
   feedCardStyleId: "sakura",
   avatarDecorationId: "sparkle",
 });

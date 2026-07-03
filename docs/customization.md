@@ -19,6 +19,8 @@
 | Avatar              |                              72px |                              88px |
 | Avatar overlap      |                  36px over banner |                  44px over banner |
 | Effect overlay      | full card (z-25), clipped by radius | full card (z-25), clipped by radius |
+| Video background    | full card (z-1), banner above (z-2) | full card (z-1), banner above (z-2) |
+| Content glass scrim | identity + body (z-10, backdrop-blur) | same |
 | Card radius         |                              16px |                              16px |
 
 ## Banner
@@ -58,7 +60,46 @@
 2. `globals.css`: `.voople-ring--<id> { box-shadow: … }` (+ keyframes при анимации).
 3. Каталог: `kind: "ring"`, `equipSlot: "avatar_ring_id"`, `equipValue: "<id>"`, без `assetFolder`.
 
-## Profile Effect
+## Card Frame (рамка карточки)
+
+Рамка заменяет эффекты профиля: это **кольцо** (border) вокруг всей карточки — баннер и основа
+как единый блок. Реализована как `border` на `<article class="profile-card">` (см.
+`ProfileCardFrame.tsx`, `frames-registry.ts`, `.profile-card--framed` в `globals.css`), поэтому
+рисуется **только по внешнему периметру** и не заходит внутрь на баннер/основу.
+
+### Виды (`kind` в frames-registry)
+
+| Вид | Рендер | Цвет |
+|-----|--------|------|
+| `solid` | сплошной border | из пресета (`colors[0]`) |
+| `gradient` | `border-image: linear-gradient(...) 1` | из пресета |
+| `glow` | border + `box-shadow` свечение | из пресета (2 цвета) |
+| `glass` | полупрозрачный border + backdrop-blur | из пресета |
+| `image` | `border-image: url(...) slice stretch` | ассет из бакета |
+
+- **Свой цвет** — только Voople+ (пресет с `usesCustomColor: true` читает `frame_color`); без подписки
+  — выбор из дефолтных пресетов.
+- Толщина кольца — `width` пресета (дефолт 10px), пробрасывается в `--profile-frame-width`.
+
+### Картиночная рамка (image) — размеры ассета
+
+Ассет — это **кольцо-рамка** (9-slice), центр **прозрачный** (там будут баннер и основа):
+
+- Экспорт: квадрат/прямоугольник, **transparent WebP/PNG**; толщина видимого кольца =
+  `frame width` (10px @1x → **20px @2x**, экспортируйте минимум 2x).
+- `border-image-slice` = толщина кольца в px внутри ассета (поле `imageSlice`, дефолт = `width`).
+  Центральная (9-я) область не рисуется — так рамка **видна только в пределах кольца** и гарантированно
+  не перекрывает баннер/основу.
+- Углы кольца рисуйте в safe area среза; стороны тянутся (`stretch`) — избегайте деталей, которые
+  плохо масштабируются по длине.
+- Naming: `frame_<slug>.webp` в бакете `customization/frames/`. Подключение: добавить пресет
+  `kind: "image"` + `imageBase: "frame_<slug>"` в `frames-registry.ts` (или equip id-файла).
+- Максимальный вес: 300 KB (static), 800 KB (animated APNG/WebP).
+
+## Profile Effect (deprecated)
+
+> **Deprecated:** эффекты профиля заменены рамкой карточки (см. «Card Frame» выше). Рендер
+> отключён (`ProfileCardEffectLayer` больше не используется), данные `profile_effect_id` не удаляются.
 
 Эффект — декоративный overlay поверх **всей** карточки. Бывает двух видов:
 
@@ -78,6 +119,38 @@
 - Alpha coverage: не перекрывать более 25% площади непрозрачными пикселями — иначе нечитаемы имя/био.
 - Motion: loop 3-8s, без резких вспышек.
 - `prefers-reduced-motion`: для картиночных эффектов статичного fallback нет — закладывайте «спокойный» first frame; для движущихся эффектов предпочитайте CSS-вид, он полностью отключается при reduced-motion.
+
+## Profile Card Background (video)
+
+Steam-style анимированный фон **всей** карточки (не путать с баннером).
+
+### Файлы в бакете `customization/backgrounds/`
+
+Для `equip_value = background_blue_flowers`:
+
+| Файл | Назначение |
+|------|------------|
+| `{base}-static.jpg` | Poster / reduced motion |
+| `{base}-webm.webm` | Основной loop (Chrome, Firefox) |
+| `{base}-video.mp4` | Fallback (Safari) |
+
+### Слои (z-index)
+
+```text
+z-25  ProfileCardEffectLayer (эффект поверх баннера + body)
+z-10  Body: blurred video + glass backdrop + контент
+z-2   Banner: sharp video (отдельный блок)
+gap   --profile-section-gap (48px) между баннером и body
+```
+
+Баннер и body — **два отдельных** rounded-контейнера. Видео дублируется: sharp в баннере, blur + scrim в body.
+Shop-баннер (картинка) при активном `profile_background_id` **не показывается** — video заменяет баннер.
+
+### UI
+
+- Equip: `profile_background_id` в `profile_customization`
+- Каталог: `kind: profile_background`, см. `bg-blue-flowers` в `catalog.ts`
+- Читаемость текста: CSS-класс `profile-card--video-bg` + `ProfileCardContentBackdrop`
 
 ## Animated Effects (CSS / code-driven)
 

@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Check, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
+import { uploadAdminCustomizationAsset } from "@/lib/admin/upload-customization-asset";
 import {
   assetPackForKind,
   detectPackRoleFromUpload,
@@ -12,7 +13,6 @@ import {
   type AssetPackFileRole,
 } from "@/lib/shop/asset-packs";
 import type { ShopItemKind } from "@/lib/shop/catalog";
-import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
 type AdminAssetPackUploadProps = {
@@ -36,13 +36,13 @@ export function AdminAssetPackUpload({
 }: AdminAssetPackUploadProps) {
   const multiInputRef = useRef<HTMLInputElement>(null);
   const pack = assetPackForKind(kind);
-  const uploadMutation = trpc.admin.createAssetUpload.useMutation();
+  const [uploading, setUploading] = useState(false);
 
   if (!pack) return null;
 
   const base = mediaBase.trim();
   const names = base ? packFileNames(base, pack) : null;
-  const busy = disabled || uploadMutation.isPending;
+  const busy = disabled || uploading;
 
   const uploadFile = async (file: File, role: AssetPackFileRole) => {
     if (!base) {
@@ -51,26 +51,18 @@ export function AdminAssetPackUpload({
     }
 
     const targetFileName = packFileName(base, pack, role);
+    setUploading(true);
     try {
-      const presigned = await uploadMutation.mutateAsync({
-        kind,
-        fileName: file.name,
-        contentType: file.type,
-        sizeBytes: file.size,
-        assetFolder: assetFolder || undefined,
+      const result = await uploadAdminCustomizationAsset({
+        file,
+        assetFolder: assetFolder || "backgrounds",
         targetFileName,
       });
-
-      const response = await fetch(presigned.uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: { "Content-Type": file.type },
-      });
-
-      if (!response.ok) throw new Error("Не удалось загрузить файл в бакет");
-      onUploaded(role, presigned.assetId);
+      onUploaded(role, result.assetId);
     } catch (e) {
       onError(e instanceof Error ? e.message : "Ошибка загрузки");
+    } finally {
+      setUploading(false);
     }
   };
 

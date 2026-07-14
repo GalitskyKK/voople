@@ -11,7 +11,7 @@ export function formatStorageError(error: unknown, bucket?: string): string {
 
   if (code === "AccessDenied" || base.includes("Access Denied")) {
     const target = bucket ? ` (${bucket})` : "";
-    return `Access Denied${target}: у S3-ключей нет прав PutObject/GetObject на этот бакет. В Selectel выдайте пользователю ключей доступ к voople-uploads (не только к voople-assets). Политику с публичным чтением с assets сюда копировать нельзя — см. docs/chat-uploads.md`;
+    return `Access Denied${target}: у S3-ключей нет PutObject на этот путь. Для админки нужен доступ к customization/* в voople-assets (посты пишут в uploads/*). См. docs/admin.md`;
   }
 
   if (code === "NoSuchBucket" || base.includes("NoSuchBucket")) {

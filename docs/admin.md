@@ -57,6 +57,24 @@ customization/* (S3)     →  CDN-ассеты
 
 Админка создаёт строку в БД и `equipValue`; визуал CSS-пресетов по-прежнему в реестрах.
 
+## S3-права (Selectel)
+
+Ключи из `.env` обычно могут писать в `uploads/*` (посты, аватар). **Админка** пишет в `customization/*` — нужно явно добавить в политику пользователя ключей:
+
+- `s3:PutObject` на `voople-assets/customization/*`
+- `s3:GetObject` — для проверок (опционально)
+
+Без этого будет **403 Access Denied** (посты работают, админка — нет).
+
+Загрузка в админке идёт **через сервер** (`POST /api/admin/upload-asset`), не presigned PUT — CORS не нужен.
+
+## Env
+
+```bash
+S3_FORCE_PATH_STYLE=false   # vHosted бакет
+VOOPLE_ADMIN_USER_IDS=...
+```
+
 ## profile_background (video-пакет)
 
 Три файла с **общим базовым id** (`equipValue`), конвенция из `profile-background-assets.ts`:

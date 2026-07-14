@@ -14,12 +14,15 @@ import {
   usesAssetPack,
   type AssetPackFileRole,
 } from "@/lib/shop/asset-packs";
+import { uploadAdminCustomizationAsset } from "@/lib/admin/upload-customization-asset";
+import { extensionForCustomizationMime } from "@/lib/object-storage";
 import {
   defaultAssetFolderForKind,
   defaultEquipSlotForKind,
   kindRequiresCdnAsset,
   kindSupportsOptionalCdn,
   SHOP_KIND_OPTIONS,
+  slugifyAssetId,
   suggestItemId,
 } from "@/lib/shop/defaults";
 import type { ShopEquipSlot, ShopItemKind } from "@/lib/shop/catalog";
@@ -96,10 +99,10 @@ export function AdminAssetEditor({ open, item, onClose, onSaved }: AdminAssetEdi
   const [error, setError] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [packUploaded, setPackUploaded] = useState<Partial<Record<AssetPackFileRole, boolean>>>({});
+  const [fileUploading, setFileUploading] = useState(false);
 
   const createMutation = trpc.admin.createShopItem.useMutation();
   const updateMutation = trpc.admin.updateShopItem.useMutation();
-  const uploadMutation = trpc.admin.createAssetUpload.useMutation();
 
   useEffect(() => {
     if (!open) return;
@@ -166,35 +169,35 @@ export function AdminAssetEditor({ open, item, onClose, onSaved }: AdminAssetEdi
   const handleUpload = async (file: File) => {
     setUploadStatus(null);
     setError(null);
+    setFileUploading(true);
+
+    const contentType = file.type.split(";")[0]?.trim().toLowerCase() ?? "";
+    const hasExt = /\.[a-z0-9]{2,5}$/i.test(file.name);
+    const ext = extensionForCustomizationMime(contentType);
+    const targetFileName =
+      form.assetId.trim() ||
+      (hasExt ? slugifyAssetId(file.name) : `${slugifyAssetId(file.name.replace(/\.[^.]+$/, ""))}.${ext}`);
+    const folder = form.assetFolder.trim() || defaultAssetFolderForKind(form.kind) || "effects";
+
     try {
-      const presigned = await uploadMutation.mutateAsync({
-        kind: form.kind,
-        fileName: file.name,
-        contentType: file.type,
-        sizeBytes: file.size,
-        assetFolder: form.assetFolder || undefined,
-        assetId: form.assetId || undefined,
+      const result = await uploadAdminCustomizationAsset({
+        file,
+        assetFolder: folder,
+        targetFileName,
       });
-
-      const response = await fetch(presigned.uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: { "Content-Type": file.type },
-      });
-
-      if (!response.ok) throw new Error("Не удалось загрузить файл в бакет");
 
       patch({
-        assetFolder: presigned.assetFolder,
-        assetId: presigned.assetId,
+        assetFolder: result.assetFolder,
+        assetId: result.assetId,
       });
       if (!form.equipValue.trim()) {
-        const base = presigned.assetId.replace(/\.[^.]+$/, "");
-        patch({ equipValue: base });
+        patch({ equipValue: result.assetId.replace(/\.[^.]+$/, "") });
       }
-      setUploadStatus(`Загружено: ${presigned.assetFolder}/${presigned.assetId}`);
+      setUploadStatus(`Загружено: ${result.assetFolder}/${result.assetId}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ошибка загрузки");
+    } finally {
+      setFileUploading(false);
     }
   };
 
@@ -230,7 +233,7 @@ export function AdminAssetEditor({ open, item, onClose, onSaved }: AdminAssetEdi
     }
   };
 
-  const busy = createMutation.isPending || updateMutation.isPending || uploadMutation.isPending;
+  const busy = createMutation.isPending || updateMutation.isPending || fileUploading;
   const isPackKind = usesAssetPack(form.kind);
   const needsCdn = kindRequiresCdnAsset(form.kind) || kindSupportsOptionalCdn(form.kind);
   const cdnRequired = kindRequiresCdnAsset(form.kind) && !isPackKind;

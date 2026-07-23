@@ -2,7 +2,14 @@
 
 import { getEffectPreset } from "@/lib/customization/effects-registry";
 import { resolveRingStyle } from "@/lib/customization/rings";
+import { resolveCustomization } from "@/lib/customization/resolve";
+import {
+  frameLayerProps,
+  ProfileCardFrameDivider,
+  ProfileCardFrameOverlay,
+} from "@/components/profile/ProfileCardFrame";
 import { CssEffectLayer } from "@/components/profile/effects/CssEffectLayer";
+import { FeedAuthorChipBackdrop } from "@/components/feed/FeedAuthorChipBackdrop";
 import { cn } from "@/lib/utils";
 import {
   catalogItemUsesCdn,
@@ -17,6 +24,45 @@ type ShopCatalogPreviewProps = {
 };
 
 export function ShopCatalogPreview({ catalog, previewUrl, className }: ShopCatalogPreviewProps) {
+  if (catalog.kind === "profile_frame") {
+    const resolvedFrame = resolveCustomization({ profileFrameId: catalog.equipValue }).assets.frame;
+    const frame = frameLayerProps(resolvedFrame);
+    return (
+      <article
+        className={cn("profile-card profile-card--split relative h-full w-full", frame.className, className)}
+        style={{
+          ...frame.style,
+          "--profile-section-gap": "30px",
+          "--profile-frame-width": "12px",
+          "--profile-frame-outset": "12px",
+        } as React.CSSProperties}
+        aria-label="Предпросмотр рамки карточки"
+      >
+        <div className="flex h-full min-h-0 flex-col gap-[var(--profile-section-gap)]">
+          <div className="min-h-0 flex-[0.42] rounded-[var(--profile-section-radius)] bg-[linear-gradient(145deg,#514b70,#252238)]" />
+          <div className="profile-card__body min-h-0 flex-1 bg-[linear-gradient(145deg,#29263a,#15131e)] p-3">
+            <ProfileCardFrameDivider frame={resolvedFrame} />
+            <div className="h-2 w-2/3 rounded-full bg-white/25" />
+            <div className="mt-2 h-2 w-1/2 rounded-full bg-white/15" />
+          </div>
+        </div>
+        <ProfileCardFrameOverlay frame={resolvedFrame} />
+      </article>
+    );
+  }
+
+  if (catalog.kind === "feed_card" && previewUrl) {
+    return (
+      <div className={cn("flex h-full w-full items-center justify-center p-4", className)}>
+        <div className="voople-author-nameplate relative h-14 w-full overflow-hidden rounded-xl" aria-label="Предпросмотр плашки имени">
+          <FeedAuthorChipBackdrop backgroundUrl={previewUrl} />
+          <span className="absolute left-10 top-1/2 z-10 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15 bg-[linear-gradient(145deg,#8b5cf6,#312e81)]" />
+          <span className="absolute left-20 top-1/2 z-10 max-w-[calc(100%_-_6rem)] -translate-y-1/2 truncate text-sm font-semibold text-white">Ваше имя</span>
+        </div>
+      </div>
+    );
+  }
+
   if (previewUrl && catalogItemUsesCdn(catalog)) {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- CDN customization previews

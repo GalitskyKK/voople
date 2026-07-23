@@ -1,11 +1,12 @@
 "use client";
 
-import { ChevronRight, MessageCircle, Music, Sparkles } from "lucide-react";
+import { ChevronRight, Music2 } from "lucide-react";
+import type { CSSProperties } from "react";
 
-import { MoodSlider } from "@/components/profile/MoodSlider";
+import { getMoodColor, getMoodEmoji, getMoodLabel } from "@/lib/constants/mood";
+import { cn } from "@/lib/utils";
 import { usePlaylistUiStore } from "@/stores/playlist-ui.store";
 import type { StatusPostPayload } from "@/types/domain";
-import { cn } from "@/lib/utils";
 
 type StatusPostBodyProps = {
   status: StatusPostPayload;
@@ -13,56 +14,60 @@ type StatusPostBodyProps = {
   className?: string;
 };
 
-/** Published status snapshot (read-only in feed). */
+/** Compact published mood snapshot: expressive, but deliberately shorter than a regular media post. */
 export function StatusPostBody({ status, authorUsername, className }: StatusPostBodyProps) {
-  const hasMood = status.moodValue != null && status.moodValue > 0;
   const hasThought = Boolean(status.thought?.trim());
   const hasTrack = Boolean(
     status.trackId || status.trackTitle?.trim() || status.trackArtist?.trim(),
   );
-  const openPlaylist = usePlaylistUiStore((s) => s.openPlaylist);
+  const moodValue = status.moodValue ?? 5;
+  const openPlaylist = usePlaylistUiStore((state) => state.openPlaylist);
+  const moodStyle = {
+    "--mood-color": getMoodColor(moodValue),
+  } as CSSProperties;
 
   return (
-    <div
-      className={cn(
-        "voople-status-post space-y-3 rounded-xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-gradient-to-br from-[color-mix(in_srgb,var(--foreground)_6%,transparent)] to-transparent p-4",
-        className,
-      )}
-    >
-      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">
-        <Sparkles className="h-3.5 w-3.5 text-[var(--theme-accent)]" />
-        <span>Состояние</span>
-      </div>
-      {hasMood && (
-        <div className="voople-status-post__mood rounded-lg bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2">
-          <MoodSlider value={status.moodValue} readOnly />
-        </div>
-      )}
-      {hasThought && (
-        <blockquote className="voople-status-post__thought flex gap-3 border-l-2 border-[var(--theme-accent)] pl-3">
-          <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]" />
-          <p className="text-sm italic leading-relaxed text-[color-mix(in_srgb,var(--foreground)_85%,transparent)]">{status.thought}</p>
-        </blockquote>
-      )}
-      {hasTrack && (
-        <button
-          type="button"
-          onClick={() => openPlaylist(authorUsername, status.trackId ?? null)}
-          className="voople-status-post__track flex w-full items-center gap-3 rounded-lg bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2.5 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)]"
-        >
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--theme-accent)]/20 text-[var(--theme-accent)]">
-            <Music className="h-4 w-4" />
-          </span>
+    <div className={cn("voople-status-post relative overflow-hidden", className)} style={moodStyle}>
+      <div className="relative z-[1]">
+        <div className="flex items-start gap-3">
+          <span className="voople-status-post__emoji" aria-hidden>{getMoodEmoji(moodValue)}</span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-[var(--foreground)]">
+            <span className="text-[11px] text-[color-mix(in_srgb,var(--foreground)_42%,transparent)]">
+              в этот момент
+            </span>
+            <div className="mt-0.5">
+              <p className="truncate text-[15px] font-semibold text-[var(--foreground)]">
+                {getMoodLabel(moodValue)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {hasThought && (
+          <div className="voople-status-post__thought mt-3 flex gap-2.5">
+            <span aria-hidden className="-mt-1 shrink-0 font-serif text-3xl leading-none text-[var(--mood-color)]">“</span>
+            <p className="text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_86%,transparent)]">
+              {status.thought}
+            </p>
+          </div>
+        )}
+
+        {hasTrack && (
+          <button
+            type="button"
+            onClick={() => openPlaylist(authorUsername, status.trackId ?? null)}
+            className="voople-status-post__track mt-3 flex w-full items-center gap-2 px-1 py-2 text-left transition-colors hover:text-[var(--foreground)]"
+          >
+            <Music2 className="h-3.5 w-3.5 shrink-0 text-[var(--mood-color)]" />
+            <span className="min-w-0 flex-1 truncate text-xs text-[color-mix(in_srgb,var(--foreground)_74%,transparent)]">
               {status.trackArtist && status.trackTitle
                 ? `${status.trackArtist} – ${status.trackTitle}`
                 : status.trackTitle || status.trackArtist}
-            </p>
-          </div>
-          <ChevronRight className="h-4 w-4 shrink-0 text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]" aria-hidden />
-        </button>
-      )}
+            </span>
+            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[color-mix(in_srgb,var(--foreground)_34%,transparent)]" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

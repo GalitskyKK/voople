@@ -3,13 +3,16 @@ import { z } from "zod";
 
 import { assertRateLimit } from "@/lib/ratelimit-guard";
 import { rateLimits } from "@/lib/ratelimit";
+import { CHAT_REACTION_EMOJIS } from "@/lib/chat/reactions";
 import {
   deleteMessage,
+  createGroupChat,
   getDirectChatByUsername,
   listChats,
   listMessages,
   markMessagesRead,
   sendMessage,
+  toggleMessageReaction,
 } from "@/server/services/chat.service";
 
 import { createTRPCRouter, protectedProcedure } from "../init";
@@ -32,6 +35,16 @@ const sendInputSchema = z
   );
 
 export const chatRouter = createTRPCRouter({
+  createGroup: protectedProcedure
+    .input(z.object({ name: z.string().trim().min(2).max(50), memberIds: z.array(z.string().uuid()).min(2).max(19) }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.createGroupChat, ctx.user.id);
+      try {
+        return await createGroupChat(ctx.user.id, input.name, input.memberIds);
+      } catch (error) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось создать группу" });
+      }
+    }),
   list: protectedProcedure.query(async ({ ctx }) => {
     try {
       return await listChats(ctx.user.id);
@@ -91,6 +104,20 @@ export const chatRouter = createTRPCRouter({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: e instanceof Error ? e.message : "Не удалось удалить сообщение",
+        });
+      }
+    }),
+
+  toggleReaction: protectedProcedure
+    .input(z.object({ messageId: z.string().uuid(), emoji: z.enum(CHAT_REACTION_EMOJIS) }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.like, ctx.user.id);
+      try {
+        return await toggleMessageReaction(input.messageId, ctx.user.id, input.emoji);
+      } catch (e) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: e instanceof Error ? e.message : "Не удалось изменить реакцию",
         });
       }
     }),

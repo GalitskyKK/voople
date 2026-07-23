@@ -9,10 +9,10 @@ import { createPost, createPostReport, getPostById, updatePostText } from "@/ser
 import { createRepost, toggleRepost } from "@/server/services/reposts.service"
 import { recordPostView } from "@/server/services/views.service"
 
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init"
+import { createTRPCRouter, optionalAuthProcedure, protectedProcedure } from "../init"
 
 export const postRouter = createTRPCRouter({
-  getById: publicProcedure
+  getById: optionalAuthProcedure
     .input(z.object({ postId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const post = await getPostById(input.postId, ctx.user?.id)
@@ -27,7 +27,8 @@ export const postRouter = createTRPCRouter({
       z.object({
         text: z.string().max(280, "Максимум 280 символов").optional(),
         mediaKey: z.string().min(1).max(500).optional(),
-        mediaType: z.enum(["image", "gif", "meme"]).optional()
+        mediaType: z.enum(["image", "gif", "meme", "video", "circle"]).optional(),
+        appearanceScene: z.enum(["midnight", "aurora", "paper"]).optional()
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -106,7 +107,7 @@ export const postRouter = createTRPCRouter({
       }
     }),
 
-  listComments: publicProcedure
+  listComments: optionalAuthProcedure
     .input(z.object({ postId: z.string().uuid() }))
     .query(({ ctx, input }) => listComments(input.postId, ctx.user?.id)),
 
@@ -116,7 +117,7 @@ export const postRouter = createTRPCRouter({
         postId: z.string().uuid(),
         text: z.string().max(280, "Максимум 280 символов").optional(),
         mediaKey: z.string().min(1).max(500).optional(),
-        mediaType: z.enum(["image", "gif", "meme"]).optional()
+        mediaType: z.enum(["image", "gif", "meme", "video", "circle"]).optional()
       })
     )
     .mutation(async ({ ctx, input }) => {

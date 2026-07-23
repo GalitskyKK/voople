@@ -1,4 +1,5 @@
 import { getAdminClient } from "@/lib/supabase/admin"
+import { clearExpiredSubscriptionCustomizationRest } from "@/server/data/subscription-rest"
 import {
   mapUserToAuthor,
   mapUserToProfile,
@@ -45,7 +46,19 @@ async function fetchUserRowByUsername(username: string): Promise<UserRow | null>
     .maybeSingle()
 
   if (error) throw new Error(error.message)
-  return data as UserRow | null
+  const row = data as UserRow | null
+  const subscription = Array.isArray(row?.subscriptions) ? row.subscriptions[0] : row?.subscriptions
+  if (row && (!subscription || new Date(subscription.expires_at) <= new Date())) {
+    await clearExpiredSubscriptionCustomizationRest(row.id)
+    const { data: refreshed, error: refreshError } = await admin
+      .from("users")
+      .select(`id, username, display_name, bio, pinned_thought, created_at, profile_customization (*), user_status (*), subscriptions (started_at, expires_at)`)
+      .eq("username", username)
+      .maybeSingle()
+    if (refreshError) throw new Error(refreshError.message)
+    return refreshed as UserRow | null
+  }
+  return row
 }
 
 async function fetchPostsByAuthorId(authorId: string, limit = 50) {

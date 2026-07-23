@@ -1,6 +1,5 @@
 import { DEFAULT_THEME } from "@/lib/constants/theme"
 import { customizationAssetPath } from "@/lib/customization/asset-path"
-import { isCssEffectId } from "./effects-registry"
 import { getFramePreset } from "./frames-registry"
 import {
   resolveProfileBackgroundAssets,
@@ -16,13 +15,14 @@ import type {
   ResolvedCustomization,
   ResolvedFrame
 } from "./types"
+import type { NicknameEffect, NicknameFont } from "./types"
 
 /** Raw shape from DB / mock — optional shop-owned fields */
 export type CustomizationInput = {
   themePrimary?: string | null
   themeAccent?: string | null
   bannerId?: string | null
-  bannerValue?: { color?: string; url?: string } | null
+  bannerValue?: { color?: string; url?: string; id?: string } | null
   avatarRingId?: string | null
   profileEffectId?: string | null
   profileFrameId?: string | null
@@ -30,6 +30,8 @@ export type CustomizationInput = {
   cardBaseMode?: string | null
   nicknameColor?: string | null
   nicknameGradient?: boolean | null
+  nicknameFont?: string | null
+  nicknameEffect?: string | null
   avatarDecorationId?: string | null
   feedCardStyleId?: string | null
   animatedAvatarUrl?: string | null
@@ -37,8 +39,9 @@ export type CustomizationInput = {
   profileBackgroundId?: string | null
 }
 
-const HAS_FILE_EXT = /\.[a-z0-9]{2,5}$/i
 const CARD_BASE_MODES: CardBaseMode[] = ["mirror", "theme", "plain"]
+const NICKNAME_FONTS: NicknameFont[] = ["sans", "serif", "rounded", "mono", "display", "soft"]
+const NICKNAME_EFFECTS: NicknameEffect[] = ["plain", "gradient", "neon", "highlight", "outline"]
 
 /**
  * Единый медиа-источник баннера. Переходная логика: video-фон (`profileBackgroundId`)
@@ -76,23 +79,26 @@ function resolveFrame(
       imageUrl: preset.imageBase
         ? customizationAssetPath("frames", preset.imageBase)
         : null,
+      dividerUrl: preset.imageBase
+        ? customizationAssetPath("frames", `${preset.imageBase}-divider`)
+        : null,
       imageSlice: preset.imageSlice ?? null
     }
   }
 
   // Неизвестный id, похожий на файл → картиночная рамка из бакета.
-  if (HAS_FILE_EXT.test(frameId)) {
-    return {
-      id: frameId,
-      kind: "image",
-      width: 10,
-      colors: [],
-      imageUrl: customizationAssetPath("frames", frameId),
-      imageSlice: null
-    }
+  return {
+    id: frameId,
+    kind: "image",
+      width: 18,
+    colors: [],
+    imageUrl: customizationAssetPath("frames", frameId),
+    dividerUrl: customizationAssetPath(
+      "frames",
+      `${frameId.replace(/\.[a-z0-9]{2,5}$/i, "")}-divider`,
+    ),
+    imageSlice: null
   }
-
-  return null
 }
 
 function resolveCardBaseMode(raw: string | null | undefined): CardBaseMode {
@@ -111,7 +117,8 @@ export function resolveCustomization(input: CustomizationInput = {}): ResolvedCu
   const hasProfileTheme =
     Boolean(input.themePrimary && input.themePrimary !== DEFAULT_THEME.themePrimary) ||
     Boolean(input.themeAccent && input.themeAccent !== DEFAULT_THEME.themeAccent)
-  const profileEffectId = input.profileEffectId ?? null
+  // Effects are retired. Legacy database values stay intact, but never render.
+  const profileEffectId = null
   const profileFrameId = input.profileFrameId ?? null
   const frameColor = input.frameColor ?? null
   const avatarDecorationId = input.avatarDecorationId ?? null
@@ -136,23 +143,22 @@ export function resolveCustomization(input: CustomizationInput = {}): ResolvedCu
     hasAvatarDecoration: Boolean(avatarDecorationId),
     hasAnimatedAvatar: Boolean(input.animatedAvatarUrl || animatedAvatarId),
     hasFeedCardStyle: Boolean(feedCardStyleId),
-    hasDisplayNameStyle: Boolean(input.nicknameColor || input.nicknameGradient),
+    hasDisplayNameStyle: Boolean(
+      input.nicknameColor ||
+      input.nicknameGradient ||
+      (input.nicknameFont && input.nicknameFont !== "sans") ||
+      (input.nicknameEffect && input.nicknameEffect !== "plain")
+    ),
     hasAvatarRing: Boolean(input.avatarRingId)
   }
-
-  const profileEffectIsCss = isCssEffectId(profileEffectId)
 
   const assets: CustomizationAssets = {
     bannerUrl: hasBanner ? bannerUrl : null,
     bannerMedia,
     profileBackground: backgroundAssets,
     frame,
-    profileEffectUrl:
-      flags.hasProfileEffect && !profileEffectIsCss
-        ? customizationAssetPath("effects", profileEffectId)
-        : null,
-    profileEffectPreset:
-      flags.hasProfileEffect && profileEffectIsCss ? profileEffectId : null,
+    profileEffectUrl: null,
+    profileEffectPreset: null,
     avatarDecorationUrl: flags.hasAvatarDecoration
       ? customizationAssetPath("decorations", avatarDecorationId)
       : null,
@@ -166,7 +172,13 @@ export function resolveCustomization(input: CustomizationInput = {}): ResolvedCu
 
   const displayName: DisplayNameStyle = {
     color: flags.hasDisplayNameStyle ? input.nicknameColor : null,
-    gradient: flags.hasDisplayNameStyle ? Boolean(input.nicknameGradient) : false
+    gradient: flags.hasDisplayNameStyle ? Boolean(input.nicknameGradient) : false,
+    font: NICKNAME_FONTS.includes(input.nicknameFont as NicknameFont)
+      ? input.nicknameFont as NicknameFont
+      : "sans",
+    effect: NICKNAME_EFFECTS.includes(input.nicknameEffect as NicknameEffect)
+      ? input.nicknameEffect as NicknameEffect
+      : input.nicknameGradient ? "gradient" : "plain"
   }
 
   return {

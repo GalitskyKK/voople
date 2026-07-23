@@ -4,7 +4,7 @@ import { useMemo } from "react";
 
 import { isAppThemeId } from "@/lib/app-themes";
 import { CUSTOMIZE_SLOT_SECTIONS, SHOP_DISPLAY_SECTIONS } from "@/lib/shop/categories";
-import { applyEquippedAppTheme, clearEquippedAppTheme } from "@/lib/shop/app-theme-client";
+import { clearEquippedAppTheme } from "@/lib/shop/app-theme-client";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { FRAME_PRESETS, type FramePreset } from "@/lib/customization/frames-registry";
@@ -19,7 +19,11 @@ import {
   profileCardThemeStyle,
 } from "@/components/profile/ProfileCardHeader";
 import { ProfileCardVideoSections } from "@/components/profile/ProfileCardVideoSections";
-import { frameLayerProps } from "@/components/profile/ProfileCardFrame";
+import {
+  frameLayerProps,
+  ProfileCardFrameDivider,
+  ProfileCardFrameOverlay,
+} from "@/components/profile/ProfileCardFrame";
 import { ProfileBanner } from "@/components/profile/ProfileBanner";
 import { resolveCustomization } from "@/lib/customization/resolve";
 
@@ -305,6 +309,7 @@ export function CustomizationEditor({
             <ProfileCardVideoSections
               media={previewCustomization.assets.bannerMedia}
               baseMode={previewCustomization.cardBaseMode}
+              frame={previewCustomization.assets.frame}
               header={
                 <ProfileCardHeader
                   customization={previewCustomization}
@@ -320,7 +325,8 @@ export function CustomizationEditor({
               <div className="relative z-[2] overflow-hidden rounded-t-2xl">
                 <ProfileBanner customization={previewCustomization} />
               </div>
-              <div className="relative z-10">
+              <div className="profile-card__body relative z-10">
+                <ProfileCardFrameDivider frame={previewCustomization.assets.frame} />
                 <ProfileCardHeader
                   customization={previewCustomization}
                   displayName="Твоё имя"
@@ -331,6 +337,7 @@ export function CustomizationEditor({
               </div>
             </>
           )}
+          <ProfileCardFrameOverlay frame={previewCustomization.assets.frame} />
         </article>
 
         <div className="voople-panel p-4">

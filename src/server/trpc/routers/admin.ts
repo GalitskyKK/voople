@@ -3,6 +3,11 @@ import { z } from "zod";
 
 import type { ShopEquipSlot, ShopItemKind } from "@/lib/shop/catalog";
 import {
+  getAdminUserSummaryRest,
+  grantAdminCurrencyRest,
+  grantAdminSubscriptionRest,
+} from "@/server/data/admin-users-rest";
+import {
   createAdminShopItem,
   createCustomizationAssetUpload,
   deleteAdminShopItem,
@@ -24,6 +29,7 @@ const shopKindSchema = z.enum([
   "app_theme",
   "nickname_style",
   "profile_background",
+  "profile_frame",
 ]) satisfies z.ZodType<ShopItemKind>;
 
 const equipSlotSchema = z.enum([
@@ -36,6 +42,7 @@ const equipSlotSchema = z.enum([
   "app_theme_id",
   "nickname_style",
   "profile_background_id",
+  "profile_frame_id",
 ]) satisfies z.ZodType<ShopEquipSlot>;
 
 const shopItemInputSchema = z.object({
@@ -63,6 +70,43 @@ function toTrpcError(e: unknown): TRPCError {
 }
 
 export const adminRouter = createTRPCRouter({
+  userSummary: adminProcedure
+    .input(z.object({ username: z.string().trim().min(1).max(30) }))
+    .query(async ({ input }) => {
+      try {
+        return await getAdminUserSummaryRest(input.username);
+      } catch (e) {
+        throw toTrpcError(e);
+      }
+    }),
+
+  grantCurrency: adminProcedure
+    .input(z.object({
+      username: z.string().trim().min(1).max(30),
+      amount: z.number().int().min(1).max(1_000_000),
+      note: z.string().trim().max(200).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await grantAdminCurrencyRest({ ...input, adminUserId: ctx.user.id });
+      } catch (e) {
+        throw toTrpcError(e);
+      }
+    }),
+
+  grantSubscription: adminProcedure
+    .input(z.object({
+      username: z.string().trim().min(1).max(30),
+      days: z.number().int().min(1).max(365),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await grantAdminSubscriptionRest({ ...input, adminUserId: ctx.user.id });
+      } catch (e) {
+        throw toTrpcError(e);
+      }
+    }),
+
   shopItems: adminProcedure.query(async () => {
     try {
       return await listAdminShopItems();
@@ -90,10 +134,10 @@ export const adminRouter = createTRPCRouter({
     }),
 
   deleteShopItem: adminProcedure
-    .input(z.object({ itemId: z.string().min(1).max(100) }))
+    .input(z.object({ itemId: z.string().min(1).max(100), confirmInventoryRemoval: z.boolean().default(false) }))
     .mutation(async ({ input }) => {
       try {
-        await deleteAdminShopItem(input.itemId);
+        await deleteAdminShopItem(input.itemId, { confirmInventoryRemoval: input.confirmInventoryRemoval });
         return { ok: true as const };
       } catch (e) {
         throw toTrpcError(e);

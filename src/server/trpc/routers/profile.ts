@@ -13,7 +13,7 @@ import { updateUserProfile } from "@/server/services/profile-update.service"
 import { getPostsByUsername, getProfileByUsername } from "@/server/services/profile.service"
 import { recordProfileView } from "@/server/services/views.service"
 
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init"
+import { createTRPCRouter, optionalAuthProcedure, protectedProcedure, publicProcedure } from "../init"
 
 export const profileRouter = createTRPCRouter({
   getByUsername: publicProcedure
@@ -26,11 +26,11 @@ export const profileRouter = createTRPCRouter({
       return profile
     }),
 
-  getPostsByUsername: publicProcedure
+  getPostsByUsername: optionalAuthProcedure
     .input(z.object({ username: z.string().min(1).max(30) }))
     .query(({ input, ctx }) => getPostsByUsername(input.username, ctx.user?.id ?? null)),
 
-  getFollowState: publicProcedure
+  getFollowState: optionalAuthProcedure
     .input(z.object({ username: z.string().min(1).max(30) }))
     .query(async ({ input, ctx }) => {
       const profile = await getProfileByUsername(input.username)
@@ -40,7 +40,7 @@ export const profileRouter = createTRPCRouter({
       return getFollowState(ctx.user?.id ?? null, profile.id)
     }),
 
-  getReactions: publicProcedure
+  getReactions: optionalAuthProcedure
     .input(z.object({ profileUserId: z.string().uuid() }))
     .query(({ input, ctx }) => listProfileReactions(input.profileUserId, ctx.user?.id ?? null)),
 

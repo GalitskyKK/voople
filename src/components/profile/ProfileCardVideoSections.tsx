@@ -2,10 +2,11 @@
 
 import type { CSSProperties, ReactNode } from "react"
 
-import type { CardBaseMode, ResolvedBannerMedia } from "@/lib/customization/types"
+import type { CardBaseMode, ResolvedBannerMedia, ResolvedFrame } from "@/lib/customization/types"
 import { cn } from "@/lib/utils"
 
 import { ProfileCardContentBackdrop } from "./ProfileCardContentBackdrop"
+import { ProfileCardFrameDivider } from "./ProfileCardFrame"
 import { ProfileCardVideo } from "./ProfileCardVideo"
 import { ProfileCardVideoScope } from "./ProfileCardVideoScope"
 
@@ -23,6 +24,7 @@ type ProfileCardVideoSectionsProps = {
   baseMode?: CardBaseMode
   themePrimary?: string
   themeAccent?: string
+  frame?: ResolvedFrame | null
 }
 
 /**
@@ -37,6 +39,7 @@ export function ProfileCardVideoSections({
   baseMode = "mirror",
   themePrimary,
   themeAccent,
+  frame,
 }: ProfileCardVideoSectionsProps) {
   const mirrorBase = baseMode === "mirror"
 
@@ -54,6 +57,7 @@ export function ProfileCardVideoSections({
       </div>
 
       <div className="profile-card__body">
+        <ProfileCardFrameDivider frame={frame ?? null} />
         {mirrorBase ? (
           <ProfileCardVideo placement="body" />
         ) : (

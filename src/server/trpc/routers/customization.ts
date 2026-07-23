@@ -4,8 +4,10 @@ import { z } from "zod";
 import {
   clearEquipSlot,
   equipShopItem,
+  getAvatarHistory,
   getEquippedCustomization,
   setAvatarPhoto,
+  selectAvatarFromHistory,
   setCustomBanner,
   updateCustomization,
 } from "@/server/services/customization.service";
@@ -23,6 +25,24 @@ export const customizationRouter = createTRPCRouter({
       });
     }
   }),
+
+  avatarHistory: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      return await getAvatarHistory(ctx.user.id);
+    } catch (e) {
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: e instanceof Error ? e.message : "Не удалось загрузить аватары" });
+    }
+  }),
+
+  selectAvatarFromHistory: protectedProcedure
+    .input(z.object({ key: z.string().min(1).max(512) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await selectAvatarFromHistory(ctx.user.id, input.key);
+      } catch (e) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: e instanceof Error ? e.message : "Не удалось сменить аватар" });
+      }
+    }),
 
   setAvatarPhoto: protectedProcedure
     .input(z.object({ mediaKey: z.string().min(1).max(512) }))
@@ -98,8 +118,14 @@ export const customizationRouter = createTRPCRouter({
         feedCardStyleId: z.string().nullable().optional(),
         animatedAvatarId: z.string().nullable().optional(),
         appThemeId: z.string().nullable().optional(),
-        nicknameColor: z.string().nullable().optional(),
+        nicknameColor: z
+          .string()
+          .regex(/^#[0-9a-fA-F]{6}$/, "Ожидается HEX-цвет вида #RRGGBB")
+          .nullable()
+          .optional(),
         nicknameGradient: z.boolean().nullable().optional(),
+        nicknameFont: z.enum(["sans", "serif", "rounded", "mono", "display", "soft"]).nullable().optional(),
+        nicknameEffect: z.enum(["plain", "gradient", "neon", "highlight", "outline"]).nullable().optional(),
         themePrimary: z
           .string()
           .regex(/^#[0-9a-fA-F]{6}$/, "Ожидается HEX-цвет вида #RRGGBB")

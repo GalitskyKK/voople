@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, UsersRound } from "lucide-react";
 
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
@@ -13,6 +13,7 @@ import type { PendingChatUpload } from "@/hooks/useChatUpload";
 import { trpc } from "@/lib/trpc/client";
 import type { ChatMessageView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
+import type { ChatReactionEmoji } from "@/lib/chat/reactions";
 
 import { playlistMetadataDefaultsFromMessage } from "@/lib/chat/playlist-from-message";
 import { Toast } from "@/components/ui/Toast";
@@ -42,15 +43,18 @@ function buildOptimisticMessage(
         track: input.pendingTrack,
         ownerId: input.senderId,
       }
-    : input.pendingUpload?.kind === "audio"
+    : input.pendingUpload?.kind === "audio" && input.pendingUpload.previewUrl
       ? {
           kind: "audio" as const,
-          url: "",
+          audioKind: input.pendingUpload.purpose === "voice" ? "voice" as const : "music" as const,
+          url: input.pendingUpload.previewUrl,
           title: input.pendingUpload.title ?? "Трек",
           artist: input.pendingUpload.artist ?? "…",
           fileName: input.pendingUpload.fileName,
         }
-      : input.pendingUpload?.previewUrl
+      : input.pendingUpload?.kind === "circle" && input.pendingUpload.previewUrl
+        ? { kind: "circle" as const, url: input.pendingUpload.previewUrl }
+      : input.pendingUpload?.kind === "image" && input.pendingUpload.previewUrl
         ? { kind: "image" as const, url: input.pendingUpload.previewUrl }
         : null;
 
@@ -70,6 +74,7 @@ function buildOptimisticMessage(
         }
       : null,
     attachment,
+    reactions: [],
   };
 }
 
@@ -121,21 +126,22 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
           ? current
           : current
             ? { ...current, messages: [...current.messages, optimistic] }
-            : { messages: [optimistic], otherUser: null },
+            : { messages: [optimistic], otherUser: null, chat: { id: chatId, type: "direct", name: null, memberCount: 0 } },
       );
 
       setText("");
       setReplyTo(null);
       setPendingUpload(null);
       setPendingTrack(null);
-      return { prev };
+      return { prev, previewUrl: pendingUpload?.previewUrl ?? null };
     },
     onError: (_err, _input, ctx) => {
       if (ctx?.prev) {
         utils.chat.getMessages.setData({ chatId }, ctx.prev);
       }
+      if (ctx?.previewUrl) URL.revokeObjectURL(ctx.previewUrl);
     },
-    onSuccess: (msg) => {
+    onSuccess: (msg, _input, ctx) => {
       utils.chat.getMessages.setData({ chatId }, (current) => {
         if (!current) return current;
         const messages = current.messages.map((m) => (m.id === msg.id ? msg : m));
@@ -143,6 +149,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         return { ...current, messages: [...messages, msg] };
       });
       void utils.chat.list.invalidate();
+      if (ctx?.previewUrl) URL.revokeObjectURL(ctx.previewUrl);
     },
   });
 
@@ -186,6 +193,50 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     },
   });
 
+  const toggleReaction = trpc.chat.toggleReaction.useMutation({
+    onMutate: async ({ messageId, emoji }) => {
+      await utils.chat.getMessages.cancel({ chatId });
+      const previous = utils.chat.getMessages.getData({ chatId });
+      utils.chat.getMessages.setData({ chatId }, (current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          messages: current.messages.map((message) => {
+            if (message.id !== messageId) return message;
+            const reactions = [...message.reactions];
+            const index = reactions.findIndex((reaction) => reaction.emoji === emoji);
+            if (index < 0) {
+              reactions.push({ emoji, count: 1, reactedByMe: true });
+            } else {
+              const reaction = reactions[index]!;
+              if (reaction.reactedByMe && reaction.count <= 1) reactions.splice(index, 1);
+              else reactions[index] = {
+                ...reaction,
+                count: reaction.count + (reaction.reactedByMe ? -1 : 1),
+                reactedByMe: !reaction.reactedByMe,
+              };
+            }
+            return { ...message, reactions };
+          }),
+        };
+      });
+      return { previous };
+    },
+    onError: (error, _input, context) => {
+      if (context?.previous) utils.chat.getMessages.setData({ chatId }, context.previous);
+      setToast(error.message);
+      window.setTimeout(() => setToast(null), 3000);
+    },
+    onSuccess: (result) => {
+      utils.chat.getMessages.setData({ chatId }, (current) => current ? {
+        ...current,
+        messages: current.messages.map((message) => message.id === result.messageId
+          ? { ...message, reactions: result.reactions }
+          : message),
+      } : current);
+    },
+  });
+
   const handleSend = () => {
     const trimmed = text.trim();
     if (!trimmed && !pendingUpload && !pendingTrack) return;
@@ -220,6 +271,8 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   }
 
   const other = data?.otherUser;
+  const isGroup = data?.chat.type === "group";
+  const chatTitle = isGroup ? data?.chat.name || "Группа" : other?.displayName || "Чат";
   const timeline = buildChatTimeline(data?.messages ?? []);
   const viewerId = me?.id ?? null;
   const otherOnline = Boolean(other?.id && onlineUserIds.has(other.id));
@@ -237,16 +290,18 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        {other && <ProfileAvatar displayName={other.displayName} size="sm" isOnline={otherOnline} />}
+        {isGroup ? (
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--app-accent-soft)] text-(--theme-accent)"><UsersRound className="h-4 w-4" /></span>
+        ) : other ? <ProfileAvatar displayName={other.displayName} size="sm" isOnline={otherOnline} /> : null}
         <div className="min-w-0 flex-1">
-          {other ? (
+          {isGroup ? <p className="truncate font-semibold">{chatTitle}</p> : other ? (
             <DisplayNameWithPin hasVooplePlus={other.hasVooplePlus} className="font-semibold">
               {other.displayName}
             </DisplayNameWithPin>
           ) : (
             <p className="truncate font-semibold">Чат</p>
           )}
-          {other && (
+          {isGroup ? <p className="text-xs text-[var(--app-muted)]">{data?.chat.memberCount ?? 0} участников</p> : other && (
             <p className="text-xs text-[var(--app-muted)]">
               {otherOnline ? (
                 <span className="text-emerald-500">в сети</span>
@@ -281,6 +336,10 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
                 onDelete={(msg) => removeMessage.mutate({ messageId: msg.id })}
                 onAddToPlaylist={(msg) => setPlaylistConfirmMessage(msg)}
                 onOpenImage={setLightboxUrl}
+                showSender={isGroup}
+                onToggleReaction={(message, emoji: ChatReactionEmoji) => {
+                  if (!toggleReaction.isPending) toggleReaction.mutate({ messageId: message.id, emoji });
+                }}
               />
             ),
           )}

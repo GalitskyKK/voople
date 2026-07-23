@@ -14,10 +14,13 @@ export const rateLimits = {
   like: () => createLimit(100, "10 m"),
   updateStatus: () => createLimit(20, "1 h"),
   uploadTrack: () => createLimit(10, "24 h"),
+  uploadChat: () => createLimit(30, "1 h"),
   // Жёсткий лимит против перебора промокодов.
   applyPromo: () => createLimit(10, "1 h"),
+  createPayment: () => createLimit(10, "10 m"),
   // Анти-спам для записи-тяжёлых мутаций (сообщения, комментарии, репосты, подписки, штрихи холста).
   sendMessage: () => createLimit(60, "1 m"),
+  createGroupChat: () => createLimit(8, "1 h"),
   comment: () => createLimit(40, "10 m"),
   repost: () => createLimit(40, "10 m"),
   follow: () => createLimit(60, "10 m"),

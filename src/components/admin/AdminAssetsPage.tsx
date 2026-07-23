@@ -29,7 +29,7 @@ export function AdminAssetsPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<AdminShopItemRecord | null>(null);
 
-  const items = itemsQuery.data ?? [];
+  const items = useMemo(() => itemsQuery.data ?? [], [itemsQuery.data]);
   const grouped = useMemo(() => {
     const map = new Map<string, AdminShopItemRecord[]>();
     for (const item of items) {
@@ -54,8 +54,12 @@ export function AdminAssetsPage() {
   const handleDelete = async (item: AdminShopItemRecord) => {
     const ok = window.confirm(`Удалить «${item.name}» (${item.id})?`);
     if (!ok) return;
+    const confirmInventoryRemoval = window.confirm(
+      "Подтвердите: удаление согласовано. Предмет будет снят у всех пользователей и удалён из их инвентарей.",
+    );
+    if (!confirmInventoryRemoval) return;
     try {
-      await deleteMutation.mutateAsync({ itemId: item.id });
+      await deleteMutation.mutateAsync({ itemId: item.id, confirmInventoryRemoval });
     } catch (e) {
       window.alert(e instanceof Error ? e.message : "Не удалось удалить");
     }

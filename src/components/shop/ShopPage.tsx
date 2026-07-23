@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { Crown, Package, Palette, ShoppingBag } from "lucide-react";
+import { Crown, Package, Palette, Search, ShoppingBag } from "lucide-react";
 
 import { trpc } from "@/lib/trpc/client";
 import { applyEquippedAppTheme, clearEquippedAppTheme } from "@/lib/shop/app-theme-client";
@@ -17,14 +17,15 @@ import { applyPaymentIntentResult } from "@/lib/payments/checkout-redirect";
 import { DonationPanel, ShopWalletBar } from "@/components/shop/ShopWalletBar";
 import { ShopCatalogSections } from "@/components/shop/ShopCatalogSections";
 import { VooplePlusPanel } from "@/components/shop/VooplePlusPanel";
+import { SHOP_DISPLAY_SECTIONS, type ShopDisplaySectionId } from "@/lib/shop/categories";
 
 type ShopTab = "catalog" | "inventory" | "customize" | "plus";
 
 const TABS: { id: ShopTab; label: string; icon: typeof ShoppingBag }[] = [
-  { id: "plus", label: "Voople+", icon: Crown },
   { id: "catalog", label: "Каталог", icon: ShoppingBag },
   { id: "inventory", label: "Инвентарь", icon: Package },
   { id: "customize", label: "Настройка", icon: Palette },
+  { id: "plus", label: "Voople+", icon: Crown },
 ];
 
 const TAB_IDS = new Set<ShopTab>(["catalog", "inventory", "customize", "plus"]);
@@ -40,6 +41,9 @@ export function ShopPage() {
   const [promoDiscount, setPromoDiscount] = useState<PromoPreviewView | null>(null);
   const [promoMessage, setPromoMessage] = useState<string | null>(null);
   const [equipMessage, setEquipMessage] = useState<string | null>(null);
+  const [catalogCategory, setCatalogCategory] = useState<ShopDisplaySectionId | "all">("all");
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const [catalogSort, setCatalogSort] = useState<"featured" | "new" | "name" | "price">("featured");
   const utils = trpc.useUtils();
   const { setThemeId } = useAppTheme();
 
@@ -153,9 +157,31 @@ export function ShopPage() {
     clearSlot.isPending;
 
   const overview = overviewQuery.data;
-  const items = useMemo(() => overview?.items ?? [], [overview?.items]);
+  // Effects are retired in favour of profile-card frames. Existing records stay
+  // in the database, but must not appear in catalogues or inventory UI.
+  const items = useMemo(
+    () => (overview?.items ?? []).filter(
+      (item) => item.kind !== "effect" && item.kind !== "app_theme" && item.kind !== "nickname_style",
+    ),
+    [overview?.items],
+  );
 
-  const catalogItems = items;
+  const catalogItems = useMemo(() => {
+    const section = SHOP_DISPLAY_SECTIONS.find((entry) => entry.id === catalogCategory);
+    const query = catalogSearch.trim().toLocaleLowerCase("ru-RU");
+    const filtered = items.filter((item) => {
+      const matchesCategory = catalogCategory === "all" || Boolean(section?.kinds.includes(item.kind));
+      const matchesSearch = !query || `${item.name} ${item.description ?? ""}`.toLocaleLowerCase("ru-RU").includes(query);
+      return matchesCategory && matchesSearch;
+    });
+
+    return filtered.toSorted((a, b) => {
+      if (catalogSort === "new") return b.id.localeCompare(a.id);
+      if (catalogSort === "name") return a.name.localeCompare(b.name, "ru");
+      if (catalogSort === "price") return a.priceRub - b.priceRub || a.priceCoins - b.priceCoins;
+      return Number(b.equipped) - Number(a.equipped) || Number(b.owned) - Number(a.owned);
+    });
+  }, [catalogCategory, catalogSearch, catalogSort, items]);
   const inventoryItems = useMemo(
     () => items.filter((item) => item.owned),
     [items],
@@ -190,31 +216,39 @@ export function ShopPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <ShopWalletBar wallet={overview.wallet} />
+    <div className="shop-page space-y-6">
+      <header className="shop-toolbar">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="shop-toolbar__mark" aria-hidden>
+            <ShoppingBag className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <h1 className="truncate text-base font-semibold">Магазин Voople</h1>
+            <p className="hidden text-xs text-[var(--app-muted)] sm:block">Оформление профиля и приложения</p>
+          </div>
+        </div>
+        <nav className="shop-tabs" aria-label="Разделы магазина">
+          {TABS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setTab(id)}
+              aria-current={tab === id ? "page" : undefined}
+              className={cn("shop-tab", tab === id && "shop-tab--active")}
+            >
+              <Icon className="h-4 w-4" aria-hidden />
+              <span>{label}</span>
+            </button>
+          ))}
+        </nav>
+        <ShopWalletBar wallet={overview.wallet} compact />
+      </header>
 
       {equipMessage ? (
         <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
           {equipMessage}
         </p>
       ) : null}
-
-      <div className="flex flex-wrap gap-2">
-        {TABS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setTab(id)}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm transition",
-              tab === id ? "bg-[color-mix(in_srgb,var(--foreground)_15%,transparent)] text-[var(--foreground)]" : "bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] text-[color-mix(in_srgb,var(--foreground)_60%,transparent)] hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)]",
-            )}
-          >
-            <Icon className="h-4 w-4" aria-hidden />
-            {label}
-          </button>
-        ))}
-      </div>
 
       {tab === "plus" && (
         <VooplePlusPanel
@@ -240,7 +274,42 @@ export function ShopPage() {
       )}
 
       {tab === "catalog" && (
-        <section className="space-y-4">
+        <section className="space-y-5">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-[-0.02em]">Найдите свой стиль</h2>
+              <p className="mt-1 text-sm text-[var(--app-muted)]">Украшения, баннеры и рамки для профиля Voople.</p>
+            </div>
+            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+              <label className="shop-search">
+                <Search className="h-4 w-4" aria-hidden />
+                <input
+                  value={catalogSearch}
+                  onChange={(event) => setCatalogSearch(event.target.value)}
+                  placeholder="Поиск по магазину"
+                />
+              </label>
+              <select
+                value={catalogSort}
+                onChange={(event) => setCatalogSort(event.target.value as typeof catalogSort)}
+                className="shop-sort"
+                aria-label="Сортировка товаров"
+              >
+                <option value="featured">Для вас</option>
+                <option value="new">Сначала новые</option>
+                <option value="name">По названию</option>
+                <option value="price">По цене</option>
+              </select>
+            </div>
+          </div>
+          <div className="shop-category-viewport">
+            <div className="shop-categories">
+              <button type="button" onClick={() => setCatalogCategory("all")} className={cn("shop-category", catalogCategory === "all" && "shop-category--active")}>Все товары</button>
+              {SHOP_DISPLAY_SECTIONS.filter((section) => items.some((item) => section.kinds.includes(item.kind))).map((section) => (
+                <button key={section.id} type="button" onClick={() => setCatalogCategory(section.id)} className={cn("shop-category", catalogCategory === section.id && "shop-category--active")}>{section.title}</button>
+              ))}
+            </div>
+          </div>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_55%,transparent)]">
               Сейчас весь сезон Launch можно забрать бесплатно. Voops копятся на будущие покупки.

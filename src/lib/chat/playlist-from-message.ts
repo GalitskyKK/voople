@@ -2,7 +2,9 @@ import type { ChatMessageView } from "@/types/chat";
 
 export function messageHasMusicForPlaylist(message: ChatMessageView) {
   const attachment = message.attachment;
-  return attachment?.kind === "track" || attachment?.kind === "audio";
+  return attachment?.kind === "track" || (
+    attachment?.kind === "audio" && attachment.audioKind === "music"
+  );
 }
 
 export function playlistMetadataDefaultsFromMessage(message: ChatMessageView): {

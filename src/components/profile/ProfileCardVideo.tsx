@@ -44,6 +44,8 @@ export function ProfileCardVideo({ placement, className }: ProfileCardVideoProps
   const imageSrc =
     media.kind === "video" ? media.posterUrl : media.kind === "image" ? media.imageUrl : ""
 
+  if (media.kind === "none" || (!showVideo && !imageSrc)) return null
+
   return (
     <div
       aria-hidden
@@ -63,8 +65,8 @@ export function ProfileCardVideo({ placement, className }: ProfileCardVideoProps
             autoPlay
             poster={media.posterUrl}
             preload="metadata">
-            <source src={media.webmUrl} type="video/webm" />
-            <source src={media.mp4Url} type="video/mp4" />
+            {media.webmUrl ? <source src={media.webmUrl} type="video/webm" /> : null}
+            {media.mp4Url ? <source src={media.mp4Url} type="video/mp4" /> : null}
           </video>
         ) : (
           // eslint-disable-next-line @next/next/no-img-element -- poster / image fallback

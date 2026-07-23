@@ -7,9 +7,11 @@ import { useIsLgViewport } from "@/hooks/useIsLgViewport";
 import { messageHasMusicForPlaylist } from "@/lib/chat/playlist-from-message";
 import { formatMessageTime } from "@/lib/format/message-time";
 import { cn } from "@/lib/utils";
+import type { ChatReactionEmoji } from "@/lib/chat/reactions";
 import type { ChatMessageView } from "@/types/chat";
 
 import { ChatAttachmentAudio } from "./ChatAttachmentAudio";
+import { ChatAttachmentCircle } from "./ChatAttachmentCircle";
 import { ChatAttachmentImage } from "./ChatAttachmentImage";
 import { ChatAttachmentTrack } from "./ChatAttachmentTrack";
 import { ChatMessageMenu } from "./ChatMessageMenu";
@@ -22,6 +24,8 @@ type ChatMessageBubbleProps = {
   onDelete?: (message: ChatMessageView) => void;
   onAddToPlaylist?: (message: ChatMessageView) => void;
   onOpenImage?: (url: string) => void;
+  showSender?: boolean;
+  onToggleReaction?: (message: ChatMessageView, emoji: ChatReactionEmoji) => void;
 };
 
 export function ChatMessageBubble({
@@ -31,6 +35,8 @@ export function ChatMessageBubble({
   onDelete,
   onAddToPlaylist,
   onOpenImage,
+  showSender = false,
+  onToggleReaction,
 }: ChatMessageBubbleProps) {
   const isLg = useIsLgViewport();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -40,7 +46,7 @@ export function ChatMessageBubble({
   const canSaveToPlaylist = Boolean(
     viewerId && onAddToPlaylist && messageHasMusicForPlaylist(message),
   );
-  const hasMenu = Boolean(onReply || (isMine && onDelete) || (canSaveToPlaylist && onAddToPlaylist));
+  const hasMenu = Boolean(onReply || onToggleReaction || (isMine && onDelete) || (canSaveToPlaylist && onAddToPlaylist));
 
   const handleBubbleClick = () => {
     if (isLg || !hasMenu) return;
@@ -60,6 +66,11 @@ export function ChatMessageBubble({
           isMine ? "voople-chat-bubble--mine" : "voople-chat-bubble--theirs",
         )}
         onClick={handleBubbleClick}
+        onContextMenu={(event) => {
+          if (!hasMenu) return;
+          event.preventDefault();
+          setMenuOpen(true);
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
@@ -87,6 +98,7 @@ export function ChatMessageBubble({
               onAddToPlaylist={onAddToPlaylist}
               isMine={isMine}
               canAddToPlaylist={canSaveToPlaylist}
+              onToggleReaction={onToggleReaction}
               showOnHover={isLg}
             />
           </div>
@@ -101,6 +113,11 @@ export function ChatMessageBubble({
               : "rounded-bl-md border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--foreground)]",
           )}
         >
+          {showSender && !isMine && message.sender ? (
+            <p className="truncate px-0.5 text-[11px] font-semibold text-[var(--theme-accent)]">
+              {message.sender.displayName}
+            </p>
+          ) : null}
           {replyTo && (
             <div
               className={cn(
@@ -132,9 +149,11 @@ export function ChatMessageBubble({
               url={attachment.url}
               title={attachment.title}
               artist={attachment.artist}
+              audioKind={attachment.audioKind}
               isMine={isMine}
             />
           )}
+          {attachment?.kind === "circle" && <ChatAttachmentCircle url={attachment.url} />}
           {attachment?.kind === "track" && (
             <ChatAttachmentTrack
               messageId={message.id}
@@ -144,6 +163,27 @@ export function ChatMessageBubble({
           )}
 
           {hasText && <p className="whitespace-pre-wrap break-words">{text}</p>}
+
+          {message.reactions.length > 0 ? (
+            <div className="flex flex-wrap gap-1 pt-0.5" onClick={(event) => event.stopPropagation()}>
+              {message.reactions.map((reaction) => (
+                <button
+                  key={reaction.emoji}
+                  type="button"
+                  onClick={() => onToggleReaction?.(message, reaction.emoji as ChatReactionEmoji)}
+                  disabled={!onToggleReaction}
+                  aria-pressed={reaction.reactedByMe}
+                  className={cn(
+                    "inline-flex h-6 items-center gap-1 rounded-full border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_78%,transparent)] px-1.5 text-xs text-[var(--app-muted)] transition",
+                    reaction.reactedByMe && "border-[color-mix(in_srgb,var(--theme-accent)_42%,var(--app-border))] bg-[var(--app-accent-soft)] text-[var(--foreground)]",
+                  )}
+                >
+                  <span>{reaction.emoji}</span>
+                  <span className="text-[10px] tabular-nums">{reaction.count}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           <div className="voople-chat-bubble__meta flex items-center justify-end gap-1 text-[10px] text-[var(--app-muted)]">
             <time dateTime={createdAt}>{timeLabel}</time>

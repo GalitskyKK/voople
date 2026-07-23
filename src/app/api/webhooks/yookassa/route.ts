@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { rateLimits } from "@/lib/ratelimit";
 import { checkRateLimit } from "@/lib/ratelimit-guard";
 import { isYooKassaConfigured } from "@/lib/payments/yookassa-config";
-import { updatePaymentIntentStatusRest } from "@/server/data/shop-rest";
+import { getPaymentIntentRest, updatePaymentIntentStatusRest } from "@/server/data/shop-rest";
 import { getYooKassaPayment } from "@/server/integrations/yookassa-client";
 import { fulfillSucceededPaymentIntent } from "@/server/services/shop.service";
 
@@ -61,6 +61,9 @@ export async function POST(request: Request) {
 
   let verifiedStatus = payload.object?.status;
   let verifiedPaid = payload.object?.paid === true;
+  let verifiedAmount: string | null = null;
+  let verifiedCurrency: string | null = null;
+  let verifiedMetadata: Record<string, string> | undefined;
 
   try {
     const payment = await getYooKassaPayment(paymentId);
@@ -69,11 +72,31 @@ export async function POST(request: Request) {
     }
     verifiedStatus = payment.status;
     verifiedPaid = payment.paid;
+    verifiedAmount = payment.amount.value;
+    verifiedCurrency = payment.amount.currency;
+    verifiedMetadata = payment.metadata;
   } catch {
     return NextResponse.json({ error: "Payment verification failed" }, { status: 502 });
   }
 
   const mappedStatus = mapPaymentStatus(verifiedStatus);
+
+  const intent = await getPaymentIntentRest(intentId);
+  if (!intent) {
+    return NextResponse.json({ error: "Payment intent not found" }, { status: 404 });
+  }
+  if (intent.external_id && intent.external_id !== paymentId) {
+    return NextResponse.json({ error: "Payment ID mismatch" }, { status: 400 });
+  }
+  if (verifiedCurrency !== "RUB" || Number(verifiedAmount) !== intent.amount_rub) {
+    return NextResponse.json({ error: "Payment amount mismatch" }, { status: 400 });
+  }
+  if (
+    (verifiedMetadata?.userId && verifiedMetadata.userId !== intent.user_id) ||
+    (verifiedMetadata?.kind && verifiedMetadata.kind !== intent.kind)
+  ) {
+    return NextResponse.json({ error: "Payment metadata mismatch" }, { status: 400 });
+  }
 
   if (mappedStatus === "succeeded" && verifiedPaid) {
     try {

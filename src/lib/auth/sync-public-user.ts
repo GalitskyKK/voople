@@ -9,7 +9,7 @@ export async function syncPublicUser(options?: { username?: string }) {
       options?.username ? { username: normalizeUsername(options.username) } : {},
     ),
   });
-  const data = (await res.json()) as { ok?: boolean; username?: string; error?: string };
+  const data = (await res.json()) as { ok?: boolean; created?: boolean; username?: string; error?: string };
   if (!res.ok) {
     throw new Error(data.error ?? "Не удалось создать профиль");
   }

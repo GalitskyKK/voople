@@ -15,6 +15,7 @@ export type PendingChatUpload = {
   title?: string;
   artist?: string;
   durationSeconds?: number | null;
+  purpose?: "voice" | "circle";
 };
 
 export type PendingChatAudioDraft = {
@@ -24,9 +25,10 @@ export type PendingChatAudioDraft = {
   durationSeconds: number | null;
 };
 
-async function uploadViaServer(file: File): Promise<string> {
+async function uploadViaServer(file: File, purpose?: "voice" | "circle"): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
+  if (purpose) formData.append("purpose", purpose);
 
   const response = await fetch("/api/upload/chat", {
     method: "POST",
@@ -51,7 +53,10 @@ export function useChatUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const uploadFile = useCallback(async (file: File): Promise<PendingChatUpload | null> => {
+  const uploadFile = useCallback(async (
+    file: File,
+    options?: { purpose?: "voice" | "circle" },
+  ): Promise<PendingChatUpload | null> => {
     setError(null);
     const contentType = file.type.split(";")[0]?.trim().toLowerCase() ?? "";
     if (!contentType) {
@@ -68,15 +73,18 @@ export function useChatUpload() {
 
     setIsUploading(true);
     try {
-      const mediaKey = await uploadViaServer(file);
+      const mediaKey = await uploadViaServer(file, options?.purpose);
       const resolvedKind = chatAttachmentKindFromKey(mediaKey);
-      const previewUrl = resolvedKind === "image" ? URL.createObjectURL(file) : null;
+      // Keep a local object URL for optimistic playback while the server is
+      // producing a short-lived private download URL.
+      const previewUrl = URL.createObjectURL(file);
 
       return {
         mediaKey,
         kind: resolvedKind,
         previewUrl,
         fileName: file.name,
+        purpose: options?.purpose,
       };
     } catch (e) {
       const message = e instanceof Error ? e.message : "Ошибка загрузки";

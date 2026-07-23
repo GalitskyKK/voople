@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useState } from "react";
 import { Paperclip } from "lucide-react";
 
 import { COPY } from "@/lib/constants/copy";
@@ -10,7 +10,6 @@ import { MediaUploadControl } from "@/components/media/MediaUploadControl";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { Button } from "@/components/ui/Button";
 import type { UploadedMedia } from "@/hooks/useMediaUpload";
-import { useDismissOnOutsideClick } from "@/hooks/useDismissOnOutsideClick";
 import { PostComposer } from "./PostComposer";
 
 type CreatePostBlockProps = {
@@ -26,22 +25,12 @@ export function CreatePostBlock({
   profile: profileProp,
   canPost = false,
 }: CreatePostBlockProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [mediaOpen, setMediaOpen] = useState(false);
   const [text, setText] = useState("");
   const [media, setMedia] = useState<UploadedMedia | null>(null);
   const [uploadResetKey, setUploadResetKey] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
-  const blockRef = useRef<HTMLElement>(null);
   const utils = trpc.useUtils();
-
-  const collapseIfEmpty = useCallback(() => {
-    if (!text.trim() && !media) {
-      setExpanded(false);
-      setFormError(null);
-    }
-  }, [media, text]);
-
-  useDismissOnOutsideClick(blockRef, collapseIfEmpty, expanded);
 
   const createPost = trpc.post.create.useMutation({
     onSuccess: (newPost) => {
@@ -49,7 +38,7 @@ export function CreatePostBlock({
       setMedia(null);
       setUploadResetKey((key) => key + 1);
       setFormError(null);
-      setExpanded(false);
+      setMediaOpen(false);
       void utils.feed.getPage.invalidate();
       if (profileProp?.username) {
         utils.profile.getPostsByUsername.setData(
@@ -85,7 +74,6 @@ export function CreatePostBlock({
 
   return (
     <section
-      ref={blockRef}
       className={className ?? "voople-compose-block voople-panel hidden p-4 lg:block"}
     >
       <div className="voople-compose-block__row flex items-start gap-3">
@@ -96,42 +84,37 @@ export function CreatePostBlock({
           decorationUrl={decorationUrl}
           animatedAvatarUrl={avatarPhotoUrl}
         />
-        <button
-          type="button"
-          onClick={() => setExpanded(true)}
-          className="voople-compose-block__trigger mt-1 flex-1 text-left text-sm text-[color-mix(in_srgb,var(--foreground)_40%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]"
-        >
-          {COPY.composePlaceholder}
-        </button>
-      </div>
-      {expanded && (
-        <div className="voople-compose-block__editor mt-3 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] pt-3">
+        <div className="min-w-0 flex-1">
           <PostComposer
             value={text}
             onChange={setText}
             disabled={createPost.isPending}
+            placeholder={COPY.composePlaceholder}
+            compact
           />
+        </div>
+      </div>
+      {mediaOpen && (
+        <div className="voople-compose-block__editor mt-3 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] pt-3">
           <MediaUploadControl
             key={uploadResetKey}
             purpose="post"
             onChange={setMedia}
             disabled={createPost.isPending}
-            className="mt-3"
           />
         </div>
       )}
       <div className="voople-compose-block__toolbar mt-3 flex items-center justify-between gap-2 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] pt-3">
         <div className="flex gap-1 text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">
-          {!expanded && (
-            <button
-              type="button"
-              onClick={() => setExpanded(true)}
-              className="rounded-lg p-2 hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]"
-              aria-label="Вложение"
-            >
-              <Paperclip className="h-5 w-5" />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setMediaOpen((open) => !open)}
+            className="rounded-lg p-2 hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]"
+            aria-label={mediaOpen ? "Скрыть вложение" : "Добавить вложение"}
+            aria-pressed={mediaOpen}
+          >
+            <Paperclip className="h-5 w-5" />
+          </button>
         </div>
         <Button
           type="button"
@@ -139,10 +122,7 @@ export function CreatePostBlock({
           size="md"
           className="voople-compose-block__publish shrink-0"
           disabled={createPost.isPending}
-          onClick={() => {
-            if (!expanded) setExpanded(true);
-            else handlePublish();
-          }}
+          onClick={handlePublish}
         >
           {createPost.isPending ? "…" : COPY.publish}
         </Button>

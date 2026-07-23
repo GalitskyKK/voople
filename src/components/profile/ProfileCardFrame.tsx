@@ -2,30 +2,77 @@ import type { CSSProperties } from "react"
 
 import type { ResolvedFrame } from "@/lib/customization/types"
 
+import {
+  ProfileCardFrameAsset,
+  ProfileCardFrameSlice,
+} from "./ProfileCardFrameAsset"
+
 /**
- * Рамка карточки = подложка-matte вокруг всей карточки (баннер + основа как единый блок).
- * Реализована как `padding` + `background` на `<article class="profile-card">`
- * (см. `.profile-card--framed` в globals.css), поэтому заливка видна:
- *   - в кольце-паддинге по внешнему периметру,
- *   - в зазоре между баннером и основой (`--profile-section-gap`).
- * Баннер/основа лежат сверху и непрозрачны → matte не заходит на их площадь.
- * Заменяет прежний ProfileCardEffectLayer.
- *
- * Виды (frames-registry):
- * - solid    — сплошной цвет подложки
- * - gradient — градиент подложки
- * - glow     — цвет подложки + внешнее свечение (box-shadow)
- * - glass    — полупрозрачная подложка + backdrop-blur
- * - image    — картиночная подложка (cover; видна только в кольце/зазоре)
+ * CSS-рамки остаются matte-подложкой с padding. Растровая рамка собирается из
+ * четырёх адаптивных срезов одного 1200×1600 файла: верх/низ не искажаются,
+ * а по высоте растягиваются только прямые боковые стойки.
  */
 export type FrameLayerProps = {
   className: string | null
   style: CSSProperties
 }
 
+export function ProfileCardFrameOverlay({ frame }: { frame: ResolvedFrame | null }) {
+  if (frame?.kind !== "image" || !frame.imageUrl) return null
+
+  return (
+    <div className="profile-card__frame-overlay" aria-hidden>
+      <ProfileCardFrameSlice
+        key={`${frame.imageUrl}:left`}
+        src={frame.imageUrl}
+        viewBox="0 220 140 1160"
+        className="profile-card__frame-side profile-card__frame-side--left"
+      />
+      <ProfileCardFrameSlice
+        key={`${frame.imageUrl}:right`}
+        src={frame.imageUrl}
+        viewBox="1060 220 140 1160"
+        className="profile-card__frame-side profile-card__frame-side--right"
+      />
+      <ProfileCardFrameSlice
+        key={`${frame.imageUrl}:top`}
+        src={frame.imageUrl}
+        viewBox="0 0 1200 220"
+        className="profile-card__frame-cap profile-card__frame-cap--top"
+      />
+      <ProfileCardFrameSlice
+        key={`${frame.imageUrl}:bottom`}
+        src={frame.imageUrl}
+        viewBox="0 1380 1200 220"
+        className="profile-card__frame-cap profile-card__frame-cap--bottom"
+      />
+    </div>
+  )
+}
+
+/**
+ * Independent artwork for the banner/body seam. It lives inside the body
+ * stacking context, so the avatar, its ring and its decoration stay above it.
+ */
+export function ProfileCardFrameDivider({ frame }: { frame: ResolvedFrame | null }) {
+  if (frame?.kind !== "image" || !frame.dividerUrl) return null
+
+  return (
+    <div className="profile-card__frame-divider" aria-hidden>
+      <ProfileCardFrameAsset
+        key={frame.dividerUrl}
+        src={frame.dividerUrl}
+        className="h-auto w-full max-w-none"
+      />
+    </div>
+  )
+}
+
 /** CSS-переменные и класс для рамки-подложки на `<article class="profile-card">`. */
 export function frameLayerProps(frame: ResolvedFrame | null): FrameLayerProps {
-  if (!frame) return { className: null, style: {} }
+  // Every card uses the same outer shell/inset. This keeps the content width
+  // and card footprint stable when a frame is equipped or removed.
+  if (!frame) return { className: "profile-card--frame-shell", style: {} }
 
   const style: Record<string, string> = {
     "--profile-frame-width": `${frame.width}px`,
@@ -49,14 +96,15 @@ export function frameLayerProps(frame: ResolvedFrame | null): FrameLayerProps {
       break
     case "image":
       style["--profile-frame-color"] = c1 ?? "transparent"
-      if (frame.imageUrl) {
-        style["--profile-frame-image"] = `url("${frame.imageUrl}")`
-      }
+      style["--profile-frame-outset"] = `${Math.max(frame.width, 18)}px`
       break
   }
 
   return {
-    className: `profile-card--framed profile-card--framed-${frame.kind}`,
+    className:
+      frame.kind === "image"
+        ? "profile-card--frame-shell profile-card--framed profile-card--image-frame"
+        : `profile-card--frame-shell profile-card--framed profile-card--framed-${frame.kind}`,
     style: style as CSSProperties,
   }
 }

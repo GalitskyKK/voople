@@ -2,10 +2,10 @@ import { z } from "zod"
 
 import { getFeedPage, getHashtagFeedPage } from "@/server/services/feed.service"
 
-import { createTRPCRouter, publicProcedure } from "../init"
+import { createTRPCRouter, optionalAuthProcedure } from "../init"
 
 export const feedRouter = createTRPCRouter({
-  getPage: publicProcedure
+  getPage: optionalAuthProcedure
     .input(
       z.object({
         tab: z.enum(["overview", "following"]).default("overview"),
@@ -29,7 +29,7 @@ export const feedRouter = createTRPCRouter({
       })
     }),
 
-  getHashtagPage: publicProcedure
+  getHashtagPage: optionalAuthProcedure
     .input(
       z.object({
         tag: z.string().min(1).max(64),

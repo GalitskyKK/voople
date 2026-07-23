@@ -3,4 +3,7 @@ export {
   getStreakRest as getStreak,
   type StreakView,
 } from "@/server/data/streaks-rest";
-export { listUserBadgesRest as listUserBadges } from "@/server/data/badges-rest";
+export {
+  chooseTeamPinRest as chooseTeamPin,
+  listUserBadgesRest as listUserBadges,
+} from "@/server/data/badges-rest";

@@ -3,6 +3,7 @@ import { toProfileCustomizationView } from "@/server/mappers/customization"
 import { mapPostRow, mapUserToAuthor, type PostRow, type UserRow } from "@/server/mappers/profile"
 import { loadLikedPostIdsRest } from "@/server/data/likes-rest"
 import type { PostViewModel } from "@/types/domain"
+import { listUserBadgesRest } from "@/server/data/badges-rest"
 
 const POST_SELECT =
   "id, author_id, text, state_snapshot, media_url, media_type, is_repost, original_post_id, repost_comment, like_count, reply_count, repost_count, view_count, created_at"
@@ -53,6 +54,42 @@ function fallbackAuthor() {
     hasVooplePlus: false,
     customization: toProfileCustomizationView(null),
   };
+}
+
+function legacyAppearanceSnapshot(value: unknown): value is Record<string, unknown> & { kind: "appearance" } {
+  return Boolean(
+    value &&
+    typeof value === "object" &&
+    (value as Record<string, unknown>).kind === "appearance" &&
+    !((value as Record<string, unknown>).customization),
+  )
+}
+
+async function freezeLegacyAppearancePosts(
+  rows: PostRow[],
+  authorById: Map<string, ReturnType<typeof mapUserToAuthor>>,
+) {
+  const legacyRows = rows.filter((row) => legacyAppearanceSnapshot(row.state_snapshot))
+  if (legacyRows.length === 0) return
+
+  const authorIds = [...new Set(legacyRows.map((row) => row.author_id))]
+  const badgesByAuthor = new Map(
+    await Promise.all(authorIds.map(async (authorId) => [authorId, await listUserBadgesRest(authorId)] as const)),
+  )
+  const admin = getAdminClient()
+
+  await Promise.all(legacyRows.map(async (row) => {
+    const author = authorById.get(row.author_id)
+    if (!author?.customization) return
+    const nextSnapshot = {
+      ...(row.state_snapshot as Record<string, unknown>),
+      customization: author.customization,
+      badgeIds: badgesByAuthor.get(row.author_id) ?? [],
+    }
+    const { error } = await admin.from("posts").update({ state_snapshot: nextSnapshot }).eq("id", row.id)
+    if (error) throw new Error(`Не удалось зафиксировать опубликованный образ: ${error.message}`)
+    row.state_snapshot = nextSnapshot
+  }))
 }
 
 export async function mapPostRowsWithReposts(
@@ -106,6 +143,12 @@ export async function mapPostRowsWithReposts(
       authorById.set(authorId, author)
     }
   }
+
+
+  // Compatibility migration for posts published before appearance snapshots
+  // included cosmetics. The first read freezes their current appearance once;
+  // subsequent profile edits no longer rewrite historical posts.
+  await freezeLegacyAppearancePosts(allRows, authorById)
 
   const likedSet = options?.viewerId
     ? await loadLikedPostIdsRest(

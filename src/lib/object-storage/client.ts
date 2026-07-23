@@ -1,5 +1,6 @@
 import {
   CopyObjectCommand,
+  DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
@@ -73,6 +74,13 @@ export async function putObject(input: {
   );
 
   return { bucket: bucketName, key: input.key };
+}
+
+export async function deleteObject(input: { key: string; bucket: StorageBucketKind }) {
+  const { client, config } = getS3Client();
+  await client.send(
+    new DeleteObjectCommand({ Bucket: resolveBucketName(config, input.bucket), Key: input.key }),
+  );
 }
 
 function resolveBucketName(config: NonNullable<ReturnType<typeof getObjectStorageConfig>>, kind: StorageBucketKind) {

@@ -8,8 +8,10 @@ import type { ChatUploadKind } from "./chat-mime";
  * Применяется там, где байты проходят через сервер (chat upload route), чтобы
  * исключить подмену типа (например, HTML/скрипт с заголовком `image/png`).
  */
-export function sniffUploadKind(bytes: Uint8Array): ChatUploadKind | null {
+export function sniffUploadKind(bytes: Uint8Array): ChatUploadKind | "container" | null {
   if (isImageSignature(bytes)) return "image";
+  if (matchesAscii(bytes, 4, "ftyp")) return "container";
+  if (matches(bytes, 0, [0x1a, 0x45, 0xdf, 0xa3])) return "container";
   if (isAudioSignature(bytes)) return "audio";
   return null;
 }
@@ -52,9 +54,5 @@ function isAudioSignature(bytes: Uint8Array): boolean {
   if (matchesAscii(bytes, 0, "OggS")) return true;
   // WAV = RIFF....WAVE
   if (matchesAscii(bytes, 0, "RIFF") && matchesAscii(bytes, 8, "WAVE")) return true;
-  // MP4 / M4A = ....ftyp
-  if (matchesAscii(bytes, 4, "ftyp")) return true;
-  // WebM / Matroska (EBML)
-  if (matches(bytes, 0, [0x1a, 0x45, 0xdf, 0xa3])) return true;
   return false;
 }

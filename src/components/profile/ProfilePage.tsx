@@ -35,11 +35,20 @@ export function ProfilePage({
   askDeepLink = false,
 }: ProfilePageProps) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [profile, setProfile] = useState(initialProfile);
   const [feedTab, setFeedTab] = useState<ProfileFeedTab>(askDeepLink ? "questions" : "posts");
   const stickyVisible = useElementScrolledPast(cardRef, { edgeTop: 48 });
-  const isOwner = Boolean(viewerId && viewerId === profile.id);
   const utils = trpc.useUtils();
+
+  const { data: liveProfile } = trpc.profile.getByUsername.useQuery(
+    { username: initialProfile.username },
+    {
+      initialData: initialProfile,
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
+    },
+  );
+  const profile = liveProfile ?? initialProfile;
+  const isOwner = Boolean(viewerId && viewerId === profile.id);
 
   const { data: posts = initialPosts } = trpc.profile.getPostsByUsername.useQuery(
     { username: profile.username },
@@ -53,10 +62,10 @@ export function ProfilePage({
 
   const profileView = trpc.profile.view.useMutation({
     onSuccess: (data) => {
-      setProfile((current) => ({
-        ...current,
-        stats: { ...current.stats, views: data.viewCount },
-      }));
+      utils.profile.getByUsername.setData(
+        { username: initialProfile.username },
+        (current) => current ? { ...current, stats: { ...current.stats, views: data.viewCount } } : current,
+      );
     },
   });
   const recordProfileView = profileView.mutate;
@@ -81,10 +90,10 @@ export function ProfilePage({
           filter: `profile_user_id=eq.${profile.id}`,
         },
         () => {
-          setProfile((current) => ({
-            ...current,
-            stats: { ...current.stats, views: current.stats.views + 1 },
-          }));
+          utils.profile.getByUsername.setData(
+            { username: profile.username },
+            (current) => current ? { ...current, stats: { ...current.stats, views: current.stats.views + 1 } } : current,
+          );
           void utils.profile.getByUsername.invalidate({ username: profile.username });
         },
       )
@@ -110,16 +119,16 @@ export function ProfilePage({
         },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            setProfile((current) => ({
-              ...current,
-              stats: { ...current.stats, posts: current.stats.posts + 1 },
-            }));
+            utils.profile.getByUsername.setData(
+              { username: profile.username },
+              (current) => current ? { ...current, stats: { ...current.stats, posts: current.stats.posts + 1 } } : current,
+            );
           }
           if (payload.eventType === "DELETE") {
-            setProfile((current) => ({
-              ...current,
-              stats: { ...current.stats, posts: Math.max(0, current.stats.posts - 1) },
-            }));
+            utils.profile.getByUsername.setData(
+              { username: profile.username },
+              (current) => current ? { ...current, stats: { ...current.stats, posts: Math.max(0, current.stats.posts - 1) } } : current,
+            );
           }
           void utils.profile.getPostsByUsername.invalidate({ username: profile.username });
           void utils.profile.getByUsername.invalidate({ username: profile.username });

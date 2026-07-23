@@ -1,5 +1,3 @@
-import { COPY } from "@/lib/constants/copy";
-
 type ProfileMetaProps = {
   createdAt?: string | null;
   subscriptionStartedAt?: string | null;
@@ -7,8 +5,8 @@ type ProfileMetaProps = {
 
 function formatDate(iso: string) {
   return new Intl.DateTimeFormat("ru-RU", {
-    day: "numeric",
-    month: "short",
+    day: "2-digit",
+    month: "2-digit",
     year: "numeric",
   }).format(new Date(iso));
 }
@@ -17,17 +15,10 @@ export function ProfileMeta({ createdAt, subscriptionStartedAt }: ProfileMetaPro
   if (!createdAt && !subscriptionStartedAt) return null;
 
   return (
-    <div className="flex flex-col gap-1 text-xs text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">
-      {createdAt && (
-        <p>
-          {COPY.registeredAt} {formatDate(createdAt)}
-        </p>
-      )}
-      {subscriptionStartedAt && (
-        <p>
-          {COPY.subscriptionSince} {formatDate(subscriptionStartedAt)}
-        </p>
-      )}
+    <div className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-[11px] text-[color-mix(in_srgb,var(--foreground)_48%,transparent)]">
+      {createdAt ? <span className="truncate">На Voople {formatDate(createdAt)}</span> : null}
+      {createdAt && subscriptionStartedAt ? <span aria-hidden>·</span> : null}
+      {subscriptionStartedAt ? <span className="truncate">Voople+ {formatDate(subscriptionStartedAt)}</span> : null}
     </div>
   );
 }

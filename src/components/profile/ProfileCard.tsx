@@ -5,7 +5,11 @@ import {
   profileCardThemeStyle,
 } from "./ProfileCardHeader";
 import { ProfileCardVideoSections } from "./ProfileCardVideoSections";
-import { frameLayerProps } from "./ProfileCardFrame";
+import {
+  frameLayerProps,
+  ProfileCardFrameDivider,
+  ProfileCardFrameOverlay,
+} from "./ProfileCardFrame";
 import { ProfileBanner } from "./ProfileBanner";
 import { ProfileMeta } from "./ProfileMeta";
 import { ProfileReactions } from "./ProfileReactions";
@@ -14,6 +18,7 @@ import { ProfileEditSheet } from "./ProfileEditSheet";
 import { ProfileFollowButton } from "./ProfileFollowButton";
 import { ProfileMessageButton } from "./ProfileMessageButton";
 import { ProfileStatusSection } from "./ProfileStatusSection";
+import { ProfileShareCardButton } from "./ProfileShareCardButton";
 
 type ProfileCardProps = {
   profile: ProfileViewModel;
@@ -30,31 +35,32 @@ function ProfileCardBodyContent({
   return (
     <>
       {profile.bio ? (
-        <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
+        <p className="mt-2 text-sm leading-5 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
           {profile.bio}
         </p>
       ) : null}
-      {isOwner ? null : (
-        <div className="mt-4 flex gap-2">
+      {isOwner || !canFollow ? null : (
+        <div className="mt-3 flex items-end gap-2">
           <ProfileFollowButton username={profile.username} canFollow={canFollow} />
-          <ProfileMessageButton username={profile.username} />
+          <ProfileMessageButton username={profile.username} size="sm" />
         </div>
       )}
-      <div className="mt-4">
+      <div className="mt-3">
         <ProfileMeta
           createdAt={profile.createdAt}
           subscriptionStartedAt={profile.subscriptionStartedAt}
         />
       </div>
-      <div className="mt-4">
+      <div className="mt-3">
         <ProfileStatusSection
           username={profile.username}
           initialStatus={profile.status}
           isOwner={isOwner}
         />
       </div>
-      <div className="mt-4 space-y-3">
+      <div className="mt-3 space-y-2">
         <ProfileReactions profileUserId={profile.id} canReact={!isOwner} />
+        {isOwner ? <ProfileShareCardButton profile={profile} /> : null}
         <ProfileStats {...profile.stats} />
       </div>
     </>
@@ -74,9 +80,12 @@ export function ProfileCard({
   const frame = frameLayerProps(assets.frame);
 
   // Рамка = matte-подложка (свой фон); иначе фон карточки из темы.
+  const themeStyle = profileCardThemeStyle(customization);
   const articleStyle = framed
     ? ({ "--theme-accent": customization.themeAccent, ...frame.style } as React.CSSProperties)
-    : profileCardThemeStyle(customization);
+    : hasBannerMedia
+      ? themeStyle
+      : ({ ...themeStyle, background: "transparent" } as React.CSSProperties);
 
   const editButton = isOwner ? (
     <div className="absolute right-4 top-[230px] z-20">
@@ -111,50 +120,50 @@ export function ProfileCard({
           className,
         )}
         style={articleStyle}
-      >
-        {editButton}
+        >
+          {editButton}
         <ProfileCardVideoSections
           media={assets.bannerMedia}
           baseMode={cardBaseMode}
           themePrimary={customization.themePrimary}
           themeAccent={customization.themeAccent}
+          frame={assets.frame}
           header={header}
         >
           {body}
-        </ProfileCardVideoSections>
-      </article>
+          </ProfileCardVideoSections>
+          <ProfileCardFrameOverlay frame={assets.frame} />
+        </article>
     );
   }
 
+  // Even a default profile has two visible sections: a banner and the body.
+  // This keeps the visual hierarchy identical to profiles with media banners.
   const flatInner = (
-    <>
-      <div className="relative z-[2] overflow-hidden rounded-t-2xl">
-        <ProfileBanner customization={customization} />
+    <div className="flex flex-col gap-[var(--profile-section-gap)]">
+      <div className="relative z-[2] overflow-hidden rounded-[var(--profile-section-radius)]">
+        <ProfileBanner customization={customization} className="h-[var(--profile-banner-height)] aspect-auto" />
       </div>
-      <div className="relative z-10">
+      <div className="profile-card__body" style={themeStyle}>
+        <ProfileCardFrameDivider frame={assets.frame} />
         {header}
         {body}
       </div>
-    </>
+    </div>
   );
 
   return (
     <article
       className={cn(
-        "profile-card voople-profile-card relative",
-        framed ? frame.className : "rounded-2xl",
+        "profile-card voople-profile-card profile-card--split relative",
+        frame.className,
         className,
       )}
       style={articleStyle}
     >
       {editButton}
-      {framed ? (
-        <div className="profile-card__surface" style={profileCardThemeStyle(customization)}>
-          {flatInner}
-        </div>
-      ) : (
-        flatInner
-      )}
+      {flatInner}
+      <ProfileCardFrameOverlay frame={assets.frame} />
     </article>
   );
 }

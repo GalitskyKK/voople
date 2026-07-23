@@ -1,9 +1,13 @@
 "use client";
 
-import { ChevronRight, MessageCircle, Music } from "lucide-react";
+import { ChevronRight, Music2 } from "lucide-react";
+import type { CSSProperties } from "react";
 
+import { getMoodColor, getMoodEmoji, getMoodLabel } from "@/lib/constants/mood";
+import { cn } from "@/lib/utils";
 import type { ProfileStatus } from "@/types/domain";
 import { MoodSlider } from "./MoodSlider";
+import { MoodLevelMeter } from "./MoodLevelMeter";
 
 type ProfileStatusBlockProps = {
   status: ProfileStatus;
@@ -13,44 +17,8 @@ type ProfileStatusBlockProps = {
   onMoodChange?: (value: number) => void;
   onThoughtChange?: (thought: string) => void;
   onMusicClick?: () => void;
+  onExpand?: () => void;
 };
-
-function StatusRow({
-  icon,
-  children,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  children: React.ReactNode;
-  onClick?: () => void;
-}) {
-  const interactive = Boolean(onClick);
-
-  return (
-    <div
-      className="voople-status-row flex items-start gap-3 rounded-xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2.5"
-      {...(interactive
-        ? {
-            role: "button" as const,
-            tabIndex: 0,
-            onClick,
-            onKeyDown: (e: React.KeyboardEvent) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onClick?.();
-              }
-            },
-          }
-        : {})}
-    >
-      <span className="mt-0.5 shrink-0 text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">{icon}</span>
-      <div className="min-w-0 flex-1">{children}</div>
-      {interactive && (
-        <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]" aria-hidden />
-      )}
-    </div>
-  );
-}
 
 export function ProfileStatusBlock({
   status,
@@ -60,13 +28,12 @@ export function ProfileStatusBlock({
   onMoodChange,
   onThoughtChange,
   onMusicClick,
+  onExpand,
 }: ProfileStatusBlockProps) {
   const hasMood = status.moodValue != null && status.moodValue > 0;
   const hasThought = Boolean(status.thought?.trim());
-  const hasTrack = Boolean(
-    status.trackId || status.trackTitle?.trim() || status.trackArtist?.trim(),
-  );
-
+  const hasTrack = Boolean(status.trackId || status.trackTitle?.trim() || status.trackArtist?.trim());
+  const moodValue = status.moodValue ?? 5;
   const showThought = hasThought || (editable && showEmptyFields);
   const showTrack = hasTrack || showMusicForOwner;
 
@@ -75,42 +42,72 @@ export function ProfileStatusBlock({
   const trackLabel =
     status.trackArtist && status.trackTitle
       ? `${status.trackArtist} – ${status.trackTitle}`
-      : status.trackTitle || status.trackArtist || "Музыка";
+      : status.trackTitle || status.trackArtist || "Добавить музыку";
+  const moodStyle = { "--mood-color": getMoodColor(moodValue) } as CSSProperties;
 
   return (
-    <div className="voople-profile-status__fields flex flex-col gap-2">
-      {(hasMood || editable) && (
-        <div className="voople-profile-status__mood rounded-xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2.5">
-          <MoodSlider
-            value={status.moodValue ?? 5}
-            onChange={editable ? onMoodChange : undefined}
-          />
-        </div>
-      )}
-      {showThought && (
-        <StatusRow icon={<MessageCircle className="h-4 w-4" />}>
-          {editable ? (
-            <input
-              type="text"
-              value={status.thought ?? ""}
-              onChange={(e) => onThoughtChange?.(e.target.value)}
-              placeholder="О чём думаешь?"
-              maxLength={80}
-              className="w-full bg-transparent text-sm italic text-[color-mix(in_srgb,var(--foreground)_70%,transparent)] outline-none placeholder:text-[color-mix(in_srgb,var(--foreground)_30%,transparent)]"
-              aria-label="Мысль"
-            />
-          ) : (
-            <p className="text-sm italic text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">{status.thought}</p>
-          )}
-        </StatusRow>
-      )}
-      {showTrack && (
-        <StatusRow icon={<Music className="h-4 w-4" />} onClick={onMusicClick}>
-          <p className={hasTrack ? "text-sm text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]" : "text-sm text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]"}>
-            {hasTrack ? trackLabel : "Добавить музыку"}
+    <div
+      className={cn("voople-mood-card relative overflow-hidden", onExpand && "cursor-pointer")}
+      style={moodStyle}
+      onClick={onExpand ? (event) => {
+        if ((event.target as Element).closest("button,input")) return;
+        onExpand();
+      } : undefined}
+    >
+      <div className="relative z-[1]">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="voople-mood-card__emoji" aria-hidden>{getMoodEmoji(moodValue)}</span>
+          <p className="min-w-0 flex-1 truncate text-sm font-semibold text-[var(--foreground)]">
+            {getMoodLabel(moodValue)}
           </p>
-        </StatusRow>
-      )}
+          {onExpand ? (
+            <button
+              type="button"
+              onClick={onExpand}
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[var(--app-muted)] transition hover:bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] hover:text-[var(--foreground)]"
+              aria-label="Открыть момент"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
+
+        {editable ? (
+          <MoodSlider value={moodValue} onChange={onMoodChange} />
+        ) : hasMood ? (
+          <MoodLevelMeter value={moodValue} color={getMoodColor(moodValue)} className="mt-2" />
+        ) : null}
+
+        {showThought ? (
+          <div className="voople-mood-card__thought mt-2">
+            {editable ? (
+              <input
+                type="text"
+                value={status.thought ?? ""}
+                onChange={(event) => onThoughtChange?.(event.target.value)}
+                placeholder="Что сейчас не выходит из головы?"
+                maxLength={80}
+                className="w-full min-w-0 bg-transparent text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_82%,transparent)] outline-none placeholder:text-[color-mix(in_srgb,var(--foreground)_32%,transparent)]"
+                aria-label="Фраза момента"
+              />
+            ) : (
+              <p className="min-w-0 text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_82%,transparent)]">{status.thought}</p>
+            )}
+          </div>
+        ) : null}
+
+        {showTrack ? (
+          <button
+            type="button"
+            onClick={onMusicClick}
+            className="voople-mood-card__track mt-2 flex w-full items-center gap-2 px-1 py-1.5 text-left transition-colors hover:text-[var(--foreground)]"
+          >
+            <Music2 className="h-3.5 w-3.5 shrink-0 text-[var(--mood-color)]" />
+            <span className="min-w-0 flex-1 truncate text-xs text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">{trackLabel}</span>
+            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[color-mix(in_srgb,var(--foreground)_34%,transparent)]" />
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

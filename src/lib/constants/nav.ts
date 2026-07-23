@@ -1,4 +1,4 @@
-import { Bell, Home, LogOut, MessageCircle, Search, ShoppingBag, User } from "lucide-react";
+import { Bell, Home, LogOut, MessageCircle, Search, Settings, ShoppingBag, Sparkles, User } from "lucide-react";
 
 import { COPY } from "./copy";
 
@@ -28,6 +28,12 @@ export const MAIN_NAV_ITEMS = [
     match: (p: string) => p.startsWith("/notifications"),
   },
   {
+    href: "/events",
+    label: "События",
+    icon: Sparkles,
+    match: (p: string) => p.startsWith("/events"),
+  },
+  {
     href: "/me",
     label: COPY.profile,
     icon: User,
@@ -36,9 +42,10 @@ export const MAIN_NAV_ITEMS = [
 ] as const;
 
 /** Mobile bottom bar — без «Поиск» (есть в хедере ленты). */
-export const MOBILE_NAV_ITEMS = MAIN_NAV_ITEMS.filter((item) => item.href !== "/explore");
+export const MOBILE_NAV_ITEMS = MAIN_NAV_ITEMS.filter((item) => item.href !== "/explore" && item.href !== "/events");
 
 export const SIDEBAR_FOOTER_ITEMS = [
   { href: "/shop", label: COPY.shop, icon: ShoppingBag },
+  { href: "/settings", label: "Настройки", icon: Settings },
   { href: "/login", label: COPY.logout, icon: LogOut },
 ] as const;

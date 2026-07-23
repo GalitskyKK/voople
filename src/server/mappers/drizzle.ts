@@ -26,6 +26,8 @@ export function customizationToRow(
     card_base_mode: row.cardBaseMode,
     nickname_color: row.nicknameColor,
     nickname_gradient: row.nicknameGradient,
+    nickname_font: row.nicknameFont,
+    nickname_effect: row.nicknameEffect,
     theme_primary: row.themePrimary,
     theme_accent: row.themeAccent,
   };

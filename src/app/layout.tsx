@@ -5,6 +5,7 @@ import { TRPCReactProvider } from "@/lib/trpc/client";
 import { createRootMetadata } from "@/lib/seo/metadata";
 import { AppThemeProvider } from "@/components/theme/AppThemeProvider";
 import { AppThemeSync } from "@/components/theme/AppThemeSync";
+import { AppPreferencesProvider } from "@/components/settings/AppPreferencesProvider";
 
 import "./globals.css";
 
@@ -34,9 +35,11 @@ export default function RootLayout({
         </a>
         <TRPCReactProvider>
           <AppThemeProvider>
-            <div aria-hidden className="voople-grain fixed inset-0 -z-[5]" />
-            <AppThemeSync />
-            {children}
+            <AppPreferencesProvider>
+              <div aria-hidden className="voople-grain fixed inset-0 -z-[5]" />
+              <AppThemeSync />
+              {children}
+            </AppPreferencesProvider>
           </AppThemeProvider>
         </TRPCReactProvider>
       </body>

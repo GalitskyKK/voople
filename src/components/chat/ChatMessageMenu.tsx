@@ -1,9 +1,10 @@
 "use client";
 
-import { ListPlus, MoreHorizontal, Reply, Trash2 } from "lucide-react";
+import { Copy, ListPlus, MoreHorizontal, Reply, Trash2 } from "lucide-react";
 
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { messageHasMusicForPlaylist } from "@/lib/chat/playlist-from-message";
+import { CHAT_REACTION_EMOJIS, type ChatReactionEmoji } from "@/lib/chat/reactions";
 import { cn } from "@/lib/utils";
 import type { ChatMessageView } from "@/types/chat";
 
@@ -17,6 +18,7 @@ type ChatMessageMenuProps = {
   isMine: boolean;
   showOnHover?: boolean;
   canAddToPlaylist?: boolean;
+  onToggleReaction?: (message: ChatMessageView, emoji: ChatReactionEmoji) => void;
 };
 
 export function ChatMessageMenu({
@@ -29,6 +31,7 @@ export function ChatMessageMenu({
   isMine,
   showOnHover = true,
   canAddToPlaylist = false,
+  onToggleReaction,
 }: ChatMessageMenuProps) {
   const showPlaylist =
     canAddToPlaylist && messageHasMusicForPlaylist(message) && onAddToPlaylist;
@@ -53,6 +56,32 @@ export function ChatMessageMenu({
         </button>
       }
     >
+      {onToggleReaction ? (
+        <div className="flex items-center gap-0.5 border-b border-[var(--app-border)] px-2 py-1.5" role="group" aria-label="Реакции">
+          {CHAT_REACTION_EMOJIS.map((emoji) => {
+            const selected = message.reactions.some((reaction) => reaction.emoji === emoji && reaction.reactedByMe);
+            return (
+              <button
+                key={emoji}
+                type="button"
+                className={cn(
+                  "grid h-8 w-8 place-items-center rounded-lg text-base transition hover:bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)]",
+                  selected && "bg-[var(--app-accent-soft)]",
+                )}
+                aria-label={`Реакция ${emoji}`}
+                aria-pressed={selected}
+                onClick={() => {
+                  onToggleReaction(message, emoji);
+                  onOpenChange(false);
+                }}
+              >
+                {emoji}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
       <button
         type="button"
         role="menuitem"
@@ -65,6 +94,21 @@ export function ChatMessageMenu({
         <Reply className="h-4 w-4" />
         Ответить
       </button>
+
+      {message.text?.trim() ? (
+        <button
+          type="button"
+          role="menuitem"
+          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]"
+          onClick={() => {
+            void navigator.clipboard.writeText(message.text ?? "");
+            onOpenChange(false);
+          }}
+        >
+          <Copy className="h-4 w-4" />
+          Копировать текст
+        </button>
+      ) : null}
 
       {showPlaylist && (
         <button

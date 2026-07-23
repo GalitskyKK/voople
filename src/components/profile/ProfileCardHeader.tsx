@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react"
 
 import { readableForeground } from "@/lib/customization/readable-foreground"
+import { displayNamePresentation } from "@/lib/customization/display-name-style"
 import { cn } from "@/lib/utils"
 import type { ProfileCustomizationView } from "@/types/domain"
 import { DisplayNameWithPin } from "./DisplayNameWithPin"
@@ -39,13 +40,7 @@ export function ProfileCardHeader({
 }: ProfileCardHeaderProps) {
   const { displayName: nameStyle, flags, assets } = customization
 
-  const nicknameStyle = nameStyle.gradient
-    ? {
-        backgroundImage: `linear-gradient(90deg, ${nameStyle.color ?? "#e5e5e5"}, #fff)`
-      }
-    : { color: nameStyle.color ?? undefined }
-
-  const useGradientName = nameStyle.gradient && flags.hasDisplayNameStyle
+  const nickname = displayNamePresentation(nameStyle)
 
   return (
     <>
@@ -75,13 +70,17 @@ export function ProfileCardHeader({
           className="mt-3"
           nameClassName={cn(
             "text-xl font-bold",
-            useGradientName ? "bg-clip-text text-transparent" : "text-[var(--foreground)]"
+            flags.hasDisplayNameStyle ? nickname.className : "text-[var(--foreground)]"
           )}
-          style={useGradientName ? nicknameStyle : undefined}>
+          style={flags.hasDisplayNameStyle ? nickname.style : undefined}>
           {displayName}
         </DisplayNameWithPin>
-        <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">@{username}</p>
-        {userId && !compact && <ProfileBadges userId={userId} />}
+        <div className="mt-0.5 flex min-w-0 items-center gap-2">
+          <p className="shrink-0 text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">@{username}</p>
+          {userId && !compact ? (
+            <ProfileBadges userId={userId} compact className="mt-0 min-w-0 flex-nowrap overflow-hidden" />
+          ) : null}
+        </div>
       </div>
     </>
   )

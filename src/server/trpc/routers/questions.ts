@@ -17,7 +17,7 @@ import {
   ANSWER_MAX_LENGTH,
 } from "@/server/services/questions.service";
 
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
+import { createTRPCRouter, optionalAuthProcedure, protectedProcedure, publicProcedure } from "../init";
 
 export const questionsRouter = createTRPCRouter({
   /** Публичная лента отвеченных вопросов профиля. */
@@ -105,7 +105,7 @@ export const questionsRouter = createTRPCRouter({
     }),
 
   /** Сводка реакций по всем отвеченным вопросам профиля (публично). */
-  listReactions: publicProcedure
+  listReactions: optionalAuthProcedure
     .input(z.object({ profileUserId: z.string().uuid() }))
     .query(({ ctx, input }) => listQuestionReactions(input.profileUserId, ctx.user?.id ?? null)),
 

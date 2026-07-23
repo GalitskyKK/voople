@@ -1,5 +1,7 @@
 export {
   clearEquipSlotRest as clearEquipSlot,
+  getAvatarHistoryRest as getAvatarHistory,
+  selectAvatarFromHistoryRest as selectAvatarFromHistory,
   equipShopItemRest as equipShopItem,
   setAvatarPhotoRest as setAvatarPhoto,
   setCustomBannerRest as setCustomBanner,

@@ -47,9 +47,13 @@ export function AppThemeSelector({
   });
 
   const handleSelect = (nextThemeId: AppThemeId) => {
+    const previousThemeId = themeId;
     setThemeId(nextThemeId);
     if (persistToAccount) {
-      updateTheme.mutate({ appThemeId: nextThemeId });
+      updateTheme.mutate(
+        { appThemeId: nextThemeId },
+        { onError: () => setThemeId(previousThemeId) },
+      );
     }
   };
 
@@ -61,7 +65,7 @@ export function AppThemeSelector({
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {APP_THEMES.map((theme) => {
           const active = theme.id === themeId;
-          const available = !theme.paid || unlocked.has(theme.id) || active;
+          const available = !theme.paid || unlocked.has(theme.id);
           const previewUrl = resolveAppThemeAssets(theme, { preferStaticBackground: true }).backgroundUrl;
 
           return (
@@ -70,12 +74,14 @@ export function AppThemeSelector({
               theme={theme}
               active={active}
               available={available}
+              busy={updateTheme.isPending}
               previewUrl={previewUrl}
               onSelect={() => handleSelect(theme.id)}
             />
           );
         })}
       </div>
+      {updateTheme.error ? <p className="text-xs text-red-300">{updateTheme.error.message}</p> : null}
     </section>
   );
 }
@@ -84,6 +90,7 @@ type ThemeOptionButtonProps = {
   theme: (typeof APP_THEMES)[number];
   active: boolean;
   available: boolean;
+  busy: boolean;
   previewUrl: string | null;
   onSelect: () => void;
 };
@@ -92,6 +99,7 @@ function ThemeOptionButton({
   theme,
   active,
   available,
+  busy,
   previewUrl,
   onSelect,
 }: ThemeOptionButtonProps) {
@@ -101,7 +109,7 @@ function ThemeOptionButton({
   return (
     <button
       type="button"
-      disabled={!available}
+      disabled={!available || busy}
       onClick={onSelect}
       className={cn(
         "rounded-xl border p-3 text-left transition disabled:cursor-default disabled:opacity-55",

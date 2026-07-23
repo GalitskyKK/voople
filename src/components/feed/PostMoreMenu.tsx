@@ -13,7 +13,7 @@ type PostMoreMenuProps = {
   postId: string;
   createdAt: string;
   authorUsername: string;
-  kind?: "text" | "status";
+  kind?: "text" | "status" | "appearance";
   text?: string;
   repostComment?: string;
   hasRepostTarget?: boolean;

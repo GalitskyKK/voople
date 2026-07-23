@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Send, Smile, X } from "lucide-react";
 
 import { TrackMetadataConfirmCard } from "@/components/player/TrackMetadataConfirmCard";
@@ -18,6 +18,7 @@ import type { PlaylistTrackView } from "@/types/playlist";
 import { ChatAttachMenu } from "./ChatAttachMenu";
 import { ChatEmojiPicker } from "./ChatEmojiPicker";
 import { ChatMusicAttachSheet } from "./ChatMusicAttachSheet";
+import { ChatVoiceRecorder, type ChatRecordMode } from "./ChatVoiceRecorder";
 
 type ChatComposerProps = {
   text: string;
@@ -56,13 +57,10 @@ export function ChatComposer({
   const [isParsingAudio, setIsParsingAudio] = useState(false);
   const { uploadFile, isUploading, error, setError } = useChatUpload();
 
-  useEffect(() => {
-    return () => {
-      if (pendingUpload?.previewUrl) {
-        URL.revokeObjectURL(pendingUpload.previewUrl);
-      }
-    };
-  }, [pendingUpload?.previewUrl]);
+  const clearPendingUpload = () => {
+    if (pendingUpload?.previewUrl) URL.revokeObjectURL(pendingUpload.previewUrl);
+    onPendingUploadChange(null);
+  };
 
   const canSend =
     !disabled &&
@@ -85,7 +83,7 @@ export function ChatComposer({
     if (!file) return;
     setError(null);
     onPendingTrackChange(null);
-    onPendingUploadChange(null);
+    clearPendingUpload();
     setIsParsingAudio(true);
     try {
       const meta = await readTrackMetadata(file);
@@ -99,6 +97,21 @@ export function ChatComposer({
       setError(e instanceof Error ? e.message : "Не удалось прочитать файл");
     } finally {
       setIsParsingAudio(false);
+    }
+  };
+
+  const handleVoiceRecorded = async (file: File, durationSeconds: number, mode: ChatRecordMode) => {
+    setError(null);
+    onPendingTrackChange(null);
+    clearPendingUpload();
+    const uploaded = await uploadFile(file, { purpose: mode });
+    if (uploaded) {
+      onPendingUploadChange(mode === "voice" ? {
+        ...uploaded,
+        title: "Голосовое сообщение",
+        artist: `${durationSeconds} сек.`,
+        durationSeconds,
+      } : { ...uploaded, durationSeconds });
     }
   };
 
@@ -159,7 +172,9 @@ export function ChatComposer({
 
       {pendingUpload && !pendingAudioDraft && (
         <div className="voople-chat-composer__pending mb-2 flex items-center gap-2 text-sm">
-          {pendingUpload.previewUrl ? (
+          {pendingUpload.previewUrl && pendingUpload.kind === "circle" ? (
+            <video src={pendingUpload.previewUrl} muted playsInline className="h-14 w-14 rounded-full object-cover" />
+          ) : pendingUpload.previewUrl && pendingUpload.kind === "image" ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={pendingUpload.previewUrl}
@@ -174,7 +189,7 @@ export function ChatComposer({
           <button
             type="button"
             className="shrink-0 text-xs text-[var(--app-muted)] hover:text-[var(--foreground)]"
-            onClick={() => onPendingUploadChange(null)}
+            onClick={clearPendingUpload}
           >
             Убрать
           </button>
@@ -224,7 +239,7 @@ export function ChatComposer({
         open={musicSheetOpen}
         onClose={() => setMusicSheetOpen(false)}
         onSelect={(track) => {
-          onPendingUploadChange(null);
+          clearPendingUpload();
           setPendingAudioDraft(null);
           onPendingTrackChange(track);
         }}
@@ -279,6 +294,14 @@ export function ChatComposer({
         >
           <Smile className="h-5 w-5" />
         </button>
+
+        {!text.trim() && !pendingUpload && !pendingTrack ? (
+          <ChatVoiceRecorder
+            disabled={disabled || isSending || isUploading || isParsingAudio}
+            onRecorded={(file, duration, mode) => void handleVoiceRecorded(file, duration, mode)}
+            onError={setError}
+          />
+        ) : null}
 
         <Button type="submit" variant="primary" disabled={!canSend} className="shrink-0 px-3">
           <Send className="h-4 w-4" />

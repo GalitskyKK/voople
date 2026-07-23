@@ -34,9 +34,9 @@ export const SHOP_DISPLAY_SECTIONS: ShopDisplaySection[] = [
   },
   {
     id: "profile_effect",
-    title: "Эффект профиля",
-    hint: "Впечатляйте эффектом профиля",
-    kinds: ["effect"],
+    title: "Рамки карточки",
+    hint: "Оформление профиля",
+    kinds: ["profile_frame"],
   },
   {
     id: "avatar",
@@ -70,6 +70,7 @@ export const CUSTOMIZE_SLOT_SECTIONS: {
   title: string;
   sectionId: ShopDisplaySectionId;
 }[] = [
+  { slot: "profile_frame_id", title: "Рамка карточки", sectionId: "profile_effect" },
   { slot: "banner", title: "Баннер профиля", sectionId: "profile_banner" },
   { slot: "profile_background_id", title: "Фон карточки", sectionId: "profile_card_bg" },
   // Эффекты профиля заменены рамкой карточки (панель «Рамка» в редакторе) — слот скрыт.
@@ -82,6 +83,7 @@ export const CUSTOMIZE_SLOT_SECTIONS: {
 ];
 
 const KIND_LABEL: Record<ShopItemKind, string> = {
+  profile_frame: "Рамка карточки",
   banner: "Баннер",
   profile_background: "Фон карточки",
   effect: "Эффект профиля",

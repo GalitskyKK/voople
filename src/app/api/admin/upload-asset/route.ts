@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import sharp from "sharp";
 
 import { isAdminUserId } from "@/lib/admin/auth";
 import {
@@ -58,13 +59,33 @@ export async function POST(request: Request) {
       );
     }
 
-    const storageKey = buildCustomizationStorageKey(assetFolder, targetFileName);
-    const body = new Uint8Array(await file.arrayBuffer());
+    const sourceBody = Buffer.from(await file.arrayBuffer());
+    const normalizeFeedCard = assetFolder === "feed-cards" && contentType.startsWith("image/");
+    if (normalizeFeedCard) {
+      const metadata = await sharp(sourceBody, { animated: false }).metadata();
+      if (metadata.width !== 1200 || metadata.height !== 240) {
+        return NextResponse.json(
+          { error: "Бейдж ленты должен иметь точный размер 1200×240 px" },
+          { status: 400 },
+        );
+      }
+    }
+    const effectiveTargetFileName = normalizeFeedCard
+      ? `${targetFileName.replace(/\.[a-z0-9]{2,5}$/i, "")}.webp`
+      : targetFileName;
+    const storageKey = buildCustomizationStorageKey(assetFolder, effectiveTargetFileName);
+    const outputBody = normalizeFeedCard
+      ? await sharp(sourceBody, { animated: false })
+          .resize(1200, 240, { fit: "fill" })
+          .webp({ quality: 94, alphaQuality: 100 })
+          .toBuffer()
+      : sourceBody;
+    const outputContentType = normalizeFeedCard ? "image/webp" : contentType;
 
     await putObject({
       key: storageKey,
-      body,
-      contentType,
+      body: new Uint8Array(outputBody),
+      contentType: outputContentType,
       bucket: "public",
     });
 
@@ -76,8 +97,9 @@ export async function POST(request: Request) {
     return NextResponse.json({
       storageKey,
       assetFolder,
-      assetId: targetFileName,
+      assetId: effectiveTargetFileName,
       publicUrl,
+      normalizedSize: normalizeFeedCard ? { width: 1200, height: 240 } : null,
     });
   } catch (e) {
     const config = getObjectStorageConfig();

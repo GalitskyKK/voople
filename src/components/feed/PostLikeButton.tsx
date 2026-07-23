@@ -140,7 +140,7 @@ export function PostLikeButton({
 
   if (!canLike) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">
+      <span className="voople-post-action inline-flex items-center gap-1.5 text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">
         <Heart className="h-4 w-4" />
         <span className="text-sm tabular-nums">{current.count}</span>
       </span>
@@ -153,7 +153,7 @@ export function PostLikeButton({
       disabled={likeMutation.isPending}
       onClick={() => likeMutation.mutate({ postId })}
       className={cn(
-        "inline-flex items-center gap-1.5 hover:text-[var(--foreground)] disabled:opacity-50",
+        "voople-post-action inline-flex items-center gap-1.5 disabled:opacity-50",
         current.liked ? "text-[#f472b6]" : "text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]",
       )}
       aria-label={COPY.like}

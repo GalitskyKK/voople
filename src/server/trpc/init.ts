@@ -69,6 +69,19 @@ export const createTRPCRouter = t.router
 export const createCallerFactory = t.createCallerFactory
 export const publicProcedure = t.procedure
 
+// Public pages may still need the signed-in viewer's state (likes, reactions,
+// follows). Authentication stays optional, but the verified user is exposed to
+// the resolver when a session exists.
+export const optionalAuthProcedure = t.procedure.use(async ({ ctx, next }) => {
+  const user = await ctx.getVerifiedUser()
+  return next({
+    ctx: {
+      ...ctx,
+      user
+    }
+  })
+})
+
 export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   const user = await ctx.getVerifiedUser()
   if (!user) {

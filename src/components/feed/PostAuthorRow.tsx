@@ -7,6 +7,7 @@ import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { cn } from "@/lib/utils";
+import { displayNamePresentation } from "@/lib/customization/display-name-style";
 
 type PostAuthorRowProps = {
   username: string;
@@ -15,7 +16,7 @@ type PostAuthorRowProps = {
   createdAt: string;
   postId?: string;
   customization?: ProfileCustomizationView;
-  postKind?: "text" | "status";
+  postKind?: "text" | "status" | "appearance";
   postText?: string;
   repostComment?: string;
   hasRepostTarget?: boolean;
@@ -52,15 +53,14 @@ export function PostAuthorRow({
 
   if (useFeedChip && c) {
     const nameStyle = c.displayName;
-    const nicknameStyle = nameStyle.gradient
-      ? { backgroundImage: `linear-gradient(90deg, ${nameStyle.color ?? "#e5e5e5"}, #fff)` }
-      : { color: nameStyle.color ?? undefined };
+    const nickname = displayNamePresentation(nameStyle);
 
     return (
-      <header className="voople-post-card__author-chip relative flex items-center gap-3 overflow-hidden rounded-t-2xl px-3 py-2.5">
-        <FeedAuthorChipBackdrop customization={c} />
-        <div className="relative z-10 flex min-w-0 flex-1 items-center gap-3">
-          <Link href={`/${username}`} className="flex min-w-0 flex-1 items-center gap-3">
+      <header className="voople-post-card__author-chip flex items-center gap-2 px-3 py-2.5">
+        <div className="voople-author-nameplate relative h-14 min-w-0 flex-1 overflow-hidden rounded-xl">
+          <FeedAuthorChipBackdrop backgroundUrl={c.assets.feedCardBackgroundUrl} />
+          <Link href={`/${username}`} className="absolute inset-0 z-10 flex min-w-0 items-center">
+            <span className="absolute left-10 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <ProfileAvatar
               displayName={displayName}
               size="sm"
@@ -69,28 +69,26 @@ export function PostAuthorRow({
               decorationUrl={c.assets.avatarDecorationUrl}
               animatedAvatarUrl={c.assets.animatedAvatarUrl}
             />
+            </span>
             <DisplayNameWithPin
               hasVooplePlus={hasVooplePlus}
               size="sm"
-              className="min-w-0"
+              className="ml-20 min-w-0 max-w-[calc(100%_-_6rem)]"
               nameClassName={cn(
                 "text-sm font-semibold",
-                nameStyle.gradient && c.flags.hasDisplayNameStyle
-                  ? "bg-clip-text text-transparent"
-                  : "text-[var(--foreground)]",
+                c.flags.hasDisplayNameStyle ? nickname.className : "text-[var(--foreground)]",
               )}
               style={
-                nameStyle.gradient && c.flags.hasDisplayNameStyle ? nicknameStyle : undefined
+                c.flags.hasDisplayNameStyle ? nickname.style : undefined
               }
             >
               {displayName}
             </DisplayNameWithPin>
           </Link>
-          {timeNode}
         </div>
+        <div className="ml-auto shrink-0">{timeNode}</div>
         {postId && (
           <PostMoreMenu
-            className="relative z-10"
             postId={postId}
             createdAt={createdAt}
             authorUsername={username}
@@ -119,7 +117,12 @@ export function PostAuthorRow({
       />
       <div className="min-w-0 flex-1">
         <Link href={`/${username}`} className="block min-w-0 text-sm font-medium text-[var(--foreground)] hover:underline">
-          <DisplayNameWithPin hasVooplePlus={hasVooplePlus} size="sm">
+          <DisplayNameWithPin
+            hasVooplePlus={hasVooplePlus}
+            size="sm"
+            nameClassName={c?.flags.hasDisplayNameStyle ? displayNamePresentation(c.displayName).className : undefined}
+            style={c?.flags.hasDisplayNameStyle ? displayNamePresentation(c.displayName).style : undefined}
+          >
             {displayName}
           </DisplayNameWithPin>
         </Link>

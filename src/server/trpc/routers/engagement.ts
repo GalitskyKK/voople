@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { getStreak, listUserBadges, pingStreak } from "@/server/services/engagement.service";
+import { chooseTeamPin, getStreak, listUserBadges, pingStreak } from "@/server/services/engagement.service";
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 
@@ -15,4 +15,14 @@ export const engagementRouter = createTRPCRouter({
   badges: publicProcedure
     .input(z.object({ userId: z.string().uuid() }))
     .query(({ input }) => listUserBadges(input.userId)),
+
+  myBadges: protectedProcedure.query(({ ctx }) => listUserBadges(ctx.user.id)),
+
+  chooseTeam: protectedProcedure
+    .input(
+      z.object({
+        answers: z.array(z.enum(["team-pulse", "team-orbit", "team-forge", "team-echo"])).length(5),
+      }),
+    )
+    .mutation(({ ctx, input }) => chooseTeamPin(ctx.user.id, input.answers)),
 });

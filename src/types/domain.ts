@@ -40,6 +40,7 @@ export type ProfileViewModel = {
 };
 
 export type PostAuthorView = {
+  id?: string;
   username: string;
   displayName: string;
   hasVooplePlus?: boolean;
@@ -55,12 +56,18 @@ export type StatusPostPayload = {
   trackArtist?: string | null;
 };
 
-export type PostMediaType = "image" | "gif" | "meme";
+export type PostMediaType = "image" | "gif" | "meme" | "video" | "circle";
 
 export type PostViewModel = {
   id: string;
   author: PostAuthorView;
-  kind?: "text" | "status";
+  kind?: "text" | "status" | "appearance";
+  appearance?: {
+    scene: "midnight" | "aurora" | "paper";
+    status?: ProfileStatus;
+    customization?: ProfileCustomizationView;
+    badgeIds?: string[];
+  };
   text?: string;
   status?: StatusPostPayload;
   mediaUrl?: string | null;

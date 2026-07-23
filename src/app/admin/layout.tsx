@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { requireAdminSession } from "@/lib/admin/require-admin";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -13,12 +15,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </p>
             <h1 className="text-lg font-semibold">Каталог ассетов</h1>
           </div>
-          <a
-            href="/shop"
-            className="text-sm text-[color-mix(in_srgb,var(--foreground)_65%,transparent)] hover:text-[var(--foreground)]"
-          >
-            ← В магазин
-          </a>
+          <nav className="flex items-center gap-3 text-sm text-[color-mix(in_srgb,var(--foreground)_65%,transparent)]">
+            <Link href="/admin/assets" className="hover:text-[var(--foreground)]">Ассеты</Link>
+            <Link href="/admin/users" className="hover:text-[var(--foreground)]">Пользователи</Link>
+            <Link href="/shop" className="hover:text-[var(--foreground)]">← В магазин</Link>
+          </nav>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>

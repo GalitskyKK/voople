@@ -57,9 +57,9 @@ export function VooplePlusPanel({
             <Crown className="h-4 w-4" aria-hidden />
             Voople+
           </p>
-          <h2 className="text-xl font-semibold text-[var(--foreground)]">Премиум оформление профиля</h2>
+          <h2 className="text-xl font-semibold text-[var(--foreground)]">Соберите узнаваемый профиль</h2>
           <p className="max-w-lg text-sm text-[color-mix(in_srgb,var(--foreground)_55%,transparent)]">
-            {VOOPLUS_PERIOD_DAYS} дней за разовую оплату.
+            Один набор для карточки, имени и темы приложения. Всё можно примерить в редакторе до оплаты. {VOOPLUS_PERIOD_DAYS} дней за разовую оплату.
             {!VOOPLUS_IS_RECURRING && " Автопродление не подключено — продлить можно вручную."} Оплата через
             ЮKassa.
           </p>

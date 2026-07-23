@@ -128,6 +128,7 @@ export const shopRouter = createTRPCRouter({
         }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.createPayment, ctx.user.id);
       try {
         return await createRubPaymentIntent({
           userId: ctx.user.id,

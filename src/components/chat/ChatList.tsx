@@ -10,6 +10,8 @@ import { useRealtimeInbox } from "@/hooks/useRealtimeChat";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { UsersRound } from "lucide-react";
+import { GroupChatCreator } from "./GroupChatCreator";
 
 type ChatListProps = {
   activeChatId?: string | null;
@@ -36,16 +38,15 @@ export function ChatList({ activeChatId = null }: ChatListProps) {
 
   if (!data?.length) {
     return (
-      <p className="text-sm text-[var(--app-muted)]">
-        Пока нет диалогов. Найдите человека в поиске и нажмите «Написать» на профиле.
-      </p>
+      <><GroupChatCreator /><p className="text-sm text-[var(--app-muted)]">Пока нет диалогов. Найдите человека в поиске и нажмите «Написать» на профиле.</p></>
     );
   }
 
   return (
-    <ul className="voople-chat-list space-y-1">
+    <><GroupChatCreator /><ul className="voople-chat-list space-y-1">
       {data.map((chat) => {
-        const title = chat.otherUser?.displayName ?? "Чат";
+        const isGroup = chat.type === "group";
+        const title = isGroup ? chat.name || "Группа" : chat.otherUser?.displayName ?? "Чат";
         const preview = chat.lastMessage?.text?.trim() || (chat.lastMessage ? "Вложение" : "Нет сообщений");
         const isActive = activeChatId === chat.id || pathname === `/messages/${chat.id}`;
         const isOnline = Boolean(chat.otherUser?.id && onlineUserIds.has(chat.otherUser.id));
@@ -61,7 +62,7 @@ export function ChatList({ activeChatId = null }: ChatListProps) {
                   : "hover:bg-[var(--app-surface-soft)]",
               )}
             >
-              <ProfileAvatar displayName={title} size="sm" isOnline={isOnline} />
+              {isGroup ? <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--app-accent-soft)] text-(--theme-accent)"><UsersRound className="h-4 w-4" /></span> : <ProfileAvatar displayName={title} size="sm" isOnline={isOnline} />}
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-baseline justify-between gap-2">
                   <DisplayNameWithPin
@@ -78,7 +79,7 @@ export function ChatList({ activeChatId = null }: ChatListProps) {
                     />
                   )}
                 </div>
-                <p className="truncate text-xs text-[var(--app-muted)]">@{chat.otherUser?.username}</p>
+                <p className="truncate text-xs text-[var(--app-muted)]">{isGroup ? `${chat.memberCount} участников` : `@${chat.otherUser?.username}`}</p>
                 <p className="mt-0.5 truncate text-sm text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
                   {preview}
                 </p>
@@ -87,6 +88,6 @@ export function ChatList({ activeChatId = null }: ChatListProps) {
           </li>
         );
       })}
-    </ul>
+    </ul></>
   );
 }

@@ -11,7 +11,7 @@ type PublishStatusBannerProps = {
   className?: string;
 };
 
-/** Поверх карточки — без сдвига layout при появлении */
+/** Compact reveal below the mood card; never covers reactions or profile stats. */
 export function PublishStatusBanner({
   visible,
   onPublish,
@@ -21,26 +21,30 @@ export function PublishStatusBanner({
   return (
     <div
       className={cn(
-        "voople-status-publish-banner absolute inset-x-0 top-full z-30 pt-2 transition-[opacity,transform] duration-200 ease-out",
+        "voople-status-publish-banner grid transition-[grid-template-rows,opacity] duration-200 ease-out",
         visible
-          ? "pointer-events-auto translate-y-0 opacity-100"
-          : "pointer-events-none -translate-y-1 opacity-0",
+          ? "pointer-events-auto grid-rows-[1fr] opacity-100"
+          : "pointer-events-none grid-rows-[0fr] opacity-0",
         className,
       )}
       aria-hidden={!visible}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--theme-accent)]/35 bg-[var(--theme-accent)]/12 px-3 py-2 shadow-lg shadow-black/30 backdrop-blur-sm">
-        <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_85%,transparent)]">{COPY.statusChanged}</p>
-        <Button
-          size="sm"
-          variant="primary"
-          onClick={onPublish}
-          disabled={disabled}
-          className="shrink-0"
-          tabIndex={visible ? 0 : -1}
-        >
-          {COPY.publishStatus}
-        </Button>
+      <div className="overflow-hidden">
+        <div className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-[var(--theme-accent)]/30 bg-[var(--theme-accent)]/10 px-3 py-2">
+          <p className="text-xs text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
+            {COPY.statusChanged}
+          </p>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={onPublish}
+            disabled={disabled}
+            className="shrink-0"
+            tabIndex={visible ? 0 : -1}
+          >
+            {COPY.publishStatus}
+          </Button>
+        </div>
       </div>
     </div>
   );

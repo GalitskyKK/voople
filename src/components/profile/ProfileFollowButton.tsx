@@ -23,15 +23,15 @@ function FollowStatusBadge({
   if (!following && !followsYou) return null;
 
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap gap-1">
       {following && (
-        <span className="inline-flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--foreground)_15%,transparent)] bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] px-2 py-0.5 text-xs font-medium text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">
-          <UserCheck className="h-3.5 w-3.5 text-(--theme-accent)" aria-hidden />
+        <span className="inline-flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] px-2 py-0.5 text-[11px] font-medium text-[color-mix(in_srgb,var(--foreground)_82%,transparent)]">
+          <UserCheck className="h-3 w-3 text-(--theme-accent)" aria-hidden />
           {COPY.subscribed}
         </span>
       )}
       {followsYou && (
-        <span className="inline-flex items-center rounded-full bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-2 py-0.5 text-xs text-[color-mix(in_srgb,var(--foreground)_55%,transparent)]">
+        <span className="inline-flex items-center rounded-full bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] px-2 py-0.5 text-[11px] text-[color-mix(in_srgb,var(--foreground)_52%,transparent)]">
           {following ? COPY.mutualFollow : COPY.followsYou}
         </span>
       )}
@@ -92,11 +92,12 @@ export function ProfileFollowButton({
   }
 
   return (
-    <div className={cn("flex min-w-0 flex-1 flex-col gap-2")}>
+    <div className={cn("flex min-w-0 flex-1 flex-col gap-1.5")}>
       <FollowStatusBadge following={following} followsYou={followsYou} />
       <Button
         type="button"
         variant={following ? "secondary" : "primary"}
+        size="sm"
         className="w-full"
         disabled={pending}
         aria-pressed={following}

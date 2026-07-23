@@ -10,6 +10,7 @@ export type ShopKindDefaults = {
 export const SHOP_KIND_DEFAULTS: Record<ShopItemKind, ShopKindDefaults> = {
   banner: { assetFolder: "banners", equipSlot: "banner" },
   profile_background: { assetFolder: "backgrounds", equipSlot: "profile_background_id" },
+  profile_frame: { assetFolder: "frames", equipSlot: "profile_frame_id" },
   effect: { assetFolder: "effects", equipSlot: "profile_effect_id" },
   decoration: { assetFolder: "decorations", equipSlot: "avatar_decoration_id" },
   animated_avatar: { assetFolder: "animated", equipSlot: "animated_avatar_id" },
@@ -23,6 +24,7 @@ export const SHOP_KIND_DEFAULTS: Record<ShopItemKind, ShopKindDefaults> = {
 };
 
 export const SHOP_KIND_OPTIONS: { value: ShopItemKind; label: string }[] = [
+  { value: "profile_frame", label: "Рамка карточки" },
   { value: "banner", label: "Баннер профиля" },
   { value: "profile_background", label: "Фон карточки" },
   { value: "effect", label: "Эффект профиля" },
@@ -58,6 +60,7 @@ export function kindRequiresCdnAsset(kind: ShopItemKind): boolean {
   return (
     kind === "banner" ||
     kind === "profile_background" ||
+    kind === "profile_frame" ||
     kind === "decoration" ||
     kind === "animated_avatar" ||
     kind === "feed_card"

@@ -14,7 +14,7 @@ export function MessagesSection({ children }: { children: React.ReactNode }) {
   return (
     <SectionFrame
       wide
-      className={cn("min-h-0 flex-1", isThread ? "py-0 lg:py-6" : "py-4 lg:py-6")}
+      className={cn("min-h-0 flex-1", isThread ? "py-0" : "py-4 lg:py-0")}
     >
       <MessagesLayout>{children}</MessagesLayout>
     </SectionFrame>

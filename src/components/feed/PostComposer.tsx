@@ -5,6 +5,8 @@ type PostComposerProps = {
   onChange: (value: string) => void;
   disabled?: boolean;
   maxLength?: number;
+  placeholder?: string;
+  compact?: boolean;
 };
 
 export function PostComposer({
@@ -12,21 +14,23 @@ export function PostComposer({
   onChange,
   disabled = false,
   maxLength = 280,
+  placeholder = "Что нового?",
+  compact = false,
 }: PostComposerProps) {
   return (
     <div>
       <textarea
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(event) => onChange(event.target.value)}
         disabled={disabled}
         maxLength={maxLength}
-        placeholder="Что нового?"
-        rows={4}
-        className="w-full resize-none rounded-xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-black/30 px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[color-mix(in_srgb,var(--foreground)_40%,transparent)] disabled:opacity-50"
+        placeholder={placeholder}
+        rows={compact ? 2 : 4}
+        className="w-full resize-none rounded-xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-black/20 px-3 py-2 text-sm text-[var(--foreground)] outline-none transition-colors placeholder:text-[color-mix(in_srgb,var(--foreground)_40%,transparent)] focus:border-[color-mix(in_srgb,var(--theme-accent)_55%,transparent)] disabled:opacity-50"
       />
-      <p className="mt-1 text-right text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">
-        {value.length}/{maxLength}
-      </p>
+      {compact && value.length === 0 ? null : (
+        <p className="mt-1 text-right text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">{value.length}/{maxLength}</p>
+      )}
     </div>
   );
 }

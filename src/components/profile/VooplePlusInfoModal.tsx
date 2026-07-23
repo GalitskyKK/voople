@@ -48,10 +48,10 @@ export function VooplePlusInfoModal({ open, onClose, expiresAt }: VooplePlusInfo
           <Crown className="h-4 w-4" aria-hidden />
           Voople+
         </p>
-        <h2 className="mt-1 text-xl font-semibold text-[var(--foreground)]">Премиум оформление</h2>
+        <h2 className="mt-1 text-xl font-semibold text-[var(--foreground)]">Профиль, который узнают</h2>
         <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--foreground)_55%,transparent)]">
-          Подписка на {VOOPLUS_PERIOD_DAYS} дней за разовую оплату{" "}
-          {VOOPLUS_PRICE_RUB} ₽.
+          Voople+ открывает цельный набор оформления: темы, рамки, собственные медиа и стиль
+          имени. {VOOPLUS_PERIOD_DAYS} дней за разовую оплату {VOOPLUS_PRICE_RUB} ₽.
           {!VOOPLUS_IS_RECURRING && " Автопродление не подключено."}
         </p>
 

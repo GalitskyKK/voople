@@ -10,7 +10,7 @@
  * - `gradient`— градиент по кольцу.
  * - `glow`    — цвет + внешнее свечение (box-shadow).
  * - `glass`   — прозрачная с backdrop-blur («стекло»).
- * - `image`   — картиночная рамка (border-image) из бакета `customization/frames/`.
+ * - `image`   — цельная прозрачная overlay-рамка из бакета `customization/frames/`.
  *              Тип и resolve-путь готовы; сами item'ы появятся, когда ассеты зальют.
  *
  * `usesCustomColor: true` → пресет берёт `frame_color` (кастомный цвет Voople+) вместо `colors`.
@@ -34,7 +34,7 @@ export type FramePreset = {
   isPremium?: boolean;
   /** Картиночная рамка: базовое имя ассета в `customization/frames/` (без расширения). */
   imageBase?: string;
-  /** `border-image-slice` для картиночной рамки (px внутри ассета). */
+  /** @deprecated Старый параметр border-image; новые overlay-рамки его не используют. */
   imageSlice?: number;
 };
 
@@ -44,14 +44,14 @@ const PRESETS: Record<string, FramePreset> = {
     id: "frame-slate",
     name: "Slate",
     kind: "solid",
-    width: 10,
+    width: 18,
     colors: ["#3b3b46"],
   },
   "frame-glass": {
     id: "frame-glass",
     name: "Стекло",
     kind: "glass",
-    width: 10,
+    width: 18,
     colors: ["rgba(255,255,255,0.10)"],
   },
 
@@ -60,7 +60,7 @@ const PRESETS: Record<string, FramePreset> = {
     id: "frame-custom",
     name: "Свой цвет",
     kind: "solid",
-    width: 10,
+    width: 18,
     colors: ["#7B3AED"],
     usesCustomColor: true,
     isPremium: true,
@@ -71,7 +71,7 @@ const PRESETS: Record<string, FramePreset> = {
     id: "frame-gold-glow",
     name: "Золотое свечение",
     kind: "glow",
-    width: 10,
+    width: 18,
     colors: ["#f5c451", "#b8860b"],
     isPremium: true,
   },
@@ -79,7 +79,7 @@ const PRESETS: Record<string, FramePreset> = {
     id: "frame-aurora",
     name: "Аврора",
     kind: "gradient",
-    width: 10,
+    width: 18,
     colors: ["#7B3AED", "#34d399", "#60a5fa"],
     isPremium: true,
   },

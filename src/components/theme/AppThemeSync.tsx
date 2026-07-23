@@ -17,15 +17,16 @@ export function AppThemeSync() {
     retry: false,
     staleTime: 30_000,
   });
+  const equippedThemeId = equippedQuery.data?.appThemeId;
 
   useEffect(() => {
     if (!equippedQuery.isSuccess || !equippedQuery.data) return;
-    const dbTheme = equippedQuery.data.appThemeId;
+    const dbTheme = equippedThemeId;
     const syncKey = dbTheme ?? "__none__";
     if (syncedRef.current === syncKey) return;
     syncedRef.current = syncKey;
     applyEquippedAppTheme(setThemeId, dbTheme);
-  }, [equippedQuery.isSuccess, equippedQuery.data?.appThemeId, setThemeId]);
+  }, [equippedQuery.data, equippedQuery.isSuccess, equippedThemeId, setThemeId]);
 
   return null;
 }

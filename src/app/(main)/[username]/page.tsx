@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { ProfilePage } from "@/components/profile/ProfilePage"
+import { ProfileJsonLd } from "@/components/seo/ProfileJsonLd"
 import { createProfileMetadata } from "@/lib/seo/metadata"
 import { createClient } from "@/lib/supabase/server"
 import { getProfileByUsername, getProfilePageData } from "@/server/services/profile.service"
@@ -44,14 +45,17 @@ export default async function UserProfilePage({ params, searchParams }: PageProp
   const canFollow = Boolean(viewerId && viewerId !== profile.id)
 
   return (
-    <ProfilePage
-      profile={profile}
-      posts={posts}
-      initialCanvasStrokes={canvasStrokes}
-      viewerId={viewerId}
-      canPost={Boolean(viewerId && viewerId === profile.id)}
-      canFollow={canFollow}
-      askDeepLink={ask === "1"}
-    />
+    <>
+      <ProfileJsonLd displayName={profile.displayName} username={profile.username} bio={profile.bio} />
+      <ProfilePage
+        profile={profile}
+        posts={posts}
+        initialCanvasStrokes={canvasStrokes}
+        viewerId={viewerId}
+        canPost={Boolean(viewerId && viewerId === profile.id)}
+        canFollow={canFollow}
+        askDeepLink={ask === "1"}
+      />
+    </>
   )
 }

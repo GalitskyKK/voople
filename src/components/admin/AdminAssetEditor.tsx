@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Upload } from "lucide-react";
 
 import { AdminAssetPackUpload } from "@/components/admin/AdminAssetPackUpload";
@@ -95,27 +95,32 @@ type AdminAssetEditorProps = {
 export function AdminAssetEditor({ open, item, onClose, onSaved }: AdminAssetEditorProps) {
   const isEdit = Boolean(item);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dividerFileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [packUploaded, setPackUploaded] = useState<Partial<Record<AssetPackFileRole, boolean>>>({});
   const [fileUploading, setFileUploading] = useState(false);
+  const editorKey = `${open ? "open" : "closed"}:${item?.id ?? "new"}`;
+  const [lastEditorKey, setLastEditorKey] = useState(editorKey);
 
   const createMutation = trpc.admin.createShopItem.useMutation();
   const updateMutation = trpc.admin.updateShopItem.useMutation();
 
-  useEffect(() => {
-    if (!open) return;
-    const next = item ? formFromItem(item) : emptyForm();
-    setForm(next);
-    setError(null);
-    setUploadStatus(null);
-    setPackUploaded(
-      item && usesAssetPack(item.kind) && item.equipValue
-        ? { poster: true, webm: true, mp4: true }
-        : {},
-    );
-  }, [open, item]);
+  if (editorKey !== lastEditorKey) {
+    setLastEditorKey(editorKey);
+    if (open) {
+      const next = item ? formFromItem(item) : emptyForm();
+      setForm(next);
+      setError(null);
+      setUploadStatus(null);
+      setPackUploaded(
+        item && usesAssetPack(item.kind) && item.equipValue
+          ? { poster: true, webm: true, mp4: true }
+          : {},
+      );
+    }
+  }
 
   const patch = (partial: Partial<FormState>) => setForm((prev) => ({ ...prev, ...partial }));
 
@@ -190,12 +195,50 @@ export function AdminAssetEditor({ open, item, onClose, onSaved }: AdminAssetEdi
         assetFolder: result.assetFolder,
         assetId: result.assetId,
       });
-      if (!form.equipValue.trim()) {
+      if (form.kind === "profile_frame") {
+        patch({ equipValue: result.assetId });
+      } else {
+        // Frame resolver uses the complete file name to avoid a brittle list
+        // of extensions; other CDN items must always follow the uploaded file.
         patch({ equipValue: result.assetId.replace(/\.[^.]+$/, "") });
       }
       setUploadStatus(`Загружено: ${result.assetFolder}/${result.assetId}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ошибка загрузки");
+    } finally {
+      setFileUploading(false);
+    }
+  };
+
+  const handleFrameDividerUpload = async (file: File) => {
+    setUploadStatus(null);
+    setError(null);
+
+    if (form.kind !== "profile_frame") return;
+
+    const base = (form.assetId.trim() || form.equipValue.trim()).replace(/\.[a-z0-9]{2,5}$/i, "");
+    if (!base) {
+      setError("Сначала загрузите или укажите основной файл рамки.");
+      return;
+    }
+    if (file.type.split(";")[0]?.trim().toLowerCase() !== "image/webp") {
+      setError("Для разделителя рамки используйте прозрачный WebP.");
+      return;
+    }
+
+    setFileUploading(true);
+    const folder = form.assetFolder.trim() || defaultAssetFolderForKind(form.kind) || "frames";
+
+    try {
+      const result = await uploadAdminCustomizationAsset({
+        file,
+        assetFolder: folder,
+        targetFileName: `${base}-divider.webp`,
+      });
+      patch({ assetFolder: result.assetFolder });
+      setUploadStatus(`Загружен разделитель: ${result.assetFolder}/${result.assetId}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Не удалось загрузить разделитель рамки");
     } finally {
       setFileUploading(false);
     }
@@ -335,6 +378,17 @@ export function AdminAssetEditor({ open, item, onClose, onSaved }: AdminAssetEdi
               <p className="text-sm font-medium">
                 Файл в CDN{cdnRequired ? "" : " (опционально)"}
               </p>
+              {form.kind === "profile_frame" ? (
+                <p className="rounded-lg bg-[var(--app-surface-soft)] p-2 text-xs leading-5 text-[var(--app-muted)]">
+                  Основная рамка: прозрачный WebP 1200×1600 px, рабочая полоса по краям — 96 px,
+                  центр прозрачный. Вертикальные стороны растягиваются, углы сохраняют пропорции.
+                </p>
+              ) : null}
+              {form.kind === "feed_card" ? (
+                <p className="rounded-lg bg-[var(--app-surface-soft)] p-2 text-xs leading-5 text-[var(--app-muted)]">
+                  Бейдж ленты: WebP ровно 1200×240 px. Левая зона 320 px и правая зона 450 px сохраняют пропорции, растягивается только центр. Аватар и имя накладываются интерфейсом, поэтому отверстие, текст и отдельный круг в ассете не нужны. Заполняйте фон до границ холста, без внешних прозрачных полей.
+                </p>
+              ) : null}
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block space-y-1 text-sm">
                   <span>Папка</span>
@@ -376,6 +430,36 @@ export function AdminAssetEditor({ open, item, onClose, onSaved }: AdminAssetEdi
                 <Upload className="h-4 w-4" aria-hidden />
                 Загрузить файл в бакет
               </Button>
+              {form.kind === "profile_frame" ? (
+                <div className="space-y-2 border-t border-[var(--app-border)] pt-3">
+                  <p className="text-xs text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]">
+                    Разделитель: отдельный прозрачный WebP 1200×144 px. Основная рамка загружается
+                    отдельным WebP без области разделителя. В исходном PSD можно оставить два артборда,
+                    но экспортировать их нужно двумя файлами. Разделитель сохранится как{" "}
+                    <code>{(form.assetId || "frame").replace(/\.[^.]+$/, "")}-divider.webp</code>.
+                  </p>
+                  <input
+                    ref={dividerFileInputRef}
+                    type="file"
+                    accept="image/webp"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) void handleFrameDividerUpload(file);
+                      e.target.value = "";
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={busy || !(form.assetId.trim() || form.equipValue.trim())}
+                    onClick={() => dividerFileInputRef.current?.click()}
+                  >
+                    <Upload className="h-4 w-4" aria-hidden />
+                    Загрузить разделитель
+                  </Button>
+                </div>
+              ) : null}
               {uploadStatus ? (
                 <p className="text-xs text-emerald-400">{uploadStatus}</p>
               ) : null}

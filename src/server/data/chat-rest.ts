@@ -1,5 +1,6 @@
 import {
   assertOwnedUploadKey,
+  chatAudioKindFromKey,
   chatAttachmentKindFromKey,
   createPresignedGetUrl,
   isPrivateChatMediaKey,
@@ -9,6 +10,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { mapSubscriptionFields } from "@/server/mappers/profile";
 import type { ChatMessageAttachment, ChatMessageView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
+import { CHAT_REACTION_EMOJIS } from "@/lib/chat/reactions";
 
 export type { ChatListItem, ChatMessageView } from "@/types/chat";
 
@@ -36,6 +38,13 @@ type TrackRow = {
   artist: string;
   file_url: string;
   duration_seconds: number | null;
+};
+
+type MessageReactionRow = {
+  message_id: string;
+  reactor_user_id?: string;
+  user_id?: string;
+  emoji: string;
 };
 
 function mapTrackRow(row: TrackRow): PlaylistTrackView {
@@ -84,11 +93,16 @@ async function buildAttachment(
 
   const kind = chatAttachmentKindFromKey(row.media_url);
   if (kind === "image") return { kind: "image", url };
+  if (kind === "circle") return { kind: "circle", url };
   if (kind === "audio") {
     const fileName = fileNameFromKey(row.media_url);
     const fallbackTitle = fileName.replace(/\.[^.]+$/i, "") || "Аудио";
+    const audioKind = chatAudioKindFromKey(row.media_url) === "voice" || row.media_title === "Голосовое сообщение"
+      ? "voice"
+      : "music";
     return {
       kind: "audio",
+      audioKind,
       url,
       fileName,
       title: row.media_title?.trim() || fallbackTitle,
@@ -124,7 +138,33 @@ function mapMessageRow(
         }
       : null,
     attachment: attachmentsById.get(row.id) ?? null,
+    reactions: [],
   };
+}
+
+function aggregateMessageReactions(rows: MessageReactionRow[], viewerId: string) {
+  const byMessage = new Map<string, Map<string, { emoji: string; count: number; reactedByMe: boolean }>>();
+  for (const row of rows) {
+    const userId = row.user_id ?? row.reactor_user_id;
+    let messageGroups = byMessage.get(row.message_id);
+    if (!messageGroups) {
+      messageGroups = new Map();
+      byMessage.set(row.message_id, messageGroups);
+    }
+    const current = messageGroups.get(row.emoji) ?? { emoji: row.emoji, count: 0, reactedByMe: false };
+    current.count += 1;
+    current.reactedByMe ||= userId === viewerId;
+    messageGroups.set(row.emoji, current);
+  }
+
+  return new Map(
+    [...byMessage].map(([messageId, groups]) => [
+      messageId,
+      [...groups.values()].sort(
+        (a, b) => CHAT_REACTION_EMOJIS.indexOf(a.emoji as (typeof CHAT_REACTION_EMOJIS)[number]) - CHAT_REACTION_EMOJIS.indexOf(b.emoji as (typeof CHAT_REACTION_EMOJIS)[number]),
+      ),
+    ]),
+  );
 }
 
 async function hydrateMessages(rows: MessageRow[], viewerId: string): Promise<ChatMessageView[]> {
@@ -152,7 +192,25 @@ async function hydrateMessages(rows: MessageRow[], viewerId: string): Promise<Ch
     }),
   );
 
-  return rows.map((row) => mapMessageRow(row, viewerId, repliesById, tracksById, attachmentsById));
+  const reactionsByMessage = new Map<string, { emoji: string; count: number; reactedByMe: boolean }[]>();
+  if (rows.length > 0) {
+    const admin = getAdminClient();
+    const { data, error } = await admin
+      .from("message_reactions")
+      .select("message_id, user_id, emoji")
+      .in("message_id", rows.map((row) => row.id));
+    // Позволяет безопасно выкатить код до миграции: чат продолжит работать
+    // без реакций вместо падения всей выдачи сообщений.
+    if (error && error.code !== "42P01") throw new Error(error.message);
+    for (const [messageId, reactions] of aggregateMessageReactions((data ?? []) as MessageReactionRow[], viewerId)) {
+      reactionsByMessage.set(messageId, reactions);
+    }
+  }
+
+  return rows.map((row) => ({
+    ...mapMessageRow(row, viewerId, repliesById, tracksById, attachmentsById),
+    reactions: reactionsByMessage.get(row.id) ?? [],
+  }));
 }
 
 async function assertMember(chatId: string, userId: string) {
@@ -201,6 +259,38 @@ export async function getOrCreateDirectChatRest(myId: string, otherUserId: strin
   return chatId;
 }
 
+export async function createGroupChatRest(ownerId: string, name: string, memberIds: string[]) {
+  const cleanName = name.trim();
+  const uniqueMemberIds = [...new Set(memberIds)].filter((id) => id !== ownerId);
+  if (cleanName.length < 2 || cleanName.length > 50) throw new Error("Название — от 2 до 50 символов");
+  if (uniqueMemberIds.length < 2) throw new Error("Выберите хотя бы двух участников");
+  if (uniqueMemberIds.length > 19) throw new Error("В группе может быть до 20 участников");
+
+  const admin = getAdminClient();
+  const { data: existingUsers, error: usersError } = await admin
+    .from("users")
+    .select("id")
+    .in("id", uniqueMemberIds);
+  if (usersError) throw new Error(usersError.message);
+  if ((existingUsers ?? []).length !== uniqueMemberIds.length) throw new Error("Один из участников не найден");
+
+  const { data: chat, error: chatError } = await admin
+    .from("chats")
+    .insert({ type: "group", name: cleanName })
+    .select("id")
+    .single();
+  if (chatError) throw new Error(chatError.message);
+
+  const { error: membersError } = await admin.from("chat_members").insert(
+    [ownerId, ...uniqueMemberIds].map((userId) => ({ chat_id: chat.id, user_id: userId })),
+  );
+  if (membersError) {
+    await admin.from("chats").delete().eq("id", chat.id);
+    throw new Error(membersError.message);
+  }
+  return chat.id as string;
+}
+
 export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
   const admin = getAdminClient();
 
@@ -215,7 +305,7 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
   const chatIds = memberships.map((m) => m.chat_id as string);
 
   const [chatsResult, membersResult, msgsResult] = await Promise.all([
-    admin.from("chats").select("id, type").in("id", chatIds),
+    admin.from("chats").select("id, type, name").in("id", chatIds),
     admin.from("chat_members").select("chat_id, user_id").in("chat_id", chatIds),
     admin
       .from("messages")
@@ -230,16 +320,21 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
   if (msgsResult.error) throw new Error(msgsResult.error.message);
 
   const typeByChat = new Map<string, "direct" | "group">();
+  const nameByChat = new Map<string, string | null>();
   for (const c of chatsResult.data ?? []) {
     typeByChat.set(c.id as string, (c.type as "direct" | "group") ?? "direct");
+    nameByChat.set(c.id as string, (c.name as string | null) ?? null);
   }
 
   const otherUserIds = new Set<string>();
   const otherIdByChat = new Map<string, string>();
+  const memberCountByChat = new Map<string, number>();
   for (const row of membersResult.data ?? []) {
     const uid = row.user_id as string;
     const cid = row.chat_id as string;
+    memberCountByChat.set(cid, (memberCountByChat.get(cid) ?? 0) + 1);
     if (uid === userId) continue;
+    if (typeByChat.get(cid) === "group") continue;
     otherIdByChat.set(cid, uid);
     otherUserIds.add(uid);
   }
@@ -303,6 +398,8 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
     return {
       id,
       type: typeByChat.get(id) ?? "direct",
+      name: nameByChat.get(id) ?? null,
+      memberCount: memberCountByChat.get(id) ?? 0,
       otherUser: other ?? null,
       lastMessage: last
         ? {
@@ -329,11 +426,11 @@ const MESSAGE_SELECT =
 export async function listMessagesRest(
   chatId: string,
   userId: string,
-): Promise<{ messages: ChatMessageView[]; otherUser: ChatListItem["otherUser"] }> {
+): Promise<{ messages: ChatMessageView[]; otherUser: ChatListItem["otherUser"]; chat: Pick<ChatListItem, "id" | "type" | "name" | "memberCount"> }> {
   await assertMember(chatId, userId);
   const admin = getAdminClient();
 
-  const [msgResult, membersResult] = await Promise.all([
+  const [msgResult, membersResult, chatResult] = await Promise.all([
     admin
       .from("messages")
       .select(MESSAGE_SELECT)
@@ -344,10 +441,12 @@ export async function listMessagesRest(
       .from("chat_members")
       .select("user_id, users (id, username, display_name, subscriptions (started_at, expires_at))")
       .eq("chat_id", chatId),
+    admin.from("chats").select("id, type, name").eq("id", chatId).single(),
   ]);
 
   if (msgResult.error) throw new Error(msgResult.error.message);
   if (membersResult.error) throw new Error(membersResult.error.message);
+  if (chatResult.error) throw new Error(chatResult.error.message);
 
   let otherUser: ChatListItem["otherUser"] = null;
   for (const row of membersResult.data ?? []) {
@@ -383,11 +482,37 @@ export async function listMessagesRest(
   }
 
   const rows = (msgResult.data ?? []) as MessageRow[];
-  const messages = await hydrateMessages(rows, userId);
+  const membersById = new Map<string, { username: string; displayName: string }>();
+  for (const row of membersResult.data ?? []) {
+    const related = row.users as
+      | { id: string; username: string; display_name: string }
+      | Array<{ id: string; username: string; display_name: string }>
+      | null;
+    const member = Array.isArray(related) ? related[0] : related;
+    if (member) {
+      membersById.set(member.id, {
+        username: member.username,
+        displayName: member.display_name,
+      });
+    }
+  }
+  const messages = (await hydrateMessages(rows, userId)).map((message) => ({
+    ...message,
+    sender: membersById.get(message.senderId) ?? null,
+  }));
 
   void markMessagesReadRest(chatId, userId);
 
-  return { messages, otherUser };
+  return {
+    messages,
+    otherUser,
+    chat: {
+      id: chatId,
+      type: (chatResult.data.type as "direct" | "group") ?? "direct",
+      name: (chatResult.data.name as string | null) ?? null,
+      memberCount: (membersResult.data ?? []).length,
+    },
+  };
 }
 
 export async function markMessagesReadRest(chatId: string, userId: string) {
@@ -532,6 +657,62 @@ export async function deleteMessageRest(messageId: string, userId: string) {
   if (error) throw new Error(error.message);
 
   return { id: messageId };
+}
+
+export async function toggleMessageReactionRest(messageId: string, userId: string, emoji: string) {
+  if (!CHAT_REACTION_EMOJIS.includes(emoji as (typeof CHAT_REACTION_EMOJIS)[number])) {
+    throw new Error("Эта реакция не поддерживается");
+  }
+
+  const admin = getAdminClient();
+  const { data: message, error: messageError } = await admin
+    .from("messages")
+    .select("id, chat_id")
+    .eq("id", messageId)
+    .maybeSingle();
+  if (messageError) throw new Error(messageError.message);
+  if (!message) throw new Error("Сообщение не найдено");
+
+  const chatId = message.chat_id as string;
+  await assertMember(chatId, userId);
+
+  const { data: existing, error: existingError } = await admin
+    .from("message_reactions")
+    .select("message_id")
+    .eq("message_id", messageId)
+    .eq("user_id", userId)
+    .eq("emoji", emoji)
+    .maybeSingle();
+  if (existingError) throw new Error(existingError.message);
+
+  if (existing) {
+    const { error } = await admin
+      .from("message_reactions")
+      .delete()
+      .eq("message_id", messageId)
+      .eq("user_id", userId)
+      .eq("emoji", emoji);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await admin.from("message_reactions").insert({
+      message_id: messageId,
+      chat_id: chatId,
+      user_id: userId,
+      emoji,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  const { data: rows, error: rowsError } = await admin
+    .from("message_reactions")
+    .select("message_id, user_id, emoji")
+    .eq("message_id", messageId);
+  if (rowsError) throw new Error(rowsError.message);
+
+  return {
+    messageId,
+    reactions: aggregateMessageReactions((rows ?? []) as MessageReactionRow[], userId).get(messageId) ?? [],
+  };
 }
 
 export async function getDirectChatByUsernameRest(myId: string, username: string) {

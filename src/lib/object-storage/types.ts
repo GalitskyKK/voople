@@ -2,7 +2,7 @@ export type UploadPurpose = "post" | "comment" | "avatar" | "banner" | "track" |
 
 export type StorageBucketKind = "public" | "private";
 
-export type PostMediaType = "image" | "gif" | "meme";
+export type PostMediaType = "image" | "gif" | "meme" | "video" | "circle";
 
 export type PresignedUploadView = {
   key: string;

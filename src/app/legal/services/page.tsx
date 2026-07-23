@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 };
 
 const KIND_LABELS: Record<ShopItemKind, string> = {
+  profile_frame: "Рамка карточки профиля",
   effect: "Эффект профиля",
   ring: "Кольцо аватара",
   banner: "Баннер профиля",

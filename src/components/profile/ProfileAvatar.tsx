@@ -21,6 +21,11 @@ const sizes = {
   lg: { box: "h-20 w-20 text-xl", img: 80 },
 };
 
+// The source decorations use a 288px canvas around a 240px avatar. Keeping a
+// size per avatar context avoids Tailwind's image `max-width:100%` clamp while
+// not turning a 32px feed avatar into a 100px ornament.
+const decorationMinSize = { sm: 52, md: 100, lg: 112 } as const;
+
 const onlineDotSize = {
   sm: "h-2.5 w-2.5 border",
   md: "h-3 w-3 border-2",
@@ -41,19 +46,27 @@ export function ProfileAvatar({
   const ringStyle = ringId ? resolveRingStyle(ringId) : ring ? DEFAULT_RING : null;
 
   return (
-    <div className="relative shrink-0 overflow-visible">
+    <div className={cn("relative shrink-0 overflow-visible", s.box)}>
       {decorationUrl && (
-        <img
+        <Image
           src={decorationUrl}
           alt=""
           aria-hidden
-          className="pointer-events-none absolute -inset-2 z-20 h-[calc(100%+16px)] w-[calc(100%+16px)] object-contain"
+          width={288}
+          height={288}
+          unoptimized
+          className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 object-contain object-center"
+          style={{
+            width: `max(140%, ${decorationMinSize[size]}px)`,
+            height: `max(140%, ${decorationMinSize[size]}px)`,
+            maxWidth: "none",
+          }}
         />
       )}
       <div
         className={cn(
           "relative flex items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-violet-600 to-violet-400 font-semibold text-[var(--foreground)]",
-          s.box,
+          "h-full w-full",
           ringStyle?.className,
         )}
       >
@@ -73,7 +86,7 @@ export function ProfileAvatar({
       {isOnline && (
         <span
           className={cn(
-            "absolute bottom-0 right-0 z-30 rounded-full border-[var(--background)] bg-emerald-500",
+            "profile-avatar__presence absolute bottom-0 right-0 z-30 rounded-full border-[var(--background)] bg-emerald-500",
             onlineDotSize[size],
           )}
           aria-label="В сети"

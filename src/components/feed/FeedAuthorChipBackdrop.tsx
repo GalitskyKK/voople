@@ -1,25 +1,25 @@
-import type { ProfileCustomizationView } from "@/types/domain";
-
 type FeedAuthorChipBackdropProps = {
-  customization: ProfileCustomizationView;
+  backgroundUrl?: string | null;
 };
 
 /**
  * Фон полоски автора в ленте — только feed-card ассет + нейтральный scrim.
  * Цвета темы карточки профиля (Voople+) сюда не попадают.
  */
-export function FeedAuthorChipBackdrop({ customization }: FeedAuthorChipBackdropProps) {
-  const bgUrl = customization.assets.feedCardBackgroundUrl;
-
+export function FeedAuthorChipBackdrop({ backgroundUrl }: FeedAuthorChipBackdropProps) {
   return (
     <>
+      <div className="absolute inset-0 bg-[#17171d]" />
       <div
-        className="absolute inset-0 bg-[var(--app-surface-soft)] bg-cover bg-right"
+        className="absolute inset-0 border-solid"
         style={{
-          backgroundImage: bgUrl ? `url(${bgUrl})` : undefined,
+          borderImageSource: backgroundUrl ? `url(${backgroundUrl})` : undefined,
+          borderImageSlice: "0 450 0 320 fill",
+          borderImageWidth: "0 105px 0 75px",
+          borderImageRepeat: "stretch",
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-[color-mix(in_srgb,var(--app-surface)_96%,transparent)] via-[color-mix(in_srgb,var(--app-surface)_88%,transparent)] to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[rgb(18_18_24/0.96)] via-[rgb(18_18_24/0.72)] to-[rgb(18_18_24/0.08)]" />
     </>
   );
 }

@@ -1,10 +1,17 @@
 export { getObjectStorageConfig, UPLOAD_LIMITS } from "./config";
-export { copyObject, createPresignedGetUrl, createPresignedPutUrl, headObject, putObject } from "./client";
+export { copyObject, createPresignedGetUrl, createPresignedPutUrl, deleteObject, headObject, putObject } from "./client";
 export { resolveForcePathStyle } from "./config";
-export { parseChatUploadMime, chatAttachmentKindFromKey } from "./chat-mime";
+export { parseChatUploadMime, chatAttachmentKindFromKey, chatAudioKindFromKey } from "./chat-mime";
 export { sniffUploadKind } from "./sniff";
 export { bucketForPurpose } from "./config";
-export { extensionForMime, mediaTypeForMime, assertAllowedImageMime } from "./mime";
+export {
+  assertAllowedImageMime,
+  assertAllowedPostMediaMime,
+  extensionForMime,
+  extensionForPostMediaMime,
+  mediaTypeForMime,
+  postMediaTypeForMime,
+} from "./mime";
 export { assertOwnedUploadKey, buildUploadKey, isPrivateChatMediaKey } from "./paths";
 export {
   buildCustomizationStorageKey,

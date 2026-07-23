@@ -3,7 +3,6 @@
 import { Suspense, useRef } from "react";
 import { usePathname } from "next/navigation";
 
-import { useDocumentScrollWheelForward } from "@/hooks/useDocumentScrollWheelForward";
 import { useIsLgViewport } from "@/hooks/useIsLgViewport";
 import { isMessagesThreadPath } from "@/lib/layout/messages-path";
 import { cn } from "@/lib/utils";
@@ -12,7 +11,6 @@ import { BottomNav } from "./BottomNav";
 import { CreatePostFab } from "./CreatePostFab";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { FeedHeader } from "./FeedHeader";
-import { LegalAside } from "./LegalAside";
 // import { LegalMobileStrip } from "./LegalMobileStrip";
 import { PlayerShell } from "@/components/player/PlayerShell";
 import { ScrollContainerProvider, type ScrollContainerMode } from "./ScrollContainerContext";
@@ -27,6 +25,8 @@ const RESERVED_SLUGS = new Set([
   "post",
   "login",
   "register",
+  "settings",
+  "events",
 ]);
 
 function isProfilePath(pathname: string) {
@@ -46,15 +46,9 @@ function isMessagesPath(pathname: string) {
 function useScrollMode(pathname: string): ScrollContainerMode {
   const isLg = useIsLgViewport();
 
-  if (isMessagesPath(pathname)) {
-    return "element";
-  }
-
-  if (isLg && isProfilePath(pathname)) {
-    return "element";
-  }
-
-  return "window";
+  // Desktop always keeps the application panel fixed and scrolls its content.
+  // Mobile keeps native document scrolling except for the messenger viewport.
+  return isMessagesPath(pathname) || isLg ? "element" : "window";
 }
 
 export function MainShell({ children }: { children: React.ReactNode }) {
@@ -65,6 +59,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   const usesWindowScroll = scrollMode === "window";
   const isProfileRoute = isProfilePath(pathname);
   const isMessagesRoute = isMessagesPath(pathname);
+  const isShopRoute = pathname.startsWith("/shop");
   const isMobileMessagesThread = isMessagesRoute && !isLg && isMessagesThreadPath(pathname);
   const hideMobileTopBar = isMessagesRoute && !isLg;
   const hideMobileBottomNav = isMobileMessagesThread;
@@ -72,35 +67,36 @@ export function MainShell({ children }: { children: React.ReactNode }) {
     !pathname.startsWith("/messages") &&
     (pathname === "/feed" || pathname === "/me" || isProfileRoute);
 
-  const showLegalAside = !pathname.startsWith("/messages");
-
   /** Лента — узкая колонка; профиль — две колонки (карточка + посты). */
-  const contentMaxWidth = isProfileRoute ? "max-w-6xl" : "max-w-2xl";
-
-  useDocumentScrollWheelForward(!usesWindowScroll);
+  const contentMaxWidth = isShopRoute
+    ? "max-w-[1440px]"
+    : isProfileRoute
+      ? "max-w-6xl"
+      : "max-w-2xl";
 
   return (
     <div
+      data-route-kind={isProfileRoute ? "profile" : isMessagesRoute ? "messages" : "standard"}
       className={cn(
         "voople-shell min-h-screen bg-background",
         isMessagesRoute && "h-dvh min-h-0 overflow-hidden",
-        isProfileRoute && "lg:h-dvh lg:min-h-0 lg:overflow-hidden",
+        "lg:h-dvh lg:min-h-0 lg:overflow-hidden",
       )}
     >
       <DesktopSidebar />
       <PlayerShell />
       <div
         className={cn(
-          "voople-shell__column flex min-h-screen min-w-0 flex-1 flex-col lg:ml-[260px]",
+          "voople-shell__column flex min-h-screen min-w-0 flex-1 flex-col lg:ml-[var(--voople-sidebar-width)] lg:p-2",
           isMessagesRoute && "h-full min-h-0",
-          isProfileRoute && "lg:h-full lg:min-h-0",
+          "lg:h-full lg:min-h-0",
         )}
       >
         <div
           className={cn(
-            "mx-auto flex w-full flex-1 justify-center gap-6 lg:gap-8",
+            "voople-shell__workspace mx-auto flex w-full flex-1 justify-center gap-6 lg:gap-8",
             isMessagesRoute && "min-h-0 h-full",
-            isProfileRoute && "min-h-0 lg:h-full lg:min-h-0",
+            "lg:h-full lg:min-h-0",
           )}
         >
           <div
@@ -108,9 +104,10 @@ export function MainShell({ children }: { children: React.ReactNode }) {
               "voople-shell__main flex min-w-0 flex-1 flex-col",
               contentMaxWidth,
               isMessagesRoute && "max-w-5xl",
+              "lg:min-h-0 lg:overflow-hidden",
               !usesWindowScroll && "min-h-0 flex-1",
               isMessagesRoute && "h-full min-h-0 overflow-hidden",
-              isProfileRoute && !usesWindowScroll && "lg:h-full lg:min-h-0 lg:overflow-hidden",
+              !usesWindowScroll && "h-full min-h-0 overflow-hidden",
             )}
           >
             {!hideMobileTopBar && <AppTopBar />}
@@ -124,6 +121,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
                 className={cn(
                   "voople-shell__scroll lg:pb-6",
                   isMobileMessagesThread ? "pb-0" : "pb-24",
+                  !isMessagesRoute && "lg:voople-scroll lg:min-h-0 lg:flex-1 lg:overflow-y-auto",
                   !usesWindowScroll &&
                     !isMessagesRoute &&
                     "voople-scroll min-h-0 flex-1 overflow-y-auto",
@@ -149,11 +147,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             {showFab && <CreatePostFab />}
             {!hideMobileBottomNav && <BottomNav />}
           </div>
-          {showLegalAside && <LegalAside />}
         </div>
-        {/* Mobile legal strip — hidden for now; re-enable when placement is decided
-        {showLegalAside && <LegalMobileStrip />}
-        */}
       </div>
     </div>
   );

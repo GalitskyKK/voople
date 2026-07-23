@@ -1,14 +1,18 @@
 import {
   assertOwnedUploadKey,
+  assertAllowedImageMime,
+  assertAllowedPostMediaMime,
   buildUploadKey,
   bucketForPurpose,
   createPresignedGetUrl,
   createPresignedPutUrl,
   extensionForMime,
+  extensionForPostMediaMime,
   getObjectStorageConfig,
   headObject,
   isPrivateChatMediaKey,
   mediaTypeForMime,
+  postMediaTypeForMime,
   parseChatUploadMime,
   publicAssetUrl,
   UPLOAD_LIMITS,
@@ -38,11 +42,15 @@ export async function createPresignedUpload(input: {
       ? extensionForAudioMime(input.contentType)
       : input.purpose === "chat"
         ? parseChatUploadMime(input.contentType).extension
-        : extensionForMime(input.contentType);
+        : input.purpose === "post"
+          ? extensionForPostMediaMime(input.contentType)
+          : extensionForMime(input.contentType);
   const mediaType =
     input.purpose === "track" || input.purpose === "chat"
       ? null
-      : mediaTypeForMime(input.contentType);
+      : input.purpose === "post"
+        ? postMediaTypeForMime(input.contentType)
+        : mediaTypeForMime(input.contentType);
   const key = buildUploadKey(input.purpose, input.userId, extension);
   const bucketKind = bucketForPurpose(input.purpose);
 
@@ -91,6 +99,10 @@ export async function resolvePublicMediaKey(
   if (meta.contentLength > limit.maxBytes) {
     throw new Error(`Файл больше ${Math.round(limit.maxBytes / (1024 * 1024))} МБ`);
   }
+
+  if (!meta.contentType) throw new Error("У файла отсутствует Content-Type");
+  if (purpose === "post") assertAllowedPostMediaMime(meta.contentType);
+  else if (purpose !== "track" && purpose !== "chat") assertAllowedImageMime(meta.contentType);
 
   return key;
 }

@@ -163,6 +163,9 @@ export async function fulfillSucceededPaymentIntent(intentId: string, externalId
   const intent = await getPaymentIntentRest(intentId);
   if (!intent) return;
   if (intent.status === "succeeded") return;
+  if (externalId && intent.external_id && intent.external_id !== externalId) {
+    throw new Error("Платёж не соответствует созданному намерению");
+  }
 
   const userId = intent.user_id;
   const metadata = intent.metadata ?? {};

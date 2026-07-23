@@ -1,4 +1,5 @@
 import { resolveCustomization, type CustomizationInput } from "@/lib/customization/resolve";
+import { DEFAULT_THEME } from "@/lib/constants/theme";
 import type { ProfileCustomizationView } from "@/types/domain";
 
 export type CustomizationRow = {
@@ -19,6 +20,8 @@ export type CustomizationRow = {
   app_theme_id?: string | null;
   nickname_color?: string | null;
   nickname_gradient?: boolean | null;
+  nickname_font?: string | null;
+  nickname_effect?: string | null;
   theme_primary?: string | null;
   theme_accent?: string | null;
 };
@@ -50,6 +53,8 @@ function rowToInput(row: CustomizationRow | null | undefined): CustomizationInpu
     animatedAvatarId: row.animated_avatar_id,
     nicknameColor: row.nickname_color,
     nicknameGradient: row.nickname_gradient,
+    nicknameFont: row.nickname_font,
+    nicknameEffect: row.nickname_effect,
     /** Загруженное фото — только если нет shop-ассета в `animated_avatar_id`. */
     animatedAvatarUrl:
       row.animated_avatar_id || !hasUploadedPhoto ? null : (avatarData?.url ?? null),
@@ -58,12 +63,30 @@ function rowToInput(row: CustomizationRow | null | undefined): CustomizationInpu
 
 export function toProfileCustomizationView(
   row: CustomizationRow | null | undefined,
+  options?: { hasActiveSubscription?: boolean },
 ): ProfileCustomizationView {
-  const resolved = resolveCustomization(rowToInput(row));
+  const raw = rowToInput(row);
+  // The server still cleans expired premium selections (see subscription-rest),
+  // but profile reads must be safe even before that maintenance pass happens.
+  // These fields are subscriber-only and therefore immediately fall back.
+  const input = options?.hasActiveSubscription === false
+    ? {
+        ...raw,
+        // Slate and Glass are free presets. They must not disappear merely
+        // because the account has no active subscription.
+        profileFrameId: raw.profileFrameId,
+        frameColor: null,
+        cardBaseMode: "mirror",
+        themePrimary: null,
+        themeAccent: null,
+        bannerValue: raw.bannerValue?.id ? raw.bannerValue : undefined,
+      }
+    : raw;
+  const resolved = resolveCustomization(input);
   return {
     ...resolved,
     bannerValue: {
-      color: resolved.themePrimary,
+      color: input.bannerValue?.color ?? DEFAULT_THEME.bannerColor,
       url: resolved.assets.bannerUrl ?? undefined,
     },
   };

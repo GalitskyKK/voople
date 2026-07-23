@@ -1,9 +1,11 @@
 "use client";
 
-import { useRef } from "react";
 import Image from "next/image";
-import { Loader2, Paperclip, X } from "lucide-react";
+import { CircleDot, Loader2, Paperclip, Video, X } from "lucide-react";
+import { useRef } from "react";
+import { useState } from "react";
 
+import { CircleRecorder } from "@/components/media/CircleRecorder";
 import { useMediaUpload, type UploadedMedia } from "@/hooks/useMediaUpload";
 import type { UploadPurpose } from "@/lib/object-storage/types";
 import { cn } from "@/lib/utils";
@@ -15,6 +17,8 @@ type MediaUploadControlProps = {
   className?: string;
   buttonClassName?: string;
   previewClassName?: string;
+  allowVideo?: boolean;
+  showCircleOption?: boolean;
 };
 
 export function MediaUploadControl({
@@ -24,51 +28,90 @@ export function MediaUploadControl({
   className,
   buttonClassName,
   previewClassName,
+  allowVideo = purpose === "post",
+  showCircleOption = false,
 }: MediaUploadControlProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
+  const circleInputRef = useRef<HTMLInputElement>(null);
+  const [recorderOpen, setRecorderOpen] = useState(false);
   const { uploaded, isUploading, error, uploadFile, reset } = useMediaUpload(purpose);
 
-  const handlePick = () => {
-    if (disabled || isUploading) return;
-    inputRef.current?.click();
-  };
-
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleFile = async (file: File | undefined, asCircle = false) => {
     if (!file) return;
-    const result = await uploadFile(file);
+    const result = await uploadFile(file, { asCircle });
     if (result) onChange(result);
   };
 
   const handleRemove = () => {
     reset();
     onChange(null);
-    if (inputRef.current) inputRef.current.value = "";
+    if (mediaInputRef.current) mediaInputRef.current.value = "";
+    if (circleInputRef.current) circleInputRef.current.value = "";
   };
+
+  const disabledNow = disabled || isUploading;
+  const mediaAccept = allowVideo
+    ? "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"
+    : "image/jpeg,image/png,image/webp,image/gif";
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          onClick={handlePick}
-          disabled={disabled || isUploading}
+          onClick={() => !disabledNow && mediaInputRef.current?.click()}
+          disabled={disabledNow}
           className={cn(
-            "rounded-lg p-2 text-[color-mix(in_srgb,var(--foreground)_40%,transparent)] hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_70%,transparent)] disabled:cursor-default disabled:opacity-50",
+            "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs text-[color-mix(in_srgb,var(--foreground)_52%,transparent)] transition-colors hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_78%,transparent)] disabled:cursor-default disabled:opacity-50",
             buttonClassName,
           )}
-          aria-label="Прикрепить изображение"
+          aria-label={allowVideo ? "Прикрепить фото или видео" : "Прикрепить изображение"}
         >
-          {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Paperclip className="h-5 w-5" />}
+          {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : allowVideo ? <Video className="h-4 w-4" /> : <Paperclip className="h-4 w-4" />}
+          {allowVideo ? "Фото или видео" : "Фото"}
         </button>
         <input
-          ref={inputRef}
+          ref={mediaInputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
+          accept={mediaAccept}
           className="hidden"
-          onChange={handleFileChange}
+          onChange={(event) => void handleFile(event.target.files?.[0])}
         />
-        {isUploading && <span className="text-xs text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">Загрузка…</span>}
+
+        {showCircleOption && allowVideo && (
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                if (disabledNow) return;
+                if (typeof MediaRecorder !== "undefined" && "mediaDevices" in navigator) {
+                  setRecorderOpen(true);
+                } else {
+                  circleInputRef.current?.click();
+                }
+              }}
+              disabled={disabledNow}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs text-[color-mix(in_srgb,var(--foreground)_52%,transparent)] transition-colors hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:text-[color-mix(in_srgb,var(--foreground)_78%,transparent)] disabled:cursor-default disabled:opacity-50"
+            >
+              <CircleDot className="h-4 w-4" />
+              Кружок
+            </button>
+            <input
+              ref={circleInputRef}
+              type="file"
+              accept="video/mp4,video/webm"
+              capture="user"
+              className="hidden"
+              onChange={(event) => void handleFile(event.target.files?.[0], true)}
+            />
+          </>
+        )}
+
+        {isUploading && (
+          <span className="text-xs text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">
+            Загрузка…
+          </span>
+        )}
       </div>
 
       {uploaded && (
@@ -77,8 +120,8 @@ export function MediaUploadControl({
           <button
             type="button"
             onClick={handleRemove}
-            disabled={disabled || isUploading}
-            className="absolute right-2 top-2 rounded-full bg-black/70 p-1 text-[var(--foreground)] hover:bg-black"
+            disabled={disabledNow}
+            className="absolute right-2 top-2 rounded-full bg-black/70 p-1 text-white hover:bg-black"
             aria-label="Убрать вложение"
           >
             <X className="h-4 w-4" />
@@ -87,27 +130,45 @@ export function MediaUploadControl({
       )}
 
       {error && <p className="text-xs text-red-400">{error}</p>}
+      <CircleRecorder
+        open={recorderOpen}
+        onClose={() => setRecorderOpen(false)}
+        onUse={(file) => {
+          setRecorderOpen(false);
+          void handleFile(file, true);
+        }}
+      />
     </div>
   );
 }
 
-function PostMediaPreview({
-  url,
-  mediaType,
-}: {
-  url: string;
-  mediaType: UploadedMedia["mediaType"];
-}) {
+function PostMediaPreview({ url, mediaType }: { url: string; mediaType: UploadedMedia["mediaType"] }) {
+  const isVideo = mediaType === "video" || mediaType === "circle";
   return (
-    <div className="relative max-h-40 overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-black/20">
-      <Image
-        src={url}
-        alt="Превью"
-        width={320}
-        height={160}
-        className="max-h-40 w-auto object-contain"
-        unoptimized={mediaType === "gif"}
-      />
+    <div
+      className={cn(
+        "relative max-h-48 overflow-hidden border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-black/30",
+        mediaType === "circle" ? "aspect-square w-40 rounded-full" : "rounded-xl",
+      )}
+    >
+      {isVideo ? (
+        <video
+          src={url}
+          className={cn("max-h-48 w-full object-cover", mediaType === "circle" && "h-full")}
+          controls
+          playsInline
+          preload="metadata"
+        />
+      ) : (
+        <Image
+          src={url}
+          alt="Превью"
+          width={320}
+          height={160}
+          className="max-h-48 w-auto object-contain"
+          unoptimized={mediaType === "gif"}
+        />
+      )}
     </div>
   );
 }

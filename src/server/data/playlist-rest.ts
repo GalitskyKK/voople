@@ -1,5 +1,6 @@
 import {
   buildUploadKey,
+  chatAudioKindFromKey,
   chatAttachmentKindFromKey,
   copyObject,
   publicAssetUrl,
@@ -281,6 +282,9 @@ export async function addTrackFromChatMessageRest(
   const mediaKey = message.media_url as string | null;
   if (!mediaKey || chatAttachmentKindFromKey(mediaKey) !== "audio") {
     throw new Error("В сообщении нет музыки для плейлиста");
+  }
+  if (chatAudioKindFromKey(mediaKey) === "voice" || message.media_title === "Голосовое сообщение") {
+    throw new Error("Голосовые сообщения нельзя добавлять в плейлист");
   }
 
   const extension = mediaKey.split(".").pop() ?? "mp3";

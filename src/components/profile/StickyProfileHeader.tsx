@@ -6,6 +6,7 @@ import type { CSSProperties } from "react";
 
 import { FeedAuthorChipBackdrop } from "@/components/feed/FeedAuthorChipBackdrop";
 import { cn } from "@/lib/utils";
+import { displayNamePresentation } from "@/lib/customization/display-name-style";
 import type { ProfileViewModel } from "@/types/domain";
 import { DisplayNameWithPin } from "./DisplayNameWithPin";
 import { ProfileAvatar } from "./ProfileAvatar";
@@ -32,10 +33,7 @@ export function StickyProfileHeader({
   const { displayName: nameStyle, flags, assets } = customization;
   const useFeedChip = flags.hasFeedCardStyle;
 
-  const useGradientName = nameStyle.gradient && flags.hasDisplayNameStyle;
-  const nicknameStyle = nameStyle.gradient
-    ? { backgroundImage: `linear-gradient(90deg, ${nameStyle.color ?? "#e5e5e5"}, #fff)` }
-    : { color: nameStyle.color ?? undefined };
+  const nickname = displayNamePresentation(nameStyle);
 
   const themeStyle = {
     "--theme-accent": customization.themeAccent,
@@ -63,10 +61,10 @@ export function StickyProfileHeader({
   if (useFeedChip) {
     return (
       <header
-        className="voople-profile-sticky fixed left-0 right-0 top-12 z-40 h-[52px] overflow-hidden border-b border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] lg:hidden"
+        className="voople-author-nameplate voople-profile-sticky fixed left-0 right-0 top-12 z-40 h-[52px] overflow-hidden border-b border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] lg:hidden"
         style={chipStyle}
       >
-        <FeedAuthorChipBackdrop customization={customization} />
+        <FeedAuthorChipBackdrop backgroundUrl={assets.feedCardBackgroundUrl} />
         <div className="relative z-10 flex h-full items-center gap-3 px-3">
           <Link href="/feed" className="shrink-0 text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]" aria-label="Назад">
             <ChevronLeft className="h-5 w-5" />
@@ -86,9 +84,9 @@ export function StickyProfileHeader({
               className="w-full"
               nameClassName={cn(
                 "text-sm font-semibold",
-                useGradientName ? "bg-clip-text text-transparent" : "text-[var(--foreground)]",
+                flags.hasDisplayNameStyle ? nickname.className : "text-[var(--foreground)]",
               )}
-              style={useGradientName ? nicknameStyle : undefined}
+              style={flags.hasDisplayNameStyle ? nickname.style : undefined}
             >
               {displayName}
             </DisplayNameWithPin>
@@ -124,9 +122,9 @@ export function StickyProfileHeader({
           className="w-full"
           nameClassName={cn(
             "text-sm font-medium",
-            useGradientName ? "bg-clip-text text-transparent" : "text-[var(--foreground)]",
+            flags.hasDisplayNameStyle ? nickname.className : "text-[var(--foreground)]",
           )}
-          style={useGradientName ? nicknameStyle : undefined}
+          style={flags.hasDisplayNameStyle ? nickname.style : undefined}
         >
           {displayName}
         </DisplayNameWithPin>

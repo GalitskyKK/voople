@@ -3,10 +3,10 @@ import { z } from "zod"
 
 import { getTrendingHashtags, searchExplore } from "@/server/services/search.service"
 
-import { createTRPCRouter, publicProcedure } from "../init"
+import { createTRPCRouter, optionalAuthProcedure, publicProcedure } from "../init"
 
 export const searchRouter = createTRPCRouter({
-  explore: publicProcedure
+  explore: optionalAuthProcedure
     .input(z.object({ q: z.string().max(50) }))
     .query(async ({ ctx, input }) => {
       try {

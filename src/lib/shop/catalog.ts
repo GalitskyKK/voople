@@ -14,7 +14,8 @@ export type ShopItemKind =
   | "animated_avatar"
   | "app_theme"
   | "nickname_style"
-  | "profile_background";
+  | "profile_background"
+  | "profile_frame";
 
 export type ShopEquipSlot =
   | "profile_effect_id"
@@ -25,7 +26,8 @@ export type ShopEquipSlot =
   | "animated_avatar_id"
   | "app_theme_id"
   | "nickname_style"
-  | "profile_background_id";
+  | "profile_background_id"
+  | "profile_frame_id";
 
 export type ShopCatalogItem = {
   id: string;
@@ -374,6 +376,8 @@ export function shopItemDbType(kind: ShopItemKind): string {
       return "effect";
     case "nickname_style":
       return "nameplate";
+    case "profile_frame":
+      return "effect";
     default:
       return kind;
   }

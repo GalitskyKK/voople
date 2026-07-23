@@ -10,9 +10,12 @@ import { cn } from "@/lib/utils";
 import type { PostViewModel } from "@/types/domain";
 import { PostMedia } from "@/components/media/PostMedia";
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
+import { ProfileAppearanceCard } from "@/components/profile/ProfileAppearanceCard";
+import { ProfileReactions } from "@/components/profile/ProfileReactions";
 import { PostAuthorRow } from "./PostAuthorRow";
 import { PostComments } from "./PostComments";
 import { PostLikeButton } from "./PostLikeButton";
+import { PostShareButton } from "./PostShareButton";
 import { PostViewCounter } from "./PostViewCounter";
 import { StatusPostBody } from "./StatusPostBody";
 
@@ -28,6 +31,7 @@ type PostCardProps = {
 function RepostPreview({ post, depth = 0 }: { post: PostViewModel; depth?: number }) {
   const isStatus = post.kind === "status" && post.status;
   const hasNestedRepost = Boolean(post.repost?.target);
+  const appearanceCustomization = post.appearance?.customization ?? post.author.customization;
 
   return (
     <div className="voople-panel--inset p-3">
@@ -50,6 +54,9 @@ function RepostPreview({ post, depth = 0 }: { post: PostViewModel; depth?: numbe
       {post.mediaUrl && (
         <PostMedia url={post.mediaUrl} mediaType={post.mediaType} className="mt-3" />
       )}
+      {post.kind === "appearance" && post.appearance && appearanceCustomization ? (
+        <ProfileAppearanceCard profile={{ id: post.author.id, username: post.author.username, displayName: post.author.displayName, customization: appearanceCustomization, status: post.appearance.status ?? {}, badgeIds: post.appearance.badgeIds }} scene={post.appearance.scene} variant="feed" className="mt-3" />
+      ) : null}
       {isStatus && (
         <StatusPostBody
           status={post.status!}
@@ -76,6 +83,7 @@ export function PostCard({
   commentsAlwaysOpen = false,
 }: PostCardProps) {
   const c = post.author.customization;
+  const appearanceCustomization = post.appearance?.customization ?? c;
   const isStatus = post.kind === "status" && post.status;
   const chipHeader = Boolean(c?.flags.hasFeedCardStyle);
   const utils = trpc.useUtils();
@@ -172,6 +180,17 @@ export function PostCard({
           {post.mediaUrl && (
             <PostMedia url={post.mediaUrl} mediaType={post.mediaType} className="mt-3" />
           )}
+          {post.kind === "appearance" && post.appearance && appearanceCustomization ? (
+            <div className="mt-3 w-full space-y-2.5">
+              <ProfileAppearanceCard profile={{ id: post.author.id, username: post.author.username, displayName: post.author.displayName, customization: appearanceCustomization, status: post.appearance.status ?? {}, badgeIds: post.appearance.badgeIds }} scene={post.appearance.scene} variant="feed" />
+              {post.author.id ? (
+                <ProfileReactions
+                  profileUserId={post.author.id}
+                  canReact={Boolean(viewerId && viewerId !== post.author.id)}
+                />
+              ) : null}
+            </div>
+          ) : null}
           {isStatus && (
             <StatusPostBody
               status={post.status!}
@@ -197,7 +216,7 @@ export function PostCard({
               ))}
             </div>
           )}
-          <footer className="voople-post-card__actions mt-4 flex items-center gap-5 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] pt-3 text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">
+          <footer className="voople-post-card__actions mt-4 flex items-center justify-between gap-1 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] pt-3 text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">
             <PostViewCounter
               key={`${post.id}:${post.viewCount}`}
               postId={post.id}
@@ -211,7 +230,7 @@ export function PostCard({
               canLike={canLike}
               profileUsername={profileUsername}
             />
-            <span className="inline-flex items-center gap-1.5">
+            <span className="voople-post-action inline-flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => {
@@ -219,7 +238,7 @@ export function PostCard({
                   setCommentsOpen((open) => !open);
                 }}
                 className={cn(
-                  "inline-flex items-center hover:text-[var(--foreground)]",
+                  "inline-flex items-center",
                   (commentsOpen || commentsAlwaysOpen) && "text-[var(--foreground)]",
                 )}
                 aria-expanded={commentsOpen || commentsAlwaysOpen}
@@ -239,7 +258,7 @@ export function PostCard({
               disabled={!viewerId || plainRepost.isPending || quoteRepost.isPending}
               onClick={() => setRepostPanelOpen((open) => !open)}
               className={cn(
-                "inline-flex items-center gap-1.5 hover:text-[var(--foreground)] disabled:cursor-default disabled:opacity-50",
+                "voople-post-action inline-flex items-center gap-1.5 disabled:cursor-default disabled:opacity-50",
                 viewerReposted && "text-[var(--foreground)]",
               )}
               aria-pressed={viewerReposted}
@@ -253,6 +272,11 @@ export function PostCard({
                 {repostCount}
               </span>
             </button>
+            <PostShareButton
+              postId={post.id}
+              authorName={post.author.displayName}
+              text={displayText || displayRepostComment}
+            />
           </footer>
           {repostPanelOpen && (
             <div className="voople-panel--inset mt-3 p-3">

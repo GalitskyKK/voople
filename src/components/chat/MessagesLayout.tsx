@@ -6,6 +6,8 @@ import { SectionPageHeader } from "@/components/layout/SectionPageHeader";
 import { COPY } from "@/lib/constants/copy";
 import { activeMessagesChatId } from "@/lib/layout/messages-path";
 import { cn } from "@/lib/utils";
+import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
+import { trpc } from "@/lib/trpc/client";
 
 import { ChatList } from "./ChatList";
 
@@ -13,13 +15,17 @@ export function MessagesLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const chatId = activeMessagesChatId(pathname);
   const isThread = Boolean(chatId);
+  const { preferences } = useAppPreferences();
+  const subscription = trpc.shop.subscriptionStatus.useQuery(undefined, { retry: false, staleTime: 60_000 });
+  const wallpaper = preferences.chatWallpaper === "aurora" && !subscription.data?.active
+    ? "doodles"
+    : preferences.chatWallpaper;
 
   return (
-    <div className="voople-messages-layout flex min-h-0 flex-1 flex-col">
+    <div className="voople-messages-layout flex min-h-0 flex-1 flex-col" data-chat-wallpaper={wallpaper}>
       <div
         className={cn(
           "flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row",
-          "lg:rounded-[var(--app-radius-xl)] lg:border lg:border-[var(--app-border)] lg:bg-[var(--app-surface-soft)]",
         )}
       >
         <aside

@@ -5,6 +5,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { usePlaylistUiStore } from "@/stores/playlist-ui.store";
 import type { ProfileStatus } from "@/types/domain";
+import type { UploadedMedia } from "@/hooks/useMediaUpload";
+import { MediaUploadControl } from "@/components/media/MediaUploadControl";
+import { PostComposer } from "@/components/feed/PostComposer";
+import { Button } from "@/components/ui/Button";
+import { Sheet } from "@/components/ui/Sheet";
 import { ProfileStatusBlock } from "./ProfileStatusBlock";
 import { PublishStatusBanner } from "./PublishStatusBanner";
 
@@ -31,6 +36,10 @@ export function ProfileStatusSection({
 }: ProfileStatusSectionProps) {
   const [feedPublished, setFeedPublished] = useState<ProfileStatus>(initialStatus);
   const [draft, setDraft] = useState<ProfileStatus>(initialStatus);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [postText, setPostText] = useState("");
+  const [media, setMedia] = useState<UploadedMedia | null>(null);
+  const [uploadResetKey, setUploadResetKey] = useState(0);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const utils = trpc.useUtils();
   const openPlaylist = usePlaylistUiStore((s) => s.openPlaylist);
@@ -76,6 +85,10 @@ export function ProfileStatusSection({
   const publishMutation = trpc.status.publishToFeed.useMutation({
     onSuccess: (post) => {
       setFeedPublished(draft);
+      setPostText("");
+      setMedia(null);
+      setUploadResetKey((key) => key + 1);
+      setComposerOpen(false);
       utils.profile.getPostsByUsername.setData({ username }, (prev) =>
         prev ? [post, ...prev] : [post],
       );
@@ -123,12 +136,25 @@ export function ProfileStatusSection({
     });
   }, [draft, publishMutation]);
 
+  const handleExpandedPublish = useCallback(() => {
+    publishMutation.mutate({
+      moodValue: draft.moodValue ?? null,
+      thought: draft.thought ?? null,
+      trackId: draft.trackId ?? null,
+      trackTitle: draft.trackTitle ?? null,
+      trackArtist: draft.trackArtist ?? null,
+      text: postText.trim() || undefined,
+      mediaKey: media?.mediaKey,
+      mediaType: media?.mediaType,
+    });
+  }, [draft, media, postText, publishMutation]);
+
   const statusForDisplay = useMemo(
     () => (isOwner ? draft : initialStatus),
     [draft, initialStatus, isOwner],
   );
 
-  const busy = saveMutation.isPending || publishMutation.isPending;
+  const busy = publishMutation.isPending;
 
   const handleMusicClick = useCallback(() => {
     openPlaylist(username, draft.trackId ?? liveProfile?.status?.trackId ?? null);
@@ -144,6 +170,7 @@ export function ProfileStatusSection({
         onMoodChange={(moodValue) => updateDraft({ moodValue })}
         onThoughtChange={(thought) => updateDraft({ thought })}
         onMusicClick={handleMusicClick}
+        onExpand={isOwner ? () => setComposerOpen(true) : undefined}
       />
       {isOwner && (
         <PublishStatusBanner
@@ -154,6 +181,65 @@ export function ProfileStatusSection({
       )}
       {publishMutation.error && (
         <p className="text-xs text-red-400">{publishMutation.error.message}</p>
+      )}
+      {isOwner && (
+        <Sheet open={composerOpen} onClose={() => setComposerOpen(false)} className="max-w-xl">
+          <div className="pe-10">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--theme-accent)]">
+              Mood Post
+            </p>
+            <h2 className="mt-1 text-xl font-semibold">Сохранить этот момент</h2>
+            <p className="mt-1 text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">
+              Состояние уже взято из карточки. Добавьте контекст или медиа — только если хочется.
+            </p>
+          </div>
+
+          <div className="mt-5">
+            <p className="mb-2 text-xs font-medium text-[color-mix(in_srgb,var(--foreground)_48%,transparent)]">
+              Сам муд
+            </p>
+            <ProfileStatusBlock
+              status={draft}
+              editable={!publishMutation.isPending}
+              showEmptyFields
+              showMusicForOwner
+              onMoodChange={(moodValue) => updateDraft({ moodValue })}
+              onThoughtChange={(thought) => updateDraft({ thought })}
+              onMusicClick={handleMusicClick}
+            />
+          </div>
+
+          <div className="mt-4">
+            <p className="mb-2 text-xs font-medium text-[color-mix(in_srgb,var(--foreground)_48%,transparent)]">
+              Если хочется рассказать больше
+            </p>
+            <PostComposer
+              value={postText}
+              onChange={setPostText}
+              disabled={publishMutation.isPending}
+              placeholder="Что стоит запомнить об этом моменте?"
+            />
+            <MediaUploadControl
+              key={uploadResetKey}
+              purpose="post"
+              onChange={setMedia}
+              disabled={publishMutation.isPending}
+              allowVideo
+              showCircleOption
+              className="mt-2"
+            />
+          </div>
+
+          <Button
+            type="button"
+            variant="primary"
+            className="mt-4 w-full"
+            disabled={publishMutation.isPending}
+            onClick={handleExpandedPublish}
+          >
+            {publishMutation.isPending ? "Публикуем…" : "Опубликовать муд"}
+          </Button>
+        </Sheet>
       )}
     </div>
   );

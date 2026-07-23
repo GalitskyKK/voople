@@ -13,6 +13,7 @@ import { usePlayerStore } from "@/stores/player.store";
 import { usePlaylistUiStore } from "@/stores/playlist-ui.store";
 import type { PlaylistTrackView } from "@/types/playlist";
 import { TrackUploadConfirm, type PendingTrackUpload } from "./TrackUploadConfirm";
+import { PlayerTrackArtwork } from "./PlayerTrackArtwork";
 
 function TrackMeta({
   track,
@@ -79,7 +80,7 @@ export function PlaylistModal() {
   const play = usePlayerStore((s) => s.play);
   const togglePlay = usePlayerStore((s) => s.togglePlay);
 
-  const tracks = playlistQuery.data?.tracks ?? [];
+  const tracks = useMemo(() => playlistQuery.data?.tracks ?? [], [playlistQuery.data?.tracks]);
   const anthemTrackId = playlistQuery.data?.anthemTrackId ?? null;
 
   const orderedTracks = useMemo(() => {
@@ -261,27 +262,28 @@ export function PlaylistModal() {
                   <button
                     type="button"
                     onClick={() => handlePlay(track)}
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--theme-accent)] text-[var(--foreground)]"
+                    className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl text-white"
                     aria-label={playing ? "Пауза" : "Воспроизвести"}
                   >
-                    {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 translate-x-0.5" />}
+                    <PlayerTrackArtwork track={track} className="absolute inset-0 h-full w-full rounded-xl" />
+                    <span className="absolute inset-0 bg-black/24" />
+                    {playing ? <Pause className="relative h-4 w-4" /> : <Play className="relative h-4 w-4 translate-x-0.5 fill-current" />}
                   </button>
                   <button
                     type="button"
                     onClick={() => handlePlay(track)}
                     className="min-w-0 flex-1 text-left"
                   >
-                    <p className="truncate text-sm font-medium text-[var(--foreground)]">
-                      {track.artist} – {track.title}
-                    </p>
-                    <TrackMeta
-                      track={track}
-                      currentTime={currentTime}
-                      duration={duration}
-                      isActive={active}
-                      isPlaying={playing}
-                    />
+                    <p className="truncate text-sm font-medium text-[var(--foreground)]">{track.title}</p>
+                    <p className="truncate text-xs text-[var(--app-muted)]">{track.artist}</p>
                   </button>
+                  <TrackMeta
+                    track={track}
+                    currentTime={currentTime}
+                    duration={duration}
+                    isActive={active}
+                    isPlaying={playing}
+                  />
                   {isOwner && (
                     <div className="flex shrink-0 items-center gap-1">
                       {track.id !== anthemTrackId && (

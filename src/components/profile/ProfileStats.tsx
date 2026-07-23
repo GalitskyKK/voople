@@ -23,7 +23,7 @@ export function ProfileStats({ posts, followers, following, views, className }: 
   return (
     <div
       className={cn(
-        "voople-profile-stats grid grid-cols-4 gap-1 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]",
+        "voople-profile-stats flex items-center justify-between gap-2 border-t border-[color-mix(in_srgb,var(--foreground)_7%,transparent)] pt-2 text-[color-mix(in_srgb,var(--foreground)_62%,transparent)]",
         className,
       )}
       aria-label="Статистика профиля"
@@ -31,11 +31,11 @@ export function ProfileStats({ posts, followers, following, views, className }: 
       {ITEMS.map(({ key, Icon, label }) => (
         <div
           key={key}
-          className="flex min-w-0 flex-col items-center gap-0.5 rounded-lg px-1 py-1 text-center"
+          className="flex min-w-0 items-center gap-1"
           title={`${values[key]} ${label.toLowerCase()}`}
         >
-          <Icon className="h-4 w-4 shrink-0 text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]" aria-hidden />
-          <span className="w-full truncate text-sm font-semibold tabular-nums text-[var(--foreground)]">
+          <Icon className="h-3.5 w-3.5 shrink-0 text-[color-mix(in_srgb,var(--foreground)_42%,transparent)]" aria-hidden />
+          <span className="truncate text-xs font-medium tabular-nums text-[color-mix(in_srgb,var(--foreground)_78%,transparent)]">
             {formatStat(values[key])}
           </span>
           <span className="sr-only">{label}</span>

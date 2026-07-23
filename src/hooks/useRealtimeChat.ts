@@ -89,6 +89,23 @@ export function useRealtimeChat(chatId: string, viewerId: string | null | undefi
           });
         },
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "message_reactions",
+          filter: `chat_id=eq.${chatId}`,
+        },
+        () => {
+          setRealtimeState({
+            key: subscriptionKey,
+            status: "subscribed",
+            lastEventAt: new Date().toISOString(),
+          });
+          void utils.chat.getMessages.invalidate({ chatId });
+        },
+      )
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
           window.clearTimeout(subscribeTimeout);

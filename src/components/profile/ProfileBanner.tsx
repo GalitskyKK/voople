@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { DEFAULT_THEME } from "@/lib/constants/theme";
 import { cn } from "@/lib/utils";
 import type { ProfileCustomizationView } from "@/types/domain";
@@ -18,13 +20,21 @@ export function ProfileBanner({ customization, className }: ProfileBannerProps) 
         "relative aspect-[8/3] w-full shrink-0 overflow-hidden bg-[color:var(--banner-fallback)]",
         className,
       )}
-      style={{ "--banner-fallback": color } as React.CSSProperties}
+      style={{
+        "--banner-fallback": color,
+        background: url
+          ? undefined
+          : `radial-gradient(circle at 78% 15%, color-mix(in srgb, ${color} 48%, #8b7ec8) 0%, transparent 34%), linear-gradient(135deg, ${color}, color-mix(in srgb, ${color} 55%, #090a12))`,
+      } as React.CSSProperties}
     >
       {url ? (
-        <img
+        <Image
           src={url}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover object-center"
+          fill
+          unoptimized
+          sizes="(max-width: 768px) 100vw, 672px"
+          className="object-cover object-center"
           draggable={false}
         />
       ) : null}

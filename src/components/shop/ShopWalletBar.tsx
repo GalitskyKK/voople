@@ -8,9 +8,25 @@ import type { WalletView } from "@/types/shop";
 type ShopWalletBarProps = {
   wallet: WalletView;
   className?: string;
+  compact?: boolean;
 };
 
-export function ShopWalletBar({ wallet, className }: ShopWalletBarProps) {
+export function ShopWalletBar({ wallet, className, compact = false }: ShopWalletBarProps) {
+  if (compact) {
+    return (
+      <div
+        className={cn(
+          "inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 text-sm font-semibold",
+          className,
+        )}
+        title="Баланс voops"
+      >
+        <Coins className="h-4 w-4 text-amber-300" aria-hidden />
+        {wallet.balanceCoins.toLocaleString("ru-RU")}
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(

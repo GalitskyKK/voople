@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import { readStoredVolume, writeStoredVolume } from "@/lib/player/volume-storage";
+import { writeStoredVolume } from "@/lib/player/volume-storage";
 import type { PlaylistTrackView } from "@/types/playlist";
 
 export type PlayerTrack = PlaylistTrackView;
@@ -108,11 +108,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   prev: () => {
-    const { queue, queueIndex, currentTime } = get();
-    if (currentTime > 3) {
-      set({ currentTime: 0 });
-      return;
-    }
+    const { queue, queueIndex } = get();
     if (queue.length < 2) return;
     const prevIndex = (queueIndex - 1 + queue.length) % queue.length;
     const track = queue[prevIndex];

@@ -34,8 +34,8 @@ export async function updateAdminShopItem(
   return updateAdminShopItemRest(itemId, input);
 }
 
-export async function deleteAdminShopItem(itemId: string): Promise<void> {
-  return deleteAdminShopItemRest(itemId);
+export async function deleteAdminShopItem(itemId: string, options?: { confirmInventoryRemoval?: boolean }): Promise<void> {
+  return deleteAdminShopItemRest(itemId, options);
 }
 
 export async function createCustomizationAssetUpload(input: {

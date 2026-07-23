@@ -20,7 +20,8 @@
 # production
 /build
 
-/drizzle
+/drizzle/*
+!/drizzle/23-message-reactions.sql
 
 # misc
 .DS_Store

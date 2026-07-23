@@ -9,6 +9,8 @@ import {
   UPLOAD_LIMITS,
 } from "@/lib/object-storage";
 import { formatStorageError } from "@/lib/object-storage/errors";
+import { rateLimits } from "@/lib/ratelimit";
+import { checkRateLimit } from "@/lib/ratelimit-guard";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -25,8 +27,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
     }
 
+    if (!(await checkRateLimit(rateLimits.uploadChat, `chat-upload:${user.id}`))) {
+      return NextResponse.json({ error: "Слишком много загрузок" }, { status: 429 });
+    }
+
     const formData = await request.formData();
     const file = formData.get("file");
+    const purpose = formData.get("purpose");
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "Файл не передан" }, { status: 400 });
     }
@@ -56,14 +63,21 @@ export async function POST(request: Request) {
 
     // Не доверяем заявленному Content-Type: сверяем магические байты.
     const sniffed = sniffUploadKind(body);
-    if (sniffed !== parsed.kind) {
+    const isContainerMatch = sniffed === "container" && (parsed.kind === "audio" || parsed.kind === "circle");
+    if (sniffed !== parsed.kind && !isContainerMatch) {
       return NextResponse.json(
         { error: "Содержимое файла не соответствует его типу" },
         { status: 400 },
       );
     }
 
-    const key = buildUploadKey("chat", user.id, parsed.extension);
+    const baseKey = buildUploadKey("chat", user.id, parsed.extension);
+    const isVoice = purpose === "voice" && parsed.kind === "audio";
+    const key = parsed.kind === "circle"
+      ? baseKey.replace(/\.([a-z0-9]+)$/i, ".circle.$1")
+      : isVoice
+        ? baseKey.replace(/\.([a-z0-9]+)$/i, ".voice.$1")
+        : baseKey;
 
     await putObject({
       key,

@@ -3,7 +3,7 @@ import { MERCHANT } from "@/lib/constants/legal";
 export const SITE_NAME = MERCHANT.serviceName;
 
 export const SITE_DESCRIPTION =
-  "Социальная сеть с живыми профилями, лентой публикаций, сообщениями и магазином цифровой кастомизации.";
+  "Voople — mood-first социальная сеть: делитесь настроением, музыкой, мыслями и кружками, реагируйте на друзей и собирайте живой профиль.";
 
 export const SITE_KEYWORDS = [
   "Voople",
@@ -11,6 +11,10 @@ export const SITE_KEYWORDS = [
   "профиль",
   "лента",
   "кастомизация профиля",
+  "настроение",
+  "mood",
+  "кружки",
+  "музыка в профиле",
 ] as const;
 
 /** Публичный origin для canonical, Open Graph и sitemap. */
@@ -32,10 +36,10 @@ export const SITE_ICONS = {
 };
 
 export const SITE_OG_IMAGE = {
-  url: `${FAVICON_BASE}/android-chrome-512x512.png`,
-  width: 512,
-  height: 512,
-  alt: SITE_NAME,
+  url: "/api/og?title=Voople&subtitle=%D0%A2%D0%B2%D0%BE%D0%B9%20%D0%BC%D1%83%D0%B4.%20%D0%A2%D0%B2%D0%BE%D0%B9%20%D0%BF%D1%80%D0%BE%D1%84%D0%B8%D0%BB%D1%8C.%20%D0%A2%D0%B2%D0%BE%D0%B8%20%D0%BB%D1%8E%D0%B4%D0%B8.",
+  width: 1200,
+  height: 630,
+  alt: "Voople — mood-first социальная сеть",
 } as const;
 
 export const PUBLIC_SITEMAP_PATHS = [

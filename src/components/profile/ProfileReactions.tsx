@@ -49,24 +49,33 @@ export function ProfileReactions({ profileUserId, canReact }: ProfileReactionsPr
   }, [profileUserId, utils]);
 
   return (
-    <div className="flex gap-2 text-lg">
-      {reactions.map(({ emoji, count, reactedByViewer }) => (
-        <button
-          key={emoji}
-          type="button"
-          disabled={!canReact || toggle.isPending}
-          onClick={() => toggle.mutate({ profileUserId, emoji })}
-          className={cn(
-            "rounded-lg bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-2 py-1 hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] disabled:cursor-default disabled:opacity-60",
-            reactedByViewer && "bg-[color-mix(in_srgb,var(--foreground)_15%,transparent)] text-[var(--foreground)]",
-          )}
-          aria-pressed={reactedByViewer}
-          aria-label={`Реакция ${emoji}`}
-        >
-          <span aria-hidden>{emoji}</span>
-          <span className="ml-1 text-xs tabular-nums text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">{count}</span>
-        </button>
-      ))}
+    <div className="flex min-h-7 items-center justify-between gap-2">
+      <p className="min-w-0 text-[11px] text-[color-mix(in_srgb,var(--foreground)_42%,transparent)]">
+        {canReact ? "Оставить реакцию" : "Реакции профиля"}
+      </p>
+      <div className="flex shrink-0 gap-1 text-sm">
+        {reactions.map(({ emoji, count, reactedByViewer }) => (
+          <button
+            key={emoji}
+            type="button"
+            disabled={!canReact || toggle.isPending}
+            onClick={() => toggle.mutate({ profileUserId, emoji })}
+            className={cn(
+              "flex h-7 items-center rounded-full bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] px-2 transition-[background-color,transform] hover:scale-[1.03] hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] active:scale-95 disabled:cursor-default disabled:opacity-60",
+              reactedByViewer && "bg-[color-mix(in_srgb,var(--theme-accent)_13%,var(--app-surface))] text-[var(--foreground)]",
+            )}
+            aria-pressed={reactedByViewer}
+            aria-label={`Реакция ${emoji}`}
+          >
+            <span aria-hidden>{emoji}</span>
+            {count > 0 && (
+              <span className="ml-1 text-[11px] tabular-nums text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">
+                {count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

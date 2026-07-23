@@ -18,7 +18,7 @@ import {
 
 export const avatarTypeEnum = pgEnum("avatar_type", ["constructor", "photo"]);
 export const bannerTypeEnum = pgEnum("banner_type", ["color", "pattern", "animated"]);
-export const postMediaTypeEnum = pgEnum("post_media_type", ["image", "gif", "meme"]);
+export const postMediaTypeEnum = pgEnum("post_media_type", ["image", "gif", "meme", "video", "circle"]);
 export const itemTypeEnum = pgEnum("item_type", [
   "effect",
   "ring",
@@ -89,6 +89,8 @@ export const profileCustomization = pgTable("profile_customization", {
   nameplateId: varchar("nameplate_id", { length: 100 }),
   nicknameColor: varchar("nickname_color", { length: 20 }),
   nicknameGradient: boolean("nickname_gradient").default(false),
+  nicknameFont: varchar("nickname_font", { length: 20 }).notNull().default("sans"),
+  nicknameEffect: varchar("nickname_effect", { length: 20 }).notNull().default("plain"),
   themePrimary: varchar("theme_primary", { length: 7 }).default("#0A0A0F"),
   themeAccent: varchar("theme_accent", { length: 7 }).default("#7B3AED"),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -452,6 +454,28 @@ export const messages = pgTable(
     chatIdx: index("messages_chat_idx").on(t.chatId),
     createdAtIdx: index("messages_time_idx").on(t.createdAt),
     chatTimeIdx: index("messages_chat_time_idx").on(t.chatId, t.createdAt),
+  }),
+);
+
+export const messageReactions = pgTable(
+  "message_reactions",
+  {
+    messageId: uuid("message_id")
+      .notNull()
+      .references(() => messages.id, { onDelete: "cascade" }),
+    chatId: uuid("chat_id")
+      .notNull()
+      .references(() => chats.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    emoji: varchar("emoji", { length: 10 }).notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.messageId, t.userId, t.emoji] }),
+    chatIdx: index("message_reactions_chat_idx").on(t.chatId),
+    messageIdx: index("message_reactions_message_idx").on(t.messageId),
   }),
 );
 

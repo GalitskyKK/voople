@@ -2,6 +2,8 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { getPostSelect } from "@/server/data/post-hydration";
 import { mapPostRow, mapUserToAuthor, type PostRow, type UserRow } from "@/server/mappers/profile";
 import { setPostHashtags } from "@/server/services/hashtags.service";
+import { resolvePublicMediaKey } from "@/server/services/upload.service";
+import type { PostMediaType } from "@/lib/object-storage/types";
 import type { PostViewModel, ProfileStatus } from "@/types/domain";
 
 export type StatusInput = {
@@ -10,6 +12,12 @@ export type StatusInput = {
   trackId?: string | null;
   trackTitle?: string | null;
   trackArtist?: string | null;
+};
+
+export type StatusPublishInput = StatusInput & {
+  text?: string;
+  mediaKey?: string;
+  mediaType?: PostMediaType;
 };
 
 function toSnapshot(input: StatusInput) {
@@ -58,15 +66,22 @@ export async function saveUserStatusRest(userId: string, input: StatusInput) {
 
 export async function publishStatusToFeedRest(
   userId: string,
-  input: StatusInput,
+  input: StatusPublishInput,
 ): Promise<PostViewModel> {
   const snapshot = toSnapshot(input);
+  const text = input.text?.trim() ?? "";
+  const mediaKey = input.mediaKey
+    ? await resolvePublicMediaKey(input.mediaKey, userId, "post")
+    : null;
+  if (mediaKey && !input.mediaType) throw new Error("Укажите тип медиа");
   const hasContent =
     snapshot.moodValue != null ||
     Boolean(snapshot.thought) ||
     Boolean(snapshot.trackId) ||
     Boolean(snapshot.trackTitle) ||
-    Boolean(snapshot.trackArtist);
+    Boolean(snapshot.trackArtist) ||
+    Boolean(text) ||
+    Boolean(mediaKey);
 
   if (!hasContent) {
     throw new Error("Заполните хотя бы одно поле состояния");
@@ -87,13 +102,22 @@ export async function publishStatusToFeedRest(
 
   const { data: post, error: postErr } = await admin
     .from("posts")
-    .insert({ author_id: userId, state_snapshot: snapshot })
+    .insert({
+      author_id: userId,
+      text: text || null,
+      state_snapshot: snapshot,
+      media_url: mediaKey,
+      media_type: mediaKey ? input.mediaType : null,
+    })
     .select(getPostSelect())
     .single();
 
   if (postErr) throw new Error(postErr.message);
   const postRow = post as unknown as PostRow;
-  const tags = await setPostHashtags(postRow.id, snapshot.thought ?? "");
+  const tags = await setPostHashtags(
+    postRow.id,
+    [snapshot.thought, text].filter(Boolean).join(" "),
+  );
 
   const { data: user, error: userErr } = await admin
     .from("users")

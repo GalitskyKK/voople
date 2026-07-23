@@ -18,6 +18,12 @@ const statusSchema = z.object({
   trackArtist: z.string().max(100).nullable().optional(),
 });
 
+const statusPublishSchema = statusSchema.extend({
+  text: z.string().max(280, "Максимум 280 символов").optional(),
+  mediaKey: z.string().min(1).max(500).optional(),
+  mediaType: z.enum(["image", "gif", "meme", "video", "circle"]).optional(),
+});
+
 export const statusRouter = createTRPCRouter({
   save: protectedProcedure.input(statusSchema).mutation(async ({ ctx, input }) => {
     await assertRateLimit(rateLimits.updateStatus, ctx.user.id);
@@ -32,7 +38,7 @@ export const statusRouter = createTRPCRouter({
   }),
 
   publishToFeed: protectedProcedure
-    .input(statusSchema)
+    .input(statusPublishSchema)
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.updateStatus, ctx.user.id);
       try {

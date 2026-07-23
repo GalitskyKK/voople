@@ -8,12 +8,13 @@ import { MAIN_NAV_ITEMS, SIDEBAR_FOOTER_ITEMS } from "@/lib/constants/nav";
 import { cn } from "@/lib/utils";
 import { GlobalPlayer } from "@/components/player/GlobalPlayer";
 import { NotificationNavBadge } from "@/components/notifications/NotificationNavBadge";
+import { SidebarHighlights } from "@/components/layout/SidebarHighlights";
 
 export function DesktopSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="voople-sidebar fixed left-0 top-0 hidden h-full w-[260px] shrink-0 flex-col lg:flex">
+    <aside className="voople-sidebar fixed left-0 top-0 hidden h-full w-[var(--voople-sidebar-width)] shrink-0 flex-col lg:flex">
       <div className="voople-sidebar__brand shrink-0 px-5 pb-7 pt-7">
         <Link
           href="/feed"
@@ -58,6 +59,7 @@ export function DesktopSidebar() {
         })}
       </nav>
 
+      <SidebarHighlights />
       <GlobalPlayer variant="desktop" />
 
       <div className="voople-sidebar__footer shrink-0 border-t border-[var(--app-border)] px-3 pb-7 pt-5">

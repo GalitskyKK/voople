@@ -24,10 +24,14 @@ export function createProfileMetadata(input: {
   bio?: string | null;
   ask?: boolean;
 }): Metadata {
-  const title = input.ask ? `Спроси ${input.displayName} анонимно` : input.displayName;
+  const title = input.ask
+    ? `Спроси ${input.displayName} анонимно`
+    : `${input.displayName} (@${input.username})`;
   const description = input.ask
     ? `Задай ${input.displayName} (@${input.username}) анонимный вопрос в Voople`
-    : (input.bio?.trim() || `Профиль @${input.username} в Voople`);
+    : input.bio?.trim()
+      ? `${input.bio.trim()} Профиль @${input.username} в Voople: настроение, публикации и реакции.`
+      : `Живой профиль @${input.username} в Voople: настроение, публикации, музыка и реакции друзей.`;
   const image = ogImageUrl({
     title: input.ask ? `Спроси меня анонимно` : input.displayName,
     subtitle: `@${input.username}`,
@@ -66,7 +70,7 @@ function siteVerification(): Metadata["verification"] | undefined {
 
 export function createRootMetadata(): Metadata {
   const siteUrl = getSiteUrl();
-  const defaultTitle = `${SITE_NAME} — социальная сеть с живыми профилями`;
+  const defaultTitle = `${SITE_NAME} — поделись своим настроением`;
   const verification = siteVerification();
 
   return {
@@ -97,7 +101,7 @@ export function createRootMetadata(): Metadata {
       images: [SITE_OG_IMAGE],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: defaultTitle,
       description: SITE_DESCRIPTION,
       images: [SITE_OG_IMAGE.url],

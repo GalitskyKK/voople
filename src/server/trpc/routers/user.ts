@@ -4,7 +4,7 @@ import { z } from "zod";
 import { searchAll, searchUsers } from "@/server/services/search.service";
 import { getUsernameById } from "@/server/services/profile.service";
 
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
+import { createTRPCRouter, optionalAuthProcedure, protectedProcedure, publicProcedure } from "../init";
 
 export const userRouter = createTRPCRouter({
   me: protectedProcedure.query(async ({ ctx }) => {
@@ -18,7 +18,7 @@ export const userRouter = createTRPCRouter({
     return { id: ctx.user.id, username };
   }),
 
-  checkUsername: publicProcedure
+  checkUsername: optionalAuthProcedure
     .input(z.object({ username: z.string().min(3).max(30) }))
     .query(async ({ input, ctx }) => {
       const { isUsernameAvailable } = await import("@/server/services/user-sync.service");

@@ -65,6 +65,8 @@ export type EquippedCustomizationView = {
   appThemeId: string | null;
   nicknameColor: string | null;
   nicknameGradient: boolean;
+  nicknameFont: string | null;
+  nicknameEffect: string | null;
   /** Тема профиля (два цвета градиента карточки). Доступна с Voople+. */
   themePrimary: string | null;
   themeAccent: string | null;

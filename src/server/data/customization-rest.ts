@@ -3,6 +3,7 @@ import { publicAssetUrl } from "@/lib/object-storage";
 import { customizationAssetPath } from "@/lib/customization/asset-path";
 import { isAppThemeId, isFreeAppThemeId } from "@/lib/app-themes";
 import { getFramePreset } from "@/lib/customization/frames-registry";
+import { isFreeNicknameColor } from "@/lib/customization/nickname-options";
 import { SHOP_CATALOG_BY_ID } from "@/lib/shop/catalog";
 import { assertActiveSubscriptionRest } from "@/server/data/subscription-rest";
 import { getInventoryItemIdsRest, getShopItemRowRest } from "@/server/data/shop-rest";
@@ -22,6 +23,8 @@ export type CustomizationEquipPatch = {
   appThemeId?: string | null;
   nicknameColor?: string | null;
   nicknameGradient?: boolean | null;
+  nicknameFont?: string | null;
+  nicknameEffect?: string | null;
   themePrimary?: string | null;
   themeAccent?: string | null;
 };
@@ -56,14 +59,13 @@ async function assertOwnsEquipValue(
 }
 
 async function assertAppThemeAllowed(
-  ownedIds: Set<string>,
+  userId: string,
   appThemeId: string | null | undefined,
-  trustedItemId?: string,
 ) {
   if (!appThemeId) return;
   if (!isAppThemeId(appThemeId)) throw new Error("Неизвестная тема приложения");
   if (isFreeAppThemeId(appThemeId)) return;
-  await assertOwnsEquipValue(ownedIds, appThemeId, trustedItemId);
+  await assertActiveSubscriptionRest(userId);
 }
 
 async function resolveBannerPatch(bannerId: string | null | undefined) {
@@ -91,22 +93,25 @@ export async function updateProfileCustomizationRest(
 
   await assertOwnsEquipValue(ownedIds, patch.profileEffectId, trustedItemId);
   await assertOwnsEquipValue(ownedIds, patch.profileBackgroundId, trustedItemId);
+  const framePreset = getFramePreset(patch.profileFrameId);
+  if (patch.profileFrameId && !framePreset) {
+    await assertOwnsEquipValue(ownedIds, patch.profileFrameId, trustedItemId);
+  }
+  if (framePreset?.isPremium || framePreset?.usesCustomColor) {
+    await assertActiveSubscriptionRest(userId);
+  }
   await assertOwnsEquipValue(ownedIds, patch.avatarRingId, trustedItemId);
   await assertOwnsEquipValue(ownedIds, patch.bannerId, trustedItemId);
   await assertOwnsEquipValue(ownedIds, patch.avatarDecorationId, trustedItemId);
   await assertOwnsEquipValue(ownedIds, patch.feedCardStyleId, trustedItemId);
   await assertOwnsEquipValue(ownedIds, patch.animatedAvatarId, trustedItemId);
-  await assertAppThemeAllowed(ownedIds, patch.appThemeId, trustedItemId);
+  await assertAppThemeAllowed(userId, patch.appThemeId);
 
-  if (patch.nicknameColor) {
-    const ownsStyle = await Promise.all(
-      [...ownedIds].map(async (id) => {
-        const row = await getShopItemRowRest(id);
-        if (!row) return false;
-        return row.equip_slot === "nickname_style" && row.equip_value === patch.nicknameColor;
-      }),
-    ).then((results) => results.some(Boolean));
-    if (!ownsStyle) throw new Error("Стиль имени не куплен");
+  // Base palette is part of the editor and never requires a shop purchase.
+  // Voople+ unlocks an exact custom HEX color; legacy shop colors remain
+  // readable in existing profiles but are no longer the source of ownership.
+  if (patch.nicknameColor && !isFreeNicknameColor(patch.nicknameColor)) {
+    await assertActiveSubscriptionRest(userId);
   }
 
   const update: Record<string, unknown> = {
@@ -119,13 +124,8 @@ export async function updateProfileCustomizationRest(
   if (patch.profileBackgroundId !== undefined) {
     update.profile_background_id = patch.profileBackgroundId;
   }
-  // Рамка: премиум-пресеты, кастомный цвет и картиночные рамки требуют Voople+.
-  // Бесплатные пресеты (isPremium=false, без usesCustomColor) доступны всем.
-  if (patch.profileFrameId) {
-    const preset = getFramePreset(patch.profileFrameId);
-    const requiresPlus = !preset || preset.isPremium || preset.usesCustomColor;
-    if (requiresPlus) await assertActiveSubscriptionRest(userId);
-  }
+  // Free presets are available to everyone. Premium/custom-color presets are
+  // subscription gated; purchased raster frames are validated by ownership.
   if (patch.profileFrameId !== undefined) {
     update.profile_frame_id = patch.profileFrameId;
   }
@@ -166,6 +166,15 @@ export async function updateProfileCustomizationRest(
   }
   if (patch.nicknameGradient !== undefined) {
     update.nickname_gradient = patch.nicknameGradient;
+  }
+  if (patch.nicknameFont !== undefined) {
+    if (patch.nicknameFont && patch.nicknameFont !== "sans") await assertActiveSubscriptionRest(userId);
+    update.nickname_font = patch.nicknameFont ?? "sans";
+  }
+  if (patch.nicknameEffect !== undefined) {
+    if (patch.nicknameEffect && patch.nicknameEffect !== "plain") await assertActiveSubscriptionRest(userId);
+    update.nickname_effect = patch.nicknameEffect ?? "plain";
+    update.nickname_gradient = patch.nicknameEffect === "gradient";
   }
   // Тема профиля (градиент карточки) — премиум-фича: установка цветов требует Voople+.
   // Сброс (null) разрешён всегда.
@@ -208,6 +217,9 @@ export async function equipShopItemRest(userId: string, itemId: string) {
       break;
     case "profile_background_id":
       patch.profileBackgroundId = value;
+      break;
+    case "profile_frame_id":
+      patch.profileFrameId = value;
       break;
     case "avatar_ring_id":
       patch.avatarRingId = value;
@@ -266,11 +278,23 @@ export async function setAvatarPhotoRest(userId: string, mediaKey: string) {
   if (!url) throw new Error("Не удалось сохранить аватар");
 
   const admin = getAdminClient();
+  const { data: existing, error: existingError } = await admin
+    .from("profile_customization")
+    .select("avatar_data")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (existingError) throw new Error(existingError.message);
+  const previous = (existing?.avatar_data ?? {}) as { url?: string; key?: string; history?: Array<{ url?: string; key?: string }> };
+  const history = [
+    { url, key },
+    ...(previous.url && previous.key ? [{ url: previous.url, key: previous.key }] : []),
+    ...(previous.history ?? []).filter((entry) => entry.url && entry.key),
+  ].filter((entry, index, all) => all.findIndex((candidate) => candidate.key === entry.key) === index).slice(0, 3);
   const { error } = await admin
     .from("profile_customization")
     .update({
       avatar_type: "photo",
-      avatar_data: { url, key },
+      avatar_data: { url, key, history },
       animated_avatar_id: null,
       updated_at: new Date().toISOString(),
     })
@@ -278,6 +302,30 @@ export async function setAvatarPhotoRest(userId: string, mediaKey: string) {
 
   if (error) throw new Error(error.message);
   return { url, key };
+}
+
+export async function getAvatarHistoryRest(userId: string): Promise<Array<{ url: string; key: string }>> {
+  const admin = getAdminClient();
+  const { data, error } = await admin.from("profile_customization").select("avatar_data").eq("user_id", userId).maybeSingle();
+  if (error) throw new Error(error.message);
+  const avatarData = (data?.avatar_data ?? {}) as { history?: Array<{ url?: string; key?: string }> };
+  return (avatarData.history ?? []).filter((entry): entry is { url: string; key: string } => Boolean(entry.url && entry.key)).slice(0, 3);
+}
+
+export async function selectAvatarFromHistoryRest(userId: string, key: string) {
+  const history = await getAvatarHistoryRest(userId);
+  const selected = history.find((entry) => entry.key === key);
+  if (!selected) throw new Error("Аватар не найден в сохранённых");
+  const reordered = [selected, ...history.filter((entry) => entry.key !== key)];
+  const admin = getAdminClient();
+  const { error } = await admin.from("profile_customization").update({
+    avatar_type: "photo",
+    avatar_data: { ...selected, history: reordered },
+    animated_avatar_id: null,
+    updated_at: new Date().toISOString(),
+  }).eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  return selected;
 }
 
 export async function clearEquipSlotRest(userId: string, slot: string) {
@@ -318,6 +366,8 @@ export async function clearEquipSlotRest(userId: string, slot: string) {
     case "nickname_style":
       patch.nicknameColor = null;
       patch.nicknameGradient = false;
+      patch.nicknameFont = "sans";
+      patch.nicknameEffect = "plain";
       break;
     default:
       throw new Error("Неизвестный слот");

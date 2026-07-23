@@ -1,4 +1,5 @@
 import { getAdminClient } from "@/lib/supabase/admin";
+import { clearExpiredSubscriptionCustomizationRest } from "@/server/data/subscription-rest";
 import { customizationAssetPath } from "@/lib/customization/asset-path";
 import {
   SHOP_CATALOG_BY_ID,
@@ -45,6 +46,8 @@ type CustomizationEquipRow = {
   app_theme_id: string | null;
   nickname_color: string | null;
   nickname_gradient: boolean | null;
+  nickname_font: string | null;
+  nickname_effect: string | null;
   theme_primary: string | null;
   theme_accent: string | null;
 };
@@ -97,11 +100,12 @@ export async function getInventoryItemIdsRest(userId: string): Promise<Set<strin
 }
 
 export async function getEquippedCustomizationRest(userId: string): Promise<EquippedCustomizationView> {
+  await clearExpiredSubscriptionCustomizationRest(userId);
   const admin = getAdminClient();
   const { data, error } = await admin
     .from("profile_customization")
     .select(
-      "profile_effect_id, profile_background_id, profile_frame_id, frame_color, card_base_mode, avatar_ring_id, banner_value, avatar_decoration_id, feed_card_style_id, animated_avatar_id, app_theme_id, nickname_color, nickname_gradient, theme_primary, theme_accent",
+      "profile_effect_id, profile_background_id, profile_frame_id, frame_color, card_base_mode, avatar_ring_id, banner_value, avatar_decoration_id, feed_card_style_id, animated_avatar_id, app_theme_id, nickname_color, nickname_gradient, nickname_font, nickname_effect, theme_primary, theme_accent",
     )
     .eq("user_id", userId)
     .maybeSingle();
@@ -123,6 +127,8 @@ export async function getEquippedCustomizationRest(userId: string): Promise<Equi
     appThemeId: row?.app_theme_id ?? null,
     nicknameColor: row?.nickname_color ?? null,
     nicknameGradient: Boolean(row?.nickname_gradient),
+    nicknameFont: row?.nickname_font ?? "sans",
+    nicknameEffect: row?.nickname_effect ?? (row?.nickname_gradient ? "gradient" : "plain"),
     themePrimary: row?.theme_primary ?? null,
     themeAccent: row?.theme_accent ?? null,
   };
@@ -139,6 +145,8 @@ function isEquipped(row: ShopItemRow, equipped: EquippedCustomizationView): bool
       return equipped.profileEffectId === value;
     case "profile_background_id":
       return equipped.profileBackgroundId === value;
+    case "profile_frame_id":
+      return equipped.profileFrameId === value;
     case "avatar_ring_id":
       return equipped.avatarRingId === value;
     case "banner":
@@ -267,16 +275,22 @@ export async function creditWalletRest(
 ): Promise<WalletView> {
   if (amount <= 0) throw new Error("Сумма начисления должна быть больше нуля");
 
-  const wallet = await getOrCreateWalletRest(userId);
-  const balanceAfter = wallet.balanceCoins + amount;
   const admin = getAdminClient();
-
-  const { error: updateErr } = await admin
-    .from("user_wallets")
-    .update({ balance_coins: balanceAfter, updated_at: new Date().toISOString() })
-    .eq("user_id", userId);
-
-  if (updateErr) throw new Error(updateErr.message);
+  let balanceAfter: number | null = null;
+  for (let attempt = 0; attempt < 5 && balanceAfter === null; attempt += 1) {
+    const wallet = await getOrCreateWalletRest(userId);
+    const nextBalance = wallet.balanceCoins + amount;
+    const { data, error: updateErr } = await admin
+      .from("user_wallets")
+      .update({ balance_coins: nextBalance, updated_at: new Date().toISOString() })
+      .eq("user_id", userId)
+      .eq("balance_coins", wallet.balanceCoins)
+      .select("balance_coins")
+      .maybeSingle();
+    if (updateErr) throw new Error(updateErr.message);
+    if (data) balanceAfter = (data as WalletRow).balance_coins;
+  }
+  if (balanceAfter === null) throw new Error("Баланс изменился одновременно, повторите операцию");
 
   const { error: txErr } = await admin.from("wallet_transactions").insert({
     user_id: userId,
@@ -300,20 +314,23 @@ export async function debitWalletRest(
 ): Promise<WalletView> {
   if (amount <= 0) throw new Error("Сумма списания должна быть больше нуля");
 
-  const wallet = await getOrCreateWalletRest(userId);
-  if (wallet.balanceCoins < amount) {
-    throw new Error("Недостаточно voops");
-  }
-
-  const balanceAfter = wallet.balanceCoins - amount;
   const admin = getAdminClient();
-
-  const { error: updateErr } = await admin
-    .from("user_wallets")
-    .update({ balance_coins: balanceAfter, updated_at: new Date().toISOString() })
-    .eq("user_id", userId);
-
-  if (updateErr) throw new Error(updateErr.message);
+  let balanceAfter: number | null = null;
+  for (let attempt = 0; attempt < 5 && balanceAfter === null; attempt += 1) {
+    const wallet = await getOrCreateWalletRest(userId);
+    if (wallet.balanceCoins < amount) throw new Error("Недостаточно voops");
+    const nextBalance = wallet.balanceCoins - amount;
+    const { data, error: updateErr } = await admin
+      .from("user_wallets")
+      .update({ balance_coins: nextBalance, updated_at: new Date().toISOString() })
+      .eq("user_id", userId)
+      .eq("balance_coins", wallet.balanceCoins)
+      .select("balance_coins")
+      .maybeSingle();
+    if (updateErr) throw new Error(updateErr.message);
+    if (data) balanceAfter = (data as WalletRow).balance_coins;
+  }
+  if (balanceAfter === null) throw new Error("Баланс изменился одновременно, повторите операцию");
 
   const { error: txErr } = await admin.from("wallet_transactions").insert({
     user_id: userId,

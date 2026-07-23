@@ -20,40 +20,9 @@ import { isMessagesThreadPath } from "@/lib/layout/messages-path";
 import { cn } from "@/lib/utils";
 import { usePlayerStore } from "@/stores/player.store";
 import { usePlaylistUiStore } from "@/stores/playlist-ui.store";
+import { PlayerProgressBar } from "./PlayerProgressBar";
+import { PlayerTrackIdentity } from "./PlayerTrackArtwork";
 import { PlayerVolumeControl } from "./PlayerVolumeControl";
-
-function ProgressBar({
-  currentTime,
-  duration,
-  onSeek,
-  className,
-}: {
-  currentTime: number;
-  duration: number;
-  onSeek: (value: number) => void;
-  className?: string;
-}) {
-  const ratio = duration > 0 ? Math.min(1, currentTime / duration) : 0;
-
-  return (
-    <div className={cn("relative h-1 w-full overflow-hidden rounded-full bg-[var(--app-border)]", className)}>
-      <div
-        className="absolute inset-y-0 left-0 rounded-full bg-[var(--theme-accent)]"
-        style={{ width: `${ratio * 100}%` }}
-      />
-      <input
-        type="range"
-        min={0}
-        max={duration || 1}
-        step={0.1}
-        value={currentTime}
-        onChange={(e) => onSeek(Number(e.target.value))}
-        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-        aria-label="Позиция воспроизведения"
-      />
-    </div>
-  );
-}
 
 type GlobalPlayerProps = {
   variant: "mobile" | "desktop";
@@ -71,6 +40,8 @@ export function GlobalPlayer({ variant }: GlobalPlayerProps) {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const currentTime = usePlayerStore((s) => s.currentTime);
   const duration = usePlayerStore((s) => s.duration);
+  const queue = usePlayerStore((s) => s.queue);
+  const queueIndex = usePlayerStore((s) => s.queueIndex);
   const expanded = usePlayerStore((s) => s.expanded);
   const togglePlay = usePlayerStore((s) => s.togglePlay);
   const next = usePlayerStore((s) => s.next);
@@ -88,12 +59,18 @@ export function GlobalPlayer({ variant }: GlobalPlayerProps) {
 
   if (!current) return null;
 
-  const title = `${current.artist} – ${current.title}`;
-
   const seek = (time: number) => {
     setCurrentTime(time);
     const audio = document.querySelector<HTMLAudioElement>("audio[data-voople-audio]");
     if (audio) audio.currentTime = time;
+  };
+
+  const handlePrev = () => {
+    if (currentTime > 3) {
+      seek(0);
+      return;
+    }
+    prev();
   };
 
   const handleMobilePointerDown = () => {
@@ -125,9 +102,9 @@ export function GlobalPlayer({ variant }: GlobalPlayerProps) {
                     if (sourceUsername) openPlaylist(sourceUsername, current.id);
                   }}
                   disabled={!sourceUsername}
-                  className="min-w-0 flex-1 truncate text-left text-xs font-semibold text-[var(--foreground)]"
+                  className="min-w-0 flex-1 text-left"
                 >
-                  {title}
+                  <PlayerTrackIdentity track={current} artworkClassName="h-9 w-9 rounded-lg" />
                 </button>
                 <button
                   type="button"
@@ -141,7 +118,7 @@ export function GlobalPlayer({ variant }: GlobalPlayerProps) {
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <ProgressBar currentTime={currentTime} duration={duration} onSeek={seek} />
+              <PlayerProgressBar currentTime={currentTime} duration={duration} onSeek={seek} />
               <div className="mt-2 flex items-center gap-2">
                 <span className="w-9 shrink-0 text-[10px] tabular-nums text-[var(--app-muted)]">
                   {formatPlaybackTime(currentTime)}
@@ -152,7 +129,7 @@ export function GlobalPlayer({ variant }: GlobalPlayerProps) {
                     onClick={(e) => {
                       e.stopPropagation();
                       touchMobilePlayer();
-                      prev();
+                      handlePrev();
                     }}
                     className="text-[var(--app-muted)]"
                     aria-label="Назад"
@@ -211,9 +188,9 @@ export function GlobalPlayer({ variant }: GlobalPlayerProps) {
                   if (sourceUsername) openPlaylist(sourceUsername, current.id);
                 }}
                 disabled={!sourceUsername}
-                className="min-w-0 flex-1 truncate text-left text-xs font-medium text-[var(--foreground)]"
+                className="min-w-0 flex-1 text-left"
               >
-                {title}
+                <PlayerTrackIdentity track={current} artworkClassName="h-8 w-8 rounded-lg" />
               </button>
               <span className="shrink-0 text-[10px] tabular-nums text-[var(--app-muted)]">
                 {formatPlaybackTime(currentTime)}
@@ -229,7 +206,7 @@ export function GlobalPlayer({ variant }: GlobalPlayerProps) {
               >
                 <X className="h-4 w-4" />
               </button>
-              <ProgressBar
+              <PlayerProgressBar
                 currentTime={currentTime}
                 duration={duration}
                 onSeek={(t) => {
@@ -249,58 +226,62 @@ export function GlobalPlayer({ variant }: GlobalPlayerProps) {
     <div className="hidden shrink-0 border-t border-[var(--app-border)] px-3 py-3 lg:block">
       <div
         className={cn(
-          "overflow-hidden rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] transition-[max-height] duration-200",
-          expanded ? "max-h-48" : "max-h-[3.25rem]",
+          "overflow-hidden rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] shadow-[var(--app-shadow-sm)] transition-[max-height] duration-200",
+          expanded ? "max-h-40" : "max-h-28",
         )}
       >
-        <div className="flex items-center gap-2 px-2 py-2">
-          <button type="button" onClick={prev} className="p-1 text-[var(--app-muted)]" aria-label="Назад">
+        <div className="flex items-center gap-2 px-2.5 pt-2.5">
+          <button
+            type="button"
+            onClick={() => sourceUsername && openPlaylist(sourceUsername, current.id)}
+            disabled={!sourceUsername}
+            className="min-w-0 flex-1 text-left"
+          >
+            <PlayerTrackIdentity track={current} artworkClassName="h-9 w-9 rounded-lg" />
+          </button>
+          <button type="button" onClick={stop} className="rounded-full p-1 text-[var(--app-muted)] hover:text-[var(--foreground)]" aria-label="Закрыть">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <PlayerProgressBar currentTime={currentTime} duration={duration} onSeek={seek} className="mx-2.5 mt-2 w-auto h-1" />
+
+        <div className="flex items-center gap-2 px-2.5 py-2">
+          <button type="button" onClick={handlePrev} className="rounded-full p-1 text-[var(--app-muted)] hover:text-[var(--foreground)]" aria-label="Назад">
             <SkipBack className="h-4 w-4" />
           </button>
           <button
             type="button"
             onClick={togglePlay}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--theme-accent)] text-[var(--foreground)]"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--theme-accent)] text-[var(--foreground)] shadow-[var(--app-shadow-sm)]"
             aria-label={isPlaying ? "Пауза" : "Воспроизвести"}
           >
             {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5 translate-x-px" />}
           </button>
-          <button type="button" onClick={next} className="p-1 text-[var(--app-muted)]" aria-label="Вперёд">
+          <button type="button" onClick={next} className="rounded-full p-1 text-[var(--app-muted)] hover:text-[var(--foreground)]" aria-label="Вперёд">
             <SkipForward className="h-4 w-4" />
           </button>
-          <button
-            type="button"
-            onClick={() => setExpanded(!expanded)}
-            className="min-w-0 flex-1 truncate text-left text-xs font-medium text-[var(--foreground)]"
-          >
-            {title}
-          </button>
-          <span className="shrink-0 text-[10px] tabular-nums text-[var(--app-muted)]">
-            {formatPlaybackTime(currentTime)}
+          <span className="ml-auto shrink-0 text-[10px] tabular-nums text-[var(--app-muted)]">
+            {formatPlaybackTime(currentTime)} / {formatPlaybackTime(duration)}
           </span>
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="p-1 text-[var(--app-muted)]"
+            className="rounded-full p-1 text-[var(--app-muted)] hover:text-[var(--foreground)]"
             aria-label={expanded ? "Свернуть" : "Развернуть"}
           >
             {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
           </button>
-          <button type="button" onClick={stop} className="p-1 text-[var(--app-muted)]" aria-label="Закрыть">
-            <X className="h-4 w-4" />
-          </button>
         </div>
-        {expanded && (
-          <div className="space-y-2 px-3 pb-3">
-            <ProgressBar currentTime={currentTime} duration={duration} onSeek={seek} />
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] tabular-nums text-[var(--app-muted)]">
-                {formatPlaybackTime(currentTime)} / {formatPlaybackTime(duration)}
-              </span>
-              <PlayerVolumeControl compact />
-            </div>
+
+        {expanded ? (
+          <div className="flex items-center justify-between gap-2 border-t border-[var(--app-border)] px-3 py-2">
+            <span className="text-[10px] text-[var(--app-muted)]">
+              {queue.length > 1 ? `В очереди ${Math.max(1, queueIndex + 1)} из ${queue.length}` : "Один трек"}
+            </span>
+            <PlayerVolumeControl compact />
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

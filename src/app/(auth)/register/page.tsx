@@ -42,7 +42,7 @@ export default function RegisterPage() {
     if (signUpData.session) {
       try {
         const { username } = await syncPublicUser({ username: data.username });
-        router.replace(username ? `/${username}` : "/feed");
+        router.replace(username ? `/onboarding?username=${encodeURIComponent(username)}` : "/feed");
         router.refresh();
         return;
       } catch (syncErr) {

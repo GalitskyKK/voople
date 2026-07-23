@@ -1,7 +1,7 @@
 import type { UploadPurpose } from "./types";
 
 export const UPLOAD_LIMITS: Record<UploadPurpose, { maxBytes: number }> = {
-  post: { maxBytes: 10 * 1024 * 1024 },
+  post: { maxBytes: 40 * 1024 * 1024 },
   comment: { maxBytes: 10 * 1024 * 1024 },
   avatar: { maxBytes: 5 * 1024 * 1024 },
   banner: { maxBytes: 5 * 1024 * 1024 },

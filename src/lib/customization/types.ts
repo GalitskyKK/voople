@@ -35,13 +35,19 @@ export type ResolvedFrame = {
   width: number
   /** Итоговые CSS-цвета (после подстановки кастомного цвета Voople+). */
   colors: string[]
-  /** URL картиночной рамки (border-image), если kind === "image". */
+  /** URL цельной прозрачной рамки-overlay, если kind === "image". */
   imageUrl?: string | null
+  /** URL отдельного прозрачного разделителя между баннером и body. */
+  dividerUrl?: string | null
+  /** @deprecated Осталось только для чтения старых preset-конфигов. */
   imageSlice?: number | null
 }
 
 /** Режим основы карточки (подложки под контентом). */
 export type CardBaseMode = "mirror" | "theme" | "plain"
+
+export type NicknameFont = "sans" | "serif" | "rounded" | "mono" | "display" | "soft"
+export type NicknameEffect = "plain" | "gradient" | "neon" | "highlight" | "outline"
 
 export type CustomizationAssets = {
   bannerUrl?: string | null
@@ -63,6 +69,8 @@ export type CustomizationAssets = {
 export type DisplayNameStyle = {
   color?: string | null
   gradient?: boolean
+  font: NicknameFont
+  effect: NicknameEffect
 }
 
 export type ResolvedCustomization = {

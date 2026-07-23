@@ -5,6 +5,7 @@ import { Pause, Play } from "lucide-react";
 import { usePlayerStore } from "@/stores/player.store";
 import type { PlaylistTrackView } from "@/types/playlist";
 import { cn } from "@/lib/utils";
+import { PlayerTrackArtwork } from "@/components/player/PlayerTrackArtwork";
 
 type ChatMusicCardProps = {
   title: string;
@@ -26,24 +27,25 @@ export function ChatMusicCard({
   const play = usePlayerStore((s) => s.play);
   const current = usePlayerStore((s) => s.current);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const togglePlay = usePlayerStore((s) => s.togglePlay);
 
-  const isActive = track ? current?.id === track.id : current?.streamUrl === streamUrl;
+  const playableTrack: PlaylistTrackView | null = track ?? (streamUrl ? {
+    id: messageId,
+    title,
+    artist: subtitle,
+    streamUrl,
+    durationSeconds: null,
+  } : null);
+
+  const isActive = Boolean(playableTrack && current?.id === playableTrack.id);
   const playing = Boolean(isActive && isPlaying);
 
   const handlePlay = () => {
-    if (track) {
-      play(track);
+    if (isActive) {
+      togglePlay();
       return;
     }
-    if (streamUrl) {
-      play({
-        id: messageId,
-        title,
-        artist: subtitle,
-        streamUrl,
-        durationSeconds: null,
-      });
-    }
+    if (playableTrack) play(playableTrack);
   };
 
   return (
@@ -57,11 +59,16 @@ export function ChatMusicCard({
     >
       <button
         type="button"
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--app-accent-soft)] text-[var(--foreground)]"
+        className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl text-white"
         aria-label={playing ? "Пауза" : "Слушать"}
-        onClick={handlePlay}
+        onClick={(event) => {
+          event.stopPropagation();
+          handlePlay();
+        }}
       >
-        {playing ? <Pause className="h-4 w-4" /> : <Play className="ml-0.5 h-4 w-4 fill-current" />}
+        {playableTrack ? <PlayerTrackArtwork track={playableTrack} className="absolute inset-0 h-full w-full rounded-xl" /> : null}
+        <span className="absolute inset-0 bg-black/24" />
+        {playing ? <Pause className="relative h-4 w-4" /> : <Play className="relative ml-0.5 h-4 w-4 fill-current" />}
       </button>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{title}</p>

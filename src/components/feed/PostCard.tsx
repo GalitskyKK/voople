@@ -96,6 +96,7 @@ export function PostCard({
   const [repostPulseKey, setRepostPulseKey] = useState(0);
   const [displayText, setDisplayText] = useState(post.text);
   const [displayRepostComment, setDisplayRepostComment] = useState(post.repostComment);
+  const [deleted, setDeleted] = useState(false);
 
   const { data: viewer } = trpc.user.me.useQuery(undefined, {
     enabled: Boolean(viewerId),
@@ -138,6 +139,8 @@ export function PostCard({
     },
   });
 
+  if (deleted) return null;
+
   return (
     <article className={cn("voople-post-card text-[var(--foreground)]", className)}>
       <div
@@ -167,6 +170,7 @@ export function PostCard({
             if (isRepostComment) setDisplayRepostComment(text);
             else setDisplayText(text);
           }}
+          onDeleted={() => setDeleted(true)}
         />
         <div className={cn("voople-post-card__body px-4 pb-4", chipHeader ? "pt-3" : "pt-3")}>
           {displayRepostComment && (

@@ -16,6 +16,8 @@ export default function robots(): MetadataRoute.Robots {
           "/notifications/",
           "/me",
           "/me/",
+          "/settings",
+          "/settings/",
           "/shop/payment/",
         ],
       },

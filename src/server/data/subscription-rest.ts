@@ -1,6 +1,6 @@
 import { getAdminClient } from "@/lib/supabase/admin";
 import { isFreeAppThemeId } from "@/lib/app-themes";
-import { VOOPLUS_PERIOD_DAYS, VOOPLUS_TIER } from "@/lib/constants/subscription";
+import { VOOPLUS_PERIOD_DAYS } from "@/lib/constants/subscription";
 import type { SubscriptionStatusView } from "@/types/subscription";
 
 export type { SubscriptionStatusView };
@@ -131,31 +131,12 @@ export async function extendVooplePlusRest(
   paymentProvider: string = "yookassa",
 ): Promise<SubscriptionStatusView> {
   const admin = getAdminClient();
-  const now = new Date();
-  const existing = await getSubscriptionRest(userId);
-
-  const base =
-    existing && isSubscriptionActive(existing, now)
-      ? new Date(existing.expires_at)
-      : now;
-  const expiresAt = new Date(base);
-  expiresAt.setDate(expiresAt.getDate() + periodDays);
-
-  const startedAt =
-    existing && isSubscriptionActive(existing, now) ? existing.started_at : now.toISOString();
-
-  const { error } = await admin.from("subscriptions").upsert(
-    {
-      user_id: userId,
-      tier: VOOPLUS_TIER,
-      started_at: startedAt,
-      expires_at: expiresAt.toISOString(),
-      payment_provider: paymentProvider,
-      external_id: externalId,
-    },
-    { onConflict: "user_id" },
-  );
-
+  const { error } = await admin.rpc("extend_voople_plus_once", {
+    p_user_id: userId,
+    p_external_id: externalId,
+    p_period_days: periodDays,
+    p_provider: paymentProvider,
+  });
   if (error) throw new Error(error.message);
   return getSubscriptionStatusRest(userId);
 }

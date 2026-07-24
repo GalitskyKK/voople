@@ -12,7 +12,7 @@ export function AppTopBar() {
   const hideShop = pathname.startsWith("/shop");
 
   return (
-    <header className="voople-topbar sticky top-0 z-20 flex h-12 items-center justify-between border-b border-[var(--app-border)] bg-[color-mix(in_srgb,var(--background)_92%,transparent)] px-4 backdrop-blur-md lg:hidden">
+    <header data-nosnippet className="voople-topbar sticky top-0 z-20 flex h-12 items-center justify-between border-b border-[var(--app-border)] bg-[color-mix(in_srgb,var(--background)_92%,transparent)] px-4 backdrop-blur-md lg:hidden">
       <Link href="/feed" className="text-sm font-semibold tracking-[-0.02em] text-[var(--foreground)]">
         {COPY.appName}
       </Link>

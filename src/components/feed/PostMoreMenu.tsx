@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Flag, Link2, MoreHorizontal, Pencil } from "lucide-react";
+import { Flag, Link2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 import { canEditPostByAge } from "@/lib/posts/edit-window";
 import { trpc } from "@/lib/trpc/client";
@@ -21,6 +21,7 @@ type PostMoreMenuProps = {
   profileUsername?: string;
   className?: string;
   onTextUpdated?: (text: string, isRepostComment: boolean) => void;
+  onDeleted?: () => void;
 };
 
 export function PostMoreMenu({
@@ -35,6 +36,7 @@ export function PostMoreMenu({
   profileUsername,
   className,
   onTextUpdated,
+  onDeleted,
 }: PostMoreMenuProps) {
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -53,6 +55,21 @@ export function PostMoreMenu({
     onSuccess: () => {
       setToast("Жалоба отправлена");
       setOpen(false);
+    },
+    onError: (err) => setToast(err.message),
+  });
+  const utils = trpc.useUtils();
+  const deletePost = trpc.post.delete.useMutation({
+    onSuccess: async () => {
+      setOpen(false);
+      await Promise.all([
+        utils.feed.getPage.invalidate(),
+        utils.post.getById.invalidate({ postId }),
+        profileUsername
+          ? utils.profile.getPostsByUsername.invalidate({ username: profileUsername })
+          : Promise.resolve(),
+      ]);
+      onDeleted?.();
     },
     onError: (err) => setToast(err.message),
   });
@@ -77,6 +94,12 @@ export function PostMoreMenu({
   const handleReport = () => {
     if (!viewerUsername || isOwner || reportPost.isPending) return;
     reportPost.mutate({ postId });
+  };
+
+  const handleDelete = () => {
+    if (!isOwner || deletePost.isPending) return;
+    if (!window.confirm("Удалить пост навсегда? Это действие нельзя отменить.")) return;
+    deletePost.mutate({ postId });
   };
 
   const menuItemClass =
@@ -118,6 +141,18 @@ export function PostMoreMenu({
           >
             <Pencil className="h-4 w-4 shrink-0 text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]" />
             Редактировать
+          </button>
+        )}
+        {isOwner && (
+          <button
+            type="button"
+            role="menuitem"
+            disabled={deletePost.isPending}
+            className={cn(menuItemClass, "text-red-400 hover:text-red-300")}
+            onClick={handleDelete}
+          >
+            <Trash2 className="h-4 w-4 shrink-0" />
+            {deletePost.isPending ? "Удаление…" : "Удалить"}
           </button>
         )}
         {viewerUsername && !isOwner && (

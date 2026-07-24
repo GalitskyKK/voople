@@ -22,6 +22,8 @@ import { ChatTrackMetadataDialog } from "./ChatTrackMetadataDialog";
 import { ChatDateDivider } from "./ChatDateDivider";
 import { ChatMediaLightbox } from "./ChatMediaLightbox";
 import { ChatMessageBubble } from "./ChatMessageBubble";
+import { ChatRoomControl } from "./ChatRoomControl";
+import { GroupInviteSheet } from "./GroupInviteSheet";
 
 type ChatWindowProps = {
   chatId: string;
@@ -126,7 +128,17 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
           ? current
           : current
             ? { ...current, messages: [...current.messages, optimistic] }
-            : { messages: [optimistic], otherUser: null, chat: { id: chatId, type: "direct", name: null, memberCount: 0 } },
+            : {
+                messages: [optimistic],
+                otherUser: null,
+                chat: {
+                  id: chatId,
+                  type: "direct",
+                  name: null,
+                  memberCount: 0,
+                  viewerRole: "member",
+                },
+              },
       );
 
       setText("");
@@ -313,6 +325,14 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
             </p>
           )}
         </div>
+        <ChatRoomControl
+          chatId={chatId}
+          chatName={chatTitle}
+          chatType={isGroup ? "group" : "direct"}
+        />
+        {isGroup && (data?.chat.viewerRole === "owner" || data?.chat.viewerRole === "admin") ? (
+          <GroupInviteSheet chatId={chatId} />
+        ) : null}
       </header>
 
       <div

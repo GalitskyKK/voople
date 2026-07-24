@@ -11,6 +11,10 @@ function createLimit(requests: number, window: `${number} s` | `${number} m` | `
 
 export const rateLimits = {
   createPost: () => createLimit(30, "1 h"),
+  updatePost: () => createLimit(30, "10 m"),
+  deletePost: () => createLimit(30, "10 m"),
+  reportPost: () => createLimit(10, "1 h"),
+  recordView: () => createLimit(300, "10 m"),
   like: () => createLimit(100, "10 m"),
   updateStatus: () => createLimit(20, "1 h"),
   uploadTrack: () => createLimit(10, "24 h"),
@@ -21,6 +25,9 @@ export const rateLimits = {
   // Анти-спам для записи-тяжёлых мутаций (сообщения, комментарии, репосты, подписки, штрихи холста).
   sendMessage: () => createLimit(60, "1 m"),
   createGroupChat: () => createLimit(8, "1 h"),
+  createChatInvite: () => createLimit(20, "1 h"),
+  acceptChatInvite: () => createLimit(20, "10 m"),
+  enterChatRoom: () => createLimit(30, "10 m"),
   comment: () => createLimit(40, "10 m"),
   repost: () => createLimit(40, "10 m"),
   follow: () => createLimit(60, "10 m"),
@@ -29,4 +36,5 @@ export const rateLimits = {
   askQuestion: () => createLimit(15, "1 h"),
   // Входящие вебхуки (ключ — IP источника): троттлинг до обращения к внешнему API.
   webhook: () => createLimit(120, "1 m"),
+  adminUpload: () => createLimit(30, "1 h"),
 };

@@ -12,6 +12,7 @@ export function BottomNav() {
 
   return (
     <nav
+      data-nosnippet
       className="voople-bottom-nav pointer-events-none fixed bottom-0 left-0 right-0 z-30 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] lg:hidden"
       aria-label="Основная навигация"
     >

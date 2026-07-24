@@ -11,7 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: path === "/" ? siteUrl : `${siteUrl}${path}`,
     lastModified: defaultLastModified,
     changeFrequency: path.startsWith("/legal") ? "monthly" : "weekly",
-    priority: path === "/" || path === "/feed" ? 1 : path.startsWith("/legal") ? 0.5 : 0.8
+    priority: path === "/" ? 1 : path.startsWith("/legal") ? 0.5 : 0.8
   }))
 
   const users = await fetchPublicUsernamesForSitemap()

@@ -11,6 +11,8 @@ import { COPY } from "@/lib/constants/copy";
 import { usernameSchema } from "@/lib/validation/username";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
+import { TURNSTILE_SITE_KEY, TurnstileChallenge } from "@/components/auth/TurnstileChallenge";
+import { useState } from "react";
 
 const schema = z.object({
   email: z.string().email("Некорректный email"),
@@ -22,6 +24,9 @@ type FormValues = z.infer<typeof schema>;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const {
     register,
     handleSubmit,
@@ -30,11 +35,23 @@ export default function RegisterPage() {
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (data: FormValues) => {
+    const requestedRedirect = new URLSearchParams(window.location.search).get("redirect");
+    const redirectAfter =
+      requestedRedirect?.startsWith("/") && !requestedRedirect.startsWith("//")
+        ? requestedRedirect
+        : null;
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      setError("root", { message: captchaError ?? "Пройдите антибот-проверку" });
+      return;
+    }
     const supabase = createClient();
     const { data: signUpData, error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
+      options: { captchaToken: captchaToken ?? undefined },
     });
+    setCaptchaToken(null);
+    setCaptchaResetKey((value) => value + 1);
     if (error) {
       setError("root", { message: error.message });
       return;
@@ -42,7 +59,11 @@ export default function RegisterPage() {
     if (signUpData.session) {
       try {
         const { username } = await syncPublicUser({ username: data.username });
-        router.replace(username ? `/onboarding?username=${encodeURIComponent(username)}` : "/feed");
+        router.replace(
+          username
+            ? `/onboarding?username=${encodeURIComponent(username)}${redirectAfter ? `&redirect=${encodeURIComponent(redirectAfter)}` : ""}`
+            : redirectAfter ?? "/feed",
+        );
         router.refresh();
         return;
       } catch (syncErr) {
@@ -52,7 +73,9 @@ export default function RegisterPage() {
         return;
       }
     }
-    router.replace("/login");
+    router.replace(
+      redirectAfter ? `/login?redirect=${encodeURIComponent(redirectAfter)}` : "/login",
+    );
   };
 
   return (
@@ -93,6 +116,13 @@ export default function RegisterPage() {
           <span className="mt-1 block text-xs text-red-400">{errors.password.message}</span>
         )}
       </label>
+      <TurnstileChallenge
+        action="register"
+        resetKey={captchaResetKey}
+        onTokenChange={setCaptchaToken}
+        onUnavailable={setCaptchaError}
+      />
+      {captchaError && <p className="text-sm text-red-400">{captchaError}</p>}
       {errors.root && <p className="text-sm text-red-400">{errors.root.message}</p>}
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {COPY.register}

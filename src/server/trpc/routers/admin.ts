@@ -8,6 +8,11 @@ import {
   grantAdminSubscriptionRest,
 } from "@/server/data/admin-users-rest";
 import {
+  getAdminOverviewRest,
+  listPendingPostReportsRest,
+  moderatePostReportRest,
+} from "@/server/data/admin-observability-rest";
+import {
   createAdminShopItem,
   createCustomizationAssetUpload,
   deleteAdminShopItem,
@@ -70,6 +75,38 @@ function toTrpcError(e: unknown): TRPCError {
 }
 
 export const adminRouter = createTRPCRouter({
+  overview: adminProcedure.query(async () => {
+    try {
+      return await getAdminOverviewRest();
+    } catch (e) {
+      throw toTrpcError(e);
+    }
+  }),
+
+  pendingPostReports: adminProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
+    .query(async ({ input }) => {
+      try {
+        return await listPendingPostReportsRest(input.limit);
+      } catch (e) {
+        throw toTrpcError(e);
+      }
+    }),
+
+  moderatePostReport: adminProcedure
+    .input(z.object({
+      reportId: z.string().uuid(),
+      action: z.enum(["dismiss", "remove_post"]),
+      note: z.string().trim().max(500).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await moderatePostReportRest({ ...input, adminUserId: ctx.user.id });
+      } catch (e) {
+        throw toTrpcError(e);
+      }
+    }),
+
   userSummary: adminProcedure
     .input(z.object({ username: z.string().trim().min(1).max(30) }))
     .query(async ({ input }) => {

@@ -11,6 +11,7 @@ import {
   VOOPLUS_PRICE_RUB,
 } from "@/lib/constants/subscription";
 import { Button } from "@/components/ui/Button";
+import { parseDatabaseDate } from "@/lib/format/database-date";
 import type { PromoPreviewView } from "@/types/promo";
 import type { SubscriptionStatusView } from "@/types/subscription";
 
@@ -27,7 +28,7 @@ type VooplePlusPanelProps = {
 };
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ru-RU", {
+  return parseDatabaseDate(iso).toLocaleDateString("ru-RU", {
     day: "numeric",
     month: "long",
     year: "numeric",

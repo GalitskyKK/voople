@@ -282,7 +282,11 @@ export async function createGroupChatRest(ownerId: string, name: string, memberI
   if (chatError) throw new Error(chatError.message);
 
   const { error: membersError } = await admin.from("chat_members").insert(
-    [ownerId, ...uniqueMemberIds].map((userId) => ({ chat_id: chat.id, user_id: userId })),
+    [ownerId, ...uniqueMemberIds].map((userId, index) => ({
+      chat_id: chat.id,
+      user_id: userId,
+      role: index === 0 ? "owner" : "member",
+    })),
   );
   if (membersError) {
     await admin.from("chats").delete().eq("id", chat.id);
@@ -306,7 +310,7 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
 
   const [chatsResult, membersResult, msgsResult] = await Promise.all([
     admin.from("chats").select("id, type, name").in("id", chatIds),
-    admin.from("chat_members").select("chat_id, user_id").in("chat_id", chatIds),
+    admin.from("chat_members").select("chat_id, user_id, role").in("chat_id", chatIds),
     admin
       .from("messages")
       .select("chat_id, text, created_at, sender_id")
@@ -329,10 +333,17 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
   const otherUserIds = new Set<string>();
   const otherIdByChat = new Map<string, string>();
   const memberCountByChat = new Map<string, number>();
+  const viewerRoleByChat = new Map<string, "owner" | "admin" | "member">();
   for (const row of membersResult.data ?? []) {
     const uid = row.user_id as string;
     const cid = row.chat_id as string;
     memberCountByChat.set(cid, (memberCountByChat.get(cid) ?? 0) + 1);
+    if (uid === userId) {
+      viewerRoleByChat.set(
+        cid,
+        row.role === "owner" || row.role === "admin" ? row.role : "member",
+      );
+    }
     if (uid === userId) continue;
     if (typeByChat.get(cid) === "group") continue;
     otherIdByChat.set(cid, uid);
@@ -400,6 +411,7 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
       type: typeByChat.get(id) ?? "direct",
       name: nameByChat.get(id) ?? null,
       memberCount: memberCountByChat.get(id) ?? 0,
+      viewerRole: viewerRoleByChat.get(id) ?? "member",
       otherUser: other ?? null,
       lastMessage: last
         ? {
@@ -426,7 +438,11 @@ const MESSAGE_SELECT =
 export async function listMessagesRest(
   chatId: string,
   userId: string,
-): Promise<{ messages: ChatMessageView[]; otherUser: ChatListItem["otherUser"]; chat: Pick<ChatListItem, "id" | "type" | "name" | "memberCount"> }> {
+): Promise<{
+  messages: ChatMessageView[];
+  otherUser: ChatListItem["otherUser"];
+  chat: Pick<ChatListItem, "id" | "type" | "name" | "memberCount" | "viewerRole">;
+}> {
   await assertMember(chatId, userId);
   const admin = getAdminClient();
 
@@ -439,7 +455,7 @@ export async function listMessagesRest(
       .limit(200),
     admin
       .from("chat_members")
-      .select("user_id, users (id, username, display_name, subscriptions (started_at, expires_at))")
+      .select("user_id, role, users (id, username, display_name, subscriptions (started_at, expires_at))")
       .eq("chat_id", chatId),
     admin.from("chats").select("id, type, name").eq("id", chatId).single(),
   ]);
@@ -449,8 +465,12 @@ export async function listMessagesRest(
   if (chatResult.error) throw new Error(chatResult.error.message);
 
   let otherUser: ChatListItem["otherUser"] = null;
+  let viewerRole: ChatListItem["viewerRole"] = "member";
   for (const row of membersResult.data ?? []) {
     const uid = row.user_id as string;
+    if (uid === userId) {
+      viewerRole = row.role === "owner" || row.role === "admin" ? row.role : "member";
+    }
     if (uid === userId) continue;
     const u = row.users as
       | {
@@ -511,6 +531,7 @@ export async function listMessagesRest(
       type: (chatResult.data.type as "direct" | "group") ?? "direct",
       name: (chatResult.data.name as string | null) ?? null,
       memberCount: (membersResult.data ?? []).length,
+      viewerRole,
     },
   };
 }

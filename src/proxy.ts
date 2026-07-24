@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
-const PUBLIC_PATHS = ["/login", "/register", "/feed", "/explore", "/shop", "/api"]
+const PUBLIC_PATHS = ["/login", "/register", "/feed", "/explore", "/shop", "/invite", "/api"]
 
 function isPublicPath(pathname: string) {
   if (pathname === "/favicon.ico" || pathname.startsWith("/favicon/")) {

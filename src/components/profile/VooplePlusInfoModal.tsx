@@ -12,6 +12,7 @@ import {
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
+import { parseDatabaseDate } from "@/lib/format/database-date";
 
 type VooplePlusInfoModalProps = {
   open: boolean;
@@ -21,7 +22,7 @@ type VooplePlusInfoModalProps = {
 };
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ru-RU", {
+  return parseDatabaseDate(iso).toLocaleDateString("ru-RU", {
     day: "numeric",
     month: "long",
     year: "numeric",

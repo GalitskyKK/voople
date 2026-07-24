@@ -17,6 +17,12 @@ export function ogImageUrl(params: { title: string; subtitle?: string; badge?: s
   return `/api/og?${query.toString()}`;
 }
 
+function cleanSeoText(value: string, maxLength = 155): string {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (normalized.length <= maxLength) return normalized;
+  return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
 /** Метаданные страницы профиля с динамической OG-картинкой (важно для виральности ask-ссылок). */
 export function createProfileMetadata(input: {
   displayName: string;
@@ -27,11 +33,11 @@ export function createProfileMetadata(input: {
   const title = input.ask
     ? `Спроси ${input.displayName} анонимно`
     : `${input.displayName} (@${input.username})`;
-  const description = input.ask
+  const description = cleanSeoText(input.ask
     ? `Задай ${input.displayName} (@${input.username}) анонимный вопрос в Voople`
     : input.bio?.trim()
       ? `${input.bio.trim()} Профиль @${input.username} в Voople: настроение, публикации и реакции.`
-      : `Живой профиль @${input.username} в Voople: настроение, публикации, музыка и реакции друзей.`;
+      : `Живой профиль @${input.username} в Voople: настроение, публикации, музыка и реакции друзей.`);
   const image = ogImageUrl({
     title: input.ask ? `Спроси меня анонимно` : input.displayName,
     subtitle: `@${input.username}`,
@@ -88,9 +94,6 @@ export function createRootMetadata(): Metadata {
     category: "social",
     icons: SITE_ICONS,
     manifest: "/favicon/site.webmanifest",
-    alternates: {
-      canonical: "/",
-    },
     openGraph: {
       type: "website",
       locale: "ru_RU",

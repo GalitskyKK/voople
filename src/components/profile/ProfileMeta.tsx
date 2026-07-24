@@ -8,7 +8,7 @@ function formatDate(iso: string) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  }).format(new Date(iso));
+  }).format(parseDatabaseDate(iso));
 }
 
 export function ProfileMeta({ createdAt, subscriptionStartedAt }: ProfileMetaProps) {
@@ -22,3 +22,4 @@ export function ProfileMeta({ createdAt, subscriptionStartedAt }: ProfileMetaPro
     </div>
   );
 }
+import { parseDatabaseDate } from "@/lib/format/database-date";

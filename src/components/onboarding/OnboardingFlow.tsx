@@ -9,7 +9,13 @@ import { Button } from "@/components/ui/Button";
 import { getMoodEmoji, getMoodLabel } from "@/lib/constants/mood";
 import { trpc } from "@/lib/trpc/client";
 
-export function OnboardingFlow({ username }: { username: string }) {
+export function OnboardingFlow({
+  username,
+  redirectAfter,
+}: {
+  username: string;
+  redirectAfter?: string;
+}) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [displayName, setDisplayName] = useState(username);
@@ -29,7 +35,7 @@ export function OnboardingFlow({ username }: { username: string }) {
         updateProfile.mutateAsync({ displayName: displayName.trim() || username, bio: bio.trim() || null }),
         saveStatus.mutateAsync({ moodValue, thought: thought.trim() || null }),
       ]);
-      router.replace(`/${username}`);
+      router.replace(redirectAfter ?? `/${username}`);
       router.refresh();
     } catch (finishError) {
       setError(finishError instanceof Error ? finishError.message : "Не удалось сохранить профиль");

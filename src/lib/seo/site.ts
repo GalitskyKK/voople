@@ -44,11 +44,8 @@ export const SITE_OG_IMAGE = {
 
 export const PUBLIC_SITEMAP_PATHS = [
   "/",
-  "/login",
-  "/register",
-  "/feed",
-  "/explore",
   "/shop",
+  "/events",
   "/legal/services",
   "/legal/delivery",
   "/legal/offer",

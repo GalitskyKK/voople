@@ -11,6 +11,8 @@ import {
   putObject,
 } from "@/lib/object-storage";
 import { formatStorageError } from "@/lib/object-storage/errors";
+import { rateLimits } from "@/lib/ratelimit";
+import { checkRateLimit } from "@/lib/ratelimit-guard";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -29,6 +31,9 @@ export async function POST(request: Request) {
 
     if (!isAdminUserId(user.id)) {
       return NextResponse.json({ error: "Нет доступа" }, { status: 403 });
+    }
+    if (!(await checkRateLimit(rateLimits.adminUpload, `admin-asset-upload:${user.id}`))) {
+      return NextResponse.json({ error: "Слишком много загрузок" }, { status: 429 });
     }
 
     if (!getObjectStorageConfig()) {

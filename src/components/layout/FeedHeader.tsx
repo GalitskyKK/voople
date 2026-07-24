@@ -20,7 +20,7 @@ export function FeedHeader() {
   };
 
   return (
-    <header className="voople-feed-header sticky top-12 z-20 shrink-0 border-b border-[var(--app-border)] bg-[color-mix(in_srgb,var(--background)_94%,transparent)] px-4 py-2.5 backdrop-blur-md lg:static lg:top-auto lg:px-6">
+    <header data-nosnippet className="voople-feed-header sticky top-12 z-20 shrink-0 border-b border-[var(--app-border)] bg-[color-mix(in_srgb,var(--background)_94%,transparent)] px-4 py-2.5 backdrop-blur-md lg:static lg:top-auto lg:px-6">
       <nav
         className="voople-feed-header__tabs mx-auto flex w-full max-w-2xl gap-1 rounded-[var(--app-radius-lg)] bg-[var(--app-surface-soft)] p-1"
         aria-label="Разделы ленты"

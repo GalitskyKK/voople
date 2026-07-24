@@ -3,7 +3,6 @@ import { clearExpiredSubscriptionCustomizationRest } from "@/server/data/subscri
 import { customizationAssetPath } from "@/lib/customization/asset-path";
 import {
   SHOP_CATALOG_BY_ID,
-  WELCOME_VOOOPS_BONUS,
   type ShopCatalogItem,
 } from "@/lib/shop/catalog";
 import {
@@ -26,10 +25,6 @@ import type {
 
 type InventoryRow = {
   item_id: string;
-};
-
-type WalletRow = {
-  balance_coins: number;
 };
 
 type CustomizationEquipRow = {
@@ -196,38 +191,11 @@ export function mapShopItemRow(
 }
 
 export async function getOrCreateWalletRest(userId: string): Promise<WalletView> {
-  const admin = getAdminClient();
-  const { data: existing, error: readErr } = await admin
-    .from("user_wallets")
-    .select("balance_coins")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (readErr) throw new Error(readErr.message);
-  if (existing) {
-    return { balanceCoins: (existing as WalletRow).balance_coins };
-  }
-
-  const { data: created, error: insertErr } = await admin
-    .from("user_wallets")
-    .insert({ user_id: userId, balance_coins: WELCOME_VOOOPS_BONUS })
-    .select("balance_coins")
-    .single();
-
-  if (insertErr) throw new Error(insertErr.message);
-
-  const { error: txErr } = await admin.from("wallet_transactions").insert({
-    user_id: userId,
-    amount: WELCOME_VOOOPS_BONUS,
-    balance_after: WELCOME_VOOOPS_BONUS,
-    kind: "earn",
-    reference_type: "welcome_bonus",
-    note: "Приветственный бонус",
+  const { data, error } = await getAdminClient().rpc("ensure_user_wallet", {
+    p_user_id: userId,
   });
-
-  if (txErr) throw new Error(txErr.message);
-
-  return { balanceCoins: (created as WalletRow).balance_coins };
+  if (error) throw new Error(error.message);
+  return { balanceCoins: Number(data) };
 }
 
 export async function getShopItemRowRest(itemId: string): Promise<ShopItemRow | null> {
@@ -271,80 +239,62 @@ export async function grantInventoryItemRest(
 export async function creditWalletRest(
   userId: string,
   amount: number,
-  reference: { type: string; id: string; note?: string },
+  reference: { type: string; id: string; note?: string; idempotencyKey?: string },
 ): Promise<WalletView> {
   if (amount <= 0) throw new Error("Сумма начисления должна быть больше нуля");
 
   const admin = getAdminClient();
-  let balanceAfter: number | null = null;
-  for (let attempt = 0; attempt < 5 && balanceAfter === null; attempt += 1) {
-    const wallet = await getOrCreateWalletRest(userId);
-    const nextBalance = wallet.balanceCoins + amount;
-    const { data, error: updateErr } = await admin
-      .from("user_wallets")
-      .update({ balance_coins: nextBalance, updated_at: new Date().toISOString() })
-      .eq("user_id", userId)
-      .eq("balance_coins", wallet.balanceCoins)
-      .select("balance_coins")
-      .maybeSingle();
-    if (updateErr) throw new Error(updateErr.message);
-    if (data) balanceAfter = (data as WalletRow).balance_coins;
-  }
-  if (balanceAfter === null) throw new Error("Баланс изменился одновременно, повторите операцию");
-
-  const { error: txErr } = await admin.from("wallet_transactions").insert({
-    user_id: userId,
-    amount,
-    balance_after: balanceAfter,
-    kind: "earn",
-    reference_type: reference.type,
-    reference_id: reference.id,
-    note: reference.note ?? null,
+  const { data, error } = await admin.rpc("adjust_wallet", {
+    p_user_id: userId,
+    p_amount: amount,
+    p_kind: "earn",
+    p_reference_type: reference.type,
+    p_reference_id: reference.id,
+    p_note: reference.note ?? null,
+    p_idempotency_key: reference.idempotencyKey ?? `${reference.type}:${reference.id}:${crypto.randomUUID()}`,
   });
-
-  if (txErr) throw new Error(txErr.message);
-
-  return { balanceCoins: balanceAfter };
+  if (error) throw new Error(error.message);
+  return { balanceCoins: Number(data) };
 }
 
 export async function debitWalletRest(
   userId: string,
   amount: number,
-  reference: { type: string; id: string; note?: string },
+  reference: { type: string; id: string; note?: string; idempotencyKey?: string },
 ): Promise<WalletView> {
   if (amount <= 0) throw new Error("Сумма списания должна быть больше нуля");
 
   const admin = getAdminClient();
-  let balanceAfter: number | null = null;
-  for (let attempt = 0; attempt < 5 && balanceAfter === null; attempt += 1) {
-    const wallet = await getOrCreateWalletRest(userId);
-    if (wallet.balanceCoins < amount) throw new Error("Недостаточно voops");
-    const nextBalance = wallet.balanceCoins - amount;
-    const { data, error: updateErr } = await admin
-      .from("user_wallets")
-      .update({ balance_coins: nextBalance, updated_at: new Date().toISOString() })
-      .eq("user_id", userId)
-      .eq("balance_coins", wallet.balanceCoins)
-      .select("balance_coins")
-      .maybeSingle();
-    if (updateErr) throw new Error(updateErr.message);
-    if (data) balanceAfter = (data as WalletRow).balance_coins;
-  }
-  if (balanceAfter === null) throw new Error("Баланс изменился одновременно, повторите операцию");
-
-  const { error: txErr } = await admin.from("wallet_transactions").insert({
-    user_id: userId,
-    amount: -amount,
-    balance_after: balanceAfter,
-    kind: "spend",
-    reference_type: reference.type,
-    reference_id: reference.id,
-    note: reference.note ?? null,
+  const { data, error } = await admin.rpc("adjust_wallet", {
+    p_user_id: userId,
+    p_amount: -amount,
+    p_kind: "spend",
+    p_reference_type: reference.type,
+    p_reference_id: reference.id,
+    p_note: reference.note ?? null,
+    p_idempotency_key: reference.idempotencyKey ?? `${reference.type}:${reference.id}:${crypto.randomUUID()}`,
   });
+  if (error) {
+    if (error.message.includes("Insufficient balance")) throw new Error("Недостаточно voops");
+    throw new Error(error.message);
+  }
+  return { balanceCoins: Number(data) };
+}
 
-  if (txErr) throw new Error(txErr.message);
-
-  return { balanceCoins: balanceAfter };
+export async function purchaseShopItemWithCoinsRest(
+  userId: string,
+  itemId: string,
+): Promise<WalletView> {
+  const { data, error } = await getAdminClient().rpc("purchase_shop_item_with_coins", {
+    p_user_id: userId,
+    p_item_id: itemId,
+  });
+  if (error) {
+    if (error.message.includes("Insufficient balance")) throw new Error("Недостаточно voops");
+    if (error.message.includes("already owned")) throw new Error("Предмет уже в инвентаре");
+    throw new Error(error.message);
+  }
+  return { balanceCoins: Number(data) };
 }
 
 export async function createPaymentIntentRest(input: {

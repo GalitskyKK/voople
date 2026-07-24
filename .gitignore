@@ -22,6 +22,10 @@
 
 /drizzle/*
 !/drizzle/23-message-reactions.sql
+!/drizzle/24-delete-post.sql
+!/drizzle/25-commerce-hardening.sql
+!/drizzle/26-admin-observability.sql
+!/drizzle/27-chat-rooms.sql
 
 # misc
 .DS_Store

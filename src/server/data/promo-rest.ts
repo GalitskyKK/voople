@@ -15,10 +15,6 @@ export type PromoCodeRow = {
   is_active: boolean;
 };
 
-type PromoRedemptionRow = {
-  id: string;
-};
-
 export async function getPromoByIdRest(promoCodeId: string): Promise<PromoCodeRow | null> {
   const admin = getAdminClient();
   const { data, error } = await admin.from("promo_codes").select("*").eq("id", promoCodeId).maybeSingle();
@@ -88,38 +84,14 @@ export async function recordPromoRedemptionRest(input: {
   referenceType?: string;
   referenceId?: string;
 }): Promise<string> {
-  const admin = getAdminClient();
-
-  const { data: redemption, error: insertErr } = await admin
-    .from("promo_redemptions")
-    .insert({
-      promo_code_id: input.promoCodeId,
-      user_id: input.userId,
-      reference_type: input.referenceType ?? null,
-      reference_id: input.referenceId ?? null,
-    })
-    .select("id")
-    .single();
-
-  if (insertErr) throw new Error(insertErr.message);
-
-  const { data: promo, error: readErr } = await admin
-    .from("promo_codes")
-    .select("redemption_count")
-    .eq("id", input.promoCodeId)
-    .single();
-
-  if (readErr) throw new Error(readErr.message);
-
-  const nextCount = (promo as { redemption_count: number }).redemption_count + 1;
-  const { error: updateErr } = await admin
-    .from("promo_codes")
-    .update({ redemption_count: nextCount })
-    .eq("id", input.promoCodeId);
-
-  if (updateErr) throw new Error(updateErr.message);
-
-  return (redemption as PromoRedemptionRow).id;
+  const { data, error } = await getAdminClient().rpc("claim_promo_redemption", {
+    p_promo_code_id: input.promoCodeId,
+    p_user_id: input.userId,
+    p_reference_type: input.referenceType ?? null,
+    p_reference_id: input.referenceId ?? null,
+  });
+  if (error) throw new Error(error.message);
+  return String(data);
 }
 
 export function parsePromoPayload(

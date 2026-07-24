@@ -5,17 +5,27 @@ import { assertRateLimit } from "@/lib/ratelimit-guard";
 import { rateLimits } from "@/lib/ratelimit";
 import { CHAT_REACTION_EMOJIS } from "@/lib/chat/reactions";
 import {
+  acceptChatInvite,
+  createChatInvite,
+  createChatRoomMediaToken,
   deleteMessage,
   createGroupChat,
+  enterChatRoom,
   getDirectChatByUsername,
+  getChatRoom,
+  heartbeatChatRoom,
+  leaveChatRoom,
   listChats,
   listMessages,
   markMessagesRead,
+  previewChatInvite,
+  revokeChatInvite,
   sendMessage,
+  setChatRoomAccess,
   toggleMessageReaction,
 } from "@/server/services/chat.service";
 
-import { createTRPCRouter, protectedProcedure } from "../init";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 
 const sendInputSchema = z
   .object({
@@ -35,6 +45,138 @@ const sendInputSchema = z
   );
 
 export const chatRouter = createTRPCRouter({
+  invitePreview: publicProcedure
+    .input(z.object({ token: z.string().min(20).max(100) }))
+    .query(async ({ input }) => {
+      try {
+        return await previewChatInvite(input.token);
+      } catch {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Ссылка недоступна" });
+      }
+    }),
+
+  createInvite: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.createChatInvite, ctx.user.id);
+      try {
+        return await createChatInvite(input.chatId, ctx.user.id);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось создать ссылку",
+        });
+      }
+    }),
+
+  acceptInvite: protectedProcedure
+    .input(z.object({ token: z.string().min(20).max(100) }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.acceptChatInvite, ctx.user.id);
+      try {
+        return await acceptChatInvite(input.token, ctx.user.id);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось вступить в группу",
+        });
+      }
+    }),
+
+  revokeInvite: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid(), token: z.string().min(20).max(100) }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.createChatInvite, ctx.user.id);
+      try {
+        return await revokeChatInvite(input.chatId, ctx.user.id, input.token);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось отозвать ссылку",
+        });
+      }
+    }),
+
+  room: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        return await getChatRoom(input.chatId, ctx.user.id);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось загрузить комнату",
+        });
+      }
+    }),
+
+  enterRoom: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid(), micMuted: z.boolean().default(true) }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
+      try {
+        return await enterChatRoom(input.chatId, ctx.user.id, input.micMuted);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось войти в комнату",
+        });
+      }
+    }),
+
+  roomMediaToken: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
+      try {
+        return await createChatRoomMediaToken(input.chatId, ctx.user.id);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось подключить голос",
+        });
+      }
+    }),
+
+  heartbeatRoom: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid(), micMuted: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await heartbeatChatRoom(input.chatId, ctx.user.id, input.micMuted);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Связь с комнатой потеряна",
+        });
+      }
+    }),
+
+  leaveRoom: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await leaveChatRoom(input.chatId, ctx.user.id);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось выйти из комнаты",
+        });
+      }
+    }),
+
+  setRoomAccess: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid(), accessMode: z.enum(["open", "locked"]) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await setChatRoomAccess(input.chatId, ctx.user.id, input.accessMode);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось изменить доступ",
+        });
+      }
+    }),
+
   createGroup: protectedProcedure
     .input(z.object({ name: z.string().trim().min(2).max(50), memberIds: z.array(z.string().uuid()).min(2).max(19) }))
     .mutation(async ({ ctx, input }) => {

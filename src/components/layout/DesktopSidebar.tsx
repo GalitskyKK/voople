@@ -14,7 +14,7 @@ export function DesktopSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="voople-sidebar fixed left-0 top-0 hidden h-full w-[var(--voople-sidebar-width)] shrink-0 flex-col lg:flex">
+    <aside data-nosnippet className="voople-sidebar fixed left-0 top-0 hidden h-full w-[var(--voople-sidebar-width)] shrink-0 flex-col lg:flex">
       <div className="voople-sidebar__brand shrink-0 px-5 pb-7 pt-7">
         <Link
           href="/feed"

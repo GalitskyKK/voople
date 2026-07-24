@@ -30,7 +30,11 @@ export async function updatePostTextRest(
     throw new Error("Редактирование доступно только в первые 24 часа после публикации");
   }
 
-  if (row.state_snapshot && typeof row.state_snapshot === "object") {
+  const snapshot =
+    row.state_snapshot && typeof row.state_snapshot === "object"
+      ? row.state_snapshot as Record<string, unknown>
+      : null;
+  if (snapshot && snapshot.kind !== "appearance") {
     throw new Error("Посты состояния нельзя редактировать");
   }
 

@@ -1,5 +1,30 @@
 # Безопасность данных
 
+> Актуальный порядок дальнейших работ хранится в [roadmap.md](./roadmap.md).
+
+## CAPTCHA
+
+Вход, регистрация и запрос email-кода поддерживают Cloudflare Turnstile через встроенный
+`captchaToken` Supabase Auth.
+
+- public env: `NEXT_PUBLIC_TURNSTILE_SITE_KEY`;
+- secret настраивается только в Supabase Dashboard → Authentication → Bot and Abuse Protection;
+- без site key компонент не отображается (удобно для локальной разработки);
+- при включённом site key форма не отправляет auth-запрос без действительного токена.
+
+## Commerce atomicity
+
+`drizzle/25-commerce-hardening.sql` переносит критические операции в транзакционные RPC:
+
+- создание кошелька и welcome bonus;
+- изменение баланса вместе с записью ledger;
+- покупка предмета вместе со списанием и выдачей inventory;
+- однократное продление подписки по external id;
+- атомарное резервирование использования промокода.
+
+RPC закрыты для `PUBLIC` и доступны только `service_role`. Любая новая награда или мини-игра
+должна начислять voops через `adjust_wallet` с устойчивым idempotency key.
+
 ## Два пути к Postgres
 
 | Путь | Кто | RLS |

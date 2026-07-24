@@ -5,7 +5,7 @@ import { assertRateLimit } from "@/lib/ratelimit-guard"
 import { rateLimits } from "@/lib/ratelimit"
 import { createComment, deleteComment, listComments } from "@/server/services/comments.service"
 import { toggleLike } from "@/server/services/likes.service"
-import { createPost, createPostReport, getPostById, updatePostText } from "@/server/services/post.service"
+import { createPost, createPostReport, deletePost, getPostById, updatePostText } from "@/server/services/post.service"
 import { createRepost, toggleRepost } from "@/server/services/reposts.service"
 import { recordPostView } from "@/server/services/views.service"
 
@@ -51,12 +51,27 @@ export const postRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.updatePost, ctx.user.id)
       try {
         return await updatePostText(ctx.user.id, input.postId, input.text)
       } catch (e) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: e instanceof Error ? e.message : "Не удалось обновить пост",
+        })
+      }
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ postId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.deletePost, ctx.user.id)
+      try {
+        return await deletePost(ctx.user.id, input.postId)
+      } catch (e) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: e instanceof Error ? e.message : "Не удалось удалить пост",
         })
       }
     }),
@@ -69,7 +84,7 @@ export const postRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await assertRateLimit(rateLimits.createPost, ctx.user.id)
+      await assertRateLimit(rateLimits.reportPost, ctx.user.id)
       try {
         return await createPostReport(ctx.user.id, input.postId, input.reason)
       } catch (e) {
@@ -97,6 +112,7 @@ export const postRouter = createTRPCRouter({
   view: protectedProcedure
     .input(z.object({ postId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.recordView, ctx.user.id)
       try {
         return await recordPostView(input.postId, ctx.user.id)
       } catch (e) {

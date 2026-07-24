@@ -23,6 +23,7 @@ type PostAuthorRowProps = {
   viewerUsername?: string | null;
   profileUsername?: string;
   onTextUpdated?: (text: string, isRepostComment: boolean) => void;
+  onDeleted?: () => void;
 };
 
 /** Author row in post: default header or themed feed chip (replaces name block, not above post). */
@@ -40,6 +41,7 @@ export function PostAuthorRow({
   viewerUsername = null,
   profileUsername,
   onTextUpdated,
+  onDeleted,
 }: PostAuthorRowProps) {
   const c = customization;
   const useFeedChip = Boolean(c?.flags.hasFeedCardStyle);
@@ -99,6 +101,7 @@ export function PostAuthorRow({
             viewerUsername={viewerUsername}
             profileUsername={profileUsername}
             onTextUpdated={onTextUpdated}
+            onDeleted={onDeleted}
           />
         )}
       </header>
@@ -140,6 +143,7 @@ export function PostAuthorRow({
           viewerUsername={viewerUsername}
           profileUsername={profileUsername}
           onTextUpdated={onTextUpdated}
+          onDeleted={onDeleted}
         />
       )}
     </header>

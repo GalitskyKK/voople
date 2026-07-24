@@ -5,7 +5,6 @@ import { CornerDownRight } from "lucide-react";
 
 import { useIsLgViewport } from "@/hooks/useIsLgViewport";
 import { messageHasMusicForPlaylist } from "@/lib/chat/playlist-from-message";
-import { formatMessageTime } from "@/lib/format/message-time";
 import { cn } from "@/lib/utils";
 import type { ChatReactionEmoji } from "@/lib/chat/reactions";
 import type { ChatMessageView } from "@/types/chat";
@@ -16,6 +15,7 @@ import { ChatAttachmentImage } from "./ChatAttachmentImage";
 import { ChatAttachmentTrack } from "./ChatAttachmentTrack";
 import { ChatMessageMenu } from "./ChatMessageMenu";
 import { MessageReadTicks } from "./MessageReadTicks";
+import { LocalMessageTime } from "./LocalMessageTime";
 
 type ChatMessageBubbleProps = {
   message: ChatMessageView;
@@ -41,7 +41,6 @@ export function ChatMessageBubble({
   const isLg = useIsLgViewport();
   const [menuOpen, setMenuOpen] = useState(false);
   const { isMine, text, createdAt, readAt, replyTo, attachment } = message;
-  const timeLabel = formatMessageTime(createdAt);
   const hasText = Boolean(text?.trim());
   const canSaveToPlaylist = Boolean(
     viewerId && onAddToPlaylist && messageHasMusicForPlaylist(message),
@@ -186,7 +185,7 @@ export function ChatMessageBubble({
           ) : null}
 
           <div className="voople-chat-bubble__meta flex items-center justify-end gap-1 text-[10px] text-[var(--app-muted)]">
-            <time dateTime={createdAt}>{timeLabel}</time>
+            <LocalMessageTime iso={createdAt} />
             {isMine && <MessageReadTicks readAt={readAt} />}
           </div>
         </div>

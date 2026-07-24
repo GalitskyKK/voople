@@ -47,6 +47,7 @@ export async function grantAdminCurrencyRest(input: {
   await creditWalletRest(user.id, input.amount, {
     type: "admin_grant",
     id: input.adminUserId,
+    idempotencyKey: `admin:${input.adminUserId}:${crypto.randomUUID()}`,
     note: input.note?.trim() || `Начисление администратором для @${user.username}`,
   });
   return getAdminUserSummaryRest(user.username);

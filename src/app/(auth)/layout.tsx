@@ -8,7 +8,7 @@ import { CirclePlay, Music2, Sparkles } from "lucide-react";
 export const metadata: Metadata = {
   title: "Вход и регистрация",
   description: "Войдите в Voople или создайте аккаунт.",
-  robots: { index: true, follow: true },
+  robots: { index: false, follow: false },
 };
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {

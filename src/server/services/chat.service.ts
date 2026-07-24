@@ -10,3 +10,16 @@ export {
   sendMessageRest as sendMessage,
   toggleMessageReactionRest as toggleMessageReaction,
 } from "@/server/data/chat-rest";
+
+export {
+  acceptChatInviteRest as acceptChatInvite,
+  createChatInviteRest as createChatInvite,
+  createChatRoomMediaTokenRest as createChatRoomMediaToken,
+  enterChatRoomRest as enterChatRoom,
+  getChatRoomRest as getChatRoom,
+  heartbeatChatRoomRest as heartbeatChatRoom,
+  leaveChatRoomRest as leaveChatRoom,
+  previewChatInviteRest as previewChatInvite,
+  revokeChatInviteRest as revokeChatInvite,
+  setChatRoomAccessRest as setChatRoomAccess,
+} from "@/server/data/chat-rooms-rest";

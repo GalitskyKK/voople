@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Coins, Crown, Search, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
+import { parseDatabaseDate } from "@/lib/format/database-date";
 import { trpc } from "@/lib/trpc/client";
 
 export function AdminUsersPage() {
@@ -78,7 +79,7 @@ export function AdminUsersPage() {
                 <p className="text-sm text-[var(--app-muted)]">@{user.username} · {user.wallet.balanceCoins} voops</p>
                 <p className="mt-1 text-xs text-[var(--app-muted)]">
                   {user.subscription.active
-                    ? `Voople+ до ${new Date(user.subscription.expiresAt!).toLocaleDateString("ru-RU")}`
+                    ? `Voople+ до ${parseDatabaseDate(user.subscription.expiresAt!).toLocaleDateString("ru-RU")}`
                     : "Активной подписки нет"}
                 </p>
               </div>

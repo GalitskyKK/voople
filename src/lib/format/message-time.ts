@@ -1,3 +1,5 @@
+import { parseDatabaseDate } from "./database-date";
+
 const TIME_FORMATTER = new Intl.DateTimeFormat("ru-RU", {
   hour: "2-digit",
   minute: "2-digit",
@@ -15,7 +17,7 @@ const DATE_YEAR_FORMATTER = new Intl.DateTimeFormat("ru-RU", {
 });
 
 function toDate(iso: string) {
-  const date = new Date(iso);
+  const date = parseDatabaseDate(iso);
   if (Number.isNaN(date.getTime())) return null;
   return date;
 }

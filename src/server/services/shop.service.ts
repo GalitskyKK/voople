@@ -2,7 +2,6 @@ import { VOOPLUS_PRICE_RUB } from "@/lib/constants/subscription";
 import { isYooKassaConfigured } from "@/lib/payments/yookassa-config";
 import {
   createPaymentIntentRest,
-  debitWalletRest,
   getEquippedCustomizationRest,
   getInventoryItemIdsRest,
   getOrCreateWalletRest,
@@ -12,6 +11,7 @@ import {
   linkPaymentIntentExternalRest,
   listShopItemsRest,
   mapShopItemRow,
+  purchaseShopItemWithCoinsRest,
   updatePaymentIntentStatusRest,
 } from "@/server/data/shop-rest";
 import { extendVooplePlusRest, getSubscriptionStatusRest } from "@/server/data/subscription-rest";
@@ -57,17 +57,7 @@ export async function purchaseShopItemWithCoins(userId: string, itemId: string):
   if (row.is_free) throw new Error("Используйте бесплатное получение");
   if (row.price_coins <= 0) throw new Error("Предмет недоступен за voops");
 
-  const owned = await getInventoryItemIdsRest(userId);
-  if (owned.has(itemId)) throw new Error("Предмет уже в инвентаре");
-
-  await debitWalletRest(userId, row.price_coins, {
-    type: "shop_item",
-    id: itemId,
-    note: `Покупка: ${row.name}`,
-  });
-
-  await grantInventoryItemRest(userId, itemId, "purchase");
-  return getOrCreateWalletRest(userId);
+  return purchaseShopItemWithCoinsRest(userId, itemId);
 }
 
 export async function createRubPaymentIntent(input: {

@@ -10,6 +10,7 @@ import { listUserBadgesRest } from "@/server/data/badges-rest";
 
 export { getPostByIdRest as getPostById, searchPostsRest as searchPosts } from "@/server/data/posts-rest";
 export { updatePostTextRest as updatePostText } from "@/server/data/post-update-rest";
+export { deletePostRest as deletePost } from "@/server/data/post-delete-rest";
 export { createPostReportRest as createPostReport } from "@/server/data/post-reports-rest";
 
 export async function createPost(

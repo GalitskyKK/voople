@@ -1,5 +1,7 @@
+import { parseDatabaseDate } from "./database-date";
+
 export function formatRelativeTime(iso: string | Date): string {
-  const then = typeof iso === "string" ? new Date(iso) : iso;
+  const then = parseDatabaseDate(iso);
   const diff = Date.now() - then.getTime();
   if (diff < 60_000) return "только что";
 

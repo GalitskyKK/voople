@@ -69,8 +69,19 @@ async function main() {
   }
 
   const drizzleDir = resolve(process.cwd(), "drizzle");
+  const requestedFile = process.argv[2];
+  if (
+    requestedFile &&
+    (!/^[a-zA-Z0-9._-]+\.sql$/.test(requestedFile) ||
+      !existsSync(resolve(drizzleDir, requestedFile)))
+  ) {
+    console.error(`Migration not found: ${requestedFile}`);
+    process.exit(1);
+  }
+
   const sqlFiles = readdirSync(drizzleDir)
     .filter((f) => f.endsWith(".sql") && !f.includes("dashboard"))
+    .filter((f) => !requestedFile || f === requestedFile)
     .sort();
 
   if (sqlFiles.length === 0) {

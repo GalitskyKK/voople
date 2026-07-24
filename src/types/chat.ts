@@ -47,6 +47,7 @@ export type ChatListItem = {
   type: "direct" | "group";
   name: string | null;
   memberCount: number;
+  viewerRole: "owner" | "admin" | "member";
   otherUser: {
     id: string;
     username: string;
@@ -61,3 +62,29 @@ export type ChatListItem = {
 };
 
 export type ChatThreadSummary = Pick<ChatListItem, "id" | "type" | "name" | "memberCount">;
+
+export type ChatRoomParticipantView = {
+  id: string;
+  username: string;
+  displayName: string;
+  micMuted: boolean;
+  isMe: boolean;
+};
+
+export type ChatRoomView = {
+  status: "empty" | "active";
+  accessMode: "open" | "locked";
+  startedBy: string | null;
+  startedAt: string | null;
+  participants: ChatRoomParticipantView[];
+  isInside: boolean;
+};
+
+export type ChatInvitePreview = {
+  available: boolean;
+  reason: "active" | "expired" | "revoked" | "used" | "missing";
+  chatId: string | null;
+  chatName: string | null;
+  memberCount: number;
+  expiresAt: string | null;
+};

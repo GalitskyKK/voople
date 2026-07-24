@@ -8,6 +8,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/Button";
+import { TURNSTILE_SITE_KEY, TurnstileChallenge } from "@/components/auth/TurnstileChallenge";
 import { syncPublicUser } from "@/lib/auth/sync-public-user";
 import { COPY } from "@/lib/constants/copy";
 import { createClient } from "@/lib/supabase/client";
@@ -23,24 +24,50 @@ export default function LoginPage() {
   const [code, setCode] = useState("");
   const [codeBusy, setCodeBusy] = useState(false);
   const [codeError, setCodeError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const codeInputs = useRef<Array<HTMLInputElement | null>>([]);
   const { register, handleSubmit, formState: { errors, isSubmitting }, setError, getValues } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
   const finishLogin = async () => {
     const { username, created } = await syncPublicUser();
-    router.replace(created && username ? `/onboarding?username=${encodeURIComponent(username)}` : username ? `/${username}` : "/feed");
+    const requestedRedirect = new URLSearchParams(window.location.search).get("redirect");
+    const safeRedirect =
+      requestedRedirect?.startsWith("/") && !requestedRedirect.startsWith("//")
+        ? requestedRedirect
+        : null;
+    router.replace(
+      created && username
+        ? `/onboarding?username=${encodeURIComponent(username)}${safeRedirect ? `&redirect=${encodeURIComponent(safeRedirect)}` : ""}`
+        : safeRedirect ?? (username ? `/${username}` : "/feed"),
+    );
     router.refresh();
   };
   const onSubmit = async (data: FormValues) => {
-    const { error } = await createClient().auth.signInWithPassword(data);
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      return setError("root", { message: captchaError ?? "Пройдите антибот-проверку" });
+    }
+    const { error } = await createClient().auth.signInWithPassword({
+      ...data,
+      options: { captchaToken: captchaToken ?? undefined },
+    });
+    setCaptchaToken(null);
+    setCaptchaResetKey((value) => value + 1);
     if (error) return setError("root", { message: error.message });
     try { await finishLogin(); } catch (error) { setError("root", { message: error instanceof Error ? error.message : "Не удалось создать профиль" }); }
   };
   const sendCode = async () => {
     const email = getValues("email").trim();
     if (!z.string().email().safeParse(email).success) return setCodeError("Введите корректный email");
+    if (TURNSTILE_SITE_KEY && !captchaToken) return setCodeError(captchaError ?? "Пройдите антибот-проверку");
     setCodeBusy(true); setCodeError(null);
-    const { error } = await createClient().auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+    const { error } = await createClient().auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: false, captchaToken: captchaToken ?? undefined },
+    });
+    setCaptchaToken(null);
+    setCaptchaResetKey((value) => value + 1);
     setCodeBusy(false);
     if (error) return setCodeError(error.message);
     setCode(""); setCodeSentTo(email);
@@ -70,5 +97,5 @@ export default function LoginPage() {
     window.setTimeout(() => codeInputs.current[Math.min(digits.length, CODE_LENGTH - 1)]?.focus(), 0);
   };
 
-  return <form onSubmit={handleSubmit(onSubmit)} className="voople-panel w-full max-w-sm space-y-4 p-6"><h1 className="voople-display">{COPY.login}</h1><label className="voople-label">Email<input type="email" className="voople-input mt-1.5" {...register("email")} />{errors.email && <span className="mt-1 block text-xs text-red-400">{errors.email.message}</span>}</label>{!codeMode && <label className="voople-label">Пароль<input type="password" className="voople-input mt-1.5" {...register("password")} />{errors.password && <span className="mt-1 block text-xs text-red-400">{errors.password.message}</span>}</label>}{codeMode && codeSentTo && <fieldset className="voople-label"><legend>Код из письма</legend><div className="mt-2 grid grid-cols-6 gap-2">{Array.from({ length: CODE_LENGTH }, (_, index) => <input key={index} ref={(element) => { codeInputs.current[index] = element; }} value={code[index] ?? ""} onChange={(event) => setCodeDigit(index, event.target.value)} onPaste={pasteCode} onKeyDown={(event) => { if (event.key === "Backspace" && !code[index] && index > 0) codeInputs.current[index - 1]?.focus(); if (event.key === "ArrowLeft" && index > 0) codeInputs.current[index - 1]?.focus(); if (event.key === "ArrowRight" && index < CODE_LENGTH - 1) codeInputs.current[index + 1]?.focus(); }} inputMode="numeric" autoComplete={index === 0 ? "one-time-code" : "off"} maxLength={CODE_LENGTH} aria-label={`Цифра ${index + 1} кода`} className="aspect-square min-w-0 rounded-xl border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] text-center text-xl font-semibold tabular-nums outline-none transition focus:border-(--theme-accent) focus:ring-2 focus:ring-(--theme-accent)/30" />)}</div></fieldset>}{errors.root && <p className="text-sm text-red-400">{errors.root.message}</p>}{codeError && <p className="text-sm text-red-400">{codeError}</p>}{!codeMode ? <Button type="submit" className="w-full" disabled={isSubmitting}>{COPY.login}</Button> : codeSentTo ? <><Button type="button" className="w-full" disabled={codeBusy} onClick={verifyCode}>{codeBusy ? "Проверяем…" : "Войти по коду"}</Button><button type="button" className="w-full text-sm voople-link" disabled={codeBusy} onClick={sendCode}>Отправить код ещё раз</button></> : <Button type="button" className="w-full" disabled={codeBusy} onClick={sendCode}>{codeBusy ? "Отправляем…" : "Отправить код"}</Button>}<button type="button" className="w-full text-center text-sm voople-link" onClick={() => { setCodeMode((value) => !value); setCodeSentTo(null); setCodeError(null); setCode(""); }}>{codeMode ? "Войти с паролем" : "Войти по коду из письма"}</button><p className="text-center text-sm text-[var(--app-muted)]">Нет аккаунта? <Link href="/register" className="voople-link">{COPY.register}</Link></p></form>;
+  return <form onSubmit={handleSubmit(onSubmit)} className="voople-panel w-full max-w-sm space-y-4 p-6"><h1 className="voople-display">{COPY.login}</h1><label className="voople-label">Email<input type="email" className="voople-input mt-1.5" {...register("email")} />{errors.email && <span className="mt-1 block text-xs text-red-400">{errors.email.message}</span>}</label>{!codeMode && <label className="voople-label">Пароль<input type="password" className="voople-input mt-1.5" {...register("password")} />{errors.password && <span className="mt-1 block text-xs text-red-400">{errors.password.message}</span>}</label>}{codeMode && codeSentTo && <fieldset className="voople-label"><legend>Код из письма</legend><div className="mt-2 grid grid-cols-6 gap-2">{Array.from({ length: CODE_LENGTH }, (_, index) => <input key={index} ref={(element) => { codeInputs.current[index] = element; }} value={code[index] ?? ""} onChange={(event) => setCodeDigit(index, event.target.value)} onPaste={pasteCode} onKeyDown={(event) => { if (event.key === "Backspace" && !code[index] && index > 0) codeInputs.current[index - 1]?.focus(); if (event.key === "ArrowLeft" && index > 0) codeInputs.current[index - 1]?.focus(); if (event.key === "ArrowRight" && index < CODE_LENGTH - 1) codeInputs.current[index + 1]?.focus(); }} inputMode="numeric" autoComplete={index === 0 ? "one-time-code" : "off"} maxLength={CODE_LENGTH} aria-label={`Цифра ${index + 1} кода`} className="aspect-square min-w-0 rounded-xl border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] text-center text-xl font-semibold tabular-nums outline-none transition focus:border-(--theme-accent) focus:ring-2 focus:ring-(--theme-accent)/30" />)}</div></fieldset>}{(!codeMode || !codeSentTo) && <TurnstileChallenge action="login" resetKey={captchaResetKey} onTokenChange={setCaptchaToken} onUnavailable={setCaptchaError} />}{errors.root && <p className="text-sm text-red-400">{errors.root.message}</p>}{codeError && <p className="text-sm text-red-400">{codeError}</p>}{captchaError && <p className="text-sm text-red-400">{captchaError}</p>}{!codeMode ? <Button type="submit" className="w-full" disabled={isSubmitting}>{COPY.login}</Button> : codeSentTo ? <><Button type="button" className="w-full" disabled={codeBusy} onClick={verifyCode}>{codeBusy ? "Проверяем…" : "Войти по коду"}</Button><button type="button" className="w-full text-sm voople-link" disabled={codeBusy} onClick={sendCode}>Отправить код ещё раз</button></> : <Button type="button" className="w-full" disabled={codeBusy} onClick={sendCode}>{codeBusy ? "Отправляем…" : "Отправить код"}</Button>}<button type="button" className="w-full text-center text-sm voople-link" onClick={() => { setCodeMode((value) => !value); setCodeSentTo(null); setCodeError(null); setCode(""); setCaptchaToken(null); setCaptchaResetKey((value) => value + 1); }}>{codeMode ? "Войти с паролем" : "Войти по коду из письма"}</button><p className="text-center text-sm text-[var(--app-muted)]">Нет аккаунта? <Link href="/register" className="voople-link">{COPY.register}</Link></p></form>;
 }

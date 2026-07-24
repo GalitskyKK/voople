@@ -12,11 +12,15 @@ export const metadata: Metadata = {
 export default async function OnboardingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ username?: string }>;
+  searchParams: Promise<{ username?: string; redirect?: string }>;
 }) {
-  const [{ username }, supabase] = await Promise.all([searchParams, createClient()]);
+  const [{ username, redirect: requestedRedirect }, supabase] = await Promise.all([searchParams, createClient()]);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   if (!username) redirect("/feed");
-  return <OnboardingFlow username={username} />;
+  const redirectAfter =
+    requestedRedirect?.startsWith("/") && !requestedRedirect.startsWith("//")
+      ? requestedRedirect
+      : undefined;
+  return <OnboardingFlow username={username} redirectAfter={redirectAfter} />;
 }

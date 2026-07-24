@@ -5,6 +5,7 @@ import { EventsPage } from "@/components/events/EventsPage";
 export const metadata: Metadata = {
   title: "События Voople",
   description: "Сезонные события, испытания и уникальные награды Voople.",
+  alternates: { canonical: "/events" },
 };
 
 export default function EventsRoute() {

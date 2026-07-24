@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CirclePlay, Music2, Palette, Sparkles } from "lucide-react";
 
 import { LandingProfilePreview } from "@/components/landing/LandingProfilePreview";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { SITE_DESCRIPTION } from "@/lib/seo/site";
+
+export const metadata: Metadata = {
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: "/" },
+};
 
 const FEATURES = [
   {

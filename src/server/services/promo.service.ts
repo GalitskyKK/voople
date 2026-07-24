@@ -106,6 +106,7 @@ export async function redeemInstantPromo(userId: string, rawCode: string): Promi
     await creditWalletRest(userId, amount, {
       type: "promo_code",
       id: promo.id,
+      idempotencyKey: `promo:${promo.id}:${userId}`,
       note: `Промокод ${promo.code}`,
     });
     return {

@@ -51,6 +51,7 @@ const secretAccessKey = requiredEnvironment("DESKTOP_RELEASE_S3_SECRET_ACCESS_KE
 const installer = await readFile(installerPath);
 const installerStats = await stat(installerPath);
 const sha256 = createHash("sha256").update(installer).digest("hex");
+const signed = process.env.DESKTOP_RELEASE_SIGNED === "true";
 const checksum = Buffer.from(`${sha256}  Voople-Setup-x64.exe\n`, "utf8");
 const publishedAt = new Date().toISOString();
 const stableKey = "desktop/Voople-Setup-x64.exe";
@@ -63,6 +64,7 @@ const latestManifest = Buffer.from(
       url: publicInstallerUrl.toString(),
       sha256,
       size: installerStats.size,
+      signed,
       publishedAt,
     },
     null,

@@ -8,6 +8,11 @@ on:
         required: true
         default: false
         type: boolean
+      allow_unsigned:
+        description: Allow an explicitly requested unsigned test release
+        required: true
+        default: false
+        type: boolean
   push:
     tags:
       - "desktop-v*"
@@ -32,7 +37,9 @@ jobs:
       NEXT_PUBLIC_ASSETS_CDN_URL: ${{ vars.DESKTOP_ASSETS_CDN_URL }}
       WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
       WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-      REQUIRE_SIGNING: ${{ startsWith(github.ref, 'refs/tags/desktop-v') || inputs.publish == true }}
+      REQUIRE_SIGNING: ${{ startsWith(github.ref, 'refs/tags/desktop-v') || (inputs.publish == true && inputs.allow_unsigned != true) }}
+      ALLOW_UNSIGNED: ${{ inputs.allow_unsigned == true }}
+      PUBLISH_RELEASE: ${{ startsWith(github.ref, 'refs/tags/desktop-v') || inputs.publish == true }}
 
     steps:
       - name: Check out source
@@ -70,6 +77,9 @@ jobs:
           }
           if ([string]::IsNullOrWhiteSpace($env:VITE_SUPABASE_ANON_KEY)) {
             throw "DESKTOP_SUPABASE_ANON_KEY is not configured."
+          }
+          if ($env:ALLOW_UNSIGNED -eq "true" -and $env:PUBLISH_RELEASE -ne "true") {
+            throw "allow_unsigned can only be used together with publish."
           }
 
           $tauri = Get-Content "desktop/src-tauri/tauri.conf.json" -Raw | ConvertFrom-Json
@@ -164,11 +174,12 @@ jobs:
           "$hash  Voople-Setup-x64.exe" |
             Set-Content "release/Voople-Setup-x64.exe.sha256" -Encoding ascii
 
-          if ($env:REQUIRE_SIGNING -eq "true") {
-            $signature = Get-AuthenticodeSignature "release/Voople-Setup-x64.exe"
-            if ($signature.Status -ne "Valid") {
-              throw "Refusing to publish installer with signature status: $($signature.Status)."
-            }
+          $signature = Get-AuthenticodeSignature "release/Voople-Setup-x64.exe"
+          $isSigned = $signature.Status -eq "Valid"
+          "DESKTOP_RELEASE_SIGNED=$($isSigned.ToString().ToLowerInvariant())" |
+            Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          if ($env:REQUIRE_SIGNING -eq "true" -and -not $isSigned) {
+            throw "Refusing to publish installer with signature status: $($signature.Status)."
           }
 
       - name: Upload private workflow artifact
@@ -211,4 +222,5 @@ jobs:
           DESKTOP_RELEASE_S3_SECRET_ACCESS_KEY: ${{ secrets.DESKTOP_RELEASE_S3_SECRET_ACCESS_KEY }}
           DESKTOP_RELEASE_S3_FORCE_PATH_STYLE: ${{ vars.DESKTOP_RELEASE_S3_FORCE_PATH_STYLE }}
           DESKTOP_RELEASE_PUBLIC_BASE_URL: ${{ vars.DESKTOP_RELEASE_PUBLIC_BASE_URL }}
+          DESKTOP_RELEASE_SIGNED: ${{ env.DESKTOP_RELEASE_SIGNED }}
         run: node scripts/publish-desktop-release.mjs release/Voople-Setup-x64.exe "$env:DESKTOP_VERSION"

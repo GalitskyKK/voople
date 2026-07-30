@@ -5,6 +5,8 @@ The Windows release pipeline lives in
 workflow artifact. A `desktop-vX.Y.Z` tag also creates a release in the private
 GitHub repository and publishes a stable public installer to S3-compatible
 storage. A manual run publishes only when the `publish` input is enabled.
+Publishing an unsigned test build additionally requires the explicit
+`allow_unsigned` input. Tagged releases always require a valid signature.
 
 The tag must match the version in `desktop/package.json` and
 `desktop/src-tauri/tauri.conf.json`.
@@ -35,8 +37,9 @@ For signed Windows builds, also configure:
 - `WINDOWS_CERTIFICATE_BASE64`, the base64-encoded PFX
 - `WINDOWS_CERTIFICATE_PASSWORD`
 
-Without those two signing secrets a manual non-publishing run can still produce
-an unsigned private workflow artifact. Tag and public publishing runs fail
+Without those two signing secrets a manual run can still produce an unsigned
+private workflow artifact. An explicitly opted-in unsigned manual test release
+can also be published. Tagged releases and normal public publishing runs fail
 before release when signing is unavailable or the resulting signature is not
 valid.
 

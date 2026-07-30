@@ -2,6 +2,7 @@ import { initTRPC, TRPCError } from "@trpc/server"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import superjson from "superjson"
 
+import { getVerifiedAuthIdentity, isTemporaryAuthError } from "@/lib/supabase/auth-claims"
 import { createClient } from "@/lib/supabase/server"
 import type { Database } from "@/server/db"
 import { db } from "@/server/db"
@@ -18,36 +19,36 @@ export type TRPCContext = {
   getVerifiedUser: () => Promise<SessionUser | null>
 }
 
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
-  let timeoutId: ReturnType<typeof setTimeout> | undefined
+async function getVerifiedUser(
+  supabase: SupabaseClient,
+  accessToken?: string,
+): Promise<SessionUser | null> {
   try {
-    return await Promise.race([
-      promise,
-      new Promise<never>((_, reject) => {
-        timeoutId = setTimeout(
-          () => reject(new Error(`Supabase auth timeout after ${timeoutMs}ms`)),
-          timeoutMs
-        )
+    return await getVerifiedAuthIdentity(supabase, accessToken)
+  } catch (error) {
+    if (isTemporaryAuthError(error)) {
+      throw new TRPCError({
+        code: "SERVICE_UNAVAILABLE",
+        message: "Сервис авторизации временно недоступен. Повторяем подключение.",
+        cause: error,
       })
-    ])
-  } finally {
-    if (timeoutId) clearTimeout(timeoutId)
-  }
-}
-
-async function getVerifiedUser(supabase: SupabaseClient): Promise<SessionUser | null> {
-  try {
-    const {
-      data: { user }
-    } = await withTimeout(supabase.auth.getUser(), 4_000)
-    return user ? { id: user.id, email: user.email } : null
-  } catch {
+    }
     return null
   }
 }
 
-export const createTRPCContext = async (): Promise<TRPCContext> => {
+function getBearerToken(request?: Request) {
+  const authorization = request?.headers.get("authorization")
+  if (!authorization?.startsWith("Bearer ")) return undefined
+  const token = authorization.slice("Bearer ".length).trim()
+  return token || undefined
+}
+
+export const createTRPCContext = async (options?: {
+  request?: Request
+}): Promise<TRPCContext> => {
   const supabase = await createClient()
+  const accessToken = getBearerToken(options?.request)
   let verifiedUserPromise: Promise<SessionUser | null> | null = null
 
   return {
@@ -55,7 +56,7 @@ export const createTRPCContext = async (): Promise<TRPCContext> => {
     supabase,
     user: null,
     getVerifiedUser: () => {
-      verifiedUserPromise ??= getVerifiedUser(supabase)
+      verifiedUserPromise ??= getVerifiedUser(supabase, accessToken)
       return verifiedUserPromise
     }
   }

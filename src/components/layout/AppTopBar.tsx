@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Settings, ShoppingBag, Sparkles } from "lucide-react";
+import { Search, Settings, ShoppingBag, Sparkles } from "lucide-react";
 
 import { COPY } from "@/lib/constants/copy";
 
@@ -17,6 +17,15 @@ export function AppTopBar() {
         {COPY.appName}
       </Link>
       <div className="flex items-center gap-1">
+        {!pathname.startsWith("/explore") && (
+          <Link
+            href="/explore"
+            className="flex items-center rounded-[var(--app-radius-sm)] px-2 py-1.5 text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
+            aria-label="Поиск"
+          >
+            <Search className="h-5 w-5" strokeWidth={1.75} />
+          </Link>
+        )}
         {!pathname.startsWith("/events") && (
           <Link
             href="/events"

@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
 import { cn } from "@/lib/utils";
 import type { DisplayNameWithPinSize } from "./DisplayNameWithPin";
-import { VooplePlusInfoModal } from "./VooplePlusInfoModal";
+const VooplePlusInfoModal = lazy(() =>
+  import("./VooplePlusInfoModal").then((module) => ({
+    default: module.VooplePlusInfoModal,
+  })),
+);
 
 const PIN_BY_SIZE = {
   xs: { px: 16, className: "h-4 w-4" },
@@ -16,12 +20,14 @@ const PIN_BY_SIZE = {
 type VooplePlusPinButtonProps = {
   size?: DisplayNameWithPinSize;
   expiresAt?: string | null;
+  badgeUrl?: string;
   className?: string;
 };
 
 export function VooplePlusPinButton({
   size = "sm",
   expiresAt,
+  badgeUrl,
   className,
 }: VooplePlusPinButtonProps) {
   const [open, setOpen] = useState(false);
@@ -44,7 +50,7 @@ export function VooplePlusPinButton({
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- CDN mascot pin */}
         <img
-          src={vooplusBadgeUrl()}
+          src={badgeUrl ?? vooplusBadgeUrl()}
           alt=""
           width={pin.px}
           height={pin.px}
@@ -56,7 +62,15 @@ export function VooplePlusPinButton({
           decoding="async"
         />
       </button>
-      <VooplePlusInfoModal open={open} onClose={() => setOpen(false)} expiresAt={expiresAt} />
+      {open ? (
+        <Suspense fallback={null}>
+          <VooplePlusInfoModal
+            open
+            onClose={() => setOpen(false)}
+            expiresAt={expiresAt}
+          />
+        </Suspense>
+      ) : null}
     </>
   );
 }

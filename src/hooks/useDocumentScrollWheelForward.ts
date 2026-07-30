@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type RefObject } from "react";
 
 function isScrollableOverflow(overflowY: string) {
   return overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay";
@@ -34,7 +34,10 @@ function findScrollContainer(target: EventTarget | null): HTMLElement | null {
  * Явный wheel-scroll для nested overflow (Firefox desktop, колонка постов на профиле).
  * Лента использует window scroll — этот хук ей не нужен.
  */
-export function useDocumentScrollWheelForward(enabled = true) {
+export function useDocumentScrollWheelForward(
+  enabled = true,
+  fallbackScrollRef?: RefObject<HTMLElement | null>,
+) {
   useEffect(() => {
     if (!enabled) return;
 
@@ -42,7 +45,8 @@ export function useDocumentScrollWheelForward(enabled = true) {
       if (event.ctrlKey || event.metaKey) return;
       if (event.defaultPrevented) return;
 
-      const scrollContainer = findScrollContainer(event.target);
+      const scrollContainer =
+        findScrollContainer(event.target) ?? fallbackScrollRef?.current ?? null;
       if (!scrollContainer) return;
 
       const maxScroll = scrollContainer.scrollHeight - scrollContainer.clientHeight;
@@ -63,5 +67,5 @@ export function useDocumentScrollWheelForward(enabled = true) {
 
     document.addEventListener("wheel", onWheel, { passive: false, capture: true });
     return () => document.removeEventListener("wheel", onWheel, { capture: true });
-  }, [enabled]);
+  }, [enabled, fallbackScrollRef]);
 }

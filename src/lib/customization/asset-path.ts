@@ -1,6 +1,9 @@
 const HAS_FILE_EXT = /\.[a-z0-9]{2,5}$/i;
 
-const ASSETS_CDN_BASE = (process.env.NEXT_PUBLIC_ASSETS_CDN_URL ?? "").replace(/\/$/, "");
+const ASSETS_CDN_BASE =
+  typeof process === "undefined"
+    ? ""
+    : (process.env.NEXT_PUBLIC_ASSETS_CDN_URL ?? "").replace(/\/$/, "");
 
 /** Resolve `/customization/{folder}/{id}.webp` or keep explicit extension (`.apng`, `.png`, …). */
 export function customizationAssetPath(folder: string, id: string | null | undefined) {

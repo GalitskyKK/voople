@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../";
 
 :root {
   --voople-sidebar-width: 248px;
@@ -36,7 +37,7 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 body {
@@ -216,7 +217,8 @@ body {
 .voople-scroll {
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
-  scroll-behavior: smooth;
+  /* Native wheel/touch scrolling; smooth here restarts on every wheel event. */
+  scroll-behavior: auto;
 }
 
 @keyframes voople-action-pop {
@@ -1058,6 +1060,16 @@ button.voople-post-action:active {
   transform-origin: top center;
 }
 
+.profile-share-scene--feed {
+  contain: layout paint style;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 396px;
+}
+
+.profile-share-scene--feed:not(.profile-share-scene--active) .profile-share-scene__card {
+  animation-play-state: paused;
+}
+
 @keyframes profile-share-float {
   0%, 100% { transform: perspective(900px) scale(var(--profile-share-scale, .86)) translateY(0) rotateX(1deg) rotateY(-2deg); }
   50% { transform: perspective(900px) scale(var(--profile-share-scale, .86)) translateY(-7px) rotateX(-1deg) rotateY(2deg); }
@@ -1344,6 +1356,16 @@ button.voople-post-action:active {
   background-attachment: local;
 }
 
+.voople-voice-session--active .voople-messages-layout {
+  padding-bottom: 4.75rem;
+}
+
+.voople-voice-session--active
+  .voople-shell[data-route-kind="messages"]
+  ~ .voople-voice-dock {
+  bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
 .voople-messages-layout[data-chat-wallpaper="plain"] .voople-chat-window__messages {
   background-image: none;
 }
@@ -1530,6 +1552,57 @@ html[data-density="compact"] .shop-category {
   box-shadow: var(--app-shadow-sm);
 }
 
+.settings-layout {
+  display: grid;
+  gap: 1rem;
+}
+
+.settings-nav {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding: 0.25rem;
+  scrollbar-width: none;
+}
+
+.settings-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.settings-nav a {
+  flex: none;
+  border-radius: 0.7rem;
+  padding: 0.55rem 0.75rem;
+  color: var(--app-muted);
+  font-size: 0.8125rem;
+  font-weight: 550;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.settings-nav a:hover,
+.settings-nav a:focus-visible {
+  background: var(--app-surface-soft);
+  color: var(--foreground);
+}
+
+@media (min-width: 768px) {
+  .settings-layout {
+    grid-template-columns: 10.5rem minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .settings-nav {
+    position: sticky;
+    top: 7.5rem;
+    flex-direction: column;
+    overflow: visible;
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius-lg);
+    background: var(--app-surface);
+    padding: 0.45rem;
+  }
+}
+
 .settings-section__header {
   display: flex;
   align-items: flex-start;
@@ -1705,6 +1778,144 @@ html[data-density="compact"] .shop-category {
   padding: 0.25rem 0;
 }
 
+.settings-hotkey-add {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--app-border);
+  border-radius: 0.75rem;
+  background: var(--app-surface-soft);
+  padding-inline: 0.8rem;
+  color: var(--foreground);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.settings-hotkey-notice,
+.settings-hotkey-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 45%, var(--app-border));
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--theme-accent) 9%, var(--app-surface-soft));
+  padding: 0.75rem;
+  color: var(--app-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.settings-hotkey-notice > svg,
+.settings-hotkey-warning > svg {
+  flex: none;
+  color: var(--theme-accent);
+}
+
+.settings-hotkey-warning {
+  border-color: color-mix(in srgb, #f59e0b 45%, var(--app-border));
+  background: color-mix(in srgb, #f59e0b 9%, var(--app-surface-soft));
+  color: var(--foreground);
+}
+
+.settings-hotkey-warning > svg {
+  color: #f59e0b;
+}
+
+.settings-hotkey-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.settings-hotkey-binding {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(10rem, 0.7fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-lg);
+  background: var(--app-surface-soft);
+  padding: 0.9rem;
+}
+
+.settings-hotkey-field {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+}
+
+.settings-hotkey-field > span {
+  color: var(--app-muted);
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.settings-hotkey-field select,
+.settings-hotkey-capture {
+  width: 100%;
+  min-height: 2.6rem;
+  border: 1px solid var(--app-border);
+  border-radius: 0.7rem;
+  background: var(--app-surface);
+  padding: 0.5rem 0.7rem;
+  color: var(--foreground);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.settings-hotkey-field select {
+  appearance: auto;
+}
+
+.settings-hotkey-field small {
+  min-height: 2.1em;
+  color: var(--app-muted);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+}
+
+.settings-hotkey-capture {
+  text-align: left;
+}
+
+.settings-hotkey-capture[aria-pressed="true"] {
+  border-color: var(--theme-accent);
+  background: color-mix(in srgb, var(--theme-accent) 12%, var(--app-surface));
+}
+
+.settings-hotkey-capture kbd {
+  font: inherit;
+}
+
+.settings-hotkey-enabled {
+  align-self: center;
+}
+
+.settings-hotkey-delete {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border-radius: 0.65rem;
+  color: var(--app-muted);
+}
+
+.settings-hotkey-delete:hover,
+.settings-hotkey-add:hover {
+  background: var(--app-surface);
+  color: var(--foreground);
+}
+
+.settings-hotkey-field select:focus-visible,
+.settings-hotkey-capture:focus-visible,
+.settings-hotkey-delete:focus-visible,
+.settings-hotkey-add:focus-visible {
+  outline: 2px solid var(--theme-accent);
+  outline-offset: 2px;
+}
+
 @media (max-width: 639px) {
   .settings-row {
     align-items: flex-start;
@@ -1722,5 +1933,13 @@ html[data-density="compact"] .shop-category {
   .settings-row .settings-switch {
     align-self: flex-end;
     margin-top: -2.15rem;
+  }
+
+  .settings-hotkey-binding {
+    grid-template-columns: 1fr auto auto;
+  }
+
+  .settings-hotkey-field {
+    grid-column: 1 / -1;
   }
 }

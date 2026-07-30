@@ -17,21 +17,22 @@ export function useRealtimeNotifications(enabled = true) {
 
     void (async () => {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (cancelled || !user) return;
+      if (cancelled || !session?.user) return;
+      const userId = session.user.id;
 
       const channelId = crypto.randomUUID();
       const channel = supabase
-        .channel(`notifications:${user.id}:${channelId}`)
+        .channel(`notifications:${userId}:${channelId}`)
         .on(
           "postgres_changes",
           {
             event: "INSERT",
             schema: "public",
             table: "notifications",
-            filter: `user_id=eq.${user.id}`,
+            filter: `user_id=eq.${userId}`,
           },
           () => {
             void utils.notifications.list.invalidate();
@@ -44,7 +45,7 @@ export function useRealtimeNotifications(enabled = true) {
             event: "UPDATE",
             schema: "public",
             table: "notifications",
-            filter: `user_id=eq.${user.id}`,
+            filter: `user_id=eq.${userId}`,
           },
           () => {
             void utils.notifications.list.invalidate();

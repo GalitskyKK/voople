@@ -1,10 +1,6 @@
 import { getAdminClient } from "@/lib/supabase/admin";
 import { extractHashtags } from "@/lib/hashtags";
-
-export type HashtagSearchHit = {
-  name: string;
-  postCount: number;
-};
+import type { HashtagSearchHit } from "@/types/search";
 
 export async function setPostHashtagsRest(postId: string, text: string) {
   const tags = extractHashtags(text);

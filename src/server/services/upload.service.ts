@@ -26,6 +26,7 @@ export async function createPresignedUpload(input: {
   purpose: UploadPurpose;
   contentType: string;
   sizeBytes: number;
+  chatMediaKind?: "voice" | "circle";
 }): Promise<PresignedUploadView> {
   if (!getObjectStorageConfig()) {
     throw new Error("Загрузка файлов не настроена (S3 env)");
@@ -37,11 +38,23 @@ export async function createPresignedUpload(input: {
     throw new Error(`Файл больше ${Math.round(limit.maxBytes / (1024 * 1024))} МБ`);
   }
 
+  const chatUpload =
+    input.purpose === "chat" ? parseChatUploadMime(input.contentType) : null;
+  if (
+    input.chatMediaKind === "circle" &&
+    chatUpload?.kind !== "circle"
+  ) {
+    throw new Error("Для кружка требуется видеофайл");
+  }
+  if (input.chatMediaKind === "voice" && chatUpload?.kind !== "audio") {
+    throw new Error("Для голосового сообщения требуется аудиофайл");
+  }
+
   const extension =
     input.purpose === "track"
       ? extensionForAudioMime(input.contentType)
       : input.purpose === "chat"
-        ? parseChatUploadMime(input.contentType).extension
+        ? chatUpload!.extension
         : input.purpose === "post"
           ? extensionForPostMediaMime(input.contentType)
           : extensionForMime(input.contentType);
@@ -51,7 +64,13 @@ export async function createPresignedUpload(input: {
       : input.purpose === "post"
         ? postMediaTypeForMime(input.contentType)
         : mediaTypeForMime(input.contentType);
-  const key = buildUploadKey(input.purpose, input.userId, extension);
+  const baseKey = buildUploadKey(input.purpose, input.userId, extension);
+  const key =
+    input.purpose === "chat" && input.chatMediaKind === "circle"
+      ? baseKey.replace(/\.([a-z0-9]+)$/i, ".circle.$1")
+      : input.purpose === "chat" && input.chatMediaKind === "voice"
+        ? baseKey.replace(/\.([a-z0-9]+)$/i, ".voice.$1")
+        : baseKey;
   const bucketKind = bucketForPurpose(input.purpose);
 
   const { uploadUrl, expiresIn } = await createPresignedPutUrl({

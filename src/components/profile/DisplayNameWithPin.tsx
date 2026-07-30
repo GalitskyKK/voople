@@ -19,6 +19,7 @@ type DisplayNameWithPinProps = {
   size?: DisplayNameWithPinSize;
   /** Дата окончания подписки (если есть — в модалке). */
   subscriptionExpiresAt?: string | null;
+  badgeUrl?: string;
   className?: string;
   nameClassName?: string;
   style?: CSSProperties;
@@ -33,6 +34,7 @@ export function DisplayNameWithPin({
   hasVooplePlus = false,
   size = "sm",
   subscriptionExpiresAt,
+  badgeUrl,
   className,
   nameClassName,
   style,
@@ -46,7 +48,11 @@ export function DisplayNameWithPin({
         {children}
       </span>
       {showPin ? (
-        <VooplePlusPinButton size={size} expiresAt={subscriptionExpiresAt} />
+        <VooplePlusPinButton
+          size={size}
+          expiresAt={subscriptionExpiresAt}
+          badgeUrl={badgeUrl}
+        />
       ) : null}
     </Tag>
   );

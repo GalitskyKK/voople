@@ -23,3 +23,8 @@ export {
   revokeChatInviteRest as revokeChatInvite,
   setChatRoomAccessRest as setChatRoomAccess,
 } from "@/server/data/chat-rooms-rest";
+
+export {
+  declineChatRoomCallRest as declineChatRoomCall,
+  listIncomingCallsRest as listIncomingCalls,
+} from "@/server/data/chat-calls-rest";

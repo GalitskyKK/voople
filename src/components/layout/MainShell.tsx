@@ -3,17 +3,20 @@
 import { Suspense, useRef } from "react";
 import { usePathname } from "next/navigation";
 
+import { PlayerShell } from "@/components/player/PlayerShell";
 import { useIsLgViewport } from "@/hooks/useIsLgViewport";
 import { isMessagesThreadPath } from "@/lib/layout/messages-path";
 import { cn } from "@/lib/utils";
+import { AppShellFrame } from "./AppShellFrame";
 import { AppTopBar } from "./AppTopBar";
 import { BottomNav } from "./BottomNav";
 import { CreatePostFab } from "./CreatePostFab";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { FeedHeader } from "./FeedHeader";
-// import { LegalMobileStrip } from "./LegalMobileStrip";
-import { PlayerShell } from "@/components/player/PlayerShell";
-import { ScrollContainerProvider, type ScrollContainerMode } from "./ScrollContainerContext";
+import {
+  ScrollContainerProvider,
+  type ScrollContainerMode,
+} from "./ScrollContainerContext";
 
 const RESERVED_SLUGS = new Set([
   "feed",
@@ -38,16 +41,8 @@ function isMessagesPath(pathname: string) {
   return pathname.startsWith("/messages");
 }
 
-/**
- * Window scroll — нативный скролл документа (работает на Chrome mobile, Firefox и т.д.).
- * Element scroll — nested overflow внутри flex; ломает touch/wheel над контентом.
- * Nested: профиль на desktop; мессенджер — фиксированный chrome, скролл только списка/чата.
- */
 function useScrollMode(pathname: string): ScrollContainerMode {
   const isLg = useIsLgViewport();
-
-  // Desktop always keeps the application panel fixed and scrolls its content.
-  // Mobile keeps native document scrolling except for the messenger viewport.
   return isMessagesPath(pathname) || isLg ? "element" : "window";
 }
 
@@ -60,95 +55,81 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   const isProfileRoute = isProfilePath(pathname);
   const isMessagesRoute = isMessagesPath(pathname);
   const isShopRoute = pathname.startsWith("/shop");
-  const isMobileMessagesThread = isMessagesRoute && !isLg && isMessagesThreadPath(pathname);
+  const isMobileMessagesThread =
+    isMessagesRoute && !isLg && isMessagesThreadPath(pathname);
   const hideMobileTopBar = isMessagesRoute && !isLg;
   const hideMobileBottomNav = isMobileMessagesThread;
   const showFab =
     !pathname.startsWith("/messages") &&
     (pathname === "/feed" || pathname === "/me" || isProfileRoute);
 
-  /** Лента — узкая колонка; профиль — две колонки (карточка + посты). */
-  const contentMaxWidth = isShopRoute
-    ? "max-w-[1440px]"
-    : isProfileRoute
-      ? "max-w-6xl"
-      : "max-w-2xl";
+  const contentMaxWidth = isMessagesRoute
+    ? "max-w-none"
+    : isShopRoute
+      ? "max-w-[1440px]"
+      : isProfileRoute
+        ? "max-w-6xl"
+        : "max-w-2xl";
 
   return (
-    <div
-      data-route-kind={isProfileRoute ? "profile" : isMessagesRoute ? "messages" : "standard"}
-      className={cn(
-        "voople-shell min-h-screen bg-background",
-        isMessagesRoute && "h-dvh min-h-0 overflow-hidden",
-        "lg:h-dvh lg:min-h-0 lg:overflow-hidden",
+    <AppShellFrame
+      routeKind={
+        isProfileRoute ? "profile" : isMessagesRoute ? "messages" : "standard"
+      }
+      sidebar={<DesktopSidebar />}
+      overlay={<PlayerShell />}
+      fixedViewport={isMessagesRoute}
+      columnClassName={cn(isMessagesRoute && "h-full min-h-0")}
+      workspaceClassName={cn(isMessagesRoute && "h-full min-h-0")}
+      mainClassName={cn(
+        contentMaxWidth,
+        !usesWindowScroll && "min-h-0 flex-1",
+        isMessagesRoute && "h-full min-h-0 overflow-hidden",
+        !usesWindowScroll && "h-full min-h-0 overflow-hidden",
       )}
     >
-      <DesktopSidebar />
-      <PlayerShell />
-      <div
-        className={cn(
-          "voople-shell__column flex min-h-screen min-w-0 flex-1 flex-col lg:ml-[var(--voople-sidebar-width)] lg:p-2",
-          isMessagesRoute && "h-full min-h-0",
-          "lg:h-full lg:min-h-0",
-        )}
-      >
+      {!hideMobileTopBar && <AppTopBar />}
+      <Suspense fallback={null}>
+        <FeedHeader />
+      </Suspense>
+      <ScrollContainerProvider scrollRef={shellScrollRef} mode={scrollMode}>
         <div
+          ref={shellScrollRef}
+          data-voople-scroll={usesWindowScroll ? undefined : ""}
           className={cn(
-            "voople-shell__workspace mx-auto flex w-full flex-1 justify-center gap-6 lg:gap-8",
-            isMessagesRoute && "min-h-0 h-full",
-            "lg:h-full lg:min-h-0",
+            "voople-shell__scroll",
+            !isProfileRoute && "lg:pb-6",
+            isMobileMessagesThread && "pb-0",
+            !isLg && !isMobileMessagesThread && "pb-24",
+            !isMessagesRoute &&
+              "lg:voople-scroll lg:min-h-0 lg:flex-1 lg:overflow-y-auto",
+            !usesWindowScroll &&
+              !isMessagesRoute &&
+              "voople-scroll min-h-0 flex-1 overflow-y-auto",
+            isMessagesRoute &&
+              "flex min-h-0 flex-1 flex-col overflow-hidden",
+            isProfileRoute &&
+              !usesWindowScroll &&
+              "lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden",
           )}
         >
           <div
+            id="main-content"
             className={cn(
-              "voople-shell__main flex min-w-0 flex-1 flex-col",
-              contentMaxWidth,
-              isMessagesRoute && "max-w-5xl",
-              "lg:min-h-0 lg:overflow-hidden",
-              !usesWindowScroll && "min-h-0 flex-1",
-              isMessagesRoute && "h-full min-h-0 overflow-hidden",
-              !usesWindowScroll && "h-full min-h-0 overflow-hidden",
+              "voople-shell__page w-full px-4 lg:px-6",
+              isMessagesRoute && "flex min-h-0 flex-1 flex-col py-0",
+              isMobileMessagesThread && "px-0",
+              isProfileRoute &&
+                !usesWindowScroll &&
+                "flex min-h-0 flex-1 flex-col lg:min-h-0 lg:py-0",
             )}
           >
-            {!hideMobileTopBar && <AppTopBar />}
-            <Suspense fallback={null}>
-              <FeedHeader />
-            </Suspense>
-            <ScrollContainerProvider scrollRef={shellScrollRef} mode={scrollMode}>
-              <div
-                ref={shellScrollRef}
-                data-voople-scroll={usesWindowScroll ? undefined : ""}
-                className={cn(
-                  "voople-shell__scroll lg:pb-6",
-                  isMobileMessagesThread ? "pb-0" : "pb-24",
-                  !isMessagesRoute && "lg:voople-scroll lg:min-h-0 lg:flex-1 lg:overflow-y-auto",
-                  !usesWindowScroll &&
-                    !isMessagesRoute &&
-                    "voople-scroll min-h-0 flex-1 overflow-y-auto",
-                  isMessagesRoute && "flex min-h-0 flex-1 flex-col overflow-hidden",
-                  isProfileRoute && !usesWindowScroll && "lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden",
-                )}
-              >
-                <div
-                  id="main-content"
-                  className={cn(
-                    "voople-shell__page w-full px-4 lg:px-6",
-                    isMessagesRoute && "flex min-h-0 flex-1 flex-col py-0",
-                    isMobileMessagesThread && "px-0",
-                    isProfileRoute &&
-                      !usesWindowScroll &&
-                      "flex min-h-0 flex-1 flex-col lg:min-h-0 lg:py-0",
-                  )}
-                >
-                  {children}
-                </div>
-              </div>
-            </ScrollContainerProvider>
-            {showFab && <CreatePostFab />}
-            {!hideMobileBottomNav && <BottomNav />}
+            {children}
           </div>
         </div>
-      </div>
-    </div>
+      </ScrollContainerProvider>
+      {showFab && <CreatePostFab />}
+      {!hideMobileBottomNav && <BottomNav />}
+    </AppShellFrame>
   );
 }

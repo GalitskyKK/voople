@@ -1,0 +1,28 @@
+{
+  "exceptions": {
+    "src/components/admin/AdminAssetEditor.tsx": {
+      "maxLines": 566,
+      "reason": "Legacy admin form; split asset metadata, media upload and preview panels."
+    },
+    "src/components/chat/ChatRoomControl.tsx": {
+      "maxLines": 830,
+      "reason": "Legacy voice orchestration; continue extracting session state and controls into chat/voice."
+    },
+    "src/components/chat/ChatWindow.tsx": {
+      "maxLines": 406,
+      "reason": "Legacy chat surface; extract header and message-list orchestration."
+    },
+    "src/components/profile/ProfileEditSheet.tsx": {
+      "maxLines": 1083,
+      "reason": "Legacy profile editor; split each customization category into a dedicated panel."
+    },
+    "src/server/data/chat-rest.ts": {
+      "maxLines": 800,
+      "reason": "Legacy chat persistence module; split lists, messages and membership queries."
+    },
+    "src/server/db/schema.ts": {
+      "maxLines": 700,
+      "reason": "Central Drizzle schema pending domain table split."
+    }
+  }
+}

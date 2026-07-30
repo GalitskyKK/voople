@@ -8,8 +8,7 @@ import type { FeedTabId } from "@/lib/constants/copy";
 import { trpc } from "@/lib/trpc/client";
 import { useRealtimeFeed } from "@/hooks/useRealtimeFeed";
 import { useVirtualFeed } from "@/hooks/useVirtualFeed";
-import type { FeedPageResult } from "@/server/services/feed.service";
-import { CreatePostBlock } from "./CreatePostBlock";
+import type { FeedPageResult } from "@/types/feed";
 import { PostCard } from "./PostCard";
 
 type FeedProps = {
@@ -20,7 +19,6 @@ type FeedProps = {
 };
 
 export function Feed({
-  canPost = false,
   viewerId = null,
   initialPage,
   initialTab = "overview",
@@ -70,7 +68,6 @@ export function Feed({
 
   return (
     <div className="voople-feed flex flex-col gap-4">
-      {canPost && <CreatePostBlock canPost />}
       {isLoading && posts.length === 0 && (
         <div className="h-40 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]" aria-hidden />
       )}

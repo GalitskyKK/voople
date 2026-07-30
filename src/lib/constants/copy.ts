@@ -4,7 +4,7 @@ export const COPY = {
   explore: "Обзор",
   following: "Подписки",
   search: "Поиск",
-  messages: "Сообщения",
+  messages: "Чаты",
   notifications: "Уведомления",
   shop: "Магазин",
   profile: "Профиль",

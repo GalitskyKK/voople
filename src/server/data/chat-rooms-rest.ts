@@ -4,10 +4,62 @@ import { createHash, randomBytes } from "node:crypto";
 import { AccessToken } from "livekit-server-sdk";
 
 import { getAdminClient } from "@/lib/supabase/admin";
-import type { ChatInvitePreview, ChatRoomView } from "@/types/chat";
+import {
+  toProfileCustomizationView,
+  type CustomizationRow,
+} from "@/server/mappers/customization";
+import type {
+  ChatInvitePreview,
+  ChatRoomView,
+} from "@/types/chat";
 
-const ROOM_STALE_AFTER_MS = 90_000;
+const ROOM_STALE_AFTER_MS = 3 * 60_000;
+export const DIRECT_CALL_RING_MS = 45_000;
 const INVITE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1_000;
+
+function roomEndReason(status: string | null | undefined): ChatRoomView["endReason"] {
+  return status === "declined" ||
+    status === "cancelled" ||
+    status === "missed" ||
+    status === "ended"
+    ? status
+    : null;
+}
+
+function utcTimestampMs(value: string | null | undefined) {
+  if (!value) return 0;
+  const normalized = /(?:Z|[+-]\d{2}:\d{2})$/.test(value)
+    ? value
+    : `${value}Z`;
+  return Date.parse(normalized);
+}
+
+function normalizeLiveKitUrl(value: string) {
+  try {
+    const url = new URL(value.trim());
+    if (url.protocol !== "wss:" && url.protocol !== "ws:") return null;
+    return url.toString().replace(/\/$/, "");
+  } catch {
+    return null;
+  }
+}
+
+function getLiveKitEndpoints() {
+  const primary = normalizeLiveKitUrl(
+    process.env.LIVEKIT_URL ?? process.env.NEXT_PUBLIC_LIVEKIT_URL ?? "",
+  );
+  const fallbacks = (process.env.LIVEKIT_FALLBACK_URLS ?? "")
+    .split(/[\n,;]/)
+    .map(normalizeLiveKitUrl)
+    .filter((url): url is string => Boolean(url));
+
+  return [...new Set([primary, ...fallbacks].filter((url): url is string => Boolean(url)))].map(
+    (url, index) => ({
+      url,
+      label: index === 0 ? "Авто" : new URL(url).hostname,
+    }),
+  );
+}
 
 function hashInviteToken(token: string) {
   return createHash("sha256").update(token, "utf8").digest("hex");
@@ -159,6 +211,49 @@ async function removeStaleRoomParticipants(chatId: string) {
   if (error && error.code !== "42P01") throw new Error(error.message);
 }
 
+async function assertNoOtherActiveRoom(chatId: string, userId: string) {
+  const admin = getAdminClient();
+  const staleBefore = new Date(Date.now() - ROOM_STALE_AFTER_MS).toISOString();
+  const { error: cleanupError } = await admin
+    .from("chat_room_participants")
+    .delete()
+    .eq("user_id", userId)
+    .lt("last_seen_at", staleBefore);
+  if (cleanupError && cleanupError.code !== "42P01") {
+    throw new Error(cleanupError.message);
+  }
+
+  const { data, error } = await admin
+    .from("chat_room_participants")
+    .select("chat_id")
+    .eq("user_id", userId)
+    .neq("chat_id", chatId)
+    .limit(1);
+  if (error && error.code !== "42P01") throw new Error(error.message);
+  if (data?.length) {
+    throw new Error("Сначала завершите текущий разговор");
+  }
+}
+
+async function finishRoom(
+  chatId: string,
+  status: NonNullable<ChatRoomView["endReason"]>,
+) {
+  const admin = getAdminClient();
+  const now = new Date().toISOString();
+  const { error: roomError } = await admin
+    .from("chat_rooms")
+    .update({ status, ended_at: now, updated_at: now })
+    .eq("chat_id", chatId);
+  if (roomError) throw new Error(roomError.message);
+
+  const { error: participantsError } = await admin
+    .from("chat_room_participants")
+    .delete()
+    .eq("chat_id", chatId);
+  if (participantsError) throw new Error(participantsError.message);
+}
+
 export async function getChatRoomRest(chatId: string, userId: string): Promise<ChatRoomView> {
   await getMembership(chatId, userId);
   await removeStaleRoomParticipants(chatId);
@@ -172,7 +267,7 @@ export async function getChatRoomRest(chatId: string, userId: string): Promise<C
       .maybeSingle(),
     admin
       .from("chat_room_participants")
-      .select("user_id, mic_muted, users!inner(id, username, display_name)")
+      .select("user_id, mic_muted, users!inner(id, username, display_name, profile_customization (avatar_type, avatar_data, animated_avatar_id, avatar_decoration_id, avatar_ring_id))")
       .eq("chat_id", chatId)
       .order("joined_at", { ascending: true }),
   ]);
@@ -185,9 +280,21 @@ export async function getChatRoomRest(chatId: string, userId: string): Promise<C
   }
 
   const participantRows = participantsResult.data ?? [];
-  const active = roomResult.data?.status === "active" && participantRows.length > 0;
+  const storedStatus = roomResult.data?.status as string | undefined;
+  const ringExpired =
+    storedStatus === "ringing" &&
+    Date.now() - utcTimestampMs(roomResult.data?.started_at) >
+      DIRECT_CALL_RING_MS;
+  if (ringExpired) {
+    await finishRoom(chatId, "missed");
+    participantRows.length = 0;
+  }
 
-  if (!active && roomResult.data?.status === "active") {
+  const active = storedStatus === "active" && participantRows.length > 0;
+  const ringing =
+    storedStatus === "ringing" && !ringExpired && participantRows.length > 0;
+
+  if (!active && storedStatus === "active") {
     await admin
       .from("chat_rooms")
       .update({ status: "ended", ended_at: new Date().toISOString(), updated_at: new Date().toISOString() })
@@ -197,27 +304,41 @@ export async function getChatRoomRest(chatId: string, userId: string): Promise<C
   const participants = participantRows.flatMap((row) => {
     const related = Array.isArray(row.users) ? row.users[0] : row.users;
     if (!related) return [];
+    const customizationRelation = related.profile_customization as
+      | CustomizationRow
+      | CustomizationRow[]
+      | null;
+    const customization = toProfileCustomizationView(
+      Array.isArray(customizationRelation)
+        ? customizationRelation[0]
+        : customizationRelation,
+    );
     return [{
       id: related.id as string,
       username: related.username as string,
       displayName: related.display_name as string,
+      avatarUrl: customization.assets.animatedAvatarUrl ?? null,
+      avatarDecorationUrl: customization.assets.avatarDecorationUrl ?? null,
+      avatarRingId: customization.avatarRingId ?? null,
       micMuted: Boolean(row.mic_muted),
       isMe: row.user_id === userId,
     }];
   });
 
   return {
-    status: active ? "active" : "empty",
+    status: active ? "active" : ringing ? "ringing" : "empty",
     accessMode: roomResult.data?.access_mode === "locked" ? "locked" : "open",
-    startedBy: active ? roomResult.data?.started_by ?? null : null,
-    startedAt: active ? roomResult.data?.started_at ?? null : null,
+    startedBy: active || ringing ? roomResult.data?.started_by ?? null : null,
+    startedAt: active || ringing ? roomResult.data?.started_at ?? null : null,
+    endReason: active || ringing ? null : ringExpired ? "missed" : roomEndReason(storedStatus),
     participants,
     isInside: participants.some((participant) => participant.id === userId),
   };
 }
 
 export async function enterChatRoomRest(chatId: string, userId: string, micMuted: boolean) {
-  await getMembership(chatId, userId);
+  const membership = await getMembership(chatId, userId);
+  await assertNoOtherActiveRoom(chatId, userId);
   const current = await getChatRoomRest(chatId, userId);
   const admin = getAdminClient();
   const now = new Date().toISOString();
@@ -229,7 +350,7 @@ export async function enterChatRoomRest(chatId: string, userId: string, micMuted
   if (current.status === "empty") {
     const { error } = await admin.from("chat_rooms").upsert({
       chat_id: chatId,
-      status: "active",
+      status: membership.type === "direct" ? "ringing" : "active",
       access_mode: "open",
       started_by: userId,
       started_at: now,
@@ -237,6 +358,20 @@ export async function enterChatRoomRest(chatId: string, userId: string, micMuted
       updated_at: now,
     });
     if (error) throw new Error(error.message);
+  } else if (
+    current.status === "ringing" &&
+    membership.type === "direct" &&
+    current.startedBy !== userId
+  ) {
+    const { data, error } = await admin
+      .from("chat_rooms")
+      .update({ status: "active", updated_at: now })
+      .eq("chat_id", chatId)
+      .eq("status", "ringing")
+      .select("chat_id")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!data) throw new Error("Звонок уже завершён");
   }
 
   const { error } = await admin.from("chat_room_participants").upsert({
@@ -254,13 +389,10 @@ export async function enterChatRoomRest(chatId: string, userId: string, micMuted
 export async function createChatRoomMediaTokenRest(chatId: string, userId: string) {
   await getMembership(chatId, userId);
 
-  const url = (
-    process.env.NEXT_PUBLIC_LIVEKIT_URL ??
-    process.env.LIVEKIT_URL
-  )?.trim();
+  const endpoints = getLiveKitEndpoints();
   const apiKey = process.env.LIVEKIT_API_KEY?.trim();
   const apiSecret = process.env.LIVEKIT_API_SECRET?.trim();
-  if (!url || !apiKey || !apiSecret) {
+  if (!endpoints.length || !apiKey || !apiSecret) {
     return { enabled: false as const };
   }
 
@@ -287,7 +419,7 @@ export async function createChatRoomMediaTokenRest(chatId: string, userId: strin
   const token = new AccessToken(apiKey, apiSecret, {
     identity: userId,
     name: user?.display_name ?? "Участник",
-    ttl: "15m",
+    ttl: "6h",
   });
   token.addGrant({
     roomJoin: true,
@@ -299,7 +431,8 @@ export async function createChatRoomMediaTokenRest(chatId: string, userId: strin
 
   return {
     enabled: true as const,
-    url,
+    url: endpoints[0]!.url,
+    endpoints,
     token: await token.toJwt(),
   };
 }
@@ -321,8 +454,25 @@ export async function heartbeatChatRoomRest(chatId: string, userId: string, micM
 }
 
 export async function leaveChatRoomRest(chatId: string, userId: string) {
-  await getMembership(chatId, userId);
+  const membership = await getMembership(chatId, userId);
   const admin = getAdminClient();
+  const { data: room, error: roomError } = await admin
+    .from("chat_rooms")
+    .select("status, started_by")
+    .eq("chat_id", chatId)
+    .maybeSingle();
+  if (roomError) throw new Error(roomError.message);
+
+  if (membership.type === "direct") {
+    await finishRoom(
+      chatId,
+      room?.status === "ringing" && room.started_by === userId
+        ? "cancelled"
+        : "ended",
+    );
+    return { ok: true as const };
+  }
+
   const { error } = await admin
     .from("chat_room_participants")
     .delete()

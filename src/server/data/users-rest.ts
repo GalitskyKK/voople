@@ -1,5 +1,9 @@
 import { getAdminClient } from "@/lib/supabase/admin";
 import { usernameSchema } from "@/lib/validation/username";
+import {
+  toProfileCustomizationView,
+  type CustomizationRow,
+} from "@/server/mappers/customization";
 
 export type AuthUserInput = {
   id: string;
@@ -55,6 +59,37 @@ export async function fetchUsernameById(userId: string): Promise<string | null> 
 
   if (error) throw new Error(error.message);
   return data?.username ?? null;
+}
+
+export async function fetchCurrentUserSummary(userId: string) {
+  const admin = getAdminClient();
+  const { data, error } = await admin
+    .from("users")
+    .select(
+      "id, username, display_name, profile_customization (avatar_type, avatar_data, animated_avatar_id, avatar_decoration_id, avatar_ring_id)",
+    )
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+
+  const related = data.profile_customization as
+    | CustomizationRow
+    | CustomizationRow[]
+    | null;
+  const customization = toProfileCustomizationView(
+    Array.isArray(related) ? related[0] : related,
+  );
+
+  return {
+    id: data.id as string,
+    username: data.username as string,
+    displayName: data.display_name as string,
+    avatarUrl: customization.assets.animatedAvatarUrl,
+    avatarDecorationUrl: customization.assets.avatarDecorationUrl,
+    avatarRingId: customization.avatarRingId,
+  };
 }
 
 export async function isUsernameAvailable(username: string, excludeUserId?: string) {

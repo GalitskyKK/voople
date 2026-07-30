@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Plus } from "lucide-react";
+import { useState, type CSSProperties } from "react";
+import { ImagePlus, Plus } from "lucide-react";
 
 import { COPY } from "@/lib/constants/copy";
 import { mobileFabBottomWithPlayer, MOBILE_FAB_BOTTOM_DEFAULT } from "@/lib/layout/mobile-chrome";
@@ -21,7 +21,7 @@ export function CreatePostFab() {
   const [formError, setFormError] = useState<string | null>(null);
   const utils = trpc.useUtils();
 
-  const { data: sessionUser } = trpc.user.me.useQuery(undefined, {
+  const { data: sessionUser } = trpc.user.viewer.useQuery(undefined, {
     retry: false,
     staleTime: 60_000,
   });
@@ -69,22 +69,40 @@ export function CreatePostFab() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="voople-fab-create fixed right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--foreground)] text-[var(--background)] shadow-lg transition-[bottom] duration-200 hover:scale-105 active:scale-95 lg:hidden"
+        className="voople-fab-create fixed bottom-[var(--voople-fab-mobile-bottom)] right-4 z-40 flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--foreground)] px-3.5 text-[var(--background)] shadow-lg transition-[bottom,transform] duration-200 hover:scale-[1.03] active:scale-95 lg:bottom-6 lg:right-6 lg:px-5"
         style={{
-          bottom: playerActive
+          "--voople-fab-mobile-bottom": playerActive
             ? mobileFabBottomWithPlayer(mobilePlayerExpanded)
             : MOBILE_FAB_BOTTOM_DEFAULT,
-        }}
+        } as CSSProperties}
         aria-label={COPY.newPost}
+        aria-haspopup="dialog"
       >
         <Plus className="h-6 w-6" strokeWidth={2.5} />
+        <span className="hidden text-sm font-semibold lg:inline">Написать пост</span>
       </button>
-      <Sheet open={open} onClose={() => setOpen(false)} placement="bottom">
-        <h2 className="mb-4 pe-10 text-lg font-semibold">{COPY.newPost}</h2>
+      <Sheet
+        open={open}
+        onClose={() => setOpen(false)}
+        className="max-w-2xl p-4 sm:p-6"
+        ariaLabel={COPY.newPost}
+      >
+        <div className="mb-5 pe-10">
+          <div className="flex items-center gap-2">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--app-accent-soft)] text-[var(--theme-accent)]">
+              <ImagePlus className="h-5 w-5" aria-hidden />
+            </span>
+            <h2 className="text-lg font-semibold">{COPY.newPost}</h2>
+          </div>
+          <p className="mt-2 text-sm text-[var(--app-muted)]">
+            Поделитесь мыслью, фотографией или видео.
+          </p>
+        </div>
         <PostComposer
           value={text}
           onChange={setText}
           disabled={createPost.isPending}
+          autoFocus
         />
         <MediaUploadControl
           key={uploadResetKey}
@@ -92,6 +110,7 @@ export function CreatePostFab() {
           onChange={setMedia}
           disabled={createPost.isPending}
           className="mt-3"
+          dropzone
         />
         {formError && <p className="mt-2 text-sm text-red-400">{formError}</p>}
         <Button

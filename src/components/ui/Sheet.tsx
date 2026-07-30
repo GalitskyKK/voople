@@ -15,12 +15,14 @@ export function Sheet({
   children,
   className,
   placement = "center",
+  ariaLabel,
 }: {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
   className?: string;
   placement?: SheetPlacement;
+  ariaLabel?: string;
 }) {
   const mounted = useIsClient();
   const isBottom = placement === "bottom";
@@ -61,6 +63,7 @@ export function Sheet({
       <div
         role="dialog"
         aria-modal="true"
+        aria-label={ariaLabel}
         className={cn(
           "relative z-[101] voople-scroll max-h-[min(90dvh,720px)] w-full max-w-lg overflow-y-auto border border-[var(--app-border)] bg-[var(--background)] p-4 pt-5 shadow-[var(--app-shadow-md)]",
           isBottom ? "rounded-t-2xl pb-6" : "rounded-2xl",

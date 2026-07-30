@@ -16,8 +16,8 @@ import { ProfileThemePicker } from "@/components/customization/ProfileThemePicke
 import { ShopCatalogPreview } from "@/components/shop/ShopCatalogPreview";
 import {
   ProfileCardHeader,
-  profileCardThemeStyle,
 } from "@/components/profile/ProfileCardHeader";
+import { profileCardThemeStyle } from "@/components/profile/profile-card-style";
 import { ProfileCardVideoSections } from "@/components/profile/ProfileCardVideoSections";
 import {
   frameLayerProps,

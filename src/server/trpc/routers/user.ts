@@ -2,20 +2,25 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { searchAll, searchUsers } from "@/server/services/search.service";
-import { getUsernameById } from "@/server/services/profile.service";
+import { fetchCurrentUserSummary } from "@/server/data/users-rest";
 
 import { createTRPCRouter, optionalAuthProcedure, protectedProcedure, publicProcedure } from "../init";
 
 export const userRouter = createTRPCRouter({
+  viewer: optionalAuthProcedure.query(async ({ ctx }) => {
+    if (!ctx.user) return null;
+    return fetchCurrentUserSummary(ctx.user.id);
+  }),
+
   me: protectedProcedure.query(async ({ ctx }) => {
-    const username = await getUsernameById(ctx.user.id);
-    if (!username) {
+    const user = await fetchCurrentUserSummary(ctx.user.id);
+    if (!user) {
       throw new TRPCError({
         code: "NOT_FOUND",
         message: "Профиль не создан — перезайдите в аккаунт",
       });
     }
-    return { id: ctx.user.id, username };
+    return user;
   }),
 
   checkUsername: optionalAuthProcedure

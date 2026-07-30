@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
+import { desktopCorsPreflight, withDesktopCors } from "@/lib/http/desktop-cors"
 import { createClient } from "@/lib/supabase/server"
 import { usernameSchema } from "@/lib/validation/username"
 import { ensurePublicUser } from "@/server/services/user-sync.service"
@@ -10,15 +11,21 @@ const bodySchema = z.object({
 })
 
 export async function POST(request: Request) {
+  const respond = (response: Response) => withDesktopCors(request, response)
+
   try {
     const supabase = await createClient()
+    const authorization = request.headers.get("authorization")
+    const accessToken = authorization?.startsWith("Bearer ")
+      ? authorization.slice("Bearer ".length).trim()
+      : undefined
     const {
       data: { user },
       error
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser(accessToken)
 
     if (error || !user) {
-      return NextResponse.json({ error: "Не авторизован" }, { status: 401 })
+      return respond(NextResponse.json({ error: "Не авторизован" }, { status: 401 }))
     }
 
     let preferredUsername: string | undefined
@@ -29,7 +36,7 @@ export async function POST(request: Request) {
         preferredUsername = parsed.data.username
       }
     } catch {
-      // пустое тело — ок для login
+      // Пустое тело допустимо для входа.
     }
 
     const result = await ensurePublicUser({
@@ -38,18 +45,24 @@ export async function POST(request: Request) {
       preferredUsername
     })
 
-    return NextResponse.json({
-      ok: true,
-      created: result.created,
-      username: result.user.username
-    })
-  } catch (e) {
-    console.error("[sync-user]", e)
-    const raw = e instanceof Error ? e.message : "Sync failed"
+    return respond(
+      NextResponse.json({
+        ok: true,
+        created: result.created,
+        username: result.user.username
+      })
+    )
+  } catch (error) {
+    console.error("[sync-user]", error)
+    const raw = error instanceof Error ? error.message : "Sync failed"
     const message =
       raw.includes("ECONNRESET") || raw.includes("connect")
         ? "Нет связи с базой. Проверьте DATABASE_URL (Session pooler :5432) в .env.local и повторите вход."
         : raw
-    return NextResponse.json({ error: message }, { status: 500 })
+    return respond(NextResponse.json({ error: message }, { status: 500 }))
   }
+}
+
+export function OPTIONS(request: Request) {
+  return desktopCorsPreflight(request)
 }

@@ -2,8 +2,7 @@
 
 import Image from "next/image";
 import { CircleDot, Loader2, Paperclip, Video, X } from "lucide-react";
-import { useRef } from "react";
-import { useState } from "react";
+import { useRef, useState, type DragEvent } from "react";
 
 import { CircleRecorder } from "@/components/media/CircleRecorder";
 import { useMediaUpload, type UploadedMedia } from "@/hooks/useMediaUpload";
@@ -19,6 +18,7 @@ type MediaUploadControlProps = {
   previewClassName?: string;
   allowVideo?: boolean;
   showCircleOption?: boolean;
+  dropzone?: boolean;
 };
 
 export function MediaUploadControl({
@@ -30,10 +30,12 @@ export function MediaUploadControl({
   previewClassName,
   allowVideo = purpose === "post",
   showCircleOption = false,
+  dropzone = false,
 }: MediaUploadControlProps) {
   const mediaInputRef = useRef<HTMLInputElement>(null);
   const circleInputRef = useRef<HTMLInputElement>(null);
   const [recorderOpen, setRecorderOpen] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const { uploaded, isUploading, error, uploadFile, reset } = useMediaUpload(purpose);
 
   const handleFile = async (file: File | undefined, asCircle = false) => {
@@ -54,8 +56,36 @@ export function MediaUploadControl({
     ? "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"
     : "image/jpeg,image/png,image/webp,image/gif";
 
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (!disabledNow) setDragActive(true);
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setDragActive(false);
+    if (!disabledNow) void handleFile(event.dataTransfer.files?.[0]);
+  };
+
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
+    <div
+      className={cn(
+        "flex flex-col gap-2",
+        dropzone &&
+          "rounded-xl border border-dashed border-[var(--app-border-strong)] bg-[var(--app-surface-soft)] p-3 transition-colors",
+        dropzone && dragActive && "border-[var(--theme-accent)] bg-[var(--app-accent-soft)]",
+        className,
+      )}
+      onDragEnter={dropzone ? handleDragOver : undefined}
+      onDragOver={dropzone ? handleDragOver : undefined}
+      onDragLeave={dropzone ? () => setDragActive(false) : undefined}
+      onDrop={dropzone ? handleDrop : undefined}
+    >
+      {dropzone && !uploaded && (
+        <p className="px-1 text-xs text-[var(--app-muted)]">
+          Перетащите сюда фото или видео либо выберите файл
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"

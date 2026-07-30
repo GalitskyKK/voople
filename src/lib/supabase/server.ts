@@ -7,7 +7,7 @@ export async function createClient() {
   const cookieStore = await cookies()
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    (process.env.SUPABASE_INTERNAL_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL)!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
@@ -24,7 +24,7 @@ export async function createClient() {
           }
         }
       },
-      global: { fetch: createFetchWithRetry(1, 3_500) }
+      global: { fetch: createFetchWithRetry(2, 8_000) }
     }
   )
 }

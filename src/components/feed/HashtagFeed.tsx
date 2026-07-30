@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import { useScrollContainer } from "@/components/layout/ScrollContainerContext";
-import type { FeedPageResult } from "@/server/services/feed.service";
+import type { FeedPageResult } from "@/types/feed";
 import { trpc } from "@/lib/trpc/client";
 import { useVirtualFeed } from "@/hooks/useVirtualFeed";
 import { PostCard } from "./PostCard";

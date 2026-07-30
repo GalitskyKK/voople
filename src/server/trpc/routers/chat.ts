@@ -8,6 +8,7 @@ import {
   acceptChatInvite,
   createChatInvite,
   createChatRoomMediaToken,
+  declineChatRoomCall,
   deleteMessage,
   createGroupChat,
   enterChatRoom,
@@ -15,6 +16,7 @@ import {
   getChatRoom,
   heartbeatChatRoom,
   leaveChatRoom,
+  listIncomingCalls,
   listChats,
   listMessages,
   markMessagesRead,
@@ -134,6 +136,37 @@ export const chatRouter = createTRPCRouter({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: error instanceof Error ? error.message : "Не удалось подключить голос",
+        });
+      }
+    }),
+
+  incomingCalls: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      return await listIncomingCalls(ctx.user.id);
+    } catch (error) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Не удалось проверить входящие звонки",
+      });
+    }
+  }),
+
+  declineCall: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
+      try {
+        return await declineChatRoomCall(input.chatId, ctx.user.id);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Не удалось отклонить звонок",
         });
       }
     }),

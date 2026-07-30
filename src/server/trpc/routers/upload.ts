@@ -13,6 +13,7 @@ export const uploadRouter = createTRPCRouter({
       z.object({
         purpose: z.enum(["post", "comment", "avatar", "banner", "track", "chat"]),
         contentType: z.string().min(3).max(100),
+        chatMediaKind: z.enum(["voice", "circle"]).optional(),
         // Абсолютный потолок; точный лимит на назначение проверяет createPresignedUpload.
         sizeBytes: z.number().int().min(1).max(30 * 1024 * 1024),
       }),
@@ -25,6 +26,7 @@ export const uploadRouter = createTRPCRouter({
           purpose: input.purpose,
           contentType: input.contentType,
           sizeBytes: input.sizeBytes,
+          chatMediaKind: input.chatMediaKind,
         });
       } catch (e) {
         throw new TRPCError({

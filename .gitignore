@@ -20,12 +20,10 @@
 # production
 /build
 
-/drizzle/*
-!/drizzle/23-message-reactions.sql
-!/drizzle/24-delete-post.sql
-!/drizzle/25-commerce-hardening.sql
-!/drizzle/26-admin-observability.sql
-!/drizzle/27-chat-rooms.sql
+# Local project notes and database migrations are intentionally kept on developer machines.
+# Deployment applies migrations separately; neither directory belongs in the public repository.
+/docs/
+/drizzle/
 
 # misc
 .DS_Store
@@ -39,6 +37,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel

@@ -5,18 +5,9 @@ import { useCallback, useState } from "react";
 import { readJsonResponse } from "@/lib/http/json-response";
 import { chatAttachmentKindFromKey } from "@/lib/object-storage";
 import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
-import type { ChatUploadKind } from "@/lib/object-storage/chat-mime";
+import type { ChatPendingUpload } from "@/types/chat";
 
-export type PendingChatUpload = {
-  mediaKey: string;
-  kind: ChatUploadKind;
-  previewUrl: string | null;
-  fileName: string;
-  title?: string;
-  artist?: string;
-  durationSeconds?: number | null;
-  purpose?: "voice" | "circle";
-};
+export type PendingChatUpload = ChatPendingUpload;
 
 export type PendingChatAudioDraft = {
   file: File;

@@ -14,7 +14,6 @@ import { trpc } from "@/lib/trpc/client";
 import type { ChatMessageView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
 import type { ChatReactionEmoji } from "@/lib/chat/reactions";
-
 import { playlistMetadataDefaultsFromMessage } from "@/lib/chat/playlist-from-message";
 import { Toast } from "@/components/ui/Toast";
 import { ChatComposer } from "./ChatComposer";
@@ -22,9 +21,9 @@ import { ChatTrackMetadataDialog } from "./ChatTrackMetadataDialog";
 import { ChatDateDivider } from "./ChatDateDivider";
 import { ChatMediaLightbox } from "./ChatMediaLightbox";
 import { ChatMessageBubble } from "./ChatMessageBubble";
-import { ChatRoomControl } from "./ChatRoomControl";
+import { VoiceRoomButton } from "./voice/VoiceRoomButton";
 import { GroupInviteSheet } from "./GroupInviteSheet";
-
+import { ChatMobileNavigation } from "./ChatMobileNavigation";
 type ChatWindowProps = {
   chatId: string;
 };
@@ -304,7 +303,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         </Link>
         {isGroup ? (
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--app-accent-soft)] text-(--theme-accent)"><UsersRound className="h-4 w-4" /></span>
-        ) : other ? <ProfileAvatar displayName={other.displayName} size="sm" isOnline={otherOnline} /> : null}
+        ) : other ? <ProfileAvatar displayName={other.displayName} size="sm" isOnline={otherOnline} animatedAvatarUrl={other.avatarUrl} decorationUrl={other.avatarDecorationUrl} ringId={other.avatarRingId} /> : null}
         <div className="min-w-0 flex-1">
           {isGroup ? <p className="truncate font-semibold">{chatTitle}</p> : other ? (
             <DisplayNameWithPin hasVooplePlus={other.hasVooplePlus} className="font-semibold">
@@ -325,7 +324,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
             </p>
           )}
         </div>
-        <ChatRoomControl
+        <VoiceRoomButton
           chatId={chatId}
           chatName={chatTitle}
           chatType={isGroup ? "group" : "direct"}
@@ -333,6 +332,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         {isGroup && (data?.chat.viewerRole === "owner" || data?.chat.viewerRole === "admin") ? (
           <GroupInviteSheet chatId={chatId} />
         ) : null}
+        <ChatMobileNavigation />
       </header>
 
       <div

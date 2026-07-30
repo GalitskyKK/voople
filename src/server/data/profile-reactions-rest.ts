@@ -1,4 +1,5 @@
 import { getAdminClient } from "@/lib/supabase/admin";
+import { createNotification } from "@/server/services/notifications.service";
 
 export const PROFILE_REACTION_EMOJIS = ["❤️", "✨", "🔥"] as const;
 export type ProfileReactionEmoji = (typeof PROFILE_REACTION_EMOJIS)[number];
@@ -77,6 +78,12 @@ export async function toggleProfileReactionRest(
       emoji,
     });
     if (error) throw new Error(error.message);
+    void createNotification({
+      userId: profileUserId,
+      actorId: reactorUserId,
+      type: "profile_reaction",
+      referenceId: profileUserId,
+    });
   }
 
   return listProfileReactionsRest(profileUserId, reactorUserId);

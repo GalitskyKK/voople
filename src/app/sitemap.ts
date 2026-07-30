@@ -3,6 +3,10 @@ import type { MetadataRoute } from "next"
 import { getSiteUrl, PUBLIC_SITEMAP_PATHS } from "@/lib/seo/site"
 import { fetchPublicUsernamesForSitemap } from "@/server/data/sitemap"
 
+// Public profiles change independently of deployments. Generate the sitemap at
+// request time instead of making the production build depend on Supabase.
+export const dynamic = "force-dynamic"
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = getSiteUrl()
   const defaultLastModified = new Date()

@@ -1,13 +1,8 @@
-import type { CSSProperties } from "react"
-
-import { readableForeground } from "@/lib/customization/readable-foreground"
-import { displayNamePresentation } from "@/lib/customization/display-name-style"
-import { cn } from "@/lib/utils"
 import type { ProfileCustomizationView } from "@/types/domain"
-import { DisplayNameWithPin } from "./DisplayNameWithPin"
 import { ProfileAvatarWithPresence } from "./ProfileAvatarWithPresence"
 import { ProfileBadges } from "./ProfileBadges"
 import { ProfileBanner } from "./ProfileBanner"
+import { ProfileCardIdentityVisual } from "./ProfileCardIdentityVisual"
 import { ProfileEffect } from "./ProfileEffect"
 import { CssEffectLayer } from "./effects/CssEffectLayer"
 
@@ -38,9 +33,7 @@ export function ProfileCardHeader({
   compact = false,
   showBanner = true
 }: ProfileCardHeaderProps) {
-  const { displayName: nameStyle, flags, assets } = customization
-
-  const nickname = displayNamePresentation(nameStyle)
+  const { flags, assets } = customization
 
   return (
     <>
@@ -50,8 +43,14 @@ export function ProfileCardHeader({
         </div>
       ) : null}
 
-      <div className={cn("relative z-10 px-4", compact ? "pb-4" : "pb-0")}>
-        <div className="-mt-9 flex items-end justify-between gap-2 overflow-visible">
+      <ProfileCardIdentityVisual
+        customization={customization}
+        displayName={displayName}
+        username={username}
+        hasVooplePlus={hasVooplePlus}
+        subscriptionExpiresAt={subscriptionExpiresAt}
+        compact={compact}
+        avatar={
           <ProfileAvatarWithPresence
             userId={userId}
             displayName={displayName}
@@ -60,28 +59,12 @@ export function ProfileCardHeader({
             decorationUrl={assets.avatarDecorationUrl}
             animatedAvatarUrl={assets.animatedAvatarUrl}
           />
-          <span className="h-[72px] w-0 shrink-0" aria-hidden />
-        </div>
-        <DisplayNameWithPin
-          as="div"
-          hasVooplePlus={hasVooplePlus}
-          subscriptionExpiresAt={subscriptionExpiresAt}
-          size="md"
-          className="mt-3"
-          nameClassName={cn(
-            "text-xl font-bold",
-            flags.hasDisplayNameStyle ? nickname.className : "text-[var(--foreground)]"
-          )}
-          style={flags.hasDisplayNameStyle ? nickname.style : undefined}>
-          {displayName}
-        </DisplayNameWithPin>
-        <div className="mt-0.5 flex min-w-0 items-center gap-2">
-          <p className="shrink-0 text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">@{username}</p>
-          {userId && !compact ? (
+        }
+        badges={
+          userId && !compact ? (
             <ProfileBadges userId={userId} compact className="mt-0 min-w-0 flex-nowrap overflow-hidden" />
           ) : null}
-        </div>
-      </div>
+      />
     </>
   )
 }
@@ -113,39 +96,4 @@ export function ProfileCardEffectLayer({
       ) : null}
     </div>
   )
-}
-
-/**
- * Стиль карточки профиля.
- * - Без темы профиля (и при баннере без своей темы): карточка следует теме
- *   приложения (фон/текст из токенов) — читаема на светлой и тёмной теме, эффекты
- *   и баннер при этом работают как обычно.
- * - С темой профиля (Voople+): фон — диагональный градиент двух цветов, а
- *   `--foreground` переопределяется на читаемый по средней яркости (весь текст
- *   внутри карточки завязан на этот токен).
- */
-export function profileCardThemeStyle(customization: ProfileCustomizationView): CSSProperties {
-  // Любой медиа-баннер (картинка/видео) → split-layout: фон карточки прозрачный,
-  // читаемость держат scrim/glass секций (не только видео-фон, как раньше).
-  if (customization.flags.hasBannerMedia) {
-    return {
-      "--theme-accent": customization.themeAccent,
-      background: "transparent"
-    } as CSSProperties
-  }
-
-  if (!customization.flags.hasProfileTheme) {
-    return {
-      "--theme-accent": customization.themeAccent,
-      background: "var(--app-surface)"
-    } as React.CSSProperties
-  }
-
-  const { themePrimary, themeAccent } = customization
-  return {
-    "--theme-primary": themePrimary,
-    "--theme-accent": themeAccent,
-    "--foreground": readableForeground(themePrimary, themeAccent),
-    background: `linear-gradient(135deg, ${themePrimary} 0%, ${themeAccent} 100%)`
-  } as React.CSSProperties
 }

@@ -26,6 +26,17 @@ export type ChatMessageAttachment =
   | { kind: "circle"; url: string }
   | { kind: "track"; track: PlaylistTrackView; ownerId: string };
 
+export type ChatPendingUpload = {
+  mediaKey: string;
+  kind: "image" | "audio" | "circle";
+  previewUrl: string | null;
+  fileName: string;
+  title?: string;
+  artist?: string;
+  durationSeconds?: number | null;
+  purpose?: "voice" | "circle";
+};
+
 export type ChatMessageView = {
   id: string;
   senderId: string;
@@ -35,6 +46,7 @@ export type ChatMessageView = {
   sender?: {
     username: string;
     displayName: string;
+    avatarUrl?: string | null;
   } | null;
   readAt?: string | null;
   replyTo?: ChatMessageReplyPreview | null;
@@ -53,6 +65,9 @@ export type ChatListItem = {
     username: string;
     displayName: string;
     hasVooplePlus: boolean;
+    avatarUrl: string | null;
+    avatarDecorationUrl: string | null;
+    avatarRingId: string | null;
   } | null;
   lastMessage: {
     text: string | null;
@@ -67,17 +82,36 @@ export type ChatRoomParticipantView = {
   id: string;
   username: string;
   displayName: string;
+  avatarUrl: string | null;
+  avatarDecorationUrl: string | null;
+  avatarRingId: string | null;
   micMuted: boolean;
   isMe: boolean;
 };
 
 export type ChatRoomView = {
-  status: "empty" | "active";
+  status: "empty" | "ringing" | "active";
   accessMode: "open" | "locked";
   startedBy: string | null;
   startedAt: string | null;
+  endReason: "declined" | "cancelled" | "missed" | "ended" | null;
   participants: ChatRoomParticipantView[];
   isInside: boolean;
+};
+
+export type IncomingCallView = {
+  chatId: string;
+  chatName: string;
+  chatType: "direct";
+  startedAt: string;
+  caller: {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl: string | null;
+    avatarDecorationUrl: string | null;
+    avatarRingId: string | null;
+  };
 };
 
 export type ChatInvitePreview = {

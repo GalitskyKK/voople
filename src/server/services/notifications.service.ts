@@ -6,6 +6,7 @@ export type NotifType =
   | "follow"
   | "reply"
   | "repost"
+  | "profile_reaction"
   | "profile_canvas_draw"
   | "question";
 

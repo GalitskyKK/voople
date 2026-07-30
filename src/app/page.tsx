@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, CirclePlay, Music2, Palette, Sparkles } from "lucide-react";
+import { ArrowRight, CirclePlay, Download, Music2, Palette, Sparkles } from "lucide-react";
 
 import { LandingProfilePreview } from "@/components/landing/LandingProfilePreview";
+import { LandingAccountActions } from "@/components/landing/LandingAccountActions";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SITE_DESCRIPTION } from "@/lib/seo/site";
 
@@ -35,14 +36,17 @@ const FEATURES = [
 ];
 
 export default function HomePage() {
+  const desktopDownloadAvailable = Boolean(
+    process.env.DESKTOP_INSTALLER_URL?.trim(),
+  );
+
   return (
     <div className="min-h-dvh overflow-hidden bg-[var(--background)]">
       <header className="relative z-20 mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="text-xl font-bold tracking-[-0.04em]">Voople</Link>
         <nav className="flex items-center gap-2" aria-label="Основная навигация">
           <Link href="/explore" className="hidden rounded-xl px-3 py-2 text-sm text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] sm:block">Посмотреть</Link>
-          <Link href="/login" className="rounded-xl px-3 py-2 text-sm font-medium transition hover:bg-[var(--app-surface-soft)]">Войти</Link>
-          <Link href="/register" className="rounded-xl bg-[var(--theme-accent)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--app-shadow-sm)] transition hover:brightness-110">Создать профиль</Link>
+          <LandingAccountActions />
         </nav>
       </header>
 
@@ -60,13 +64,19 @@ export default function HomePage() {
             <p className="mt-7 max-w-xl text-pretty text-lg leading-8 text-[var(--app-muted)] sm:text-xl">
               Мысли, музыка, фото и кружки складываются в живой профиль. Друзья реагируют не только на публикацию — они чувствуют ваш текущий момент.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link href="/register" className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--theme-accent)] px-6 font-semibold text-white shadow-[0_12px_34px_color-mix(in_srgb,var(--theme-accent)_30%,transparent)] transition hover:-translate-y-0.5 hover:brightness-110">
                 Создать свой профиль <ArrowRight className="h-4 w-4" />
               </Link>
+              {desktopDownloadAvailable ? (
+                <Link href="/download/desktop" prefetch={false} className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_42%,var(--app-border))] bg-[color-mix(in_srgb,var(--theme-accent)_10%,var(--app-surface))] px-6 font-semibold text-[var(--foreground)] transition hover:-translate-y-0.5 hover:border-[var(--theme-accent)] hover:bg-[color-mix(in_srgb,var(--theme-accent)_16%,var(--app-surface))]">
+                  <Download className="h-4 w-4" />
+                  Скачать для Windows
+                </Link>
+              ) : null}
               <Link href="/feed" className="inline-flex h-12 items-center justify-center rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] px-6 font-medium transition hover:border-[var(--app-border-strong)] hover:bg-[var(--app-surface-soft)]">Открыть ленту</Link>
             </div>
-            <p className="mt-4 text-sm text-[var(--app-muted)]">Бесплатный профиль · без привязки карты</p>
+            <p className="mt-4 text-sm text-[var(--app-muted)]">Бесплатный профиль · Windows 10/11 x64 · без привязки карты</p>
           </div>
 
           <div className="relative z-10"><LandingProfilePreview /></div>

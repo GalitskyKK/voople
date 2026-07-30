@@ -7,6 +7,7 @@ type PostComposerProps = {
   maxLength?: number;
   placeholder?: string;
   compact?: boolean;
+  autoFocus?: boolean;
 };
 
 export function PostComposer({
@@ -16,6 +17,7 @@ export function PostComposer({
   maxLength = 280,
   placeholder = "Что нового?",
   compact = false,
+  autoFocus = false,
 }: PostComposerProps) {
   return (
     <div>
@@ -26,6 +28,7 @@ export function PostComposer({
         maxLength={maxLength}
         placeholder={placeholder}
         rows={compact ? 2 : 4}
+        autoFocus={autoFocus}
         className="w-full resize-none rounded-xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-black/20 px-3 py-2 text-sm text-[var(--foreground)] outline-none transition-colors placeholder:text-[color-mix(in_srgb,var(--foreground)_40%,transparent)] focus:border-[color-mix(in_srgb,var(--theme-accent)_55%,transparent)] disabled:opacity-50"
       />
       {compact && value.length === 0 ? null : (

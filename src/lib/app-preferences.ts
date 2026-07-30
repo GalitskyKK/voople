@@ -1,3 +1,9 @@
+import {
+  DEFAULT_HOTKEY_BINDINGS,
+  sanitizeHotkeys,
+  type HotkeyBinding,
+} from "@/lib/hotkeys";
+
 export type FontScale = "small" | "standard" | "large";
 export type InterfaceDensity = "comfortable" | "compact";
 export type ChatWallpaper = "plain" | "doodles" | "grid" | "aurora";
@@ -8,6 +14,14 @@ export type AppPreferences = {
   reduceMotion: boolean;
   showPresence: boolean;
   chatWallpaper: ChatWallpaper;
+  notifyMessages: boolean;
+  notifyCalls: boolean;
+  notifyReplies: boolean;
+  notifyReactions: boolean;
+  notificationSound: boolean;
+  closeToTray: boolean;
+  minimizeToTray: boolean;
+  hotkeys: HotkeyBinding[];
 };
 
 export const DEFAULT_APP_PREFERENCES: AppPreferences = {
@@ -16,6 +30,14 @@ export const DEFAULT_APP_PREFERENCES: AppPreferences = {
   reduceMotion: false,
   showPresence: true,
   chatWallpaper: "doodles",
+  notifyMessages: true,
+  notifyCalls: true,
+  notifyReplies: true,
+  notifyReactions: true,
+  notificationSound: true,
+  closeToTray: true,
+  minimizeToTray: false,
+  hotkeys: DEFAULT_HOTKEY_BINDINGS,
 };
 
 const STORAGE_KEY = "voople:app-preferences";
@@ -42,6 +64,14 @@ export function readAppPreferences(): AppPreferences {
       chatWallpaper: ["plain", "doodles", "grid", "aurora"].includes(parsed.chatWallpaper ?? "")
         ? (parsed.chatWallpaper as ChatWallpaper)
         : DEFAULT_APP_PREFERENCES.chatWallpaper,
+      notifyMessages: parsed.notifyMessages !== false,
+      notifyCalls: parsed.notifyCalls !== false,
+      notifyReplies: parsed.notifyReplies !== false,
+      notifyReactions: parsed.notifyReactions !== false,
+      notificationSound: parsed.notificationSound !== false,
+      closeToTray: parsed.closeToTray !== false,
+      minimizeToTray: parsed.minimizeToTray === true,
+      hotkeys: sanitizeHotkeys(parsed.hotkeys),
     };
     return cachedPreferences;
   } catch {

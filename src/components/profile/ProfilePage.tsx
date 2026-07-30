@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect } from "react";
 
-import { CreatePostBlock } from "@/components/feed/CreatePostBlock";
 import { PostCard } from "@/components/feed/PostCard";
-import { useElementScrolledPast } from "@/hooks/useElementScrolledPast";
 import { createClient } from "@/lib/supabase/client";
 import { trpc } from "@/lib/trpc/client";
 import type { PostViewModel, ProfileViewModel } from "@/types/domain";
 import type { Stroke } from "@/types/canvas";
-import { ProfileFeedTabs, type ProfileFeedTab } from "./ProfileFeedTabs";
+import { ProfilePageView } from "./ProfilePageView";
 import { ProfileQuestions } from "./ProfileQuestions";
 import { ProfileFlipCard } from "./canvas/ProfileFlipCard";
 import { StickyProfileHeader } from "./StickyProfileHeader";
@@ -30,13 +28,9 @@ export function ProfilePage({
   posts: initialPosts,
   initialCanvasStrokes = [],
   viewerId = null,
-  canPost = false,
   canFollow = false,
   askDeepLink = false,
 }: ProfilePageProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [feedTab, setFeedTab] = useState<ProfileFeedTab>(askDeepLink ? "questions" : "posts");
-  const stickyVisible = useElementScrolledPast(cardRef, { edgeTop: 48 });
   const utils = trpc.useUtils();
 
   const { data: liveProfile } = trpc.profile.getByUsername.useQuery(
@@ -141,67 +135,46 @@ export function ProfilePage({
     };
   }, [profile.id, profile.username, utils]);
 
-  const filteredPosts = useMemo(() => {
-    if (feedTab === "media") return posts.filter((post) => Boolean(post.mediaUrl));
-    return posts;
-  }, [feedTab, posts]);
-
-  const emptyFeedMessage =
-    feedTab === "media" ? "Пока нет постов с медиа" : "Пока нет постов";
-
   return (
-    <>
-      <StickyProfileHeader
-        visible={stickyVisible}
-        profile={profile}
-        isOwner={isOwner}
-        canFollow={canFollow}
-      />
-      <div className="voople-profile-page flex w-full flex-col gap-4 py-4 lg:min-h-0 lg:flex-1 lg:flex-row lg:gap-6 lg:py-6">
-        <div ref={cardRef} className="voople-profile-page__card w-full shrink-0 lg:w-[320px]">
-          <ProfileFlipCard
-            profile={profile}
-            isOwner={isOwner}
-            canFollow={canFollow}
-            viewerId={viewerId}
-            initialStrokes={initialCanvasStrokes}
-          />
-        </div>
-
-        <section
-          data-voople-scroll=""
-          className="voople-profile-page__posts voople-scroll min-w-0 space-y-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1"
-        >
-          {canPost && feedTab !== "questions" && (
-            <div className="hidden lg:block">
-              <CreatePostBlock profile={profile} canPost />
-            </div>
-          )}
-          <ProfileFeedTabs active={feedTab} onChange={setFeedTab} />
-          {feedTab === "questions" ? (
-            <ProfileQuestions
-              profileUserId={profile.id}
-              username={profile.username}
-              isOwner={isOwner}
-              canAsk={Boolean(viewerId) && !isOwner}
-              canReact={Boolean(viewerId)}
-              autoFocusAsk={askDeepLink}
-            />
-          ) : filteredPosts.length === 0 ? (
-            <p className="text-center text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">{emptyFeedMessage}</p>
-          ) : (
-            filteredPosts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                canLike={Boolean(viewerId)}
-                viewerId={viewerId}
-                profileUsername={profile.username}
-              />
-            ))
-          )}
-        </section>
-      </div>
-    </>
+    <ProfilePageView
+      posts={posts}
+      initialTab={askDeepLink ? "questions" : "posts"}
+      card={
+        <ProfileFlipCard
+          profile={profile}
+          isOwner={isOwner}
+          canFollow={canFollow}
+          viewerId={viewerId}
+          initialStrokes={initialCanvasStrokes}
+        />
+      }
+      renderStickyHeader={(visible) => (
+        <StickyProfileHeader
+          visible={visible}
+          profile={profile}
+          isOwner={isOwner}
+          canFollow={canFollow}
+        />
+      )}
+      renderQuestions={() => (
+        <ProfileQuestions
+          profileUserId={profile.id}
+          username={profile.username}
+          isOwner={isOwner}
+          canAsk={Boolean(viewerId) && !isOwner}
+          canReact={Boolean(viewerId)}
+          autoFocusAsk={askDeepLink}
+        />
+      )}
+      renderPost={(post) => (
+        <PostCard
+          key={post.id}
+          post={post}
+          canLike={Boolean(viewerId)}
+          viewerId={viewerId}
+          profileUsername={profile.username}
+        />
+      )}
+    />
   );
 }

@@ -1,0 +1,214 @@
+name: Desktop release
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the successful build to the public download bucket
+        required: true
+        default: false
+        type: boolean
+  push:
+    tags:
+      - "desktop-v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    name: Build Windows installer
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.DESKTOP_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.DESKTOP_SUPABASE_ANON_KEY }}
+      VITE_TURNSTILE_SITE_KEY: ${{ vars.DESKTOP_TURNSTILE_SITE_KEY }}
+      VITE_VOOPLE_API_URL: ${{ vars.DESKTOP_API_URL }}
+      NEXT_PUBLIC_ASSETS_CDN_URL: ${{ vars.DESKTOP_ASSETS_CDN_URL }}
+      WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
+      WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+      REQUIRE_SIGNING: ${{ startsWith(github.ref, 'refs/tags/desktop-v') || inputs.publish == true }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            desktop/package-lock.json
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+
+      - name: Install web dependencies
+        run: npm ci
+
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm ci
+
+      - name: Validate release configuration
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:VITE_SUPABASE_URL)) {
+            throw "DESKTOP_SUPABASE_URL is not configured."
+          }
+          if ([string]::IsNullOrWhiteSpace($env:VITE_SUPABASE_ANON_KEY)) {
+            throw "DESKTOP_SUPABASE_ANON_KEY is not configured."
+          }
+
+          $tauri = Get-Content "desktop/src-tauri/tauri.conf.json" -Raw | ConvertFrom-Json
+          $desktopPackage = Get-Content "desktop/package.json" -Raw | ConvertFrom-Json
+          if ($tauri.version -ne $desktopPackage.version) {
+            throw "desktop/package.json and tauri.conf.json versions must match."
+          }
+          if ($env:GITHUB_REF -like "refs/tags/desktop-v*") {
+            $expectedTag = "desktop-v$($tauri.version)"
+            if ($env:GITHUB_REF_NAME -ne $expectedTag) {
+              throw "Release tag must be $expectedTag."
+            }
+          }
+          "DESKTOP_VERSION=$($tauri.version)" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Run repository checks
+        run: |
+          npm run check:architecture
+          npm run lint
+          npx tsc --noEmit
+
+      - name: Prepare optional Windows code signing
+        shell: pwsh
+        run: |
+          $releaseConfig = @{}
+          if (
+            $env:REQUIRE_SIGNING -eq "true" -and
+            [string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE_BASE64)
+          ) {
+            throw "A public release requires WINDOWS_CERTIFICATE_BASE64."
+          }
+          if (-not [string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE_BASE64)) {
+            if ([string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE_PASSWORD)) {
+              throw "WINDOWS_CERTIFICATE_PASSWORD is required when a certificate is configured."
+            }
+
+            $pfxPath = Join-Path $env:RUNNER_TEMP "voople-code-signing.pfx"
+            [IO.File]::WriteAllBytes(
+              $pfxPath,
+              [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE_BASE64)
+            )
+            try {
+              $password = ConvertTo-SecureString $env:WINDOWS_CERTIFICATE_PASSWORD -AsPlainText -Force
+              $certificate = Import-PfxCertificate `
+                -FilePath $pfxPath `
+                -CertStoreLocation "Cert:\CurrentUser\My" `
+                -Password $password
+              $releaseConfig = @{
+                bundle = @{
+                  windows = @{
+                    certificateThumbprint = $certificate.Thumbprint
+                    digestAlgorithm = "sha256"
+                    timestampUrl = "http://timestamp.digicert.com"
+                  }
+                }
+              }
+            } finally {
+              Remove-Item -LiteralPath $pfxPath -Force -ErrorAction SilentlyContinue
+            }
+          }
+
+          $releaseConfig |
+            ConvertTo-Json -Depth 8 |
+            Set-Content "desktop/.tauri-release.conf.json" -Encoding utf8
+
+      - name: Build NSIS installer
+        id: tauri
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: desktop
+          tauriScript: npm run tauri
+          args: --config .tauri-release.conf.json --target x86_64-pc-windows-msvc
+          uploadUpdaterJson: false
+          releaseAssetNamePattern: Voople-[version]-Windows-[arch][setup].[ext]
+
+      - name: Normalize installer artifact
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem `
+            "desktop/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis" `
+            -Filter "*-setup.exe" |
+            Select-Object -First 1
+          if ($null -eq $installer) {
+            throw "The NSIS installer was not produced."
+          }
+
+          New-Item -ItemType Directory -Path "release" -Force | Out-Null
+          Copy-Item -LiteralPath $installer.FullName -Destination "release/Voople-Setup-x64.exe"
+          $hash = (Get-FileHash "release/Voople-Setup-x64.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  Voople-Setup-x64.exe" |
+            Set-Content "release/Voople-Setup-x64.exe.sha256" -Encoding ascii
+
+          if ($env:REQUIRE_SIGNING -eq "true") {
+            $signature = Get-AuthenticodeSignature "release/Voople-Setup-x64.exe"
+            if ($signature.Status -ne "Valid") {
+              throw "Refusing to publish installer with signature status: $($signature.Status)."
+            }
+          }
+
+      - name: Upload private workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Voople-Desktop-${{ env.DESKTOP_VERSION }}-Windows-x64
+          path: |
+            release/Voople-Setup-x64.exe
+            release/Voople-Setup-x64.exe.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Create private GitHub release
+        if: startsWith(github.ref, 'refs/tags/desktop-v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view $env:GITHUB_REF_NAME *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $env:GITHUB_REF_NAME `
+              "release/Voople-Setup-x64.exe#Voople Desktop Windows x64" `
+              "release/Voople-Setup-x64.exe.sha256#SHA-256 checksum" `
+              --clobber
+          } else {
+            gh release create $env:GITHUB_REF_NAME `
+              "release/Voople-Setup-x64.exe#Voople Desktop Windows x64" `
+              "release/Voople-Setup-x64.exe.sha256#SHA-256 checksum" `
+              --title "Voople Desktop v$env:DESKTOP_VERSION" `
+              --generate-notes
+          }
+
+      - name: Publish public installer
+        if: startsWith(github.ref, 'refs/tags/desktop-v') || inputs.publish == true
+        env:
+          DESKTOP_RELEASE_S3_ENDPOINT: ${{ secrets.DESKTOP_RELEASE_S3_ENDPOINT }}
+          DESKTOP_RELEASE_S3_REGION: ${{ secrets.DESKTOP_RELEASE_S3_REGION }}
+          DESKTOP_RELEASE_S3_BUCKET: ${{ secrets.DESKTOP_RELEASE_S3_BUCKET }}
+          DESKTOP_RELEASE_S3_ACCESS_KEY_ID: ${{ secrets.DESKTOP_RELEASE_S3_ACCESS_KEY_ID }}
+          DESKTOP_RELEASE_S3_SECRET_ACCESS_KEY: ${{ secrets.DESKTOP_RELEASE_S3_SECRET_ACCESS_KEY }}
+          DESKTOP_RELEASE_S3_FORCE_PATH_STYLE: ${{ vars.DESKTOP_RELEASE_S3_FORCE_PATH_STYLE }}
+          DESKTOP_RELEASE_PUBLIC_BASE_URL: ${{ vars.DESKTOP_RELEASE_PUBLIC_BASE_URL }}
+        run: node scripts/publish-desktop-release.mjs release/Voople-Setup-x64.exe "$env:DESKTOP_VERSION"

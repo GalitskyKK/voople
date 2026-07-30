@@ -20,5 +20,5 @@ export {
   CUSTOMIZATION_UPLOAD_MAX_BYTES,
   extensionForCustomizationMime,
 } from "./customization-paths";
-export { publicAssetUrl } from "./urls";
+export { publicAssetUrl, setPublicAssetBaseUrl } from "./urls";
 export type { PostMediaType, PresignedUploadView, UploadPurpose } from "./types";

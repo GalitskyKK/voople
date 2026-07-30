@@ -9,7 +9,6 @@ import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import type { PostViewModel } from "@/types/domain";
 import { PostMedia } from "@/components/media/PostMedia";
-import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { ProfileAppearanceCard } from "@/components/profile/ProfileAppearanceCard";
 import { ProfileReactions } from "@/components/profile/ProfileReactions";
 import { PostAuthorRow } from "./PostAuthorRow";
@@ -18,6 +17,12 @@ import { PostLikeButton } from "./PostLikeButton";
 import { PostShareButton } from "./PostShareButton";
 import { PostViewCounter } from "./PostViewCounter";
 import { StatusPostBody } from "./StatusPostBody";
+import {
+  PostCardActions,
+  PostCardBody,
+  PostCardSurface,
+} from "./PostCardVisual";
+import { RepostPreview } from "./RepostPreview";
 
 type PostCardProps = {
   post: PostViewModel;
@@ -27,52 +32,6 @@ type PostCardProps = {
   profileUsername?: string;
   commentsAlwaysOpen?: boolean;
 };
-
-function RepostPreview({ post, depth = 0 }: { post: PostViewModel; depth?: number }) {
-  const isStatus = post.kind === "status" && post.status;
-  const hasNestedRepost = Boolean(post.repost?.target);
-  const appearanceCustomization = post.appearance?.customization ?? post.author.customization;
-
-  return (
-    <div className="voople-panel--inset p-3">
-      <div className="mb-3">
-        <DisplayNameWithPin
-          hasVooplePlus={post.author.hasVooplePlus}
-          size="xs"
-          className="text-xs font-medium text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]"
-        >
-          {post.author.displayName}
-        </DisplayNameWithPin>
-        <p className="text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">@{post.author.username}</p>
-      </div>
-
-      {post.repostComment && (
-        <p className="mb-3 text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">{post.repostComment}</p>
-      )}
-
-      {post.text && <p className="text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_85%,transparent)]">{post.text}</p>}
-      {post.mediaUrl && (
-        <PostMedia url={post.mediaUrl} mediaType={post.mediaType} className="mt-3" />
-      )}
-      {post.kind === "appearance" && post.appearance && appearanceCustomization ? (
-        <ProfileAppearanceCard profile={{ id: post.author.id, username: post.author.username, displayName: post.author.displayName, customization: appearanceCustomization, status: post.appearance.status ?? {}, badgeIds: post.appearance.badgeIds }} scene={post.appearance.scene} variant="feed" className="mt-3" />
-      ) : null}
-      {isStatus && (
-        <StatusPostBody
-          status={post.status!}
-          authorUsername={post.author.username}
-          className={post.text ? "mt-3" : undefined}
-        />
-      )}
-
-      {hasNestedRepost && depth < 4 && (
-        <div className="mt-3">
-          <RepostPreview post={post.repost!.target} depth={depth + 1} />
-        </div>
-      )}
-    </div>
-  );
-}
 
 export function PostCard({
   post,
@@ -85,7 +44,6 @@ export function PostCard({
   const c = post.author.customization;
   const appearanceCustomization = post.appearance?.customization ?? c;
   const isStatus = post.kind === "status" && post.status;
-  const chipHeader = Boolean(c?.flags.hasFeedCardStyle);
   const utils = trpc.useUtils();
   const [commentsOpen, setCommentsOpen] = useState(commentsAlwaysOpen);
   const [repostPanelOpen, setRepostPanelOpen] = useState(false);
@@ -142,17 +100,16 @@ export function PostCard({
   if (deleted) return null;
 
   return (
-    <article className={cn("voople-post-card text-[var(--foreground)]", className)}>
-      <div
-        className="voople-post-card__surface voople-panel overflow-hidden rounded-[var(--app-radius-xl)]"
-        style={
+    <PostCardSurface
+      className={className}
+      surfaceStyle={
           c
             ? ({
                 "--theme-accent": c.themeAccent,
               } as CSSProperties)
             : undefined
-        }
-      >
+      }
+    >
         <PostAuthorRow
           postId={post.id}
           username={post.author.username}
@@ -172,7 +129,7 @@ export function PostCard({
           }}
           onDeleted={() => setDeleted(true)}
         />
-        <div className={cn("voople-post-card__body px-4 pb-4", chipHeader ? "pt-3" : "pt-3")}>
+        <PostCardBody>
           {displayRepostComment && (
             <p className="voople-post-card__text mb-3 text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">
               {displayRepostComment}
@@ -220,7 +177,7 @@ export function PostCard({
               ))}
             </div>
           )}
-          <footer className="voople-post-card__actions mt-4 flex items-center justify-between gap-1 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] pt-3 text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">
+          <PostCardActions>
             <PostViewCounter
               key={`${post.id}:${post.viewCount}`}
               postId={post.id}
@@ -281,7 +238,7 @@ export function PostCard({
               authorName={post.author.displayName}
               text={displayText || displayRepostComment}
             />
-          </footer>
+          </PostCardActions>
           {repostPanelOpen && (
             <div className="voople-panel--inset mt-3 p-3">
               <textarea
@@ -317,8 +274,7 @@ export function PostCard({
             canComment={Boolean(viewerId)}
             onCountChange={setReplyCount}
           />
-        </div>
-      </div>
-    </article>
+        </PostCardBody>
+    </PostCardSurface>
   );
 }

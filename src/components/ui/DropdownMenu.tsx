@@ -102,7 +102,7 @@ export function DropdownMenu({
             ref={menuRef}
             role="menu"
             className={cn(
-              "fixed z-[110] overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] bg-[#1a1a24] py-1 shadow-xl",
+              "fixed z-[110] overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] py-1 text-[var(--foreground)] shadow-[var(--app-shadow-md)]",
               menuClassName,
             )}
             style={{

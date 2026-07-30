@@ -20,7 +20,7 @@ import {
   ProfileCardFrameDivider,
   ProfileCardFrameOverlay,
 } from "@/components/profile/ProfileCardFrame";
-import { profileCardThemeStyle } from "@/components/profile/ProfileCardHeader";
+import { profileCardThemeStyle } from "@/components/profile/profile-card-style";
 import { ProfileCardVideoSections } from "@/components/profile/ProfileCardVideoSections";
 import { ProfileMeta } from "@/components/profile/ProfileMeta";
 import { ProfileStats } from "@/components/profile/ProfileStats";

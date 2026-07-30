@@ -123,7 +123,13 @@ export function useRealtimeChat(chatId: string, viewerId: string | null | undefi
         }
         if (status === "CLOSED") {
           window.clearTimeout(subscribeTimeout);
-          setRealtimeState({ key: subscriptionKey, status: "idle", lastEventAt: null });
+          // An unexpected close must keep the HTTP polling fallback active.
+          // Cleanup for a different chat is ignored by the subscription key.
+          setRealtimeState((current) =>
+            current.key === subscriptionKey || current.key === null
+              ? { key: subscriptionKey, status: "degraded", lastEventAt: current.lastEventAt }
+              : current,
+          );
         }
       });
 

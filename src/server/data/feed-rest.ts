@@ -2,13 +2,9 @@ import { getAdminClient } from "@/lib/supabase/admin"
 import { mapUserToAuthor, type PostRow, type UserRow } from "@/server/mappers/profile"
 import { getPostSelect, mapPostRowsWithReposts } from "@/server/data/post-hydration"
 import type { PostViewModel } from "@/types/domain"
+import type { FeedPageResult } from "@/types/feed"
 
 const DEFAULT_LIMIT = 20
-
-export type FeedPageResult = {
-  items: PostViewModel[]
-  nextCursor?: string
-}
 
 export async function getFeedPageRest(options?: {
   followingOnly?: boolean

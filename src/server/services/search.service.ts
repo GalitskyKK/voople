@@ -1,35 +1,26 @@
 import { getAdminClient } from "@/lib/supabase/admin";
 import { mapSubscriptionFields } from "@/server/mappers/profile";
+import {
+  toProfileCustomizationView,
+  type CustomizationRow,
+} from "@/server/mappers/customization";
 import { searchPostsRest } from "@/server/data/posts-rest";
 import {
   getTrendingHashtagsRest,
   searchHashtagsRest,
-  type HashtagSearchHit,
 } from "@/server/data/hashtags-rest";
-import type { PostViewModel } from "@/types/domain";
+import type {
+  ExploreSearchResult,
+  SearchHit,
+  UserSearchHit,
+} from "@/types/search";
 
-export type { HashtagSearchHit };
-
-export type UserSearchHit = {
-  type: "user";
-  id: string;
-  username: string;
-  displayName: string;
-  bio: string | null;
-  hasVooplePlus?: boolean;
-};
-
-export type SearchHit =
-  | UserSearchHit
-  | (HashtagSearchHit & {
-      type: "hashtag";
-    });
-
-export type ExploreSearchResult = {
-  users: UserSearchHit[];
-  hashtags: HashtagSearchHit[];
-  posts: PostViewModel[];
-};
+export type {
+  ExploreSearchResult,
+  HashtagSearchHit,
+  SearchHit,
+  UserSearchHit,
+} from "@/types/search";
 
 function mapRow(row: {
   id: string;
@@ -37,9 +28,16 @@ function mapRow(row: {
   display_name: string;
   bio: string | null;
   subscriptions?: { started_at: string; expires_at: string } | { started_at: string; expires_at: string }[] | null;
+  profile_customization?: CustomizationRow | CustomizationRow[] | null;
 }): UserSearchHit {
   const sub = Array.isArray(row.subscriptions) ? row.subscriptions[0] : row.subscriptions;
   const { hasVooplePlus } = mapSubscriptionFields(sub ?? undefined);
+  const customizationRow = Array.isArray(row.profile_customization)
+    ? row.profile_customization[0]
+    : row.profile_customization;
+  const customization = toProfileCustomizationView(customizationRow, {
+    hasActiveSubscription: hasVooplePlus,
+  });
   return {
     type: "user",
     id: row.id,
@@ -47,6 +45,7 @@ function mapRow(row: {
     displayName: row.display_name,
     bio: row.bio,
     hasVooplePlus,
+    avatarUrl: customization.assets.animatedAvatarUrl ?? null,
   };
 }
 
@@ -61,13 +60,13 @@ export async function searchUsers(query: string, limit = 20): Promise<UserSearch
   const [byUsername, byDisplayName] = await Promise.all([
     admin
       .from("users")
-      .select("id, username, display_name, bio, subscriptions (started_at, expires_at)")
+      .select("id, username, display_name, bio, subscriptions (started_at, expires_at), profile_customization (avatar_type, avatar_data, animated_avatar_id)")
       .ilike("username", pattern)
       .order("username")
       .limit(perQuery),
     admin
       .from("users")
-      .select("id, username, display_name, bio, subscriptions (started_at, expires_at)")
+      .select("id, username, display_name, bio, subscriptions (started_at, expires_at), profile_customization (avatar_type, avatar_data, animated_avatar_id)")
       .ilike("display_name", pattern)
       .order("username")
       .limit(perQuery),
@@ -89,6 +88,14 @@ export async function searchUsers(query: string, limit = 20): Promise<UserSearch
         username: row.username as string,
         display_name: row.display_name as string,
         bio: (row.bio as string | null) ?? null,
+        subscriptions: row.subscriptions as
+          | { started_at: string; expires_at: string }
+          | { started_at: string; expires_at: string }[]
+          | null,
+        profile_customization: row.profile_customization as
+          | CustomizationRow
+          | CustomizationRow[]
+          | null,
       }),
     );
     if (merged.length >= limit) break;

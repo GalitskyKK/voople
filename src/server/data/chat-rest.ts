@@ -7,6 +7,10 @@ import {
   publicAssetUrl,
 } from "@/lib/object-storage";
 import { getAdminClient } from "@/lib/supabase/admin";
+import {
+  toProfileCustomizationView,
+  type CustomizationRow,
+} from "@/server/mappers/customization";
 import { mapSubscriptionFields } from "@/server/mappers/profile";
 import type { ChatMessageAttachment, ChatMessageView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
@@ -17,6 +21,19 @@ export type { ChatListItem, ChatMessageView } from "@/types/chat";
 import type { ChatListItem } from "@/types/chat";
 
 type DirectChatRpcResult = string | { get_or_create_direct_chat?: string } | null;
+
+function compactAvatarFields(
+  related: CustomizationRow | CustomizationRow[] | null | undefined,
+) {
+  const customization = toProfileCustomizationView(
+    Array.isArray(related) ? related[0] : related,
+  );
+  return {
+    avatarUrl: customization.assets.animatedAvatarUrl ?? null,
+    avatarDecorationUrl: customization.assets.avatarDecorationUrl ?? null,
+    avatarRingId: customization.avatarRingId ?? null,
+  };
+}
 
 type MessageRow = {
   id: string;
@@ -352,12 +369,12 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
 
   const othersByChat = new Map<
     string,
-    { id: string; username: string; displayName: string; hasVooplePlus: boolean }
+    NonNullable<ChatListItem["otherUser"]>
   >();
   if (otherUserIds.size > 0) {
     const { data: users, error: usersErr } = await admin
       .from("users")
-      .select("id, username, display_name, subscriptions (started_at, expires_at)")
+      .select("id, username, display_name, subscriptions (started_at, expires_at), profile_customization (avatar_type, avatar_data, animated_avatar_id, avatar_decoration_id, avatar_ring_id)")
       .in("id", [...otherUserIds]);
 
     if (usersErr) throw new Error(usersErr.message);
@@ -377,6 +394,12 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
             username: u.username as string,
             displayName: u.display_name as string,
             hasVooplePlus,
+            ...compactAvatarFields(
+              u.profile_customization as
+                | CustomizationRow
+                | CustomizationRow[]
+                | null,
+            ),
           },
         ] as const;
       }),
@@ -455,7 +478,7 @@ export async function listMessagesRest(
       .limit(200),
     admin
       .from("chat_members")
-      .select("user_id, role, users (id, username, display_name, subscriptions (started_at, expires_at))")
+      .select("user_id, role, users (id, username, display_name, subscriptions (started_at, expires_at), profile_customization (avatar_type, avatar_data, animated_avatar_id, avatar_decoration_id, avatar_ring_id))")
       .eq("chat_id", chatId),
     admin.from("chats").select("id, type, name").eq("id", chatId).single(),
   ]);
@@ -478,12 +501,14 @@ export async function listMessagesRest(
           username: string;
           display_name: string;
           subscriptions?: { started_at: string; expires_at: string } | { started_at: string; expires_at: string }[];
+          profile_customization?: CustomizationRow | CustomizationRow[] | null;
         }
       | Array<{
           id: string;
           username: string;
           display_name: string;
           subscriptions?: { started_at: string; expires_at: string } | { started_at: string; expires_at: string }[];
+          profile_customization?: CustomizationRow | CustomizationRow[] | null;
         }>
       | null;
     const user = Array.isArray(u) ? u[0] : u;
@@ -496,23 +521,38 @@ export async function listMessagesRest(
         username: user.username,
         displayName: user.display_name,
         hasVooplePlus,
+        ...compactAvatarFields(user.profile_customization),
       };
       break;
     }
   }
 
   const rows = (msgResult.data ?? []) as MessageRow[];
-  const membersById = new Map<string, { username: string; displayName: string }>();
+  const membersById = new Map<
+    string,
+    { username: string; displayName: string; avatarUrl: string | null }
+  >();
   for (const row of membersResult.data ?? []) {
     const related = row.users as
-      | { id: string; username: string; display_name: string }
-      | Array<{ id: string; username: string; display_name: string }>
+      | {
+          id: string;
+          username: string;
+          display_name: string;
+          profile_customization?: CustomizationRow | CustomizationRow[] | null;
+        }
+      | Array<{
+          id: string;
+          username: string;
+          display_name: string;
+          profile_customization?: CustomizationRow | CustomizationRow[] | null;
+        }>
       | null;
     const member = Array.isArray(related) ? related[0] : related;
     if (member) {
       membersById.set(member.id, {
         username: member.username,
         displayName: member.display_name,
+        avatarUrl: compactAvatarFields(member.profile_customization).avatarUrl,
       });
     }
   }

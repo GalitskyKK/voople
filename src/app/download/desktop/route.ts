@@ -1,8 +1,10 @@
+import { DESKTOP_RELEASE } from "@/lib/constants/desktop-release";
+
 const INSTALLER_ENV_NAME = "DESKTOP_INSTALLER_URL";
 
 function getInstallerUrl() {
-  const configuredUrl = process.env[INSTALLER_ENV_NAME]?.trim();
-  if (!configuredUrl) return null;
+  const configuredUrl =
+    process.env[INSTALLER_ENV_NAME]?.trim() || DESKTOP_RELEASE.installerUrl;
 
   try {
     const url = new URL(configuredUrl);

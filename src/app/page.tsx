@@ -5,6 +5,7 @@ import { ArrowRight, CirclePlay, Download, Music2, Palette, Sparkles } from "luc
 import { LandingProfilePreview } from "@/components/landing/LandingProfilePreview";
 import { LandingAccountActions } from "@/components/landing/LandingAccountActions";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { DESKTOP_RELEASE } from "@/lib/constants/desktop-release";
 import { SITE_DESCRIPTION } from "@/lib/seo/site";
 
 export const metadata: Metadata = {
@@ -36,10 +37,6 @@ const FEATURES = [
 ];
 
 export default function HomePage() {
-  const desktopDownloadAvailable = Boolean(
-    process.env.DESKTOP_INSTALLER_URL?.trim(),
-  );
-
   return (
     <div className="min-h-dvh overflow-hidden bg-[var(--background)]">
       <header className="relative z-20 mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -68,15 +65,20 @@ export default function HomePage() {
               <Link href="/register" className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--theme-accent)] px-6 font-semibold text-white shadow-[0_12px_34px_color-mix(in_srgb,var(--theme-accent)_30%,transparent)] transition hover:-translate-y-0.5 hover:brightness-110">
                 Создать свой профиль <ArrowRight className="h-4 w-4" />
               </Link>
-              {desktopDownloadAvailable ? (
-                <Link href="/download/desktop" prefetch={false} className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_42%,var(--app-border))] bg-[color-mix(in_srgb,var(--theme-accent)_10%,var(--app-surface))] px-6 font-semibold text-[var(--foreground)] transition hover:-translate-y-0.5 hover:border-[var(--theme-accent)] hover:bg-[color-mix(in_srgb,var(--theme-accent)_16%,var(--app-surface))]">
-                  <Download className="h-4 w-4" />
-                  Скачать для Windows
-                </Link>
-              ) : null}
+              <Link href="/download/desktop" prefetch={false} className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_42%,var(--app-border))] bg-[color-mix(in_srgb,var(--theme-accent)_10%,var(--app-surface))] px-6 font-semibold text-[var(--foreground)] transition hover:-translate-y-0.5 hover:border-[var(--theme-accent)] hover:bg-[color-mix(in_srgb,var(--theme-accent)_16%,var(--app-surface))]">
+                <Download className="h-4 w-4" />
+                Скачать для Windows
+              </Link>
               <Link href="/feed" className="inline-flex h-12 items-center justify-center rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] px-6 font-medium transition hover:border-[var(--app-border-strong)] hover:bg-[var(--app-surface-soft)]">Открыть ленту</Link>
             </div>
             <p className="mt-4 text-sm text-[var(--app-muted)]">Бесплатный профиль · Windows 10/11 x64 · без привязки карты</p>
+            {!DESKTOP_RELEASE.signed ? (
+              <p className="mt-2 max-w-xl text-xs leading-5 text-[var(--app-muted)]">
+                Тестовая сборка без цифровой подписи: Windows может показать
+                предупреждение SmartScreen. Для запуска выберите «Подробнее» →
+                «Выполнить в любом случае».
+              </p>
+            ) : null}
           </div>
 
           <div className="relative z-10"><LandingProfilePreview /></div>

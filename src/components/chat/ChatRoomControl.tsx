@@ -133,7 +133,18 @@ export const ChatRoomControl = forwardRef<
       void utils.chat.room.invalidate({ chatId });
     },
   });
-  const heartbeat = trpc.chat.heartbeatRoom.useMutation();
+
+  // const heartbeat = trpc.chat.heartbeatRoom.useMutation()
+  
+  const { mutate: sendHeartbeat } = trpc.chat.heartbeatRoom.useMutation({
+    onError(error) {
+      console.error("Room heartbeat failed", {
+        chatId,
+        message: error.message,
+        timestamp: new Date().toISOString()
+      })
+    }
+  })
   const access = trpc.chat.setRoomAccess.useMutation({
     onSuccess: () => void utils.chat.room.invalidate({ chatId }),
   });
@@ -195,14 +206,36 @@ export const ChatRoomControl = forwardRef<
     return () => window.clearTimeout(timer);
   }, [open, showParkedMedia]);
 
+  // useEffect(() => {
+  //   if (!inside) return;
+  //   const timer = window.setInterval(() => {
+  //     const actualMuted = getMicrophoneMuted(liveRoomRef.current);
+  //     heartbeat.mutate({ chatId, micMuted: actualMuted });
+  //   }, 25_000);
+  //   return () => window.clearInterval(timer);
+  // }, [chatId, heartbeat, inside]);
+
   useEffect(() => {
-    if (!inside) return;
-    const timer = window.setInterval(() => {
-      const actualMuted = getMicrophoneMuted(liveRoomRef.current);
-      heartbeat.mutate({ chatId, micMuted: actualMuted });
-    }, 25_000);
-    return () => window.clearInterval(timer);
-  }, [chatId, heartbeat, inside]);
+    if (!inside || !chatId) return
+
+    const ping = () => {
+      const actualMuted = getMicrophoneMuted(liveRoomRef.current)
+
+      sendHeartbeat({
+        chatId,
+        micMuted: actualMuted
+      })
+    }
+
+    // Не ждём первые 25 секунд.
+    ping()
+
+    const timer = window.setInterval(ping, 25_000)
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [chatId, inside, sendHeartbeat])
 
   useEffect(() => {
     mountedRef.current = true;
@@ -496,7 +529,10 @@ export const ChatRoomControl = forwardRef<
       if (actualMuted === targetEnabled) {
         throw new Error("Медиасервер не подтвердил изменение микрофона");
       }
-      heartbeat.mutate({ chatId, micMuted: actualMuted });
+      sendHeartbeat({
+        chatId,
+        micMuted: actualMuted
+      })
       await refreshDevices();
     } catch (error) {
       setMicMuted(getMicrophoneMuted(liveRoom));

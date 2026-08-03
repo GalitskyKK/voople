@@ -35,9 +35,13 @@ jobs:
       VITE_TURNSTILE_SITE_KEY: ${{ vars.DESKTOP_TURNSTILE_SITE_KEY }}
       VITE_VOOPLE_API_URL: ${{ vars.DESKTOP_API_URL }}
       NEXT_PUBLIC_ASSETS_CDN_URL: ${{ vars.DESKTOP_ASSETS_CDN_URL }}
+      DESKTOP_RELEASE_PUBLIC_BASE_URL: ${{ vars.DESKTOP_RELEASE_PUBLIC_BASE_URL }}
+      DESKTOP_UPDATER_PUBLIC_KEY: ${{ vars.DESKTOP_UPDATER_PUBLIC_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.DESKTOP_UPDATER_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.DESKTOP_UPDATER_PRIVATE_KEY_PASSWORD }}
       WINDOWS_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_BASE64 }}
       WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-      REQUIRE_SIGNING: ${{ startsWith(github.ref, 'refs/tags/desktop-v') || (inputs.publish == true && inputs.allow_unsigned != true) }}
+      REQUIRE_SIGNING: ${{ vars.DESKTOP_REQUIRE_WINDOWS_SIGNING == 'true' && (startsWith(github.ref, 'refs/tags/desktop-v') || (inputs.publish == true && inputs.allow_unsigned != true)) }}
       ALLOW_UNSIGNED: ${{ inputs.allow_unsigned == true }}
       PUBLISH_RELEASE: ${{ startsWith(github.ref, 'refs/tags/desktop-v') || inputs.publish == true }}
 
@@ -81,11 +85,25 @@ jobs:
           if ($env:ALLOW_UNSIGNED -eq "true" -and $env:PUBLISH_RELEASE -ne "true") {
             throw "allow_unsigned can only be used together with publish."
           }
+          if ($env:PUBLISH_RELEASE -eq "true") {
+            if ([string]::IsNullOrWhiteSpace($env:DESKTOP_UPDATER_PUBLIC_KEY)) {
+              throw "DESKTOP_UPDATER_PUBLIC_KEY is required for a published release."
+            }
+            if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) {
+              throw "DESKTOP_UPDATER_PRIVATE_KEY is required for a published release."
+            }
+            if ([string]::IsNullOrWhiteSpace($env:DESKTOP_RELEASE_PUBLIC_BASE_URL)) {
+              throw "DESKTOP_RELEASE_PUBLIC_BASE_URL is required for a published release."
+            }
+          }
 
           $tauri = Get-Content "desktop/src-tauri/tauri.conf.json" -Raw | ConvertFrom-Json
           $desktopPackage = Get-Content "desktop/package.json" -Raw | ConvertFrom-Json
-          if ($tauri.version -ne $desktopPackage.version) {
-            throw "desktop/package.json and tauri.conf.json versions must match."
+          $cargoVersion = (
+            Select-String -Path "desktop/src-tauri/Cargo.toml" -Pattern '^version = "(.+)"$'
+          ).Matches.Groups[1].Value
+          if ($tauri.version -ne $desktopPackage.version -or $tauri.version -ne $cargoVersion) {
+            throw "desktop/package.json, Cargo.toml and tauri.conf.json versions must match."
           }
           if ($env:GITHUB_REF -like "refs/tags/desktop-v*") {
             $expectedTag = "desktop-v$($tauri.version)"
@@ -105,6 +123,27 @@ jobs:
         shell: pwsh
         run: |
           $releaseConfig = @{}
+          $updaterConfigured =
+            -not [string]::IsNullOrWhiteSpace($env:DESKTOP_UPDATER_PUBLIC_KEY) -and
+            -not [string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY) -and
+            -not [string]::IsNullOrWhiteSpace($env:DESKTOP_RELEASE_PUBLIC_BASE_URL)
+          if ($updaterConfigured) {
+            $baseUrl = $env:DESKTOP_RELEASE_PUBLIC_BASE_URL.TrimEnd('/')
+            if (-not $baseUrl.StartsWith('https://')) {
+              throw "DESKTOP_RELEASE_PUBLIC_BASE_URL must use HTTPS."
+            }
+            $releaseConfig.bundle = @{ createUpdaterArtifacts = $true }
+            $releaseConfig.plugins = @{
+              updater = @{
+                pubkey = $env:DESKTOP_UPDATER_PUBLIC_KEY
+                endpoints = @("$baseUrl/desktop/latest.json")
+                windows = @{ installMode = "passive" }
+              }
+            }
+          }
+          "DESKTOP_UPDATER_ENABLED=$($updaterConfigured.ToString().ToLowerInvariant())" |
+            Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
           if (
             $env:REQUIRE_SIGNING -eq "true" -and
             [string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE_BASE64)
@@ -127,14 +166,13 @@ jobs:
                 -FilePath $pfxPath `
                 -CertStoreLocation "Cert:\CurrentUser\My" `
                 -Password $password
-              $releaseConfig = @{
-                bundle = @{
-                  windows = @{
-                    certificateThumbprint = $certificate.Thumbprint
-                    digestAlgorithm = "sha256"
-                    timestampUrl = "http://timestamp.digicert.com"
-                  }
-                }
+              if (-not $releaseConfig.ContainsKey("bundle")) {
+                $releaseConfig.bundle = @{}
+              }
+              $releaseConfig.bundle.windows = @{
+                certificateThumbprint = $certificate.Thumbprint
+                digestAlgorithm = "sha256"
+                timestampUrl = "http://timestamp.digicert.com"
               }
             } finally {
               Remove-Item -LiteralPath $pfxPath -Force -ErrorAction SilentlyContinue
@@ -182,6 +220,14 @@ jobs:
             throw "Refusing to publish installer with signature status: $($signature.Status)."
           }
 
+          if ($env:DESKTOP_UPDATER_ENABLED -eq "true") {
+            $updaterSignature = "$($installer.FullName).sig"
+            if (-not (Test-Path -LiteralPath $updaterSignature)) {
+              throw "The Tauri updater signature was not produced."
+            }
+            Copy-Item -LiteralPath $updaterSignature -Destination "release/Voople-Setup-x64.exe.sig"
+          }
+
       - name: Upload private workflow artifact
         uses: actions/upload-artifact@v4
         with:
@@ -189,6 +235,7 @@ jobs:
           path: |
             release/Voople-Setup-x64.exe
             release/Voople-Setup-x64.exe.sha256
+            release/Voople-Setup-x64.exe.sig
           if-no-files-found: error
           retention-days: 30
 
@@ -203,11 +250,13 @@ jobs:
             gh release upload $env:GITHUB_REF_NAME `
               "release/Voople-Setup-x64.exe#Voople Desktop Windows x64" `
               "release/Voople-Setup-x64.exe.sha256#SHA-256 checksum" `
+              "release/Voople-Setup-x64.exe.sig#Tauri updater signature" `
               --clobber
           } else {
             gh release create $env:GITHUB_REF_NAME `
               "release/Voople-Setup-x64.exe#Voople Desktop Windows x64" `
               "release/Voople-Setup-x64.exe.sha256#SHA-256 checksum" `
+              "release/Voople-Setup-x64.exe.sig#Tauri updater signature" `
               --title "Voople Desktop v$env:DESKTOP_VERSION" `
               --generate-notes
           }
@@ -221,6 +270,4 @@ jobs:
           DESKTOP_RELEASE_S3_ACCESS_KEY_ID: ${{ secrets.DESKTOP_RELEASE_S3_ACCESS_KEY_ID }}
           DESKTOP_RELEASE_S3_SECRET_ACCESS_KEY: ${{ secrets.DESKTOP_RELEASE_S3_SECRET_ACCESS_KEY }}
           DESKTOP_RELEASE_S3_FORCE_PATH_STYLE: ${{ vars.DESKTOP_RELEASE_S3_FORCE_PATH_STYLE }}
-          DESKTOP_RELEASE_PUBLIC_BASE_URL: ${{ vars.DESKTOP_RELEASE_PUBLIC_BASE_URL }}
-          DESKTOP_RELEASE_SIGNED: ${{ env.DESKTOP_RELEASE_SIGNED }}
-        run: node scripts/publish-desktop-release.mjs release/Voople-Setup-x64.exe "$env:DESKTOP_VERSION"
+        run: node scripts/publish-desktop-release.mjs release/Voople-Setup-x64.exe "$env:DESKTOP_VERSION" release/Voople-Setup-x64.exe.sig

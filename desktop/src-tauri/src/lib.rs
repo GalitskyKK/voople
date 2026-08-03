@@ -1,5 +1,11 @@
 use serde::Serialize;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::{
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Mutex,
+    },
+    time::Duration,
+};
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
@@ -10,6 +16,21 @@ struct WindowBehavior {
     close_to_tray: AtomicBool,
     minimize_to_tray: AtomicBool,
     quitting: AtomicBool,
+}
+
+struct VoiceHeartbeatTask {
+    id: String,
+    handle: tauri::async_runtime::JoinHandle<()>,
+}
+
+#[derive(Default)]
+struct VoiceHeartbeat(Mutex<Option<VoiceHeartbeatTask>>);
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct VoiceHeartbeatBody {
+    chat_id: String,
+    mic_muted: bool,
 }
 
 impl Default for WindowBehavior {
@@ -57,6 +78,27 @@ fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn open_external_url(url: String) -> Result<(), String> {
+    let parsed = reqwest::Url::parse(&url).map_err(|error| error.to_string())?;
+    if parsed.scheme() != "https" {
+        return Err("External URL must use HTTPS".to_owned());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("rundll32.exe")
+            .arg("url.dll,FileProtocolHandler")
+            .arg(parsed.as_str())
+            .spawn()
+            .map_err(|error| error.to_string())?;
+        return Ok(());
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    Err("Opening external URLs is not supported on this platform".to_owned())
+}
+
+#[tauri::command]
 fn set_window_behavior(
     state: tauri::State<'_, WindowBehavior>,
     close_to_tray: bool,
@@ -68,12 +110,79 @@ fn set_window_behavior(
         .store(minimize_to_tray, Ordering::Relaxed);
 }
 
+#[tauri::command]
+fn start_voice_heartbeat(
+    state: tauri::State<'_, VoiceHeartbeat>,
+    heartbeat_id: String,
+    api_url: String,
+    access_token: String,
+    chat_id: String,
+    mic_muted: bool,
+) -> Result<(), String> {
+    let base_url = reqwest::Url::parse(&api_url).map_err(|error| error.to_string())?;
+    let local_development = matches!(base_url.host_str(), Some("127.0.0.1" | "localhost"));
+    if base_url.scheme() != "https" && !(base_url.scheme() == "http" && local_development) {
+        return Err("Voice heartbeat API must use HTTPS".to_owned());
+    }
+    let endpoint = base_url
+        .join("/api/desktop/voice/heartbeat")
+        .map_err(|error| error.to_string())?;
+    let client = reqwest::Client::new();
+    let body = VoiceHeartbeatBody { chat_id, mic_muted };
+    let handle = tauri::async_runtime::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(25));
+        loop {
+            interval.tick().await;
+            match client
+                .post(endpoint.clone())
+                .bearer_auth(&access_token)
+                .json(&body)
+                .timeout(Duration::from_secs(15))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {}
+                Ok(response) if matches!(response.status().as_u16(), 401 | 409) => break,
+                Ok(response) => {
+                    eprintln!("voice heartbeat returned status {}", response.status());
+                }
+                Err(error) => eprintln!("voice heartbeat request failed: {error}"),
+            }
+        }
+    });
+
+    let mut current = state.0.lock().map_err(|_| "Heartbeat state is unavailable")?;
+    if let Some(previous) = current.replace(VoiceHeartbeatTask {
+        id: heartbeat_id,
+        handle,
+    }) {
+        previous.handle.abort();
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn stop_voice_heartbeat(
+    state: tauri::State<'_, VoiceHeartbeat>,
+    heartbeat_id: String,
+) -> Result<(), String> {
+    let mut current = state.0.lock().map_err(|_| "Heartbeat state is unavailable")?;
+    if current.as_ref().is_some_and(|task| task.id == heartbeat_id) {
+        if let Some(task) = current.take() {
+            task.handle.abort();
+        }
+    }
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .manage(WindowBehavior::default())
+        .manage(VoiceHeartbeat::default())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             let _ = restore_main_window(app);
@@ -143,7 +252,10 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             runtime_info,
             show_main_window,
-            set_window_behavior
+            open_external_url,
+            set_window_behavior,
+            start_voice_heartbeat,
+            stop_voice_heartbeat
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Voople desktop");

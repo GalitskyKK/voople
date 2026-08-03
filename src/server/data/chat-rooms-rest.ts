@@ -4,6 +4,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { AccessToken } from "livekit-server-sdk";
 
 import { getAdminClient } from "@/lib/supabase/admin";
+import { getChatMembershipRest } from "@/server/data/chat-access-rest";
 import {
   toProfileCustomizationView,
   type CustomizationRow,
@@ -66,33 +67,16 @@ function hashInviteToken(token: string) {
 }
 
 async function getMembership(chatId: string, userId: string) {
-  const admin = getAdminClient();
-  const { data, error } = await admin
-    .from("chat_members")
-    .select("role, chats!inner(type, name)")
-    .eq("chat_id", chatId)
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Нет доступа к этой беседе");
-
-  const relatedChat = Array.isArray(data.chats) ? data.chats[0] : data.chats;
-  if (!relatedChat || (relatedChat.type !== "group" && relatedChat.type !== "direct")) {
-    throw new Error("Беседа недоступна");
-  }
-
-  return {
-    role: data.role === "owner" || data.role === "admin" ? data.role : "member",
-    type: relatedChat.type,
-    name: typeof relatedChat.name === "string" ? relatedChat.name : null,
-  } as const;
+  return getChatMembershipRest(chatId, userId);
 }
 
 export async function createChatInviteRest(chatId: string, userId: string) {
   const membership = await getMembership(chatId, userId);
   if (membership.type !== "group") {
     throw new Error("Ссылки-приглашения доступны только для групп");
+  }
+  if (membership.parentChatId) {
+    throw new Error("Приглашение создаётся для основной группы, а не подчатов");
   }
   if (membership.role !== "owner" && membership.role !== "admin") {
     throw new Error("Создавать ссылки могут владелец и администраторы группы");
@@ -119,6 +103,9 @@ export async function revokeChatInviteRest(chatId: string, userId: string, token
   const membership = await getMembership(chatId, userId);
   if (membership.type !== "group") {
     throw new Error("Ссылки-приглашения доступны только для групп");
+  }
+  if (membership.parentChatId) {
+    throw new Error("Приглашение отзывается в основной группе");
   }
   if (membership.role !== "owner" && membership.role !== "admin") {
     throw new Error("Отзывать ссылки могут владелец и администраторы группы");
@@ -365,7 +352,7 @@ export async function enterChatRoomRest(chatId: string, userId: string, micMuted
   ) {
     const { data, error } = await admin
       .from("chat_rooms")
-      .update({ status: "active", updated_at: now })
+      .update({ status: "active", started_at: now, updated_at: now })
       .eq("chat_id", chatId)
       .eq("status", "ringing")
       .select("chat_id")

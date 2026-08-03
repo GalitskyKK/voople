@@ -1,15 +1,15 @@
 import type { Session } from "@supabase/supabase-js";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
+import { readJsonResponse } from "@/lib/http/json-response";
 import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
 import type { ChatPendingUpload } from "@/types/chat";
 
-import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
 
-type PresignedChatUpload = {
+type ChatUploadResponse = {
+  error?: string;
   key?: string;
-  uploadUrl?: string;
 };
 
 export function useDesktopChatUpload(
@@ -20,10 +20,6 @@ export function useDesktopChatUpload(
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const uploadRef = useRef<ChatPendingUpload | null>(null);
-  const client = useMemo(
-    () => createDesktopTrpcClient(config, () => session.access_token),
-    [config, session.access_token],
-  );
 
   const clear = useCallback(() => {
     setUpload((current) => {
@@ -67,27 +63,24 @@ export function useDesktopChatUpload(
 
       setUploading(true);
       try {
-        const presigned = (await client.mutation("upload.createPresigned", {
-          purpose: "chat",
-          contentType,
-          sizeBytes: file.size,
-          chatMediaKind: options?.purpose,
-        })) as PresignedChatUpload;
-        if (!presigned.key || !presigned.uploadUrl) {
-          throw new Error("Сервер не подготовил загрузку");
-        }
-
-        const response = await fetch(presigned.uploadUrl, {
-          method: "PUT",
-          body: file,
-          headers: { "Content-Type": contentType },
+        const formData = new FormData();
+        formData.append("file", file);
+        if (options?.purpose) formData.append("purpose", options.purpose);
+        const response = await fetch(`${config.apiUrl}/api/upload/chat`, {
+          method: "POST",
+          body: formData,
+          headers: { Authorization: `Bearer ${session.access_token}` },
         });
+        const payload = await readJsonResponse<ChatUploadResponse>(response);
         if (!response.ok) {
-          throw new Error(`Не удалось загрузить файл (${response.status})`);
+          throw new Error(
+            payload?.error ?? `Не удалось загрузить файл (${response.status})`,
+          );
         }
+        if (!payload?.key) throw new Error("Сервер не вернул ключ файла");
 
         const nextUpload: ChatPendingUpload = {
-          mediaKey: presigned.key,
+          mediaKey: payload.key,
           kind: parsed.kind,
           previewUrl: URL.createObjectURL(file),
           fileName: file.name,
@@ -115,7 +108,7 @@ export function useDesktopChatUpload(
         setUploading(false);
       }
     },
-    [clear, client],
+    [clear, config.apiUrl, session.access_token],
   );
 
   const updateAudioMetadata = useCallback(

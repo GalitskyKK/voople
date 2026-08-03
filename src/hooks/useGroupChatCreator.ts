@@ -15,7 +15,7 @@ export function useGroupChatCreator({
   createGroup,
   onCreated,
 }: UseGroupChatCreatorOptions) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpenState] = useState(false);
   const [name, setName] = useState("");
   const [query, setQuery] = useState("");
   const [users, setUsers] = useState<UserSearchHit[]>([]);
@@ -25,7 +25,7 @@ export function useGroupChatCreator({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open || !query.trim()) return;
+    if (!open) return;
 
     let active = true;
     const timer = window.setTimeout(() => {
@@ -54,7 +54,7 @@ export function useGroupChatCreator({
   }, [currentUserId, open, query, searchUsers]);
 
   const reset = () => {
-    setOpen(false);
+    setOpenState(false);
     setName("");
     setQuery("");
     setUsers([]);
@@ -72,7 +72,12 @@ export function useGroupChatCreator({
     setQuery(value);
     setUsers([]);
     setError(null);
-    setSearching(Boolean(value.trim()));
+    setSearching(true);
+  };
+
+  const setOpen = (value: boolean) => {
+    setOpenState(value);
+    if (value) setSearching(true);
   };
 
   const toggleUser = (user: UserSearchHit) => {
@@ -86,7 +91,7 @@ export function useGroupChatCreator({
   };
 
   const submit = async () => {
-    if (name.trim().length < 2 || selected.length < 2 || creating) return;
+    if (name.trim().length < 2 || creating) return;
     setCreating(true);
     setError(null);
     try {
@@ -107,7 +112,7 @@ export function useGroupChatCreator({
   };
 
   return {
-    canCreate: name.trim().length >= 2 && selected.length >= 2 && !creating,
+    canCreate: name.trim().length >= 2 && !creating,
     changeQuery,
     close,
     creating,

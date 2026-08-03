@@ -14,7 +14,7 @@ export function GroupChatCreator({ compact = false }: { compact?: boolean }) {
   const me = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
   const create = trpc.chat.createGroup.useMutation();
   const searchUsers = useCallback(
-    (query: string) => utils.client.user.search.query({ q: query }),
+    (query: string) => utils.client.chat.groupContacts.query({ q: query }),
     [utils.client],
   );
 

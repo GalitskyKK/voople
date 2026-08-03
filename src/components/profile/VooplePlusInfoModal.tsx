@@ -6,8 +6,7 @@ import { Crown } from "lucide-react";
 import {
   VOOPLUS_BENEFITS,
   VOOPLUS_IS_RECURRING,
-  VOOPLUS_PERIOD_DAYS,
-  VOOPLUS_PRICE_RUB,
+  VOOPLUS_PLANS,
 } from "@/lib/constants/subscription";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
 import { Button } from "@/components/ui/Button";
@@ -52,9 +51,18 @@ export function VooplePlusInfoModal({ open, onClose, expiresAt }: VooplePlusInfo
         <h2 className="mt-1 text-xl font-semibold text-[var(--foreground)]">Профиль, который узнают</h2>
         <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--foreground)_55%,transparent)]">
           Voople+ открывает цельный набор оформления: темы, рамки, собственные медиа и стиль
-          имени. {VOOPLUS_PERIOD_DAYS} дней за разовую оплату {VOOPLUS_PRICE_RUB} ₽.
+          имени. Доступны оплата на месяц и выгодный годовой вариант.
           {!VOOPLUS_IS_RECURRING && " Автопродление не подключено."}
         </p>
+
+        <div className="mt-3 grid w-full gap-2 sm:grid-cols-2">
+          {VOOPLUS_PLANS.map((plan) => (
+            <div key={plan.id} className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2 text-left">
+              <p className="text-sm font-medium text-[var(--foreground)]">{plan.label} · {plan.priceRub.toLocaleString("ru-RU")} ₽</p>
+              <p className="mt-0.5 text-xs text-[var(--app-muted)]">{plan.note}</p>
+            </div>
+          ))}
+        </div>
 
         {expiresAt ? (
           <p className="mt-3 rounded-xl bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">

@@ -9,6 +9,7 @@ import type { DesktopConfig } from "../config";
 import type { Session } from "@supabase/supabase-js";
 import { DesktopProfileAvatar } from "./DesktopProfileAvatar";
 import { DesktopProfileShareButton } from "./DesktopProfileShareButton";
+import { DesktopProfileActions } from "./DesktopProfileActions";
 
 export function DesktopProfileCard({
   profile,
@@ -16,12 +17,14 @@ export function DesktopProfileCard({
   session,
   isOwner,
   onAppearancePublished,
+  navigate,
 }: {
   profile: ProfileViewModel;
   config: DesktopConfig;
   session: Session;
   isOwner: boolean;
   onAppearancePublished: () => void;
+  navigate: (href: string) => void;
 }) {
   const { customization } = profile;
   const avatar = (
@@ -62,6 +65,16 @@ export function DesktopProfileCard({
       body={
         <ProfileCardBodyVisual
           profile={profile}
+          relationshipActions={
+            <DesktopProfileActions
+              profile={profile}
+              config={config}
+              session={session}
+              isOwner={isOwner}
+              navigate={navigate}
+              onUpdated={onAppearancePublished}
+            />
+          }
           status={<ProfileStatusBlock status={profile.status} />}
           shareAction={
             isOwner ? (

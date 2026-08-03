@@ -9,10 +9,6 @@ import {
   useState,
 } from "react";
 import {
-  Headphones,
-  UsersRound,
-} from "lucide-react";
-import {
   AudioPresets,
   ConnectionQuality,
   ConnectionState,
@@ -32,7 +28,6 @@ import {
   type VoicePreferences,
 } from "@/lib/livekit/voice-preferences";
 import { trpc } from "@/lib/trpc/client";
-import { cn } from "@/lib/utils";
 import {
   getAudioCaptureOptions,
   getConnectionLabel,
@@ -43,8 +38,11 @@ import {
   type VoiceControlState,
 } from "./voice/voice-room-config";
 import { VoiceRoomSheet } from "./voice/VoiceRoomSheet";
+import { VoiceRoomTrigger } from "./voice/VoiceRoomTrigger";
 import { VoiceSettingsPanel } from "./voice/VoiceSettingsPanel";
 import { VoiceSessionDock } from "./voice/VoiceSessionDock";
+import { useCallDuration } from "./voice/useCallDuration";
+import { useVoiceHeartbeat } from "./voice/useVoiceHeartbeat";
 import { useVoiceOutput } from "./voice/useVoiceOutput";
 import { useVoiceRoomTermination } from "./voice/useVoiceRoomTermination";
 import { useVoiceVideoStage } from "./voice/useVoiceVideoStage";
@@ -102,14 +100,14 @@ export const ChatRoomControl = forwardRef<
   const {
     screenContainerRef,
     screenParkingRef,
-    cameraContainerRef,
     cameraParkingRef,
+    bindCameraContainer,
     screenSharing,
     setScreenSharing,
     screenShareOwner,
     cameraEnabled,
     setCameraEnabled,
-    cameraCount,
+    cameraParticipantIds,
     attachRemoteVideo,
     attachLocalVideo,
     detachRemoteVideo,
@@ -119,7 +117,15 @@ export const ChatRoomControl = forwardRef<
     parkVisibleMedia,
     clearVideoMedia,
   } = useVoiceVideoStage();
-  const { audioContainerRef, outputMuted, attachAudio, clearAudio, toggleOutput } = useVoiceOutput();
+  const {
+    audioContainerRef,
+    outputMuted,
+    participantVolumes,
+    attachAudio,
+    clearAudio,
+    toggleOutput,
+    setParticipantVolume,
+  } = useVoiceOutput(liveRoomRef);
   const utils = trpc.useUtils();
   const room = trpc.chat.room.useQuery(
     { chatId },
@@ -134,17 +140,6 @@ export const ChatRoomControl = forwardRef<
     },
   });
 
-  // const heartbeat = trpc.chat.heartbeatRoom.useMutation()
-  
-  const { mutate: sendHeartbeat } = trpc.chat.heartbeatRoom.useMutation({
-    onError(error) {
-      console.error("Room heartbeat failed", {
-        chatId,
-        message: error.message,
-        timestamp: new Date().toISOString()
-      })
-    }
-  })
   const access = trpc.chat.setRoomAccess.useMutation({
     onSuccess: () => void utils.chat.room.invalidate({ chatId }),
   });
@@ -153,6 +148,11 @@ export const ChatRoomControl = forwardRef<
   const active = value?.status === "active" || value?.status === "ringing";
   const inside = Boolean(value?.isInside);
   const participantCount = value?.participants.length ?? 0;
+  const durationLabel = useCallDuration(
+    value?.startedAt ?? null,
+    inside && value?.status === "active",
+  );
+  const sendHeartbeat = useVoiceHeartbeat(chatId, inside, liveRoomRef);
   const meIsStarter = Boolean(
     value?.startedBy &&
       value.participants.find((participant) => participant.isMe)?.id === value.startedBy,
@@ -183,7 +183,7 @@ export const ChatRoomControl = forwardRef<
     }
   };
 
-  const refreshDevices = async (requestPermissions = false) => {
+  const refreshDevices = useCallback(async (requestPermissions = false) => {
     try {
       const [inputs, outputs] = await Promise.all([
         Room.getLocalDevices("audioinput", requestPermissions),
@@ -195,7 +195,7 @@ export const ChatRoomControl = forwardRef<
     } catch {
       // Список может быть пустым до первого разрешения на микрофон.
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -204,38 +204,14 @@ export const ChatRoomControl = forwardRef<
       showParkedMedia();
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [open, showParkedMedia]);
-
-  // useEffect(() => {
-  //   if (!inside) return;
-  //   const timer = window.setInterval(() => {
-  //     const actualMuted = getMicrophoneMuted(liveRoomRef.current);
-  //     heartbeat.mutate({ chatId, micMuted: actualMuted });
-  //   }, 25_000);
-  //   return () => window.clearInterval(timer);
-  // }, [chatId, heartbeat, inside]);
+  }, [open, refreshDevices, showParkedMedia]);
 
   useEffect(() => {
-    if (!inside || !chatId) return
-
-    const ping = () => {
-      const actualMuted = getMicrophoneMuted(liveRoomRef.current)
-
-      sendHeartbeat({
-        chatId,
-        micMuted: actualMuted
-      })
-    }
-
-    // Не ждём первые 25 секунд.
-    ping()
-
-    const timer = window.setInterval(ping, 25_000)
-
-    return () => {
-      window.clearInterval(timer)
-    }
-  }, [chatId, inside, sendHeartbeat])
+    if (!open || !navigator.mediaDevices?.addEventListener) return;
+    const handleDeviceChange = () => void refreshDevices();
+    navigator.mediaDevices.addEventListener("devicechange", handleDeviceChange);
+    return () => navigator.mediaDevices.removeEventListener("devicechange", handleDeviceChange);
+  }, [open, refreshDevices]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -277,7 +253,7 @@ export const ChatRoomControl = forwardRef<
     participant: RemoteParticipant,
   ) => {
     if (track.kind === Track.Kind.Audio) {
-      attachAudio(track);
+      attachAudio(track, participant);
       return;
     }
 
@@ -310,7 +286,7 @@ export const ChatRoomControl = forwardRef<
       .on(RoomEvent.TrackSubscribed, attachRemoteTrack)
       .on(RoomEvent.TrackUnsubscribed, detachRemoteVideo)
       .on(RoomEvent.LocalTrackPublished, (publication) => {
-        attachLocalVideo(publication);
+        attachLocalVideo(publication, liveRoom.localParticipant.identity);
         syncMic();
       })
       .on(RoomEvent.LocalTrackUnpublished, onLocalTrackUnpublished)
@@ -395,11 +371,12 @@ export const ChatRoomControl = forwardRef<
           const liveRoom = new Room({
             adaptiveStream: true,
             dynacast: true,
+            webAudioMix: true,
             reconnectPolicy,
             disconnectOnPageLeave: true,
             audioCaptureDefaults: getAudioCaptureOptions(preferencesRef.current),
             publishDefaults: {
-              audioPreset: AudioPresets.speech,
+              audioPreset: AudioPresets.musicHighQuality,
               dtx: true,
               red: true,
               stopMicTrackOnMute: false,
@@ -446,7 +423,7 @@ export const ChatRoomControl = forwardRef<
               await liveRoom.localParticipant.setMicrophoneEnabled(
                 true,
                 getAudioCaptureOptions(preferencesRef.current),
-                { audioPreset: AudioPresets.speech, dtx: true, red: true },
+                { audioPreset: AudioPresets.musicHighQuality, dtx: true, red: true },
               );
             } catch (error) {
               // A failed publication must not tear down an already healthy
@@ -522,17 +499,14 @@ export const ChatRoomControl = forwardRef<
       await liveRoom.localParticipant.setMicrophoneEnabled(
         targetEnabled,
         getAudioCaptureOptions(preferencesRef.current),
-        { audioPreset: AudioPresets.speech, dtx: true, red: true },
+        { audioPreset: AudioPresets.musicHighQuality, dtx: true, red: true },
       );
       const actualMuted = getMicrophoneMuted(liveRoom);
       setMicMuted(actualMuted);
       if (actualMuted === targetEnabled) {
         throw new Error("Медиасервер не подтвердил изменение микрофона");
       }
-      sendHeartbeat({
-        chatId,
-        micMuted: actualMuted
-      })
+      void sendHeartbeat();
       await refreshDevices();
     } catch (error) {
       setMicMuted(getMicrophoneMuted(liveRoom));
@@ -711,32 +685,15 @@ export const ChatRoomControl = forwardRef<
 
   return (
     <>
-      {renderTrigger ? <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={cn(
-          "inline-flex h-9 shrink-0 items-center gap-2 rounded-xl border px-3 text-xs font-medium transition",
-          mediaStatus === "connected"
-            ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/15"
-            : mediaStatus === "reconnecting"
-              ? "border-amber-500/35 bg-amber-500/10 text-amber-300"
-              : active
-                ? "border-[var(--theme-accent)]/35 bg-[var(--app-accent-soft)] text-(--theme-accent)"
-                : "border-[var(--app-border)] text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]",
-        )}
-        aria-label={isDirect ? "Открыть голосовую комнату" : "Комната группы"}
-      >
-        {active ? <UsersRound className="h-4 w-4" /> : <Headphones className="h-4 w-4" />}
-        <span className="hidden sm:inline">
-          {mediaStatus === "reconnecting"
-            ? "Связь…"
-            : active
-              ? `${participantCount} в комнате`
-              : isDirect
-                ? "Голос"
-                : "Комната"}
-        </span>
-      </button> : null}
+      {renderTrigger ? (
+        <VoiceRoomTrigger
+          active={active}
+          isDirect={isDirect}
+          mediaStatus={mediaStatus}
+          participantCount={participantCount}
+          onOpen={() => setOpen(true)}
+        />
+      ) : null}
 
       <div ref={audioContainerRef} hidden aria-hidden="true" />
       <div ref={screenParkingRef} hidden aria-hidden="true" />
@@ -746,6 +703,7 @@ export const ChatRoomControl = forwardRef<
         <VoiceSessionDock
           chatName={chatName}
           participantCount={participantCount}
+          durationLabel={durationLabel}
           mediaStatus={mediaStatus}
           connectionLabel={connectionLabel}
           connectionQuality={connectionQuality}
@@ -768,15 +726,16 @@ export const ChatRoomControl = forwardRef<
           setOpen(false);
         }}
         screenContainerRef={screenContainerRef}
-        cameraContainerRef={cameraContainerRef}
         isDirect={isDirect}
         chatName={chatName}
         active={active}
+        durationLabel={durationLabel}
         connectionLabel={connectionLabel}
         mediaStatus={mediaStatus}
         connectionQuality={connectionQuality}
         screenShareOwner={screenShareOwner}
         participants={value?.participants ?? []}
+        participantVolumes={participantVolumes}
         micMuted={micMuted}
         outputMuted={outputMuted}
         remoteMicMutedById={remoteMicMutedById}
@@ -784,7 +743,7 @@ export const ChatRoomControl = forwardRef<
         mediaActionPending={mediaActionPending}
         screenSharePending={screenSharePending}
         screenSharing={screenSharing}
-        cameraCount={cameraCount}
+        cameraParticipantIds={cameraParticipantIds}
         cameraEnabled={cameraEnabled}
         cameraPending={cameraPending}
         audioBlocked={audioBlocked}
@@ -793,6 +752,8 @@ export const ChatRoomControl = forwardRef<
         onScreenShareToggle={toggleScreenShare}
         onCameraToggle={toggleCamera}
         onResumeAudio={resumeAudio}
+        onCameraContainerChange={bindCameraContainer}
+        onParticipantVolumeChange={setParticipantVolume}
         settingsPanel={
           <VoiceSettingsPanel
             preferences={preferences}
@@ -807,6 +768,7 @@ export const ChatRoomControl = forwardRef<
             onInputDeviceChange={changeInputDevice}
             onOutputDeviceChange={changeOutputDevice}
             onMicTestToggle={startMicTest}
+            onRefreshDevices={() => refreshDevices(true)}
             onAudioProcessingChange={changeAudioProcessing}
             onEndpointChange={(endpointUrl) => persistPreferences({ endpointUrl })}
             onCompatibilityModeChange={(compatibilityMode) =>

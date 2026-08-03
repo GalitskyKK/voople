@@ -1,19 +1,32 @@
 import type { Session } from "@supabase/supabase-js";
 import { useCallback, useMemo } from "react";
 
-import { GroupInviteSheetView } from "@/components/chat/GroupInviteSheetView";
+import { GroupManagementSheetView } from "@/components/chat/GroupManagementSheetView";
+import type { ChatGroupMemberView } from "@/types/chat";
+import type { UserSearchHit } from "@/types/search";
 
 import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
+import { DesktopChatAvatar } from "./DesktopChatAvatar";
 
 export function DesktopGroupInviteSheet({
   chatId,
+  chatName,
+  canManage,
+  topicsEnabled,
+  topicsLayout,
   config,
   session,
+  onMembersChanged,
 }: {
   chatId: string;
+  chatName: string;
+  canManage: boolean;
+  topicsEnabled: boolean;
+  topicsLayout: "tabs" | "list";
   config: DesktopConfig;
   session: Session;
+  onMembersChanged: () => void;
 }) {
   const client = useMemo(
     () => createDesktopTrpcClient(config, () => session.access_token),
@@ -31,12 +44,49 @@ export function DesktopGroupInviteSheet({
       client.mutation("chat.revokeInvite", { chatId, token }),
     [chatId, client],
   );
+  const loadMembers = useCallback(
+    async () =>
+      (await client.query("chat.groupMembers", { chatId })) as ChatGroupMemberView[],
+    [chatId, client],
+  );
+  const searchContacts = useCallback(
+    async (q: string) =>
+      (await client.query("chat.groupContacts", { chatId, q })) as UserSearchHit[],
+    [chatId, client],
+  );
+  const addMembers = useCallback(
+    (memberIds: string[]) =>
+      client.mutation("chat.addGroupMembers", { chatId, memberIds }),
+    [chatId, client],
+  );
 
   return (
-    <GroupInviteSheetView
+    <GroupManagementSheetView
+      chatName={chatName}
+      canManage={canManage}
+      topicsEnabled={topicsEnabled}
+      topicsLayout={topicsLayout}
       inviteBaseUrl={config.apiUrl}
+      loadMembers={loadMembers}
+      searchContacts={searchContacts}
+      addMembers={addMembers}
       createInvite={createInvite}
       revokeInvite={revokeInvite}
+      updateTopics={async (enabled, layout) => {
+        await client.mutation("chat.setGroupTopics", {
+          chatId,
+          enabled,
+          layout,
+        });
+        onMembersChanged();
+      }}
+      onMembersChanged={onMembersChanged}
+      renderAvatar={(user) => (
+        <DesktopChatAvatar
+          displayName={user.displayName}
+          avatarUrl={user.avatarUrl}
+        />
+      )}
     />
   );
 }

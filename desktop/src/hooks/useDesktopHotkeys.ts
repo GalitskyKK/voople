@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import {
+  isRegistered,
   register,
   unregister,
   type ShortcutEvent,
@@ -39,6 +40,40 @@ export function useDesktopHotkeys(
   suspended: boolean,
 ) {
   const actionsRef = useRef(actions);
+  const [registrationEpoch, refreshRegistration] = useReducer(
+    (value: number) => value + 1,
+    0,
+  );
+
+  useEffect(() => {
+    if (!isTauriRuntime() || suspended) return;
+
+    let checking = false;
+    const verifyRegistrations = async () => {
+      if (checking || registeredShortcuts.length === 0) return;
+      checking = true;
+      try {
+        const states = await Promise.all(
+          registeredShortcuts.map((shortcut) => isRegistered(shortcut)),
+        );
+        if (states.some((registered) => !registered)) refreshRegistration();
+      } catch {
+        refreshRegistration();
+      } finally {
+        checking = false;
+      }
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") void verifyRegistrations();
+    };
+
+    window.addEventListener("focus", verifyRegistrations);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("focus", verifyRegistrations);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [suspended]);
 
   useEffect(() => {
     actionsRef.current = actions;
@@ -100,6 +135,9 @@ export function useDesktopHotkeys(
               actionsRef.current[binding.action]();
             }
           });
+          if (!(await isRegistered(binding.shortcut))) {
+            throw new Error("Система не подтвердила регистрацию сочетания");
+          }
           registered.push(binding.shortcut);
         } catch (error) {
           failures.push({
@@ -129,5 +167,5 @@ export function useDesktopHotkeys(
         unregisterCurrentShortcuts().catch(() => undefined),
       );
     };
-  }, [hotkeys, suspended]);
+  }, [hotkeys, registrationEpoch, suspended]);
 }

@@ -18,6 +18,7 @@ type ChatMessageBubbleVisualProps = {
   onKeyDown?: React.KeyboardEventHandler<HTMLDivElement>;
   interactive?: boolean;
   onToggleReaction?: (emoji: string) => void;
+  groupPosition?: "only" | "start" | "middle" | "end";
 };
 
 export function ChatMessageBubbleVisual({
@@ -32,22 +33,36 @@ export function ChatMessageBubbleVisual({
   onKeyDown,
   interactive = false,
   onToggleReaction,
+  groupPosition = "only",
 }: ChatMessageBubbleVisualProps) {
   const { isMine, text, createdAt, readAt, replyTo } = message;
   const hasText = Boolean(text?.trim());
+  const messageMeta = (
+    <span className="voople-chat-bubble__meta ml-2 inline-flex translate-y-0.5 items-center gap-0.5 whitespace-nowrap text-[10px] leading-none text-[var(--app-muted)]">
+      <LocalMessageTime iso={createdAt} />
+      {isMine ? <MessageReadTicks readAt={readAt} /> : null}
+    </span>
+  );
 
   return (
     <div
       className={cn(
         "voople-chat-bubble-row group/bubble flex w-full items-end gap-2",
         isMine ? "justify-end" : "justify-start",
+        (groupPosition === "only" || groupPosition === "start") && "mt-1.5",
         className,
       )}
     >
-      {showSender && !isMine ? senderAvatar : null}
+      {showSender && !isMine ? (
+        <div className="w-8 shrink-0">
+          {groupPosition === "only" || groupPosition === "end"
+            ? senderAvatar
+            : null}
+        </div>
+      ) : null}
       <div
         className={cn(
-          "voople-chat-bubble relative max-w-[min(100%,22rem)]",
+          "voople-chat-bubble relative max-w-[min(82%,34rem)]",
           isMine ? "voople-chat-bubble--mine" : "voople-chat-bubble--theirs",
         )}
         onClick={onClick}
@@ -59,14 +74,22 @@ export function ChatMessageBubbleVisual({
         {menu}
         <div
           className={cn(
-            "voople-chat-bubble__body flex flex-col gap-1.5 rounded-2xl px-3 py-2 text-sm leading-relaxed",
-            menu && "pt-7",
+            "voople-chat-bubble__body flex flex-col gap-1 rounded-2xl px-3 py-1.5 text-sm leading-relaxed",
             isMine
-              ? "rounded-br-md bg-[color-mix(in_srgb,var(--theme-accent)_22%,var(--app-surface))] text-[var(--foreground)]"
-              : "rounded-bl-md border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--foreground)]",
+              ? "bg-[color-mix(in_srgb,var(--theme-accent)_22%,var(--app-surface))] text-[var(--foreground)]"
+              : "border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--foreground)]",
+            groupPosition === "start" &&
+              (isMine ? "rounded-br-lg" : "rounded-bl-lg"),
+            groupPosition === "middle" &&
+              (isMine ? "rounded-r-lg" : "rounded-l-lg"),
+            (groupPosition === "only" || groupPosition === "end") &&
+              (isMine ? "rounded-br-md" : "rounded-bl-md"),
           )}
         >
-          {showSender && !isMine && message.sender ? (
+          {showSender &&
+          !isMine &&
+          message.sender &&
+          (groupPosition === "only" || groupPosition === "start") ? (
             <p className="truncate px-0.5 text-[11px] font-semibold text-[var(--theme-accent)]">
               {message.sender.displayName}
             </p>
@@ -97,7 +120,10 @@ export function ChatMessageBubbleVisual({
 
           {attachment}
           {hasText ? (
-            <p className="whitespace-pre-wrap break-words">{text}</p>
+            <p className="whitespace-pre-wrap break-words">
+              {text}
+              <span className="float-right">{messageMeta}</span>
+            </p>
           ) : null}
 
           {message.reactions.length > 0 ? (
@@ -127,10 +153,7 @@ export function ChatMessageBubbleVisual({
             </div>
           ) : null}
 
-          <div className="voople-chat-bubble__meta flex items-center justify-end gap-1 text-[10px] text-[var(--app-muted)]">
-            <LocalMessageTime iso={createdAt} />
-            {isMine ? <MessageReadTicks readAt={readAt} /> : null}
-          </div>
+          {!hasText ? <div className="flex justify-end">{messageMeta}</div> : null}
         </div>
       </div>
     </div>

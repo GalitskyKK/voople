@@ -11,6 +11,8 @@ import {
   type PendingChatUpload,
 } from "@/hooks/useChatUpload";
 import { readTrackMetadata } from "@/lib/player/metadata";
+import { getChatClipboardFile } from "@/lib/chat/clipboard";
+import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
 import { cn } from "@/lib/utils";
 import type { ChatMessageView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
@@ -131,6 +133,30 @@ export function ChatComposer({
         durationSeconds: draft.durationSeconds ?? pendingAudioDraft.durationSeconds,
       });
       setPendingAudioDraft(null);
+    }
+  };
+
+  const handlePastedFile = async (file: File) => {
+    try {
+      const { kind } = parseChatUploadMime(file.type);
+      if (kind === "audio") {
+        await handleAudioFileSelected(file);
+      } else if (kind === "circle") {
+        setError(null);
+        setPendingAudioDraft(null);
+        onPendingTrackChange(null);
+        clearPendingUpload();
+        const uploaded = await uploadFile(file, { purpose: "circle" });
+        if (uploaded) onPendingUploadChange(uploaded);
+      } else {
+        await handleImageFile(file);
+      }
+    } catch (pasteError) {
+      setError(
+        pasteError instanceof Error
+          ? pasteError.message
+          : "Формат файла не поддерживается",
+      );
     }
   };
 
@@ -276,6 +302,12 @@ export function ChatComposer({
           type="text"
           value={text}
           onChange={(e) => onTextChange(e.target.value)}
+          onPaste={(event) => {
+            const file = getChatClipboardFile(event.clipboardData);
+            if (!file) return;
+            event.preventDefault();
+            void handlePastedFile(file);
+          }}
           placeholder="Сообщение…"
           maxLength={1000}
           disabled={disabled || Boolean(pendingAudioDraft)}

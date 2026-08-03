@@ -4,9 +4,11 @@ import type { PaymentIntentView } from "@/types/shop";
 export function applyPaymentIntentResult(
   intent: PaymentIntentView,
   onFallbackMessage: (message: string) => void,
+  openExternal?: (url: string) => void,
 ): boolean {
   if (intent.checkoutUrl) {
-    window.location.assign(intent.checkoutUrl);
+    if (openExternal) openExternal(intent.checkoutUrl);
+    else window.location.assign(intent.checkoutUrl);
     return true;
   }
   if (intent.message) {

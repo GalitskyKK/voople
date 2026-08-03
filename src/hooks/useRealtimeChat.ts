@@ -173,6 +173,13 @@ export function useRealtimeInbox(viewerId: string | null | undefined) {
           void utils.chat.list.invalidate();
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "chats" },
+        () => {
+          void utils.chat.list.invalidate();
+        },
+      )
       .subscribe();
 
     return () => {

@@ -107,6 +107,7 @@ export function DesktopMessages({
             session={session}
             onBack={() => navigate("/messages")}
             onInboxChange={refresh}
+            onNavigateChat={(chatId) => navigate(`/messages/${chatId}`)}
             onlineUserIds={onlineUserIds}
           />
         ) : null

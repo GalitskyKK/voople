@@ -38,11 +38,13 @@ function loadTurnstile() {
 }
 
 export function DesktopTurnstile({
+  action = "login",
   onError,
   onTokenChange,
   resetKey,
   siteKey,
 }: {
+  action?: "login" | "register";
   onError: (message: string | null) => void;
   onTokenChange: (token: string | null) => void;
   resetKey: number;
@@ -59,7 +61,7 @@ export function DesktopTurnstile({
         const turnstile = getTurnstile();
         if (!active || !containerRef.current || !turnstile) return;
         widgetId = turnstile.render(containerRef.current, {
-          action: "login",
+          action,
           appearance: "interaction-only",
           sitekey: siteKey,
           theme: "dark",
@@ -88,7 +90,7 @@ export function DesktopTurnstile({
       if (widgetId && turnstile) turnstile.remove(widgetId);
       onTokenChange(null);
     };
-  }, [onError, onTokenChange, resetKey, siteKey]);
+  }, [action, onError, onTokenChange, resetKey, siteKey]);
 
   return <div ref={containerRef} className="turnstile-container" aria-label="Антибот-проверка" />;
 }

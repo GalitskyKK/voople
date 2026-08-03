@@ -16,13 +16,25 @@ import {
   prepareDesktopNotifications,
 } from "./notifications/incoming-call";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
+import { DesktopTitleBar } from "./shell/DesktopTitleBar";
 
 export function App() {
   const config = getDesktopConfig();
-  if (!config) return <DesktopSetup />;
-  setPublicAssetBaseUrl(config.assetsCdnUrl);
-  return <AuthProvider config={config}><DesktopRouter config={config} /></AuthProvider>;
+  if (config) setPublicAssetBaseUrl(config.assetsCdnUrl);
+  return (
+    <div className="desktop-window-frame">
+      <DesktopTitleBar />
+      <div className="desktop-window-content">
+        {config ? (
+          <AuthProvider config={config}><DesktopRouter config={config} /></AuthProvider>
+        ) : (
+          <DesktopSetup />
+        )}
+      </div>
+    </div>
+  );
 }
+
 
 function DesktopRouter({ config }: { config: DesktopConfig }) {
   const { loading, session } = useDesktopAuth();

@@ -25,6 +25,7 @@ export const rateLimits = {
   // Анти-спам для записи-тяжёлых мутаций (сообщения, комментарии, репосты, подписки, штрихи холста).
   sendMessage: () => createLimit(60, "1 m"),
   createGroupChat: () => createLimit(8, "1 h"),
+  manageGroupChat: () => createLimit(30, "1 h"),
   createChatInvite: () => createLimit(20, "1 h"),
   acceptChatInvite: () => createLimit(20, "10 m"),
   enterChatRoom: () => createLimit(30, "10 m"),

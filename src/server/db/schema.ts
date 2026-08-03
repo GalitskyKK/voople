@@ -392,8 +392,17 @@ export const chats = pgTable("chats", {
   id: uuid("id").primaryKey().defaultRandom(),
   type: chatTypeEnum("type").notNull(),
   name: varchar("name", { length: 50 }),
+  parentChatId: uuid("parent_chat_id").references(
+    (): AnyPgColumn => chats.id,
+    { onDelete: "cascade" },
+  ),
+  topicsEnabled: boolean("topics_enabled").notNull().default(false),
+  topicsLayout: varchar("topics_layout", { length: 20 }).notNull().default("list"),
+  topicIcon: varchar("topic_icon", { length: 16 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (t) => ({
+  parentIdx: index("chats_parent_chat_idx").on(t.parentChatId, t.createdAt),
+}));
 
 export const directChatPairs = pgTable(
   "direct_chat_pairs",

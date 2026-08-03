@@ -77,11 +77,14 @@ export const shopRouter = createTRPCRouter({
     }),
 
   applyPromo: protectedProcedure
-    .input(z.object({ code: z.string().min(1).max(50) }))
+    .input(z.object({
+      code: z.string().min(1).max(50),
+      subscriptionPlan: z.enum(["monthly", "annual"]).default("monthly"),
+    }))
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.applyPromo, ctx.user.id);
       try {
-        const result = await applyPromoCode(ctx.user.id, input.code);
+        const result = await applyPromoCode(ctx.user.id, input.code, input.subscriptionPlan);
         if (result.action === "redeemed") {
           const needsOverview =
             result.result.kind === "grant_item" || result.result.kind === "voops_bonus";
@@ -107,6 +110,7 @@ export const shopRouter = createTRPCRouter({
           amountRub: z.number().int().min(1).max(500_000).optional(),
           itemId: z.string().min(1).max(100).optional(),
           promoCode: z.string().min(1).max(50).optional(),
+          subscriptionPlan: z.enum(["monthly", "annual"]).optional(),
         })
         .superRefine((value, ctx) => {
           if (value.kind === "shop_item" && !value.itemId) {
@@ -136,6 +140,7 @@ export const shopRouter = createTRPCRouter({
           amountRub: input.amountRub,
           itemId: input.itemId,
           promoCode: input.promoCode,
+          subscriptionPlan: input.subscriptionPlan,
         });
       } catch (e) {
         throw new TRPCError({

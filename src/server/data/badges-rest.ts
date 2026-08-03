@@ -13,6 +13,29 @@ export async function listUserBadgesRest(userId: string): Promise<string[]> {
   return ((data ?? []) as { badge_id: string }[]).map((row) => row.badge_id);
 }
 
+export async function listUserBadgesByUserIdsRest(
+  userIds: string[],
+): Promise<Map<string, string[]>> {
+  const uniqueUserIds = [...new Set(userIds)];
+  if (uniqueUserIds.length === 0) return new Map();
+
+  const { data, error } = await getAdminClient()
+    .from("user_badges")
+    .select("user_id, badge_id, earned_at")
+    .in("user_id", uniqueUserIds)
+    .order("earned_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+
+  const badgesByUserId = new Map<string, string[]>();
+  for (const row of (data ?? []) as { user_id: string; badge_id: string }[]) {
+    const badges = badgesByUserId.get(row.user_id) ?? [];
+    badges.push(row.badge_id);
+    badgesByUserId.set(row.user_id, badges);
+  }
+  return badgesByUserId;
+}
+
 export async function chooseTeamPinRest(userId: string, answers: TeamPinId[]): Promise<TeamPinId> {
   if (answers.length !== 5 || answers.some((answer) => !TEAM_PIN_IDS.includes(answer))) {
     throw new Error("Ответьте на все вопросы");

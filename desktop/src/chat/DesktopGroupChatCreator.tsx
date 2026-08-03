@@ -23,7 +23,7 @@ export function DesktopGroupChatCreator({
   );
   const searchUsers = useCallback(
     async (query: string) =>
-      (await client.query("user.search", { q: query })) as UserSearchHit[],
+      (await client.query("chat.groupContacts", { q: query })) as UserSearchHit[],
     [client],
   );
   const createGroup = useCallback(

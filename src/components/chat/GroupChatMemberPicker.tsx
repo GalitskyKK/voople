@@ -12,6 +12,7 @@ type GroupChatMemberPickerProps = {
   onQueryChange: (value: string) => void;
   onToggleUser: (user: UserSearchHit) => void;
   renderAvatar: (user: UserSearchHit) => ReactNode;
+  emptyLabel?: string;
 };
 
 export function GroupChatMemberPicker({
@@ -22,6 +23,7 @@ export function GroupChatMemberPicker({
   onQueryChange,
   onToggleUser,
   renderAvatar,
+  emptyLabel = "Нет доступных контактов",
 }: GroupChatMemberPickerProps) {
   return (
     <>
@@ -79,8 +81,10 @@ export function GroupChatMemberPicker({
               );
             })
           : null}
-        {query.trim() && !searching && users.length === 0 ? (
-          <p className="py-4 text-center text-sm text-[var(--app-muted)]">Никого не нашли</p>
+        {!searching && users.length === 0 ? (
+          <p className="py-4 text-center text-sm text-[var(--app-muted)]">
+            {query.trim() ? "Никого не нашли" : emptyLabel}
+          </p>
         ) : null}
       </div>
     </>

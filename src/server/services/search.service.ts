@@ -1,9 +1,8 @@
 import { getAdminClient } from "@/lib/supabase/admin";
-import { mapSubscriptionFields } from "@/server/mappers/profile";
 import {
-  toProfileCustomizationView,
-  type CustomizationRow,
-} from "@/server/mappers/customization";
+  mapUserSearchRow,
+  type UserSearchRow,
+} from "@/server/mappers/user-search";
 import { searchPostsRest } from "@/server/data/posts-rest";
 import {
   getTrendingHashtagsRest,
@@ -21,33 +20,6 @@ export type {
   SearchHit,
   UserSearchHit,
 } from "@/types/search";
-
-function mapRow(row: {
-  id: string;
-  username: string;
-  display_name: string;
-  bio: string | null;
-  subscriptions?: { started_at: string; expires_at: string } | { started_at: string; expires_at: string }[] | null;
-  profile_customization?: CustomizationRow | CustomizationRow[] | null;
-}): UserSearchHit {
-  const sub = Array.isArray(row.subscriptions) ? row.subscriptions[0] : row.subscriptions;
-  const { hasVooplePlus } = mapSubscriptionFields(sub ?? undefined);
-  const customizationRow = Array.isArray(row.profile_customization)
-    ? row.profile_customization[0]
-    : row.profile_customization;
-  const customization = toProfileCustomizationView(customizationRow, {
-    hasActiveSubscription: hasVooplePlus,
-  });
-  return {
-    type: "user",
-    id: row.id,
-    username: row.username,
-    displayName: row.display_name,
-    bio: row.bio,
-    hasVooplePlus,
-    avatarUrl: customization.assets.animatedAvatarUrl ?? null,
-  };
-}
 
 export async function searchUsers(query: string, limit = 20): Promise<UserSearchHit[]> {
   const q = query.trim();
@@ -83,7 +55,7 @@ export async function searchUsers(query: string, limit = 20): Promise<UserSearch
     if (seen.has(id)) continue;
     seen.add(id);
     merged.push(
-      mapRow({
+      mapUserSearchRow({
         id,
         username: row.username as string,
         display_name: row.display_name as string,
@@ -92,10 +64,7 @@ export async function searchUsers(query: string, limit = 20): Promise<UserSearch
           | { started_at: string; expires_at: string }
           | { started_at: string; expires_at: string }[]
           | null,
-        profile_customization: row.profile_customization as
-          | CustomizationRow
-          | CustomizationRow[]
-          | null,
+        profile_customization: row.profile_customization as UserSearchRow["profile_customization"],
       }),
     );
     if (merged.length >= limit) break;

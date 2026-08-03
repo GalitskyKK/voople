@@ -7,6 +7,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { syncPublicUser } from "@/lib/auth/sync-public-user";
+import { getEmailDeliveryErrorMessage } from "@/lib/auth/email-delivery-error";
 import { COPY } from "@/lib/constants/copy";
 import { usernameSchema } from "@/lib/validation/username";
 import { createClient } from "@/lib/supabase/client";
@@ -27,6 +28,7 @@ export default function RegisterPage() {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
+  const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -48,12 +50,15 @@ export default function RegisterPage() {
     const { data: signUpData, error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
-      options: { captchaToken: captchaToken ?? undefined },
+      options: {
+        captchaToken: captchaToken ?? undefined,
+        data: { username: data.username },
+      },
     });
     setCaptchaToken(null);
     setCaptchaResetKey((value) => value + 1);
     if (error) {
-      setError("root", { message: error.message });
+      setError("root", { message: getEmailDeliveryErrorMessage(error) });
       return;
     }
     if (signUpData.session) {
@@ -73,10 +78,48 @@ export default function RegisterPage() {
         return;
       }
     }
-    router.replace(
-      redirectAfter ? `/login?redirect=${encodeURIComponent(redirectAfter)}` : "/login",
-    );
+    setConfirmationEmail(data.email.trim());
   };
+
+  if (confirmationEmail) {
+    const loginHref = new URLSearchParams(window.location.search).get("redirect");
+    const safeRedirect =
+      loginHref?.startsWith("/") && !loginHref.startsWith("//") ? loginHref : null;
+
+    return (
+      <section
+        className="voople-panel w-full max-w-sm space-y-5 p-6 text-center"
+        role="status"
+        aria-live="polite"
+      >
+        <div
+          className="mx-auto grid size-14 place-items-center rounded-full bg-(--theme-accent)/15 text-2xl"
+          aria-hidden="true"
+        >
+          ✉
+        </div>
+        <div className="space-y-2">
+          <h1 className="voople-display">Подтвердите почту</h1>
+          <p className="text-sm leading-6 text-[var(--app-muted)]">
+            Мы отправили письмо на <strong className="text-[var(--foreground)]">{confirmationEmail}</strong>.
+            Перейдите по ссылке в письме, чтобы завершить регистрацию.
+          </p>
+          <p className="text-xs text-[var(--app-muted)]">
+            Если письма нет, проверьте папку «Спам».
+          </p>
+        </div>
+        <Button
+          type="button"
+          className="w-full"
+          onClick={() =>
+            router.push(safeRedirect ? `/login?redirect=${encodeURIComponent(safeRedirect)}` : "/login")
+          }
+        >
+          Перейти ко входу
+        </Button>
+      </section>
+    );
+  }
 
   return (
     <form

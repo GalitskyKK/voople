@@ -28,6 +28,7 @@ type ChatMessageBubbleProps = {
     message: ChatMessageView,
     emoji: ChatReactionEmoji,
   ) => void;
+  groupPosition?: "only" | "start" | "middle" | "end";
 };
 
 export function ChatMessageBubble({
@@ -39,6 +40,7 @@ export function ChatMessageBubble({
   onOpenImage,
   showSender = false,
   onToggleReaction,
+  groupPosition = "only",
 }: ChatMessageBubbleProps) {
   const isLg = useIsLgViewport();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -53,16 +55,19 @@ export function ChatMessageBubble({
       (canSaveToPlaylist && onAddToPlaylist),
   );
 
-  const openMobileMenu = () => {
-    if (!isLg && hasMenu) setMenuOpen(true);
+  const openMenu = () => {
+    if (hasMenu) setMenuOpen(true);
   };
 
   return (
     <ChatMessageBubbleVisual
       message={message}
+      groupPosition={groupPosition}
       showSender={showSender}
-      interactive={!isLg && hasMenu}
-      onClick={openMobileMenu}
+      interactive={hasMenu}
+      onClick={() => {
+        if (!isLg) openMenu();
+      }}
       onContextMenu={(event) => {
         if (!hasMenu) return;
         event.preventDefault();
@@ -71,7 +76,7 @@ export function ChatMessageBubble({
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          openMobileMenu();
+          openMenu();
         }
       }}
       onToggleReaction={
@@ -111,6 +116,7 @@ export function ChatMessageBubble({
               canAddToPlaylist={canSaveToPlaylist}
               onToggleReaction={onToggleReaction}
               showOnHover={isLg}
+              showTrigger={false}
             />
           </div>
         ) : null

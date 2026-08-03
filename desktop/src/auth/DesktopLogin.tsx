@@ -1,12 +1,15 @@
 import { useState, type FormEvent } from "react";
 
 import type { DesktopConfig } from "../config";
+import { getEmailDeliveryErrorMessage } from "@/lib/auth/email-delivery-error";
 import { DesktopTurnstile } from "./DesktopTurnstile";
+import { DesktopRegister } from "./DesktopRegister";
 import { getSupabase } from "./supabase";
 
 type LoginMode = "password" | "code";
 
 export function DesktopLogin({ config }: { config: DesktopConfig }) {
+  const [registering, setRegistering] = useState(false);
   const [mode, setMode] = useState<LoginMode>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,6 +21,10 @@ export function DesktopLogin({ config }: { config: DesktopConfig }) {
   const [captchaError, setCaptchaError] = useState<string | null>(null);
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const supabase = getSupabase(config);
+
+  if (registering) {
+    return <DesktopRegister config={config} onLogin={() => setRegistering(false)} />;
+  }
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -57,7 +64,11 @@ export function DesktopLogin({ config }: { config: DesktopConfig }) {
       setCaptchaResetKey((value) => value + 1);
     }
     if (result.error) {
-      setError(result.error.message);
+      setError(
+        mode === "code" && !codeSent
+          ? getEmailDeliveryErrorMessage(result.error)
+          : result.error.message,
+      );
       return;
     }
     if (mode === "code" && !codeSent) setCodeSent(true);
@@ -146,6 +157,9 @@ export function DesktopLogin({ config }: { config: DesktopConfig }) {
 
         <button type="button" className="text-button" onClick={switchMode}>
           {mode === "password" ? "Войти по коду из письма" : "Войти с паролем"}
+        </button>
+        <button type="button" className="text-button" onClick={() => setRegistering(true)}>
+          Нет аккаунта? Зарегистрироваться
         </button>
       </section>
     </main>

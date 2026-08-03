@@ -5,18 +5,23 @@ import { assertRateLimit } from "@/lib/ratelimit-guard";
 import { rateLimits } from "@/lib/ratelimit";
 import { CHAT_REACTION_EMOJIS } from "@/lib/chat/reactions";
 import {
+  addGroupMembers,
   acceptChatInvite,
   createChatInvite,
   createChatRoomMediaToken,
   declineChatRoomCall,
   deleteMessage,
   createGroupChat,
+  createSubchat,
   enterChatRoom,
   getDirectChatByUsername,
   getChatRoom,
   heartbeatChatRoom,
   leaveChatRoom,
   listIncomingCalls,
+  listGroupContacts,
+  listGroupMembers,
+  setGroupTopics,
   listChats,
   listMessages,
   markMessagesRead,
@@ -211,13 +216,118 @@ export const chatRouter = createTRPCRouter({
     }),
 
   createGroup: protectedProcedure
-    .input(z.object({ name: z.string().trim().min(2).max(50), memberIds: z.array(z.string().uuid()).min(2).max(19) }))
+    .input(z.object({ name: z.string().trim().min(2).max(50), memberIds: z.array(z.string().uuid()).max(19) }))
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.createGroupChat, ctx.user.id);
       try {
         return await createGroupChat(ctx.user.id, input.name, input.memberIds);
       } catch (error) {
         throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось создать группу" });
+      }
+    }),
+  groupMembers: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        return await listGroupMembers(input.chatId, ctx.user.id);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Не удалось загрузить участников",
+        });
+      }
+    }),
+  groupContacts: protectedProcedure
+    .input(
+      z.object({
+        chatId: z.string().uuid().optional(),
+        q: z.string().trim().max(50).default(""),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        return await listGroupContacts(ctx.user.id, input.q, input.chatId);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Не удалось загрузить контакты",
+        });
+      }
+    }),
+  addGroupMembers: protectedProcedure
+    .input(
+      z.object({
+        chatId: z.string().uuid(),
+        memberIds: z.array(z.string().uuid()).min(1).max(19),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      try {
+        return await addGroupMembers(input.chatId, ctx.user.id, input.memberIds);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Не удалось добавить участников",
+        });
+      }
+    }),
+  createSubchat: protectedProcedure
+    .input(
+      z.object({
+        parentChatId: z.string().uuid(),
+        name: z.string().trim().min(2).max(50),
+        icon: z.string().trim().max(16).nullable().default(null),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.createGroupChat, ctx.user.id);
+      try {
+        return await createSubchat(input.parentChatId, ctx.user.id, input.name, input.icon);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Не удалось создать подчат",
+        });
+      }
+    }),
+  setGroupTopics: protectedProcedure
+    .input(
+      z.object({
+        chatId: z.string().uuid(),
+        enabled: z.boolean(),
+        layout: z.enum(["tabs", "list"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      try {
+        return await setGroupTopics(
+          input.chatId,
+          ctx.user.id,
+          input.enabled,
+          input.layout,
+        );
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Не удалось сохранить настройки тем",
+        });
       }
     }),
   list: protectedProcedure.query(async ({ ctx }) => {

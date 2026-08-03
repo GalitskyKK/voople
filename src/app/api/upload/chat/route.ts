@@ -9,6 +9,7 @@ import {
   UPLOAD_LIMITS,
 } from "@/lib/object-storage";
 import { formatStorageError } from "@/lib/object-storage/errors";
+import { desktopCorsPreflight, withDesktopCors } from "@/lib/http/desktop-cors";
 import { rateLimits } from "@/lib/ratelimit";
 import { checkRateLimit } from "@/lib/ratelimit-guard";
 import { createClient } from "@/lib/supabase/server";
@@ -16,31 +17,38 @@ import { createClient } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const json = (body: object, init?: ResponseInit) =>
+    withDesktopCors(request, NextResponse.json(body, init));
+
   try {
     const supabase = await createClient();
+    const authorization = request.headers.get("authorization");
+    const accessToken = authorization?.startsWith("Bearer ")
+      ? authorization.slice("Bearer ".length).trim()
+      : undefined;
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser();
+    } = await supabase.auth.getUser(accessToken);
 
     if (authError || !user) {
-      return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+      return json({ error: "Не авторизован" }, { status: 401 });
     }
 
     if (!(await checkRateLimit(rateLimits.uploadChat, `chat-upload:${user.id}`))) {
-      return NextResponse.json({ error: "Слишком много загрузок" }, { status: 429 });
+      return json({ error: "Слишком много загрузок" }, { status: 429 });
     }
 
     const formData = await request.formData();
     const file = formData.get("file");
     const purpose = formData.get("purpose");
     if (!(file instanceof File)) {
-      return NextResponse.json({ error: "Файл не передан" }, { status: 400 });
+      return json({ error: "Файл не передан" }, { status: 400 });
     }
 
     const contentType = file.type.split(";")[0]?.trim().toLowerCase() ?? "";
     if (!contentType) {
-      return NextResponse.json({ error: "Неизвестный тип файла" }, { status: 400 });
+      return json({ error: "Неизвестный тип файла" }, { status: 400 });
     }
 
     let parsed: ReturnType<typeof parseChatUploadMime>;
@@ -48,12 +56,12 @@ export async function POST(request: Request) {
       parsed = parseChatUploadMime(contentType);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Формат не поддерживается";
-      return NextResponse.json({ error: message }, { status: 400 });
+      return json({ error: message }, { status: 400 });
     }
 
     const limit = UPLOAD_LIMITS.chat.maxBytes;
     if (file.size <= 0 || file.size > limit) {
-      return NextResponse.json(
+      return json(
         { error: `Файл больше ${Math.round(limit / (1024 * 1024))} МБ` },
         { status: 400 },
       );
@@ -65,7 +73,7 @@ export async function POST(request: Request) {
     const sniffed = sniffUploadKind(body);
     const isContainerMatch = sniffed === "container" && (parsed.kind === "audio" || parsed.kind === "circle");
     if (sniffed !== parsed.kind && !isContainerMatch) {
-      return NextResponse.json(
+      return json(
         { error: "Содержимое файла не соответствует его типу" },
         { status: 400 },
       );
@@ -86,10 +94,14 @@ export async function POST(request: Request) {
       bucket: "private",
     });
 
-    return NextResponse.json({ key });
+    return json({ key });
   } catch (e) {
     const config = getObjectStorageConfig();
     const message = formatStorageError(e, config?.privateBucket);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return json({ error: message }, { status: 500 });
   }
+}
+
+export function OPTIONS(request: Request) {
+  return desktopCorsPreflight(request);
 }

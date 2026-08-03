@@ -1,4 +1,8 @@
-import { VOOPLUS_PRICE_RUB } from "@/lib/constants/subscription";
+import {
+  DEFAULT_VOOPLUS_PLAN_ID,
+  getVooplePlusPlan,
+  type VooplePlusPlanId,
+} from "@/lib/constants/subscription";
 import { isYooKassaConfigured } from "@/lib/payments/yookassa-config";
 import {
   createPaymentIntentRest,
@@ -66,20 +70,22 @@ export async function createRubPaymentIntent(input: {
   amountRub?: number;
   itemId?: string;
   promoCode?: string;
+  subscriptionPlan?: VooplePlusPlanId;
 }): Promise<PaymentIntentView> {
   let amountRub: number;
   let description: string;
   const metadata: Record<string, unknown> = {};
 
   if (input.kind === "subscription") {
-    const pricing = await resolveSubscriptionPromo(input.userId, input.promoCode);
+    const plan = getVooplePlusPlan(input.subscriptionPlan ?? DEFAULT_VOOPLUS_PLAN_ID);
+    const pricing = await resolveSubscriptionPromo(input.userId, input.promoCode, plan.id);
     amountRub = pricing.amountRub;
     description =
       pricing.discountRub != null
         ? `Подписка Voople+ (скидка ${pricing.discountRub} ₽)`
-        : "Подписка Voople+ на 30 дней";
-    metadata.plan = "voople_plus_monthly";
-    metadata.basePriceRub = VOOPLUS_PRICE_RUB;
+        : `Подписка Voople+ — ${plan.label.toLocaleLowerCase("ru-RU")}`;
+    metadata.subscriptionPlan = plan.id;
+    metadata.basePriceRub = plan.priceRub;
     if (pricing.promoCodeId) metadata.promoCodeId = pricing.promoCodeId;
   } else if (input.kind === "shop_item") {
     if (!input.itemId) throw new Error("Не указан предмет");
@@ -174,14 +180,15 @@ export async function fulfillSucceededPaymentIntent(intentId: string, externalId
   }
 
   if (intent.kind === "subscription") {
-    const basePriceRub =
-      typeof metadata.basePriceRub === "number" ? metadata.basePriceRub : VOOPLUS_PRICE_RUB;
-    if (intent.amount_rub < 1 || intent.amount_rub > basePriceRub) {
+    const rawPlan = metadata.subscriptionPlan;
+    const subscriptionPlan = rawPlan === "annual" ? "annual" : DEFAULT_VOOPLUS_PLAN_ID;
+    const plan = getVooplePlusPlan(subscriptionPlan);
+    if (intent.amount_rub < 1 || intent.amount_rub > plan.priceRub) {
       throw new Error("Сумма платежа не совпадает с ценой подписки");
     }
     const paymentId = externalId ?? intent.external_id;
     if (!paymentId) throw new Error("Нет ID платежа ЮKassa");
-    await extendVooplePlusRest(userId, paymentId);
+    await extendVooplePlusRest(userId, paymentId, plan.periodDays);
 
     const promoCodeId = metadata.promoCodeId;
     if (typeof promoCodeId === "string" && promoCodeId) {

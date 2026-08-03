@@ -1,18 +1,11 @@
 import type { Session } from "@supabase/supabase-js";
-import {
-  ImageIcon,
-  LoaderCircle,
-  Music,
-  Paperclip,
-  Send,
-} from "lucide-react";
-import { useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useState, type FormEvent } from "react";
 
-import { ChatVoiceRecorder } from "@/components/chat/ChatVoiceRecorder";
-import { DropdownMenu } from "@/components/ui/DropdownMenu";
+import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
 import type { ChatMessageView } from "@/types/chat";
 
 import type { DesktopConfig } from "../config";
+import { DesktopChatComposerInput } from "./DesktopChatComposerInput";
 import { DesktopChatComposerPreview } from "./DesktopChatComposerPreview";
 import type { DesktopMessageDraft } from "./useDesktopChatThread";
 import { useDesktopChatUpload } from "./useDesktopChatUpload";
@@ -33,9 +26,6 @@ export function DesktopChatComposer({
   onSend: (draft: DesktopMessageDraft) => Promise<boolean>;
 }) {
   const [text, setText] = useState("");
-  const [attachOpen, setAttachOpen] = useState(false);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const audioInputRef = useRef<HTMLInputElement>(null);
   const {
     clear,
     error,
@@ -65,13 +55,6 @@ export function DesktopChatComposer({
     onCancelReply();
   };
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      void submit();
-    }
-  };
-
   const selectImage = async (file?: File) => {
     if (file) await uploadFile(file);
   };
@@ -84,6 +67,23 @@ export function DesktopChatComposer({
       title: file.name.replace(/\.[^.]+$/u, "") || "Аудиофайл",
       artist: "Аудиосообщение",
     });
+  };
+
+  const pasteFile = async (file: File) => {
+    try {
+      const { kind } = parseChatUploadMime(file.type);
+      if (kind === "audio") {
+        await selectAudio(file);
+      } else {
+        await uploadFile(file, kind === "circle" ? { purpose: "circle" } : undefined);
+      }
+    } catch (pasteError) {
+      setError(
+        pasteError instanceof Error
+          ? pasteError.message
+          : "Формат файла не поддерживается",
+      );
+    }
   };
 
   return (
@@ -105,110 +105,27 @@ export function DesktopChatComposer({
         </p>
       ) : null}
 
-      <input
-        ref={imageInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        className="sr-only"
-        onChange={(event) => {
-          void selectImage(event.target.files?.[0]);
-          event.target.value = "";
+      <DesktopChatComposerInput
+        text={text}
+        canSend={canSend}
+        sending={sending}
+        uploading={uploading}
+        hasUpload={Boolean(upload)}
+        onTextChange={setText}
+        onSubmit={() => void submit()}
+        onImageSelected={selectImage}
+        onAudioSelected={selectAudio}
+        onPastedFile={pasteFile}
+        onVoiceRecorded={(file, durationSeconds, purpose) => {
+          void uploadFile(file, { purpose, durationSeconds });
         }}
+        onError={setError}
       />
-      <input
-        ref={audioInputRef}
-        type="file"
-        accept="audio/mpeg,audio/mp4,audio/m4a,audio/ogg,audio/wav,audio/webm"
-        className="sr-only"
-        onChange={(event) => {
-          void selectAudio(event.target.files?.[0]);
-          event.target.value = "";
-        }}
-      />
-
-      <div className="desktop-chat-composer__row">
-        <DropdownMenu
-          open={attachOpen}
-          onOpenChange={setAttachOpen}
-          align="start"
-          trigger={
-            <button
-              type="button"
-              disabled={uploading}
-              className="desktop-chat-composer__utility"
-              aria-label="Вложения"
-              aria-expanded={attachOpen}
-            >
-              {uploading ? (
-                <LoaderCircle className="h-5 w-5 animate-spin" />
-              ) : (
-                <Paperclip className="h-5 w-5" />
-              )}
-            </button>
-          }
-        >
-          <button
-            type="button"
-            role="menuitem"
-            className="desktop-chat-composer__menu-item"
-            onClick={() => {
-              setAttachOpen(false);
-              imageInputRef.current?.click();
-            }}
-          >
-            <ImageIcon className="h-4 w-4" />
-            Изображение
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            className="desktop-chat-composer__menu-item"
-            onClick={() => {
-              setAttachOpen(false);
-              audioInputRef.current?.click();
-            }}
-          >
-            <Music className="h-4 w-4" />
-            Аудиофайл
-          </button>
-        </DropdownMenu>
-
-        <textarea
-          value={text}
-          onChange={(event) => setText(event.target.value.slice(0, 1000))}
-          onKeyDown={handleKeyDown}
-          rows={1}
-          maxLength={1000}
-          placeholder="Сообщение"
-          aria-label="Сообщение"
-        />
-
-        {!text.trim() && !upload ? (
-          <ChatVoiceRecorder
-            disabled={sending || uploading}
-            onRecorded={(file, durationSeconds, purpose) => {
-              void uploadFile(file, { purpose, durationSeconds });
-            }}
-            onError={setError}
-          />
-        ) : null}
-
-        <button
-          type="submit"
-          className="desktop-chat-composer__send"
-          disabled={!canSend}
-          aria-label="Отправить сообщение"
-        >
-          {sending ? (
-            <LoaderCircle className="h-5 w-5 animate-spin" />
-          ) : (
-            <Send className="h-5 w-5" />
-          )}
-        </button>
-      </div>
-      <span className="desktop-chat-composer__counter">
-        {text.length}/1000
-      </span>
+      {text.length >= 800 ? (
+        <span className="desktop-chat-composer__counter">
+          {text.length}/1000
+        </span>
+      ) : null}
     </form>
   );
 }

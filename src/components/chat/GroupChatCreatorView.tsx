@@ -49,7 +49,8 @@ export function GroupChatCreatorView(props: GroupChatCreatorViewProps) {
         <div className="pr-10">
           <h2 className="text-xl font-semibold">Новая группа</h2>
           <p className="mt-1 text-sm text-[var(--app-muted)]">
-            Название и минимум два собеседника. Добавить можно до 19 человек.
+            Группу можно создать одному. Сразу добавить можно до 19 взаимных
+            подписок, а остальных — пригласить по ссылке после создания.
           </p>
         </div>
 
@@ -72,6 +73,7 @@ export function GroupChatCreatorView(props: GroupChatCreatorViewProps) {
           onQueryChange={creator.changeQuery}
           onToggleUser={creator.toggleUser}
           renderAvatar={renderAvatar}
+          emptyLabel="Взаимных подписок пока нет"
         />
 
         {creator.error ? (

@@ -6,6 +6,7 @@ import {
   publicAssetUrl,
 } from "@/lib/object-storage";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { assertChatMemberRest } from "@/server/data/chat-access-rest";
 import { resolvePublicMediaKey } from "@/server/services/upload.service";
 import type { PlaylistTrackView, UserPlaylistView } from "@/types/playlist";
 
@@ -264,15 +265,7 @@ export async function addTrackFromChatMessageRest(
   if (msgErr) throw new Error(msgErr.message);
   if (!message) throw new Error("Сообщение не найдено");
 
-  const { data: membership, error: memErr } = await admin
-    .from("chat_members")
-    .select("user_id")
-    .eq("chat_id", message.chat_id as string)
-    .eq("user_id", recipientUserId)
-    .maybeSingle();
-
-  if (memErr) throw new Error(memErr.message);
-  if (!membership) throw new Error("Нет доступа к чату");
+  await assertChatMemberRest(message.chat_id as string, recipientUserId);
 
   const sharedTrackId = message.shared_track_id as string | null;
   if (sharedTrackId) {

@@ -17,6 +17,7 @@ type ChatMessageMenuProps = {
   onAddToPlaylist?: (message: ChatMessageView) => void;
   isMine: boolean;
   showOnHover?: boolean;
+  showTrigger?: boolean;
   canAddToPlaylist?: boolean;
   onToggleReaction?: (message: ChatMessageView, emoji: ChatReactionEmoji) => void;
 };
@@ -30,6 +31,7 @@ export function ChatMessageMenu({
   onAddToPlaylist,
   isMine,
   showOnHover = true,
+  showTrigger = true,
   canAddToPlaylist = false,
   onToggleReaction,
 }: ChatMessageMenuProps) {
@@ -43,13 +45,17 @@ export function ChatMessageMenu({
       align={isMine ? "end" : "start"}
       className={cn(
         "transition-opacity",
+        !showTrigger && "h-0 w-0 overflow-hidden opacity-0",
         showOnHover && !open && "opacity-0 group-hover/bubble:opacity-100 focus-within:opacity-100",
         open && "opacity-100",
       )}
       trigger={
         <button
           type="button"
-          className="flex h-7 w-7 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--app-surface)_85%,transparent)] text-[var(--app-muted)] shadow-sm hover:text-[var(--foreground)]"
+          className={cn(
+            "flex items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--app-surface)_85%,transparent)] text-[var(--app-muted)] shadow-sm hover:text-[var(--foreground)]",
+            showTrigger ? "h-7 w-7" : "h-0 w-0 overflow-hidden",
+          )}
           aria-label="Действия с сообщением"
         >
           <MoreHorizontal className="h-4 w-4" />

@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { LegalDocument } from "@/components/legal/LegalDocument";
 import { MERCHANT } from "@/lib/constants/legal";
-import { VOOPLUS_PERIOD_DAYS, VOOPLUS_PRICE_RUB } from "@/lib/constants/subscription";
+import { VOOPLUS_PLANS } from "@/lib/constants/subscription";
 import { SHOP_CATALOG, type ShopCatalogItem, type ShopItemKind } from "@/lib/shop/catalog";
 
 export const metadata: Metadata = {
@@ -60,13 +60,15 @@ export default function LegalServicesPage() {
       <h2>Подписка Voople+</h2>
       <p>
         Подписка даёт доступ к загрузке и рисованию собственного баннера профиля и отображает бейдж Voople+.
-        Срок действия — {VOOPLUS_PERIOD_DAYS} календарных дней с момента успешной оплаты. Повторная оплата
-        продлевает срок от текущей даты окончания, если подписка ещё активна.
+        Срок действия зависит от выбранного тарифа и начинается с момента успешной оплаты. Повторная оплата
+        добавляет выбранный срок к текущей дате окончания, если подписка ещё активна.
       </p>
-      <p className="font-medium">
-        Стоимость: {formatRub(VOOPLUS_PRICE_RUB)} за {VOOPLUS_PERIOD_DAYS} дней. Разовая оплата, без автопродления.
-        Промокоды могут давать пробный период или скидку (см. условия акции).
-      </p>
+      <ul className="font-medium">
+        {VOOPLUS_PLANS.map((plan) => (
+          <li key={plan.id}>{plan.label}: {formatRub(plan.priceRub)} за {plan.periodDays} дней — {plan.note.toLocaleLowerCase("ru-RU")}.</li>
+        ))}
+      </ul>
+      <p>Оба варианта оплачиваются разово, без автопродления. Промокоды могут давать пробный период или скидку.</p>
 
       <h2>Цифровые товары для профиля</h2>
       <p>

@@ -46,7 +46,13 @@ export function getAudioCaptureOptions(preferences: VoicePreferences): AudioCapt
     noiseSuppression: preferences.noiseSuppression,
     autoGainControl: preferences.autoGainControl,
     voiceIsolation: preferences.voiceIsolation,
-    channelCount: 1,
+    // Opus works internally at 48 kHz. Asking the capture stack for the same
+    // rate avoids an unnecessary resampling pass when the device supports it,
+    // while `ideal` keeps unusual microphones from failing to start.
+    sampleRate: { ideal: 48_000 },
+    sampleSize: { ideal: 16 },
+    channelCount: { ideal: 1 },
+    latency: { ideal: 0.02 },
   };
 }
 

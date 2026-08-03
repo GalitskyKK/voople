@@ -3,7 +3,7 @@ import { toProfileCustomizationView } from "@/server/mappers/customization"
 import { mapPostRow, mapUserToAuthor, type PostRow, type UserRow } from "@/server/mappers/profile"
 import { loadLikedPostIdsRest } from "@/server/data/likes-rest"
 import type { PostViewModel } from "@/types/domain"
-import { listUserBadgesRest } from "@/server/data/badges-rest"
+import { listUserBadgesByUserIdsRest } from "@/server/data/badges-rest"
 
 const POST_SELECT =
   "id, author_id, text, state_snapshot, media_url, media_type, is_repost, original_post_id, repost_comment, like_count, reply_count, repost_count, view_count, created_at"
@@ -73,9 +73,7 @@ async function freezeLegacyAppearancePosts(
   if (legacyRows.length === 0) return
 
   const authorIds = [...new Set(legacyRows.map((row) => row.author_id))]
-  const badgesByAuthor = new Map(
-    await Promise.all(authorIds.map(async (authorId) => [authorId, await listUserBadgesRest(authorId)] as const)),
-  )
+  const badgesByAuthor = await listUserBadgesByUserIdsRest(authorIds)
   const admin = getAdminClient()
 
   await Promise.all(legacyRows.map(async (row) => {
@@ -148,15 +146,14 @@ export async function mapPostRowsWithReposts(
   // Compatibility migration for posts published before appearance snapshots
   // included cosmetics. The first read freezes their current appearance once;
   // subsequent profile edits no longer rewrite historical posts.
-  await freezeLegacyAppearancePosts(allRows, authorById)
-
-  const likedSet = options?.viewerId
-    ? await loadLikedPostIdsRest(
-        options.viewerId,
-        allRows.map((post) => post.id)
-      )
-    : new Set<string>()
-  const tagsByPostId = await loadTags(allRows.map((post) => post.id))
+  const postIds = allRows.map((post) => post.id)
+  const [likedSet, tagsByPostId] = await Promise.all([
+    options?.viewerId
+      ? loadLikedPostIdsRest(options.viewerId, postIds)
+      : Promise.resolve(new Set<string>()),
+    loadTags(postIds),
+    freezeLegacyAppearancePosts(allRows, authorById),
+  ])
 
   function mapNestedPost(post: PostRow, depth = 0): PostViewModel {
     const author = authorById.get(post.author_id) ?? fallbackAuthor()

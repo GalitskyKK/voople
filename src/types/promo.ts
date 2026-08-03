@@ -1,3 +1,5 @@
+import type { VooplePlusPlanId } from "@/lib/constants/subscription";
+
 export type PromoKind =
   | "plus_trial"
   | "subscription_discount"
@@ -11,6 +13,7 @@ export type PromoPreviewView = {
   originalAmountRub: number;
   finalAmountRub: number;
   discountRub: number;
+  subscriptionPlan: VooplePlusPlanId;
 };
 
 export type PromoRedeemView = {

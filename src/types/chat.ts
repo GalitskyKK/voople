@@ -58,6 +58,10 @@ export type ChatListItem = {
   id: string;
   type: "direct" | "group";
   name: string | null;
+  parentChatId: string | null;
+  topicsEnabled: boolean;
+  topicsLayout: "tabs" | "list";
+  topicIcon: string | null;
   memberCount: number;
   viewerRole: "owner" | "admin" | "member";
   otherUser: {
@@ -74,9 +78,33 @@ export type ChatListItem = {
     createdAt: string;
     senderId: string;
   } | null;
+  channels: ChatListItem[];
 };
 
-export type ChatThreadSummary = Pick<ChatListItem, "id" | "type" | "name" | "memberCount">;
+export type ChatGroupMemberView = {
+  type: "user";
+  id: string;
+  username: string;
+  displayName: string;
+  bio: string | null;
+  hasVooplePlus?: boolean;
+  avatarUrl?: string | null;
+  role: "owner" | "admin" | "member";
+};
+
+export type ChatThreadSummary = Pick<
+  ChatListItem,
+  | "id"
+  | "type"
+  | "name"
+  | "parentChatId"
+  | "topicsEnabled"
+  | "topicsLayout"
+  | "topicIcon"
+  | "memberCount"
+> & {
+  parentName?: string | null;
+};
 
 export type ChatRoomParticipantView = {
   id: string;

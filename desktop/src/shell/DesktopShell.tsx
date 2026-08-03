@@ -17,7 +17,8 @@ import { syncDesktopUser } from "../api/sync-user";
 import { getSupabase } from "../auth/supabase";
 import type { DesktopConfig } from "../config";
 import { useDesktopHotkeys } from "../hooks/useDesktopHotkeys";
-
+import { useNativeVoiceHeartbeat } from "../hooks/useNativeVoiceHeartbeat";
+import { DesktopAutoUpdater } from "../updates/DesktopAutoUpdater";
 const DesktopFeed = lazy(() =>
   import("../feed/DesktopFeed").then((module) => ({
     default: module.DesktopFeed,
@@ -26,6 +27,11 @@ const DesktopFeed = lazy(() =>
 const DesktopExplore = lazy(() =>
   import("../explore/DesktopExplore").then((module) => ({
     default: module.DesktopExplore,
+  })),
+);
+const DesktopHashtagFeed = lazy(() =>
+  import("../feed/DesktopHashtagFeed").then((module) => ({
+    default: module.DesktopHashtagFeed,
   })),
 );
 const DesktopNotifications = lazy(() =>
@@ -56,6 +62,11 @@ const DesktopEvents = lazy(() =>
 const DesktopSettings = lazy(() =>
   import("../settings/DesktopSettings").then((module) => ({
     default: module.DesktopSettings,
+  })),
+);
+const DesktopShop = lazy(() =>
+  import("../shop/DesktopShop").then((module) => ({
+    default: module.DesktopShop,
   })),
 );
 const DesktopCreatePostModal = lazy(() =>
@@ -95,6 +106,16 @@ function chatIdFromPath(pathname: string) {
   )?.[1] ?? null;
 }
 
+function hashtagFromPath(pathname: string) {
+  const encodedTag = pathname.match(/^\/hashtag\/([^/]+)$/)?.[1];
+  if (!encodedTag) return null;
+  try {
+    return decodeURIComponent(encodedTag).trim().replace(/^#/, "").toLowerCase() || null;
+  } catch {
+    return null;
+  }
+}
+
 export function DesktopShell({
   config,
   session,
@@ -109,6 +130,11 @@ export function DesktopShell({
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const { preferences } = useAppPreferences();
   const voiceSession = useVoiceSession();
+  useNativeVoiceHeartbeat({
+    config,
+    accessToken: session.access_token,
+    voiceSession,
+  });
 
   useEffect(() => {
     let active = true;
@@ -207,6 +233,7 @@ export function DesktopShell({
   const profileUsername = profileUsernameFromPath(pathname);
   const postId = postIdFromPath(pathname);
   const chatId = chatIdFromPath(pathname);
+  const hashtag = hashtagFromPath(pathname);
   const isProfileRoute = pathname === "/me" || profileUsername !== null;
   const isMessagesRoute = pathname === "/messages" || chatId !== null;
   const isWideRoute =
@@ -261,6 +288,13 @@ export function DesktopShell({
               session={session}
               renderDestination={renderDestination}
             />
+          ) : hashtag ? (
+            <DesktopHashtagFeed
+              config={config}
+              session={session}
+              tag={hashtag}
+              renderDestination={renderDestination}
+            />
           ) : pathname === "/notifications" ? (
             <DesktopNotifications
               config={config}
@@ -272,6 +306,8 @@ export function DesktopShell({
             <DesktopEvents />
           ) : pathname === "/settings" ? (
             <DesktopSettings config={config} navigate={navigate} />
+          ) : pathname === "/shop" ? (
+            <DesktopShop config={config} />
           ) : isMessagesRoute ? (
             <DesktopMessages
               config={config}
@@ -291,6 +327,7 @@ export function DesktopShell({
               config={config}
               session={session}
               username={profileUsername}
+              navigate={navigate}
               renderDestination={renderDestination}
             />
           ) : (
@@ -337,6 +374,7 @@ export function DesktopShell({
           />
         </Suspense>
       )}
+      <DesktopAutoUpdater />
     </AppShellFrame>
   );
 }

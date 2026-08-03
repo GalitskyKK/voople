@@ -1,6 +1,6 @@
 "use client";
 
-import { Gauge, Mic, MicOff, RotateCcw, Settings2, ShieldCheck } from "lucide-react";
+import { Mic, MicOff, RefreshCw, RotateCcw, ShieldCheck } from "lucide-react";
 
 import type { VoicePreferences } from "@/lib/livekit/voice-preferences";
 
@@ -25,6 +25,7 @@ type VoiceSettingsPanelProps = {
   onInputDeviceChange: (deviceId: string) => void | Promise<void>;
   onOutputDeviceChange: (deviceId: string) => void | Promise<void>;
   onMicTestToggle: () => void | Promise<void>;
+  onRefreshDevices: () => void | Promise<void>;
   onAudioProcessingChange: (
     key: AudioProcessingKey,
     enabled: boolean,
@@ -54,22 +55,32 @@ export function VoiceSettingsPanel({
   onInputDeviceChange,
   onOutputDeviceChange,
   onMicTestToggle,
+  onRefreshDevices,
   onAudioProcessingChange,
   onEndpointChange,
   onCompatibilityModeChange,
   onReconnect,
 }: VoiceSettingsPanelProps) {
   return (
-    <details className="mt-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-soft)]">
-      <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium">
-        <span className="inline-flex items-center gap-2">
-          <Settings2 className="h-4 w-4" />
-          Звук и соединение
-        </span>
-        <Gauge className="h-4 w-4 text-[var(--app-muted)]" />
-      </summary>
+    <div className="space-y-4">
+        <p className="rounded-xl bg-[var(--app-accent-soft)] px-3 py-2 text-xs leading-5 text-[var(--app-muted)]">
+          Голос передаётся в Opus с повышенным битрейтом до 96 кбит/с. Обработка
+          ниже применяется локально до отправки звука.
+        </p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-[var(--app-muted)]">
+            Названия появляются после разрешения доступа к микрофону.
+          </p>
+          <button
+            type="button"
+            onClick={() => void onRefreshDevices()}
+            className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--app-border)] px-2.5 text-xs hover:bg-[var(--app-surface)]"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Обновить
+          </button>
+        </div>
 
-      <div className="voople-scroll max-h-[min(42dvh,22rem)] space-y-4 overflow-y-auto border-t border-[var(--app-border)] p-4">
         <label className="block text-xs font-medium text-[var(--app-muted)]">
           Микрофон
           <select
@@ -198,7 +209,6 @@ export function VoiceSettingsPanel({
             Подключено через {new URL(currentEndpoint).hostname}
           </p>
         ) : null}
-      </div>
-    </details>
+    </div>
   );
 }

@@ -39,6 +39,12 @@ export async function POST(request: Request) {
       // Пустое тело допустимо для входа.
     }
 
+    if (!preferredUsername) {
+      const metadataUsername = user.user_metadata?.username
+      const parsed = usernameSchema.safeParse(metadataUsername)
+      if (parsed.success) preferredUsername = parsed.data
+    }
+
     const result = await ensurePublicUser({
       id: user.id,
       email: user.email,

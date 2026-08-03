@@ -35,6 +35,7 @@ function getUpstreamUrl(request: NextRequest, path: string[]) {
 }
 
 async function forward(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
+  const startedAt = performance.now();
   const { path } = await context.params;
   const upstreamUrl = getUpstreamUrl(request, path);
   if (!upstreamUrl) {
@@ -74,6 +75,10 @@ async function forward(request: NextRequest, context: { params: Promise<{ path: 
       const value = upstream.headers.get(name);
       if (value) responseHeaders.set(name, value);
     }
+    responseHeaders.set(
+      "server-timing",
+      `supabase;dur=${(performance.now() - startedAt).toFixed(1)}`,
+    );
 
     return new NextResponse(upstream.body, {
       status: upstream.status,
@@ -84,7 +89,13 @@ async function forward(request: NextRequest, context: { params: Promise<{ path: 
     console.error("[supabase-proxy]", error);
     return NextResponse.json(
       { error: "Supabase upstream is temporarily unavailable" },
-      { status: 503, headers: { "cache-control": "private, no-store" } },
+      {
+        status: 503,
+        headers: {
+          "cache-control": "private, no-store",
+          "server-timing": `supabase;dur=${(performance.now() - startedAt).toFixed(1)}`,
+        },
+      },
     );
   }
 }

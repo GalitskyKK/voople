@@ -45,6 +45,7 @@ export function ChatEmojiPicker({ open, onClose, onPick, className }: ChatEmojiP
           key={emoji}
           type="button"
           role="option"
+          aria-selected="false"
           className="rounded-[var(--app-radius-sm)] p-1.5 text-lg leading-none transition-colors hover:bg-[var(--app-surface-soft)]"
           onClick={() => {
             onPick(emoji);

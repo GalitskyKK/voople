@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Crown } from "lucide-react";
 
 import {
+  DEFAULT_VOOPLUS_PLAN_ID,
   VOOPLUS_BENEFITS,
   VOOPLUS_IS_RECURRING,
-  VOOPLUS_PERIOD_DAYS,
-  VOOPLUS_PRICE_RUB,
+  VOOPLUS_PLANS,
+  getVooplePlusPlan,
+  type VooplePlusPlanId,
 } from "@/lib/constants/subscription";
 import { Button } from "@/components/ui/Button";
 import { parseDatabaseDate } from "@/lib/format/database-date";
@@ -23,8 +24,10 @@ type VooplePlusPanelProps = {
   promoPending?: boolean;
   promoMessage?: string | null;
   promoDiscount?: PromoPreviewView | null;
-  onSubscribe: (promoCode?: string) => void;
-  onApplyPromo: (code: string) => void;
+  onSubscribe: (plan: VooplePlusPlanId, promoCode?: string) => void;
+  onApplyPromo: (code: string, plan: VooplePlusPlanId) => void;
+  legalOfferHref?: string;
+  onOpenLegalOffer?: (href: string) => void;
 };
 
 function formatDate(iso: string) {
@@ -45,10 +48,15 @@ export function VooplePlusPanel({
   promoDiscount,
   onSubscribe,
   onApplyPromo,
+  legalOfferHref = "/legal/offer",
+  onOpenLegalOffer,
 }: VooplePlusPanelProps) {
   const [promoInput, setPromoInput] = useState("");
+  const [selectedPlanId, setSelectedPlanId] = useState<VooplePlusPlanId>(DEFAULT_VOOPLUS_PLAN_ID);
   const active = status?.active === true;
-  const displayPrice = promoDiscount?.finalAmountRub ?? VOOPLUS_PRICE_RUB;
+  const selectedPlan = getVooplePlusPlan(selectedPlanId);
+  const activeDiscount = promoDiscount?.subscriptionPlan === selectedPlanId ? promoDiscount : null;
+  const displayPrice = activeDiscount?.finalAmountRub ?? selectedPlan.priceRub;
 
   return (
     <section className="voople-panel overflow-hidden border-(--theme-accent)/30 bg-linear-to-br from-(--theme-accent)/15 via-[color-mix(in_srgb,var(--foreground)_5%,transparent)] to-transparent p-6">
@@ -60,7 +68,7 @@ export function VooplePlusPanel({
           </p>
           <h2 className="text-xl font-semibold text-[var(--foreground)]">Соберите узнаваемый профиль</h2>
           <p className="max-w-lg text-sm text-[color-mix(in_srgb,var(--foreground)_55%,transparent)]">
-            Один набор для карточки, имени и темы приложения. Всё можно примерить в редакторе до оплаты. {VOOPLUS_PERIOD_DAYS} дней за разовую оплату.
+            Один набор для карточки, имени и темы приложения. Всё можно примерить в редакторе до оплаты.
             {!VOOPLUS_IS_RECURRING && " Автопродление не подключено — продлить можно вручную."} Оплата через
             ЮKassa.
           </p>
@@ -68,14 +76,36 @@ export function VooplePlusPanel({
         <div className="text-right">
           <p className="text-2xl font-bold text-[var(--foreground)]">
             {displayPrice} ₽
-            {promoDiscount && promoDiscount.finalAmountRub < VOOPLUS_PRICE_RUB && (
+            {activeDiscount && activeDiscount.finalAmountRub < selectedPlan.priceRub && (
               <span className="ml-2 text-base font-normal text-[color-mix(in_srgb,var(--foreground)_35%,transparent)] line-through">
-                {VOOPLUS_PRICE_RUB} ₽
+                {selectedPlan.priceRub} ₽
               </span>
             )}
           </p>
-          <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_45%,transparent)]">на {VOOPLUS_PERIOD_DAYS} дн.</p>
+          <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_45%,transparent)]">на {selectedPlan.periodDays} дн.</p>
         </div>
+      </div>
+
+      <div className="mt-5 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Срок подписки">
+        {VOOPLUS_PLANS.map((plan) => {
+          const selected = plan.id === selectedPlanId;
+          return (
+            <button
+              key={plan.id}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => setSelectedPlanId(plan.id)}
+              className={`rounded-2xl border p-3 text-left transition ${selected ? "border-(--theme-accent) bg-(--theme-accent)/10" : "border-[var(--app-border)] bg-[var(--app-surface-soft)] hover:border-[var(--app-border-strong)]"}`}
+            >
+              <span className="flex items-center justify-between gap-3">
+                <span className="font-semibold text-[var(--foreground)]">{plan.label}</span>
+                <span className="font-semibold text-[var(--foreground)]">{plan.priceRub.toLocaleString("ru-RU")} ₽</span>
+              </span>
+              <span className="mt-1 block text-xs text-[var(--app-muted)]">{plan.note}</span>
+            </button>
+          );
+        })}
       </div>
 
       <ul className="mt-4 space-y-2 text-sm text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
@@ -107,14 +137,14 @@ export function VooplePlusPanel({
           variant="secondary"
           size="sm"
           disabled={promoPending || !promoInput.trim()}
-          onClick={() => onApplyPromo(promoInput.trim())}
+          onClick={() => onApplyPromo(promoInput.trim(), selectedPlanId)}
         >
           {promoPending ? "…" : "Применить"}
         </Button>
       </div>
 
-      {promoDiscount && (
-        <p className="mt-2 text-sm text-emerald-300/90">{promoDiscount.message}</p>
+      {activeDiscount && (
+        <p className="mt-2 text-sm text-emerald-300/90">{activeDiscount.message}</p>
       )}
       {promoMessage && <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">{promoMessage}</p>}
 
@@ -127,30 +157,37 @@ export function VooplePlusPanel({
             <span className="block text-emerald-200/70">С {formatDate(status.startedAt)}</span>
           ) : null}
         </p>
-      ) : (
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <Button
-            type="button"
-            disabled={paymentPending}
-            onClick={() =>
-              onSubscribe(promoDiscount ? promoDiscount.code : promoInput.trim() || undefined)
-            }
+      ) : null}
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Button
+          type="button"
+          disabled={paymentPending}
+          onClick={() =>
+            onSubscribe(selectedPlanId, activeDiscount ? activeDiscount.code : promoInput.trim() || undefined)
+          }
+        >
+          {paymentPending ? "Переход к оплате…" : active ? `Продлить за ${displayPrice} ₽` : `Оплатить ${displayPrice} ₽`}
+        </Button>
+        <p className="text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">
+          Нажимая кнопку, вы соглашаетесь с{" "}
+          <a
+            href={legalOfferHref}
+            onClick={onOpenLegalOffer ? (event) => {
+              event.preventDefault();
+              onOpenLegalOffer(legalOfferHref);
+            } : undefined}
+            className="underline hover:text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]"
           >
-            {paymentPending ? "Переход к оплате…" : `Оплатить ${displayPrice} ₽`}
-          </Button>
-          <p className="text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">
-            Нажимая кнопку, вы соглашаетесь с{" "}
-            <Link href="/legal/offer" className="underline hover:text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">
-              офертой
-            </Link>
-            .
-          </p>
-        </div>
-      )}
+            офертой
+          </a>
+          .
+        </p>
+      </div>
 
       {active && (
         <p className="mt-3 text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">
-          Продление: снова нажмите «Оплатить» до или после окончания срока — дни добавятся к дате окончания.
+          При продлении выбранный срок добавится к текущей дате окончания.
         </p>
       )}
 

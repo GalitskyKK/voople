@@ -8,6 +8,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/Button";
+import { getEmailDeliveryErrorMessage } from "@/lib/auth/email-delivery-error";
 import { TURNSTILE_SITE_KEY, TurnstileChallenge } from "@/components/auth/TurnstileChallenge";
 import { syncPublicUser } from "@/lib/auth/sync-public-user";
 import { COPY } from "@/lib/constants/copy";
@@ -69,7 +70,7 @@ export default function LoginPage() {
     setCaptchaToken(null);
     setCaptchaResetKey((value) => value + 1);
     setCodeBusy(false);
-    if (error) return setCodeError(error.message);
+    if (error) return setCodeError(getEmailDeliveryErrorMessage(error));
     setCode(""); setCodeSentTo(email);
     window.setTimeout(() => codeInputs.current[0]?.focus(), 0);
   };

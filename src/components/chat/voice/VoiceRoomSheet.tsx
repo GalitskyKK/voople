@@ -1,55 +1,43 @@
 "use client";
 
-import type { ReactNode, RefObject } from "react";
+import { useState, type ReactNode, type RefObject } from "react";
 import {
   DoorOpen,
   Headphones,
   Loader2,
   Lock,
   LockOpen,
-  Mic,
-  MicOff,
   PhoneOff,
+  Settings2,
   Volume2,
   Wifi,
   WifiOff,
 } from "lucide-react";
 import { ConnectionQuality } from "livekit-client";
 
-import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
-import { resolveRingStyle } from "@/lib/customization/rings";
 import { cn } from "@/lib/utils";
+import type { ChatRoomParticipantView } from "@/types/chat";
 
 import { getQualityLabel, type MediaStatus } from "./voice-room-config";
 import { VoiceMediaControls } from "./VoiceMediaControls";
-import { VoiceMediaStage } from "./VoiceMediaStage";
-
-type VoiceParticipant = {
-  id: string;
-  displayName: string;
-  username: string;
-  avatarUrl: string | null;
-  avatarDecorationUrl: string | null;
-  avatarRingId: string | null;
-  isMe: boolean;
-  micMuted: boolean;
-};
+import { VoiceRoomStage } from "./VoiceRoomStage";
 
 type VoiceRoomSheetProps = {
   open: boolean;
   onClose: () => void;
   screenContainerRef: RefObject<HTMLDivElement | null>;
-  cameraContainerRef: RefObject<HTMLDivElement | null>;
   isDirect: boolean;
   chatName: string;
   active: boolean;
+  durationLabel: string | null;
   connectionLabel: string | null;
   mediaStatus: MediaStatus;
   connectionQuality: ConnectionQuality;
   screenShareOwner: string | null;
-  participants: VoiceParticipant[];
+  participants: ChatRoomParticipantView[];
+  participantVolumes: Record<string, number>;
   micMuted: boolean;
   outputMuted: boolean;
   remoteMicMutedById: Record<string, boolean>;
@@ -57,7 +45,7 @@ type VoiceRoomSheetProps = {
   mediaActionPending: boolean;
   screenSharePending: boolean;
   screenSharing: boolean;
-  cameraCount: number;
+  cameraParticipantIds: ReadonlySet<string>;
   cameraEnabled: boolean;
   cameraPending: boolean;
   audioBlocked: boolean;
@@ -66,6 +54,11 @@ type VoiceRoomSheetProps = {
   onScreenShareToggle: () => void | Promise<void>;
   onCameraToggle: () => void | Promise<void>;
   onResumeAudio: () => void | Promise<void>;
+  onCameraContainerChange: (
+    participantId: string,
+    element: HTMLDivElement | null,
+  ) => void;
+  onParticipantVolumeChange: (participantId: string, volume: number) => void;
   settingsPanel: ReactNode;
   canManageAccess: boolean;
   accessMode: "open" | "locked";
@@ -85,15 +78,16 @@ export function VoiceRoomSheet({
   open,
   onClose,
   screenContainerRef,
-  cameraContainerRef,
   isDirect,
   chatName,
   active,
+  durationLabel,
   connectionLabel,
   mediaStatus,
   connectionQuality,
   screenShareOwner,
   participants,
+  participantVolumes,
   micMuted,
   outputMuted,
   remoteMicMutedById,
@@ -101,7 +95,7 @@ export function VoiceRoomSheet({
   mediaActionPending,
   screenSharePending,
   screenSharing,
-  cameraCount,
+  cameraParticipantIds,
   cameraEnabled,
   cameraPending,
   audioBlocked,
@@ -110,6 +104,8 @@ export function VoiceRoomSheet({
   onScreenShareToggle,
   onCameraToggle,
   onResumeAudio,
+  onCameraContainerChange,
+  onParticipantVolumeChange,
   settingsPanel,
   canManageAccess,
   accessMode,
@@ -124,13 +120,28 @@ export function VoiceRoomSheet({
   onConnect,
   connectLabel,
 }: VoiceRoomSheetProps) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   return (
-    <Sheet open={open} onClose={onClose} className={cn("h-[min(90dvh,720px)] overflow-x-hidden", isDirect ? "max-w-xl" : "max-w-4xl")}>
+    <Sheet
+      open={open}
+      onClose={() => {
+        setSettingsOpen(false);
+        onClose();
+      }}
+      className={cn("overflow-x-hidden", isDirect ? "max-w-xl" : "max-w-4xl")}
+    >
       <div className="pr-10">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-(--theme-accent)">
           {isDirect ? "Разговор вдвоём" : "Комната"}
         </p>
         <h2 className="mt-1 truncate text-xl font-semibold">{chatName}</h2>
+
+        {durationLabel ? (
+          <p className="mt-1 text-sm tabular-nums text-[var(--app-muted)]">
+            {durationLabel}
+          </p>
+        ) : null}
 
         {connectionLabel ? (
           <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-[var(--app-muted)]">
@@ -157,72 +168,19 @@ export function VoiceRoomSheet({
         ) : null}
       </div>
 
-      <VoiceMediaStage
-        screenContainerRef={screenContainerRef}
-        cameraContainerRef={cameraContainerRef}
-        screenShareOwner={screenShareOwner}
-        cameraCount={cameraCount}
-      />
-
       {active ? (
-        <div className="mt-5 grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-2">
-          {participants.map((participant) => {
-            const actualMuted = participant.isMe
-              ? micMuted
-              : (remoteMicMutedById[participant.id] ?? participant.micMuted);
-            const speaking = activeSpeakerIds.has(participant.id);
-            return (
-              <div
-                key={participant.id}
-                className={cn(
-                  "relative flex min-h-36 flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border bg-[var(--app-surface-soft)] px-4 py-5 text-center transition",
-                  speaking ? "border-emerald-500/50" : "border-[var(--app-border)]",
-                )}
-              >
-                <ProfileAvatarVisual
-                  displayName={participant.displayName}
-                  size="lg"
-                  isOnline
-                  ringClassName={resolveRingStyle(participant.avatarRingId)?.className}
-                  avatarImage={
-                    participant.avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- shared animated avatar for Next.js and Tauri
-                      <img
-                        src={participant.avatarUrl}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    ) : undefined
-                  }
-                  decorationImage={
-                    participant.avatarDecorationUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- shared animated decoration for Next.js and Tauri
-                      <img
-                        src={participant.avatarDecorationUrl}
-                        alt=""
-                        className="h-full w-full max-w-none object-contain object-center"
-                      />
-                    ) : undefined
-                  }
-                />
-                <div className="min-w-0 max-w-full">
-                  <p className="truncate text-sm font-medium">
-                    {participant.displayName}
-                    {participant.isMe ? " · вы" : ""}
-                  </p>
-                  <p className="truncate text-xs text-[var(--app-muted)]">
-                    {speaking ? "говорит" : `@${participant.username}`}
-                  </p>
-                </div>
-                {actualMuted ? (
-                  <MicOff className="absolute right-3 top-3 h-4 w-4 text-[var(--app-muted)]" />
-                ) : (
-                  <Mic className="absolute right-3 top-3 h-4 w-4 text-emerald-400" />
-                )}
-              </div>
-            );
-          })}
-        </div>
+        <VoiceRoomStage
+            screenContainerRef={screenContainerRef}
+            screenShareOwner={screenShareOwner}
+            participants={participants}
+            participantVolumes={participantVolumes}
+            micMuted={micMuted}
+            remoteMicMutedById={remoteMicMutedById}
+            activeSpeakerIds={activeSpeakerIds}
+            cameraParticipantIds={cameraParticipantIds}
+            onCameraContainerChange={onCameraContainerChange}
+            onParticipantVolumeChange={onParticipantVolumeChange}
+          />
       ) : (
         <div className="mt-5 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-4">
           <div className="flex items-center gap-3">
@@ -267,7 +225,32 @@ export function VoiceRoomSheet({
         </button>
       ) : null}
 
-      {settingsPanel}
+      <button
+        type="button"
+        onClick={() => setSettingsOpen(true)}
+        className="mt-3 flex w-full items-center justify-between rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-4 py-3 text-sm font-medium transition hover:bg-[var(--app-surface)]"
+      >
+        <span className="inline-flex items-center gap-2">
+          <Settings2 className="h-4 w-4" />
+          Звук и соединение
+        </span>
+        <span className="text-xs font-normal text-[var(--app-muted)]">Настроить</span>
+      </button>
+
+      <Sheet
+        open={open && settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        className="max-w-xl"
+        ariaLabel="Настройки звука и соединения"
+      >
+        <div className="mb-5 pr-10">
+          <h3 className="text-xl font-semibold">Звук и соединение</h3>
+          <p className="mt-1 text-sm text-[var(--app-muted)]">
+            Устройства, обработка голоса и маршрут медиасервера.
+          </p>
+        </div>
+        {settingsPanel}
+      </Sheet>
 
       {canManageAccess ? (
         <button

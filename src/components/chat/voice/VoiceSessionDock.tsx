@@ -9,6 +9,7 @@ import type { MediaStatus } from "./voice-room-config";
 type VoiceSessionDockProps = {
   chatName: string;
   participantCount: number;
+  durationLabel: string | null;
   mediaStatus: MediaStatus;
   connectionLabel: string | null;
   connectionQuality: ConnectionQuality;
@@ -25,6 +26,7 @@ type VoiceSessionDockProps = {
 export function VoiceSessionDock({
   chatName,
   participantCount,
+  durationLabel,
   mediaStatus,
   connectionLabel,
   connectionQuality,
@@ -66,7 +68,7 @@ export function VoiceSessionDock({
           <span className="block truncate text-sm font-semibold">{chatName}</span>
           <span className="block truncate text-xs text-[var(--app-muted)]">
             {mediaStatus === "connected"
-              ? `${participantCount} в разговоре`
+              ? `${participantCount} в разговоре${durationLabel ? ` · ${durationLabel}` : ""}`
               : connectionLabel ?? "Подключаем…"}
           </span>
         </span>

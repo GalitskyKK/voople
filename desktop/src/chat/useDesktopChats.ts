@@ -68,6 +68,11 @@ export function useDesktopChats(
         { event: "*", schema: "public", table: "chat_members" },
         () => void load({ silent: true }),
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "chats" },
+        () => void load({ silent: true }),
+      )
       .subscribe();
     const pollId = window.setInterval(() => {
       void load({ silent: true });

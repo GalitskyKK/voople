@@ -1,4 +1,8 @@
-import { VOOPLUS_PRICE_RUB } from "@/lib/constants/subscription";
+import {
+  DEFAULT_VOOPLUS_PLAN_ID,
+  getVooplePlusPlan,
+  type VooplePlusPlanId,
+} from "@/lib/constants/subscription";
 import { normalizePromoCode } from "@/lib/promo/kinds";
 import {
   assertPromoRowEligible,
@@ -31,6 +35,7 @@ async function loadEligiblePromo(userId: string, rawCode: string): Promise<Promo
 export async function previewSubscriptionPromo(
   userId: string,
   rawCode: string,
+  subscriptionPlan: VooplePlusPlanId = DEFAULT_VOOPLUS_PLAN_ID,
 ): Promise<PromoPreviewView> {
   const promo = await loadEligiblePromo(userId, rawCode);
   if (promo.kind !== "subscription_discount") {
@@ -38,15 +43,17 @@ export async function previewSubscriptionPromo(
   }
 
   const { discountRub } = parsePromoPayload("subscription_discount", promo.payload);
-  const finalAmountRub = Math.max(VOOPLUS_PRICE_RUB - discountRub, 1);
+  const plan = getVooplePlusPlan(subscriptionPlan);
+  const finalAmountRub = Math.max(plan.priceRub - discountRub, 1);
 
   return {
     code: normalizePromoCode(rawCode),
     kind: "subscription_discount",
     message: `Скидка ${discountRub} ₽ на подписку`,
-    originalAmountRub: VOOPLUS_PRICE_RUB,
+    originalAmountRub: plan.priceRub,
     finalAmountRub,
     discountRub,
+    subscriptionPlan,
   };
 }
 
@@ -123,9 +130,11 @@ export async function redeemInstantPromo(userId: string, rawCode: string): Promi
 export async function resolveSubscriptionPromo(
   userId: string,
   rawCode: string | undefined,
+  subscriptionPlan: VooplePlusPlanId = DEFAULT_VOOPLUS_PLAN_ID,
 ): Promise<{ amountRub: number; promoCodeId?: string; discountRub?: number }> {
+  const plan = getVooplePlusPlan(subscriptionPlan);
   if (!rawCode?.trim()) {
-    return { amountRub: VOOPLUS_PRICE_RUB };
+    return { amountRub: plan.priceRub };
   }
 
   const promo = await loadEligiblePromo(userId, rawCode);
@@ -134,7 +143,7 @@ export async function resolveSubscriptionPromo(
   }
 
   const { discountRub } = parsePromoPayload("subscription_discount", promo.payload);
-  const amountRub = Math.max(VOOPLUS_PRICE_RUB - discountRub, 1);
+  const amountRub = Math.max(plan.priceRub - discountRub, 1);
 
   return { amountRub, promoCodeId: promo.id, discountRub };
 }
@@ -148,11 +157,15 @@ export type ApplyPromoResult =
     };
 
 /** Одна кнопка «Применить»: пробный/бонус сразу, скидка — к оплате. */
-export async function applyPromoCode(userId: string, rawCode: string): Promise<ApplyPromoResult> {
+export async function applyPromoCode(
+  userId: string,
+  rawCode: string,
+  subscriptionPlan: VooplePlusPlanId = DEFAULT_VOOPLUS_PLAN_ID,
+): Promise<ApplyPromoResult> {
   const promo = await loadEligiblePromo(userId, rawCode);
 
   if (promo.kind === "subscription_discount") {
-    const preview = await previewSubscriptionPromo(userId, rawCode);
+    const preview = await previewSubscriptionPromo(userId, rawCode, subscriptionPlan);
     return { action: "discount", preview };
   }
 

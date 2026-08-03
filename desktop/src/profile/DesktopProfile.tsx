@@ -15,11 +15,13 @@ export function DesktopProfile({
   session,
   username,
   renderDestination,
+  navigate,
 }: {
   config: DesktopConfig;
   session: Session;
   username: string | null;
   renderDestination: NavigationDestinationRenderer;
+  navigate: (href: string) => void;
 }) {
   const { data, error, loading, reload } = useDesktopProfile(
     config,
@@ -65,6 +67,7 @@ export function DesktopProfile({
                 session={session}
                 isOwner={data.isOwner}
                 onAppearancePublished={reload}
+                navigate={navigate}
               />
             }
             renderBack={() => (

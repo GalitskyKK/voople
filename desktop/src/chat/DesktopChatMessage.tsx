@@ -16,25 +16,28 @@ export function DesktopChatMessage({
   onReply,
   onDelete,
   onToggleReaction,
+  groupPosition,
 }: {
   message: ChatMessageView;
   showSender: boolean;
   onReply: (message: ChatMessageView) => void;
   onDelete: (messageId: string) => void;
   onToggleReaction: (messageId: string, emoji: string) => void;
+  groupPosition: "only" | "start" | "middle" | "end";
 }) {
   const isLg = useIsLgViewport();
   const [menuOpen, setMenuOpen] = useState(false);
-  const openMobileMenu = () => {
-    if (!isLg) setMenuOpen(true);
-  };
+  const openMenu = () => setMenuOpen(true);
 
   return (
     <ChatMessageBubbleVisual
       message={message}
+      groupPosition={groupPosition}
       showSender={showSender}
-      interactive={!isLg}
-      onClick={openMobileMenu}
+      interactive
+      onClick={() => {
+        if (!isLg) openMenu();
+      }}
       onContextMenu={(event) => {
         event.preventDefault();
         setMenuOpen(true);
@@ -42,7 +45,7 @@ export function DesktopChatMessage({
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          openMobileMenu();
+          openMenu();
         }
       }}
       onToggleReaction={(emoji) => onToggleReaction(message.id, emoji)}
@@ -93,6 +96,7 @@ export function DesktopChatMessage({
               emoji: ChatReactionEmoji,
             ) => onToggleReaction(message.id, emoji)}
             showOnHover={isLg}
+            showTrigger={false}
           />
         </div>
       }

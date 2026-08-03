@@ -7,6 +7,7 @@ import type {
   ChatMessageReaction,
   ChatMessageView,
   ChatPendingUpload,
+  ChatThreadSummary,
 } from "@/types/chat";
 
 import { createDesktopTrpcClient } from "../api/trpc";
@@ -16,10 +17,7 @@ import type { DesktopConfig } from "../config";
 export type DesktopChatThreadData = {
   messages: ChatMessageView[];
   otherUser: ChatListItem["otherUser"];
-  chat: Pick<
-    ChatListItem,
-    "id" | "type" | "name" | "memberCount" | "viewerRole"
-  >;
+  chat: ChatThreadSummary & Pick<ChatListItem, "viewerRole">;
 };
 
 export type DesktopMessageDraft = {

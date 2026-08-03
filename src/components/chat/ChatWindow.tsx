@@ -1,11 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, UsersRound } from "lucide-react";
-
-import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
-import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
@@ -21,9 +16,7 @@ import { ChatTrackMetadataDialog } from "./ChatTrackMetadataDialog";
 import { ChatDateDivider } from "./ChatDateDivider";
 import { ChatMediaLightbox } from "./ChatMediaLightbox";
 import { ChatMessageBubble } from "./ChatMessageBubble";
-import { VoiceRoomButton } from "./voice/VoiceRoomButton";
-import { GroupInviteSheet } from "./GroupInviteSheet";
-import { ChatMobileNavigation } from "./ChatMobileNavigation";
+import { ChatWindowHeader } from "./ChatWindowHeader";
 type ChatWindowProps = {
   chatId: string;
 };
@@ -134,6 +127,10 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
                   id: chatId,
                   type: "direct",
                   name: null,
+                  parentChatId: null,
+                  topicsEnabled: false,
+                  topicsLayout: "list",
+                  topicIcon: null,
                   memberCount: 0,
                   viewerRole: "member",
                 },
@@ -283,6 +280,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
 
   const other = data?.otherUser;
   const isGroup = data?.chat.type === "group";
+  const isSubchat = Boolean(data?.chat.parentChatId);
   const chatTitle = isGroup ? data?.chat.name || "Группа" : other?.displayName || "Чат";
   const timeline = buildChatTimeline(data?.messages ?? []);
   const viewerId = me?.id ?? null;
@@ -293,47 +291,21 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
 
   return (
     <div className="voople-chat-window flex min-h-0 flex-1 flex-col">
-      <header className="voople-chat-window__header flex shrink-0 items-center gap-3 border-b border-[var(--app-border)] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] lg:px-4 lg:pt-3">
-        <Link
-          href="/messages"
-          className="shrink-0 rounded-[var(--app-radius-sm)] p-1 text-[var(--app-muted)] transition-colors hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] lg:hidden"
-          aria-label="К списку сообщений"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        {isGroup ? (
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--app-accent-soft)] text-(--theme-accent)"><UsersRound className="h-4 w-4" /></span>
-        ) : other ? <ProfileAvatar displayName={other.displayName} size="sm" isOnline={otherOnline} animatedAvatarUrl={other.avatarUrl} decorationUrl={other.avatarDecorationUrl} ringId={other.avatarRingId} /> : null}
-        <div className="min-w-0 flex-1">
-          {isGroup ? <p className="truncate font-semibold">{chatTitle}</p> : other ? (
-            <DisplayNameWithPin hasVooplePlus={other.hasVooplePlus} className="font-semibold">
-              {other.displayName}
-            </DisplayNameWithPin>
-          ) : (
-            <p className="truncate font-semibold">Чат</p>
-          )}
-          {isGroup ? <p className="text-xs text-[var(--app-muted)]">{data?.chat.memberCount ?? 0} участников</p> : other && (
-            <p className="text-xs text-[var(--app-muted)]">
-              {otherOnline ? (
-                <span className="text-emerald-500">в сети</span>
-              ) : (
-                <Link href={`/${other.username}`} className="voople-link hover:underline">
-                  @{other.username}
-                </Link>
-              )}
-            </p>
-          )}
-        </div>
-        <VoiceRoomButton
-          chatId={chatId}
-          chatName={chatTitle}
-          chatType={isGroup ? "group" : "direct"}
-        />
-        {isGroup && (data?.chat.viewerRole === "owner" || data?.chat.viewerRole === "admin") ? (
-          <GroupInviteSheet chatId={chatId} />
-        ) : null}
-        <ChatMobileNavigation />
-      </header>
+      <ChatWindowHeader
+        chatId={chatId}
+        chatTitle={chatTitle}
+        isGroup={isGroup}
+        isSubchat={isSubchat}
+        parentChatId={data?.chat.parentChatId}
+        parentName={data?.chat.parentName}
+        memberCount={data?.chat.memberCount ?? 0}
+        topicsEnabled={data?.chat.topicsEnabled ?? false}
+        topicsLayout={data?.chat.topicsLayout ?? "list"}
+        topicIcon={data?.chat.topicIcon ?? null}
+        viewerRole={data?.chat.viewerRole ?? "member"}
+        other={other}
+        otherOnline={otherOnline}
+      />
 
       <div
         ref={messagesRef}
@@ -343,7 +315,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         {timeline.length === 0 && (
           <p className="text-center text-sm text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">Напишите первое сообщение</p>
         )}
-        <div className="flex flex-col gap-1">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-0.5 px-2">
           {timeline.map((item) =>
             item.type === "date" ? (
               <ChatDateDivider key={item.key} label={item.label} />
@@ -351,6 +323,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
               <ChatMessageBubble
                 key={item.message.id}
                 message={item.message}
+                groupPosition={item.groupPosition}
                 viewerId={viewerId}
                 onReply={setReplyTo}
                 onDelete={(msg) => removeMessage.mutate({ messageId: msg.id })}

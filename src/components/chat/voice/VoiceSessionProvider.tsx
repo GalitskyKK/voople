@@ -35,7 +35,7 @@ export type VoiceSessionDescriptor = {
   chatType: "direct" | "group";
 };
 
-type VoiceSessionContextValue = {
+export type VoiceSessionContextValue = {
   activeSession: VoiceSessionDescriptor | null;
   state: VoiceControlState;
   openRoom: (session: VoiceSessionDescriptor) => void;

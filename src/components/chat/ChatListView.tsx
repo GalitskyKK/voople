@@ -1,17 +1,16 @@
 "use client";
 
-import { MessageCircle, Search, UsersRound } from "lucide-react";
+import { MessageCircle, Search } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 
-import { RelativeTime } from "@/components/ui/RelativeTime";
 import { cn } from "@/lib/utils";
 import type { ChatListItem } from "@/types/chat";
+import {
+  ChatListRow,
+  type ChatListDestinationRenderer,
+} from "./ChatListRow";
 
-export type ChatListDestinationRenderer = (input: {
-  chat: ChatListItem;
-  className: string;
-  children: ReactNode;
-}) => ReactNode;
+export type { ChatListDestinationRenderer } from "./ChatListRow";
 
 type ChatListViewProps = {
   chats: ChatListItem[];
@@ -40,10 +39,8 @@ export function ChatListView({
   const [filter, setFilter] = useState<"all" | "direct" | "group">("all");
   const visibleChats = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("ru-RU");
-    return chats.filter((chat) => {
-      if (filter !== "all" && chat.type !== filter) return false;
-      if (!normalizedQuery) return true;
-      return [
+    const matchesQuery = (chat: ChatListItem) =>
+      [
         chat.name,
         chat.otherUser?.displayName,
         chat.otherUser?.username,
@@ -53,6 +50,10 @@ export function ChatListView({
         .join(" ")
         .toLocaleLowerCase("ru-RU")
         .includes(normalizedQuery);
+    return chats.filter((chat) => {
+      if (filter !== "all" && chat.type !== filter) return false;
+      if (!normalizedQuery) return true;
+      return matchesQuery(chat) || chat.channels.some(matchesQuery);
     });
   }, [chats, filter, query]);
 
@@ -129,67 +130,18 @@ export function ChatListView({
       </div>
 
       {visibleChats.length ? (
-        <ul className="voople-chat-list space-y-1">
-          {visibleChats.map((chat) => {
-            const isGroup = chat.type === "group";
-            const title = isGroup
-              ? chat.name || "Группа"
-              : chat.otherUser?.displayName ?? "Чат";
-            const preview =
-              chat.lastMessage?.text?.trim() ||
-              (chat.lastMessage ? "Вложение" : "Нет сообщений");
-            const className = cn(
-              "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors",
-              activeChatId === chat.id
-                ? "bg-[var(--app-accent-soft)]"
-                : "hover:bg-[var(--app-surface-soft)]",
-            );
-
-            return (
-              <li key={chat.id}>
-                {renderDestination({
-                  chat,
-                  className,
-                  children: (
-                    <>
-                      {isGroup ? (
-                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--app-accent-soft)] text-[var(--theme-accent)]">
-                          <UsersRound className="h-4 w-4" />
-                        </span>
-                      ) : (
-                        renderAvatar(chat, title)
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex min-w-0 items-baseline justify-between gap-2">
-                          {renderTitle ? (
-                            renderTitle(chat, title)
-                          ) : (
-                            <span className="min-w-0 truncate font-medium">
-                              {title}
-                            </span>
-                          )}
-                          {chat.lastMessage ? (
-                            <RelativeTime
-                              iso={chat.lastMessage.createdAt}
-                              className="shrink-0 text-xs text-[var(--app-muted)]"
-                            />
-                          ) : null}
-                        </div>
-                        <p className="truncate text-xs text-[var(--app-muted)]">
-                          {isGroup
-                            ? `${chat.memberCount} участников`
-                            : `@${chat.otherUser?.username ?? ""}`}
-                        </p>
-                        <p className="mt-0.5 truncate text-sm text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-                          {preview}
-                        </p>
-                      </div>
-                    </>
-                  ),
-                })}
-              </li>
-            );
-          })}
+        <ul className="voople-chat-list space-y-0.5">
+          {visibleChats.map((chat) => (
+            <ChatListRow
+              key={chat.id}
+              chat={chat}
+              activeChatId={activeChatId}
+              normalizedQuery={query.trim().toLocaleLowerCase("ru-RU")}
+              renderDestination={renderDestination}
+              renderAvatar={renderAvatar}
+              renderTitle={renderTitle}
+            />
+          ))}
         </ul>
       ) : (
         <p className="rounded-xl px-3 py-8 text-center text-sm text-[var(--app-muted)]">

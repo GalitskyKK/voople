@@ -4,7 +4,7 @@ import { basename, resolve } from "node:path";
 
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
-const [installerArgument, versionArgument] = process.argv.slice(2);
+const [installerArgument, versionArgument, signatureArgument] = process.argv.slice(2);
 
 function requiredEnvironment(name) {
   const value = process.env[name]?.trim();
@@ -20,9 +20,9 @@ function validatedHttpsUrl(value, name) {
   return url;
 }
 
-if (!installerArgument || !versionArgument) {
+if (!installerArgument || !versionArgument || !signatureArgument) {
   throw new Error(
-    "Usage: node scripts/publish-desktop-release.mjs <installer.exe> <version>",
+    "Usage: node scripts/publish-desktop-release.mjs <installer.exe> <version> <installer.exe.sig>",
   );
 }
 
@@ -31,6 +31,7 @@ if (!/^[0-9A-Za-z][0-9A-Za-z.-]*$/.test(versionArgument)) {
 }
 
 const installerPath = resolve(installerArgument);
+const signaturePath = resolve(signatureArgument);
 if (basename(installerPath).toLowerCase() !== "voople-setup-x64.exe") {
   throw new Error("Publish the normalized Voople-Setup-x64.exe artifact.");
 }
@@ -49,23 +50,27 @@ const accessKeyId = requiredEnvironment("DESKTOP_RELEASE_S3_ACCESS_KEY_ID");
 const secretAccessKey = requiredEnvironment("DESKTOP_RELEASE_S3_SECRET_ACCESS_KEY");
 
 const installer = await readFile(installerPath);
+const updaterSignature = (await readFile(signaturePath, "utf8")).trim();
+if (!updaterSignature) throw new Error("The Tauri updater signature is empty.");
 const installerStats = await stat(installerPath);
 const sha256 = createHash("sha256").update(installer).digest("hex");
-const signed = process.env.DESKTOP_RELEASE_SIGNED === "true";
 const checksum = Buffer.from(`${sha256}  Voople-Setup-x64.exe\n`, "utf8");
 const publishedAt = new Date().toISOString();
 const stableKey = "desktop/Voople-Setup-x64.exe";
 const versionedKey = `desktop/releases/${versionArgument}/Voople-Setup-x64.exe`;
-const publicInstallerUrl = new URL(stableKey, `${publicBaseUrl.toString().replace(/\/+$/, "")}/`);
+const publicUpdaterUrl = new URL(versionedKey, `${publicBaseUrl.toString().replace(/\/+$/, "")}/`);
 const latestManifest = Buffer.from(
   `${JSON.stringify(
     {
       version: versionArgument,
-      url: publicInstallerUrl.toString(),
-      sha256,
-      size: installerStats.size,
-      signed,
-      publishedAt,
+      notes: `Voople Desktop ${versionArgument}`,
+      pub_date: publishedAt,
+      platforms: {
+        "windows-x86_64": {
+          signature: updaterSignature,
+          url: publicUpdaterUrl.toString(),
+        },
+      },
     },
     null,
     2,
@@ -101,6 +106,10 @@ await upload(versionedKey, installer, {
   CacheControl: "public, max-age=31536000, immutable",
 });
 await upload(`${versionedKey}.sha256`, checksum, {
+  ContentType: "text/plain; charset=utf-8",
+  CacheControl: "public, max-age=31536000, immutable",
+});
+await upload(`${versionedKey}.sig`, Buffer.from(`${updaterSignature}\n`, "utf8"), {
   ContentType: "text/plain; charset=utf-8",
   CacheControl: "public, max-age=31536000, immutable",
 });

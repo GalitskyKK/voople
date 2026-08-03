@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 import { HotkeySettings, type HotkeyRuntimeStatus } from "@/components/settings/HotkeySettings";
 import { NotificationSettings } from "@/components/settings/NotificationSettings";
+import { SettingsNavigation } from "@/components/settings/SettingsNavigation";
 import { AppThemeSelector } from "@/components/theme/AppThemeSelector";
 import { APP_THEMES, type AppThemeId } from "@/lib/app-themes";
 import { LEGAL_PAGES } from "@/lib/constants/legal";
@@ -48,7 +49,6 @@ export function AppSettingsView({
     <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col gap-5 py-4 lg:py-6">
       <SectionPageHeader
         title="Настройки"
-        sticky
         action={
           <Button type="button" size="sm" variant="ghost" onClick={resetPreferences}>
           <RotateCcw className="h-4 w-4" /> Сбросить
@@ -57,15 +57,7 @@ export function AppSettingsView({
       />
 
       <div className="settings-layout">
-        <nav className="settings-nav" aria-label="Разделы настроек">
-          <a href="#appearance">Оформление</a>
-          <a href="#messages">Чаты</a>
-          <a href="#notifications">Уведомления</a>
-          <a href="#interface">Интерфейс</a>
-          <a href="#hotkeys">Горячие клавиши</a>
-          <a href="#security">Безопасность</a>
-          <a href="#legal">Документы</a>
-        </nav>
+        <SettingsNavigation />
         <div className="min-w-0 space-y-5">
 
       <section id="appearance" className="settings-section scroll-mt-28">

@@ -17,6 +17,7 @@ export {
 export {
   deleteGroupRest as deleteGroup,
   leaveGroupRest as leaveGroup,
+  listChatContactsRest as listChatContacts,
   listGroupContactsRest as listGroupContacts,
   listGroupMembersRest as listGroupMembers,
   removeGroupMemberRest as removeGroupMember,

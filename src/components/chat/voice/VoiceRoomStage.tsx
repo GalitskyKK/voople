@@ -1,6 +1,6 @@
 "use client";
 
-import type { RefObject } from "react";
+import { useState, type RefObject } from "react";
 
 import { cn } from "@/lib/utils";
 import type { ChatRoomParticipantView } from "@/types/chat";
@@ -36,32 +36,54 @@ export function VoiceRoomStage({
   onCameraContainerChange,
   onParticipantVolumeChange,
 }: VoiceRoomStageProps) {
-  const participantCards = participants.map((participant) => (
-    <VoiceParticipantCard
-      key={participant.id}
-      participant={participant}
-      muted={participant.isMe
-        ? micMuted
-        : (remoteMicMutedById[participant.id] ?? participant.micMuted)}
-      speaking={activeSpeakerIds.has(participant.id)}
-      volume={participantVolumes[participant.id] ?? 1}
-      hasCamera={cameraParticipantIds.has(participant.id)}
-      onCameraContainerChange={onCameraContainerChange}
-      onVolumeChange={(volume) => onParticipantVolumeChange(participant.id, volume)}
-      compact={Boolean(screenShareOwner)}
-    />
-  ));
+  const [focusedMediaId, setFocusedMediaId] = useState<string | null>(null);
+  const hasVisualMedia = Boolean(screenShareOwner) || cameraParticipantIds.size > 0;
+  const activeFocusId =
+    (focusedMediaId === "screen" && screenShareOwner) ||
+    (focusedMediaId !== "screen" &&
+      focusedMediaId !== null &&
+      cameraParticipantIds.has(focusedMediaId))
+      ? focusedMediaId
+      : screenShareOwner
+        ? "screen"
+        : [...cameraParticipantIds][0] ?? null;
 
-  if (screenShareOwner) {
+  const renderParticipant = (participant: ChatRoomParticipantView) => {
+    const hasCamera = cameraParticipantIds.has(participant.id);
+    const focused = hasCamera && activeFocusId === participant.id;
     return (
-      <div className="mt-5 grid min-h-0 gap-3 lg:grid-cols-[minmax(0,1fr)_15rem]">
-        <VoiceMediaStage
-          screenContainerRef={screenContainerRef}
-          screenShareOwner={screenShareOwner}
-        />
-        <div className="voople-scroll grid max-h-52 grid-cols-2 gap-2 overflow-y-auto lg:max-h-[min(56dvh,32rem)] lg:grid-cols-1">
-          {participantCards}
-        </div>
+      <VoiceParticipantCard
+        key={participant.id}
+        participant={participant}
+        muted={participant.isMe
+          ? micMuted
+          : (remoteMicMutedById[participant.id] ?? participant.micMuted)}
+        speaking={activeSpeakerIds.has(participant.id)}
+        volume={participantVolumes[participant.id] ?? 1}
+        hasCamera={hasCamera}
+        onCameraContainerChange={onCameraContainerChange}
+        onVolumeChange={(volume) => onParticipantVolumeChange(participant.id, volume)}
+        compact={hasVisualMedia && !focused}
+        focused={focused}
+        onFocus={hasCamera ? () => setFocusedMediaId(participant.id) : undefined}
+        className={focused ? "order-first" : "order-2"}
+      />
+    );
+  };
+
+  if (hasVisualMedia) {
+    return (
+      <div className="mt-5 grid min-h-0 grid-cols-2 gap-2 lg:grid-cols-4">
+        {screenShareOwner ? (
+          <VoiceMediaStage
+            screenContainerRef={screenContainerRef}
+            screenShareOwner={screenShareOwner}
+            focused={activeFocusId === "screen"}
+            onFocus={() => setFocusedMediaId("screen")}
+            className={activeFocusId === "screen" ? "order-first" : "order-2"}
+          />
+        ) : null}
+        {participants.map(renderParticipant)}
       </div>
     );
   }
@@ -74,7 +96,7 @@ export function VoiceRoomStage({
         participants.length >= 5 && "lg:[grid-template-columns:repeat(3,minmax(0,1fr))]",
       )}
     >
-      {participantCards}
+      {participants.map(renderParticipant)}
     </div>
   );
 }

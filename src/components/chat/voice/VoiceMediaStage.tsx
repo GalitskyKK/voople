@@ -2,27 +2,56 @@
 
 import type { RefObject } from "react";
 
+import { cn } from "@/lib/utils";
+
 type VoiceMediaStageProps = {
   screenContainerRef: RefObject<HTMLDivElement | null>;
   screenShareOwner: string | null;
+  focused?: boolean;
+  onFocus?: () => void;
+  className?: string;
 };
 
 export function VoiceMediaStage({
   screenContainerRef,
   screenShareOwner,
+  focused = false,
+  onFocus,
+  className,
 }: VoiceMediaStageProps) {
   return (
     <section
-      className={screenShareOwner
-        ? "min-h-0 overflow-hidden rounded-2xl border border-[var(--app-border)] bg-black"
-        : "hidden"}
+      className={cn(
+        screenShareOwner
+          ? "relative min-h-0 overflow-hidden rounded-2xl border bg-black transition"
+          : "hidden",
+        focused
+          ? "col-span-2 min-h-72 border-(--theme-accent) lg:col-span-4"
+          : "min-h-32 border-[var(--app-border)]",
+        className,
+      )}
       aria-label={screenShareOwner ? `Демонстрация экрана: ${screenShareOwner}` : undefined}
     >
-      <div className="flex items-center justify-between border-b border-white/10 px-3 py-2 text-xs text-white/70">
+      {onFocus ? (
+        <button
+          type="button"
+          className="absolute inset-0 z-[1] cursor-zoom-in"
+          onClick={onFocus}
+          aria-label={`Показать демонстрацию ${screenShareOwner} крупно`}
+        />
+      ) : null}
+      <div className="relative z-[2] flex pointer-events-none items-center justify-between border-b border-white/10 px-3 py-2 text-xs text-white/70">
         <span className="truncate">{screenShareOwner}</span>
-        <span className="shrink-0">Демонстрация экрана</span>
+        <span className="shrink-0">{focused ? "В фокусе" : "Демонстрация"}</span>
       </div>
-      <div ref={screenContainerRef} className="aspect-video max-h-[min(56dvh,32rem)] w-full overflow-hidden" />
+      <div
+        ref={screenContainerRef}
+        data-voople-screen-stage=""
+        className={cn(
+          "w-full overflow-hidden",
+          focused ? "h-[min(56dvh,32rem)] min-h-64" : "aspect-video h-full",
+        )}
+      />
     </section>
   );
 }

@@ -1586,18 +1586,23 @@ html[data-density="compact"] .shop-category {
   display: none;
 }
 
-.settings-nav a {
+.settings-nav button {
   flex: none;
+  border: 0;
   border-radius: 0.7rem;
   padding: 0.55rem 0.75rem;
   color: var(--app-muted);
   font-size: 0.8125rem;
   font-weight: 550;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
   transition: background-color 160ms ease, color 160ms ease;
 }
 
-.settings-nav a:hover,
-.settings-nav a:focus-visible {
+.settings-nav button:hover,
+.settings-nav button:focus-visible,
+.settings-nav button.settings-nav__active {
   background: var(--app-surface-soft);
   color: var(--foreground);
 }
@@ -1610,7 +1615,7 @@ html[data-density="compact"] .shop-category {
 
   .settings-nav {
     position: sticky;
-    top: 7.5rem;
+    top: 1rem;
     flex-direction: column;
     overflow: visible;
     border: 1px solid var(--app-border);

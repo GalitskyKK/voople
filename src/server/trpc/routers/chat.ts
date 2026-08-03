@@ -21,6 +21,7 @@ import {
   heartbeatChatRoom,
   leaveChatRoom,
   leaveGroup,
+  listChatContacts,
   listIncomingCalls,
   listGroupContacts,
   listGroupMembers,
@@ -264,6 +265,21 @@ export const chatRouter = createTRPCRouter({
         });
       }
     }),
+  contacts: protectedProcedure
+    .input(z.object({ q: z.string().trim().max(50).default("") }))
+    .query(async ({ ctx, input }) => {
+      try {
+        return await listChatContacts(ctx.user.id, input.q);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Не удалось загрузить контакты",
+        });
+      }
+    }),
   addGroupMembers: protectedProcedure
     .input(
       z.object({
@@ -444,6 +460,7 @@ export const chatRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.openDirectChat, ctx.user.id);
       await assertRateLimit(rateLimits.sendMessage, ctx.user.id);
       try {
         return await editMessage(input.messageId, ctx.user.id, input.text);

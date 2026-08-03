@@ -17,6 +17,9 @@ export function VoiceParticipantCard({
   onCameraContainerChange,
   onVolumeChange,
   compact = false,
+  focused = false,
+  onFocus,
+  className,
 }: {
   participant: ChatRoomParticipantView;
   muted: boolean;
@@ -29,6 +32,9 @@ export function VoiceParticipantCard({
   ) => void;
   onVolumeChange: (volume: number) => void;
   compact?: boolean;
+  focused?: boolean;
+  onFocus?: () => void;
+  className?: string;
 }) {
   const volumePercent = Math.round(volume * 100);
   const bindCameraContainer = useCallback(
@@ -43,7 +49,9 @@ export function VoiceParticipantCard({
       className={cn(
         "relative flex flex-col items-center justify-end overflow-hidden rounded-2xl border bg-[var(--app-surface-soft)] text-center transition",
         compact ? "min-h-32 gap-2 px-3 py-3" : "min-h-44 gap-3 px-4 py-4",
+        focused && "col-span-2 min-h-72 border-(--theme-accent) lg:col-span-4 lg:min-h-[min(56dvh,32rem)]",
         speaking ? "border-emerald-500/50" : "border-[var(--app-border)]",
+        className,
       )}
     >
       <div
@@ -51,6 +59,14 @@ export function VoiceParticipantCard({
         className="absolute inset-0"
         aria-hidden={!hasCamera}
       />
+      {hasCamera && onFocus ? (
+        <button
+          type="button"
+          className="absolute inset-0 z-[5] cursor-zoom-in"
+          onClick={onFocus}
+          aria-label={`Показать камеру ${participant.displayName} крупно`}
+        />
+      ) : null}
       {hasCamera ? (
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/15" />
       ) : null}

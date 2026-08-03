@@ -697,8 +697,8 @@ export const ChatRoomControl = forwardRef<
       ) : null}
 
       <div ref={audioContainerRef} hidden aria-hidden="true" />
-      <div ref={screenParkingRef} hidden aria-hidden="true" />
-      <div ref={cameraParkingRef} hidden aria-hidden="true" />
+      <div ref={screenParkingRef} className="pointer-events-none fixed -left-[10000px] top-0 h-px w-px overflow-hidden opacity-0" aria-hidden="true" />
+      <div ref={cameraParkingRef} className="pointer-events-none fixed -left-[10000px] top-0 h-px w-px overflow-hidden opacity-0" aria-hidden="true" />
 
       {inside ? (
         <VoiceSessionDock

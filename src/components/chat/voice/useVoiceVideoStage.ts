@@ -47,6 +47,10 @@ export function useVoiceVideoStage() {
     screenParkingRef.current?.replaceChildren();
   }, []);
 
+  const resumeVideo = useCallback((element: HTMLVideoElement) => {
+    void element.play().catch(() => undefined);
+  }, []);
+
   const removeCamera = useCallback(
     (trackId: string) => {
       let participantId: string | undefined;
@@ -81,7 +85,7 @@ export function useVoiceVideoStage() {
 
       element.autoplay = true;
       element.playsInline = true;
-      element.className = "h-full w-full object-cover";
+      element.className = "h-full w-full bg-black object-contain";
       element.setAttribute("aria-label", `Камера: ${participantName}`);
 
       const tile = document.createElement("div");
@@ -95,9 +99,10 @@ export function useVoiceVideoStage() {
       } else {
         container.replaceChildren(tile);
       }
+      resumeVideo(element);
       setCameraParticipantIds((current) => new Set(current).add(participantId));
     },
-    [removeCamera],
+    [removeCamera, resumeVideo],
   );
 
   const attachRemoteVideo = useCallback(
@@ -116,6 +121,7 @@ export function useVoiceVideoStage() {
         element.playsInline = true;
         element.className = "h-full w-full object-contain";
         target?.appendChild(element);
+        resumeVideo(element);
         setScreenShareOwner(participant.name || "Участник");
       } else if (publication.source === Track.Source.Camera) {
         attachCamera(
@@ -126,7 +132,7 @@ export function useVoiceVideoStage() {
         );
       }
     },
-    [attachCamera, clearScreen],
+    [attachCamera, clearScreen, resumeVideo],
   );
 
   const attachLocalVideo = useCallback(
@@ -141,6 +147,7 @@ export function useVoiceVideoStage() {
         element.playsInline = true;
         element.className = "h-full w-full object-contain";
         target?.appendChild(element);
+        resumeVideo(element);
         setScreenSharing(true);
         setScreenShareOwner("Ваш экран");
       } else if (publication.source === Track.Source.Camera) {
@@ -150,7 +157,7 @@ export function useVoiceVideoStage() {
         setCameraEnabled(true);
       }
     },
-    [attachCamera, clearScreen],
+    [attachCamera, clearScreen, resumeVideo],
   );
 
   const detachRemoteVideo = useCallback(
@@ -204,7 +211,12 @@ export function useVoiceVideoStage() {
         cameraTarget?.replaceChildren(tile);
       }
     }
-  }, []);
+    for (const video of document.querySelectorAll<HTMLVideoElement>(
+      "[data-livekit-camera] video, [data-voople-screen-stage] video",
+    )) {
+      resumeVideo(video);
+    }
+  }, [resumeVideo]);
 
   const parkVisibleMedia = useCallback(() => {
     const screenSource = screenContainerRef.current;

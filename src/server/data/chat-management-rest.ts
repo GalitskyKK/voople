@@ -10,7 +10,7 @@ import type { UserSearchHit } from "@/types/search";
 const USER_CARD_SELECT =
   "id, username, display_name, bio, subscriptions (started_at, expires_at), profile_customization (avatar_type, avatar_data, animated_avatar_id)";
 
-async function getMutualContactIds(userId: string) {
+async function getFollowContactIds(userId: string) {
   const admin = getAdminClient();
   const [followingResult, followerResult] = await Promise.all([
     admin
@@ -28,14 +28,40 @@ async function getMutualContactIds(userId: string) {
   if (followingResult.error) throw new Error(followingResult.error.message);
   if (followerResult.error) throw new Error(followerResult.error.message);
 
-  const followers = new Set(
+  const followerIds = new Set(
     (followerResult.data ?? []).map((row) => row.follower_id as string),
   );
-  return new Set(
-    (followingResult.data ?? [])
-      .map((row) => row.following_id as string)
-      .filter((id) => followers.has(id)),
+  const followingIds = new Set(
+    (followingResult.data ?? []).map((row) => row.following_id as string),
   );
+  return { followerIds, followingIds };
+}
+
+async function getMutualContactIds(userId: string) {
+  const { followerIds, followingIds } = await getFollowContactIds(userId);
+  return new Set([...followingIds].filter((id) => followerIds.has(id)));
+}
+
+async function loadContactCards(contactIds: string[], query: string) {
+  if (contactIds.length === 0) return [];
+  const admin = getAdminClient();
+  let usersQuery = admin
+    .from("users")
+    .select(USER_CARD_SELECT)
+    .in("id", contactIds)
+    .order("display_name")
+    .limit(50);
+  const cleanQuery = query.trim().replace(/[%_,()]/g, "");
+  if (cleanQuery) {
+    const pattern = `%${cleanQuery}%`;
+    usersQuery = usersQuery.or(
+      `username.ilike.${pattern},display_name.ilike.${pattern}`,
+    );
+  }
+
+  const { data, error } = await usersQuery;
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => mapUserSearchRow(row as UserSearchRow));
 }
 
 async function assertMutualContacts(userId: string, contactIds: string[]) {
@@ -75,26 +101,12 @@ export async function listGroupContactsRest(
   }
 
   const candidateIds = [...mutualIds].filter((id) => !excludedIds.has(id));
-  if (candidateIds.length === 0) return [];
+  return loadContactCards(candidateIds, query);
+}
 
-  const admin = getAdminClient();
-  let usersQuery = admin
-    .from("users")
-    .select(USER_CARD_SELECT)
-    .in("id", candidateIds)
-    .order("display_name")
-    .limit(50);
-  const cleanQuery = query.trim().replace(/[%_,()]/g, "");
-  if (cleanQuery) {
-    const pattern = `%${cleanQuery}%`;
-    usersQuery = usersQuery.or(
-      `username.ilike.${pattern},display_name.ilike.${pattern}`,
-    );
-  }
-
-  const { data, error } = await usersQuery;
-  if (error) throw new Error(error.message);
-  return (data ?? []).map((row) => mapUserSearchRow(row as UserSearchRow));
+export async function listChatContactsRest(userId: string, query = "") {
+  const { followerIds, followingIds } = await getFollowContactIds(userId);
+  return loadContactCards([...new Set([...followerIds, ...followingIds])], query);
 }
 
 export async function listGroupMembersRest(

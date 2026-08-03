@@ -21,7 +21,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: desktop-release-${{ github.ref }}
+  group: desktop-release-publish
   cancel-in-progress: false
 
 jobs:

@@ -1,11 +1,14 @@
 import type { Session } from "@supabase/supabase-js";
+import { useCallback, useMemo } from "react";
 
 import { ChatListView } from "@/components/chat/ChatListView";
 import { MessagesLayoutView } from "@/components/chat/MessagesLayoutView";
 import { SectionPageHeader } from "@/components/layout/SectionPageHeader";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
 import type { ChatListItem } from "@/types/chat";
+import type { UserSearchHit } from "@/types/search";
 
+import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
 import { DesktopChatAvatar } from "./DesktopChatAvatar";
 import { DesktopGroupChatCreator } from "./DesktopGroupChatCreator";
@@ -23,6 +26,15 @@ export function DesktopMessages({
   session: Session;
   navigate: (href: string) => void;
 }) {
+  const client = useMemo(
+    () => createDesktopTrpcClient(config, () => session.access_token),
+    [config, session.access_token],
+  );
+  const searchContacts = useCallback(
+    async (query: string) =>
+      (await client.query("chat.contacts", { q: query })) as UserSearchHit[],
+    [client],
+  );
   const { chats, error, loading, onlineUserIds, refresh } = useDesktopChats(
     config,
     session,
@@ -96,6 +108,33 @@ export function DesktopMessages({
             <span className="inline-flex min-w-0 items-center gap-1 font-medium">
               <span className="min-w-0 truncate">{title}</span>
               {chat.otherUser?.hasVooplePlus ? (
+                <img
+                  src={badgeUrl}
+                  alt="Voople+"
+                  className="h-[18px] w-[18px] shrink-0 object-contain"
+                />
+              ) : null}
+            </span>
+          )}
+          searchContacts={searchContacts}
+          openContact={async (contact) => {
+            const result = (await client.mutation("chat.openDirect", {
+              username: contact.username,
+            })) as { chatId: string };
+            await refresh();
+            navigate(`/messages/${result.chatId}`);
+          }}
+          renderContactAvatar={(contact) => (
+            <DesktopChatAvatar
+              displayName={contact.displayName}
+              avatarUrl={contact.avatarUrl}
+              isOnline={onlineUserIds.has(contact.id)}
+            />
+          )}
+          renderContactTitle={(contact) => (
+            <span className="inline-flex min-w-0 items-center gap-1 font-medium">
+              <span className="min-w-0 truncate">{contact.displayName}</span>
+              {contact.hasVooplePlus ? (
                 <img
                   src={badgeUrl}
                   alt="Voople+"

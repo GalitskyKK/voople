@@ -21,6 +21,7 @@ type ChatMessageBubbleProps = {
   viewerId: string | null;
   onReply?: (message: ChatMessageView) => void;
   onDelete?: (message: ChatMessageView) => void;
+  onEdit?: (message: ChatMessageView) => void;
   onAddToPlaylist?: (message: ChatMessageView) => void;
   onOpenImage?: (url: string) => void;
   showSender?: boolean;
@@ -36,6 +37,7 @@ export function ChatMessageBubble({
   viewerId,
   onReply,
   onDelete,
+  onEdit,
   onAddToPlaylist,
   onOpenImage,
   showSender = false,
@@ -52,6 +54,7 @@ export function ChatMessageBubble({
     onReply ||
       onToggleReaction ||
       (isMine && onDelete) ||
+      (isMine && onEdit) ||
       (canSaveToPlaylist && onAddToPlaylist),
   );
 
@@ -111,6 +114,7 @@ export function ChatMessageBubble({
               onOpenChange={setMenuOpen}
               onReply={onReply}
               onDelete={onDelete}
+              onEdit={onEdit}
               onAddToPlaylist={onAddToPlaylist}
               isMine={isMine}
               canAddToPlaylist={canSaveToPlaylist}

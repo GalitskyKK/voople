@@ -12,21 +12,25 @@ import { DesktopChatAvatar } from "./DesktopChatAvatar";
 export function DesktopGroupInviteSheet({
   chatId,
   chatName,
+  viewerRole,
   canManage,
   topicsEnabled,
   topicsLayout,
   config,
   session,
   onMembersChanged,
+  onGroupClosed,
 }: {
   chatId: string;
   chatName: string;
+  viewerRole: "owner" | "admin" | "member";
   canManage: boolean;
   topicsEnabled: boolean;
   topicsLayout: "tabs" | "list";
   config: DesktopConfig;
   session: Session;
   onMembersChanged: () => void;
+  onGroupClosed: () => void;
 }) {
   const client = useMemo(
     () => createDesktopTrpcClient(config, () => session.access_token),
@@ -63,6 +67,7 @@ export function DesktopGroupInviteSheet({
   return (
     <GroupManagementSheetView
       chatName={chatName}
+      viewerRole={viewerRole}
       canManage={canManage}
       topicsEnabled={topicsEnabled}
       topicsLayout={topicsLayout}
@@ -80,6 +85,12 @@ export function DesktopGroupInviteSheet({
         });
         onMembersChanged();
       }}
+      removeMember={(memberId) =>
+        client.mutation("chat.removeGroupMember", { chatId, memberId })
+      }
+      leaveGroup={() => client.mutation("chat.leaveGroup", { chatId })}
+      deleteGroup={() => client.mutation("chat.deleteGroup", { chatId })}
+      onGroupClosed={onGroupClosed}
       onMembersChanged={onMembersChanged}
       renderAvatar={(user) => (
         <DesktopChatAvatar

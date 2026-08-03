@@ -10,7 +10,9 @@ import {
   createChatInvite,
   createChatRoomMediaToken,
   declineChatRoomCall,
+  deleteGroup,
   deleteMessage,
+  editMessage,
   createGroupChat,
   createSubchat,
   enterChatRoom,
@@ -18,6 +20,7 @@ import {
   getChatRoom,
   heartbeatChatRoom,
   leaveChatRoom,
+  leaveGroup,
   listIncomingCalls,
   listGroupContacts,
   listGroupMembers,
@@ -26,6 +29,7 @@ import {
   listMessages,
   markMessagesRead,
   previewChatInvite,
+  removeGroupMember,
   revokeChatInvite,
   sendMessage,
   setChatRoomAccess,
@@ -281,6 +285,45 @@ export const chatRouter = createTRPCRouter({
         });
       }
     }),
+  removeGroupMember: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid(), memberId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      try {
+        return await removeGroupMember(input.chatId, ctx.user.id, input.memberId);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось исключить участника",
+        });
+      }
+    }),
+  leaveGroup: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      try {
+        return await leaveGroup(input.chatId, ctx.user.id);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось выйти из группы",
+        });
+      }
+    }),
+  deleteGroup: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      try {
+        return await deleteGroup(input.chatId, ctx.user.id);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось удалить группу",
+        });
+      }
+    }),
   createSubchat: protectedProcedure
     .input(
       z.object({
@@ -299,7 +342,7 @@ export const chatRouter = createTRPCRouter({
           message:
             error instanceof Error
               ? error.message
-              : "Не удалось создать подчат",
+              : "Не удалось создать раздел",
         });
       }
     }),
@@ -326,7 +369,7 @@ export const chatRouter = createTRPCRouter({
           message:
             error instanceof Error
               ? error.message
-              : "Не удалось сохранить настройки тем",
+              : "Не удалось сохранить настройки разделов",
         });
       }
     }),
@@ -389,6 +432,25 @@ export const chatRouter = createTRPCRouter({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: e instanceof Error ? e.message : "Не удалось удалить сообщение",
+        });
+      }
+    }),
+
+  editMessage: protectedProcedure
+    .input(
+      z.object({
+        messageId: z.string().uuid(),
+        text: z.string().trim().min(1).max(1000),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.sendMessage, ctx.user.id);
+      try {
+        return await editMessage(input.messageId, ctx.user.id, input.text);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось изменить сообщение",
         });
       }
     }),

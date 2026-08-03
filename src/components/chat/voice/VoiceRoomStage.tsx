@@ -69,11 +69,9 @@ export function VoiceRoomStage({
   return (
     <div
       className={cn(
-        "mt-5 grid gap-2",
+        "mt-5 grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))]",
         participants.length === 1 && "mx-auto max-w-xl grid-cols-1",
-        participants.length === 2 && "sm:grid-cols-2",
-        participants.length >= 3 && participants.length <= 4 && "sm:grid-cols-2",
-        participants.length >= 5 && "sm:grid-cols-2 lg:grid-cols-3",
+        participants.length >= 5 && "lg:[grid-template-columns:repeat(3,minmax(0,1fr))]",
       )}
     >
       {participantCards}

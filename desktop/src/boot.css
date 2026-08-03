@@ -1,7 +1,15 @@
+@font-face {
+  font-family: "Geist Voople";
+  src: url("../../node_modules/next/dist/next-devtools/server/font/geist-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 :root {
   color: #f7f7fa;
   background: #101016;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: "Geist Voople", system-ui, sans-serif;
 }
 
 html,

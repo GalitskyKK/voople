@@ -35,6 +35,7 @@ type StrokeDeletePayload = {
 }
 
 type UseCanvasRealtimeOptions = {
+  enabled?: boolean
   profileUserId: string
   profileOwnerId: string
   viewerId: string | null | undefined
@@ -62,6 +63,7 @@ function mapStrokeRow(row: StrokeRowPayload): Stroke {
 }
 
 export function useCanvasRealtime({
+  enabled = true,
   profileUserId,
   profileOwnerId,
   viewerId,
@@ -99,6 +101,8 @@ export function useCanvasRealtime({
   }, [onSyncFromServer])
 
   useEffect(() => {
+    if (!enabled) return
+
     const supabase = createClient()
     channelReadyRef.current = false
     const channel = supabase
@@ -181,7 +185,7 @@ export function useCanvasRealtime({
       void supabase.removeChannel(channel)
       channelRef.current = null
     }
-  }, [profileOwnerId, profileUserId])
+  }, [enabled, profileOwnerId, profileUserId])
 
   const broadcast = useCallback(
     (payload: CanvasBroadcastPayload) => {

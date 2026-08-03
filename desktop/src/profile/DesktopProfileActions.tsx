@@ -1,9 +1,9 @@
 import type { Session } from "@supabase/supabase-js";
-import { LoaderCircle, MessageCircle, Pencil, UserMinus, UserPlus } from "lucide-react";
+import { MessageCircle, UserMinus, UserPlus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { ProfileEditSheet } from "@/components/profile/ProfileEditSheet";
 import { Button } from "@/components/ui/Button";
-import { Sheet } from "@/components/ui/Sheet";
 import type { ProfileViewModel } from "@/types/domain";
 
 import { createDesktopTrpcClient } from "../api/trpc";
@@ -32,9 +32,6 @@ export function DesktopProfileActions({
   );
   const [followState, setFollowState] = useState<FollowState>();
   const [pending, setPending] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [displayName, setDisplayName] = useState(profile.displayName);
-  const [bio, setBio] = useState(profile.bio ?? "");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -70,52 +67,11 @@ export function DesktopProfileActions({
 
   if (isOwner) {
     return (
-      <>
-        <Button type="button" size="sm" variant="secondary" onClick={() => setEditing(true)}>
-          <Pencil className="h-4 w-4" />
-          Редактировать
-        </Button>
-        <Sheet open={editing} onClose={() => setEditing(false)} className="max-w-md">
-          <h2 className="text-xl font-semibold">Редактировать профиль</h2>
-          <div className="mt-5 space-y-4">
-            <label className="voople-label">
-              Отображаемое имя
-              <input
-                className="voople-input mt-1.5"
-                maxLength={50}
-                value={displayName}
-                onChange={(event) => setDisplayName(event.target.value)}
-              />
-            </label>
-            <label className="voople-label">
-              О себе
-              <textarea
-                className="voople-input mt-1.5 min-h-24 resize-none"
-                maxLength={100}
-                value={bio}
-                onChange={(event) => setBio(event.target.value)}
-              />
-            </label>
-            {error ? <p className="text-sm text-red-400" role="alert">{error}</p> : null}
-            <Button
-              type="button"
-              className="w-full"
-              disabled={pending || !displayName.trim()}
-              onClick={() => void run(async () => {
-                await client.mutation("profile.update", {
-                  displayName: displayName.trim(),
-                  bio: bio.trim() || null,
-                });
-                setEditing(false);
-                onUpdated();
-              })}
-            >
-              {pending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-              Сохранить
-            </Button>
-          </div>
-        </Sheet>
-      </>
+      <ProfileEditSheet
+        profile={profile}
+        onUpdated={onUpdated}
+        triggerVariant="button"
+      />
     );
   }
 

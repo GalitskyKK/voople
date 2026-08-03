@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, ListPlus, MoreHorizontal, Reply, Trash2 } from "lucide-react";
+import { Copy, ListPlus, MoreHorizontal, Pencil, Reply, Trash2 } from "lucide-react";
 
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { messageHasMusicForPlaylist } from "@/lib/chat/playlist-from-message";
@@ -13,6 +13,7 @@ type ChatMessageMenuProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onReply: (message: ChatMessageView) => void;
+  onEdit?: (message: ChatMessageView) => void;
   onDelete?: (message: ChatMessageView) => void;
   onAddToPlaylist?: (message: ChatMessageView) => void;
   isMine: boolean;
@@ -27,6 +28,7 @@ export function ChatMessageMenu({
   open,
   onOpenChange,
   onReply,
+  onEdit,
   onDelete,
   onAddToPlaylist,
   isMine,
@@ -113,6 +115,21 @@ export function ChatMessageMenu({
         >
           <Copy className="h-4 w-4" />
           Копировать текст
+        </button>
+      ) : null}
+
+      {isMine && onEdit && message.text?.trim() ? (
+        <button
+          type="button"
+          role="menuitem"
+          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]"
+          onClick={() => {
+            onEdit(message);
+            onOpenChange(false);
+          }}
+        >
+          <Pencil className="h-4 w-4" />
+          Редактировать
         </button>
       ) : null}
 

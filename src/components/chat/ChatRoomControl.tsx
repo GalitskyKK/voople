@@ -1,15 +1,6 @@
 "use client";
-
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
-import {
-  AudioPresets,
   ConnectionQuality,
   ConnectionState,
   LocalAudioTrack,
@@ -22,17 +13,15 @@ import {
   type RemoteTrack,
   type RemoteTrackPublication,
 } from "livekit-client";
-import {
-  loadVoicePreferences,
-  saveVoicePreferences,
-  type VoicePreferences,
-} from "@/lib/livekit/voice-preferences";
+import { loadVoicePreferences, saveVoicePreferences, type VoicePreferences } from "@/lib/livekit/voice-preferences";
+import { syncRnnoiseProcessor } from "@/lib/livekit/rnnoise-track-processor";
 import { trpc } from "@/lib/trpc/client";
 import {
   getAudioCaptureOptions,
   getConnectionLabel,
   getMicrophoneMuted,
   reconnectPolicy,
+  VOICE_PUBLISH_OPTIONS,
   type LiveKitEndpoint,
   type MediaStatus,
   type VoiceControlState,
@@ -376,9 +365,7 @@ export const ChatRoomControl = forwardRef<
             disconnectOnPageLeave: true,
             audioCaptureDefaults: getAudioCaptureOptions(preferencesRef.current),
             publishDefaults: {
-              audioPreset: AudioPresets.musicHighQuality,
-              dtx: true,
-              red: true,
+              ...VOICE_PUBLISH_OPTIONS,
               stopMicTrackOnMute: false,
             },
           });
@@ -423,8 +410,11 @@ export const ChatRoomControl = forwardRef<
               await liveRoom.localParticipant.setMicrophoneEnabled(
                 true,
                 getAudioCaptureOptions(preferencesRef.current),
-                { audioPreset: AudioPresets.musicHighQuality, dtx: true, red: true },
+                VOICE_PUBLISH_OPTIONS,
               );
+              const rnnoiseError = await syncRnnoiseProcessor(liveRoom,
+                preferencesRef.current.enhancedNoiseSuppression);
+              if (rnnoiseError) setMediaError(rnnoiseError);
             } catch (error) {
               // A failed publication must not tear down an already healthy
               // signal connection. The microphone can be retried separately.
@@ -499,8 +489,11 @@ export const ChatRoomControl = forwardRef<
       await liveRoom.localParticipant.setMicrophoneEnabled(
         targetEnabled,
         getAudioCaptureOptions(preferencesRef.current),
-        { audioPreset: AudioPresets.musicHighQuality, dtx: true, red: true },
+        VOICE_PUBLISH_OPTIONS,
       );
+      const rnnoiseError = await syncRnnoiseProcessor(liveRoom,
+        preferencesRef.current.enhancedNoiseSuppression);
+      if (rnnoiseError) setMediaError(rnnoiseError);
       const actualMuted = getMicrophoneMuted(liveRoom);
       setMicMuted(actualMuted);
       if (actualMuted === targetEnabled) {
@@ -642,10 +635,18 @@ export const ChatRoomControl = forwardRef<
   };
 
   const changeAudioProcessing = async (
-    key: "echoCancellation" | "noiseSuppression" | "autoGainControl" | "voiceIsolation",
+    key: "echoCancellation" | "noiseSuppression" | "autoGainControl" | "voiceIsolation" | "enhancedNoiseSuppression",
     enabled: boolean,
   ) => {
-    const next = persistPreferences({ [key]: enabled });
+    const next = persistPreferences(
+      key === "enhancedNoiseSuppression"
+        ? { enhancedNoiseSuppression: enabled, noiseSuppression: !enabled }
+        : { [key]: enabled },
+    );
+    if (key === "enhancedNoiseSuppression") {
+      const liveRoom = liveRoomRef.current;
+      if (liveRoom) setMediaError(await syncRnnoiseProcessor(liveRoom, enabled));
+    }
     const publication = liveRoomRef.current?.localParticipant.getTrackPublication(
       Track.Source.Microphone,
     );

@@ -26,7 +26,9 @@ type ChatComposerProps = {
   text: string;
   onTextChange: (value: string) => void;
   replyTo: ChatMessageView | null;
+  editing?: ChatMessageView | null;
   onReplyCancel: () => void;
+  onEditCancel?: () => void;
   pendingUpload: PendingChatUpload | null;
   onPendingUploadChange: (value: PendingChatUpload | null) => void;
   pendingTrack: PlaylistTrackView | null;
@@ -40,7 +42,9 @@ export function ChatComposer({
   text,
   onTextChange,
   replyTo,
+  editing = null,
   onReplyCancel,
+  onEditCancel,
   pendingUpload,
   onPendingUploadChange,
   pendingTrack,
@@ -70,7 +74,8 @@ export function ChatComposer({
     !isUploading &&
     !isParsingAudio &&
     !pendingAudioDraft &&
-    (Boolean(text.trim()) || Boolean(pendingUpload) || Boolean(pendingTrack));
+    (Boolean(text.trim()) || Boolean(pendingUpload) || Boolean(pendingTrack)) &&
+    (!editing || text.trim() !== editing.text?.trim());
 
   const handleImageFile = async (file: File | undefined) => {
     if (!file) return;
@@ -162,6 +167,17 @@ export function ChatComposer({
 
   return (
     <div className="voople-chat-composer shrink-0 border-t border-[var(--app-border)] py-3">
+      {editing && (
+        <div className="voople-chat-composer__reply mb-2 flex items-start gap-2 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2">
+          <div className="min-w-0 flex-1 text-sm">
+            <p className="text-xs font-medium text-[var(--theme-accent)]">Редактирование</p>
+            <p className="truncate text-[var(--foreground)]">{editing.text}</p>
+          </div>
+          <button type="button" className="shrink-0 rounded p-1 text-[var(--app-muted)] hover:text-[var(--foreground)]" aria-label="Отменить редактирование" onClick={onEditCancel}>
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
       {replyTo && (
         <div className="voople-chat-composer__reply mb-2 flex items-start gap-2 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2">
           <div className="min-w-0 flex-1 text-sm">
@@ -285,14 +301,16 @@ export function ChatComposer({
           className="absolute bottom-full right-12 z-10 mb-2"
         />
 
-        <ChatAttachMenu
-          open={attachOpen}
-          onOpenChange={setAttachOpen}
-          disabled={disabled || isUploading || isParsingAudio || Boolean(pendingAudioDraft)}
-          onPickPhoto={() => imageInputRef.current?.click()}
-          onPickAudioFile={() => audioInputRef.current?.click()}
-          onPickMusic={() => setMusicSheetOpen(true)}
-        />
+        {!editing ? (
+          <ChatAttachMenu
+            open={attachOpen}
+            onOpenChange={setAttachOpen}
+            disabled={disabled || isUploading || isParsingAudio || Boolean(pendingAudioDraft)}
+            onPickPhoto={() => imageInputRef.current?.click()}
+            onPickAudioFile={() => audioInputRef.current?.click()}
+            onPickMusic={() => setMusicSheetOpen(true)}
+          />
+        ) : null}
 
         <label htmlFor={inputId} className="sr-only">
           Сообщение
@@ -327,7 +345,7 @@ export function ChatComposer({
           <Smile className="h-5 w-5" />
         </button>
 
-        {!text.trim() && !pendingUpload && !pendingTrack ? (
+        {!editing && !text.trim() && !pendingUpload && !pendingTrack ? (
           <ChatVoiceRecorder
             disabled={disabled || isSending || isUploading || isParsingAudio}
             onRecorded={(file, duration, mode) => void handleVoiceRecorded(file, duration, mode)}

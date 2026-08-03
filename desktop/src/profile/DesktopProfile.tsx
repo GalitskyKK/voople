@@ -1,9 +1,9 @@
 import type { Session } from "@supabase/supabase-js";
 
 import { ProfilePageView } from "@/components/profile/ProfilePageView";
+import { ProfileQuestions } from "@/components/profile/ProfileQuestions";
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
-import { FlipCard } from "@/components/profile/canvas/FlipCard";
-import { ProfileCanvasPreview } from "@/components/profile/canvas/ProfileCanvasPreview";
+import { ProfileFlipCard } from "@/components/profile/canvas/ProfileFlipCard";
 
 import type { DesktopConfig } from "../config";
 import { DesktopPostCard } from "../feed/DesktopPostCard";
@@ -58,8 +58,12 @@ export function DesktopProfile({
       <ProfilePageView
         posts={data.posts}
         card={
-          <FlipCard
-            flipLabel="Оборот карточки — просмотр рисунка"
+          <ProfileFlipCard
+            profile={data.profile}
+            isOwner={data.isOwner}
+            viewerId={session.user.id}
+            initialStrokes={data.canvasStrokes}
+            realtimeEnabled={false}
             front={
               <DesktopProfileCard
                 profile={data.profile}
@@ -70,14 +74,6 @@ export function DesktopProfile({
                 navigate={navigate}
               />
             }
-            renderBack={() => (
-              <div className="voople-profile-canvas-back h-full overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)]">
-                <ProfileCanvasPreview
-                  strokes={data.canvasStrokes}
-                  className="h-full min-h-[320px]"
-                />
-              </div>
-            )}
           />
         }
         renderPost={(post) => (
@@ -87,6 +83,15 @@ export function DesktopProfile({
             config={config}
             session={session}
             renderDestination={renderDestination}
+          />
+        )}
+        renderQuestions={() => (
+          <ProfileQuestions
+            profileUserId={data.profile.id}
+            username={data.profile.username}
+            isOwner={data.isOwner}
+            canAsk={!data.isOwner}
+            canReact
           />
         )}
       />

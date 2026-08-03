@@ -87,7 +87,7 @@ export function ChatWindowHeader({
         )}
         {isGroup ? (
           <p className="text-xs text-[var(--app-muted)]">
-            {isSubchat ? "Тема · " : ""}
+            {isSubchat ? "Раздел · " : ""}
             {memberCount} участников
           </p>
         ) : other ? (
@@ -107,11 +107,12 @@ export function ChatWindowHeader({
         chatName={chatTitle}
         chatType={isGroup ? "group" : "direct"}
       />
-      {canManageGroup && topicsEnabled ? <SubchatCreator parentChatId={chatId} /> : null}
+      {isGroup && !isSubchat && topicsEnabled ? <SubchatCreator parentChatId={chatId} /> : null}
       {isGroup && !isSubchat ? (
         <GroupInviteSheet
           chatId={chatId}
           chatName={chatTitle}
+          viewerRole={viewerRole}
           canManage={canManageGroup}
           topicsEnabled={topicsEnabled}
           topicsLayout={topicsLayout}

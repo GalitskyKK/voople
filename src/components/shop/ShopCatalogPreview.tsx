@@ -11,6 +11,7 @@ import {
 import { CssEffectLayer } from "@/components/profile/effects/CssEffectLayer";
 import { FeedAuthorChipBackdrop } from "@/components/feed/FeedAuthorChipBackdrop";
 import { cn } from "@/lib/utils";
+import { publicAssetUrl } from "@/lib/object-storage";
 import {
   catalogItemUsesCdn,
   getCssCatalogPreviewStyle,
@@ -24,6 +25,8 @@ type ShopCatalogPreviewProps = {
 };
 
 export function ShopCatalogPreview({ catalog, previewUrl, className }: ShopCatalogPreviewProps) {
+  const resolvedPreviewUrl = publicAssetUrl(previewUrl);
+
   if (catalog.kind === "profile_frame") {
     const resolvedFrame = resolveCustomization({ profileFrameId: catalog.equipValue }).assets.frame;
     const frame = frameLayerProps(resolvedFrame);
@@ -51,11 +54,11 @@ export function ShopCatalogPreview({ catalog, previewUrl, className }: ShopCatal
     );
   }
 
-  if (catalog.kind === "feed_card" && previewUrl) {
+  if (catalog.kind === "feed_card" && resolvedPreviewUrl) {
     return (
       <div className={cn("flex h-full w-full items-center justify-center p-4", className)}>
         <div className="voople-author-nameplate relative h-14 w-full overflow-hidden rounded-xl" aria-label="Предпросмотр плашки имени">
-          <FeedAuthorChipBackdrop backgroundUrl={previewUrl} />
+          <FeedAuthorChipBackdrop backgroundUrl={resolvedPreviewUrl} />
           <span className="absolute left-10 top-1/2 z-10 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15 bg-[linear-gradient(145deg,#8b5cf6,#312e81)]" />
           <span className="absolute left-20 top-1/2 z-10 max-w-[calc(100%_-_6rem)] -translate-y-1/2 truncate text-sm font-semibold text-white">Ваше имя</span>
         </div>
@@ -63,10 +66,10 @@ export function ShopCatalogPreview({ catalog, previewUrl, className }: ShopCatal
     );
   }
 
-  if (previewUrl && catalogItemUsesCdn(catalog)) {
+  if (resolvedPreviewUrl && catalogItemUsesCdn(catalog)) {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- CDN customization previews
-      <img src={previewUrl} alt="" className={cn("h-full w-full object-cover", className)} loading="lazy" />
+      <img src={resolvedPreviewUrl} alt="" className={cn("h-full w-full object-cover", className)} loading="lazy" />
     );
   }
 

@@ -1,11 +1,13 @@
 import type { Session } from "@supabase/supabase-js";
-import { ArrowLeft, Hash, UsersRound, Wifi } from "lucide-react";
+import { ArrowLeft, Hash, UsersRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { ChatDateDivider } from "@/components/chat/ChatDateDivider";
+import { ChatSectionsBarView } from "@/components/chat/ChatSectionsBarView";
 import { VoiceRoomButton } from "@/components/chat/voice/VoiceRoomButton";
+import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
-import type { ChatMessageView } from "@/types/chat";
+import type { ChatListItem, ChatMessageView } from "@/types/chat";
 
 import type { DesktopConfig } from "../config";
 import { DesktopChatAvatar } from "./DesktopChatAvatar";
@@ -17,26 +19,30 @@ import { useDesktopChatThread } from "./useDesktopChatThread";
 
 export function DesktopChatThread({
   chatId,
+  rootChat,
   config,
   session,
   onBack,
   onInboxChange,
   onNavigateChat,
+  onNavigateProfile,
   onlineUserIds,
 }: {
   chatId: string;
+  rootChat: ChatListItem | null;
   config: DesktopConfig;
   session: Session;
   onBack: () => void;
   onInboxChange: () => void;
   onNavigateChat: (chatId: string) => void;
+  onNavigateProfile: (username: string) => void;
   onlineUserIds: ReadonlySet<string>;
 }) {
   const {
     data,
     deleteMessage,
+    editMessage,
     error,
-    live,
     loading,
     retry,
     sendMessage,
@@ -44,6 +50,7 @@ export function DesktopChatThread({
     toggleReaction,
   } = useDesktopChatThread(config, session, chatId, onInboxChange);
   const [replyTo, setReplyTo] = useState<ChatMessageView | null>(null);
+  const [editing, setEditing] = useState<ChatMessageView | null>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -106,34 +113,65 @@ export function DesktopChatThread({
             <UsersRound className="h-4 w-4" />
           </span>
         ) : other ? (
-          <DesktopChatAvatar
-            displayName={other.displayName}
-            avatarUrl={other.avatarUrl}
-            decorationUrl={other.avatarDecorationUrl}
-            ringId={other.avatarRingId}
-            isOnline={onlineUserIds.has(other.id)}
-          />
+          <button
+            type="button"
+            onClick={() => onNavigateProfile(other.username)}
+            className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]"
+            aria-label={`Открыть профиль ${other.displayName}`}
+          >
+            <DesktopChatAvatar
+              displayName={other.displayName}
+              avatarUrl={other.avatarUrl}
+              decorationUrl={other.avatarDecorationUrl}
+              ringId={other.avatarRingId}
+              isOnline={onlineUserIds.has(other.id)}
+            />
+          </button>
         ) : null}
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">
-            {isSubchat && data.chat.parentName
-              ? `${data.chat.parentName} / ${title}`
-              : title}
-          </p>
-          <p className="truncate text-xs text-[var(--app-muted)]">
-            {isSubchat
-              ? `Тема · ${data.chat.memberCount} участников`
-              : isGroup
-              ? `${data.chat.memberCount} участников`
-              : other && onlineUserIds.has(other.id)
-                ? "в сети"
-                : `@${other?.username ?? ""}`}
-          </p>
+          {isGroup ? (
+            <p className="truncate font-semibold">
+              {isSubchat && data.chat.parentName
+                ? `${data.chat.parentName} / ${title}`
+                : title}
+            </p>
+          ) : other ? (
+            <button
+              type="button"
+              onClick={() => onNavigateProfile(other.username)}
+              className="max-w-full text-left"
+            >
+              <DisplayNameWithPin
+                hasVooplePlus={other.hasVooplePlus}
+                className="max-w-full font-semibold"
+              >
+                {other.displayName}
+              </DisplayNameWithPin>
+            </button>
+          ) : (
+            <p className="truncate font-semibold">{title}</p>
+          )}
+          {isGroup ? (
+            <p className="truncate text-xs text-[var(--app-muted)]">
+              {isSubchat
+                ? `Раздел · ${data.chat.memberCount} участников`
+                : `${data.chat.memberCount} участников`}
+            </p>
+          ) : other ? (
+            <button
+              type="button"
+              onClick={() => onNavigateProfile(other.username)}
+              className="block max-w-full truncate text-xs text-[var(--app-muted)] hover:text-[var(--foreground)]"
+            >
+              {onlineUserIds.has(other.id) ? "в сети" : `@${other.username}`}
+            </button>
+          ) : null}
         </div>
         {isGroup && !isSubchat ? (
           <DesktopGroupInviteSheet
             chatId={chatId}
             chatName={title}
+            viewerRole={data.chat.viewerRole}
             canManage={
               data.chat.viewerRole === "owner" || data.chat.viewerRole === "admin"
             }
@@ -141,14 +179,17 @@ export function DesktopChatThread({
             topicsLayout={data.chat.topicsLayout}
             config={config}
             session={session}
-            onMembersChanged={onInboxChange}
+            onMembersChanged={() => {
+              onInboxChange();
+              retry();
+            }}
+            onGroupClosed={onBack}
           />
         ) : null}
         {isGroup &&
         !isSubchat &&
         data.chat.topicsEnabled &&
-        (data.chat.viewerRole === "owner" ||
-          data.chat.viewerRole === "admin") ? (
+        data.chat.topicsEnabled ? (
           <DesktopSubchatCreator
             parentChatId={chatId}
             config={config}
@@ -164,18 +205,23 @@ export function DesktopChatThread({
           chatName={title}
           chatType={isGroup ? "group" : "direct"}
         />
-        <span
-          className={live ? "desktop-chat-live is-live" : "desktop-chat-live"}
-          title={
-            live
-              ? "Обновления в реальном времени"
-              : "Резервная синхронизация"
-          }
-        >
-          <Wifi className="h-4 w-4" />
-          <span>{live ? "Live" : "Sync"}</span>
-        </span>
       </header>
+      {rootChat ? (
+        <ChatSectionsBarView
+          rootChat={rootChat}
+          activeChatId={chatId}
+          renderDestination={(chat, className, children) => (
+            <button
+              key={chat.id}
+              type="button"
+              className={className}
+              onClick={() => onNavigateChat(chat.id)}
+            >
+              {children}
+            </button>
+          )}
+        />
+      ) : null}
 
       <div
         ref={messagesRef}
@@ -198,6 +244,10 @@ export function DesktopChatThread({
                 groupPosition={item.groupPosition}
                 showSender={isGroup}
                 onReply={setReplyTo}
+                onEdit={(message) => {
+                  setReplyTo(null);
+                  setEditing(message);
+                }}
                 onDelete={(messageId) => {
                   if (replyTo?.id === messageId) setReplyTo(null);
                   void deleteMessage(messageId);
@@ -217,12 +267,16 @@ export function DesktopChatThread({
         </p>
       ) : null}
       <DesktopChatComposer
+        key={editing?.id ?? "new-message"}
         config={config}
         session={session}
         replyTo={replyTo}
+        editing={editing}
         sending={sending}
         onCancelReply={() => setReplyTo(null)}
         onSend={sendMessage}
+        onEdit={editMessage}
+        onCancelEdit={() => setEditing(null)}
       />
     </div>
   );

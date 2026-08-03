@@ -7,14 +7,22 @@ type Options = {
   loadMembers: () => Promise<ChatGroupMemberView[]>;
   searchContacts: (query: string) => Promise<UserSearchHit[]>;
   addMembers: (memberIds: string[]) => Promise<unknown>;
+  removeMember: (memberId: string) => Promise<unknown>;
+  leaveGroup: () => Promise<unknown>;
+  deleteGroup: () => Promise<unknown>;
   onMembersChanged?: () => void;
+  onGroupClosed: () => void;
 };
 
 export function useGroupManagementSheet({
   loadMembers,
   searchContacts,
   addMembers,
+  removeMember,
+  leaveGroup,
+  deleteGroup,
   onMembersChanged,
+  onGroupClosed,
 }: Options) {
   const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -25,6 +33,8 @@ export function useGroupManagementSheet({
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
+  const [destructivePending, setDestructivePending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refreshMembers = useCallback(async () => {
@@ -109,15 +119,65 @@ export function useGroupManagementSheet({
     }
   };
 
+  const remove = async (member: ChatGroupMemberView) => {
+    if (removingMemberId || destructivePending) return;
+    if (!window.confirm(`Исключить ${member.displayName} из группы?`)) return;
+    setRemovingMemberId(member.id);
+    setError(null);
+    try {
+      await removeMember(member.id);
+      await refreshMembers();
+      onMembersChanged?.();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Не удалось исключить участника");
+    } finally {
+      setRemovingMemberId(null);
+    }
+  };
+
+  const leave = async () => {
+    if (destructivePending || !window.confirm("Выйти из этой группы?")) return;
+    setDestructivePending(true);
+    setError(null);
+    try {
+      await leaveGroup();
+      onGroupClosed();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Не удалось выйти из группы");
+      setDestructivePending(false);
+    }
+  };
+
+  const destroyGroup = async () => {
+    if (
+      destructivePending ||
+      !window.confirm("Удалить группу и все сообщения без возможности восстановления?")
+    ) return;
+    setDestructivePending(true);
+    setError(null);
+    try {
+      await deleteGroup();
+      onGroupClosed();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Не удалось удалить группу");
+      setDestructivePending(false);
+    }
+  };
+
   return {
     adding,
     close,
     contacts,
+    destructivePending,
+    destroyGroup,
     error,
+    leave,
     loading,
     members,
     open,
     query,
+    remove,
+    removingMemberId,
     saving,
     searching,
     selected,

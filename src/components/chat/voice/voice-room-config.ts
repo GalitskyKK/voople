@@ -1,4 +1,5 @@
 import {
+  AudioPresets,
   ConnectionQuality,
   DefaultReconnectPolicy,
   Track,
@@ -36,6 +37,14 @@ export const reconnectPolicy = new DefaultReconnectPolicy([
   ...Array.from({ length: 40 }, () => 7_000),
 ]);
 
+export const VOICE_PUBLISH_OPTIONS = {
+  audioPreset: AudioPresets.musicHighQuality,
+  // Continuous Opus avoids clipping the first syllable after silence. It uses
+  // a little more traffic, which is acceptable for a voice-first desktop app.
+  dtx: false,
+  red: true,
+} as const;
+
 export function getAudioCaptureOptions(preferences: VoicePreferences): AudioCaptureOptions {
   return {
     deviceId:
@@ -43,7 +52,8 @@ export function getAudioCaptureOptions(preferences: VoicePreferences): AudioCapt
         ? { ideal: "default" }
         : { exact: preferences.inputDeviceId },
     echoCancellation: preferences.echoCancellation,
-    noiseSuppression: preferences.noiseSuppression,
+    noiseSuppression:
+      preferences.enhancedNoiseSuppression ? false : preferences.noiseSuppression,
     autoGainControl: preferences.autoGainControl,
     voiceIsolation: preferences.voiceIsolation,
     // Opus works internally at 48 kHz. Asking the capture stack for the same

@@ -46,6 +46,7 @@ export type ChatMessageView = {
   sender?: {
     username: string;
     displayName: string;
+    hasVooplePlus?: boolean;
     avatarUrl?: string | null;
   } | null;
   readAt?: string | null;

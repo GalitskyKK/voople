@@ -47,7 +47,7 @@ export function NotificationsView({
 
   return (
     <SectionFrame className="gap-5 py-4 lg:py-6">
-      <SectionPageHeader title={COPY.notifications} />
+      <SectionPageHeader title={COPY.notifications} sticky />
 
       {loading ? (
         <div

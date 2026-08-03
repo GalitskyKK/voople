@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
+import { useChatMessageEditor } from "@/hooks/useChatMessageEditor";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 import type { PendingChatUpload } from "@/hooks/useChatUpload";
 import { trpc } from "@/lib/trpc/client";
@@ -17,6 +18,7 @@ import { ChatDateDivider } from "./ChatDateDivider";
 import { ChatMediaLightbox } from "./ChatMediaLightbox";
 import { ChatMessageBubble } from "./ChatMessageBubble";
 import { ChatWindowHeader } from "./ChatWindowHeader";
+import { ChatSectionsBar } from "./ChatSectionsBar";
 type ChatWindowProps = {
   chatId: string;
 };
@@ -85,6 +87,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   );
   const { onlineUserIds } = useOnlineUsers();
   const utils = trpc.useUtils();
+  const editor = useChatMessageEditor(chatId, setText);
 
   const { data: me } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
   const { realtimeDegraded } = useRealtimeChat(chatId, me?.id);
@@ -247,6 +250,12 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
 
   const handleSend = () => {
     const trimmed = text.trim();
+    if (editor.editing) {
+      if (trimmed && trimmed !== editor.editing.text?.trim()) {
+        editor.mutation.mutate({ messageId: editor.editing.id, text: trimmed });
+      }
+      return;
+    }
     if (!trimmed && !pendingUpload && !pendingTrack) return;
 
     const isAudio = pendingUpload?.kind === "audio";
@@ -306,6 +315,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         other={other}
         otherOnline={otherOnline}
       />
+      {isGroup ? <ChatSectionsBar chatId={chatId} /> : null}
 
       <div
         ref={messagesRef}
@@ -326,6 +336,12 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
                 groupPosition={item.groupPosition}
                 viewerId={viewerId}
                 onReply={setReplyTo}
+                onEdit={(message) => {
+                  setReplyTo(null);
+                  setPendingUpload(null);
+                  setPendingTrack(null);
+                  editor.beginEditing(message);
+                }}
                 onDelete={(msg) => removeMessage.mutate({ messageId: msg.id })}
                 onAddToPlaylist={(msg) => setPlaylistConfirmMessage(msg)}
                 onOpenImage={setLightboxUrl}
@@ -344,13 +360,17 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
           text={text}
           onTextChange={setText}
           replyTo={replyTo}
+          editing={editor.editing}
           onReplyCancel={() => setReplyTo(null)}
+          onEditCancel={() => {
+            editor.cancelEditing();
+          }}
           pendingUpload={pendingUpload}
           onPendingUploadChange={setPendingUpload}
           pendingTrack={pendingTrack}
           onPendingTrackChange={setPendingTrack}
           onSend={handleSend}
-          isSending={send.isPending}
+          isSending={send.isPending || editor.mutation.isPending}
         />
       </div>
 

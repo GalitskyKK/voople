@@ -1,6 +1,14 @@
 "use client";
 
-import { ArrowLeft, Loader2, UserPlus, UsersRound } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  LogOut,
+  Trash2,
+  UserMinus,
+  UserPlus,
+  UsersRound,
+} from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/Button";
@@ -15,6 +23,7 @@ import { GroupTopicsSettings } from "./GroupTopicsSettings";
 
 type Props = {
   chatName: string;
+  viewerRole: "owner" | "admin" | "member";
   canManage: boolean;
   topicsEnabled: boolean;
   topicsLayout: "tabs" | "list";
@@ -25,16 +34,26 @@ type Props = {
   createInvite: () => Promise<{ token: string }>;
   revokeInvite: (token: string) => Promise<unknown>;
   updateTopics: (enabled: boolean, layout: "tabs" | "list") => Promise<unknown>;
+  removeMember: (memberId: string) => Promise<unknown>;
+  leaveGroup: () => Promise<unknown>;
+  deleteGroup: () => Promise<unknown>;
   onMembersChanged?: () => void;
+  onGroupClosed: () => void;
   renderAvatar: (user: UserSearchHit) => ReactNode;
 };
 
 function MembersList({
   members,
   renderAvatar,
+  viewerRole,
+  removingMemberId,
+  onRemoveMember,
 }: {
   members: ChatGroupMemberView[];
   renderAvatar: Props["renderAvatar"];
+  viewerRole: Props["viewerRole"];
+  removingMemberId: string | null;
+  onRemoveMember: (member: ChatGroupMemberView) => void;
 }) {
   return (
     <div className="voople-scroll mt-4 max-h-72 space-y-1 overflow-y-auto">
@@ -49,6 +68,24 @@ function MembersList({
             <span className="rounded-full bg-[var(--app-accent-soft)] px-2 py-1 text-[0.65rem] font-semibold text-(--theme-accent)">
               {member.role === "owner" ? "владелец" : "админ"}
             </span>
+          ) : null}
+          {member.role !== "owner" &&
+          (viewerRole === "owner" ||
+            (viewerRole === "admin" && member.role === "member")) ? (
+            <button
+              type="button"
+              onClick={() => onRemoveMember(member)}
+              disabled={removingMemberId === member.id}
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--app-muted)] transition hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+              aria-label={`Исключить ${member.displayName}`}
+              title="Исключить из группы"
+            >
+              {removingMemberId === member.id ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <UserMinus className="h-4 w-4" />
+              )}
+            </button>
           ) : null}
         </div>
       ))}
@@ -65,11 +102,12 @@ export function GroupManagementSheetView(props: Props) {
       <button
         type="button"
         onClick={() => state.setOpen(true)}
-        className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[var(--app-border)] text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
-        aria-label="Открыть информацию о группе"
-        title="Участники группы"
+        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-[var(--app-border)] px-2.5 text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
+        aria-label="Участники и разделы"
+        title="Участники и разделы"
       >
         <UsersRound className="h-4 w-4" />
+        <span className="hidden text-xs font-medium md:inline">Участники и разделы</span>
       </button>
 
       <Sheet
@@ -143,16 +181,20 @@ export function GroupManagementSheetView(props: Props) {
             {state.loading ? (
               <div className="mt-4 h-24 animate-pulse rounded-2xl bg-[var(--app-surface-soft)]" />
             ) : (
-              <MembersList members={state.members} renderAvatar={props.renderAvatar} />
+              <MembersList
+                members={state.members}
+                renderAvatar={props.renderAvatar}
+                viewerRole={props.viewerRole}
+                removingMemberId={state.removingMemberId}
+                onRemoveMember={(member) => void state.remove(member)}
+              />
             )}
 
-            {props.canManage ? (
-              <GroupTopicsSettings
-                enabled={props.topicsEnabled}
-                layout={props.topicsLayout}
-                onChange={props.updateTopics}
-              />
-            ) : null}
+            <GroupTopicsSettings
+              enabled={props.topicsEnabled}
+              canManage={props.canManage}
+              onChange={props.updateTopics}
+            />
 
             {props.canManage ? (
               <div className="mt-4">
@@ -163,6 +205,40 @@ export function GroupManagementSheetView(props: Props) {
                 />
               </div>
             ) : null}
+
+            <div className="mt-5 border-t border-[var(--app-border)] pt-4">
+              {props.viewerRole === "owner" ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full text-red-400 hover:text-red-300"
+                  disabled={state.destructivePending}
+                  onClick={() => void state.destroyGroup()}
+                >
+                  {state.destructivePending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                  Удалить группу
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full text-red-400 hover:text-red-300"
+                  disabled={state.destructivePending}
+                  onClick={() => void state.leave()}
+                >
+                  {state.destructivePending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <LogOut className="h-4 w-4" />
+                  )}
+                  Выйти из группы
+                </Button>
+              )}
+            </div>
           </>
         )}
 

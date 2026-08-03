@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { LocalMessageTime } from "@/components/chat/LocalMessageTime";
 import { MessageReadTicks } from "@/components/chat/MessageReadTicks";
+import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { cn } from "@/lib/utils";
 import type { ChatMessageView } from "@/types/chat";
 
@@ -62,7 +63,7 @@ export function ChatMessageBubbleVisual({
       ) : null}
       <div
         className={cn(
-          "voople-chat-bubble relative max-w-[min(82%,34rem)]",
+          "voople-chat-bubble relative max-w-[min(86%,36rem)]",
           isMine ? "voople-chat-bubble--mine" : "voople-chat-bubble--theirs",
         )}
         onClick={onClick}
@@ -74,7 +75,7 @@ export function ChatMessageBubbleVisual({
         {menu}
         <div
           className={cn(
-            "voople-chat-bubble__body flex flex-col gap-1 rounded-2xl px-3 py-1.5 text-sm leading-relaxed",
+            "voople-chat-bubble__body flex flex-col gap-1 rounded-[1.15rem] px-3 py-1.5 text-sm leading-[1.45]",
             isMine
               ? "bg-[color-mix(in_srgb,var(--theme-accent)_22%,var(--app-surface))] text-[var(--foreground)]"
               : "border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--foreground)]",
@@ -90,9 +91,13 @@ export function ChatMessageBubbleVisual({
           !isMine &&
           message.sender &&
           (groupPosition === "only" || groupPosition === "start") ? (
-            <p className="truncate px-0.5 text-[11px] font-semibold text-[var(--theme-accent)]">
+            <DisplayNameWithPin
+              hasVooplePlus={message.sender.hasVooplePlus}
+              size="xs"
+              className="max-w-full px-0.5 text-[11px] font-semibold text-[var(--theme-accent)]"
+            >
               {message.sender.displayName}
-            </p>
+            </DisplayNameWithPin>
           ) : null}
           {replyTo ? (
             <div

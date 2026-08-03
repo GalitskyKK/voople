@@ -1113,7 +1113,7 @@ button.voople-post-action:active {
 /* Shell */
 .shop-toolbar {
   position: sticky;
-  top: 0;
+  top: 1rem;
   z-index: 18;
   display: grid;
   grid-template-columns: minmax(180px, 1fr) auto minmax(120px, 1fr);
@@ -1322,7 +1322,7 @@ button.voople-post-action:active {
 
 @media (max-width: 520px) {
   .shop-toolbar {
-    top: 3rem;
+    top: 3.75rem;
     gap: 0.5rem;
     border-radius: 0.875rem;
   }
@@ -1352,8 +1352,15 @@ button.voople-post-action:active {
 
 .voople-chat-window__messages {
   touch-action: pan-y;
-  background-color: color-mix(in srgb, var(--app-surface) 84%, var(--background));
+  background-color: color-mix(in srgb, var(--app-surface) 90%, var(--background));
   background-attachment: local;
+}
+
+.voople-chat-window__header {
+  position: relative;
+  z-index: 5;
+  background: color-mix(in srgb, var(--app-surface) 92%, transparent);
+  backdrop-filter: blur(18px);
 }
 
 .voople-voice-session--active .voople-messages-layout {
@@ -1372,10 +1379,10 @@ button.voople-post-action:active {
 
 .voople-messages-layout[data-chat-wallpaper="doodles"] .voople-chat-window__messages {
   background-image:
-    radial-gradient(circle at 18px 18px, color-mix(in srgb, var(--theme-accent) 13%, transparent) 0 2px, transparent 2.5px),
-    radial-gradient(circle at 46px 44px, color-mix(in srgb, var(--foreground) 7%, transparent) 0 1.5px, transparent 2px),
-    linear-gradient(35deg, transparent 47%, color-mix(in srgb, var(--foreground) 4%, transparent) 48% 50%, transparent 51%);
-  background-size: 64px 64px, 72px 72px, 88px 88px;
+    radial-gradient(circle at 18px 18px, color-mix(in srgb, var(--theme-accent) 9%, transparent) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 58px 54px, color-mix(in srgb, var(--foreground) 5%, transparent) 0 1px, transparent 1.5px),
+    linear-gradient(35deg, transparent 48%, color-mix(in srgb, var(--foreground) 2.5%, transparent) 49% 50%, transparent 51%);
+  background-size: 76px 76px, 86px 86px, 104px 104px;
 }
 
 .voople-messages-layout[data-chat-wallpaper="grid"] .voople-chat-window__messages {
@@ -1393,7 +1400,7 @@ button.voople-post-action:active {
 }
 
 .voople-chat-bubble__body {
-  box-shadow: var(--app-shadow-sm);
+  box-shadow: 0 1px 1px color-mix(in srgb, var(--foreground) 7%, transparent);
 }
 
 .voople-chat-audio__player {
@@ -1405,6 +1412,16 @@ button.voople-post-action:active {
 }
 
 .voople-feed-header {
+  position: sticky;
+  top: 0;
+  z-index: 19;
+  padding-bottom: 0.75rem;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--background) 98%, transparent) 0 82%,
+    transparent
+  );
+  backdrop-filter: blur(18px);
 }
 
 .voople-status-publish-banner {

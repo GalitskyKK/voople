@@ -116,8 +116,9 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           <div
             id="main-content"
             className={cn(
-              "voople-shell__page w-full px-4 lg:px-6",
-              isMessagesRoute && "flex min-h-0 flex-1 flex-col py-0",
+              "voople-shell__page w-full",
+              !isMessagesRoute && "px-4 lg:px-6",
+              isMessagesRoute && "flex min-h-0 flex-1 flex-col px-0 py-0",
               isMobileMessagesThread && "px-0",
               isProfileRoute &&
                 !usesWindowScroll &&

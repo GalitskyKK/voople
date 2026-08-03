@@ -34,7 +34,7 @@ export function SubchatCreatorView({
       setError(
         createError instanceof Error
           ? createError.message
-          : "Не удалось создать тему",
+          : "Не удалось создать раздел",
       );
     } finally {
       setPending(false);
@@ -46,24 +46,25 @@ export function SubchatCreatorView({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[var(--app-border)] text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
-        aria-label="Создать тему"
-        title="Создать тему"
+        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-[var(--app-border)] px-2.5 text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
+        aria-label="Создать раздел"
+        title="Создать раздел"
       >
         <Plus className="h-4 w-4" />
+        <span className="hidden text-xs font-medium sm:inline">Новый раздел</span>
       </button>
       <Sheet
         open={open}
         onClose={() => setOpen(false)}
-        ariaLabel="Новая тема"
+        ariaLabel="Новый раздел"
       >
         <form onSubmit={(event) => void submit(event)}>
           <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--app-accent-soft)] text-xl">
             {icon || "💬"}
           </span>
-          <h2 className="mt-4 text-xl font-semibold">Новая тема</h2>
+          <h2 className="mt-4 text-xl font-semibold">Новый раздел</h2>
           <p className="mt-1 text-sm leading-6 text-[var(--app-muted)]">
-            Тема использует участников и администраторов основной группы.
+            Раздел использует участников и администраторов основной группы.
           </p>
           <label className="mt-5 block text-sm font-medium">
             Название
@@ -105,7 +106,7 @@ export function SubchatCreatorView({
             disabled={pending || name.trim().length < 2}
           >
             {pending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-            Создать тему
+            Создать раздел
           </Button>
         </form>
       </Sheet>

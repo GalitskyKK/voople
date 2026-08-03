@@ -1,17 +1,15 @@
 "use client";
 
-import { LayoutList, Loader2, MessageSquareMore, PanelTop } from "lucide-react";
+import { Loader2, MessageSquareMore } from "lucide-react";
 import { useState } from "react";
-
-import { cn } from "@/lib/utils";
 
 export function GroupTopicsSettings({
   enabled,
-  layout,
+  canManage,
   onChange,
 }: {
   enabled: boolean;
-  layout: "tabs" | "list";
+  canManage: boolean;
   onChange: (enabled: boolean, layout: "tabs" | "list") => Promise<unknown>;
 }) {
   const [pending, setPending] = useState(false);
@@ -24,7 +22,7 @@ export function GroupTopicsSettings({
     try {
       await onChange(nextEnabled, nextLayout);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Не удалось сохранить темы");
+      setError(cause instanceof Error ? cause.message : "Не удалось сохранить разделы");
     } finally {
       setPending(false);
     }
@@ -36,9 +34,9 @@ export function GroupTopicsSettings({
         <span className="flex items-start gap-3">
           <MessageSquareMore className="mt-0.5 h-4 w-4 text-(--theme-accent)" />
           <span>
-            <span className="block text-sm font-medium">Темы</span>
+            <span className="block text-sm font-medium">Разделы</span>
             <span className="mt-0.5 block text-xs leading-5 text-[var(--app-muted)]">
-              Разделите большую группу на отдельные обсуждения.
+              Отдельные обсуждения открываются во вкладках над сообщениями.
             </span>
           </span>
         </span>
@@ -48,35 +46,17 @@ export function GroupTopicsSettings({
           <input
             type="checkbox"
             checked={enabled}
-            onChange={(event) => void update(event.target.checked, layout)}
+            disabled={!canManage}
+            onChange={(event) => void update(event.target.checked, "tabs")}
             className="settings-switch shrink-0"
+            aria-label="Включить разделы группы"
           />
         )}
       </label>
-
-      {enabled ? (
-        <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[var(--app-border)] pt-3">
-          {(["tabs", "list"] as const).map((value) => {
-            const Icon = value === "tabs" ? PanelTop : LayoutList;
-            return (
-              <button
-                key={value}
-                type="button"
-                disabled={pending}
-                onClick={() => void update(true, value)}
-                className={cn(
-                  "flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm transition",
-                  layout === value
-                    ? "border-[var(--theme-accent)] bg-[var(--app-accent-soft)] text-(--theme-accent)"
-                    : "border-[var(--app-border)] hover:bg-[var(--app-surface-soft)]",
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {value === "tabs" ? "Вкладки" : "Список"}
-              </button>
-            );
-          })}
-        </div>
+      {!canManage ? (
+        <p className="mt-2 text-xs text-[var(--app-muted)]">
+          Включить или отключить разделы может владелец или администратор.
+        </p>
       ) : null}
 
       {error ? <p className="mt-2 text-xs text-red-400" role="alert">{error}</p> : null}

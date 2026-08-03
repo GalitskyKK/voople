@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 
 import { useProfileCanvasStrokes } from "@/hooks/useProfileCanvasStrokes";
 import type { ProfileViewModel } from "@/types/domain";
@@ -16,6 +16,8 @@ type ProfileFlipCardProps = {
   canFollow?: boolean;
   viewerId?: string | null;
   initialStrokes?: Stroke[];
+  front?: ReactNode;
+  realtimeEnabled?: boolean;
   className?: string;
 };
 
@@ -25,6 +27,8 @@ export function ProfileFlipCard({
   canFollow = false,
   viewerId = null,
   initialStrokes = [],
+  front,
+  realtimeEnabled = true,
   className,
 }: ProfileFlipCardProps) {
   const [flipped, setFlipped] = useState(false);
@@ -57,14 +61,14 @@ export function ProfileFlipCard({
       className={className}
       flipped={flipped}
       onFlippedChange={setFlipped}
-      front={
+      front={front ?? (
         <ProfileCard
           profile={profile}
           isOwner={isOwner}
           canFollow={canFollow}
           className="h-full"
         />
-      }
+      )}
       renderBack={(isEditing) =>
         isEditing ? (
           <div className={backShellClassName}>
@@ -82,6 +86,7 @@ export function ProfileFlipCard({
               onSyncFromServer={handleSyncFromServer}
               canClear={isOwner}
               canUndo={canUndo}
+              realtimeEnabled={realtimeEnabled}
               className="h-full min-h-[320px]"
             />
           </div>

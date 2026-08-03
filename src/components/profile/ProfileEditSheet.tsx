@@ -7,7 +7,6 @@ import {
   ChevronRight,
   ImagePlus,
   Loader2,
-  Pencil,
   RotateCcw,
   Upload,
 } from "lucide-react";
@@ -41,7 +40,7 @@ import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import type { ProfileCustomizationView, ProfileViewModel } from "@/types/domain";
 import type { EquippedCustomizationView, ShopItemView } from "@/types/shop";
-
+import { ProfileEditTrigger } from "./ProfileEditTrigger";
 type Panel = "profile" | "avatar" | "banner" | "frame" | "feed" | "name";
 type EditorCustomizationPatch = {
   profileFrameId?: string | null;
@@ -411,7 +410,15 @@ function ProfileEditorPreview({
   );
 }
 
-export function ProfileEditSheet({ profile }: { profile: ProfileViewModel }) {
+export function ProfileEditSheet({
+  profile,
+  onUpdated,
+  triggerVariant = "icon",
+}: {
+  profile: ProfileViewModel;
+  onUpdated?: () => void;
+  triggerVariant?: "icon" | "button";
+}) {
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<Panel>("profile");
   const [editing, setEditing] = useState<"name" | "bio" | null>(null);
@@ -462,6 +469,7 @@ export function ProfileEditSheet({ profile }: { profile: ProfileViewModel }) {
       utils.shop.overview.invalidate(),
       utils.customization.getEquipped.invalidate(),
     ]);
+    onUpdated?.();
   };
 
   const save = trpc.profile.update.useMutation({
@@ -625,15 +633,7 @@ export function ProfileEditSheet({ profile }: { profile: ProfileViewModel }) {
 
   return (
     <>
-      <button
-        type="button"
-        aria-label="Редактировать профиль"
-        title="Редактировать профиль"
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white/85 backdrop-blur-sm transition hover:bg-black/55 hover:text-white"
-        onClick={openEditor}
-      >
-        <Pencil className="h-4 w-4" />
-      </button>
+      <ProfileEditTrigger variant={triggerVariant} onClick={openEditor} />
 
       <Sheet
         open={open}

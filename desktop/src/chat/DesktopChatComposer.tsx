@@ -14,18 +14,24 @@ export function DesktopChatComposer({
   config,
   session,
   replyTo,
+  editing,
   sending,
   onCancelReply,
   onSend,
+  onEdit,
+  onCancelEdit,
 }: {
   config: DesktopConfig;
   session: Session;
   replyTo: ChatMessageView | null;
+  editing: ChatMessageView | null;
   sending: boolean;
   onCancelReply: () => void;
   onSend: (draft: DesktopMessageDraft) => Promise<boolean>;
+  onEdit: (messageId: string, text: string) => Promise<boolean>;
+  onCancelEdit: () => void;
 }) {
-  const [text, setText] = useState("");
+  const [text, setText] = useState(() => editing?.text ?? "");
   const {
     clear,
     error,
@@ -43,11 +49,19 @@ export function DesktopChatComposer({
     !sending &&
     !uploading &&
     audioMetadataReady &&
-    Boolean(text.trim() || upload);
+    Boolean(text.trim() || upload) &&
+    (!editing || text.trim() !== editing.text?.trim());
 
   const submit = async (event?: FormEvent) => {
     event?.preventDefault();
     if (!canSend) return;
+    if (editing) {
+      if (await onEdit(editing.id, text)) {
+        setText("");
+        onCancelEdit();
+      }
+      return;
+    }
     const sent = await onSend({ text, replyTo, upload });
     if (!sent) return;
     setText("");
@@ -92,11 +106,16 @@ export function DesktopChatComposer({
       onSubmit={(event) => void submit(event)}
     >
       <DesktopChatComposerPreview
+        editing={editing}
         replyTo={replyTo}
         upload={upload}
         onCancelReply={onCancelReply}
         onClearUpload={clear}
         onUpdateAudioMetadata={updateAudioMetadata}
+        onCancelEdit={() => {
+          setText("");
+          onCancelEdit();
+        }}
       />
 
       {error ? (
@@ -111,6 +130,7 @@ export function DesktopChatComposer({
         sending={sending}
         uploading={uploading}
         hasUpload={Boolean(upload)}
+        editing={Boolean(editing)}
         onTextChange={setText}
         onSubmit={() => void submit()}
         onImageSelected={selectImage}

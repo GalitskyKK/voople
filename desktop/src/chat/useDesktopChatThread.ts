@@ -296,6 +296,44 @@ export function useDesktopChatThread(
     [client, data, onInboxChange],
   );
 
+  const editMessage = useCallback(
+    async (messageId: string, text: string) => {
+      const previous = data;
+      const trimmed = text.trim();
+      if (!trimmed) return false;
+      setError(null);
+      setData((current) => current ? {
+        ...current,
+        messages: current.messages.map((message) =>
+          message.id === messageId ? { ...message, text: trimmed } : message,
+        ),
+      } : current);
+      try {
+        const updated = (await client.mutation("chat.editMessage", {
+          messageId,
+          text: trimmed,
+        })) as ChatMessageView;
+        setData((current) => current ? {
+          ...current,
+          messages: current.messages.map((message) =>
+            message.id === messageId ? { ...updated, sender: message.sender } : message,
+          ),
+        } : current);
+        onInboxChange();
+        return true;
+      } catch (editError) {
+        setData(previous);
+        setError(
+          editError instanceof Error
+            ? editError.message
+            : "Не удалось изменить сообщение",
+        );
+        return false;
+      }
+    },
+    [client, data, onInboxChange],
+  );
+
   const toggleReaction = useCallback(
     async (messageId: string, emoji: string) => {
       const previous = data;
@@ -350,6 +388,7 @@ export function useDesktopChatThread(
   return {
     data,
     deleteMessage,
+    editMessage,
     error,
     live,
     loading,

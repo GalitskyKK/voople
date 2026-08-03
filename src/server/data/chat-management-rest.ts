@@ -180,10 +180,10 @@ export async function setGroupTopicsRest(
 ) {
   const membership = await assertChatMemberRest(chatId, userId);
   if (membership.type !== "group" || membership.parentChatId) {
-    throw new Error("Темы настраиваются в основной группе");
+    throw new Error("Разделы настраиваются в основной группе");
   }
   if (membership.role !== "owner" && membership.role !== "admin") {
-    throw new Error("Настраивать темы могут владелец и администраторы группы");
+    throw new Error("Настраивать разделы могут владелец и администраторы группы");
   }
 
   const admin = getAdminClient();
@@ -194,7 +194,7 @@ export async function setGroupTopicsRest(
       .eq("parent_chat_id", chatId);
     if (countError) throw new Error(countError.message);
     if ((count ?? 0) > 0) {
-      throw new Error("Сначала удалите или перенесите существующие темы");
+      throw new Error("Сначала удалите или перенесите существующие разделы");
     }
   }
 
@@ -204,6 +204,98 @@ export async function setGroupTopicsRest(
     .eq("id", chatId);
   if (error) throw new Error(error.message);
   return { topicsEnabled: enabled, topicsLayout: layout };
+}
+
+async function clearGroupRoomPresence(chatId: string, userId: string) {
+  const admin = getAdminClient();
+  const { data: topics, error: topicsError } = await admin
+    .from("chats")
+    .select("id")
+    .eq("parent_chat_id", chatId);
+  if (topicsError) throw new Error(topicsError.message);
+
+  const chatIds = [chatId, ...(topics ?? []).map((topic) => topic.id as string)];
+  const { error } = await admin
+    .from("chat_room_participants")
+    .delete()
+    .in("chat_id", chatIds)
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+}
+
+export async function removeGroupMemberRest(
+  chatId: string,
+  actorId: string,
+  memberId: string,
+) {
+  const membership = await assertChatMemberRest(chatId, actorId);
+  if (membership.type !== "group" || membership.parentChatId) {
+    throw new Error("Участники управляются в основной группе");
+  }
+  if (membership.role !== "owner" && membership.role !== "admin") {
+    throw new Error("Исключать участников могут владелец и администраторы группы");
+  }
+  if (actorId === memberId) {
+    throw new Error("Для своего аккаунта используйте выход из группы");
+  }
+
+  const admin = getAdminClient();
+  const { data: target, error: targetError } = await admin
+    .from("chat_members")
+    .select("role")
+    .eq("chat_id", membership.accessChatId)
+    .eq("user_id", memberId)
+    .maybeSingle();
+  if (targetError) throw new Error(targetError.message);
+  if (!target) throw new Error("Участник уже покинул группу");
+  if (target.role === "owner") throw new Error("Владельца группы исключить нельзя");
+  if (membership.role === "admin" && target.role !== "member") {
+    throw new Error("Администратор может исключать только обычных участников");
+  }
+
+  const { error } = await admin
+    .from("chat_members")
+    .delete()
+    .eq("chat_id", membership.accessChatId)
+    .eq("user_id", memberId);
+  if (error) throw new Error(error.message);
+  await clearGroupRoomPresence(membership.accessChatId, memberId);
+  return { removed: true };
+}
+
+export async function leaveGroupRest(chatId: string, userId: string) {
+  const membership = await assertChatMemberRest(chatId, userId);
+  if (membership.type !== "group" || membership.parentChatId) {
+    throw new Error("Выйти можно только из основной группы");
+  }
+  if (membership.role === "owner") {
+    throw new Error("Владелец должен удалить группу или сначала передать права");
+  }
+
+  const admin = getAdminClient();
+  const { error } = await admin
+    .from("chat_members")
+    .delete()
+    .eq("chat_id", membership.accessChatId)
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  await clearGroupRoomPresence(membership.accessChatId, userId);
+  return { left: true };
+}
+
+export async function deleteGroupRest(chatId: string, userId: string) {
+  const membership = await assertChatMemberRest(chatId, userId);
+  if (membership.type !== "group" || membership.parentChatId) {
+    throw new Error("Удалить можно только основную группу");
+  }
+  if (membership.role !== "owner") {
+    throw new Error("Удалить группу может только владелец");
+  }
+
+  const admin = getAdminClient();
+  const { error } = await admin.from("chats").delete().eq("id", chatId);
+  if (error) throw new Error(error.message);
+  return { deleted: true };
 }
 
 type DirectChatRpcResult = string | { get_or_create_direct_chat?: string } | null;
@@ -277,12 +369,8 @@ export async function createSubchatRest(
 ) {
   const membership = await assertChatMemberRest(parentChatId, userId);
   if (membership.type !== "group" || membership.parentChatId) {
-    throw new Error("Подчаты можно создавать только внутри основной группы");
+    throw new Error("Разделы можно создавать только внутри основной группы");
   }
-  if (membership.role !== "owner" && membership.role !== "admin") {
-    throw new Error("Создавать подчаты могут владелец и администраторы группы");
-  }
-
   const cleanName = name.trim();
   if (cleanName.length < 2 || cleanName.length > 50) {
     throw new Error("Название — от 2 до 50 символов");
@@ -296,7 +384,7 @@ export async function createSubchatRest(
     .single();
   if (parentError) throw new Error(parentError.message);
   if (!parent.topics_enabled) {
-    throw new Error("Сначала включите темы в настройках группы");
+    throw new Error("Сначала включите разделы в настройках группы");
   }
 
   const { count, error: countError } = await admin
@@ -304,7 +392,7 @@ export async function createSubchatRest(
     .select("id", { count: "exact", head: true })
     .eq("parent_chat_id", parentChatId);
   if (countError) throw new Error(countError.message);
-  if ((count ?? 0) >= 30) throw new Error("В группе может быть до 30 подчатов");
+  if ((count ?? 0) >= 30) throw new Error("В группе может быть до 30 разделов");
 
   const { data, error } = await admin
     .from("chats")

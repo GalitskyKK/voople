@@ -4,6 +4,7 @@ import { ChatListView } from "@/components/chat/ChatListView";
 import { MessagesLayoutView } from "@/components/chat/MessagesLayoutView";
 import { SectionPageHeader } from "@/components/layout/SectionPageHeader";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
+import type { ChatListItem } from "@/types/chat";
 
 import type { DesktopConfig } from "../config";
 import { DesktopChatAvatar } from "./DesktopChatAvatar";
@@ -27,6 +28,13 @@ export function DesktopMessages({
     session,
   );
   const badgeUrl = vooplusBadgeUrl(config.assetsCdnUrl);
+  const activeRootChat: ChatListItem | null = activeChatId
+    ? chats.find(
+        (chat) =>
+          chat.id === activeChatId ||
+          chat.channels.some((section) => section.id === activeChatId),
+      ) ?? null
+    : null;
 
   return (
     <MessagesLayoutView
@@ -103,11 +111,13 @@ export function DesktopMessages({
           <DesktopChatThread
             key={activeChatId}
             chatId={activeChatId}
+            rootChat={activeRootChat}
             config={config}
             session={session}
             onBack={() => navigate("/messages")}
             onInboxChange={refresh}
             onNavigateChat={(chatId) => navigate(`/messages/${chatId}`)}
+            onNavigateProfile={(username) => navigate(`/${username}`)}
             onlineUserIds={onlineUserIds}
           />
         ) : null

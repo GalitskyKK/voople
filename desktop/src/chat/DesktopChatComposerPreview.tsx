@@ -3,12 +3,15 @@ import { X } from "lucide-react";
 import type { ChatMessageView, ChatPendingUpload } from "@/types/chat";
 
 export function DesktopChatComposerPreview({
+  editing,
   replyTo,
   upload,
   onCancelReply,
   onClearUpload,
   onUpdateAudioMetadata,
+  onCancelEdit,
 }: {
+  editing: ChatMessageView | null;
   replyTo: ChatMessageView | null;
   upload: ChatPendingUpload | null;
   onCancelReply: () => void;
@@ -17,9 +20,21 @@ export function DesktopChatComposerPreview({
     title: string;
     artist: string;
   }) => void;
+  onCancelEdit: () => void;
 }) {
   return (
     <>
+      {editing ? (
+        <div className="desktop-chat-composer__preview">
+          <div className="min-w-0 flex-1">
+            <p>Редактирование</p>
+            <span>{editing.text}</span>
+          </div>
+          <button type="button" onClick={onCancelEdit} aria-label="Отменить редактирование">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      ) : null}
       {replyTo ? (
         <div className="desktop-chat-composer__preview">
           <div className="min-w-0 flex-1">

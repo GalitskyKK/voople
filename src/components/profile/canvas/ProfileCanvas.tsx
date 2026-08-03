@@ -38,6 +38,7 @@ type ProfileCanvasProps = {
   onSyncFromServer: () => void;
   canClear?: boolean;
   canUndo?: boolean;
+  realtimeEnabled?: boolean;
   className?: string;
 };
 
@@ -71,6 +72,7 @@ export function ProfileCanvas({
   onSyncFromServer,
   canClear = false,
   canUndo = false,
+  realtimeEnabled = true,
   className,
 }: ProfileCanvasProps) {
   const { theme } = useAppTheme();
@@ -155,6 +157,7 @@ export function ProfileCanvas({
   );
 
   const { emitDrawing, emitStrokeEnd, emitClear, emitUndo, canDraw } = useCanvasRealtime({
+    enabled: realtimeEnabled,
     profileUserId,
     profileOwnerId,
     viewerId,

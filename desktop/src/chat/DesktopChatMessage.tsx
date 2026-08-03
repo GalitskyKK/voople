@@ -14,6 +14,7 @@ export function DesktopChatMessage({
   message,
   showSender,
   onReply,
+  onEdit,
   onDelete,
   onToggleReaction,
   groupPosition,
@@ -21,6 +22,7 @@ export function DesktopChatMessage({
   message: ChatMessageView;
   showSender: boolean;
   onReply: (message: ChatMessageView) => void;
+  onEdit: (message: ChatMessageView) => void;
   onDelete: (messageId: string) => void;
   onToggleReaction: (messageId: string, emoji: string) => void;
   groupPosition: "only" | "start" | "middle" | "end";
@@ -77,6 +79,7 @@ export function DesktopChatMessage({
             open={menuOpen}
             onOpenChange={setMenuOpen}
             onReply={onReply}
+            onEdit={onEdit}
             onDelete={
               message.isMine
                 ? () => {

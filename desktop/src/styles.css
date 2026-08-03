@@ -1,7 +1,25 @@
+@font-face {
+  font-family: "Geist Voople";
+  src: url("../../node_modules/next/dist/next-devtools/server/font/geist-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono Voople";
+  src: url("../../node_modules/next/dist/next-devtools/server/font/geist-mono-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 :root {
+  --font-geist-sans: "Geist Voople";
+  --font-geist-mono: "Geist Mono Voople";
   color: var(--foreground);
   background: var(--background);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -19,10 +37,22 @@ button { color: inherit; }
   overflow: hidden;
   background: var(--background);
 }
-.desktop-window-content { position: relative; min-height: 0; overflow: hidden; }
+.desktop-window-content {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 0.375rem;
+  background: var(--background);
+}
 .desktop-window-content > .status-page,
 .desktop-window-content > .auth-page { min-height: 100%; }
-.desktop-window-content .voople-shell { height: 100%; min-height: 0; }
+.desktop-window-content .voople-shell {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
 .desktop-titlebar {
   z-index: 200;
   display: flex;
@@ -384,12 +414,33 @@ button:focus-visible, input:focus-visible {
   flex: 1;
   overflow-y: auto;
   padding-bottom: 1.5rem;
+  scrollbar-gutter: stable;
 }
 
 .voople-shell[data-route-kind="messages"] .desktop-shell-scroll {
   display: flex;
+  width: 100%;
   overflow: hidden;
   padding-bottom: 0;
+  scrollbar-gutter: auto;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-shell__workspace,
+.voople-shell[data-route-kind="messages"] .voople-shell__main {
+  width: 100%;
+  max-width: none;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-messages-layout {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: inherit;
+  background: var(--app-surface);
+  box-shadow: none;
 }
 
 .desktop-section-content {
@@ -492,7 +543,10 @@ button:focus-visible, input:focus-visible {
   max-width: 50rem;
   margin-inline: auto;
   flex-shrink: 0;
+  border-top: 1px solid var(--app-border);
   padding: 0.65rem 1rem max(0.75rem, env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--app-surface) 94%, transparent);
+  backdrop-filter: blur(18px);
 }
 
 .desktop-chat-composer__row {
@@ -503,7 +557,7 @@ button:focus-visible, input:focus-visible {
   border-radius: 1.25rem;
   padding: 0.4rem;
   background: color-mix(in srgb, var(--app-surface) 94%, transparent);
-  box-shadow: var(--app-shadow-sm);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 8%, transparent);
 }
 
 .desktop-chat-composer textarea {
@@ -695,6 +749,13 @@ button:focus-visible, input:focus-visible {
 
   .voople-shell[data-route-kind="messages"] .desktop-shell-scroll {
     padding-bottom: 0;
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-messages-layout {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .desktop-create-fab {

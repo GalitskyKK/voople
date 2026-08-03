@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
+import { useRouter } from "next/navigation";
 
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { trpc } from "@/lib/trpc/client";
@@ -10,21 +11,27 @@ import { GroupManagementSheetView } from "./GroupManagementSheetView";
 export function GroupInviteSheet({
   chatId,
   chatName,
+  viewerRole,
   canManage,
   topicsEnabled,
   topicsLayout,
 }: {
   chatId: string;
   chatName: string;
+  viewerRole: "owner" | "admin" | "member";
   canManage: boolean;
   topicsEnabled: boolean;
   topicsLayout: "tabs" | "list";
 }) {
+  const router = useRouter();
   const utils = trpc.useUtils();
   const createInvite = trpc.chat.createInvite.useMutation();
   const revokeInvite = trpc.chat.revokeInvite.useMutation();
   const addMembers = trpc.chat.addGroupMembers.useMutation();
   const setTopics = trpc.chat.setGroupTopics.useMutation();
+  const removeMember = trpc.chat.removeGroupMember.useMutation();
+  const leaveGroup = trpc.chat.leaveGroup.useMutation();
+  const deleteGroup = trpc.chat.deleteGroup.useMutation();
   const loadMembers = useCallback(
     () => utils.client.chat.groupMembers.query({ chatId }),
     [chatId, utils.client],
@@ -37,6 +44,7 @@ export function GroupInviteSheet({
   return (
     <GroupManagementSheetView
       chatName={chatName}
+      viewerRole={viewerRole}
       canManage={canManage}
       topicsEnabled={topicsEnabled}
       topicsLayout={topicsLayout}
@@ -51,6 +59,13 @@ export function GroupInviteSheet({
           utils.chat.getMessages.invalidate({ chatId }),
           utils.chat.list.invalidate(),
         ]);
+      }}
+      removeMember={(memberId) => removeMember.mutateAsync({ chatId, memberId })}
+      leaveGroup={() => leaveGroup.mutateAsync({ chatId })}
+      deleteGroup={() => deleteGroup.mutateAsync({ chatId })}
+      onGroupClosed={() => {
+        void utils.chat.list.invalidate();
+        router.replace("/messages");
       }}
       onMembersChanged={() => {
         void utils.chat.getMessages.invalidate({ chatId });

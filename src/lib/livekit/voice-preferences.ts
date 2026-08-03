@@ -6,6 +6,7 @@ export type VoicePreferences = {
   noiseSuppression: boolean;
   autoGainControl: boolean;
   voiceIsolation: boolean;
+  enhancedNoiseSuppression: boolean;
   compatibilityMode: boolean;
 };
 
@@ -16,9 +17,10 @@ export const DEFAULT_VOICE_PREFERENCES: VoicePreferences = {
   outputDeviceId: "default",
   endpointUrl: "auto",
   echoCancellation: true,
-  noiseSuppression: true,
+  noiseSuppression: false,
   autoGainControl: true,
   voiceIsolation: true,
+  enhancedNoiseSuppression: true,
   compatibilityMode: false,
 };
 
@@ -27,7 +29,9 @@ export function loadVoicePreferences(): VoicePreferences {
 
   try {
     const stored = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "{}") as Partial<VoicePreferences>;
-    return { ...DEFAULT_VOICE_PREFERENCES, ...stored };
+    const preferences = { ...DEFAULT_VOICE_PREFERENCES, ...stored };
+    if (preferences.enhancedNoiseSuppression) preferences.noiseSuppression = false;
+    return preferences;
   } catch {
     return DEFAULT_VOICE_PREFERENCES;
   }

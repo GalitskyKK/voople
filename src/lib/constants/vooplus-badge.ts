@@ -1,3 +1,5 @@
+import { publicAssetUrl } from "@/lib/object-storage/urls";
+
 /** Ключ в публичном бакете `voople-assets` (CDN: `/pins/vooplus.gif`). */
 export const VOOPLUS_BADGE_STORAGE_KEY = "pins/vooplus.gif";
 
@@ -10,5 +12,5 @@ export function vooplusBadgeUrl(cdnBase = defaultCdnBase()): string {
   const normalizedCdnBase = cdnBase.replace(/\/$/, "");
   return normalizedCdnBase
     ? `${normalizedCdnBase}/${VOOPLUS_BADGE_STORAGE_KEY}`
-    : `/${VOOPLUS_BADGE_STORAGE_KEY}`;
+    : (publicAssetUrl(VOOPLUS_BADGE_STORAGE_KEY) ?? `/${VOOPLUS_BADGE_STORAGE_KEY}`);
 }

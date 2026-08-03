@@ -17,6 +17,7 @@ const eslintConfig = defineConfig([
     ".next/**",
     "desktop/dist/**",
     "desktop/src-tauri/target/**",
+    "public/audio/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

@@ -19,6 +19,7 @@ export function DesktopChatComposerInput({
   sending,
   uploading,
   hasUpload,
+  editing,
   onTextChange,
   onSubmit,
   onImageSelected,
@@ -32,6 +33,7 @@ export function DesktopChatComposerInput({
   sending: boolean;
   uploading: boolean;
   hasUpload: boolean;
+  editing: boolean;
   onTextChange: (value: string) => void;
   onSubmit: () => void;
   onImageSelected: (file?: File) => void | Promise<void>;
@@ -88,7 +90,7 @@ export function DesktopChatComposerInput({
       />
 
       <div className="desktop-chat-composer__row">
-        <DropdownMenu
+        {!editing ? <DropdownMenu
           open={attachOpen}
           onOpenChange={setAttachOpen}
           align="start"
@@ -132,7 +134,7 @@ export function DesktopChatComposerInput({
             <Music className="h-4 w-4" />
             Аудиофайл
           </button>
-        </DropdownMenu>
+        </DropdownMenu> : null}
 
         <div className="relative">
           <button
@@ -169,7 +171,7 @@ export function DesktopChatComposerInput({
           aria-label="Сообщение"
         />
 
-        {!text.trim() && !hasUpload ? (
+        {!editing && !text.trim() && !hasUpload ? (
           <ChatVoiceRecorder
             disabled={sending || uploading}
             onRecorded={onVoiceRecorded}

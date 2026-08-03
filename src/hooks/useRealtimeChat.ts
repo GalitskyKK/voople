@@ -76,17 +76,23 @@ export function useRealtimeChat(chatId: string, viewerId: string | null | undefi
         },
         (payload) => {
           const row = payload.new as RealtimeRow;
-          if (!row.read_at) return;
-
+          setRealtimeState({
+            key: subscriptionKey,
+            status: "subscribed",
+            lastEventAt: new Date().toISOString(),
+          });
           utils.chat.getMessages.setData({ chatId }, (current) => {
             if (!current) return current;
             return {
               ...current,
               messages: current.messages.map((message) =>
-                message.isMine ? { ...message, readAt: row.read_at } : message,
+                message.id === row.id
+                  ? { ...message, text: row.text, readAt: row.read_at }
+                  : message,
               ),
             };
           });
+          void utils.chat.list.invalidate();
         },
       )
       .on(

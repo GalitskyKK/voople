@@ -4,6 +4,7 @@ import { ProfileBannerVisual } from "@/components/profile/ProfileBannerVisual";
 import { ProfileCardBodyVisual } from "@/components/profile/ProfileCardBodyVisual";
 import { ProfileCardIdentityVisual } from "@/components/profile/ProfileCardIdentityVisual";
 import { ProfileCardVisual } from "@/components/profile/ProfileCardVisual";
+import { ProfileReactions } from "@/components/profile/ProfileReactions";
 import { ProfileStatusBlock } from "@/components/profile/ProfileStatusBlock";
 import type { DesktopConfig } from "../config";
 import type { Session } from "@supabase/supabase-js";
@@ -76,6 +77,13 @@ export function DesktopProfileCard({
             />
           }
           status={<ProfileStatusBlock status={profile.status} />}
+          reactions={
+            <ProfileReactions
+              profileUserId={profile.id}
+              canReact={!isOwner}
+              realtimeEnabled={false}
+            />
+          }
           shareAction={
             isOwner ? (
               <DesktopProfileShareButton

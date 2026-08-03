@@ -449,12 +449,9 @@ export async function listMessagesRest(
   if (chatResult.error) throw new Error(chatResult.error.message);
 
   let otherUser: ChatListItem["otherUser"] = null;
-  let viewerRole: ChatListItem["viewerRole"] = "member";
+  const viewerRole: ChatListItem["viewerRole"] = membership.role;
   for (const row of membersResult.data ?? []) {
     const uid = row.user_id as string;
-    if (uid === userId) {
-      viewerRole = row.role === "owner" || row.role === "admin" ? row.role : "member";
-    }
     if (uid === userId) continue;
     const u = row.users as
       | {
@@ -491,7 +488,12 @@ export async function listMessagesRest(
   const rows = (msgResult.data ?? []) as MessageRow[];
   const membersById = new Map<
     string,
-    { username: string; displayName: string; avatarUrl: string | null }
+    {
+      username: string;
+      displayName: string;
+      hasVooplePlus: boolean;
+      avatarUrl: string | null;
+    }
   >();
   for (const row of membersResult.data ?? []) {
     const related = row.users as
@@ -499,20 +501,26 @@ export async function listMessagesRest(
           id: string;
           username: string;
           display_name: string;
+          subscriptions?: { started_at: string; expires_at: string } | { started_at: string; expires_at: string }[];
           profile_customization?: CustomizationRow | CustomizationRow[] | null;
         }
       | Array<{
           id: string;
           username: string;
           display_name: string;
+          subscriptions?: { started_at: string; expires_at: string } | { started_at: string; expires_at: string }[];
           profile_customization?: CustomizationRow | CustomizationRow[] | null;
         }>
       | null;
     const member = Array.isArray(related) ? related[0] : related;
     if (member) {
+      const subscription = Array.isArray(member.subscriptions)
+        ? member.subscriptions[0]
+        : member.subscriptions;
       membersById.set(member.id, {
         username: member.username,
         displayName: member.display_name,
+        hasVooplePlus: mapSubscriptionFields(subscription ?? undefined).hasVooplePlus,
         avatarUrl: compactAvatarFields(member.profile_customization).avatarUrl,
       });
     }
@@ -684,6 +692,39 @@ export async function deleteMessageRest(messageId: string, userId: string) {
   if (error) throw new Error(error.message);
 
   return { id: messageId };
+}
+
+export async function editMessageRest(
+  messageId: string,
+  userId: string,
+  text: string,
+) {
+  const admin = getAdminClient();
+  const trimmed = text.trim();
+  const { data: message, error: messageError } = await admin
+    .from("messages")
+    .select("id, chat_id, sender_id")
+    .eq("id", messageId)
+    .maybeSingle();
+
+  if (messageError) throw new Error(messageError.message);
+  if (!message) throw new Error("Сообщение не найдено");
+  if ((message.sender_id as string) !== userId) {
+    throw new Error("Можно редактировать только свои сообщения");
+  }
+  await assertChatMemberRest(message.chat_id as string, userId);
+
+  const { data: updated, error } = await admin
+    .from("messages")
+    .update({ text: trimmed })
+    .eq("id", messageId)
+    .eq("sender_id", userId)
+    .select(MESSAGE_SELECT)
+    .single();
+  if (error) throw new Error(error.message);
+
+  const [result] = await hydrateMessages([updated as MessageRow], userId);
+  return result;
 }
 
 export async function toggleMessageReactionRest(messageId: string, userId: string, emoji: string) {

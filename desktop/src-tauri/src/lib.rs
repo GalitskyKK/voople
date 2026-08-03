@@ -78,6 +78,11 @@ fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn restart_application(app: tauri::AppHandle) {
+    app.restart();
+}
+
+#[tauri::command]
 fn open_external_url(url: String) -> Result<(), String> {
     let parsed = reqwest::Url::parse(&url).map_err(|error| error.to_string())?;
     if parsed.scheme() != "https" {
@@ -252,6 +257,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             runtime_info,
             show_main_window,
+            restart_application,
             open_external_url,
             set_window_behavior,
             start_voice_heartbeat,

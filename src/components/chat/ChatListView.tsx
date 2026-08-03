@@ -136,7 +136,6 @@ export function ChatListView({
               key={chat.id}
               chat={chat}
               activeChatId={activeChatId}
-              normalizedQuery={query.trim().toLocaleLowerCase("ru-RU")}
               renderDestination={renderDestination}
               renderAvatar={renderAvatar}
               renderTitle={renderTitle}

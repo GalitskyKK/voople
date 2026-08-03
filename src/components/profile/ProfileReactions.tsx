@@ -9,9 +9,14 @@ import { trpc } from "@/lib/trpc/client";
 type ProfileReactionsProps = {
   profileUserId: string;
   canReact: boolean;
+  realtimeEnabled?: boolean;
 };
 
-export function ProfileReactions({ profileUserId, canReact }: ProfileReactionsProps) {
+export function ProfileReactions({
+  profileUserId,
+  canReact,
+  realtimeEnabled = true,
+}: ProfileReactionsProps) {
   const utils = trpc.useUtils();
   const { data: reactions = [] } = trpc.profile.getReactions.useQuery(
     { profileUserId },
@@ -25,6 +30,8 @@ export function ProfileReactions({ profileUserId, canReact }: ProfileReactionsPr
   });
 
   useEffect(() => {
+    if (!realtimeEnabled) return;
+
     const supabase = createClient();
     const channelId = crypto.randomUUID();
     const channel = supabase
@@ -46,7 +53,7 @@ export function ProfileReactions({ profileUserId, canReact }: ProfileReactionsPr
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [profileUserId, utils]);
+  }, [profileUserId, realtimeEnabled, utils]);
 
   return (
     <div className="flex min-h-7 items-center justify-between gap-2">

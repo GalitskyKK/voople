@@ -1,6 +1,6 @@
 [package]
 name = "voople-desktop"
-version = "0.1.7"
+version = "0.1.8"
 description = "Voople desktop application"
 authors = ["Voople"]
 edition = "2021"

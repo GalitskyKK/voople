@@ -11,6 +11,7 @@ import type { Session } from "@supabase/supabase-js";
 import { DesktopProfileAvatar } from "./DesktopProfileAvatar";
 import { DesktopProfileShareButton } from "./DesktopProfileShareButton";
 import { DesktopProfileActions } from "./DesktopProfileActions";
+import { ProfileStatusSection } from "@/components/profile/ProfileStatusSection";
 
 export function DesktopProfileCard({
   profile,
@@ -76,7 +77,14 @@ export function DesktopProfileCard({
               onUpdated={onAppearancePublished}
             />
           }
-          status={<ProfileStatusBlock status={profile.status} />}
+          // status={<ProfileStatusBlock status={profile.status} />}
+          status={
+            <ProfileStatusSection
+              username={profile.username}
+              initialStatus={profile.status}
+              isOwner={isOwner}
+            />
+          }
           reactions={
             <ProfileReactions
               profileUserId={profile.id}
@@ -97,5 +105,5 @@ export function DesktopProfileCard({
         />
       }
     />
-  );
+  )
 }

@@ -325,7 +325,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         {timeline.length === 0 && (
           <p className="text-center text-sm text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">Напишите первое сообщение</p>
         )}
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-0.5 px-2">
+        <div className="mx-auto flex w-full flex-col gap-0.5 px-2">
           {timeline.map((item) =>
             item.type === "date" ? (
               <ChatDateDivider key={item.key} label={item.label} />

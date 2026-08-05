@@ -40,7 +40,7 @@ export function ChatMessageBubble({
   onEdit,
   onAddToPlaylist,
   onOpenImage,
-  showSender = false,
+  showSender = true,
   onToggleReaction,
   groupPosition = "only",
 }: ChatMessageBubbleProps) {
@@ -89,7 +89,7 @@ export function ChatMessageBubble({
           : undefined
       }
       senderAvatar={
-        showSender && !isMine && message.sender ? (
+        showSender && message.sender ? (
           <ProfileAvatar
             displayName={message.sender.displayName}
             size="sm"

@@ -233,7 +233,7 @@ export function DesktopChatThread({
             Напишите первое сообщение
           </p>
         ) : null}
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-0.5 px-2">
+        <div className="flex w-full flex-col gap-0.5 px-2">
           {timeline.map((item) =>
             item.type === "date" ? (
               <ChatDateDivider key={item.key} label={item.label} />

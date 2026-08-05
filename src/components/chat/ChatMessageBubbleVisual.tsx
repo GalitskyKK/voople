@@ -58,9 +58,12 @@ export function ChatMessageBubbleVisual({
           {groupPosition === "only" || groupPosition === "end" ? senderAvatar : null}
         </div>
       ) : null} */}
-      <div className={cn("w-8 shrink-0", !isMine && showSender ? "block" : "hidden lg:block")}>
-        {groupPosition === "only" || groupPosition === "end" ? senderAvatar : null}
-      </div>
+      {senderAvatar ? (
+        <div
+          className={cn("w-8 shrink-0", showSender && !isMine ? "block" : "hidden", "2xl:block")}>
+          {groupPosition === "only" || groupPosition === "end" ? senderAvatar : null}
+        </div>
+      ) : null}
       <div
         className={cn(
           "voople-chat-bubble relative max-w-[min(86%,36rem)]",
@@ -79,13 +82,17 @@ export function ChatMessageBubbleVisual({
               ? "bg-[color-mix(in_srgb,var(--theme-accent)_22%,var(--app-surface))] text-[var(--foreground)]"
               : "border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--foreground)]",
             groupPosition === "start" &&
-              (isMine ? "rounded-br-lg lg:rounded-bl-lg lg:rounded-br-[1.15rem]" : "rounded-bl-lg"),
+              (isMine
+                ? "rounded-br-lg 2xl:rounded-bl-lg 2xl:rounded-br-[1.15rem]"
+                : "rounded-bl-lg"),
 
             groupPosition === "middle" &&
-              (isMine ? "rounded-r-lg lg:rounded-l-lg lg:rounded-r-[1.15rem]" : "rounded-l-lg"),
+              (isMine ? "rounded-r-lg 2xl:rounded-l-lg 2xl:rounded-r-[1.15rem]" : "rounded-l-lg"),
 
             (groupPosition === "only" || groupPosition === "end") &&
-              (isMine ? "rounded-br-md lg:rounded-bl-md lg:rounded-br-[1.15rem]" : "rounded-bl-md")
+              (isMine
+                ? "rounded-br-md 2xl:rounded-bl-md 2xl:rounded-br-[1.15rem]"
+                : "rounded-bl-md")
           )}>
           {showSender &&
           !isMine &&

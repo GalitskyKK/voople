@@ -40,7 +40,7 @@ export function ChatMessageBubble({
   onEdit,
   onAddToPlaylist,
   onOpenImage,
-  showSender = true,
+  showSender = false,
   onToggleReaction,
   groupPosition = "only",
 }: ChatMessageBubbleProps) {
@@ -69,45 +69,33 @@ export function ChatMessageBubble({
       showSender={showSender}
       interactive={hasMenu}
       onClick={() => {
-        if (!isLg) openMenu();
+        if (!isLg) openMenu()
       }}
       onContextMenu={(event) => {
-        if (!hasMenu) return;
-        event.preventDefault();
-        setMenuOpen(true);
+        if (!hasMenu) return
+        event.preventDefault()
+        setMenuOpen(true)
       }}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          openMenu();
+          event.preventDefault()
+          openMenu()
         }
       }}
       onToggleReaction={
         onToggleReaction
-          ? (emoji) =>
-              onToggleReaction(message, emoji as ChatReactionEmoji)
+          ? (emoji) => onToggleReaction(message, emoji as ChatReactionEmoji)
           : undefined
       }
       senderAvatar={
-        showSender && message.sender ? (
-          <ProfileAvatar
-            displayName={message.sender.displayName}
-            size="sm"
-            animatedAvatarUrl={message.sender.avatarUrl}
-            className="mb-0.5 shrink-0"
-          />
-        ) : null
+        message.sender ? <ProfileAvatar displayName={message.sender.displayName} size="sm" /> : null
       }
       menu={
         hasMenu && onReply ? (
           <div
-            className={cn(
-              "absolute top-1 z-20",
-              isMine ? "left-1" : "right-1",
-            )}
+            className={cn("absolute top-1 z-20", isMine ? "left-1" : "right-1")}
             onClick={(event) => event.stopPropagation()}
-            onKeyDown={(event) => event.stopPropagation()}
-          >
+            onKeyDown={(event) => event.stopPropagation()}>
             <ChatMessageMenu
               message={message}
               open={menuOpen}
@@ -143,18 +131,12 @@ export function ChatMessageBubble({
               isMine={isMine}
             />
           ) : null}
-          {attachment?.kind === "circle" ? (
-            <ChatAttachmentCircle url={attachment.url} />
-          ) : null}
+          {attachment?.kind === "circle" ? <ChatAttachmentCircle url={attachment.url} /> : null}
           {attachment?.kind === "track" ? (
-            <ChatAttachmentTrack
-              messageId={message.id}
-              attachment={attachment}
-              isMine={isMine}
-            />
+            <ChatAttachmentTrack messageId={message.id} attachment={attachment} isMine={isMine} />
           ) : null}
         </>
       }
     />
-  );
+  )
 }

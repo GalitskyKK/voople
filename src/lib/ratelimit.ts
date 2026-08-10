@@ -27,6 +27,7 @@ export const rateLimits = {
   createGroupChat: () => createLimit(8, "1 h"),
   openDirectChat: () => createLimit(60, "10 m"),
   manageGroupChat: () => createLimit(30, "1 h"),
+  joinPublicGroup: () => createLimit(20, "10 m"),
   createChatInvite: () => createLimit(20, "1 h"),
   acceptChatInvite: () => createLimit(20, "10 m"),
   enterChatRoom: () => createLimit(30, "10 m"),

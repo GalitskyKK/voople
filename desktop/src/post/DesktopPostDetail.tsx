@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { PostDetailViewVisual } from "@/components/feed/PostDetailViewVisual";
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
+import { AppPageContent } from "@/components/layout/AppPageContent";
 import type { DesktopConfig } from "../config";
 import { DesktopPostCard } from "../feed/DesktopPostCard";
 import { DesktopPostComments } from "./DesktopPostComments";
@@ -23,30 +24,30 @@ export function DesktopPostDetail({
 
   if (detail.loading) {
     return (
-      <div
-        className="desktop-section-content"
+      <AppPageContent
+        className="py-4"
         aria-label="Загрузка публикации"
       >
         <div className="feed-skeleton h-80 rounded-2xl" />
-      </div>
+      </AppPageContent>
     );
   }
 
   if (detail.error || !detail.post) {
     return (
-      <div className="desktop-section-content">
+      <AppPageContent className="py-4">
         <div className="feed-message" role="alert">
           <p>{detail.error ?? "Публикация не найдена"}</p>
           <button type="button" onClick={() => void detail.retry()}>
             Повторить
           </button>
         </div>
-      </div>
+      </AppPageContent>
     );
   }
 
   return (
-    <div className="desktop-section-content">
+    <AppPageContent>
       <PostDetailViewVisual
         backAction={renderDestination({
           href: "/feed",
@@ -80,6 +81,6 @@ export function DesktopPostDetail({
           onDelete={detail.deleteComment}
         />
       </PostDetailViewVisual>
-    </div>
+    </AppPageContent>
   );
 }

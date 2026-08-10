@@ -1,11 +1,9 @@
 "use client";
 
-import type { RefObject } from "react";
-
 import { cn } from "@/lib/utils";
 
 type VoiceMediaStageProps = {
-  screenContainerRef: RefObject<HTMLDivElement | null>;
+  screenContainerRef: (element: HTMLDivElement | null) => void;
   screenShareOwner: string | null;
   focused?: boolean;
   onFocus?: () => void;

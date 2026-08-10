@@ -1,5 +1,7 @@
 import { cn } from "@/lib/utils";
 
+import { SectionHeaderGlow } from "./SectionHeaderGlow";
+
 type SectionPageHeaderProps = {
   title: string;
   description?: string;
@@ -38,10 +40,7 @@ export function SectionPageHeader({
       )}
     >
       {variant === "panel" ? (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -right-12 -top-20 h-48 w-48 rounded-full bg-[color-mix(in_srgb,var(--theme-accent)_18%,transparent)] blur-3xl"
-        />
+        <SectionHeaderGlow />
       ) : null}
       <div className="relative flex items-center justify-between gap-4">
         <div className="min-w-0">

@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Hash, UsersRound } from "lucide-react";
+import { ArrowLeft, Hash } from "lucide-react";
 
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import type { ChatListItem } from "@/types/chat";
 
 import { ChatMobileNavigation } from "./ChatMobileNavigation";
+import { ChatPeerPresence } from "./ChatPeerPresence";
+import { ChatWindowHeaderVisual } from "./ChatWindowHeaderVisual";
 import { GroupInviteSheet } from "./GroupInviteSheet";
+import { SectionAccessSheet } from "./SectionAccessSheet";
 import { SubchatCreator } from "./SubchatCreator";
 import { VoiceRoomButton } from "./voice/VoiceRoomButton";
 
@@ -23,6 +26,10 @@ type ChatWindowHeaderProps = {
   topicsEnabled: boolean;
   topicsLayout: "tabs" | "list";
   topicIcon: string | null;
+  groupVisibility: "private" | "public";
+  groupIcon: string | null;
+  groupAvatarUrl: string | null;
+  groupAccentColor: string | null;
   viewerRole: "owner" | "admin" | "member";
   other: ChatListItem["otherUser"] | undefined;
   otherOnline: boolean;
@@ -39,6 +46,10 @@ export function ChatWindowHeader({
   topicsEnabled,
   topicsLayout,
   topicIcon,
+  groupVisibility,
+  groupIcon,
+  groupAvatarUrl,
+  groupAccentColor,
   viewerRole,
   other,
   otherOnline,
@@ -47,7 +58,7 @@ export function ChatWindowHeader({
     isGroup && !isSubchat && (viewerRole === "owner" || viewerRole === "admin");
 
   return (
-    <header className="voople-chat-window__header flex shrink-0 items-center gap-3 border-b border-[var(--app-border)] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] lg:px-4 lg:pt-3">
+    <ChatWindowHeaderVisual>
       <Link
         href={isSubchat && parentChatId ? `/messages/${parentChatId}` : "/messages"}
         className="shrink-0 rounded-[var(--app-radius-sm)] p-1 text-[var(--app-muted)] transition-colors hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] lg:hidden"
@@ -55,13 +66,24 @@ export function ChatWindowHeader({
       >
         <ArrowLeft className="h-5 w-5" />
       </Link>
-      {isSubchat ? (
+      {isGroup && !isSubchat ? (
+        <GroupInviteSheet
+          chatId={chatId}
+          chatName={chatTitle}
+          memberCount={memberCount}
+          groupIcon={groupIcon}
+          groupAvatarUrl={groupAvatarUrl}
+          groupAccentColor={groupAccentColor}
+          triggerVariant="identity"
+          viewerRole={viewerRole}
+          canManage={canManageGroup}
+          topicsEnabled={topicsEnabled}
+          topicsLayout={topicsLayout}
+          groupVisibility={groupVisibility}
+        />
+      ) : isSubchat ? (
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--app-accent-soft)] text-(--theme-accent)">
           {topicIcon ? <span aria-hidden="true">{topicIcon}</span> : <Hash className="h-4 w-4" />}
-        </span>
-      ) : isGroup ? (
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--app-accent-soft)] text-(--theme-accent)">
-          <UsersRound className="h-4 w-4" />
         </span>
       ) : other ? (
         <ProfileAvatar
@@ -73,7 +95,7 @@ export function ChatWindowHeader({
           ringId={other.avatarRingId}
         />
       ) : null}
-      <div className="min-w-0 flex-1">
+      {isGroup && !isSubchat ? null : <div className="min-w-0 flex-1">
         {isGroup ? (
           <p className="truncate font-semibold">
             {isSubchat && parentName ? `${parentName} / ${chatTitle}` : chatTitle}
@@ -92,33 +114,28 @@ export function ChatWindowHeader({
           </p>
         ) : other ? (
           <p className="text-xs text-[var(--app-muted)]">
-            {otherOnline ? (
-              <span className="text-emerald-500">в сети</span>
-            ) : (
-              <Link href={`/${other.username}`} className="voople-link hover:underline">
-                @{other.username}
-              </Link>
-            )}
+            <Link href={`/${other.username}`} className="voople-link hover:underline">
+              <ChatPeerPresence
+                isOnline={otherOnline}
+                lastSeenAt={other.lastSeenAt}
+                username={other.username}
+              />
+            </Link>
           </p>
         ) : null}
-      </div>
+      </div>}
       <VoiceRoomButton
         chatId={chatId}
         chatName={chatTitle}
         chatType={isGroup ? "group" : "direct"}
       />
-      {isGroup && !isSubchat && topicsEnabled ? <SubchatCreator parentChatId={chatId} /> : null}
-      {isGroup && !isSubchat ? (
-        <GroupInviteSheet
-          chatId={chatId}
-          chatName={chatTitle}
-          viewerRole={viewerRole}
-          canManage={canManageGroup}
-          topicsEnabled={topicsEnabled}
-          topicsLayout={topicsLayout}
-        />
+      {isGroup && !isSubchat && topicsEnabled ? (
+        <SubchatCreator parentChatId={chatId} viewerRole={viewerRole} />
+      ) : null}
+      {isSubchat && parentChatId && viewerRole !== "member" ? (
+        <SectionAccessSheet chatId={chatId} parentChatId={parentChatId} />
       ) : null}
       <ChatMobileNavigation />
-    </header>
+    </ChatWindowHeaderVisual>
   );
 }

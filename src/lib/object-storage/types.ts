@@ -1,4 +1,11 @@
-export type UploadPurpose = "post" | "comment" | "avatar" | "banner" | "track" | "chat";
+export type UploadPurpose =
+  | "post"
+  | "comment"
+  | "avatar"
+  | "group-avatar"
+  | "banner"
+  | "track"
+  | "chat";
 
 export type StorageBucketKind = "public" | "private";
 

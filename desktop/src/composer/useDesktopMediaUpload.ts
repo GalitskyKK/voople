@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 
 import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
+import { uploadPresignedFile } from "@/lib/uploads/presigned-upload";
 
 const ALLOWED_MIME = new Set([
   "image/gif",
@@ -61,12 +62,7 @@ export function useDesktopMediaUpload(
       if (!presigned.uploadUrl || !presigned.key || !presigned.publicUrl || !presigned.mediaType) {
         throw new Error("Сервер не подготовил загрузку");
       }
-      const response = await fetch(presigned.uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: { "Content-Type": contentType },
-      });
-      if (!response.ok) throw new Error("Не удалось загрузить файл");
+      await uploadPresignedFile({ url: presigned.uploadUrl, file, contentType });
       setMedia({
         mediaKey: presigned.key,
         mediaType: presigned.mediaType,

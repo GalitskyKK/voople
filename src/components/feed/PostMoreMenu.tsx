@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Flag, Link2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Flag, Link2, MoreHorizontal, Pencil, Pin, PinOff, Trash2 } from "lucide-react";
 
 import { canEditPostByAge } from "@/lib/posts/edit-window";
 import { trpc } from "@/lib/trpc/client";
@@ -19,6 +19,7 @@ type PostMoreMenuProps = {
   hasRepostTarget?: boolean;
   viewerUsername?: string | null;
   profileUsername?: string;
+  isPinned?: boolean;
   className?: string;
   onTextUpdated?: (text: string, isRepostComment: boolean) => void;
   onDeleted?: () => void;
@@ -34,6 +35,7 @@ export function PostMoreMenu({
   hasRepostTarget = false,
   viewerUsername = null,
   profileUsername,
+  isPinned = false,
   className,
   onTextUpdated,
   onDeleted,
@@ -70,6 +72,16 @@ export function PostMoreMenu({
           : Promise.resolve(),
       ]);
       onDeleted?.();
+    },
+    onError: (err) => setToast(err.message),
+  });
+  const setPinnedPost = trpc.profile.setPinnedPost.useMutation({
+    onSuccess: async () => {
+      setOpen(false);
+      if (profileUsername) {
+        await utils.profile.getPinnedPostByUsername.invalidate({ username: profileUsername });
+      }
+      setToast(isPinned ? "Пост откреплён" : "Пост закреплён");
     },
     onError: (err) => setToast(err.message),
   });
@@ -141,6 +153,26 @@ export function PostMoreMenu({
           >
             <Pencil className="h-4 w-4 shrink-0 text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]" />
             Редактировать
+          </button>
+        )}
+        {isOwner && profileUsername && (
+          <button
+            type="button"
+            role="menuitem"
+            disabled={setPinnedPost.isPending}
+            className={menuItemClass}
+            onClick={() => setPinnedPost.mutate({ postId: isPinned ? null : postId })}
+          >
+            {isPinned ? (
+              <PinOff className="h-4 w-4 shrink-0 text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]" />
+            ) : (
+              <Pin className="h-4 w-4 shrink-0 text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]" />
+            )}
+            {setPinnedPost.isPending
+              ? "Сохранение…"
+              : isPinned
+                ? "Открепить от профиля"
+                : "Закрепить в профиле"}
           </button>
         )}
         {isOwner && (

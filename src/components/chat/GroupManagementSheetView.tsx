@@ -5,28 +5,41 @@ import {
   Loader2,
   LogOut,
   Trash2,
-  UserMinus,
   UserPlus,
-  UsersRound,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { useGroupManagementSheet } from "@/hooks/useGroupManagementSheet";
-import type { ChatGroupMemberView } from "@/types/chat";
+import type { ChatGroupMemberView, GroupCommunityView } from "@/types/chat";
 import type { UserSearchHit } from "@/types/search";
 
 import { GroupChatMemberPicker } from "./GroupChatMemberPicker";
+import { GroupCommunityPanel } from "./GroupCommunityPanel";
 import { GroupInviteLinkPanel } from "./GroupInviteLinkPanel";
+import { GroupMembersList } from "./GroupMembersList";
 import { GroupTopicsSettings } from "./GroupTopicsSettings";
+import { GroupVisibilitySettings } from "./GroupVisibilitySettings";
+import { GroupAvatar } from "./GroupAvatar";
+import { GroupManagementTrigger } from "./GroupManagementTrigger";
+import {
+  GroupSettingsNavigation,
+  type GroupSettingsSection,
+} from "./GroupSettingsNavigation";
 
 type Props = {
   chatName: string;
+  memberCount: number;
+  groupIcon: string | null;
+  groupAvatarUrl: string | null;
+  groupAccentColor: string | null;
+  triggerVariant?: "toolbar" | "identity";
   viewerRole: "owner" | "admin" | "member";
   canManage: boolean;
   topicsEnabled: boolean;
   topicsLayout: "tabs" | "list";
+  groupVisibility: "private" | "public";
   inviteBaseUrl?: string;
   loadMembers: () => Promise<ChatGroupMemberView[]>;
   searchContacts: (query: string) => Promise<UserSearchHit[]>;
@@ -34,6 +47,11 @@ type Props = {
   createInvite: () => Promise<{ token: string }>;
   revokeInvite: (token: string) => Promise<unknown>;
   updateTopics: (enabled: boolean, layout: "tabs" | "list") => Promise<unknown>;
+  updateVisibility: (visibility: "private" | "public") => Promise<unknown>;
+  loadCommunity: () => Promise<GroupCommunityView>;
+  updateCustomization: (input: { description: string | null; icon: string | null; publicSlug: string | null; accentColor: string | null; avatarKey?: string | null }) => Promise<GroupCommunityView>;
+  uploadAvatar?: (file: File) => Promise<{ mediaKey: string; previewUrl: string }>;
+  setBoost: (enabled: boolean) => Promise<GroupCommunityView>;
   removeMember: (memberId: string) => Promise<unknown>;
   leaveGroup: () => Promise<unknown>;
   deleteGroup: () => Promise<unknown>;
@@ -42,73 +60,14 @@ type Props = {
   renderAvatar: (user: UserSearchHit) => ReactNode;
 };
 
-function MembersList({
-  members,
-  renderAvatar,
-  viewerRole,
-  removingMemberId,
-  onRemoveMember,
-}: {
-  members: ChatGroupMemberView[];
-  renderAvatar: Props["renderAvatar"];
-  viewerRole: Props["viewerRole"];
-  removingMemberId: string | null;
-  onRemoveMember: (member: ChatGroupMemberView) => void;
-}) {
-  return (
-    <div className="voople-scroll mt-4 max-h-72 space-y-1 overflow-y-auto">
-      {members.map((member) => (
-        <div key={member.id} className="flex items-center gap-3 rounded-xl px-2 py-2">
-          {renderAvatar(member)}
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{member.displayName}</p>
-            <p className="truncate text-xs text-[var(--app-muted)]">@{member.username}</p>
-          </div>
-          {member.role !== "member" ? (
-            <span className="rounded-full bg-[var(--app-accent-soft)] px-2 py-1 text-[0.65rem] font-semibold text-(--theme-accent)">
-              {member.role === "owner" ? "владелец" : "админ"}
-            </span>
-          ) : null}
-          {member.role !== "owner" &&
-          (viewerRole === "owner" ||
-            (viewerRole === "admin" && member.role === "member")) ? (
-            <button
-              type="button"
-              onClick={() => onRemoveMember(member)}
-              disabled={removingMemberId === member.id}
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--app-muted)] transition hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
-              aria-label={`Исключить ${member.displayName}`}
-              title="Исключить из группы"
-            >
-              {removingMemberId === member.id ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <UserMinus className="h-4 w-4" />
-              )}
-            </button>
-          ) : null}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function GroupManagementSheetView(props: Props) {
   const state = useGroupManagementSheet(props);
+  const [section, setSection] = useState<GroupSettingsSection>("members");
   const slotsLeft = Math.max(0, 20 - state.members.length);
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => state.setOpen(true)}
-        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-[var(--app-border)] px-2.5 text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
-        aria-label="Участники и разделы"
-        title="Участники и разделы"
-      >
-        <UsersRound className="h-4 w-4" />
-        <span className="hidden text-xs font-medium md:inline">Участники и разделы</span>
-      </button>
+      <GroupManagementTrigger variant={props.triggerVariant ?? "toolbar"} onClick={() => state.setOpen(true)} chatName={props.chatName} memberCount={props.memberCount} groupIcon={props.groupIcon} groupAvatarUrl={props.groupAvatarUrl} groupAccentColor={props.groupAccentColor} />
 
       <Sheet
         open={state.open}
@@ -155,17 +114,18 @@ export function GroupManagementSheetView(props: Props) {
           </>
         ) : (
           <>
-            <div className="pr-10">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-(--theme-accent)">
-                Группа
-              </p>
-              <h2 className="mt-1 truncate text-xl font-semibold">{props.chatName}</h2>
-              <p className="mt-1 text-sm text-[var(--app-muted)]">
-                {state.members.length} из 20 участников
-              </p>
+            <div className="flex items-center gap-3 pr-10">
+              <GroupAvatar name={props.chatName} avatarUrl={props.groupAvatarUrl} icon={props.groupIcon} accentColor={props.groupAccentColor} size="lg" />
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-(--theme-accent)">Группа</p>
+                <h2 className="mt-1 truncate text-xl font-semibold">{props.chatName}</h2>
+                <p className="mt-1 text-sm text-[var(--app-muted)]">{state.members.length} из 20 участников</p>
+              </div>
             </div>
 
-            {props.canManage ? (
+            <GroupSettingsNavigation section={section} onChange={setSection} />
+
+            {section === "members" && props.canManage ? (
               <Button
                 type="button"
                 variant="secondary"
@@ -178,25 +138,42 @@ export function GroupManagementSheetView(props: Props) {
               </Button>
             ) : null}
 
-            {state.loading ? (
+            {section === "members" && state.loading ? (
               <div className="mt-4 h-24 animate-pulse rounded-2xl bg-[var(--app-surface-soft)]" />
-            ) : (
-              <MembersList
+            ) : section === "members" ? (
+              <GroupMembersList
                 members={state.members}
                 renderAvatar={props.renderAvatar}
                 viewerRole={props.viewerRole}
                 removingMemberId={state.removingMemberId}
                 onRemoveMember={(member) => void state.remove(member)}
               />
-            )}
+            ) : null}
 
-            <GroupTopicsSettings
+            {section === "access" ? <><GroupTopicsSettings
               enabled={props.topicsEnabled}
               canManage={props.canManage}
               onChange={props.updateTopics}
             />
 
-            {props.canManage ? (
+            <GroupVisibilitySettings
+              value={props.groupVisibility}
+              canManage={props.canManage}
+              onChange={props.updateVisibility}
+            />
+            </> : null}
+
+            {section === "appearance" ? <GroupCommunityPanel
+              canManage={props.canManage}
+              groupName={props.chatName}
+              load={props.loadCommunity}
+              save={props.updateCustomization}
+              setBoost={props.setBoost}
+              uploadAvatar={props.uploadAvatar}
+              onChanged={props.onMembersChanged}
+            /> : null}
+
+            {section === "invites" && props.canManage ? (
               <div className="mt-4">
                 <GroupInviteLinkPanel
                   inviteBaseUrl={props.inviteBaseUrl}
@@ -206,7 +183,7 @@ export function GroupManagementSheetView(props: Props) {
               </div>
             ) : null}
 
-            <div className="mt-5 border-t border-[var(--app-border)] pt-4">
+            {section === "access" ? <div className="mt-5 border-t border-[var(--app-border)] pt-4">
               {props.viewerRole === "owner" ? (
                 <Button
                   type="button"
@@ -238,7 +215,7 @@ export function GroupManagementSheetView(props: Props) {
                   Выйти из группы
                 </Button>
               )}
-            </div>
+            </div> : null}
           </>
         )}
 

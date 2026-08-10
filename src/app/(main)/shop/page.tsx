@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { ShopPage } from "@/components/shop/ShopPage";
+import { ShopPageFrame } from "@/components/shop/ShopPageFrame";
 
 export const revalidate = 300;
 export const metadata: Metadata = {
@@ -16,8 +17,8 @@ export const metadata: Metadata = {
 
 export default function ShopRoutePage() {
   return (
-    <div className="mx-auto w-full px-1 py-4 sm:px-3 lg:px-5 lg:py-5">
+    <ShopPageFrame>
       <ShopPage />
-    </div>
+    </ShopPageFrame>
   );
 }

@@ -88,7 +88,13 @@ export function ChatMessageBubble({
           : undefined
       }
       senderAvatar={
-        message.sender ? <ProfileAvatar displayName={message.sender.displayName} size="sm" /> : null
+        message.sender ? (
+          <ProfileAvatar
+            displayName={message.sender.displayName}
+            size="sm"
+            animatedAvatarUrl={message.sender.avatarUrl}
+          />
+        ) : null
       }
       menu={
         hasMenu && onReply ? (

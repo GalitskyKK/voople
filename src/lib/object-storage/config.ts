@@ -4,6 +4,7 @@ export const UPLOAD_LIMITS: Record<UploadPurpose, { maxBytes: number }> = {
   post: { maxBytes: 40 * 1024 * 1024 },
   comment: { maxBytes: 10 * 1024 * 1024 },
   avatar: { maxBytes: 5 * 1024 * 1024 },
+  "group-avatar": { maxBytes: 5 * 1024 * 1024 },
   banner: { maxBytes: 5 * 1024 * 1024 },
   track: { maxBytes: 30 * 1024 * 1024 },
   chat: { maxBytes: 15 * 1024 * 1024 },

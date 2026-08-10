@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { FeedHeaderVisual } from "@/components/layout/FeedHeaderVisual";
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
+import { AppPageContent } from "@/components/layout/AppPageContent";
 
 import type { DesktopConfig } from "../config";
 import { DesktopPostCard } from "./DesktopPostCard";
@@ -24,7 +25,7 @@ export function DesktopFeed({
   return (
     <>
       <FeedHeaderVisual activeTab={tab} onTabChange={setTab} />
-      <div className="feed-layout desktop-section-content">
+      <AppPageContent className="feed-layout py-4">
         {feed.loading && (
           <div className="feed-skeleton" aria-label="Загрузка ленты" />
         )}
@@ -64,7 +65,7 @@ export function DesktopFeed({
             {feed.loadingMore ? "Загружаем…" : "Показать ещё"}
           </button>
         )}
-      </div>
+      </AppPageContent>
     </>
   );
 }

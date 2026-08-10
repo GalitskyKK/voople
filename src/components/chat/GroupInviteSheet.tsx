@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
+import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { trpc } from "@/lib/trpc/client";
 
 import { GroupManagementSheetView } from "./GroupManagementSheetView";
@@ -11,17 +12,29 @@ import { GroupManagementSheetView } from "./GroupManagementSheetView";
 export function GroupInviteSheet({
   chatId,
   chatName,
+  memberCount,
+  groupIcon,
+  groupAvatarUrl,
+  groupAccentColor,
+  triggerVariant = "toolbar",
   viewerRole,
   canManage,
   topicsEnabled,
   topicsLayout,
+  groupVisibility,
 }: {
   chatId: string;
   chatName: string;
+  memberCount: number;
+  groupIcon: string | null;
+  groupAvatarUrl: string | null;
+  groupAccentColor: string | null;
+  triggerVariant?: "toolbar" | "identity";
   viewerRole: "owner" | "admin" | "member";
   canManage: boolean;
   topicsEnabled: boolean;
   topicsLayout: "tabs" | "list";
+  groupVisibility: "private" | "public";
 }) {
   const router = useRouter();
   const utils = trpc.useUtils();
@@ -29,11 +42,19 @@ export function GroupInviteSheet({
   const revokeInvite = trpc.chat.revokeInvite.useMutation();
   const addMembers = trpc.chat.addGroupMembers.useMutation();
   const setTopics = trpc.chat.setGroupTopics.useMutation();
+  const setVisibility = trpc.chat.setGroupVisibility.useMutation();
+  const updateCustomization = trpc.chat.updateGroupCustomization.useMutation();
+  const setBoost = trpc.chat.setGroupBoost.useMutation();
   const removeMember = trpc.chat.removeGroupMember.useMutation();
   const leaveGroup = trpc.chat.leaveGroup.useMutation();
   const deleteGroup = trpc.chat.deleteGroup.useMutation();
+  const avatarUpload = useMediaUpload("group-avatar");
   const loadMembers = useCallback(
     () => utils.client.chat.groupMembers.query({ chatId }),
+    [chatId, utils.client],
+  );
+  const loadCommunity = useCallback(
+    () => utils.client.chat.groupCommunity.query({ chatId }),
     [chatId, utils.client],
   );
   const searchContacts = useCallback(
@@ -44,10 +65,16 @@ export function GroupInviteSheet({
   return (
     <GroupManagementSheetView
       chatName={chatName}
+      memberCount={memberCount}
+      groupIcon={groupIcon}
+      groupAvatarUrl={groupAvatarUrl}
+      groupAccentColor={groupAccentColor}
+      triggerVariant={triggerVariant}
       viewerRole={viewerRole}
       canManage={canManage}
       topicsEnabled={topicsEnabled}
       topicsLayout={topicsLayout}
+      groupVisibility={groupVisibility}
       loadMembers={loadMembers}
       searchContacts={searchContacts}
       addMembers={(memberIds) => addMembers.mutateAsync({ chatId, memberIds })}
@@ -60,6 +87,23 @@ export function GroupInviteSheet({
           utils.chat.list.invalidate(),
         ]);
       }}
+      updateVisibility={async (visibility) => {
+        await setVisibility.mutateAsync({ chatId, visibility });
+        await Promise.all([
+          utils.chat.getMessages.invalidate({ chatId }),
+          utils.chat.list.invalidate(),
+        ]);
+      }}
+      loadCommunity={loadCommunity}
+      updateCustomization={(input) =>
+        updateCustomization.mutateAsync({ chatId, ...input })
+      }
+      uploadAvatar={async (file) => {
+        const uploaded = await avatarUpload.uploadFile(file);
+        if (!uploaded) throw new Error("Не удалось загрузить аватарку группы");
+        return { mediaKey: uploaded.mediaKey, previewUrl: uploaded.previewUrl };
+      }}
+      setBoost={(enabled) => setBoost.mutateAsync({ chatId, enabled })}
       removeMember={(memberId) => removeMember.mutateAsync({ chatId, memberId })}
       leaveGroup={() => leaveGroup.mutateAsync({ chatId })}
       deleteGroup={() => deleteGroup.mutateAsync({ chatId })}

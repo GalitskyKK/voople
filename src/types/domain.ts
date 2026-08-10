@@ -29,6 +29,7 @@ export type ProfileViewModel = {
   username: string;
   displayName: string;
   bio?: string | null;
+  lastSeenAt?: string | null;
   createdAt: string;
   subscriptionStartedAt?: string | null;
   subscriptionExpiresAt?: string | null;
@@ -76,6 +77,7 @@ export type PostViewModel = {
   repost?: {
     target: PostViewModel;
   };
+  repostUnavailable?: boolean;
   likeCount: number;
   replyCount: number;
   viewCount: number;

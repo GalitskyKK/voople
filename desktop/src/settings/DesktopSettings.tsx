@@ -2,16 +2,21 @@ import {
   AppSettingsView,
   type SettingsDestinationRenderer,
 } from "@/components/settings/AppSettingsView";
+import type { Session } from "@supabase/supabase-js";
+import { AppPageContent } from "@/components/layout/AppPageContent";
 
 import type { DesktopConfig } from "../config";
 import { useGlobalHotkeyStatus } from "../hotkeys/global-hotkey-status";
 import { DesktopWindowSettings } from "./DesktopWindowSettings";
+import { DesktopAccountSecuritySettings } from "./DesktopAccountSecuritySettings";
 
 export function DesktopSettings({
   config,
+  session,
   navigate,
 }: {
   config: DesktopConfig;
+  session: Session;
   navigate: (href: string) => void;
 }) {
   const hotkeyRuntimeStatus = useGlobalHotkeyStatus();
@@ -46,11 +51,16 @@ export function DesktopSettings({
   };
 
   return (
+    <AppPageContent>
     <AppSettingsView
       renderDestination={renderDestination}
       hotkeyRuntimeStatus={hotkeyRuntimeStatus}
       desktopWindowSettings={<DesktopWindowSettings />}
       desktopCallNotifications
+      accountSecuritySettings={
+        <DesktopAccountSecuritySettings config={config} session={session} />
+      }
     />
+    </AppPageContent>
   );
 }

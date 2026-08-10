@@ -1,10 +1,6 @@
-"use client";
-
-import { useState } from "react";
-
 import { cn } from "@/lib/utils";
 
-const SETTINGS_SECTIONS = [
+export const SETTINGS_SECTIONS = [
   ["appearance", "Оформление"],
   ["messages", "Чаты"],
   ["notifications", "Уведомления"],
@@ -14,38 +10,15 @@ const SETTINGS_SECTIONS = [
   ["legal", "Документы"],
 ] as const;
 
-export function SettingsNavigation() {
-  const [activeSection, setActiveSection] = useState("appearance");
+export type SettingsSectionId = (typeof SETTINGS_SECTIONS)[number][0];
 
-  const navigateTo = (sectionId: string) => {
-    const target = document.getElementById(sectionId);
-    if (!target) return;
-    setActiveSection(sectionId);
-
-    const scrollContainer = target.closest<HTMLElement>(
-      ".desktop-shell-scroll, [data-voople-scroll]",
-    );
-    const reducedMotion = document.documentElement.dataset.reduceMotion === "true";
-    if (scrollContainer) {
-      const top =
-        target.getBoundingClientRect().top -
-        scrollContainer.getBoundingClientRect().top +
-        scrollContainer.scrollTop -
-        16;
-      scrollContainer.scrollTo({
-        top,
-        left: scrollContainer.scrollLeft,
-        behavior: reducedMotion ? "auto" : "smooth",
-      });
-      return;
-    }
-
-    window.scrollTo({
-      top: target.getBoundingClientRect().top + window.scrollY - 80,
-      left: window.scrollX,
-      behavior: reducedMotion ? "auto" : "smooth",
-    });
-  };
+export function SettingsNavigation({
+  activeSection,
+  onSectionChange,
+}: {
+  activeSection: SettingsSectionId;
+  onSectionChange: (section: SettingsSectionId) => void;
+}) {
 
   return (
     <nav className="settings-nav" aria-label="Разделы настроек">
@@ -54,7 +27,7 @@ export function SettingsNavigation() {
           key={id}
           type="button"
           aria-current={activeSection === id ? "location" : undefined}
-          onClick={() => navigateTo(id)}
+          onClick={() => onSectionChange(id)}
           className={cn(activeSection === id && "settings-nav__active")}
         >
           {label}

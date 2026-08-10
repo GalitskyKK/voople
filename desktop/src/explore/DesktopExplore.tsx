@@ -3,6 +3,7 @@ import type { Session } from "@supabase/supabase-js";
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { ExploreView } from "@/components/explore/ExploreView";
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
+import { AppPageContent } from "@/components/layout/AppPageContent";
 import { useDebouncedSearchQuery } from "@/hooks/useDebouncedSearchQuery";
 import { resolveRingStyle } from "@/lib/customization/rings";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
@@ -24,7 +25,7 @@ export function DesktopExplore({
   const explore = useDesktopExplore(config, session, debouncedQuery);
 
   return (
-    <div className="desktop-section-content">
+    <AppPageContent>
       <ExploreView
         query={query}
         debouncedQuery={debouncedQuery}
@@ -41,7 +42,7 @@ export function DesktopExplore({
           <DesktopExploreAvatar author={author} />
         )}
       />
-    </div>
+    </AppPageContent>
   );
 }
 

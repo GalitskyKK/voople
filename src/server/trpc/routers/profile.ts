@@ -10,7 +10,12 @@ import {
   toggleProfileReaction
 } from "@/server/services/profile-reactions.service"
 import { updateUserProfile } from "@/server/services/profile-update.service"
-import { getPostsByUsername, getProfileByUsername } from "@/server/services/profile.service"
+import {
+  getPinnedPostByUsername,
+  getPostsByUsername,
+  getProfileByUsername,
+  setPinnedPost,
+} from "@/server/services/profile.service"
 import { recordProfileView } from "@/server/services/views.service"
 
 import { createTRPCRouter, optionalAuthProcedure, protectedProcedure, publicProcedure } from "../init"
@@ -29,6 +34,25 @@ export const profileRouter = createTRPCRouter({
   getPostsByUsername: optionalAuthProcedure
     .input(z.object({ username: z.string().min(1).max(30) }))
     .query(({ input, ctx }) => getPostsByUsername(input.username, ctx.user?.id ?? null)),
+
+  getPinnedPostByUsername: optionalAuthProcedure
+    .input(z.object({ username: z.string().min(1).max(30) }))
+    .query(({ input, ctx }) =>
+      getPinnedPostByUsername(input.username, ctx.user?.id ?? null)
+    ),
+
+  setPinnedPost: protectedProcedure
+    .input(z.object({ postId: z.string().uuid().nullable() }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        return await setPinnedPost(ctx.user.id, input.postId)
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось закрепить пост",
+        })
+      }
+    }),
 
   getFollowState: optionalAuthProcedure
     .input(z.object({ username: z.string().min(1).max(30) }))

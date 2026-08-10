@@ -17,6 +17,8 @@ export type PublicUser = {
   displayName: string;
   bio: string | null;
   pinnedThought: string | null;
+  lastSeenAt: Date;
+  showOnlineStatus: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -27,6 +29,8 @@ type UserRow = {
   display_name: string;
   bio: string | null;
   pinned_thought: string | null;
+  last_seen_at: string;
+  show_online_status: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -38,6 +42,8 @@ function mapUser(row: UserRow): PublicUser {
     displayName: row.display_name,
     bio: row.bio,
     pinnedThought: row.pinned_thought,
+    lastSeenAt: new Date(row.last_seen_at),
+    showOnlineStatus: row.show_online_status,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
   };
@@ -59,6 +65,26 @@ export async function fetchUsernameById(userId: string): Promise<string | null> 
 
   if (error) throw new Error(error.message);
   return data?.username ?? null;
+}
+
+export async function touchUserPresenceRest(userId: string) {
+  const lastSeenAt = new Date().toISOString();
+  const { error } = await getAdminClient()
+    .from("users")
+    .update({ last_seen_at: lastSeenAt })
+    .eq("id", userId);
+  if (error) throw new Error(error.message);
+  return { lastSeenAt };
+}
+
+export async function setUserPresenceVisibilityRest(userId: string, visible: boolean) {
+  const lastSeenAt = new Date().toISOString();
+  const { error } = await getAdminClient()
+    .from("users")
+    .update({ show_online_status: visible, last_seen_at: lastSeenAt })
+    .eq("id", userId);
+  if (error) throw new Error(error.message);
+  return { visible, lastSeenAt };
 }
 
 export async function fetchCurrentUserSummary(userId: string) {
@@ -154,7 +180,7 @@ export async function ensurePublicUser(authUser: AuthUserInput) {
 
   const { data: existing, error: selectErr } = await admin
     .from("users")
-    .select("id, username, display_name, bio, pinned_thought, created_at, updated_at")
+    .select("id, username, display_name, bio, pinned_thought, last_seen_at, show_online_status, created_at, updated_at")
     .eq("id", authUser.id)
     .maybeSingle();
 
@@ -175,7 +201,7 @@ export async function ensurePublicUser(authUser: AuthUserInput) {
       username,
       display_name: displayName,
     })
-    .select("id, username, display_name, bio, pinned_thought, created_at, updated_at")
+    .select("id, username, display_name, bio, pinned_thought, last_seen_at, show_online_status, created_at, updated_at")
     .single();
 
   if (insertErr) throw new Error(insertErr.message);

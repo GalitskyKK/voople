@@ -8,6 +8,7 @@ import { useIsLgViewport } from "@/hooks/useIsLgViewport";
 import { isMessagesThreadPath } from "@/lib/layout/messages-path";
 import { cn } from "@/lib/utils";
 import { AppShellFrame } from "./AppShellFrame";
+import { AppPageContent } from "./AppPageContent";
 import { AppTopBar } from "./AppTopBar";
 import { BottomNav } from "./BottomNav";
 import { CreatePostFab } from "./CreatePostFab";
@@ -98,7 +99,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           data-voople-scroll={usesWindowScroll ? undefined : ""}
           className={cn(
             "voople-shell__scroll",
-            !isProfileRoute && "lg:pb-6",
+            !isProfileRoute && !isMessagesRoute && "lg:pb-6",
             isMobileMessagesThread && "pb-0",
             !isLg && !isMobileMessagesThread && "pb-24",
             !isMessagesRoute &&
@@ -113,11 +114,10 @@ export function MainShell({ children }: { children: React.ReactNode }) {
               "lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden",
           )}
         >
-          <div
+          <AppPageContent
             id="main-content"
+            padded={!isMessagesRoute}
             className={cn(
-              "voople-shell__page w-full",
-              !isMessagesRoute && "px-4 lg:px-6",
               isMessagesRoute && "flex min-h-0 flex-1 flex-col px-0 py-0",
               isMobileMessagesThread && "px-0",
               isProfileRoute &&
@@ -126,7 +126,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             )}
           >
             {children}
-          </div>
+          </AppPageContent>
         </div>
       </ScrollContainerProvider>
       {showFab && <CreatePostFab />}

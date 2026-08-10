@@ -22,7 +22,7 @@ import {
   PostCardBody,
   PostCardSurface,
 } from "./PostCardVisual";
-import { RepostPreview } from "./RepostPreview";
+import { RepostContent } from "./RepostContent";
 
 type PostCardProps = {
   post: PostViewModel;
@@ -31,6 +31,7 @@ type PostCardProps = {
   viewerId?: string | null;
   profileUsername?: string;
   commentsAlwaysOpen?: boolean;
+  isPinned?: boolean;
 };
 
 export function PostCard({
@@ -40,6 +41,7 @@ export function PostCard({
   viewerId = null,
   profileUsername,
   commentsAlwaysOpen = false,
+  isPinned = false,
 }: PostCardProps) {
   const c = post.author.customization;
   const appearanceCustomization = post.appearance?.customization ?? c;
@@ -123,6 +125,7 @@ export function PostCard({
           hasRepostTarget={Boolean(post.repost?.target)}
           viewerUsername={viewer?.username ?? null}
           profileUsername={profileUsername}
+          isPinned={isPinned}
           onTextUpdated={(text, isRepostComment) => {
             if (isRepostComment) setDisplayRepostComment(text);
             else setDisplayText(text);
@@ -159,11 +162,7 @@ export function PostCard({
               className={post.text ? "mt-3" : undefined}
             />
           )}
-          {post.repost?.target && (
-            <div className="mt-3">
-              <RepostPreview post={post.repost.target} />
-            </div>
-          )}
+          <RepostContent post={post} />
           {post.tags && post.tags.length > 0 && (
             <div className="voople-post-card__tags mt-2 flex flex-wrap gap-2">
               {post.tags.map((tag) => (

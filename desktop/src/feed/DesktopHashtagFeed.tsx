@@ -1,7 +1,7 @@
 import type { Session } from "@supabase/supabase-js";
-import { Hash } from "lucide-react";
-
+import { HashtagPageHeader } from "@/components/feed/HashtagPageHeader";
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
+import { AppPageContent } from "@/components/layout/AppPageContent";
 
 import type { DesktopConfig } from "../config";
 import { DesktopPostCard } from "./DesktopPostCard";
@@ -21,18 +21,8 @@ export function DesktopHashtagFeed({
   const feed = useDesktopHashtagFeed(config, session, tag);
 
   return (
-    <div className="desktop-section-content">
-      <header className="voople-panel mb-4 px-4 py-4">
-        <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--app-accent-soft)] text-[var(--theme-accent)]">
-            <Hash className="h-5 w-5" />
-          </span>
-          <div>
-            <h1 className="text-2xl font-bold">#{tag}</h1>
-            <p className="text-sm text-[var(--app-muted)]">Посты с этим хэштегом</p>
-          </div>
-        </div>
-      </header>
+    <AppPageContent className="py-4 lg:py-6">
+      <div className="mb-4"><HashtagPageHeader tag={tag} /></div>
       {feed.loading ? <div className="feed-skeleton" aria-label="Загрузка ленты" /> : null}
       {feed.error ? (
         <div className="feed-message" role="alert">
@@ -59,6 +49,6 @@ export function DesktopHashtagFeed({
           {feed.loadingMore ? "Загружаем…" : "Показать ещё"}
         </button>
       ) : null}
-    </div>
+    </AppPageContent>
   );
 }

@@ -3,9 +3,8 @@ import { useCallback, useMemo } from "react";
 
 import { ChatListView } from "@/components/chat/ChatListView";
 import { MessagesLayoutView } from "@/components/chat/MessagesLayoutView";
-import { SectionPageHeader } from "@/components/layout/SectionPageHeader";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
-import type { ChatListItem } from "@/types/chat";
+import type { ChatListItem, PublicGroupSearchHit } from "@/types/chat";
 import type { UserSearchHit } from "@/types/search";
 
 import { createDesktopTrpcClient } from "../api/trpc";
@@ -14,6 +13,7 @@ import { DesktopChatAvatar } from "./DesktopChatAvatar";
 import { DesktopGroupChatCreator } from "./DesktopGroupChatCreator";
 import { DesktopChatThread } from "./DesktopChatThread";
 import { useDesktopChats } from "./useDesktopChats";
+import { useDesktopPresence } from "../providers/DesktopPresenceProvider";
 
 export function DesktopMessages({
   activeChatId,
@@ -31,11 +31,22 @@ export function DesktopMessages({
     [config, session.access_token],
   );
   const searchContacts = useCallback(
+    async (query: string) => {
+      const contacts = (await client.query(
+        query.trim() ? "user.search" : "chat.contacts",
+        { q: query.trim() },
+      )) as UserSearchHit[];
+      return contacts.filter((contact) => contact.id !== session.user.id);
+    },
+    [client, session.user.id],
+  );
+  const searchPublicGroups = useCallback(
     async (query: string) =>
-      (await client.query("chat.contacts", { q: query })) as UserSearchHit[],
+      (await client.query("chat.publicGroups", { q: query })) as PublicGroupSearchHit[],
     [client],
   );
-  const { chats, error, loading, onlineUserIds, refresh } = useDesktopChats(
+  const onlineUserIds = useDesktopPresence();
+  const { chats, error, loading, refresh } = useDesktopChats(
     config,
     session,
   );
@@ -51,13 +62,6 @@ export function DesktopMessages({
   return (
     <MessagesLayoutView
       isThread={Boolean(activeChatId)}
-      listHeader={
-        <SectionPageHeader
-          title="Сообщения"
-          variant="plain"
-          className="border-b-0 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] lg:pt-4"
-        />
-      }
       list={
         <ChatListView
           chats={chats}
@@ -143,6 +147,14 @@ export function DesktopMessages({
               ) : null}
             </span>
           )}
+          searchPublicGroups={searchPublicGroups}
+          openPublicGroup={async (group) => {
+            const result = (await client.mutation("chat.joinPublicGroup", {
+              chatId: group.id,
+            })) as { chatId: string };
+            await refresh();
+            navigate(`/messages/${result.chatId}`);
+          }}
         />
       }
       thread={

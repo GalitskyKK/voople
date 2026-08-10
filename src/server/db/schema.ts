@@ -1,53 +1,22 @@
 import { relations, sql } from "drizzle-orm";
 import {
-  type AnyPgColumn,
-  boolean,
-  date,
-  index,
-  integer,
-  jsonb,
-  pgEnum,
-  pgTable,
-  primaryKey,
-  text,
-  timestamp,
-  uniqueIndex,
-  uuid,
-  varchar,
+  type AnyPgColumn, boolean, date, index, integer, jsonb, pgEnum, pgTable,
+  primaryKey, text, timestamp, uniqueIndex, uuid, varchar,
 } from "drizzle-orm/pg-core";
 
 export const avatarTypeEnum = pgEnum("avatar_type", ["constructor", "photo"]);
 export const bannerTypeEnum = pgEnum("banner_type", ["color", "pattern", "animated"]);
 export const postMediaTypeEnum = pgEnum("post_media_type", ["image", "gif", "meme", "video", "circle"]);
 export const itemTypeEnum = pgEnum("item_type", [
-  "effect",
-  "ring",
-  "banner",
-  "nameplate",
-  "badge",
-  "reaction_pack",
-  "decoration",
-  "feed_card",
-  "app_theme",
-  "profile_background",
-]);
+  "effect", "ring", "banner", "nameplate", "badge", "reaction_pack", "decoration",
+  "feed_card", "app_theme", "profile_background"]);
 export const chatTypeEnum = pgEnum("chat_type", ["direct", "group"]);
 export const notifTypeEnum = pgEnum("notif_type", [
-  "like",
-  "card_reaction",
-  "follow",
-  "reply",
-  "repost",
-  "match",
-  "mystery_drop",
-  "profile_canvas_draw",
-  "question",
+  "like", "card_reaction", "follow", "reply", "repost", "match",
+  "mystery_drop", "profile_canvas_draw", "question",
 ]);
 export const acquiredViaEnum = pgEnum("acquired_via", [
-  "purchase",
-  "earned",
-  "gifted",
-  "seasonal_reward",
+  "purchase", "earned", "gifted", "seasonal_reward",
 ]);
 export const subscriptionTierEnum = pgEnum("subscription_tier", ["plus", "pro"]);
 export const trackSourceEnum = pgEnum("track_source", ["upload", "chat", "post"]);
@@ -60,6 +29,8 @@ export const users = pgTable(
     displayName: varchar("display_name", { length: 50 }).notNull(),
     bio: varchar("bio", { length: 100 }),
     pinnedThought: varchar("pinned_thought", { length: 100 }),
+    lastSeenAt: timestamp("last_seen_at").notNull().defaultNow(),
+    showOnlineStatus: boolean("show_online_status").notNull().default(true),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -163,6 +134,16 @@ export const posts = pgTable(
       .where(sql`${t.isRepost} = true AND ${t.repostComment} IS NULL AND ${t.originalPostId} IS NOT NULL`),
   }),
 );
+
+export const profilePinnedPosts = pgTable("profile_pinned_posts", {
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  postId: uuid("post_id")
+    .notNull()
+    .references(() => posts.id, { onDelete: "cascade" }),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
 
 export const postComments = pgTable(
   "post_comments",
@@ -399,6 +380,8 @@ export const chats = pgTable("chats", {
   topicsEnabled: boolean("topics_enabled").notNull().default(false),
   topicsLayout: varchar("topics_layout", { length: 20 }).notNull().default("list"),
   topicIcon: varchar("topic_icon", { length: 16 }),
+  groupVisibility: varchar("group_visibility", { length: 20 }).notNull().default("private"),
+  sectionAccessMode: varchar("section_access_mode", { length: 20 }).notNull().default("inherit"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (t) => ({
   parentIdx: index("chats_parent_chat_idx").on(t.parentChatId, t.createdAt),
@@ -437,6 +420,19 @@ export const chatMembers = pgTable(
   },
   (t) => ({
     pk: primaryKey({ columns: [t.chatId, t.userId] }),
+  }),
+);
+
+export const chatSectionMembers = pgTable(
+  "chat_section_members",
+  {
+    chatId: uuid("chat_id").notNull().references(() => chats.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.chatId, t.userId] }),
+    userIdx: index("chat_section_members_user_idx").on(t.userId, t.chatId),
   }),
 );
 

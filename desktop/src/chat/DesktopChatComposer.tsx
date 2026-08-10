@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 
 import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
 import type { ChatMessageView } from "@/types/chat";
+import { ChatComposerFrame } from "@/components/chat/ChatComposerVisual";
 
 import type { DesktopConfig } from "../config";
 import { DesktopChatComposerInput } from "./DesktopChatComposerInput";
@@ -101,51 +102,52 @@ export function DesktopChatComposer({
   };
 
   return (
-    <form
-      className="desktop-chat-composer"
-      onSubmit={(event) => void submit(event)}
-    >
-      <DesktopChatComposerPreview
-        editing={editing}
-        replyTo={replyTo}
-        upload={upload}
-        onCancelReply={onCancelReply}
-        onClearUpload={clear}
-        onUpdateAudioMetadata={updateAudioMetadata}
-        onCancelEdit={() => {
-          setText("");
-          onCancelEdit();
-        }}
-      />
+    <div className="px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:px-4 lg:pb-3">
+      <ChatComposerFrame>
+        <form onSubmit={(event) => void submit(event)}>
+          <DesktopChatComposerPreview
+            editing={editing}
+            replyTo={replyTo}
+            upload={upload}
+            onCancelReply={onCancelReply}
+            onClearUpload={clear}
+            onUpdateAudioMetadata={updateAudioMetadata}
+            onCancelEdit={() => {
+              setText("");
+              onCancelEdit();
+            }}
+          />
 
-      {error ? (
-        <p className="form-error desktop-chat-composer__error" role="alert">
-          {error}
-        </p>
-      ) : null}
+          {error ? (
+            <p className="mb-2 text-xs text-red-400" role="alert">
+              {error}
+            </p>
+          ) : null}
 
-      <DesktopChatComposerInput
-        text={text}
-        canSend={canSend}
-        sending={sending}
-        uploading={uploading}
-        hasUpload={Boolean(upload)}
-        editing={Boolean(editing)}
-        onTextChange={setText}
-        onSubmit={() => void submit()}
-        onImageSelected={selectImage}
-        onAudioSelected={selectAudio}
-        onPastedFile={pasteFile}
-        onVoiceRecorded={(file, durationSeconds, purpose) => {
-          void uploadFile(file, { purpose, durationSeconds });
-        }}
-        onError={setError}
-      />
-      {text.length >= 800 ? (
-        <span className="desktop-chat-composer__counter">
-          {text.length}/1000
-        </span>
-      ) : null}
-    </form>
+          <DesktopChatComposerInput
+            text={text}
+            canSend={canSend}
+            sending={sending}
+            uploading={uploading}
+            hasUpload={Boolean(upload)}
+            editing={Boolean(editing)}
+            onTextChange={setText}
+            onSubmit={() => void submit()}
+            onImageSelected={selectImage}
+            onAudioSelected={selectAudio}
+            onPastedFile={pasteFile}
+            onVoiceRecorded={(file, durationSeconds, purpose) => {
+              void uploadFile(file, { purpose, durationSeconds });
+            }}
+            onError={setError}
+          />
+          {text.length >= 800 ? (
+            <span className="mt-1 block text-right text-[10px] tabular-nums text-[var(--app-muted)]">
+              {text.length}/1000
+            </span>
+          ) : null}
+        </form>
+      </ChatComposerFrame>
+    </div>
   );
 }

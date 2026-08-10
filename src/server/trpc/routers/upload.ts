@@ -11,7 +11,15 @@ export const uploadRouter = createTRPCRouter({
   createPresigned: protectedProcedure
     .input(
       z.object({
-        purpose: z.enum(["post", "comment", "avatar", "banner", "track", "chat"]),
+        purpose: z.enum([
+          "post",
+          "comment",
+          "avatar",
+          "group-avatar",
+          "banner",
+          "track",
+          "chat",
+        ]),
         contentType: z.string().min(3).max(100),
         chatMediaKind: z.enum(["voice", "circle"]).optional(),
         // Абсолютный потолок; точный лимит на назначение проверяет createPresignedUpload.

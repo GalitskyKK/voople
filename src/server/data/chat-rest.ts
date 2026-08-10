@@ -18,8 +18,8 @@ import type {
   ChatThreadSummary,
 } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
-import { CHAT_REACTION_EMOJIS } from "@/lib/chat/reactions";
 import { assertChatMemberRest } from "@/server/data/chat-access-rest";
+import { loadGroupCommunitySummariesRest } from "@/server/data/chat-community-rest";
 import { loadMessageReactionsRest } from "@/server/data/chat-reactions-rest";
 import { getOrCreateDirectChatRest } from "@/server/data/chat-management-rest";
 
@@ -29,6 +29,7 @@ export {
   createSubchatRest,
 } from "@/server/data/chat-management-rest";
 export { getOrCreateDirectChatRest };
+export { deleteMessageRest, toggleMessageReactionRest } from "@/server/data/chat-message-actions-rest";
 
 export type { ChatListItem, ChatMessageView } from "@/types/chat";
 
@@ -228,11 +229,11 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
   const chatIds = memberships.map((m) => m.chat_id as string);
 
   const [chatsResult, membersResult, channelsResult] = await Promise.all([
-    admin.from("chats").select("id, type, name, parent_chat_id, topics_enabled, topics_layout, topic_icon").in("id", chatIds),
+    admin.from("chats").select("id, type, name, parent_chat_id, topics_enabled, topics_layout, topic_icon, group_visibility, section_access_mode").in("id", chatIds),
     admin.from("chat_members").select("chat_id, user_id, role").in("chat_id", chatIds),
     admin
       .from("chats")
-      .select("id, type, name, parent_chat_id, topics_enabled, topics_layout, topic_icon")
+      .select("id, type, name, parent_chat_id, topics_enabled, topics_layout, topic_icon, group_visibility, section_access_mode")
       .in("parent_chat_id", chatIds),
   ]);
 
@@ -256,16 +257,24 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
   const topicsEnabledByChat = new Map<string, boolean>();
   const topicsLayoutByChat = new Map<string, "tabs" | "list">();
   const topicIconByChat = new Map<string, string | null>();
+  const groupVisibilityByChat = new Map<string, "private" | "public">();
+  const sectionAccessByChat = new Map<string, "inherit" | "restricted">();
   for (const c of [...(chatsResult.data ?? []), ...channelRows]) {
     typeByChat.set(c.id as string, (c.type as "direct" | "group") ?? "direct");
     nameByChat.set(c.id as string, (c.name as string | null) ?? null);
     topicsEnabledByChat.set(c.id as string, Boolean(c.topics_enabled));
     topicsLayoutByChat.set(c.id as string, c.topics_layout === "tabs" ? "tabs" : "list");
     topicIconByChat.set(c.id as string, (c.topic_icon as string | null) ?? null);
+    groupVisibilityByChat.set(c.id as string, c.group_visibility === "public" ? "public" : "private");
+    sectionAccessByChat.set(c.id as string, c.section_access_mode === "restricted" ? "restricted" : "inherit");
     if (c.parent_chat_id) {
       parentByChat.set(c.id as string, c.parent_chat_id as string);
     }
   }
+  const communityByChat = await loadGroupCommunitySummariesRest(
+    chatIds.filter((id) => typeByChat.get(id) === "group"),
+    userId,
+  );
   const otherUserIds = new Set<string>();
   const otherIdByChat = new Map<string, string>();
   const memberCountByChat = new Map<string, number>();
@@ -285,6 +294,17 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
     otherIdByChat.set(cid, uid);
     otherUserIds.add(uid);
   }
+  const { data: sectionMemberships, error: sectionMembershipError } = channelIds.length
+    ? await admin
+        .from("chat_section_members")
+        .select("chat_id")
+        .eq("user_id", userId)
+        .in("chat_id", channelIds)
+    : { data: [], error: null };
+  if (sectionMembershipError) throw new Error(sectionMembershipError.message);
+  const allowedRestrictedSectionIds = new Set(
+    (sectionMemberships ?? []).map((row) => row.chat_id as string),
+  );
 
   const othersByChat = new Map<
     string,
@@ -293,7 +313,7 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
   if (otherUserIds.size > 0) {
     const { data: users, error: usersErr } = await admin
       .from("users")
-      .select("id, username, display_name, subscriptions (started_at, expires_at), profile_customization (avatar_type, avatar_data, animated_avatar_id, avatar_decoration_id, avatar_ring_id)")
+      .select("id, username, display_name, last_seen_at, show_online_status, subscriptions (started_at, expires_at), profile_customization (avatar_type, avatar_data, animated_avatar_id, avatar_decoration_id, avatar_ring_id)")
       .in("id", [...otherUserIds]);
 
     if (usersErr) throw new Error(usersErr.message);
@@ -313,6 +333,7 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
             username: u.username as string,
             displayName: u.display_name as string,
             hasVooplePlus,
+            lastSeenAt: u.show_online_status === false ? null : (u.last_seen_at as string | null),
             ...compactAvatarFields(
               u.profile_customization as
                 | CustomizationRow
@@ -348,6 +369,7 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
     const last = lastByChat.get(id);
     const other = othersByChat.get(id);
     const accessChatId = parentChatId ?? id;
+    const community = communityByChat.get(accessChatId);
     return {
       id,
       type: typeByChat.get(id) ?? "direct",
@@ -356,6 +378,13 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
       topicsEnabled: topicsEnabledByChat.get(id) ?? false,
       topicsLayout: topicsLayoutByChat.get(id) ?? "list",
       topicIcon: topicIconByChat.get(id) ?? null,
+      groupVisibility: groupVisibilityByChat.get(id) ?? "private",
+      sectionAccessMode: sectionAccessByChat.get(id) ?? "inherit",
+      groupIcon: community?.icon ?? null,
+      groupAvatarUrl: community?.avatarUrl ?? null,
+      groupAccentColor: community?.effectiveAccentColor ?? null,
+      boostCount: community?.boostCount ?? 0,
+      boostedByMe: community?.boostedByMe ?? false,
       memberCount: memberCountByChat.get(accessChatId) ?? 0,
       viewerRole: viewerRoleByChat.get(accessChatId) ?? "member",
       otherUser: other ?? null,
@@ -374,6 +403,12 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
   for (const id of channelIds) {
     const parentChatId = parentByChat.get(id);
     if (!parentChatId) continue;
+    const rootRole = viewerRoleByChat.get(parentChatId) ?? "member";
+    if (
+      sectionAccessByChat.get(id) === "restricted" &&
+      rootRole === "member" &&
+      !allowedRestrictedSectionIds.has(id)
+    ) continue;
     const channels = channelsByParent.get(parentChatId) ?? [];
     channels.push(createItem(id, parentChatId));
     channelsByParent.set(parentChatId, channels);
@@ -435,11 +470,11 @@ export async function listMessagesRest(
       .limit(200),
     admin
       .from("chat_members")
-      .select("user_id, role, users (id, username, display_name, subscriptions (started_at, expires_at), profile_customization (avatar_type, avatar_data, animated_avatar_id, avatar_decoration_id, avatar_ring_id))")
+      .select("user_id, role, users (id, username, display_name, last_seen_at, show_online_status, subscriptions (started_at, expires_at), profile_customization (avatar_type, avatar_data, animated_avatar_id, avatar_decoration_id, avatar_ring_id))")
       .eq("chat_id", membership.accessChatId),
     admin
       .from("chats")
-      .select("id, type, name, parent_chat_id, topics_enabled, topics_layout, topic_icon")
+      .select("id, type, name, parent_chat_id, topics_enabled, topics_layout, topic_icon, group_visibility, section_access_mode")
       .eq("id", chatId)
       .single(),
   ]);
@@ -458,6 +493,8 @@ export async function listMessagesRest(
           id: string;
           username: string;
           display_name: string;
+          last_seen_at?: string | null;
+          show_online_status?: boolean | null;
           subscriptions?: { started_at: string; expires_at: string } | { started_at: string; expires_at: string }[];
           profile_customization?: CustomizationRow | CustomizationRow[] | null;
         }
@@ -465,6 +502,8 @@ export async function listMessagesRest(
           id: string;
           username: string;
           display_name: string;
+          last_seen_at?: string | null;
+          show_online_status?: boolean | null;
           subscriptions?: { started_at: string; expires_at: string } | { started_at: string; expires_at: string }[];
           profile_customization?: CustomizationRow | CustomizationRow[] | null;
         }>
@@ -479,6 +518,7 @@ export async function listMessagesRest(
         username: user.username,
         displayName: user.display_name,
         hasVooplePlus,
+        lastSeenAt: user.show_online_status === false ? null : (user.last_seen_at ?? null),
         ...compactAvatarFields(user.profile_customization),
       };
       break;
@@ -501,6 +541,8 @@ export async function listMessagesRest(
           id: string;
           username: string;
           display_name: string;
+          last_seen_at?: string | null;
+          show_online_status?: boolean | null;
           subscriptions?: { started_at: string; expires_at: string } | { started_at: string; expires_at: string }[];
           profile_customization?: CustomizationRow | CustomizationRow[] | null;
         }
@@ -508,6 +550,8 @@ export async function listMessagesRest(
           id: string;
           username: string;
           display_name: string;
+          last_seen_at?: string | null;
+          show_online_status?: boolean | null;
           subscriptions?: { started_at: string; expires_at: string } | { started_at: string; expires_at: string }[];
           profile_customization?: CustomizationRow | CustomizationRow[] | null;
         }>
@@ -531,6 +575,12 @@ export async function listMessagesRest(
   }));
 
   void markMessagesReadRest(chatId, userId);
+  const community = (
+    await loadGroupCommunitySummariesRest(
+      membership.type === "group" ? [membership.accessChatId] : [],
+      userId,
+    )
+  ).get(membership.accessChatId);
 
   return {
     messages,
@@ -544,6 +594,13 @@ export async function listMessagesRest(
       topicsEnabled: Boolean(chatResult.data.topics_enabled),
       topicsLayout: chatResult.data.topics_layout === "tabs" ? "tabs" : "list",
       topicIcon: (chatResult.data.topic_icon as string | null) ?? null,
+      groupVisibility: chatResult.data.group_visibility === "public" ? "public" : "private",
+      sectionAccessMode: chatResult.data.section_access_mode === "restricted" ? "restricted" : "inherit",
+      groupIcon: community?.icon ?? null,
+      groupAvatarUrl: community?.avatarUrl ?? null,
+      groupAccentColor: community?.effectiveAccentColor ?? null,
+      boostCount: community?.boostCount ?? 0,
+      boostedByMe: community?.boostedByMe ?? false,
       memberCount: (membersResult.data ?? []).length,
       viewerRole,
     },
@@ -671,29 +728,6 @@ export async function sendMessageRest(input: SendMessageInput) {
   return message;
 }
 
-export async function deleteMessageRest(messageId: string, userId: string) {
-  const admin = getAdminClient();
-
-  const { data: message, error: msgErr } = await admin
-    .from("messages")
-    .select("id, chat_id, sender_id")
-    .eq("id", messageId)
-    .maybeSingle();
-
-  if (msgErr) throw new Error(msgErr.message);
-  if (!message) throw new Error("Сообщение не найдено");
-  if ((message.sender_id as string) !== userId) {
-    throw new Error("Можно удалить только свои сообщения");
-  }
-
-  await assertChatMemberRest(message.chat_id as string, userId);
-
-  const { error } = await admin.from("messages").delete().eq("id", messageId);
-  if (error) throw new Error(error.message);
-
-  return { id: messageId };
-}
-
 export async function editMessageRest(
   messageId: string,
   userId: string,
@@ -725,58 +759,6 @@ export async function editMessageRest(
 
   const [result] = await hydrateMessages([updated as MessageRow], userId);
   return result;
-}
-
-export async function toggleMessageReactionRest(messageId: string, userId: string, emoji: string) {
-  if (!CHAT_REACTION_EMOJIS.includes(emoji as (typeof CHAT_REACTION_EMOJIS)[number])) {
-    throw new Error("Эта реакция не поддерживается");
-  }
-
-  const admin = getAdminClient();
-  const { data: message, error: messageError } = await admin
-    .from("messages")
-    .select("id, chat_id")
-    .eq("id", messageId)
-    .maybeSingle();
-  if (messageError) throw new Error(messageError.message);
-  if (!message) throw new Error("Сообщение не найдено");
-
-  const chatId = message.chat_id as string;
-  await assertChatMemberRest(chatId, userId);
-
-  const { data: existing, error: existingError } = await admin
-    .from("message_reactions")
-    .select("message_id")
-    .eq("message_id", messageId)
-    .eq("user_id", userId)
-    .eq("emoji", emoji)
-    .maybeSingle();
-  if (existingError) throw new Error(existingError.message);
-
-  if (existing) {
-    const { error } = await admin
-      .from("message_reactions")
-      .delete()
-      .eq("message_id", messageId)
-      .eq("user_id", userId)
-      .eq("emoji", emoji);
-    if (error) throw new Error(error.message);
-  } else {
-    const { error } = await admin.from("message_reactions").insert({
-      message_id: messageId,
-      chat_id: chatId,
-      user_id: userId,
-      emoji,
-    });
-    if (error) throw new Error(error.message);
-  }
-
-  const reactions = await loadMessageReactionsRest([messageId], userId);
-
-  return {
-    messageId,
-    reactions: reactions.get(messageId) ?? [],
-  };
 }
 
 export async function getDirectChatByUsernameRest(myId: string, username: string) {

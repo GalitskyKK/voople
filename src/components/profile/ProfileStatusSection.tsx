@@ -27,12 +27,14 @@ type ProfileStatusSectionProps = {
   username: string;
   initialStatus: ProfileStatus;
   isOwner?: boolean;
+  onPublished?: () => void;
 };
 
 export function ProfileStatusSection({
   username,
   initialStatus,
   isOwner = false,
+  onPublished,
 }: ProfileStatusSectionProps) {
   const [feedPublished, setFeedPublished] = useState<ProfileStatus>(initialStatus);
   const [draft, setDraft] = useState<ProfileStatus>(initialStatus);
@@ -93,6 +95,7 @@ export function ProfileStatusSection({
         prev ? [post, ...prev] : [post],
       );
       void utils.feed.getPage.invalidate();
+      onPublished?.();
     },
   });
 

@@ -10,6 +10,8 @@ export type ChatMembership = {
   role: "owner" | "admin" | "member";
   type: "direct" | "group";
   name: string | null;
+  groupVisibility: "private" | "public";
+  sectionAccessMode: "inherit" | "restricted";
 };
 
 export async function getChatMembershipRest(
@@ -19,7 +21,7 @@ export async function getChatMembershipRest(
   const admin = getAdminClient();
   const { data: chat, error: chatError } = await admin
     .from("chats")
-    .select("id, type, name, parent_chat_id")
+    .select("id, type, name, parent_chat_id, group_visibility, section_access_mode")
     .eq("id", chatId)
     .maybeSingle();
 
@@ -48,6 +50,8 @@ export async function getChatMembershipRest(
 
   if (memberError) throw new Error(memberError.message);
   if (!member) throw new Error("Нет доступа к этой беседе");
+  const role: ChatMembership["role"] =
+    member.role === "owner" || member.role === "admin" ? member.role : "member";
   if (
     parentChatId &&
     (!parentResult.data ||
@@ -55,6 +59,20 @@ export async function getChatMembershipRest(
       parentResult.data.parent_chat_id)
   ) {
     throw new Error("Родительская группа недоступна");
+  }
+  if (
+    parentChatId &&
+    chat.section_access_mode === "restricted" &&
+    role === "member"
+  ) {
+    const { data: sectionMember, error: sectionMemberError } = await admin
+      .from("chat_section_members")
+      .select("chat_id")
+      .eq("chat_id", chatId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (sectionMemberError) throw new Error(sectionMemberError.message);
+    if (!sectionMember) throw new Error("Этот раздел доступен только выбранным участникам");
   }
 
   return {
@@ -65,12 +83,11 @@ export async function getChatMembershipRest(
       parentChatId && typeof parentResult.data?.name === "string"
         ? parentResult.data.name
         : null,
-    role:
-      member.role === "owner" || member.role === "admin"
-        ? member.role
-        : "member",
+    role,
     type: chat.type,
     name: typeof chat.name === "string" ? chat.name : null,
+    groupVisibility: chat.group_visibility === "public" ? "public" : "private",
+    sectionAccessMode: chat.section_access_mode === "restricted" ? "restricted" : "inherit",
   };
 }
 

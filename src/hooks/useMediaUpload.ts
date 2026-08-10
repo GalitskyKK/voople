@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 
 import { trpc } from "@/lib/trpc/client";
 import type { UploadPurpose } from "@/lib/object-storage/types";
+import { uploadPresignedFile } from "@/lib/uploads/presigned-upload";
 import type { PostMediaType } from "@/types/domain";
 
 const IMAGE_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -76,13 +77,7 @@ export function useMediaUpload(purpose: UploadPurpose) {
           sizeBytes: file.size,
         });
 
-        const response = await fetch(presigned.uploadUrl, {
-          method: "PUT",
-          body: file,
-          headers: { "Content-Type": contentType },
-        });
-
-        if (!response.ok) throw new Error("Не удалось загрузить файл");
+        await uploadPresignedFile({ url: presigned.uploadUrl, file, contentType });
         if (!presigned.mediaType || !presigned.publicUrl) {
           throw new Error("Неподдерживаемый тип файла");
         }

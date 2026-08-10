@@ -9,6 +9,7 @@ import {
   type NavigationDestinationRenderer,
 } from "@/components/layout/AppNavigationVisual";
 import { AppShellFrame } from "@/components/layout/AppShellFrame";
+import { AppPageContent } from "@/components/layout/AppPageContent";
 import { COPY } from "@/lib/constants/copy";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 import { useVoiceSession } from "@/components/chat/voice/VoiceSessionProvider";
@@ -305,7 +306,7 @@ export function DesktopShell({
           ) : pathname === "/events" ? (
             <DesktopEvents />
           ) : pathname === "/settings" ? (
-            <DesktopSettings config={config} navigate={navigate} />
+            <DesktopSettings config={config} session={session} navigate={navigate} />
           ) : pathname === "/shop" ? (
             <DesktopShop config={config} />
           ) : isMessagesRoute ? (
@@ -381,9 +382,9 @@ export function DesktopShell({
 
 function DesktopRouteFallback() {
   return (
-    <div className="desktop-section-content" aria-label="Загрузка раздела">
+    <AppPageContent className="py-4 lg:py-6" aria-label="Загрузка раздела">
       <div className="feed-skeleton h-40 rounded-2xl" />
-    </div>
+    </AppPageContent>
   );
 }
 

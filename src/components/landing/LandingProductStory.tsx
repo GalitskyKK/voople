@@ -1,0 +1,148 @@
+"use client";
+
+import { Headphones, MessageCircleMore, UserRound } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+import { cn } from "@/lib/utils";
+
+const STORY = [
+  {
+    id: "profile",
+    number: "01",
+    eyebrow: "Профиль",
+    title: "Чтобы не отвечать всем «нормально».",
+    text: "Муд, трек, короткая мысль и оформление живут в одной карточке. Свои и так поймут, что у тебя за день.",
+  },
+  {
+    id: "messages",
+    number: "02",
+    eyebrow: "Сообщения",
+    title: "Скинул кружок. Потом трек. Потом всё-таки текстом.",
+    text: "Люди, личные чаты, группы и разделы находятся одним поиском. Даже длинный разговор выглядит как разговор, а не склад кнопок.",
+  },
+  {
+    id: "rooms",
+    number: "03",
+    eyebrow: "Комнаты",
+    title: "Экран видно. Тебя слышно. Уже неплохо.",
+    text: "Камера, демонстрация и активный собеседник складываются в одну сцену. Сверни её в маленькое окно и продолжай переписку.",
+  },
+] as const;
+
+type StoryId = (typeof STORY)[number]["id"];
+
+function ProductFrame({ active }: { active: StoryId }) {
+  return (
+    <div className="landing-product-frame" data-scene={active} aria-live="polite">
+      <div className="landing-product-frame__bar">
+        <span />
+        <span />
+        <span />
+        <strong>Voople</strong>
+      </div>
+      <div className="landing-product-frame__body">
+        <nav aria-label="Пример навигации Voople">
+          <span className={cn(active === "profile" && "is-active")}><UserRound /></span>
+          <span className={cn(active === "messages" && "is-active")}><MessageCircleMore /></span>
+          <span className={cn(active === "rooms" && "is-active")}><Headphones /></span>
+        </nav>
+        <div className="landing-product-frame__scene">
+          <div className="landing-product-scene" data-product-scene="profile">
+            <div className="landing-profile-card">
+              <div className="landing-profile-card__cover" />
+              <span className="landing-profile-card__avatar">В</span>
+              <strong>Ваша карточка</strong>
+              <small>@username · сегодня хочется громкой музыки</small>
+              <div className="landing-profile-card__mood">♪ трек дня · 03:42</div>
+            </div>
+            <div className="landing-feed-note">
+              <span>Сейчас</span>
+              <strong>Короткая мысль становится постом, когда ей нужен контекст.</strong>
+              <small>Фото, кружок, музыка или просто текст.</small>
+            </div>
+          </div>
+
+          <div className="landing-product-scene" data-product-scene="messages">
+            <div className="landing-chat-list">
+              <strong>Чаты</strong>
+              <div className="landing-search-field">Поиск людей и групп</div>
+              {["Команда", "Лена", "Музыка и дизайн"].map((name, index) => (
+                <div key={name} className={cn("landing-chat-row", index === 0 && "is-active")}>
+                  <span>{name.slice(0, 1)}</span><p><b>{name}</b><small>{index ? "Недавний разговор" : "Макет уже в сообщениях"}</small></p>
+                </div>
+              ))}
+            </div>
+            <div className="landing-chat-thread">
+              <header><strong>Команда</strong><small>4 участника</small></header>
+              <div className="landing-chat-thread__messages">
+                <p>Созвон в восемь?</p>
+                <p className="is-mine">Да. Экран покажу прямо в комнате.</p>
+                <p>Закрепил план выше.</p>
+              </div>
+              <div className="landing-chat-composer">Сообщение…</div>
+            </div>
+          </div>
+
+          <div className="landing-product-scene" data-product-scene="rooms">
+            <div className="landing-room-stage">
+              <div className="landing-room-stage__screen"><span>Демонстрация экрана</span></div>
+              <div className="landing-room-stage__camera"><span>АК</span><small>Алексей</small></div>
+              <div className="landing-room-stage__controls">●　●　●　●</div>
+            </div>
+            <div className="landing-call-float"><span>АК</span><p><b>Алексей говорит</b><small>Комната · 08:24</small></p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function LandingProductStory() {
+  const [active, setActive] = useState<StoryId>("profile");
+  const stepRefs = useRef(new Map<StoryId, HTMLElement>());
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        const id = visible?.target.getAttribute("data-story-id") as StoryId | null;
+        if (id) setActive(id);
+      },
+      { rootMargin: "-28% 0px -42%", threshold: [0.25, 0.55, 0.8] },
+    );
+    for (const element of stepRefs.current.values()) observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <section className="landing-story" aria-labelledby="landing-story-title">
+      <div className="landing-story__intro">
+        <p>Ну да, ещё одно приложение</p>
+        <h2 id="landing-story-title">Зато одно вместо пяти.</h2>
+      </div>
+      <div className="landing-story__grid">
+        <div className="landing-story__steps">
+          {STORY.map((step) => (
+            <article
+              key={step.id}
+              ref={(element) => {
+                if (element) stepRefs.current.set(step.id, element);
+                else stepRefs.current.delete(step.id);
+              }}
+              data-story-id={step.id}
+              className={cn("landing-story-step", active === step.id && "is-active")}
+            >
+              <span>{step.number}</span>
+              <p>{step.eyebrow}</p>
+              <h3>{step.title}</h3>
+              <small>{step.text}</small>
+            </article>
+          ))}
+        </div>
+        <div className="landing-story__sticky"><ProductFrame active={active} /></div>
+      </div>
+    </section>
+  );
+}

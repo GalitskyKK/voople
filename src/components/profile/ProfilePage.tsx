@@ -53,6 +53,10 @@ export function ProfilePage({
       staleTime: Infinity,
     },
   );
+  const { data: pinnedPost = null } = trpc.profile.getPinnedPostByUsername.useQuery(
+    { username: profile.username },
+    { refetchOnWindowFocus: false },
+  );
 
   const profileView = trpc.profile.view.useMutation({
     onSuccess: (data) => {
@@ -138,6 +142,7 @@ export function ProfilePage({
   return (
     <ProfilePageView
       posts={posts}
+      pinnedPost={pinnedPost}
       initialTab={askDeepLink ? "questions" : "posts"}
       card={
         <ProfileFlipCard
@@ -173,6 +178,16 @@ export function ProfilePage({
           canLike={Boolean(viewerId)}
           viewerId={viewerId}
           profileUsername={profile.username}
+        />
+      )}
+      renderPinnedPost={(post) => (
+        <PostCard
+          key={`pinned:${post.id}`}
+          post={post}
+          canLike={Boolean(viewerId)}
+          viewerId={viewerId}
+          profileUsername={profile.username}
+          isPinned
         />
       )}
     />

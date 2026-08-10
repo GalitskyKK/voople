@@ -10,8 +10,11 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import { ChatEmojiPicker } from "@/components/chat/ChatEmojiPicker";
 import { ChatVoiceRecorder } from "@/components/chat/ChatVoiceRecorder";
+import { CHAT_COMPOSER_ICON_BUTTON_CLASS } from "@/components/chat/ChatComposerVisual";
+import { Button } from "@/components/ui/Button";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { getChatClipboardFile } from "@/lib/chat/clipboard";
+import { cn } from "@/lib/utils";
 
 export function DesktopChatComposerInput({
   text,
@@ -89,7 +92,7 @@ export function DesktopChatComposerInput({
         }}
       />
 
-      <div className="desktop-chat-composer__row">
+      <div className="relative flex items-end gap-1.5">
         {!editing ? <DropdownMenu
           open={attachOpen}
           onOpenChange={setAttachOpen}
@@ -98,7 +101,7 @@ export function DesktopChatComposerInput({
             <button
               type="button"
               disabled={uploading}
-              className="desktop-chat-composer__utility"
+              className={CHAT_COMPOSER_ICON_BUTTON_CLASS}
               aria-label="Вложения"
               aria-expanded={attachOpen}
             >
@@ -113,7 +116,7 @@ export function DesktopChatComposerInput({
           <button
             type="button"
             role="menuitem"
-            className="desktop-chat-composer__menu-item"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--app-surface-soft)]"
             onClick={() => {
               setAttachOpen(false);
               imageInputRef.current?.click();
@@ -125,7 +128,7 @@ export function DesktopChatComposerInput({
           <button
             type="button"
             role="menuitem"
-            className="desktop-chat-composer__menu-item"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--app-surface-soft)]"
             onClick={() => {
               setAttachOpen(false);
               audioInputRef.current?.click();
@@ -139,7 +142,10 @@ export function DesktopChatComposerInput({
         <div className="relative">
           <button
             type="button"
-            className="desktop-chat-composer__utility"
+            className={cn(
+              CHAT_COMPOSER_ICON_BUTTON_CLASS,
+              emojiOpen && "bg-[var(--app-surface-soft)] text-[var(--foreground)]",
+            )}
             onClick={() => setEmojiOpen((current) => !current)}
             aria-label="Эмодзи"
             aria-expanded={emojiOpen}
@@ -169,6 +175,7 @@ export function DesktopChatComposerInput({
           maxLength={1000}
           placeholder="Сообщение"
           aria-label="Сообщение"
+          className="voople-input min-w-0 flex-1 resize-none py-2.5 text-sm"
         />
 
         {!editing && !text.trim() && !hasUpload ? (
@@ -179,9 +186,10 @@ export function DesktopChatComposerInput({
           />
         ) : null}
 
-        <button
+        <Button
           type="submit"
-          className="desktop-chat-composer__send"
+          variant="primary"
+          className="shrink-0 px-3"
           disabled={!canSend}
           aria-label="Отправить сообщение"
         >
@@ -190,7 +198,7 @@ export function DesktopChatComposerInput({
           ) : (
             <Send className="h-5 w-5" />
           )}
-        </button>
+        </Button>
       </div>
     </>
   );

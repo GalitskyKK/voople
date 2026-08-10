@@ -19,6 +19,7 @@ type PostAuthorRowProps = {
   hasRepostTarget?: boolean;
   viewerUsername?: string | null;
   profileUsername?: string;
+  isPinned?: boolean;
   onTextUpdated?: (text: string, isRepostComment: boolean) => void;
   onDeleted?: () => void;
 };
@@ -37,6 +38,7 @@ export function PostAuthorRow({
   hasRepostTarget = false,
   viewerUsername = null,
   profileUsername,
+  isPinned = false,
   onTextUpdated,
   onDeleted,
 }: PostAuthorRowProps) {
@@ -61,6 +63,7 @@ export function PostAuthorRow({
       hasRepostTarget={hasRepostTarget}
       viewerUsername={viewerUsername}
       profileUsername={profileUsername}
+      isPinned={isPinned}
       onTextUpdated={onTextUpdated}
       onDeleted={onDeleted}
     />

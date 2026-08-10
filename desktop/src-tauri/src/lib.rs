@@ -7,6 +7,7 @@ use std::{
     time::Duration,
 };
 use tauri::{
+    ipc::{InvokeBody, Request},
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Manager, WindowEvent,
@@ -104,6 +105,67 @@ fn open_external_url(url: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn upload_presigned_media(request: Request<'_>) -> Result<(), String> {
+    const MAX_UPLOAD_BYTES: usize = 40 * 1024 * 1024;
+
+    let bytes = match request.body() {
+        InvokeBody::Raw(bytes) if !bytes.is_empty() && bytes.len() <= MAX_UPLOAD_BYTES => {
+            bytes.clone()
+        }
+        InvokeBody::Raw(_) => return Err("Upload size must be between 1 byte and 40 MB".to_owned()),
+        InvokeBody::Json(_) => return Err("Upload must use a binary IPC body".to_owned()),
+    };
+    let upload_url = request
+        .headers()
+        .get("x-voople-upload-url")
+        .and_then(|value| value.to_str().ok())
+        .ok_or_else(|| "Upload URL is missing".to_owned())?
+        .to_owned();
+    let content_type = request
+        .headers()
+        .get("x-voople-content-type")
+        .and_then(|value| value.to_str().ok())
+        .filter(|value| {
+            value.starts_with("image/")
+                || value.starts_with("video/")
+                || value.starts_with("audio/")
+        })
+        .ok_or_else(|| "Unsupported upload content type".to_owned())?
+        .to_owned();
+
+    let parsed = reqwest::Url::parse(&upload_url).map_err(|_| "Invalid upload URL".to_owned())?;
+    let host = parsed.host_str().unwrap_or_default();
+    let selectel_host =
+        host == "s3.ru-3.storage.selcloud.ru" || host.ends_with(".storage.selcloud.ru");
+    let local_development = cfg!(debug_assertions)
+        && parsed.scheme() == "http"
+        && matches!(host, "127.0.0.1" | "localhost");
+    if !(parsed.scheme() == "https" && selectel_host) && !local_development {
+        return Err("Upload URL host is not allowed".to_owned());
+    }
+    if !local_development
+        && !parsed
+            .query_pairs()
+            .any(|(key, _)| key.eq_ignore_ascii_case("x-amz-signature"))
+    {
+        return Err("Upload URL is not signed".to_owned());
+    }
+
+    let response = reqwest::Client::new()
+        .put(parsed)
+        .header(reqwest::header::CONTENT_TYPE, content_type)
+        .body(bytes)
+        .timeout(Duration::from_secs(90))
+        .send()
+        .await
+        .map_err(|error| format!("Upload request failed: {error}"))?;
+    if !response.status().is_success() {
+        return Err(format!("Upload failed with status {}", response.status()));
+    }
+    Ok(())
+}
+
+#[tauri::command]
 fn set_window_behavior(
     state: tauri::State<'_, WindowBehavior>,
     close_to_tray: bool,
@@ -156,7 +218,10 @@ fn start_voice_heartbeat(
         }
     });
 
-    let mut current = state.0.lock().map_err(|_| "Heartbeat state is unavailable")?;
+    let mut current = state
+        .0
+        .lock()
+        .map_err(|_| "Heartbeat state is unavailable")?;
     if let Some(previous) = current.replace(VoiceHeartbeatTask {
         id: heartbeat_id,
         handle,
@@ -171,7 +236,10 @@ fn stop_voice_heartbeat(
     state: tauri::State<'_, VoiceHeartbeat>,
     heartbeat_id: String,
 ) -> Result<(), String> {
-    let mut current = state.0.lock().map_err(|_| "Heartbeat state is unavailable")?;
+    let mut current = state
+        .0
+        .lock()
+        .map_err(|_| "Heartbeat state is unavailable")?;
     if current.as_ref().is_some_and(|task| task.id == heartbeat_id) {
         if let Some(task) = current.take() {
             task.handle.abort();
@@ -259,6 +327,7 @@ pub fn run() {
             show_main_window,
             restart_application,
             open_external_url,
+            upload_presigned_media,
             set_window_behavior,
             start_voice_heartbeat,
             stop_voice_heartbeat

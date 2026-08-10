@@ -218,6 +218,26 @@ export async function setGroupTopicsRest(
   return { topicsEnabled: enabled, topicsLayout: layout };
 }
 
+export async function setGroupVisibilityRest(
+  chatId: string,
+  userId: string,
+  visibility: "private" | "public",
+) {
+  const membership = await assertChatMemberRest(chatId, userId);
+  if (membership.type !== "group" || membership.parentChatId) {
+    throw new Error("Тип доступа настраивается в основной группе");
+  }
+  if (membership.role !== "owner" && membership.role !== "admin") {
+    throw new Error("Тип доступа могут менять владелец и администраторы группы");
+  }
+  const { error } = await getAdminClient()
+    .from("chats")
+    .update({ group_visibility: visibility })
+    .eq("id", chatId);
+  if (error) throw new Error(error.message);
+  return { visibility };
+}
+
 async function clearGroupRoomPresence(chatId: string, userId: string) {
   const admin = getAdminClient();
   const { data: topics, error: topicsError } = await admin
@@ -378,6 +398,8 @@ export async function createSubchatRest(
   userId: string,
   name: string,
   icon: string | null,
+  accessMode: "inherit" | "restricted" = "inherit",
+  memberIds: string[] = [],
 ) {
   const membership = await assertChatMemberRest(parentChatId, userId);
   if (membership.type !== "group" || membership.parentChatId) {
@@ -386,6 +408,13 @@ export async function createSubchatRest(
   const cleanName = name.trim();
   if (cleanName.length < 2 || cleanName.length > 50) {
     throw new Error("Название — от 2 до 50 символов");
+  }
+  if (
+    accessMode === "restricted" &&
+    membership.role !== "owner" &&
+    membership.role !== "admin"
+  ) {
+    throw new Error("Закрытые разделы могут создавать владелец и администраторы");
   }
 
   const admin = getAdminClient();
@@ -406,6 +435,19 @@ export async function createSubchatRest(
   if (countError) throw new Error(countError.message);
   if ((count ?? 0) >= 30) throw new Error("В группе может быть до 30 разделов");
 
+  const uniqueMemberIds = [...new Set(memberIds)].filter((id) => id !== userId);
+  if (accessMode === "restricted" && uniqueMemberIds.length > 0) {
+    const { data: rootMembers, error: rootMembersError } = await admin
+      .from("chat_members")
+      .select("user_id")
+      .eq("chat_id", parentChatId)
+      .in("user_id", uniqueMemberIds);
+    if (rootMembersError) throw new Error(rootMembersError.message);
+    if ((rootMembers ?? []).length !== uniqueMemberIds.length) {
+      throw new Error("В закрытый раздел можно добавить только участников основной группы");
+    }
+  }
+
   const { data, error } = await admin
     .from("chats")
     .insert({
@@ -413,9 +455,103 @@ export async function createSubchatRest(
       name: cleanName,
       parent_chat_id: parentChatId,
       topic_icon: icon?.trim() || null,
+      section_access_mode: accessMode,
     })
     .select("id")
     .single();
   if (error) throw new Error(error.message);
+  if (accessMode === "restricted" && uniqueMemberIds.length > 0) {
+    const { error: sectionMembersError } = await admin
+      .from("chat_section_members")
+      .insert(
+        uniqueMemberIds.map((memberId) => ({
+          chat_id: data.id,
+          user_id: memberId,
+        })),
+      );
+    if (sectionMembersError) {
+      await admin.from("chats").delete().eq("id", data.id);
+      throw new Error(sectionMembersError.message);
+    }
+  }
   return data.id as string;
+}
+
+export async function setSectionAccessRest(
+  chatId: string,
+  userId: string,
+  accessMode: "inherit" | "restricted",
+  memberIds: string[],
+) {
+  const membership = await assertChatMemberRest(chatId, userId);
+  if (membership.type !== "group" || !membership.parentChatId) {
+    throw new Error("Доступ участников настраивается внутри раздела");
+  }
+  if (membership.role !== "owner" && membership.role !== "admin") {
+    throw new Error("Доступ раздела могут менять владелец и администраторы");
+  }
+  const uniqueMemberIds = [...new Set(memberIds)].filter((id) => id !== userId);
+  const admin = getAdminClient();
+  if (accessMode === "restricted" && uniqueMemberIds.length > 0) {
+    const { data: rootMembers, error: rootMembersError } = await admin
+      .from("chat_members")
+      .select("user_id")
+      .eq("chat_id", membership.accessChatId)
+      .in("user_id", uniqueMemberIds);
+    if (rootMembersError) throw new Error(rootMembersError.message);
+    if ((rootMembers ?? []).length !== uniqueMemberIds.length) {
+      throw new Error("Выбранный пользователь не состоит в основной группе");
+    }
+  }
+
+  const [{ data: previousChat, error: previousChatError }, { data: previousRows, error: previousRowsError }] = await Promise.all([
+    admin.from("chats").select("section_access_mode").eq("id", chatId).single(),
+    admin.from("chat_section_members").select("user_id").eq("chat_id", chatId),
+  ]);
+  if (previousChatError) throw new Error(previousChatError.message);
+  if (previousRowsError) throw new Error(previousRowsError.message);
+
+  try {
+    const { error: updateError } = await admin.from("chats").update({ section_access_mode: accessMode }).eq("id", chatId);
+    if (updateError) throw new Error(updateError.message);
+    const { error: clearError } = await admin.from("chat_section_members").delete().eq("chat_id", chatId);
+    if (clearError) throw new Error(clearError.message);
+    if (accessMode === "restricted" && uniqueMemberIds.length > 0) {
+      const { error: insertError } = await admin.from("chat_section_members").insert(
+        uniqueMemberIds.map((memberId) => ({ chat_id: chatId, user_id: memberId })),
+      );
+      if (insertError) throw new Error(insertError.message);
+    }
+  } catch (cause) {
+    await admin.from("chats").update({ section_access_mode: previousChat.section_access_mode }).eq("id", chatId);
+    await admin.from("chat_section_members").delete().eq("chat_id", chatId);
+    if ((previousRows ?? []).length > 0) {
+      await admin.from("chat_section_members").insert(
+        (previousRows ?? []).map((row) => ({ chat_id: chatId, user_id: row.user_id })),
+      );
+    }
+    throw cause;
+  }
+  return { accessMode, memberIds: uniqueMemberIds };
+}
+
+export async function getSectionAccessRest(chatId: string, userId: string) {
+  const membership = await assertChatMemberRest(chatId, userId);
+  if (membership.type !== "group" || !membership.parentChatId) {
+    throw new Error("Это не раздел группы");
+  }
+  if (membership.role !== "owner" && membership.role !== "admin") {
+    throw new Error("Настройки раздела доступны владельцу и администраторам");
+  }
+  const admin = getAdminClient();
+  const [{ data: chat, error: chatError }, { data: rows, error: rowsError }] = await Promise.all([
+    admin.from("chats").select("section_access_mode").eq("id", chatId).single(),
+    admin.from("chat_section_members").select("user_id").eq("chat_id", chatId),
+  ]);
+  if (chatError) throw new Error(chatError.message);
+  if (rowsError) throw new Error(rowsError.message);
+  return {
+    accessMode: chat.section_access_mode === "restricted" ? "restricted" as const : "inherit" as const,
+    selectedMemberIds: (rows ?? []).map((row) => row.user_id as string),
+  };
 }

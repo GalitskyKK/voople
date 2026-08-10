@@ -2,7 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { searchAll, searchUsers } from "@/server/services/search.service";
-import { fetchCurrentUserSummary } from "@/server/data/users-rest";
+import {
+  fetchCurrentUserSummary,
+  setUserPresenceVisibilityRest,
+  touchUserPresenceRest,
+} from "@/server/data/users-rest";
 
 import { createTRPCRouter, optionalAuthProcedure, protectedProcedure, publicProcedure } from "../init";
 
@@ -22,6 +26,16 @@ export const userRouter = createTRPCRouter({
     }
     return user;
   }),
+
+  touchPresence: protectedProcedure.mutation(({ ctx }) =>
+    touchUserPresenceRest(ctx.user.id)
+  ),
+
+  setPresenceVisibility: protectedProcedure
+    .input(z.object({ visible: z.boolean() }))
+    .mutation(({ ctx, input }) =>
+      setUserPresenceVisibilityRest(ctx.user.id, input.visible)
+    ),
 
   checkUsername: optionalAuthProcedure
     .input(z.object({ username: z.string().min(3).max(30) }))

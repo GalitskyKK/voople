@@ -19,17 +19,20 @@ import { DesktopPostAuthor } from "./DesktopPostAuthor";
 import { DesktopPostMedia } from "./DesktopPostMedia";
 import type { DesktopPost } from "./types";
 import { useDesktopPostActions } from "./useDesktopPostActions";
+import { DesktopPostMoreMenu } from "./DesktopPostMoreMenu";
 
 export function DesktopPostCard({
   post,
   config,
   session,
   renderDestination,
+  ownerProfile,
 }: {
   post: DesktopPost;
   config: DesktopConfig;
   session: Session;
   renderDestination: NavigationDestinationRenderer;
+  ownerProfile?: { isPinned: boolean; onChanged: () => void };
 }) {
   const customization = post.author.customization;
   const appearanceCustomization =
@@ -51,6 +54,17 @@ export function DesktopPostCard({
         post={post}
         renderDestination={renderDestination}
         badgeUrl={badgeUrl}
+        trailing={
+          ownerProfile ? (
+            <DesktopPostMoreMenu
+              postId={post.id}
+              isPinned={ownerProfile.isPinned}
+              config={config}
+              session={session}
+              onChanged={ownerProfile.onChanged}
+            />
+          ) : undefined
+        }
       />
 
       <PostCardBody>

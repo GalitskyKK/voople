@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode, type RefObject } from "react";
+import { useState, type ReactNode } from "react";
 import {
   DoorOpen,
   Headphones,
@@ -27,7 +27,7 @@ import { VoiceRoomStage } from "./VoiceRoomStage";
 type VoiceRoomSheetProps = {
   open: boolean;
   onClose: () => void;
-  screenContainerRef: RefObject<HTMLDivElement | null>;
+  screenContainerRef: (element: HTMLDivElement | null) => void;
   isDirect: boolean;
   chatName: string;
   active: boolean;
@@ -121,6 +121,7 @@ export function VoiceRoomSheet({
   connectLabel,
 }: VoiceRoomSheetProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const hasVisualMedia = Boolean(screenShareOwner) || cameraParticipantIds.size > 0;
 
   return (
     <Sheet
@@ -129,7 +130,14 @@ export function VoiceRoomSheet({
         setSettingsOpen(false);
         onClose();
       }}
-      className={cn("overflow-x-hidden", isDirect ? "max-w-xl" : "max-w-4xl")}
+      className={cn(
+        "overflow-x-hidden",
+        hasVisualMedia
+          ? "max-h-[94dvh] max-w-6xl"
+          : isDirect
+            ? "max-w-xl"
+            : "max-w-4xl",
+      )}
     >
       <div className="pr-10">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-(--theme-accent)">
@@ -170,17 +178,17 @@ export function VoiceRoomSheet({
 
       {active ? (
         <VoiceRoomStage
-            screenContainerRef={screenContainerRef}
-            screenShareOwner={screenShareOwner}
-            participants={participants}
-            participantVolumes={participantVolumes}
-            micMuted={micMuted}
-            remoteMicMutedById={remoteMicMutedById}
-            activeSpeakerIds={activeSpeakerIds}
-            cameraParticipantIds={cameraParticipantIds}
-            onCameraContainerChange={onCameraContainerChange}
-            onParticipantVolumeChange={onParticipantVolumeChange}
-          />
+          screenContainerRef={screenContainerRef}
+          screenShareOwner={screenShareOwner}
+          participants={participants}
+          participantVolumes={participantVolumes}
+          micMuted={micMuted}
+          remoteMicMutedById={remoteMicMutedById}
+          activeSpeakerIds={activeSpeakerIds}
+          cameraParticipantIds={cameraParticipantIds}
+          onCameraContainerChange={onCameraContainerChange}
+          onParticipantVolumeChange={onParticipantVolumeChange}
+        />
       ) : (
         <div className="mt-5 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-4">
           <div className="flex items-center gap-3">

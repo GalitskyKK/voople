@@ -36,7 +36,7 @@ async function fetchUserRowByUsername(username: string): Promise<UserRow | null>
     .from("users")
     .select(
       `
-      id, username, display_name, bio, pinned_thought, created_at,
+      id, username, display_name, bio, pinned_thought, last_seen_at, show_online_status, created_at,
       profile_customization (*),
       user_status (*),
       subscriptions (started_at, expires_at)
@@ -52,7 +52,7 @@ async function fetchUserRowByUsername(username: string): Promise<UserRow | null>
     await clearExpiredSubscriptionCustomizationRest(row.id)
     const { data: refreshed, error: refreshError } = await admin
       .from("users")
-      .select(`id, username, display_name, bio, pinned_thought, created_at, profile_customization (*), user_status (*), subscriptions (started_at, expires_at)`)
+      .select(`id, username, display_name, bio, pinned_thought, last_seen_at, show_online_status, created_at, profile_customization (*), user_status (*), subscriptions (started_at, expires_at)`)
       .eq("username", username)
       .maybeSingle()
     if (refreshError) throw new Error(refreshError.message)

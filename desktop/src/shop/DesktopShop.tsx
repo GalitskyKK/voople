@@ -2,6 +2,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useState } from "react";
 
 import { ShopPageView } from "@/components/shop/ShopPageView";
+import { ShopPageFrame } from "@/components/shop/ShopPageFrame";
+import { AppPageContent } from "@/components/layout/AppPageContent";
 
 import type { DesktopConfig } from "../config";
 
@@ -15,12 +17,14 @@ export function DesktopShop({ config }: { config: DesktopConfig }) {
   }, []);
 
   return (
-    <section className="desktop-section-content">
-      {openError ? <p className="form-error mb-3" role="alert">{openError}</p> : null}
-      <ShopPageView
-        legalOfferHref={`${config.apiUrl}/legal/offer`}
-        openExternal={openExternal}
-      />
-    </section>
+    <AppPageContent>
+      <ShopPageFrame>
+        {openError ? <p className="form-error mb-3" role="alert">{openError}</p> : null}
+        <ShopPageView
+          legalOfferHref={`${config.apiUrl}/legal/offer`}
+          openExternal={openExternal}
+        />
+      </ShopPageFrame>
+    </AppPageContent>
   );
 }

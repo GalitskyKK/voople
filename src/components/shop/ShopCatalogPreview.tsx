@@ -68,8 +68,26 @@ export function ShopCatalogPreview({ catalog, previewUrl, className }: ShopCatal
 
   if (resolvedPreviewUrl && catalogItemUsesCdn(catalog)) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element -- CDN customization previews
-      <img src={resolvedPreviewUrl} alt="" className={cn("h-full w-full object-cover", className)} loading="lazy" />
+      <div
+        className={cn(
+          "relative flex h-full w-full items-center justify-center overflow-hidden bg-[linear-gradient(145deg,var(--app-surface-soft),color-mix(in_srgb,var(--theme-accent)_12%,var(--app-surface)))]",
+          className,
+        )}
+      >
+        <span className="px-3 text-center text-xs text-[var(--app-muted)]">
+          Превью временно недоступно
+        </span>
+        {/* eslint-disable-next-line @next/next/no-img-element -- CDN customization previews */}
+        <img
+          src={resolvedPreviewUrl}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="lazy"
+          onError={(event) => {
+            event.currentTarget.hidden = true;
+          }}
+        />
+      </div>
     );
   }
 

@@ -5,7 +5,6 @@ import { ProfileCardBodyVisual } from "@/components/profile/ProfileCardBodyVisua
 import { ProfileCardIdentityVisual } from "@/components/profile/ProfileCardIdentityVisual";
 import { ProfileCardVisual } from "@/components/profile/ProfileCardVisual";
 import { ProfileReactions } from "@/components/profile/ProfileReactions";
-import { ProfileStatusBlock } from "@/components/profile/ProfileStatusBlock";
 import type { DesktopConfig } from "../config";
 import type { Session } from "@supabase/supabase-js";
 import { DesktopProfileAvatar } from "./DesktopProfileAvatar";
@@ -77,12 +76,12 @@ export function DesktopProfileCard({
               onUpdated={onAppearancePublished}
             />
           }
-          // status={<ProfileStatusBlock status={profile.status} />}
           status={
             <ProfileStatusSection
               username={profile.username}
               initialStatus={profile.status}
               isOwner={isOwner}
+              onPublished={onAppearancePublished}
             />
           }
           reactions={

@@ -1,23 +1,59 @@
 "use client";
 
 import { LoaderCircle, Plus } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
+import type { ChatGroupMemberView } from "@/types/chat";
+import { SubchatAccessPicker } from "./SubchatAccessPicker";
 
 export function SubchatCreatorView({
   createSubchat,
   onCreated,
+  canRestrict = false,
+  loadMembers,
 }: {
-  createSubchat: (name: string, icon: string | null) => Promise<string>;
+  createSubchat: (
+    name: string,
+    icon: string | null,
+    accessMode: "inherit" | "restricted",
+    memberIds: string[],
+  ) => Promise<string>;
   onCreated: (chatId: string) => void;
+  canRestrict?: boolean;
+  loadMembers?: () => Promise<ChatGroupMemberView[]>;
 }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("💬");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [accessMode, setAccessMode] = useState<"inherit" | "restricted">("inherit");
+  const [members, setMembers] = useState<ChatGroupMemberView[]>([]);
+  const [membersLoaded, setMembersLoaded] = useState(false);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!open || accessMode !== "restricted" || !loadMembers || membersLoaded) return;
+    let active = true;
+    void loadMembers()
+      .then((result) => {
+        if (active) {
+          setMembers(result);
+          setMembersLoaded(true);
+        }
+      })
+      .catch((cause: unknown) => {
+        if (active) {
+          setMembersLoaded(true);
+          setError(cause instanceof Error ? cause.message : "Не удалось загрузить участников");
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [accessMode, loadMembers, membersLoaded, open]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -26,8 +62,15 @@ export function SubchatCreatorView({
     setPending(true);
     setError(null);
     try {
-      const chatId = await createSubchat(cleanName, icon || null);
+      const chatId = await createSubchat(
+        cleanName,
+        icon || null,
+        canRestrict ? accessMode : "inherit",
+        canRestrict && accessMode === "restricted" ? selectedMemberIds : [],
+      );
       setName("");
+      setAccessMode("inherit");
+      setSelectedMemberIds([]);
       setOpen(false);
       onCreated(chatId);
     } catch (createError) {
@@ -99,6 +142,22 @@ export function SubchatCreatorView({
               ))}
             </div>
           </fieldset>
+          {canRestrict ? (
+            <SubchatAccessPicker
+              mode={accessMode}
+              members={members}
+              selectedIds={selectedMemberIds}
+              loading={!membersLoaded}
+              onModeChange={setAccessMode}
+              onToggleMember={(memberId) =>
+                setSelectedMemberIds((current) =>
+                  current.includes(memberId)
+                    ? current.filter((id) => id !== memberId)
+                    : [...current, memberId],
+                )
+              }
+            />
+          ) : null}
           {error ? <p className="mt-3 text-sm text-red-400">{error}</p> : null}
           <Button
             type="submit"

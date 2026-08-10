@@ -3,6 +3,7 @@ import { useEffect } from "react";
 
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { NotificationsView } from "@/components/notifications/NotificationsView";
+import { AppPageContent } from "@/components/layout/AppPageContent";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
 
 import type { DesktopConfig } from "../config";
@@ -26,7 +27,7 @@ export function DesktopNotifications({
   }, [notifications.unreadCount, onUnreadCountChange]);
 
   return (
-    <div className="desktop-section-content">
+    <AppPageContent>
       <NotificationsView
         items={notifications.items}
         loading={notifications.loading}
@@ -37,6 +38,6 @@ export function DesktopNotifications({
         renderDestination={renderDestination}
         badgeUrl={vooplusBadgeUrl(config.assetsCdnUrl)}
       />
-    </div>
+    </AppPageContent>
   );
 }

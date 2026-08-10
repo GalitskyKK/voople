@@ -3,6 +3,10 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
+import {
+  PRESENCE_VISIBILITY_EVENT,
+  shouldPublishPresence,
+} from "@/lib/presence-privacy";
 import { trpc } from "@/lib/trpc/client";
 
 type OnlinePresenceContextValue = {
@@ -19,14 +23,35 @@ export function useOnlineUsers() {
 
 export function OnlinePresenceProvider({ children }: { children: React.ReactNode }) {
   const { data: me } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
+  const touchPresence = trpc.user.touchPresence.useMutation();
+  const touchPresenceMutate = touchPresence.mutate;
   const [onlineUserIds, setOnlineUserIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [publishPresence, setPublishPresence] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!me?.id) return;
+    let active = true;
+    const supabase = createClient();
+    void supabase.auth.getUser().then(({ data }) => {
+      if (active) setPublishPresence(shouldPublishPresence(data.user?.user_metadata));
+    });
+    const onVisibilityChange = (event: Event) => {
+      setPublishPresence((event as CustomEvent<boolean>).detail);
+    };
+    window.addEventListener(PRESENCE_VISIBILITY_EVENT, onVisibilityChange);
+    return () => {
+      active = false;
+      window.removeEventListener(PRESENCE_VISIBILITY_EVENT, onVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!me?.id || publishPresence === null) return;
+
+    touchPresenceMutate();
+    const heartbeat = window.setInterval(() => touchPresenceMutate(), 60_000);
 
     const supabase = createClient();
-    const channelId = crypto.randomUUID();
-    const channel = supabase.channel(`presence:global:${channelId}`, {
+    const channel = supabase.channel("presence:global", {
       config: { presence: { key: me.id } },
     });
 
@@ -48,14 +73,15 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
       .on("presence", { event: "leave" }, syncPresence)
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
-          await channel.track({ user_id: me.id });
+          if (publishPresence) await channel.track({ user_id: me.id });
         }
       });
 
     return () => {
+      window.clearInterval(heartbeat);
       void supabase.removeChannel(channel);
     };
-  }, [me?.id]);
+  }, [me?.id, publishPresence, touchPresenceMutate]);
 
   const value = useMemo(() => ({ onlineUserIds }), [onlineUserIds]);
 

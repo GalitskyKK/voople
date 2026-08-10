@@ -1,5 +1,6 @@
 "use client";
 
+import { Pin } from "lucide-react";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 
 import { useElementScrolledPast } from "@/hooks/useElementScrolledPast";
@@ -8,8 +9,10 @@ import { ProfileFeedTabs, type ProfileFeedTab } from "./ProfileFeedTabs";
 
 type ProfilePageViewProps = {
   posts: PostViewModel[];
+  pinnedPost?: PostViewModel | null;
   card: ReactNode;
   renderPost: (post: PostViewModel) => ReactNode;
+  renderPinnedPost?: (post: PostViewModel) => ReactNode;
   renderQuestions?: () => ReactNode;
   renderStickyHeader?: (visible: boolean) => ReactNode;
   initialTab?: ProfileFeedTab;
@@ -17,8 +20,10 @@ type ProfilePageViewProps = {
 
 export function ProfilePageView({
   posts,
+  pinnedPost = null,
   card,
   renderPost,
+  renderPinnedPost,
   renderQuestions,
   renderStickyHeader,
   initialTab = "posts",
@@ -29,12 +34,15 @@ export function ProfilePageView({
   const filteredPosts = useMemo(
     () =>
       feedTab === "media"
-        ? posts.filter((post) => Boolean(post.mediaUrl))
-        : posts,
-    [feedTab, posts],
+        ? posts.filter((post) => Boolean(post.mediaUrl) && post.id !== pinnedPost?.id)
+        : posts.filter((post) => post.id !== pinnedPost?.id),
+    [feedTab, pinnedPost?.id, posts],
   );
   const emptyFeedMessage =
     feedTab === "media" ? "Пока нет постов с медиа" : "Пока нет постов";
+  const showPinnedPost = Boolean(
+    pinnedPost && feedTab !== "questions" && (feedTab !== "media" || pinnedPost.mediaUrl),
+  );
 
   return (
     <>
@@ -60,12 +68,25 @@ export function ProfilePageView({
                 Вопросы пока недоступны в этой версии приложения
               </p>
             )
-          ) : filteredPosts.length === 0 ? (
-            <p className="text-center text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">
-              {emptyFeedMessage}
-            </p>
           ) : (
-            filteredPosts.map(renderPost)
+            <>
+              {pinnedPost && showPinnedPost ? (
+                <div className="space-y-2" aria-label="Закреплённый пост">
+                  <div className="flex items-center gap-1.5 px-1 text-xs font-medium text-[color-mix(in_srgb,var(--foreground)_58%,transparent)]">
+                    <Pin className="h-3.5 w-3.5" aria-hidden="true" />
+                    Закреплённый пост
+                  </div>
+                  {(renderPinnedPost ?? renderPost)(pinnedPost)}
+                </div>
+              ) : null}
+              {filteredPosts.length === 0 && !showPinnedPost ? (
+                <p className="text-center text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">
+                  {emptyFeedMessage}
+                </p>
+              ) : (
+                filteredPosts.map(renderPost)
+              )}
+            </>
           )}
         </section>
       </div>

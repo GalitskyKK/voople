@@ -165,7 +165,11 @@ export async function mapPostRowsWithReposts(
     }
     const target = post.original_post_id ? rowById.get(post.original_post_id) : null
 
-    if (!post.is_repost || !target || depth >= 4) return mapped
+    if (!post.is_repost) return mapped
+    if (!target) {
+      return { ...mapped, repostUnavailable: true }
+    }
+    if (depth >= 4) return mapped
 
     return {
       ...mapped,

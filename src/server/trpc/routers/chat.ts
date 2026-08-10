@@ -16,6 +16,7 @@ import {
   createGroupChat,
   createSubchat,
   enterChatRoom,
+  getSectionAccess,
   getDirectChatByUsername,
   getChatRoom,
   heartbeatChatRoom,
@@ -26,6 +27,8 @@ import {
   listGroupContacts,
   listGroupMembers,
   setGroupTopics,
+  setGroupVisibility,
+  setSectionAccess,
   listChats,
   listMessages,
   markMessagesRead,
@@ -38,6 +41,7 @@ import {
 } from "@/server/services/chat.service";
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
+import { chatCommunityProcedures } from "./chat-community";
 
 const sendInputSchema = z
   .object({
@@ -57,6 +61,7 @@ const sendInputSchema = z
   );
 
 export const chatRouter = createTRPCRouter({
+  ...chatCommunityProcedures,
   invitePreview: publicProcedure
     .input(z.object({ token: z.string().min(20).max(100) }))
     .query(async ({ input }) => {
@@ -346,12 +351,21 @@ export const chatRouter = createTRPCRouter({
         parentChatId: z.string().uuid(),
         name: z.string().trim().min(2).max(50),
         icon: z.string().trim().max(16).nullable().default(null),
+        accessMode: z.enum(["inherit", "restricted"]).default("inherit"),
+        memberIds: z.array(z.string().uuid()).max(20).default([]),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.createGroupChat, ctx.user.id);
       try {
-        return await createSubchat(input.parentChatId, ctx.user.id, input.name, input.icon);
+        return await createSubchat(
+          input.parentChatId,
+          ctx.user.id,
+          input.name,
+          input.icon,
+          input.accessMode,
+          input.memberIds,
+        );
       } catch (error) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -386,6 +400,63 @@ export const chatRouter = createTRPCRouter({
             error instanceof Error
               ? error.message
               : "Не удалось сохранить настройки разделов",
+        });
+      }
+    }),
+  setGroupVisibility: protectedProcedure
+    .input(
+      z.object({
+        chatId: z.string().uuid(),
+        visibility: z.enum(["private", "public"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      try {
+        return await setGroupVisibility(input.chatId, ctx.user.id, input.visibility);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось изменить тип группы",
+        });
+      }
+    }),
+  setSectionAccess: protectedProcedure
+    .input(
+      z.object({
+        chatId: z.string().uuid(),
+        accessMode: z.enum(["inherit", "restricted"]),
+        memberIds: z.array(z.string().uuid()).max(20),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      try {
+        return await setSectionAccess(
+          input.chatId,
+          ctx.user.id,
+          input.accessMode,
+          input.memberIds,
+        );
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось изменить доступ раздела",
+        });
+      }
+    }),
+  sectionAccess: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        return await getSectionAccess(input.chatId, ctx.user.id);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Не удалось загрузить настройки раздела",
         });
       }
     }),

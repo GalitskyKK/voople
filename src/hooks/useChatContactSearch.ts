@@ -7,11 +7,13 @@ import type { UserSearchHit } from "@/types/search";
 
 export function useChatContactSearch({
   chats,
+  enabled,
   filter,
   query,
   searchContacts,
 }: {
   chats: ChatListItem[];
+  enabled: boolean;
   filter: "all" | "direct" | "group";
   query: string;
   searchContacts?: (query: string) => Promise<UserSearchHit[]>;
@@ -21,7 +23,7 @@ export function useChatContactSearch({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!searchContacts || filter === "group") return;
+    if (!enabled || !searchContacts || filter === "group") return;
     let active = true;
     const timer = window.setTimeout(
       () => {
@@ -50,22 +52,22 @@ export function useChatContactSearch({
       active = false;
       window.clearTimeout(timer);
     };
-  }, [filter, query, searchContacts]);
+  }, [enabled, filter, query, searchContacts]);
 
   const visibleContacts = useMemo(() => {
-    if (filter === "group") return [];
+    if (!enabled || filter === "group") return [];
     const directUserIds = new Set(
       chats.flatMap((chat) =>
         chat.type === "direct" && chat.otherUser?.id ? [chat.otherUser.id] : [],
       ),
     );
     return contacts.filter((contact) => !directUserIds.has(contact.id));
-  }, [chats, contacts, filter]);
+  }, [chats, contacts, enabled, filter]);
 
   return {
     visibleContacts,
-    loading: filter === "group" ? false : loading,
-    error: filter === "group" ? null : error,
+    loading: !enabled || filter === "group" ? false : loading,
+    error: !enabled || filter === "group" ? null : error,
     setError,
   };
 }

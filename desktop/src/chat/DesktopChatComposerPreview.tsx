@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 
+import { ChatComposerContextPreview } from "@/components/chat/ChatComposerVisual";
 import type { ChatMessageView, ChatPendingUpload } from "@/types/chat";
 
 export function DesktopChatComposerPreview({
@@ -25,47 +26,40 @@ export function DesktopChatComposerPreview({
   return (
     <>
       {editing ? (
-        <div className="desktop-chat-composer__preview">
-          <div className="min-w-0 flex-1">
-            <p>Редактирование</p>
-            <span>{editing.text}</span>
-          </div>
-          <button type="button" onClick={onCancelEdit} aria-label="Отменить редактирование">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+        <ChatComposerContextPreview
+          label="Редактирование"
+          text={editing.text ?? ""}
+          accent
+          onClose={onCancelEdit}
+        />
       ) : null}
       {replyTo ? (
-        <div className="desktop-chat-composer__preview">
-          <div className="min-w-0 flex-1">
-            <p>Ответ</p>
-            <span>{replyTo.text?.trim() || "Вложение"}</span>
-          </div>
-          <button
-            type="button"
-            onClick={onCancelReply}
-            aria-label="Отменить ответ"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+        <ChatComposerContextPreview
+          label="Ответ"
+          text={replyTo.text?.trim() || "Вложение"}
+          onClose={onCancelReply}
+        />
       ) : null}
 
       {upload ? (
-        <div className="desktop-chat-composer__preview">
+        <div className="voople-chat-composer__pending mb-2 flex items-center gap-2 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2 text-sm">
           {upload.kind === "image" && upload.previewUrl ? (
-            <img src={upload.previewUrl} alt="" />
+            <img
+              src={upload.previewUrl}
+              alt=""
+              className="h-12 w-12 shrink-0 rounded object-cover"
+            />
           ) : null}
           {upload.kind === "circle" && upload.previewUrl ? (
             <video
               src={upload.previewUrl}
               muted
               playsInline
-              className="rounded-full"
+              className="h-14 w-14 shrink-0 rounded-full object-cover"
             />
           ) : null}
           {upload.kind === "audio" ? (
-            <div className="desktop-chat-composer__audio-fields">
+            <div className="desktop-chat-composer__audio-fields min-w-0 flex-1">
               <label>
                 <span>Название</span>
                 <input
@@ -95,14 +89,17 @@ export function DesktopChatComposerPreview({
             </div>
           ) : (
             <div className="min-w-0 flex-1">
-              <p>
+              <p className="text-xs font-medium text-[var(--theme-accent)]">
                 {upload.kind === "circle" ? "Кружок" : "Изображение"}
               </p>
-              <span>{upload.fileName}</span>
+              <span className="block truncate text-[var(--app-muted)]">
+                {upload.fileName}
+              </span>
             </div>
           )}
           <button
             type="button"
+            className="shrink-0 rounded p-1 text-[var(--app-muted)] hover:text-[var(--foreground)]"
             onClick={onClearUpload}
             aria-label="Убрать вложение"
           >

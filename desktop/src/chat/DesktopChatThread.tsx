@@ -1,12 +1,15 @@
 import type { Session } from "@supabase/supabase-js";
-import { ArrowLeft, Hash, UsersRound } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, Hash } from "lucide-react";
+import { useState } from "react";
 
 import { ChatDateDivider } from "@/components/chat/ChatDateDivider";
 import { ChatSectionsBarView } from "@/components/chat/ChatSectionsBarView";
+import { ChatWindowHeaderVisual } from "@/components/chat/ChatWindowHeaderVisual";
+import { ChatPeerPresence } from "@/components/chat/ChatPeerPresence";
 import { VoiceRoomButton } from "@/components/chat/voice/VoiceRoomButton";
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
+import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import type { ChatListItem, ChatMessageView } from "@/types/chat";
 
 import type { DesktopConfig } from "../config";
@@ -15,6 +18,7 @@ import { DesktopChatComposer } from "./DesktopChatComposer";
 import { DesktopGroupInviteSheet } from "./DesktopGroupInviteSheet";
 import { DesktopChatMessage } from "./DesktopChatMessage";
 import { DesktopSubchatCreator } from "./DesktopSubchatCreator";
+import { DesktopSectionAccessSheet } from "./DesktopSectionAccessSheet";
 import { useDesktopChatThread } from "./useDesktopChatThread";
 
 export function DesktopChatThread({
@@ -51,12 +55,8 @@ export function DesktopChatThread({
   } = useDesktopChatThread(config, session, chatId, onInboxChange);
   const [replyTo, setReplyTo] = useState<ChatMessageView | null>(null);
   const [editing, setEditing] = useState<ChatMessageView | null>(null);
-  const messagesRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const element = messagesRef.current;
-    if (element) element.scrollTop = element.scrollHeight;
-  }, [data?.messages.length]);
+  const { containerRef: messagesRef, contentRef: messagesContentRef } =
+    useChatAutoScroll(chatId, data?.messages.length ?? 0);
 
   if (loading) {
     return (
@@ -87,7 +87,7 @@ export function DesktopChatThread({
 
   return (
     <div className="voople-chat-window flex min-h-0 flex-1 flex-col">
-      <header className="voople-chat-window__header flex shrink-0 items-center gap-3 border-b border-[var(--app-border)] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] lg:pt-3">
+      <ChatWindowHeaderVisual>
         <button
           type="button"
           onClick={() =>
@@ -100,17 +100,35 @@ export function DesktopChatThread({
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        {isSubchat ? (
+        {isGroup && !isSubchat ? (
+          <DesktopGroupInviteSheet
+            chatId={chatId}
+            chatName={title}
+            memberCount={data.chat.memberCount}
+            groupIcon={data.chat.groupIcon}
+            groupAvatarUrl={data.chat.groupAvatarUrl}
+            groupAccentColor={data.chat.groupAccentColor}
+            triggerVariant="identity"
+            viewerRole={data.chat.viewerRole}
+            canManage={data.chat.viewerRole === "owner" || data.chat.viewerRole === "admin"}
+            topicsEnabled={data.chat.topicsEnabled}
+            topicsLayout={data.chat.topicsLayout}
+            groupVisibility={data.chat.groupVisibility}
+            config={config}
+            session={session}
+            onMembersChanged={() => {
+              onInboxChange();
+              retry();
+            }}
+            onGroupClosed={onBack}
+          />
+        ) : isSubchat ? (
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--app-accent-soft)] text-[var(--theme-accent)]">
             {data.chat.topicIcon ? (
               <span aria-hidden="true">{data.chat.topicIcon}</span>
             ) : (
               <Hash className="h-4 w-4" />
             )}
-          </span>
-        ) : isGroup ? (
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--app-accent-soft)] text-[var(--theme-accent)]">
-            <UsersRound className="h-4 w-4" />
           </span>
         ) : other ? (
           <button
@@ -128,7 +146,7 @@ export function DesktopChatThread({
             />
           </button>
         ) : null}
-        <div className="min-w-0 flex-1">
+        {isGroup && !isSubchat ? null : <div className="min-w-0 flex-1">
           {isGroup ? (
             <p className="truncate font-semibold">
               {isSubchat && data.chat.parentName
@@ -163,40 +181,39 @@ export function DesktopChatThread({
               onClick={() => onNavigateProfile(other.username)}
               className="block max-w-full truncate text-xs text-[var(--app-muted)] hover:text-[var(--foreground)]"
             >
-              {onlineUserIds.has(other.id) ? "в сети" : `@${other.username}`}
+              <ChatPeerPresence
+                isOnline={onlineUserIds.has(other.id)}
+                lastSeenAt={other.lastSeenAt}
+                username={other.username}
+              />
             </button>
           ) : null}
-        </div>
-        {isGroup && !isSubchat ? (
-          <DesktopGroupInviteSheet
-            chatId={chatId}
-            chatName={title}
-            viewerRole={data.chat.viewerRole}
-            canManage={
-              data.chat.viewerRole === "owner" || data.chat.viewerRole === "admin"
-            }
-            topicsEnabled={data.chat.topicsEnabled}
-            topicsLayout={data.chat.topicsLayout}
-            config={config}
-            session={session}
-            onMembersChanged={() => {
-              onInboxChange();
-              retry();
-            }}
-            onGroupClosed={onBack}
-          />
-        ) : null}
+        </div>}
         {isGroup &&
         !isSubchat &&
-        data.chat.topicsEnabled &&
         data.chat.topicsEnabled ? (
           <DesktopSubchatCreator
             parentChatId={chatId}
             config={config}
             session={session}
+            viewerRole={data.chat.viewerRole}
             onCreated={(createdChatId) => {
               onInboxChange();
               onNavigateChat(createdChatId);
+            }}
+          />
+        ) : null}
+        {isSubchat &&
+        data.chat.parentChatId &&
+        data.chat.viewerRole !== "member" ? (
+          <DesktopSectionAccessSheet
+            chatId={chatId}
+            parentChatId={data.chat.parentChatId}
+            config={config}
+            session={session}
+            onChanged={() => {
+              onInboxChange();
+              retry();
             }}
           />
         ) : null}
@@ -205,7 +222,7 @@ export function DesktopChatThread({
           chatName={title}
           chatType={isGroup ? "group" : "direct"}
         />
-      </header>
+      </ChatWindowHeaderVisual>
       {rootChat ? (
         <ChatSectionsBarView
           rootChat={rootChat}
@@ -233,7 +250,7 @@ export function DesktopChatThread({
             Напишите первое сообщение
           </p>
         ) : null}
-        <div className="flex w-full flex-col gap-0.5 px-2">
+        <div ref={messagesContentRef} className="flex w-full flex-col gap-0.5 px-2">
           {timeline.map((item) =>
             item.type === "date" ? (
               <ChatDateDivider key={item.key} label={item.label} />

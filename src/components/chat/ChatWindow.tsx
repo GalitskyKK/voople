@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
 import { useChatMessageEditor } from "@/hooks/useChatMessageEditor";
+import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 import type { PendingChatUpload } from "@/hooks/useChatUpload";
 import { trpc } from "@/lib/trpc/client";
@@ -79,7 +80,6 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   const [replyTo, setReplyTo] = useState<ChatMessageView | null>(null);
   const [pendingUpload, setPendingUpload] = useState<PendingChatUpload | null>(null);
   const [pendingTrack, setPendingTrack] = useState<PlaylistTrackView | null>(null);
-  const messagesRef = useRef<HTMLDivElement>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [playlistConfirmMessage, setPlaylistConfirmMessage] = useState<ChatMessageView | null>(
@@ -97,7 +97,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     {
       staleTime: 5_000,
       refetchOnWindowFocus: false,
-      refetchInterval: realtimeDegraded ? 2_500 : false,
+      refetchInterval: realtimeDegraded ? 2_500 : 60_000,
     },
   );
 
@@ -134,6 +134,13 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
                   topicsEnabled: false,
                   topicsLayout: "list",
                   topicIcon: null,
+                  groupVisibility: "private",
+                  sectionAccessMode: "inherit",
+                  groupIcon: null,
+                  groupAvatarUrl: null,
+                  groupAccentColor: null,
+                  boostCount: 0,
+                  boostedByMe: false,
                   memberCount: 0,
                   viewerRole: "member",
                 },
@@ -164,15 +171,8 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     },
   });
 
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    const el = messagesRef.current;
-    if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior });
-  }, []);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [data?.messages.length, scrollToBottom]);
+  const { containerRef: messagesRef, contentRef: messagesContentRef } =
+    useChatAutoScroll(chatId, data?.messages.length ?? 0);
 
   const removeMessage = trpc.chat.deleteMessage.useMutation({
     onSuccess: (_data, variables) => {
@@ -311,6 +311,10 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         topicsEnabled={data?.chat.topicsEnabled ?? false}
         topicsLayout={data?.chat.topicsLayout ?? "list"}
         topicIcon={data?.chat.topicIcon ?? null}
+        groupVisibility={data?.chat.groupVisibility ?? "private"}
+        groupIcon={data?.chat.groupIcon ?? null}
+        groupAvatarUrl={data?.chat.groupAvatarUrl ?? null}
+        groupAccentColor={data?.chat.groupAccentColor ?? null}
         viewerRole={data?.chat.viewerRole ?? "member"}
         other={other}
         otherOnline={otherOnline}
@@ -325,7 +329,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         {timeline.length === 0 && (
           <p className="text-center text-sm text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">Напишите первое сообщение</p>
         )}
-        <div className="mx-auto flex w-full flex-col gap-0.5 px-2">
+        <div ref={messagesContentRef} className="mx-auto flex w-full flex-col gap-0.5 px-2">
           {timeline.map((item) =>
             item.type === "date" ? (
               <ChatDateDivider key={item.key} label={item.label} />

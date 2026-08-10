@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 
 type MessagesLayoutViewProps = {
   isThread: boolean;
-  listHeader: ReactNode;
   list: ReactNode;
   thread: ReactNode;
   wallpaper?: "plain" | "doodles" | "grid" | "aurora";
@@ -12,7 +11,6 @@ type MessagesLayoutViewProps = {
 
 export function MessagesLayoutView({
   isThread,
-  listHeader,
   list,
   thread,
   wallpaper = "doodles",
@@ -29,17 +27,7 @@ export function MessagesLayoutView({
             isThread ? "hidden lg:flex" : "flex flex-1 lg:flex-none",
           )}
         >
-          {listHeader}
-          <div
-            data-voople-scroll=""
-            className={cn(
-              "voople-messages-layout__list voople-scroll min-h-0 flex-1 overflow-y-auto px-4 lg:px-4 lg:pb-3",
-              !isThread &&
-                "pb-[max(5.5rem,calc(3.625rem+1.25rem+env(safe-area-inset-bottom)))]",
-            )}
-          >
-            {list}
-          </div>
+          {list}
         </aside>
 
         <section

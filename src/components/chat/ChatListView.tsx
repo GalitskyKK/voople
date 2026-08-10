@@ -1,16 +1,20 @@
 "use client";
 
-import { Loader2, MessageCircle, Search } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 
 import { useChatContactSearch } from "@/hooks/useChatContactSearch";
-import { cn } from "@/lib/utils";
-import type { ChatListItem } from "@/types/chat";
+import { usePublicGroupSearch } from "@/hooks/usePublicGroupSearch";
+import type { ChatListItem, PublicGroupSearchHit } from "@/types/chat";
 import type { UserSearchHit } from "@/types/search";
 import {
   ChatListRow,
   type ChatListDestinationRenderer,
 } from "./ChatListRow";
+import { ChatContactResults } from "./ChatContactResults";
+import { ChatPublicGroupResults } from "./ChatPublicGroupResults";
+import type { ChatListFilter, ChatSearchScope } from "./ChatListFilters";
+import { ChatListSearchPanel } from "./ChatListSearchPanel";
 
 export type { ChatListDestinationRenderer } from "./ChatListRow";
 
@@ -28,6 +32,8 @@ type ChatListViewProps = {
   openContact?: (user: UserSearchHit) => Promise<void>;
   renderContactAvatar?: (user: UserSearchHit) => ReactNode;
   renderContactTitle?: (user: UserSearchHit) => ReactNode;
+  searchPublicGroups?: (query: string) => Promise<PublicGroupSearchHit[]>;
+  openPublicGroup?: (group: PublicGroupSearchHit) => Promise<void>;
 };
 
 export function ChatListView({
@@ -44,10 +50,15 @@ export function ChatListView({
   openContact,
   renderContactAvatar,
   renderContactTitle,
+  searchPublicGroups,
+  openPublicGroup,
 }: ChatListViewProps) {
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<"all" | "direct" | "group">("all");
+  const [filter, setFilter] = useState<ChatListFilter>("all");
+  const [searchActive, setSearchActive] = useState(false);
+  const [searchScope, setSearchScope] = useState<ChatSearchScope>("all");
   const [openingContactId, setOpeningContactId] = useState<string | null>(null);
+  const [openingGroupId, setOpeningGroupId] = useState<string | null>(null);
   const visibleChats = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("ru-RU");
     const matchesQuery = (chat: ChatListItem) =>
@@ -62,17 +73,40 @@ export function ChatListView({
         .toLocaleLowerCase("ru-RU")
         .includes(normalizedQuery);
     return chats.filter((chat) => {
-      if (filter !== "all" && chat.type !== filter) return false;
+      const typeFilter = searchActive
+        ? searchScope === "people"
+          ? "direct"
+          : searchScope === "groups"
+            ? "group"
+            : "all"
+        : filter;
+      if (typeFilter !== "all" && chat.type !== typeFilter) return false;
       if (!normalizedQuery) return true;
       return matchesQuery(chat) || chat.channels.some(matchesQuery);
     });
-  }, [chats, filter, query]);
+  }, [chats, filter, query, searchActive, searchScope]);
   const {
     visibleContacts,
     loading: contactsLoading,
     error: contactsError,
     setError: setContactsError,
-  } = useChatContactSearch({ chats, filter, query, searchContacts });
+  } = useChatContactSearch({
+    chats,
+    enabled: searchActive,
+    filter: searchScope === "groups" ? "group" : "all",
+    query,
+    searchContacts,
+  });
+  const {
+    groups: publicGroups,
+    loading: publicGroupsLoading,
+    error: publicGroupsError,
+    setError: setPublicGroupsError,
+  } = usePublicGroupSearch({
+    enabled: searchActive && searchScope !== "people",
+    query,
+    search: searchPublicGroups,
+  });
 
   const handleOpenContact = async (contact: UserSearchHit) => {
     if (!openContact) return;
@@ -89,67 +123,49 @@ export function ChatListView({
     }
   };
 
-  if (loading) {
-    return (
-      <div
-        className="h-32 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]"
-        aria-label="Загружаем чаты"
-      />
-    );
-  }
-
-  if (error) {
-    return <p className="text-sm text-red-400">{error}</p>;
-  }
+  const handleOpenPublicGroup = async (group: PublicGroupSearchHit) => {
+    if (!openPublicGroup) return;
+    setOpeningGroupId(group.id);
+    setPublicGroupsError(null);
+    try {
+      await openPublicGroup(group);
+    } catch (openError) {
+      setPublicGroupsError(
+        openError instanceof Error
+          ? openError.message
+          : "Не удалось открыть группу",
+      );
+    } finally {
+      setOpeningGroupId(null);
+    }
+  };
 
   return (
-    <div className="space-y-3">
-      <div className="flex gap-2">
-        <label className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--app-muted)]" />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Чаты, группы и контакты"
-            aria-label="Найти чат, группу или контакт"
-            className="voople-input h-10 w-full pl-9 text-sm"
-          />
-        </label>
-        {headerAction}
-      </div>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <ChatListSearchPanel query={query} searchActive={searchActive} filter={filter} searchScope={searchScope} headerAction={headerAction} onQueryChange={setQuery} onSearchActiveChange={setSearchActive} onFilterChange={setFilter} onSearchScopeChange={setSearchScope} />
 
       <div
-        className="grid grid-cols-3 rounded-xl bg-[var(--app-surface-soft)] p-1"
-        aria-label="Фильтр чатов"
+        data-voople-scroll=""
+        className="voople-messages-layout__list voople-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 py-2 pb-[max(5.5rem,calc(3.625rem+1.25rem+env(safe-area-inset-bottom)))] lg:pb-3"
       >
-        {([
-          ["all", "Все"],
-          ["direct", "Личные"],
-          ["group", "Группы"],
-        ] as const).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setFilter(id)}
-            aria-pressed={filter === id}
-            className={cn(
-              "rounded-lg px-2 py-1.5 text-xs font-medium transition",
-              filter === id
-                ? "bg-[var(--app-surface)] text-[var(--foreground)] shadow-[var(--app-shadow-sm)]"
-                : "text-[var(--app-muted)] hover:text-[var(--foreground)]",
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {loading ? (
+        <div
+          className="h-32 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]"
+          aria-label="Загружаем чаты"
+        />
+      ) : error ? (
+        <p className="px-3 py-4 text-sm text-red-400">{error}</p>
+      ) : <>
 
       {visibleChats.length ? (
-        <div>
+        <div className={searchActive ? "order-2" : undefined}>
           {query.trim() ? (
             <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--app-muted)]">
               Чаты и группы
+            </p>
+          ) : searchActive ? (
+            <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--app-muted)]">
+              Недавние чаты
             </p>
           ) : null}
           <ul className="voople-chat-list space-y-0.5">
@@ -167,52 +183,40 @@ export function ChatListView({
         </div>
       ) : null}
 
-      {contactsLoading ? (
-        <div className="flex items-center justify-center gap-2 px-3 py-5 text-xs text-[var(--app-muted)]">
-          <Loader2 className="h-4 w-4 animate-spin" /> Ищем контакты
-        </div>
-      ) : visibleContacts.length ? (
-        <div>
-          <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--app-muted)]">
-            Контакты
-          </p>
-          <ul className="space-y-0.5">
-            {visibleContacts.map((contact) => (
-              <li key={contact.id}>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-[var(--app-surface-soft)] disabled:opacity-60"
-                  disabled={openingContactId !== null}
-                  onClick={() => void handleOpenContact(contact)}
-                >
-                  {renderContactAvatar?.(contact)}
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">
-                      {renderContactTitle?.(contact) ?? contact.displayName}
-                    </span>
-                    <span className="block truncate text-xs text-[var(--app-muted)]">
-                      @{contact.username}
-                    </span>
-                  </span>
-                  {openingContactId === contact.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-[var(--app-muted)]" />
-                  ) : null}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      <ChatContactResults
+        contacts={visibleContacts}
+        loading={contactsLoading}
+        openingContactId={openingContactId}
+        onOpen={(contact) => void handleOpenContact(contact)}
+        renderAvatar={renderContactAvatar}
+        renderTitle={renderContactTitle}
+      />
+
+      <ChatPublicGroupResults
+        groups={publicGroups}
+        loading={publicGroupsLoading}
+        openingId={openingGroupId}
+        onOpen={(group) => void handleOpenPublicGroup(group)}
+      />
 
       {contactsError ? (
-        <p className="px-3 text-xs text-red-400" role="alert">
+        <p className="order-3 px-3 text-xs text-red-400" role="alert">
           {contactsError}
         </p>
       ) : null}
+      {publicGroupsError ? (
+        <p className="order-3 px-3 text-xs text-red-400" role="alert">
+          {publicGroupsError}
+        </p>
+      ) : null}
 
-      {!visibleChats.length && !visibleContacts.length && !contactsLoading ? (
+      {!visibleChats.length &&
+      !visibleContacts.length &&
+      !publicGroups.length &&
+      !contactsLoading &&
+      !publicGroupsLoading ? (
         chats.length || query.trim() ? (
-          <p className="rounded-xl px-3 py-8 text-center text-sm text-[var(--app-muted)]">
+          <p className="order-4 rounded-xl px-3 py-8 text-center text-sm text-[var(--app-muted)]">
             Ничего не найдено
           </p>
         ) : (
@@ -226,6 +230,8 @@ export function ChatListView({
           </div>
         )
       ) : null}
+      </>}
+      </div>
     </div>
   );
 }

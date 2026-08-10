@@ -443,10 +443,6 @@ button:focus-visible, input:focus-visible {
   box-shadow: none;
 }
 
-.desktop-section-content {
-  padding: 1rem 1.5rem 1.5rem;
-}
-
 @media (min-width: 1024px) {
   .voople-shell[data-route-kind="profile"] .desktop-shell-scroll {
     display: flex;
@@ -454,7 +450,7 @@ button:focus-visible, input:focus-visible {
     padding-bottom: 0;
   }
 
-  .voople-shell[data-route-kind="profile"] .desktop-section-content {
+  .voople-shell[data-route-kind="profile"] .desktop-shell-scroll > .voople-shell__page {
     display: flex;
     min-height: 0;
     flex: 1;
@@ -537,145 +533,6 @@ button:focus-visible, input:focus-visible {
   color: #10b981;
 }
 
-.desktop-chat-composer {
-  position: relative;
-  width: 100%;
-  max-width: 50rem;
-  margin-inline: auto;
-  flex-shrink: 0;
-  border-top: 1px solid var(--app-border);
-  padding: 0.65rem 1rem max(0.75rem, env(safe-area-inset-bottom));
-  background: color-mix(in srgb, var(--app-surface) 94%, transparent);
-  backdrop-filter: blur(18px);
-}
-
-.desktop-chat-composer__row {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.55rem;
-  border: 1px solid var(--app-border);
-  border-radius: 1.25rem;
-  padding: 0.4rem;
-  background: color-mix(in srgb, var(--app-surface) 94%, transparent);
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 8%, transparent);
-}
-
-.desktop-chat-composer textarea {
-  min-height: 2.35rem;
-  max-height: 8rem;
-  flex: 1;
-  resize: none;
-  overflow-y: auto;
-  border: 0;
-  padding: 0.52rem 0.65rem;
-  color: var(--foreground);
-  line-height: 1.35;
-  outline: 0;
-  background: transparent;
-}
-
-.desktop-chat-composer__send {
-  width: 2.35rem;
-  height: 2.35rem;
-  display: grid;
-  flex-shrink: 0;
-  place-items: center;
-  border: 0;
-  border-radius: 0.75rem;
-  cursor: pointer;
-  color: white;
-  background: var(--theme-accent);
-}
-
-.desktop-chat-composer__send:disabled {
-  cursor: default;
-  opacity: 0.45;
-}
-
-.desktop-chat-composer__utility {
-  width: 2.35rem;
-  height: 2.35rem;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: 0.75rem;
-  cursor: pointer;
-  color: var(--app-muted);
-  background: transparent;
-}
-
-.desktop-chat-composer__utility:hover {
-  color: var(--foreground);
-  background: color-mix(in srgb, var(--foreground) 6%, transparent);
-}
-
-.desktop-chat-composer__menu-item {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  border: 0;
-  padding: 0.6rem 0.75rem;
-  color: var(--foreground);
-  text-align: left;
-  background: transparent;
-}
-
-.desktop-chat-composer__menu-item:hover {
-  background: color-mix(in srgb, var(--foreground) 5%, transparent);
-}
-
-.desktop-chat-composer__preview {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  margin-bottom: 0.5rem;
-  border: 1px solid var(--app-border);
-  border-radius: 0.9rem;
-  padding: 0.55rem 0.65rem;
-  background: var(--app-surface-soft);
-}
-
-.desktop-chat-composer__preview img,
-.desktop-chat-composer__preview video {
-  width: 3rem;
-  height: 3rem;
-  flex-shrink: 0;
-  border-radius: 0.65rem;
-  object-fit: cover;
-}
-
-.desktop-chat-composer__preview p,
-.desktop-chat-composer__preview span {
-  overflow: hidden;
-  margin: 0;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.desktop-chat-composer__preview p {
-  color: var(--theme-accent);
-  font-size: 0.72rem;
-  font-weight: 650;
-}
-
-.desktop-chat-composer__preview span {
-  display: block;
-  color: var(--app-muted);
-  font-size: 0.78rem;
-}
-
-.desktop-chat-composer__preview > button {
-  display: grid;
-  flex-shrink: 0;
-  place-items: center;
-  border: 0;
-  border-radius: 0.55rem;
-  padding: 0.35rem;
-  color: var(--app-muted);
-  background: transparent;
-}
-
 .desktop-chat-composer__audio-fields {
   display: grid;
   min-width: 0;
@@ -696,19 +553,6 @@ button:focus-visible, input:focus-visible {
   color: var(--foreground);
   outline: 0;
   background: transparent;
-}
-
-.desktop-chat-composer__counter {
-  position: absolute;
-  right: 4.3rem;
-  bottom: max(0.18rem, env(safe-area-inset-bottom));
-  color: var(--app-muted);
-  font-size: 0.62rem;
-}
-
-.desktop-chat-composer__error {
-  margin: 0 0 0.45rem;
-  font-size: 0.75rem;
 }
 
 .desktop-chat-thread-error {
@@ -771,10 +615,6 @@ button:focus-visible, input:focus-visible {
 }
 
 @media (max-width: 520px) {
-  .desktop-section-content {
-    padding-inline: 1rem;
-  }
-
   .desktop-shell-error,
   .desktop-placeholder {
     margin-inline: 1rem;

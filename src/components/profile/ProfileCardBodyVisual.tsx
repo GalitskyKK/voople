@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { ProfileViewModel } from "@/types/domain";
+import { RelativeTime } from "@/components/ui/RelativeTime";
 import { ProfileMeta } from "./ProfileMeta";
 import { ProfileStats } from "./ProfileStats";
 
@@ -24,6 +25,11 @@ export function ProfileCardBodyVisual({
       {profile.bio ? (
         <p className="mt-2 text-sm leading-5 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
           {profile.bio}
+        </p>
+      ) : null}
+      {profile.lastSeenAt ? (
+        <p className="mt-2 text-xs text-[var(--app-muted)]">
+          Был(а) в сети <RelativeTime iso={profile.lastSeenAt} />
         </p>
       ) : null}
       {relationshipActions ? (

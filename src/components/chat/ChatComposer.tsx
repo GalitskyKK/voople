@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { Send, Smile, X } from "lucide-react";
+import { Send, Smile } from "lucide-react";
 
 import { TrackMetadataConfirmCard } from "@/components/player/TrackMetadataConfirmCard";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +18,10 @@ import type { ChatMessageView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
 
 import { ChatAttachMenu } from "./ChatAttachMenu";
+import {
+  ChatComposerContextPreview,
+  ChatComposerFrame,
+} from "./ChatComposerVisual";
 import { ChatEmojiPicker } from "./ChatEmojiPicker";
 import { ChatMusicAttachSheet } from "./ChatMusicAttachSheet";
 import { ChatVoiceRecorder, type ChatRecordMode } from "./ChatVoiceRecorder";
@@ -166,35 +170,21 @@ export function ChatComposer({
   };
 
   return (
-    <div className="voople-chat-composer shrink-0 border-t border-[var(--app-border)] py-3">
+    <ChatComposerFrame>
       {editing && (
-        <div className="voople-chat-composer__reply mb-2 flex items-start gap-2 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2">
-          <div className="min-w-0 flex-1 text-sm">
-            <p className="text-xs font-medium text-[var(--theme-accent)]">Редактирование</p>
-            <p className="truncate text-[var(--foreground)]">{editing.text}</p>
-          </div>
-          <button type="button" className="shrink-0 rounded p-1 text-[var(--app-muted)] hover:text-[var(--foreground)]" aria-label="Отменить редактирование" onClick={onEditCancel}>
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+        <ChatComposerContextPreview
+          label="Редактирование"
+          text={editing.text ?? ""}
+          accent
+          onClose={() => onEditCancel?.()}
+        />
       )}
       {replyTo && (
-        <div className="voople-chat-composer__reply mb-2 flex items-start gap-2 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2">
-          <div className="min-w-0 flex-1 text-sm">
-            <p className="text-xs font-medium text-[var(--app-muted)]">Ответ</p>
-            <p className="truncate text-[var(--foreground)]">
-              {replyTo.text?.trim() || "Вложение"}
-            </p>
-          </div>
-          <button
-            type="button"
-            className="shrink-0 rounded p-1 text-[var(--app-muted)] hover:text-[var(--foreground)]"
-            aria-label="Отменить ответ"
-            onClick={onReplyCancel}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+        <ChatComposerContextPreview
+          label="Ответ"
+          text={replyTo.text?.trim() || "Вложение"}
+          onClose={onReplyCancel}
+        />
       )}
 
       {pendingAudioDraft && (
@@ -357,6 +347,6 @@ export function ChatComposer({
           <Send className="h-4 w-4" />
         </Button>
       </form>
-    </div>
+    </ChatComposerFrame>
   );
 }

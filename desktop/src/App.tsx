@@ -17,6 +17,7 @@ import {
 } from "./notifications/incoming-call";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 import { DesktopTitleBar } from "./shell/DesktopTitleBar";
+import { DesktopPresenceProvider } from "./providers/DesktopPresenceProvider";
 
 export function App() {
   const config = getDesktopConfig();
@@ -81,7 +82,9 @@ function DesktopRouter({ config }: { config: DesktopConfig }) {
         onIncomingCall={handleIncomingCall}
         subscribeToVoiceRooms={subscribeToVoiceRooms}
       >
-        <DesktopShell config={config} session={session} />
+        <DesktopPresenceProvider config={config} session={session}>
+          <DesktopShell config={config} session={session} />
+        </DesktopPresenceProvider>
       </VoiceSessionProvider>
     </DesktopTRPCProvider>
   );

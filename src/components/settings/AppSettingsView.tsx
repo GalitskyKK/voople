@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { KeyRound, Keyboard, MessageCircleMore, Palette, RotateCcw, Scale, ShieldCheck, SlidersHorizontal, Type } from "lucide-react";
 
 import { SectionPageHeader } from "@/components/layout/SectionPageHeader";
@@ -8,7 +8,10 @@ import { Button } from "@/components/ui/Button";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 import { HotkeySettings, type HotkeyRuntimeStatus } from "@/components/settings/HotkeySettings";
 import { NotificationSettings } from "@/components/settings/NotificationSettings";
-import { SettingsNavigation } from "@/components/settings/SettingsNavigation";
+import {
+  SettingsNavigation,
+  type SettingsSectionId,
+} from "@/components/settings/SettingsNavigation";
 import { AppThemeSelector } from "@/components/theme/AppThemeSelector";
 import { APP_THEMES, type AppThemeId } from "@/lib/app-themes";
 import { LEGAL_PAGES } from "@/lib/constants/legal";
@@ -33,13 +36,16 @@ export function AppSettingsView({
   hotkeyRuntimeStatus,
   desktopWindowSettings,
   desktopCallNotifications = false,
+  accountSecuritySettings,
 }: {
   renderDestination: SettingsDestinationRenderer;
   hotkeyRuntimeStatus?: HotkeyRuntimeStatus;
   desktopWindowSettings?: ReactNode;
   desktopCallNotifications?: boolean;
+  accountSecuritySettings?: ReactNode;
 }) {
   const { preferences, updatePreferences, resetPreferences } = useAppPreferences();
+  const [activeSection, setActiveSection] = useState<SettingsSectionId>("appearance");
   const subscription = trpc.shop.subscriptionStatus.useQuery(undefined, { retry: false });
   const unlockedThemeIds: AppThemeId[] = subscription.data?.active
     ? APP_THEMES.filter((theme) => theme.paid).map((theme) => theme.id)
@@ -57,10 +63,14 @@ export function AppSettingsView({
       />
 
       <div className="settings-layout">
-        <SettingsNavigation />
+        <SettingsNavigation
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
+        />
         <div className="min-w-0 space-y-5">
 
-      <section id="appearance" className="settings-section scroll-mt-28">
+      {activeSection === "appearance" ? <>
+      <section id="appearance" className="settings-section">
         <div className="settings-section__header">
           <Palette className="h-5 w-5" />
           <div>
@@ -103,8 +113,9 @@ export function AppSettingsView({
           ))}
         </div>
       </section>
+      </> : null}
 
-      <section id="messages" className="settings-section scroll-mt-28">
+      {activeSection === "messages" ? <section id="messages" className="settings-section">
         <div className="settings-section__header">
           <MessageCircleMore className="h-5 w-5" />
           <div>
@@ -126,13 +137,14 @@ export function AppSettingsView({
             </button>;
           })}
         </div>
-      </section>
+      </section> : null}
 
-      <NotificationSettings
+      {activeSection === "notifications" ? <NotificationSettings
         showDesktopCallNotifications={desktopCallNotifications}
-      />
+      /> : null}
 
-      <section id="interface" className="settings-section scroll-mt-28">
+      {activeSection === "interface" ? <>
+      <section id="interface" className="settings-section">
         <div className="settings-section__header">
           <SlidersHorizontal className="h-5 w-5" />
           <div>
@@ -153,15 +165,16 @@ export function AppSettingsView({
             <input type="checkbox" className="settings-switch" checked={preferences.reduceMotion} onChange={(event) => updatePreferences({ reduceMotion: event.target.checked })} />
           </label>
           <label className="settings-row">
-            <div><p className="font-medium">Показывать статус онлайн</p><p>Отображает индикатор присутствия возле аватаров.</p></div>
+            <div><p className="font-medium">Показывать индикаторы онлайна</p><p>Отображает статус присутствия других пользователей возле аватаров только на этом устройстве.</p></div>
             <input type="checkbox" className="settings-switch" checked={preferences.showPresence} onChange={(event) => updatePreferences({ showPresence: event.target.checked })} />
           </label>
         </div>
       </section>
 
       {desktopWindowSettings}
+      </> : null}
 
-      <section id="hotkeys" className="settings-section scroll-mt-28">
+      {activeSection === "hotkeys" ? <section id="hotkeys" className="settings-section">
         <div className="settings-section__header">
           <Keyboard className="h-5 w-5" />
           <div>
@@ -174,9 +187,9 @@ export function AppSettingsView({
           onChange={(hotkeys) => updatePreferences({ hotkeys })}
           runtimeStatus={hotkeyRuntimeStatus}
         />
-      </section>
+      </section> : null}
 
-      <section id="security" className="settings-section scroll-mt-28">
+      {activeSection === "security" ? <section id="security" className="settings-section">
         <div className="settings-section__header">
           <ShieldCheck className="h-5 w-5" />
           <div>
@@ -184,16 +197,16 @@ export function AppSettingsView({
             <p>Вход без пароля уменьшает риск повторного использования паролей.</p>
           </div>
         </div>
-        <div className="settings-security-card">
+        {accountSecuritySettings ?? <div className="settings-security-card">
           <KeyRound className="h-5 w-5 text-(--theme-accent)" />
           <div>
             <p className="font-medium">Код подтверждения по email</p>
             <p className="mt-1 text-sm text-[var(--app-muted)]">Voople отправляет одноразовый шестизначный код. Никому его не сообщайте.</p>
           </div>
-        </div>
-      </section>
+        </div>}
+      </section> : null}
 
-      <section id="legal" className="settings-section scroll-mt-28">
+      {activeSection === "legal" ? <section id="legal" className="settings-section">
         <div className="settings-section__header">
           <Scale className="h-5 w-5" />
           <div>
@@ -215,7 +228,7 @@ export function AppSettingsView({
             ))}
           </ul>
         </nav>
-      </section>
+      </section> : null}
         </div>
       </div>
     </div>

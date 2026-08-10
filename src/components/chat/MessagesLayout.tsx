@@ -2,9 +2,7 @@
 
 import { usePathname } from "next/navigation";
 
-import { SectionPageHeader } from "@/components/layout/SectionPageHeader";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
-import { COPY } from "@/lib/constants/copy";
 import { activeMessagesChatId } from "@/lib/layout/messages-path";
 import { trpc } from "@/lib/trpc/client";
 
@@ -28,13 +26,6 @@ export function MessagesLayout({ children }: { children: React.ReactNode }) {
     <MessagesLayoutView
       isThread={Boolean(chatId)}
       wallpaper={wallpaper}
-      listHeader={
-        <SectionPageHeader
-          title={COPY.messages}
-          variant="plain"
-          className="border-b-0 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] lg:pt-4"
-        />
-      }
       list={<ChatList activeChatId={chatId} />}
       thread={children}
     />

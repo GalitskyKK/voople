@@ -70,6 +70,7 @@ export function DesktopProfileActions({
       <ProfileEditSheet
         profile={profile}
         onUpdated={onUpdated}
+        onNavigate={navigate}
         triggerVariant="button"
       />
     );

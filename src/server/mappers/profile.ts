@@ -14,6 +14,8 @@ export type UserRow = {
   display_name: string;
   bio: string | null;
   pinned_thought: string | null;
+  last_seen_at?: string | null;
+  show_online_status?: boolean | null;
   created_at: string;
   profile_customization?: CustomizationRow | CustomizationRow[] | null;
   user_status?: StatusRow | StatusRow[] | null;
@@ -106,6 +108,7 @@ export function mapUserToProfile(
     username: user.username,
     displayName: user.display_name,
     bio: user.bio,
+    lastSeenAt: user.show_online_status === false ? null : (user.last_seen_at ?? null),
     createdAt: user.created_at,
     subscriptionStartedAt,
     subscriptionExpiresAt,

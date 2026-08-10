@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import {
   Check,
@@ -41,6 +40,7 @@ import { cn } from "@/lib/utils";
 import type { ProfileCustomizationView, ProfileViewModel } from "@/types/domain";
 import type { EquippedCustomizationView, ShopItemView } from "@/types/shop";
 import { ProfileEditTrigger } from "./ProfileEditTrigger";
+import { ProfileEditorShopLink } from "./ProfileEditorShopLink";
 type Panel = "profile" | "avatar" | "banner" | "frame" | "feed" | "name";
 type EditorCustomizationPatch = {
   profileFrameId?: string | null;
@@ -413,10 +413,12 @@ function ProfileEditorPreview({
 export function ProfileEditSheet({
   profile,
   onUpdated,
+  onNavigate,
   triggerVariant = "icon",
 }: {
   profile: ProfileViewModel;
   onUpdated?: () => void;
+  onNavigate?: (href: string) => void;
   triggerVariant?: "icon" | "button";
 }) {
   const [open, setOpen] = useState(false);
@@ -663,9 +665,7 @@ export function ProfileEditSheet({
                 </button>
               ))}
             </nav>
-            <Link href="/shop?tab=catalog" className="profile-editor-shop-link">
-              Открыть магазин
-            </Link>
+            <ProfileEditorShopLink onNavigate={onNavigate} onBeforeNavigate={() => setOpen(false)} />
           </aside>
 
           <main className="profile-editor-main voople-scroll">

@@ -26,12 +26,23 @@ export function ChatList({ activeChatId = null }: ChatListProps) {
   const { data, isLoading, error } = trpc.chat.list.useQuery(undefined, {
     staleTime: 5_000,
     refetchOnWindowFocus: false,
+    refetchInterval: 60_000,
   });
   const openDirect = trpc.chat.openDirect.useMutation();
   const searchContacts = useCallback(
-    (query: string) => utils.client.chat.contacts.query({ q: query }),
+    async (query: string) => {
+      const contacts = query.trim()
+        ? await utils.client.user.search.query({ q: query.trim() })
+        : await utils.client.chat.contacts.query({ q: "" });
+      return contacts.filter((contact) => contact.id !== me?.id);
+    },
+    [me?.id, utils.client],
+  );
+  const searchPublicGroups = useCallback(
+    (query: string) => utils.client.chat.publicGroups.query({ q: query }),
     [utils.client],
   );
+  const joinPublicGroup = trpc.chat.joinPublicGroup.useMutation();
 
   return (
     <ChatListView
@@ -97,6 +108,12 @@ export function ChatList({ activeChatId = null }: ChatListProps) {
           {contact.displayName}
         </DisplayNameWithPin>
       )}
+      searchPublicGroups={searchPublicGroups}
+      openPublicGroup={async (group) => {
+        const result = await joinPublicGroup.mutateAsync({ chatId: group.id });
+        await utils.chat.list.invalidate();
+        router.push(`/messages/${result.chatId}`);
+      }}
     />
   );
 }

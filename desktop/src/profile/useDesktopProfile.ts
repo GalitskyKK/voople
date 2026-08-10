@@ -10,6 +10,7 @@ import type { DesktopConfig } from "../config";
 type DesktopProfileData = {
   profile: ProfileViewModel;
   posts: PostViewModel[];
+  pinnedPost: PostViewModel | null;
   canvasStrokes: Stroke[];
   isOwner: boolean;
 };
@@ -87,8 +88,9 @@ export function useDesktopProfile(
           username,
         });
         const profile = parseProfile(profileValue);
-        const [postsValue, strokesValue] = await Promise.all([
+        const [postsValue, pinnedPostValue, strokesValue] = await Promise.all([
           client.query("profile.getPostsByUsername", { username }),
+          client.query("profile.getPinnedPostByUsername", { username }),
           client.query("profileCanvas.listStrokes", {
             profileUserId: profile.id,
           }),
@@ -97,6 +99,10 @@ export function useDesktopProfile(
         setData({
           profile,
           posts: parsePosts(postsValue),
+          pinnedPost:
+            pinnedPostValue === null
+              ? null
+              : (parsePosts([pinnedPostValue])[0] ?? null),
           canvasStrokes: parseCanvasStrokes(strokesValue),
           isOwner: profile.username === viewerUsername,
         });

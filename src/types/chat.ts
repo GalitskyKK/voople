@@ -63,6 +63,13 @@ export type ChatListItem = {
   topicsEnabled: boolean;
   topicsLayout: "tabs" | "list";
   topicIcon: string | null;
+  groupVisibility: "private" | "public";
+  sectionAccessMode: "inherit" | "restricted";
+  groupIcon: string | null;
+  groupAvatarUrl: string | null;
+  groupAccentColor: string | null;
+  boostCount: number;
+  boostedByMe: boolean;
   memberCount: number;
   viewerRole: "owner" | "admin" | "member";
   otherUser: {
@@ -73,6 +80,7 @@ export type ChatListItem = {
     avatarUrl: string | null;
     avatarDecorationUrl: string | null;
     avatarRingId: string | null;
+    lastSeenAt: string | null;
   } | null;
   lastMessage: {
     text: string | null;
@@ -93,6 +101,29 @@ export type ChatGroupMemberView = {
   role: "owner" | "admin" | "member";
 };
 
+export type PublicGroupSearchHit = {
+  id: string;
+  name: string;
+  publicSlug: string | null;
+  icon: string | null;
+  avatarUrl: string | null;
+  memberCount: number;
+  joined: boolean;
+};
+
+export type GroupCommunityView = {
+  description: string | null;
+  icon: string | null;
+  avatarUrl: string | null;
+  publicSlug: string | null;
+  accentColor: string | null;
+  effectiveAccentColor: string | null;
+  boostCount: number;
+  boostedByMe: boolean;
+  canBoost: boolean;
+  boostUnlocksAccent: boolean;
+};
+
 export type ChatThreadSummary = Pick<
   ChatListItem,
   | "id"
@@ -102,6 +133,13 @@ export type ChatThreadSummary = Pick<
   | "topicsEnabled"
   | "topicsLayout"
   | "topicIcon"
+  | "groupVisibility"
+  | "sectionAccessMode"
+  | "groupIcon"
+  | "groupAvatarUrl"
+  | "groupAccentColor"
+  | "boostCount"
+  | "boostedByMe"
   | "memberCount"
 > & {
   parentName?: string | null;

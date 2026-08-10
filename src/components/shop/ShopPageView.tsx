@@ -6,6 +6,7 @@ import { Crown, Package, Palette, Search, ShoppingBag } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { applyEquippedAppTheme, clearEquippedAppTheme } from "@/lib/shop/app-theme-client";
 import { cn } from "@/lib/utils";
+import { SectionHeaderGlow } from "@/components/layout/SectionHeaderGlow";
 import { useAppTheme } from "@/components/theme/AppThemeProvider";
 import type { PromoPreviewView } from "@/types/promo";
 import type { ShopItemView } from "@/types/shop";
@@ -211,6 +212,7 @@ export function ShopPageView({
   return (
     <div className="shop-page space-y-6">
       <header className="shop-toolbar">
+        <SectionHeaderGlow />
         <div className="flex min-w-0 items-center gap-3">
           <span className="shop-toolbar__mark" aria-hidden>
             <ShoppingBag className="h-4 w-4" />

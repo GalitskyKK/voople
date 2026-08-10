@@ -121,7 +121,8 @@ export async function resolvePublicMediaKey(
 
   if (!meta.contentType) throw new Error("У файла отсутствует Content-Type");
   if (purpose === "post") assertAllowedPostMediaMime(meta.contentType);
-  else if (purpose !== "track" && purpose !== "chat") assertAllowedImageMime(meta.contentType);
+  else if (purpose === "chat") parseChatUploadMime(meta.contentType);
+  else if (purpose !== "track") assertAllowedImageMime(meta.contentType);
 
   return key;
 }

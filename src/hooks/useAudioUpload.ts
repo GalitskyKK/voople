@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 
 import { trpc } from "@/lib/trpc/client";
 import type { TrackMetadataDraft } from "@/lib/player/metadata";
+import { uploadPresignedFile } from "@/lib/uploads/presigned-upload";
 
 const ALLOWED_AUDIO = new Set([
   "audio/mpeg",
@@ -47,12 +48,7 @@ export function useAudioUpload() {
           sizeBytes: file.size,
         });
 
-        const putRes = await fetch(presigned.uploadUrl, {
-          method: "PUT",
-          body: file,
-          headers: { "Content-Type": contentType },
-        });
-        if (!putRes.ok) throw new Error("Не удалось загрузить файл");
+        await uploadPresignedFile({ url: presigned.uploadUrl, file, contentType });
 
         return await createTrack.mutateAsync({
           fileKey: presigned.key,

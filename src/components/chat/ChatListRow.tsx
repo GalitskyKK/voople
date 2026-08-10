@@ -1,11 +1,12 @@
 "use client";
 
-import { UsersRound } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { cn } from "@/lib/utils";
 import type { ChatListItem } from "@/types/chat";
+
+import { GroupAvatar } from "./GroupAvatar";
 
 export type ChatListDestinationRenderer = (input: {
   chat: ChatListItem;
@@ -50,9 +51,12 @@ export function ChatListRow({
         children: (
           <>
             {isGroup ? (
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--app-accent-soft)] text-[var(--theme-accent)]">
-                <UsersRound className="h-4 w-4" />
-              </span>
+              <GroupAvatar
+                name={title}
+                avatarUrl={chat.groupAvatarUrl}
+                icon={chat.groupIcon}
+                accentColor={chat.groupAccentColor}
+              />
             ) : (
               renderAvatar(chat, title)
             )}

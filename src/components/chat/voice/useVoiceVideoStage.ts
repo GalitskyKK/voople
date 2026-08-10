@@ -51,6 +51,23 @@ export function useVoiceVideoStage() {
     void element.play().catch(() => undefined);
   }, []);
 
+  const bindScreenContainer = useCallback((element: HTMLDivElement | null) => {
+    const current = screenContainerRef.current;
+    if (!element) {
+      if (current?.childNodes.length && screenParkingRef.current) {
+        screenParkingRef.current.replaceChildren(...current.childNodes);
+      }
+      screenContainerRef.current = null;
+      return;
+    }
+
+    screenContainerRef.current = element;
+    if (screenParkingRef.current?.childNodes.length) {
+      element.replaceChildren(...screenParkingRef.current.childNodes);
+    }
+    element.querySelectorAll("video").forEach(resumeVideo);
+  }, [resumeVideo]);
+
   const removeCamera = useCallback(
     (trackId: string) => {
       let participantId: string | undefined;
@@ -277,7 +294,7 @@ export function useVoiceVideoStage() {
   }, [getCameraContainers, syncCameraParticipantIds]);
 
   return {
-    screenContainerRef,
+    bindScreenContainer,
     screenParkingRef,
     cameraParkingRef,
     bindCameraContainer,

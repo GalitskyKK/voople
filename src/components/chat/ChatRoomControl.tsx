@@ -7,8 +7,6 @@ import {
   Room,
   RoomEvent,
   Track,
-  type LocalTrackPublication,
-  type Participant,
   type RemoteParticipant,
   type RemoteTrack,
   type RemoteTrackPublication,
@@ -29,6 +27,8 @@ import {
 import { VoiceRoomSheet } from "./voice/VoiceRoomSheet";
 import { VoiceRoomTrigger } from "./voice/VoiceRoomTrigger";
 import { VoiceSettingsPanel } from "./voice/VoiceSettingsPanel";
+import { configureVoiceRoomEvents } from "./voice/configureVoiceRoomEvents";
+import { VoiceMiniStage } from "./voice/VoiceMiniStage";
 import { VoiceSessionDock } from "./voice/VoiceSessionDock";
 import { useCallDuration } from "./voice/useCallDuration";
 import { useVoiceHeartbeat } from "./voice/useVoiceHeartbeat";
@@ -87,7 +87,7 @@ export const ChatRoomControl = forwardRef<
   const micTestContextRef = useRef<AudioContext | null>(null);
   const micTestFrameRef = useRef<number | null>(null);
   const {
-    screenContainerRef,
+    bindScreenContainer,
     screenParkingRef,
     cameraParkingRef,
     bindCameraContainer,
@@ -250,62 +250,28 @@ export const ChatRoomControl = forwardRef<
   };
 
   const configureRoomEvents = (liveRoom: Room) => {
-    const syncRemoteMicrophones = () => {
-      if (liveRoomRef.current !== liveRoom || !mountedRef.current) return;
-      setRemoteMicMutedById(
-        Object.fromEntries(
-          [...liveRoom.remoteParticipants.values()].map((participant) => {
-            const publication = participant.getTrackPublication(Track.Source.Microphone);
-            return [participant.identity, publication ? publication.isMuted : true];
-          }),
-        ),
-      );
-    };
-    const syncMic = () => {
-      if (liveRoomRef.current !== liveRoom || !mountedRef.current) return;
-      setMicMuted(getMicrophoneMuted(liveRoom));
-      syncRemoteMicrophones();
-    };
-    const onLocalTrackUnpublished = (publication: LocalTrackPublication) => {
-      detachLocalVideo(publication);
-      syncMic();
-    };
+    configureVoiceRoomEvents({
+      room: liveRoom,
+      isCurrent: () => liveRoomRef.current === liveRoom && mountedRef.current,
+      onRemoteTrack: attachRemoteTrack,
+      onRemoteTrackDetached: detachRemoteVideo,
+      onLocalVideoPublished: attachLocalVideo,
+      onLocalVideoUnpublished: detachLocalVideo,
+      onMicrophonesChange: (localMuted, remoteMutedById) => {
+        setMicMuted(localMuted);
+        setRemoteMicMutedById(remoteMutedById);
+      },
+      onActiveSpeakersChange: setActiveSpeakerIds,
+      onConnectionQualityChange: setConnectionQuality,
+      onAudioBlockedChange: setAudioBlocked,
+      onReconnecting: () => setMediaStatus("reconnecting"),
+      onReconnected: () => {
+        setMediaStatus("connected");
+        setMediaError(null);
+      },
+    });
 
-    liveRoom
-      .on(RoomEvent.TrackSubscribed, attachRemoteTrack)
-      .on(RoomEvent.TrackUnsubscribed, detachRemoteVideo)
-      .on(RoomEvent.LocalTrackPublished, (publication) => {
-        attachLocalVideo(publication, liveRoom.localParticipant.identity);
-        syncMic();
-      })
-      .on(RoomEvent.LocalTrackUnpublished, onLocalTrackUnpublished)
-      .on(RoomEvent.TrackMuted, syncMic)
-      .on(RoomEvent.TrackUnmuted, syncMic)
-      .on(RoomEvent.ParticipantConnected, syncRemoteMicrophones)
-      .on(RoomEvent.ParticipantDisconnected, syncRemoteMicrophones)
-      .on(RoomEvent.ActiveSpeakersChanged, (speakers: Participant[]) => {
-        setActiveSpeakerIds(new Set(speakers.map((speaker) => speaker.identity)));
-      })
-      .on(RoomEvent.ConnectionQualityChanged, (quality, participant) => {
-        if (participant.isLocal) setConnectionQuality(quality);
-      })
-      .on(RoomEvent.AudioPlaybackStatusChanged, () => {
-        setAudioBlocked(!liveRoom.canPlaybackAudio);
-      })
-      .on(RoomEvent.SignalReconnecting, () => {
-        if (liveRoomRef.current === liveRoom) setMediaStatus("reconnecting");
-      })
-      .on(RoomEvent.Reconnecting, () => {
-        if (liveRoomRef.current === liveRoom) setMediaStatus("reconnecting");
-      })
-      .on(RoomEvent.Reconnected, () => {
-        if (liveRoomRef.current === liveRoom) {
-          setMediaStatus("connected");
-          setMediaError(null);
-          syncMic();
-        }
-      })
-      .on(RoomEvent.Disconnected, () => {
+    liveRoom.on(RoomEvent.Disconnected, () => {
         if (liveRoomRef.current !== liveRoom) return;
         liveRoomRef.current = null;
         clearAttachedMedia();
@@ -712,6 +678,19 @@ export const ChatRoomControl = forwardRef<
           outputMuted={outputMuted}
           mediaActionPending={mediaActionPending}
           leavePending={leave.isPending}
+          mediaPreview={
+            !open ? (
+              <VoiceMiniStage
+                screenContainerRef={bindScreenContainer}
+                screenShareOwner={screenShareOwner}
+                participants={value?.participants ?? []}
+                activeSpeakerIds={activeSpeakerIds}
+                cameraParticipantIds={cameraParticipantIds}
+                onCameraContainerChange={bindCameraContainer}
+                onOpen={() => setOpen(true)}
+              />
+            ) : undefined
+          }
           onOpen={() => setOpen(true)}
           onToggleMic={() => void toggleMic()}
           onToggleOutput={toggleOutput}
@@ -726,7 +705,7 @@ export const ChatRoomControl = forwardRef<
           parkVisibleMedia();
           setOpen(false);
         }}
-        screenContainerRef={screenContainerRef}
+        screenContainerRef={bindScreenContainer}
         isDirect={isDirect}
         chatName={chatName}
         active={active}

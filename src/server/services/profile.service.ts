@@ -8,3 +8,8 @@ export {
   fetchUsernameById,
   fetchUsernameById as getUsernameById,
 } from "@/server/data/users-rest";
+
+export {
+  getPinnedPostByUsernameRest as getPinnedPostByUsername,
+  setPinnedPostRest as setPinnedPost,
+} from "@/server/data/profile-pinned-post-rest";

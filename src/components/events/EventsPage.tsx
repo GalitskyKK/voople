@@ -3,12 +3,13 @@
 import { CalendarDays, Gift, Sparkles } from "lucide-react";
 
 import { TeamPinQuiz } from "@/components/settings/TeamPinQuiz";
+import { SectionHeaderGlow } from "@/components/layout/SectionHeaderGlow";
 
 export function EventsPage() {
   return (
     <div className="mx-auto w-full max-w-4xl space-y-5 py-4 lg:py-6">
       <header className="relative overflow-hidden rounded-[var(--app-radius-xl)] border border-[var(--app-border)] bg-[var(--app-surface)] p-5 sm:p-7">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[color-mix(in_srgb,var(--theme-accent)_24%,transparent)] blur-3xl" />
+        <SectionHeaderGlow />
         <div className="relative max-w-2xl">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--app-accent-soft)] px-2.5 py-1 text-xs font-semibold text-(--theme-accent)">
             <Sparkles className="h-3.5 w-3.5" /> Сейчас в Voople

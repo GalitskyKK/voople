@@ -1,36 +1,22 @@
-import {
-  isPermissionGranted,
-  requestPermission,
-  sendNotification,
-} from "@tauri-apps/plugin-notification";
-
 import type { IncomingCallView } from "@/types/chat";
 
-let permissionRequest: Promise<boolean> | null = null;
+import {
+  notificationId,
+  showDesktopNotification,
+} from "./native";
 
-export function prepareDesktopNotifications() {
-  permissionRequest ??= resolveNotificationPermission();
-  return permissionRequest;
-}
+export { prepareDesktopNotifications } from "./native";
 
-export async function notifyIncomingCall(call: IncomingCallView) {
-  try {
-    if (!(await prepareDesktopNotifications())) return;
-    sendNotification({
-      title: "Входящий звонок",
-      body: `${call.caller.displayName} звонит вам в Voople`,
-    });
-  } catch {
-    permissionRequest = null;
-  }
-}
-
-async function resolveNotificationPermission() {
-  try {
-    if (await isPermissionGranted()) return true;
-    return (await requestPermission()) === "granted";
-  } catch {
-    permissionRequest = null;
-    return false;
-  }
+export async function notifyIncomingCall(
+  call: IncomingCallView,
+  sound = true,
+) {
+  await showDesktopNotification({
+    id: notificationId(`call:${call.chatId}:${call.startedAt}`),
+    title: "Входящий звонок",
+    body: `${call.caller.displayName} звонит вам в Voople`,
+    href: `/messages/${call.chatId}`,
+    group: `call:${call.chatId}`,
+    sound,
+  });
 }

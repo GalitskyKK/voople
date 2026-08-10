@@ -18,6 +18,7 @@ import {
   enterChatRoom,
   getSectionAccess,
   getDirectChatByUsername,
+  getMessageNotification,
   getChatRoom,
   heartbeatChatRoom,
   leaveChatRoom,
@@ -168,6 +169,22 @@ export const chatRouter = createTRPCRouter({
       });
     }
   }),
+
+  messageNotification: protectedProcedure
+    .input(z.object({ messageId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        return await getMessageNotification(input.messageId, ctx.user.id);
+      } catch (error) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Уведомление о сообщении недоступно",
+        });
+      }
+    }),
 
   declineCall: protectedProcedure
     .input(z.object({ chatId: z.string().uuid() }))

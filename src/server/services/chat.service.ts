@@ -17,6 +17,8 @@ export {
   toggleMessageReactionRest as toggleMessageReaction,
 } from "@/server/data/chat-rest";
 
+export { getMessageNotificationRest as getMessageNotification } from "@/server/data/chat-message-actions-rest";
+
 export async function sendMessage(
   input: Parameters<typeof sendMessageRest>[0],
 ) {

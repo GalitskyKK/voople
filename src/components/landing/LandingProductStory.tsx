@@ -1,6 +1,7 @@
 "use client";
 
-import { Headphones, MessageCircleMore, UserRound } from "lucide-react";
+import { ArrowRight, Download, Headphones, MessageCircleMore, UserRound } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
@@ -10,22 +11,25 @@ const STORY = [
     id: "profile",
     number: "01",
     eyebrow: "Профиль",
-    title: "Чтобы не отвечать всем «нормально».",
-    text: "Муд, трек, короткая мысль и оформление живут в одной карточке. Свои и так поймут, что у тебя за день.",
+    title: "Открыл профиль — уже понял, что тебе скинуть.",
+    text: "Настроение, музыка, короткая мысль и оформление живут вместе. Своим не придётся начинать разговор с дежурного «как дела?». ",
+    proof: "Настроение, музыка и посты — в одном профиле",
   },
   {
     id: "messages",
     number: "02",
     eyebrow: "Сообщения",
-    title: "Скинул кружок. Потом трек. Потом всё-таки текстом.",
-    text: "Люди, личные чаты, группы и разделы находятся одним поиском. Даже длинный разговор выглядит как разговор, а не склад кнопок.",
+    title: "Написал «го?» — и не потерял разговор между вкладками.",
+    text: "Люди, личные чаты, группы и разделы находятся одним поиском. Сообщения, кружки, голосовые и музыка остаются в понятной ленте.",
+    proof: "Люди, группы и разделы — в одном поиске",
   },
   {
     id: "rooms",
     number: "03",
     eyebrow: "Комнаты",
-    title: "Экран видно. Тебя слышно. Уже неплохо.",
-    text: "Камера, демонстрация и активный собеседник складываются в одну сцену. Сверни её в маленькое окно и продолжай переписку.",
+    title: "Покажи экран. Окно можно свернуть, разговор — нет.",
+    text: "Камера, демонстрация и активный собеседник складываются в одну сцену. Мини-окно останется рядом, пока ты читаешь чат или листаешь ленту.",
+    proof: "Камера, экран и мини-окно — в одной комнате",
   },
 ] as const;
 
@@ -56,9 +60,9 @@ function ProductFrame({ active }: { active: StoryId }) {
               <div className="landing-profile-card__mood">♪ трек дня · 03:42</div>
             </div>
             <div className="landing-feed-note">
-              <span>Сейчас</span>
-              <strong>Короткая мысль становится постом, когда ей нужен контекст.</strong>
-              <small>Фото, кружок, музыка или просто текст.</small>
+              <span>Свои поймут</span>
+              <strong>Контекст виден ещё до первого сообщения.</strong>
+              <small>Фото, кружок, музыка или короткий текст — без анкеты о себе.</small>
             </div>
           </div>
 
@@ -119,8 +123,8 @@ export function LandingProductStory() {
   return (
     <section className="landing-story" aria-labelledby="landing-story-title">
       <div className="landing-story__intro">
-        <p>Ну да, ещё одно приложение</p>
-        <h2 id="landing-story-title">Зато одно вместо пяти.</h2>
+        <p>Между «ты где?» и «ещё пять минут»</p>
+        <h2 id="landing-story-title">Переписка не заканчивается на кнопке «позвонить».</h2>
       </div>
       <div className="landing-story__grid">
         <div className="landing-story__steps">
@@ -138,10 +142,21 @@ export function LandingProductStory() {
               <p>{step.eyebrow}</p>
               <h3>{step.title}</h3>
               <small>{step.text}</small>
+              <strong className="landing-story-step__proof">{step.proof}</strong>
             </article>
           ))}
         </div>
         <div className="landing-story__sticky"><ProductFrame active={active} /></div>
+      </div>
+      <div className="landing-story__cta">
+        <div>
+          <p>Соберите своих в одном месте</p>
+          <strong>Начните бесплатно. Карту не просим.</strong>
+        </div>
+        <div className="landing-story__cta-actions">
+          <Link href="/register">Забрать @username <ArrowRight /></Link>
+          <Link href="/download/desktop" prefetch={false}>Скачать для Windows <Download /></Link>
+        </div>
       </div>
     </section>
   );

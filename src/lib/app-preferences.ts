@@ -18,6 +18,7 @@ export type AppPreferences = {
   notifyCalls: boolean;
   notifyReplies: boolean;
   notifyReactions: boolean;
+  notificationPreview: boolean;
   notificationSound: boolean;
   closeToTray: boolean;
   minimizeToTray: boolean;
@@ -34,6 +35,7 @@ export const DEFAULT_APP_PREFERENCES: AppPreferences = {
   notifyCalls: true,
   notifyReplies: true,
   notifyReactions: true,
+  notificationPreview: true,
   notificationSound: true,
   closeToTray: true,
   minimizeToTray: false,
@@ -68,6 +70,7 @@ export function readAppPreferences(): AppPreferences {
       notifyCalls: parsed.notifyCalls !== false,
       notifyReplies: parsed.notifyReplies !== false,
       notifyReactions: parsed.notifyReactions !== false,
+      notificationPreview: parsed.notificationPreview !== false,
       notificationSound: parsed.notificationSound !== false,
       closeToTray: parsed.closeToTray !== false,
       minimizeToTray: parsed.minimizeToTray === true,

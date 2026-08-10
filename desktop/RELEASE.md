@@ -6,7 +6,9 @@ workflow artifact. A `desktop-vX.Y.Z` tag also creates a release in the private
 GitHub repository and publishes a stable public installer to S3-compatible
 storage. A manual run publishes only when the `publish` input is enabled.
 Publishing an unsigned test build additionally requires the explicit
-`allow_unsigned` input. Tagged releases always require a valid signature.
+`allow_unsigned` input. Tagged releases require Authenticode only when
+`DESKTOP_REQUIRE_WINDOWS_SIGNING=true`; Tauri updater signatures remain
+mandatory for every published release.
 
 The tag must match the version in `desktop/package.json` and
 `desktop/src-tauri/tauri.conf.json`.

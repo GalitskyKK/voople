@@ -2,6 +2,38 @@
 
 All notable user-facing changes to Voople are documented here.
 
+## [0.1.12] - 2026-08-10
+
+### Added
+
+- Native Windows notifications for new messages, replies, reactions and incoming calls.
+- Safe notification actions that restore Voople and open the exact internal destination.
+- A message-preview privacy switch and notification sound handling in desktop settings.
+- Public and authenticated Playwright smoke-test projects with a scheduled GitHub Actions workflow.
+
+### Changed
+
+- Reworked the landing product story around the complete profile → chat → room journey, with clearer benefits and conversion actions.
+- Incoming calls no longer force a minimized desktop window into the foreground; Windows displays an actionable notification instead.
+- Notification badges are now reconciled by the desktop shell even when the notifications page has not been opened.
+
+### Fixed
+
+- Fixed the oversized landing profile avatar overlapping the profile name.
+- Fixed landing product-story geometry at desktop and 360 px mobile widths.
+- Prevented native notifications from duplicating content when the focused app already shows the exact destination.
+
+### Security and reliability
+
+- Message notification previews require a protected server lookup with a fresh chat-membership check.
+- Native notification destinations accept only allowlisted internal Voople routes.
+- E2E session state, reports, screenshots, traces and videos are excluded from Git.
+
+### Deployment notes
+
+- No database migration is required for this release.
+- Add the optional `E2E_*` repository Actions secrets to enable authenticated production smoke tests; public tests run without them.
+
 ## [0.1.11] - 2026-08-10
 
 ### Added

@@ -40,17 +40,35 @@ export function NotificationSettings({
           </label>
         ))}
         {showDesktopCallNotifications ? (
-          <label className="settings-row">
-            <p className="font-medium">Системные уведомления о звонках</p>
-            <input
-              type="checkbox"
-              className="settings-switch"
-              checked={preferences.notifyCalls}
-              onChange={(event) =>
-                updatePreferences({ notifyCalls: event.target.checked })
-              }
-            />
-          </label>
+          <>
+            <label className="settings-row">
+              <div>
+                <p className="font-medium">Показывать текст сообщений</p>
+                <p className="mt-1 text-xs text-[var(--app-muted)]">
+                  Отключите, чтобы скрыть содержимое в системных уведомлениях.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                className="settings-switch"
+                checked={preferences.notificationPreview}
+                onChange={(event) =>
+                  updatePreferences({ notificationPreview: event.target.checked })
+                }
+              />
+            </label>
+            <label className="settings-row">
+              <p className="font-medium">Системные уведомления о звонках</p>
+              <input
+                type="checkbox"
+                className="settings-switch"
+                checked={preferences.notifyCalls}
+                onChange={(event) =>
+                  updatePreferences({ notifyCalls: event.target.checked })
+                }
+              />
+            </label>
+          </>
         ) : null}
       </div>
     </section>

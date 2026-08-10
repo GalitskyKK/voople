@@ -20,6 +20,7 @@ import type { DesktopConfig } from "../config";
 import { useDesktopHotkeys } from "../hooks/useDesktopHotkeys";
 import { useNativeVoiceHeartbeat } from "../hooks/useNativeVoiceHeartbeat";
 import { DesktopAutoUpdater } from "../updates/DesktopAutoUpdater";
+import { DesktopNotificationBridge } from "../notifications/DesktopNotificationBridge";
 const DesktopFeed = lazy(() =>
   import("../feed/DesktopFeed").then((module) => ({
     default: module.DesktopFeed,
@@ -269,6 +270,14 @@ export function DesktopShell({
               : "max-w-2xl"
       }
     >
+      <DesktopNotificationBridge
+        config={config}
+        session={session}
+        pathname={pathname}
+        preferences={preferences}
+        navigate={navigate}
+        onUnreadCountChange={setUnreadNotifications}
+      />
       <div className="desktop-shell-scroll voople-scroll">
         {syncError && (
           <p className="form-error desktop-shell-error" role="alert">

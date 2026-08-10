@@ -1,0 +1,36 @@
+name: E2E smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 2 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  production-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: "true"
+      PLAYWRIGHT_BASE_URL: https://voople.ru
+      E2E_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+      E2E_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14

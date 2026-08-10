@@ -107,6 +107,46 @@ cargo check --manifest-path src-tauri/Cargo.toml
 new warnings. `npm run check:architecture` must pass without increasing baseline
 limits.
 
+## End-to-end smoke tests
+
+Playwright covers release-critical browser boundaries without replacing the
+two-device call matrix. Public tests validate the landing conversion actions,
+authentication entry points, protected-route redirect and desktop download
+route. Authenticated tests validate that a real session can open the messenger
+and navigate settings without mutating production data.
+
+Install the Chromium runtime once, then run:
+
+```powershell
+npx playwright install chromium
+npm run test:e2e:public
+npm run test:e2e
+```
+
+`npm run test:e2e` starts the local Next.js server when
+`PLAYWRIGHT_BASE_URL` is absent. To exercise an existing deployment, set it to
+an HTTPS origin. The authenticated project is included only when all of these
+variables exist:
+
+```text
+E2E_SUPABASE_URL
+E2E_SUPABASE_ANON_KEY
+E2E_USER_EMAIL
+E2E_USER_PASSWORD
+```
+
+Use a dedicated verified account with no administrator rights, payments or
+private production conversations. Never use a maintainer's account. Playwright
+creates `playwright/.auth/user.json` at runtime; the directory, report, traces
+and failure videos are ignored by Git. Do not attach a trace publicly until it
+has been checked for personal chat content.
+
+The scheduled `E2E smoke` GitHub Action targets `https://voople.ru`. Add the
+four `E2E_*` values as repository Actions secrets to enable authenticated
+checks. If they are absent, the same workflow intentionally runs only the
+public project. A failing smoke test blocks confidence in a release but does
+not roll back production automatically.
+
 ## Common feature workflow
 
 For a feature that reads or writes server data:
@@ -139,6 +179,9 @@ For visual-only changes, begin at the canonical shared component listed in
 - Rust/native commands: `npm run tauri:dev:debug` terminal;
 - occupied ports: `npm run dev:stop`, then start again;
 - updater: inspect the updater status UI and release endpoint response;
+- native notifications: check Windows notification permissions, then inspect
+  the desktop renderer log for the originating realtime/tRPC failure without
+  logging message text or access tokens;
 - `Failed to fetch` during upload usually means a direct WebView PUT was added
   instead of the shared native upload adapter.
 

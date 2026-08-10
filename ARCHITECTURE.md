@@ -112,6 +112,7 @@ must remain adapters, not alternative designs:
 | `desktop/src/bridge` | typed browser-to-Tauri bridge helpers |
 | `desktop/src/<domain>` | data hooks and platform actions injected into shared views |
 | `desktop/src/hotkeys` | local/global shortcut registration |
+| `desktop/src/notifications` | Windows permission, realtime bridge and safe native actions |
 | `desktop/src/updates` | signed updater checks and restart flow |
 | `desktop/src/providers` | desktop equivalents of application-wide providers |
 
@@ -379,6 +380,36 @@ The repeatable release matrix is documented in `VOICE_TESTING.md`.
   and prevents realtime presence publication.
 - Realtime events invalidate or reconcile tRPC data; they do not replace server
   authorization.
+
+### Desktop system notifications
+
+`DesktopNotificationBridge` is the only renderer-level owner of ordinary
+Windows notifications. It subscribes to message and social realtime events,
+reconciles the unread counter and applies local notification preferences.
+Incoming calls use the same native sender but keep their authoritative call
+lifecycle in `App.tsx`.
+
+Message realtime payloads contain only an id and sender id. Before a preview is
+shown, `chat.messageNotification` loads a stable view model and verifies group
+membership server-side. The desktop must never build a private message preview
+from an unverified realtime row. Social text is derived from the canonical
+`notificationText` mapper shared with the notification page.
+
+`notifications/native.ts` owns permission requests, action registration,
+stable numeric ids and text length limits. Native actions accept only an
+allowlisted internal route, restore the main window through Tauri IPC and then
+delegate navigation to `DesktopShell`. Do not pass arbitrary or external URLs
+through notification `extra` data.
+
+To add a new notification kind:
+
+1. add its stable view model and authorized server read if the realtime payload
+   is not already safe for display;
+2. add a user preference or map it to an existing explicit category;
+3. reuse `showDesktopNotification` and an internal destination;
+4. suppress the toast only when the focused app is already showing that exact
+   destination;
+5. test foreground, background, minimized and fully hidden window states.
 
 ## 13. Customization and subscriptions
 

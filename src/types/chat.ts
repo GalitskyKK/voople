@@ -55,6 +55,14 @@ export type ChatMessageView = {
   reactions: ChatMessageReaction[];
 };
 
+export type ChatMessageNotificationView = {
+  messageId: string;
+  chatId: string;
+  senderName: string;
+  chatTitle: string;
+  previewText: string;
+};
+
 export type ChatListItem = {
   id: string;
   type: "direct" | "group";

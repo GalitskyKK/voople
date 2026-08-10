@@ -16,7 +16,10 @@ possible, different networks.
 
 ## Direct-call matrix
 
-1. A calls B; B sees one incoming call and answers.
+1. A calls B while desktop B is minimized; Windows shows one incoming-call
+   notification. Clicking **Open** restores Voople on the correct chat, and B
+   can answer. Repeat once with the desktop window focused: the in-app call UI
+   remains authoritative and no duplicate native notification appears.
 2. Repeat with B calling A.
 3. Decline, cancel before answer and let one call become missed.
 4. Verify the timer starts from the authoritative room start and agrees on both
@@ -30,6 +33,23 @@ possible, different networks.
 8. Minimize the room and navigate through feed, profile, shop and settings. The
    mini stage remains movable, controls still work and opening it restores the
    room.
+
+## Message notification matrix
+
+1. With desktop A minimized, send a direct message from B. A receives one
+   Windows notification with the chat title and preview.
+2. Click it and verify that the main window opens the exact chat. Repeat while A
+   already has that focused chat open: no native toast is expected.
+3. Disable message previews. The next toast says only `Новое сообщение` and
+   never exposes text on the lock screen.
+4. Disable message notifications, replies and reactions independently and
+   verify each category. Disable notification sound and verify the visual toast
+   remains.
+5. Repeat for a private group and restricted section. An account outside the
+   group must never obtain the title or preview, including by calling
+   `chat.messageNotification` with a captured message id.
+6. Sign out and send another message: no notification or stale unread update is
+   produced by the previous session.
 
 ## Camera and screen sharing
 

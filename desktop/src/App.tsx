@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useCallback, useEffect } from "react";
 
 import { AuthProvider, useDesktopAuth } from "./auth/AuthProvider";
@@ -46,10 +46,14 @@ function DesktopRouter({ config }: { config: DesktopConfig }) {
   }, [preferences.notifyCalls, session]);
   const handleIncomingCall = useCallback(
     (call: IncomingCallView) => {
-      if (preferences.notifyCalls) void notifyIncomingCall(call);
-      void invoke<void>("show_main_window").catch(() => undefined);
+      if (!preferences.notifyCalls) return;
+      void getCurrentWindow().isFocused()
+        .then((focused) => {
+          if (!focused) return notifyIncomingCall(call, preferences.notificationSound);
+        })
+        .catch(() => notifyIncomingCall(call, preferences.notificationSound));
     },
-    [preferences.notifyCalls],
+    [preferences.notificationSound, preferences.notifyCalls],
   );
   const subscribeToVoiceRooms = useCallback<SubscribeToVoiceRooms>(
     (onChange) => {

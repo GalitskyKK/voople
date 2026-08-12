@@ -26,6 +26,7 @@ import {
 } from "@/components/profile/ProfileCardFrame";
 import { ProfileBanner } from "@/components/profile/ProfileBanner";
 import { resolveCustomization } from "@/lib/customization/resolve";
+import { customizationAssetPath } from "@/lib/customization/asset-path";
 import { VooplePlusFeatureSurface } from "@/components/subscription/VooplePlusFeatureSurface";
 import { VooplePlusBadge } from "@/components/subscription/VooplePlusFeatureSurface";
 
@@ -43,9 +44,12 @@ function frameSwatchStyle(preset: FramePreset, customColor: string): React.CSSPr
     case "glass":
       return { background: "rgba(255,255,255,0.12)", backdropFilter: "blur(4px)" };
     case "image":
-      return preset.imageBase
-        ? { backgroundImage: `url(/customization/frames/${preset.imageBase}.webp)`, backgroundSize: "cover" }
-        : { background: c1 };
+      if (!preset.imageBase) return { background: c1 };
+      return {
+        backgroundImage: `url(${customizationAssetPath("frames", preset.imageBase)})`,
+        backgroundPosition: "center",
+        backgroundSize: "cover",
+      };
     default:
       return { background: c1 };
   }

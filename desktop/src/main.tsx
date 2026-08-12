@@ -7,6 +7,7 @@ import { App } from "./App";
 import { AppPreferencesProvider } from "@/components/settings/AppPreferencesProvider";
 import { AppThemeProvider } from "@/components/theme/AppThemeProvider";
 import { setPresignedUploadAdapter } from "@/lib/uploads/presigned-upload";
+import { setPublicAssetBaseUrl } from "@/lib/object-storage";
 import {
   initializeClientTelemetry,
   reportClientMetric,
@@ -17,7 +18,9 @@ import "../../src/app/globals.css";
 import "./styles.css";
 
 const root = document.getElementById("root");
-const telemetryEndpoint = `${getDesktopConfig()?.apiUrl ?? "https://voople.ru"}/api/telemetry`;
+const desktopConfig = getDesktopConfig();
+setPublicAssetBaseUrl(desktopConfig?.assetsCdnUrl);
+const telemetryEndpoint = `${desktopConfig?.apiUrl ?? "https://voople.ru"}/api/telemetry`;
 
 initializeClientTelemetry({
   enabled: import.meta.env.PROD,

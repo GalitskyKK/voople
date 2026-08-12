@@ -28,7 +28,27 @@ export function ShopCatalogPreview({ catalog, previewUrl, className }: ShopCatal
   const resolvedPreviewUrl = publicAssetUrl(previewUrl);
 
   if (catalog.kind === "profile_frame") {
-    const resolvedFrame = resolveCustomization({ profileFrameId: catalog.equipValue }).assets.frame;
+    const frameId = catalog.equipValue ?? catalog.assetId ?? null;
+    const canonicalFrame = resolveCustomization({ profileFrameId: frameId }).assets.frame;
+    const resolvedFrame =
+      canonicalFrame?.kind === "image" && resolvedPreviewUrl
+        ? { ...canonicalFrame, imageUrl: resolvedPreviewUrl }
+        : canonicalFrame;
+
+    if (!resolvedFrame && resolvedPreviewUrl) {
+      return (
+        <div className={cn("relative h-full w-full overflow-hidden", className)}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- CDN frame preview fallback */}
+          <img
+            src={resolvedPreviewUrl}
+            alt=""
+            className="h-full w-full object-contain"
+            loading="lazy"
+          />
+        </div>
+      );
+    }
+
     const frame = frameLayerProps(resolvedFrame);
     return (
       <article

@@ -107,6 +107,11 @@ all-caps text. Headlines should wrap by meaning, not by arbitrary `<br>` tags.
 - Web and Tauri render domain views from `src/components`; native folders only
   adapt navigation, authentication transport, updater and window controls.
 - Profile visuals use the canonical avatar/card/customization components.
+- Shared customization UI resolves public media through
+  `customizationAssetPath()` or `publicAssetUrl()`. Never construct a literal
+  `/customization/...` URL in a component: web reads the CDN base from the
+  build environment, while Tauri supplies it through the runtime desktop
+  configuration.
 - Async controls expose pending, error and retry states. Destructive controls
   require confirmation.
 - Empty states explain the next action instead of merely stating that content

@@ -1,7 +1,6 @@
 import { lazy, Suspense } from "react";
 
 import { getDesktopConfig } from "./config";
-import { setPublicAssetBaseUrl } from "@/lib/object-storage";
 import { DesktopTitleBar } from "./shell/DesktopTitleBar";
 
 const DesktopConfiguredApp = lazy(() =>
@@ -12,7 +11,6 @@ const DesktopConfiguredApp = lazy(() =>
 
 export function App() {
   const config = getDesktopConfig();
-  if (config) setPublicAssetBaseUrl(config.assetsCdnUrl);
   return (
     <div className="desktop-window-frame">
       <DesktopTitleBar />

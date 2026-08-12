@@ -4,6 +4,7 @@ import {
   DefaultReconnectPolicy,
   Track,
   type AudioCaptureOptions,
+  type ScreenShareCaptureOptions,
   type Room,
 } from "livekit-client";
 
@@ -44,6 +45,20 @@ export const VOICE_PUBLISH_OPTIONS = {
   dtx: false,
   red: true,
 } as const;
+
+/**
+ * System output includes the remote voices played by Voople on Windows. Until
+ * desktop has native per-process loopback, video-only capture prevents that
+ * audio from being published back to the same room as echo.
+ */
+export const ECHO_SAFE_SCREEN_SHARE_OPTIONS = {
+  audio: false,
+  video: { displaySurface: "monitor" },
+  contentHint: "detail",
+  selfBrowserSurface: "exclude",
+  systemAudio: "exclude",
+  surfaceSwitching: "include",
+} satisfies ScreenShareCaptureOptions;
 
 export function getAudioCaptureOptions(preferences: VoicePreferences): AudioCaptureOptions {
   return {

@@ -51,6 +51,9 @@ export default function LegalContactsPage() {
       <h2>Документы</h2>
       <ul>
         <li>
+          <Link href="/legal/privacy">Политика конфиденциальности</Link>
+        </li>
+        <li>
           <Link href="/legal/services">Услуги и цены</Link>
         </li>
         <li>

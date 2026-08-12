@@ -1,6 +1,8 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Minus, Square, X } from "lucide-react";
 
+import { VoopleMark } from "@/components/brand/VoopleMark";
+
 function runWindowAction(action: "minimize" | "maximize" | "close") {
   if (!("__TAURI_INTERNALS__" in window)) return;
   const appWindow = getCurrentWindow();
@@ -13,7 +15,7 @@ export function DesktopTitleBar() {
   return (
     <header className="desktop-titlebar">
       <div className="desktop-titlebar__drag" data-tauri-drag-region>
-        <span className="desktop-titlebar__mark" data-tauri-drag-region aria-hidden>в.</span>
+        <VoopleMark className="desktop-titlebar__mark" tauriDragRegion />
         <span className="desktop-titlebar__name" data-tauri-drag-region>Voople</span>
         <span className="desktop-titlebar__channel" data-tauri-drag-region>desktop</span>
       </div>

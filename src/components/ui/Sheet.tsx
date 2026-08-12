@@ -16,6 +16,8 @@ export function Sheet({
   className,
   placement = "center",
   ariaLabel,
+  containerClassName,
+  closeOnEscape = true,
 }: {
   open: boolean;
   onClose: () => void;
@@ -23,6 +25,8 @@ export function Sheet({
   className?: string;
   placement?: SheetPlacement;
   ariaLabel?: string;
+  containerClassName?: string;
+  closeOnEscape?: boolean;
 }) {
   const mounted = useIsClient();
   const isBottom = placement === "bottom";
@@ -31,7 +35,7 @@ export function Sheet({
     if (!open) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape" && closeOnEscape) onClose();
     };
 
     const previousOverflow = document.body.style.overflow;
@@ -42,7 +46,7 @@ export function Sheet({
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [open, onClose]);
+  }, [closeOnEscape, open, onClose]);
 
   if (!open || !mounted) return null;
 
@@ -51,6 +55,7 @@ export function Sheet({
       className={cn(
         "fixed inset-0 z-[100] flex justify-center",
         isBottom ? "items-end" : "items-center p-4 sm:p-6",
+        containerClassName,
       )}
       role="presentation"
     >

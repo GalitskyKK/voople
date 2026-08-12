@@ -24,6 +24,7 @@ export function withDesktopCors(request: Request, response: Response) {
   headers.set("Access-Control-Allow-Origin", origin);
   headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
+  headers.set("Access-Control-Expose-Headers", "Content-Disposition");
   headers.set("Access-Control-Max-Age", "86400");
   headers.append("Vary", "Origin");
 

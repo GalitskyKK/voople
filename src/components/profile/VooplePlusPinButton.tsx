@@ -43,10 +43,10 @@ export function VooplePlusPinButton({
           setOpen(true);
         }}
         className={cn(
-          "inline-flex shrink-0 cursor-pointer rounded-md p-0.5 transition hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--theme-accent)",
+          "voople-plus-pin inline-flex shrink-0 cursor-pointer rounded-md p-0.5 transition hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--theme-accent)",
           className,
         )}
-        aria-label="Подробнее о Voople+"
+        aria-label="Подробнее о Вупл+"
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- CDN mascot pin */}
         <img
@@ -55,7 +55,7 @@ export function VooplePlusPinButton({
           width={pin.px}
           height={pin.px}
           className={cn(
-            "object-contain object-center",
+            "voople-plus-pin__image object-contain object-center",
             pin.className,
             "drop-shadow-[0_1px_4px_color-mix(in_srgb,var(--theme-accent)_45%,transparent)]",
           )}

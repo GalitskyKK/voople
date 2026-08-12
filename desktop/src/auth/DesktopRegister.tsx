@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 
 import { usernameSchema } from "@/lib/validation/username";
 import { getEmailDeliveryErrorMessage } from "@/lib/auth/email-delivery-error";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/constants/legal";
 
 import type { DesktopConfig } from "../config";
 import { DesktopTurnstile } from "./DesktopTurnstile";
@@ -17,6 +18,7 @@ export function DesktopRegister({
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
@@ -35,16 +37,28 @@ export function DesktopRegister({
       setError(captchaError ?? "Пройдите антибот-проверку");
       return;
     }
+    if (!acceptedLegal) {
+      setError("Подтвердите согласие с условиями и политикой");
+      return;
+    }
 
     setBusy(true);
     setError(null);
     setConfirmationEmail(null);
+    const acceptedAt = new Date().toISOString();
     const { data, error: signUpError } = await getSupabase(config).auth.signUp({
       email: email.trim(),
       password,
       options: {
         captchaToken: captchaToken ?? undefined,
-        data: { username: parsedUsername.data },
+        data: {
+          username: parsedUsername.data,
+          privacy_accepted_at: acceptedAt,
+          privacy_version: PRIVACY_VERSION,
+          terms_accepted_at: acceptedAt,
+          terms_version: TERMS_VERSION,
+          legal_consent_source: "desktop_registration",
+        },
       },
     });
     setBusy(false);
@@ -122,6 +136,18 @@ export function DesktopRegister({
               onChange={(event) => setPassword(event.target.value)}
               required
             />
+          </label>
+          <label className="auth-legal-consent">
+            <input
+              type="checkbox"
+              checked={acceptedLegal}
+              onChange={(event) => setAcceptedLegal(event.target.checked)}
+              required
+            />
+            <span>
+              Я принимаю <a href={`${config.apiUrl}/legal/terms`} target="_blank" rel="noreferrer">условия использования</a>{" "}
+              и <a href={`${config.apiUrl}/legal/privacy`} target="_blank" rel="noreferrer">политику конфиденциальности</a>.
+            </span>
           </label>
           {config.turnstileSiteKey ? (
             <DesktopTurnstile

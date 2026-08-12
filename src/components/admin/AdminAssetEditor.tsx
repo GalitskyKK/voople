@@ -6,14 +6,7 @@ import { Upload } from "lucide-react";
 import { AdminAssetPackUpload } from "@/components/admin/AdminAssetPackUpload";
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
-import {
-  inferMediaBaseFromAssetId,
-  normalizeMediaBase,
-  posterAssetIdForBase,
-  suggestMediaBase,
-  usesAssetPack,
-  type AssetPackFileRole,
-} from "@/lib/shop/asset-packs";
+import { inferMediaBaseFromAssetId, normalizeMediaBase, posterAssetIdForBase, suggestMediaBase, usesAssetPack, type AssetPackFileRole } from "@/lib/shop/asset-packs";
 import { uploadAdminCustomizationAsset } from "@/lib/admin/upload-customization-asset";
 import { extensionForCustomizationMime } from "@/lib/object-storage";
 import {
@@ -28,6 +21,7 @@ import {
 import type { ShopEquipSlot, ShopItemKind } from "@/lib/shop/catalog";
 import { trpc } from "@/lib/trpc/client";
 import type { AdminShopItemRecord } from "@/types/admin-shop";
+import { SubscriptionRequirementField } from "@/components/admin/SubscriptionRequirementField";
 
 type FormState = {
   id: string;
@@ -43,6 +37,7 @@ type FormState = {
   assetId: string;
   equipSlot: ShopEquipSlot;
   equipValue: string;
+  requiresSubscription: boolean;
 };
 
 function emptyForm(): FormState {
@@ -60,6 +55,7 @@ function emptyForm(): FormState {
     assetId: "",
     equipSlot: "profile_effect_id",
     equipValue: "",
+    requiresSubscription: false,
   };
 }
 
@@ -82,6 +78,7 @@ function formFromItem(item: AdminShopItemRecord): FormState {
     assetId: item.assetId ?? "",
     equipSlot: item.equipSlot,
     equipValue,
+    requiresSubscription: item.requiresSubscription,
   };
 }
 
@@ -262,6 +259,7 @@ export function AdminAssetEditor({ open, item, onClose, onSaved }: AdminAssetEdi
       assetId: form.assetId.trim() || null,
       equipSlot: form.equipSlot,
       equipValue: form.equipValue.trim() || null,
+      requiresSubscription: form.requiresSubscription,
     };
 
     try {
@@ -547,6 +545,8 @@ export function AdminAssetEditor({ open, item, onClose, onSaved }: AdminAssetEdi
               Бесплатно
             </label>
           </div>
+
+          <SubscriptionRequirementField checked={form.requiresSubscription} disabled={busy} onChange={(requiresSubscription) => patch({ requiresSubscription })} />
 
           {error ? <p className="text-sm text-red-400">{error}</p> : null}
         </div>

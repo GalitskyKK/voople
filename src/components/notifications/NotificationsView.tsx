@@ -47,7 +47,32 @@ export function NotificationsView({
 
   return (
     <SectionFrame className="gap-5 py-4 lg:py-6">
-      <SectionPageHeader title={COPY.notifications} />
+      <SectionPageHeader
+        title={COPY.notifications}
+        density="compact"
+        sticky
+        action={
+          <div
+            className="settings-segmented"
+            aria-label="Фильтр уведомлений"
+          >
+            <button
+              type="button"
+              aria-pressed={filter === "all"}
+              onClick={() => setFilter("all")}
+            >
+              Все
+            </button>
+            <button
+              type="button"
+              aria-pressed={filter === "unread"}
+              onClick={() => setFilter("unread")}
+            >
+              Новые
+            </button>
+          </div>
+        }
+      />
 
       {loading ? (
         <div
@@ -56,27 +81,8 @@ export function NotificationsView({
         />
       ) : (
         <div className="voople-notifications space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div
-              className="settings-segmented"
-              aria-label="Фильтр уведомлений"
-            >
-              <button
-                type="button"
-                aria-pressed={filter === "all"}
-                onClick={() => setFilter("all")}
-              >
-                Все
-              </button>
-              <button
-                type="button"
-                aria-pressed={filter === "unread"}
-                onClick={() => setFilter("unread")}
-              >
-                Новые
-              </button>
-            </div>
-            {hasUnread && (
+          {hasUnread ? (
+          <div className="flex justify-end">
               <button
                 type="button"
                 onClick={onMarkAllRead}
@@ -86,8 +92,8 @@ export function NotificationsView({
                 <CheckCheck className="h-3.5 w-3.5" aria-hidden="true" />
                 Прочитать всё
               </button>
-            )}
           </div>
+          ) : null}
 
           {error && (
             <div

@@ -1,41 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { Lock } from "lucide-react";
+import { Check, Lock } from "lucide-react";
 
-import { resolveAppThemeAssets } from "@/lib/app-theme-assets";
 import { APP_THEMES, type AppThemeId } from "@/lib/app-themes";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { VooplePlusFeatureSurface } from "@/components/subscription/VooplePlusFeatureSurface";
 import { useAppTheme } from "./AppThemeProvider";
 
 type AppThemeSelectorProps = {
   unlockedThemeIds?: AppThemeId[];
   /** Сохранять выбор в БД (для авторизованных). */
   persistToAccount?: boolean;
+  premiumAction?: React.ReactNode;
 };
-
-function ThemePreviewSwatches({
-  background,
-  surface,
-  accent,
-}: {
-  background: string;
-  surface: string;
-  accent: string;
-}) {
-  return (
-    <span className="flex gap-1">
-      <span className="h-4 w-8 rounded-full" style={{ background }} aria-hidden />
-      <span className="h-4 w-8 rounded-full" style={{ background: surface }} aria-hidden />
-      <span className="h-4 w-8 rounded-full" style={{ background: accent }} aria-hidden />
-    </span>
-  );
-}
 
 export function AppThemeSelector({
   unlockedThemeIds = [],
   persistToAccount = true,
+  premiumAction,
 }: AppThemeSelectorProps) {
   const { themeId, setThemeId } = useAppTheme();
   const unlocked = new Set<AppThemeId>(unlockedThemeIds);
@@ -58,31 +41,51 @@ export function AppThemeSelector({
   };
 
   return (
-    <section className="space-y-3">
-      <div>
-        <h3 className="text-sm font-semibold text-[var(--foreground)]">Тема приложения</h3>
-      </div>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {APP_THEMES.map((theme) => {
-          const active = theme.id === themeId;
-          const available = !theme.paid || unlocked.has(theme.id);
-          const previewUrl = resolveAppThemeAssets(theme, { preferStaticBackground: true }).backgroundUrl;
+    <div className="settings-theme-picker">
+      {([false, true] as const).map((paid) => {
+        const options = (
+          <div className={cn("settings-theme-picker__options", paid && "settings-theme-picker__options--colors")}>
+            {APP_THEMES.filter((theme) => Boolean(theme.paid) === paid).map((theme) => {
+              const active = theme.id === themeId;
+              const available = !theme.paid || unlocked.has(theme.id);
+              return (
+                <ThemeOptionButton
+                  key={theme.id}
+                  theme={theme}
+                  active={active}
+                  available={available}
+                  busy={updateTheme.isPending}
+                  onSelect={() => handleSelect(theme.id)}
+                />
+              );
+            })}
+          </div>
+        );
 
+        if (paid) {
           return (
-            <ThemeOptionButton
-              key={theme.id}
-              theme={theme}
-              active={active}
-              available={available}
-              busy={updateTheme.isPending}
-              previewUrl={previewUrl}
-              onSelect={() => handleSelect(theme.id)}
-            />
+            <VooplePlusFeatureSurface
+              key="paid"
+              title="Цветовые темы"
+              description="Единый цвет приложения, сообщений и профиля на всех устройствах."
+              locked={unlockedThemeIds.length === 0}
+              action={premiumAction}
+            >
+              {options}
+            </VooplePlusFeatureSurface>
           );
-        })}
-      </div>
+        }
+
+        return <section key="free" className="settings-theme-picker__group">
+          <div className="settings-theme-picker__heading">
+            <h3>Базовые темы</h3>
+            <span>Для всех</span>
+          </div>
+          {options}
+        </section>;
+      })}
       {updateTheme.error ? <p className="text-xs text-red-300">{updateTheme.error.message}</p> : null}
-    </section>
+    </div>
   );
 }
 
@@ -91,7 +94,6 @@ type ThemeOptionButtonProps = {
   active: boolean;
   available: boolean;
   busy: boolean;
-  previewUrl: string | null;
   onSelect: () => void;
 };
 
@@ -100,51 +102,29 @@ function ThemeOptionButton({
   active,
   available,
   busy,
-  previewUrl,
   onSelect,
 }: ThemeOptionButtonProps) {
-  const [previewFailed, setPreviewFailed] = useState(false);
-  const showAssetPreview = Boolean(previewUrl) && !previewFailed;
-
   return (
     <button
       type="button"
       disabled={!available || busy}
       onClick={onSelect}
-      className={cn(
-        "rounded-xl border p-3 text-left transition disabled:cursor-default disabled:opacity-55",
-        active ? "border-[var(--theme-accent)] bg-[var(--app-accent-soft)]" : "border-[var(--app-border)] bg-[var(--app-surface-soft)] hover:border-[var(--app-border-strong)] hover:bg-[color-mix(in_srgb,var(--app-surface-soft)_80%,white)]",
-      )}
+      className={cn("settings-theme-option", active && "settings-theme-option--active")}
       aria-pressed={active}
+      aria-label={`${theme.name}. ${theme.description}${available ? "" : ". Доступно с Вупл+"}`}
+      title={theme.description}
     >
-      <span className="mb-2 flex items-center justify-between gap-2">
-        <span className="font-medium text-[var(--foreground)]">{theme.name}</span>
-        {!available && <Lock className="h-4 w-4 text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]" />}
+      <span
+        className="settings-theme-option__preview"
+        style={{
+          background: `linear-gradient(135deg, ${theme.tokens.background} 0 48%, ${theme.tokens.surface} 49% 72%, ${theme.tokens.accent} 73%)`,
+        }}
+        aria-hidden
+      >
+        {active ? <Check className="h-4 w-4" /> : null}
+        {!available ? <Lock className="h-4 w-4" /> : null}
       </span>
-      <span className="mb-3 block text-xs text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">{theme.description}</span>
-      {showAssetPreview ? (
-        <span className="relative block h-10 overflow-hidden rounded-lg border border-[color-mix(in_srgb,var(--foreground)_10%,transparent)]">
-          {/* eslint-disable-next-line @next/next/no-img-element -- local theme preview thumbnails */}
-          <img
-            src={previewUrl!}
-            alt=""
-            aria-hidden
-            className="h-full w-full object-cover"
-            onError={() => setPreviewFailed(true)}
-          />
-          <span
-            className="absolute inset-0"
-            style={{ background: `linear-gradient(90deg, ${theme.tokens.background}cc, transparent)` }}
-            aria-hidden
-          />
-        </span>
-      ) : (
-        <ThemePreviewSwatches
-          background={theme.tokens.background}
-          surface={theme.tokens.surface}
-          accent={theme.tokens.accent}
-        />
-      )}
+      <span className="settings-theme-option__name">{theme.name}</span>
     </button>
   );
 }

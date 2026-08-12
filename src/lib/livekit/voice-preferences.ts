@@ -7,6 +7,7 @@ export type VoicePreferences = {
   autoGainControl: boolean;
   voiceIsolation: boolean;
   enhancedNoiseSuppression: boolean;
+  roomSounds: boolean;
   compatibilityMode: boolean;
 };
 
@@ -21,6 +22,7 @@ export const DEFAULT_VOICE_PREFERENCES: VoicePreferences = {
   autoGainControl: true,
   voiceIsolation: true,
   enhancedNoiseSuppression: true,
+  roomSounds: true,
   compatibilityMode: false,
 };
 

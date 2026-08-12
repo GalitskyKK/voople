@@ -88,7 +88,7 @@ export function VoiceRoomStage({
     );
 
     return (
-      <div className="mt-5 min-h-0">
+      <div className="flex h-full min-h-0 flex-col">
         <div className="mb-2 flex items-center justify-between gap-3">
           <p className="text-xs font-medium text-[var(--app-muted)]">
             {layout === "focus" ? "Фокус" : "Сетка"}
@@ -122,19 +122,20 @@ export function VoiceRoomStage({
         </div>
 
         {layout === "focus" ? (
-          <div className="grid min-h-0 gap-2 lg:grid-cols-[minmax(0,1fr)_12rem]">
-            <div className="min-w-0">
+          <div className="grid min-h-0 flex-1 gap-2 lg:grid-cols-[minmax(0,1fr)_12rem]">
+            <div className="min-h-0 min-w-0">
               {activeFocusId === "screen" && screenShareOwner ? (
                 <VoiceMediaStage
                   screenContainerRef={screenContainerRef}
                   screenShareOwner={screenShareOwner}
                   focused
+                  className="h-full"
                 />
               ) : focusedParticipant ? (
                 renderParticipant(focusedParticipant, "focused")
               ) : null}
             </div>
-            <div className="grid max-h-[min(56dvh,32rem)] grid-cols-2 gap-2 overflow-y-auto lg:grid-cols-1">
+            <div className="grid min-h-0 grid-cols-2 content-start gap-2 overflow-y-auto lg:grid-cols-1">
               {screenShareOwner && activeFocusId !== "screen" ? (
                 <VoiceMediaStage
                   screenContainerRef={screenContainerRef}
@@ -146,7 +147,7 @@ export function VoiceRoomStage({
             </div>
           </div>
         ) : (
-          <div className="grid min-h-0 grid-cols-2 gap-2 lg:grid-cols-3">
+          <div className="grid min-h-0 flex-1 grid-cols-2 content-start gap-2 overflow-y-auto lg:grid-cols-3">
             {screenShareOwner ? (
               <VoiceMediaStage
                 screenContainerRef={screenContainerRef}
@@ -164,7 +165,7 @@ export function VoiceRoomStage({
   return (
     <div
       className={cn(
-        "mt-5 grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))]",
+        "grid h-full min-h-0 content-center gap-2 overflow-y-auto [grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))]",
         participants.length === 1 && "mx-auto max-w-xl grid-cols-1",
         participants.length >= 5 && "lg:[grid-template-columns:repeat(3,minmax(0,1fr))]",
       )}

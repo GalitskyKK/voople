@@ -2,6 +2,44 @@
 
 All notable user-facing changes to Voople are documented here.
 
+## [0.1.13] - 2026-08-12
+
+### Added
+
+- Account export, verified deletion requests, retention rules and an authenticated deletion worker.
+- A unified moderation and complaint flow, group roles, administrator permissions and an action log.
+- A structured help centre plus architecture, design-system, messenger, groups, monetization, observability and security documentation.
+- Privacy-safe client telemetry, global error boundaries and improved production smoke tests that work with CAPTCHA-enabled authentication.
+- Expanded Вупл+ presentation, annual-plan surfaces, premium customization grouping and group-boost controls.
+
+### Changed
+
+- Reworked chat selection, message actions, group management and the compact conversation layout across web and desktop.
+- Reworked voice-room composition with scalable floating mode, fullscreen stage, participant grid controls and join/leave sounds.
+- Unified shared headers, settings navigation, shop presentation, sticky surfaces, typography and desktop shell styling.
+- Updated the landing page, onboarding, legal consent flow and Russian product terminology.
+- Improved desktop notification preferences, account security screens, help access and updater-ready release configuration.
+
+### Fixed
+
+- Fixed chat auto-scroll failures, message-selection hit areas and several mobile messenger layout issues.
+- Fixed desktop media upload paths, stale call controls and microphone state reconciliation.
+- Fixed overlapping Вупл+ showcase cards, missing static pin previews and excessive continuously running badge animation.
+- Fixed inconsistent settings/shop headers and content leaking above sticky headers while scrolling.
+- Fixed production E2E authentication failures caused by CAPTCHA rejecting password sign-in from CI.
+
+### Security and reliability
+
+- Added server-side validation, rate limits and authorization checks for account lifecycle, moderation, group roles and protected media operations.
+- Kept deletion verification, audit and worker credentials server-only and documented independent secret rotation.
+- Added data-retention and legal-readiness documentation for the current Russian deployment model.
+
+### Deployment notes
+
+- Database migrations through `35-unified-moderation-reports.sql` must be applied before enabling all account-lifecycle, group-role and moderation features.
+- Configure `E2E_SUPABASE_SERVICE_ROLE_KEY` for authenticated production smoke tests when CAPTCHA is enabled.
+- The Windows installer is published unsigned only through the explicit manual release option; Tauri update artifacts remain cryptographically signed.
+
 ## [0.1.12] - 2026-08-10
 
 ### Added

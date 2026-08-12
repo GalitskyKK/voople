@@ -14,6 +14,7 @@ export const rateLimits = {
   updatePost: () => createLimit(30, "10 m"),
   deletePost: () => createLimit(30, "10 m"),
   reportPost: () => createLimit(10, "1 h"),
+  reportContent: () => createLimit(15, "1 h"),
   recordView: () => createLimit(300, "10 m"),
   like: () => createLimit(100, "10 m"),
   updateStatus: () => createLimit(20, "1 h"),
@@ -39,5 +40,9 @@ export const rateLimits = {
   askQuestion: () => createLimit(15, "1 h"),
   // Входящие вебхуки (ключ — IP источника): троттлинг до обращения к внешнему API.
   webhook: () => createLimit(120, "1 m"),
+  telemetry: () => createLimit(120, "1 m"),
   adminUpload: () => createLimit(30, "1 h"),
+  accountExport: () => createLimit(3, "24 h"),
+  accountDeletion: () => createLimit(5, "24 h"),
+  accountDeletionVerification: () => createLimit(10, "1 h"),
 };

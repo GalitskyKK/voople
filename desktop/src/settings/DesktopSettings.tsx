@@ -9,6 +9,7 @@ import type { DesktopConfig } from "../config";
 import { useGlobalHotkeyStatus } from "../hotkeys/global-hotkey-status";
 import { DesktopWindowSettings } from "./DesktopWindowSettings";
 import { DesktopAccountSecuritySettings } from "./DesktopAccountSecuritySettings";
+import { DesktopNotificationSettings } from "./DesktopNotificationSettings";
 
 export function DesktopSettings({
   config,
@@ -57,6 +58,7 @@ export function DesktopSettings({
       hotkeyRuntimeStatus={hotkeyRuntimeStatus}
       desktopWindowSettings={<DesktopWindowSettings />}
       desktopCallNotifications
+      desktopNotificationSettings={<DesktopNotificationSettings />}
       accountSecuritySettings={
         <DesktopAccountSecuritySettings config={config} session={session} />
       }

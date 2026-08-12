@@ -54,7 +54,7 @@ export async function getAdminOverviewRest() {
     exactCount("posts"),
     exactCount("posts", dayAgo),
     exactCount("posts", weekAgo),
-    admin.from("post_reports").select("*", { count: "exact", head: true }).eq("status", "pending"),
+    admin.from("moderation_reports").select("*", { count: "exact", head: true }).eq("status", "pending"),
     admin
       .from("subscriptions")
       .select("*", { count: "exact", head: true })

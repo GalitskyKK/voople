@@ -17,10 +17,11 @@ export type ShopItemRow = {
   asset_id: string | null;
   equip_slot: string | null;
   equip_value: string | null;
+  requires_subscription: "plus" | "pro" | null;
 };
 
 export const SHOP_ITEM_SELECT =
-  "id, season_id, type, kind, name, description, price_rub, price_coins, is_free, preview_url, sort_order, asset_folder, asset_id, equip_slot, equip_value";
+  "id, season_id, type, kind, name, description, price_rub, price_coins, is_free, preview_url, sort_order, asset_folder, asset_id, equip_slot, equip_value, requires_subscription";
 
 export function resolveRowKind(row: ShopItemRow, catalogKind?: ShopItemKind): ShopItemKind {
   if (row.kind) return row.kind as ShopItemKind;

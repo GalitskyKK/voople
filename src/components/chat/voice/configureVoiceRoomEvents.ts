@@ -38,6 +38,8 @@ type ConfigureVoiceRoomEventsOptions = {
   onAudioBlockedChange: (blocked: boolean) => void;
   onReconnecting: () => void;
   onReconnected: () => void;
+  onParticipantConnected?: () => void;
+  onParticipantDisconnected?: () => void;
 };
 
 export function configureVoiceRoomEvents({
@@ -53,6 +55,8 @@ export function configureVoiceRoomEvents({
   onAudioBlockedChange,
   onReconnecting,
   onReconnected,
+  onParticipantConnected,
+  onParticipantDisconnected,
 }: ConfigureVoiceRoomEventsOptions) {
   const syncMicrophones = () => {
     if (!isCurrent()) return;
@@ -83,8 +87,14 @@ export function configureVoiceRoomEvents({
     })
     .on(RoomEvent.TrackMuted, syncMicrophones)
     .on(RoomEvent.TrackUnmuted, syncMicrophones)
-    .on(RoomEvent.ParticipantConnected, syncMicrophones)
-    .on(RoomEvent.ParticipantDisconnected, syncMicrophones)
+    .on(RoomEvent.ParticipantConnected, () => {
+      syncMicrophones();
+      onParticipantConnected?.();
+    })
+    .on(RoomEvent.ParticipantDisconnected, () => {
+      syncMicrophones();
+      onParticipantDisconnected?.();
+    })
     .on(RoomEvent.ActiveSpeakersChanged, (speakers: Participant[]) => {
       onActiveSpeakersChange(new Set(speakers.map((speaker) => speaker.identity)));
     })

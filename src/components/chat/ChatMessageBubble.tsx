@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { useIsLgViewport } from "@/hooks/useIsLgViewport";
+import { useSwipeToReply } from "@/hooks/useSwipeToReply";
 import { messageHasMusicForPlaylist } from "@/lib/chat/playlist-from-message";
 import type { ChatReactionEmoji } from "@/lib/chat/reactions";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,9 @@ type ChatMessageBubbleProps = {
     emoji: ChatReactionEmoji,
   ) => void;
   groupPosition?: "only" | "start" | "middle" | "end";
+  selectionMode?: boolean;
+  selected?: boolean;
+  onSelect?: (message: ChatMessageView) => void;
 };
 
 export function ChatMessageBubble({
@@ -43,6 +47,9 @@ export function ChatMessageBubble({
   showSender = false,
   onToggleReaction,
   groupPosition = "only",
+  selectionMode = false,
+  selected = false,
+  onSelect,
 }: ChatMessageBubbleProps) {
   const isLg = useIsLgViewport();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -57,6 +64,10 @@ export function ChatMessageBubble({
       (isMine && onEdit) ||
       (canSaveToPlaylist && onAddToPlaylist),
   );
+  const swipe = useSwipeToReply({
+    enabled: !isLg && !selectionMode && Boolean(onReply),
+    onReply: () => onReply?.(message),
+  });
 
   const openMenu = () => {
     if (hasMenu) setMenuOpen(true);
@@ -67,23 +78,39 @@ export function ChatMessageBubble({
       message={message}
       groupPosition={groupPosition}
       showSender={showSender}
-      interactive={hasMenu}
+      interactive={hasMenu || selectionMode}
       onClick={() => {
-        if (!isLg) openMenu()
+        if (swipe.consumeClick()) return;
+        if (selectionMode) onSelect?.(message);
+        else if (!isLg) openMenu();
+      }}
+      {...swipe.pointerHandlers}
+      swipeOffset={swipe.offset}
+      swipeDragging={swipe.dragging}
+      onDoubleClick={(event) => {
+        if (!isLg || selectionMode || !onToggleReaction) return;
+        event.preventDefault();
+        onToggleReaction(message, "❤️");
       }}
       onContextMenu={(event) => {
         if (!hasMenu) return
         event.preventDefault()
+        if (selectionMode) {
+          onSelect?.(message);
+          return;
+        }
         setMenuOpen(true)
       }}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault()
-          openMenu()
+          if (selectionMode) onSelect?.(message);
+          else openMenu();
         }
       }}
+      selectionState={selectionMode ? selected : undefined}
       onToggleReaction={
-        onToggleReaction
+        onToggleReaction && !selectionMode
           ? (emoji) => onToggleReaction(message, emoji as ChatReactionEmoji)
           : undefined
       }
@@ -97,7 +124,7 @@ export function ChatMessageBubble({
         ) : null
       }
       menu={
-        hasMenu && onReply ? (
+        hasMenu && onReply && !selectionMode ? (
           <div
             className={cn("absolute top-1 z-20", isMine ? "left-1" : "right-1")}
             onClick={(event) => event.stopPropagation()}
@@ -113,6 +140,7 @@ export function ChatMessageBubble({
               isMine={isMine}
               canAddToPlaylist={canSaveToPlaylist}
               onToggleReaction={onToggleReaction}
+              onSelect={onSelect}
               showOnHover={isLg}
               showTrigger={false}
             />

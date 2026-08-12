@@ -22,6 +22,7 @@ function catalogRowSql(item: ShopCatalogItem): string {
     sqlString(item.assetId),
     sqlString(item.equipSlot),
     sqlString(item.equipValue),
+    item.requiresSubscription ? "'plus'" : "NULL",
   ];
   return `  (${parts.join(", ")})`;
 }
@@ -32,7 +33,7 @@ export function buildShopCatalogUpsertSql(): string {
   return `-- Generated from src/lib/shop/catalog.ts — do not edit by hand
 INSERT INTO public.shop_items (
   id, season_id, type, kind, name, description, price_rub, price_coins, is_free,
-  preview_url, sort_order, asset_folder, asset_id, equip_slot, equip_value
+  preview_url, sort_order, asset_folder, asset_id, equip_slot, equip_value, requires_subscription
 ) VALUES
 ${values}
 ON CONFLICT (id) DO UPDATE SET
@@ -48,7 +49,8 @@ ON CONFLICT (id) DO UPDATE SET
   asset_folder = EXCLUDED.asset_folder,
   asset_id = EXCLUDED.asset_id,
   equip_slot = EXCLUDED.equip_slot,
-  equip_value = EXCLUDED.equip_value;
+  equip_value = EXCLUDED.equip_value,
+  requires_subscription = EXCLUDED.requires_subscription;
 `;
 }
 

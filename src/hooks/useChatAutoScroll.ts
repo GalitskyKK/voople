@@ -1,12 +1,21 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useChatAutoScroll(conversationKey: string, itemCount: number) {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const currentConversationRef = useRef<string | null>(null);
   const stickToBottomRef = useRef(true);
+  const [isAwayFromBottom, setIsAwayFromBottom] = useState(false);
+
+  const scrollToBottom = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    stickToBottomRef.current = true;
+    setIsAwayFromBottom(false);
+    container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -17,6 +26,7 @@ export function useChatAutoScroll(conversationKey: string, itemCount: number) {
     if (conversationChanged) {
       currentConversationRef.current = conversationKey;
       stickToBottomRef.current = true;
+      setIsAwayFromBottom(false);
     }
 
     let firstFrame = 0;
@@ -39,6 +49,7 @@ export function useChatAutoScroll(conversationKey: string, itemCount: number) {
     const updateStickiness = () => {
       const distance = container.scrollHeight - container.scrollTop - container.clientHeight;
       stickToBottomRef.current = distance < 96;
+      setIsAwayFromBottom(!stickToBottomRef.current);
     };
 
     container.addEventListener("scroll", updateStickiness, { passive: true });
@@ -57,5 +68,5 @@ export function useChatAutoScroll(conversationKey: string, itemCount: number) {
     };
   }, [conversationKey, itemCount]);
 
-  return { containerRef, contentRef };
+  return { containerRef, contentRef, isAwayFromBottom, scrollToBottom };
 }

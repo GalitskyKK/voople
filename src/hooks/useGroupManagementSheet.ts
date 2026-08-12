@@ -8,6 +8,8 @@ type Options = {
   searchContacts: (query: string) => Promise<UserSearchHit[]>;
   addMembers: (memberIds: string[]) => Promise<unknown>;
   removeMember: (memberId: string) => Promise<unknown>;
+  changeMemberRole: (memberId: string, role: "admin" | "member") => Promise<unknown>;
+  transferOwnership: (memberId: string) => Promise<unknown>;
   leaveGroup: () => Promise<unknown>;
   deleteGroup: () => Promise<unknown>;
   onMembersChanged?: () => void;
@@ -19,6 +21,8 @@ export function useGroupManagementSheet({
   searchContacts,
   addMembers,
   removeMember,
+  changeMemberRole,
+  transferOwnership,
   leaveGroup,
   deleteGroup,
   onMembersChanged,
@@ -34,6 +38,8 @@ export function useGroupManagementSheet({
   const [searching, setSearching] = useState(false);
   const [saving, setSaving] = useState(false);
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
+  const [changingRoleMemberId, setChangingRoleMemberId] = useState<string | null>(null);
+  const [transferringOwnerMemberId, setTransferringOwnerMemberId] = useState<string | null>(null);
   const [destructivePending, setDestructivePending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -135,6 +141,45 @@ export function useGroupManagementSheet({
     }
   };
 
+  const changeRole = async (member: ChatGroupMemberView) => {
+    if (changingRoleMemberId || destructivePending || member.role === "owner") return;
+    const nextRole = member.role === "admin" ? "member" : "admin";
+    const prompt = nextRole === "admin"
+      ? `Назначить ${member.displayName} администратором группы?`
+      : `Снять с ${member.displayName} роль администратора?`;
+    if (!window.confirm(prompt)) return;
+    setChangingRoleMemberId(member.id);
+    setError(null);
+    try {
+      await changeMemberRole(member.id, nextRole);
+      await refreshMembers();
+      onMembersChanged?.();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Не удалось изменить роль участника");
+    } finally {
+      setChangingRoleMemberId(null);
+    }
+  };
+
+  const transferOwner = async (member: ChatGroupMemberView) => {
+    if (transferringOwnerMemberId || destructivePending || member.role === "owner") return;
+    if (!window.confirm(
+      `Передать владение группой пользователю ${member.displayName}? Вы станете администратором, а отменить передачу сможет только новый владелец.`,
+    )) return;
+    setTransferringOwnerMemberId(member.id);
+    setError(null);
+    try {
+      await transferOwnership(member.id);
+      await refreshMembers();
+      onMembersChanged?.();
+      setOpen(false);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Не удалось передать владение группой");
+    } finally {
+      setTransferringOwnerMemberId(null);
+    }
+  };
+
   const leave = async () => {
     if (destructivePending || !window.confirm("Выйти из этой группы?")) return;
     setDestructivePending(true);
@@ -166,6 +211,8 @@ export function useGroupManagementSheet({
 
   return {
     adding,
+    changeRole,
+    changingRoleMemberId,
     close,
     contacts,
     destructivePending,
@@ -186,6 +233,8 @@ export function useGroupManagementSheet({
     setOpen,
     setQuery,
     submit,
+    transferOwner,
+    transferringOwnerMemberId,
     toggleContact,
   };
 }

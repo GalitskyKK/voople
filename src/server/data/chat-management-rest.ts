@@ -1,6 +1,10 @@
 import { getAdminClient } from "@/lib/supabase/admin";
 import { assertChatMemberRest } from "@/server/data/chat-access-rest";
 import {
+  recordGroupAuditBatchRest,
+  recordGroupAuditRest,
+} from "@/server/data/chat-group-audit-rest";
+import {
   mapUserSearchRow,
   type UserSearchRow,
 } from "@/server/mappers/user-search";
@@ -181,6 +185,15 @@ export async function addGroupMembersRest(
   );
   if (error) throw new Error(error.message);
 
+  await recordGroupAuditBatchRest(
+    newIds.map((newUserId) => ({
+      chatId: membership.accessChatId,
+      actorId: userId,
+      targetUserId: newUserId,
+      action: "member_added" as const,
+    })),
+  );
+
   return { addedCount: newIds.length, memberCount: existingIds.size + newIds.length };
 }
 
@@ -215,6 +228,12 @@ export async function setGroupTopicsRest(
     .update({ topics_enabled: enabled, topics_layout: layout })
     .eq("id", chatId);
   if (error) throw new Error(error.message);
+  await recordGroupAuditRest({
+    chatId: membership.accessChatId,
+    actorId: userId,
+    action: "topics_changed",
+    details: { enabled, layout },
+  });
   return { topicsEnabled: enabled, topicsLayout: layout };
 }
 
@@ -235,6 +254,12 @@ export async function setGroupVisibilityRest(
     .update({ group_visibility: visibility })
     .eq("id", chatId);
   if (error) throw new Error(error.message);
+  await recordGroupAuditRest({
+    chatId: membership.accessChatId,
+    actorId: userId,
+    action: "visibility_changed",
+    details: { visibility },
+  });
   return { visibility };
 }
 
@@ -292,6 +317,12 @@ export async function removeGroupMemberRest(
     .eq("user_id", memberId);
   if (error) throw new Error(error.message);
   await clearGroupRoomPresence(membership.accessChatId, memberId);
+  await recordGroupAuditRest({
+    chatId: membership.accessChatId,
+    actorId,
+    targetUserId: memberId,
+    action: "member_removed",
+  });
   return { removed: true };
 }
 
@@ -312,6 +343,12 @@ export async function leaveGroupRest(chatId: string, userId: string) {
     .eq("user_id", userId);
   if (error) throw new Error(error.message);
   await clearGroupRoomPresence(membership.accessChatId, userId);
+  await recordGroupAuditRest({
+    chatId: membership.accessChatId,
+    actorId: userId,
+    targetUserId: userId,
+    action: "member_left",
+  });
   return { left: true };
 }
 

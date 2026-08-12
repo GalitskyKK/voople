@@ -44,7 +44,7 @@ export function ShopWalletBar({ wallet, className, compact = false }: ShopWallet
       </div>
       <div className="flex items-center gap-2 text-xs text-[color-mix(in_srgb,var(--foreground)_45%,transparent)]">
         <Sparkles className="h-4 w-4" aria-hidden />
-        Внутренняя валюта Voople
+        Внутренняя валюта Вупл.
       </div>
     </div>
   );
@@ -63,7 +63,7 @@ export function DonationPanel({ onDonate, pending, message }: DonationPanelProps
     <section className="voople-panel border border-[color-mix(in_srgb,var(--theme-accent)_18%,transparent)] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--theme-accent)_12%,var(--app-surface)),var(--app-surface))] p-4">
       <div className="mb-3 flex items-center gap-2">
         <Heart className="h-4 w-4 text-pink-300" aria-hidden />
-        <h2 className="text-sm font-semibold text-[var(--foreground)]">Поддержать Voople</h2>
+        <h2 className="text-sm font-semibold text-[var(--foreground)]">Поддержать Вупл.</h2>
       </div>
       <div className="flex flex-wrap gap-2">
         {DONATION_PRESETS.map((amount) => (

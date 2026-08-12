@@ -13,6 +13,10 @@ import {
   moderatePostReportRest,
 } from "@/server/data/admin-observability-rest";
 import {
+  listPendingModerationReportsRest,
+  moderateReportRest,
+} from "@/server/data/unified-moderation-admin-rest";
+import {
   createAdminShopItem,
   createCustomizationAssetUpload,
   deleteAdminShopItem,
@@ -65,6 +69,7 @@ const shopItemInputSchema = z.object({
   assetId: z.string().max(200).nullable().optional(),
   equipSlot: equipSlotSchema,
   equipValue: z.string().max(200).nullable().optional(),
+  requiresSubscription: z.boolean(),
 });
 
 function toTrpcError(e: unknown): TRPCError {
@@ -88,6 +93,30 @@ export const adminRouter = createTRPCRouter({
     .query(async ({ input }) => {
       try {
         return await listPendingPostReportsRest(input.limit);
+      } catch (e) {
+        throw toTrpcError(e);
+      }
+    }),
+
+  pendingModerationReports: adminProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }))
+    .query(async ({ input }) => {
+      try {
+        return await listPendingModerationReportsRest(input.limit);
+      } catch (e) {
+        throw toTrpcError(e);
+      }
+    }),
+
+  moderateReport: adminProcedure
+    .input(z.object({
+      reportId: z.string().uuid(),
+      action: z.enum(["dismiss", "remove_content"]),
+      note: z.string().trim().max(500).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await moderateReportRest({ ...input, adminUserId: ctx.user.id });
       } catch (e) {
         throw toTrpcError(e);
       }

@@ -87,23 +87,38 @@ export function HotkeySettings({
     });
   };
 
+  if (!runtimeStatus) {
+    return (
+      <div className="settings-hotkey-notice settings-hotkey-notice--browser">
+        <Info className="h-4 w-4" />
+        <div>
+          <p className="font-medium text-[var(--foreground)]">Глобальные и пользовательские сочетания недоступны в браузере.</p>
+          <p className="mt-1">В приложении они работают, даже когда Вупл. свёрнут.</p>
+          {/* Shared with the Vite/Tauri renderer, so importing next/link here would break desktop. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          <a href="/download/desktop" className="settings-hotkey-notice__link">Скачать приложение для Windows</a>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       <div className="settings-hotkey-notice">
         <Info className="h-4 w-4" />
         <p>
-          {runtimeStatus?.mode === "suspended"
+          {runtimeStatus.mode === "suspended"
             ? "Пока открыта эта страница, глобальные горячие клавиши приостановлены."
-            : runtimeStatus?.mode === "ready"
-              ? `Глобальные горячие клавиши работают при свёрнутом Voople. Зарегистрировано: ${runtimeStatus.registeredCount}.`
-              : runtimeStatus?.mode === "registering"
+            : runtimeStatus.mode === "ready"
+              ? `Глобальные горячие клавиши работают при свёрнутом Вупл. Зарегистрировано: ${runtimeStatus.registeredCount}.`
+              : runtimeStatus.mode === "registering"
                 ? "Регистрируем глобальные горячие клавиши…"
-                : runtimeStatus?.mode === "error"
+                : runtimeStatus.mode === "error"
                   ? `Глобальные клавиши активны частично. Зарегистрировано: ${runtimeStatus.registeredCount}.`
-                  : "В веб-версии сочетания работают только при активном окне."}
+                  : "Глобальные сочетания будут зарегистрированы после сохранения."}
         </p>
       </div>
-      {runtimeStatus?.failures.length ? (
+      {runtimeStatus.failures.length ? (
         <div className="settings-hotkey-warning" role="alert">
           <TriangleAlert className="h-4 w-4" />
           <div>

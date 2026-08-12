@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Crown, Package, Palette, Search, ShoppingBag } from "lucide-react";
 
 import { trpc } from "@/lib/trpc/client";
@@ -17,6 +17,7 @@ import { DonationPanel, ShopWalletBar } from "@/components/shop/ShopWalletBar";
 import { ShopCatalogSections } from "@/components/shop/ShopCatalogSections";
 import { VooplePlusPanel } from "@/components/shop/VooplePlusPanel";
 import { SHOP_DISPLAY_SECTIONS, type ShopDisplaySectionId } from "@/lib/shop/categories";
+import { reportClientMetric } from "@/lib/telemetry/client";
 
 export type ShopTab = "catalog" | "inventory" | "customize" | "plus";
 
@@ -24,7 +25,7 @@ const TABS: { id: ShopTab; label: string; icon: typeof ShoppingBag }[] = [
   { id: "catalog", label: "Каталог", icon: ShoppingBag },
   { id: "inventory", label: "Инвентарь", icon: Package },
   { id: "customize", label: "Настройка", icon: Palette },
-  { id: "plus", label: "Voople+", icon: Crown },
+  { id: "plus", label: "Вупл+", icon: Crown },
 ];
 
 export function ShopPageView({
@@ -49,6 +50,13 @@ export function ShopPageView({
   const [catalogSort, setCatalogSort] = useState<"featured" | "new" | "name" | "price">("featured");
   const utils = trpc.useUtils();
   const { setThemeId } = useAppTheme();
+  const reportedPlusView = useRef(false);
+
+  useEffect(() => {
+    if (tab !== "plus" || reportedPlusView.current) return;
+    reportedPlusView.current = true;
+    reportClientMetric({ name: "vooplus_offer_viewed", value: 1 });
+  }, [tab]);
 
   const overviewQuery = trpc.shop.overview.useQuery(undefined, {
     retry: false,
@@ -101,8 +109,14 @@ export function ShopPageView({
   });
 
   const createPayment = trpc.shop.createPaymentIntent.useMutation({
+    onMutate: (variables) => {
+      if (variables.kind === "subscription") {
+        reportClientMetric({ name: "vooplus_checkout_started", value: 1 });
+      }
+    },
     onSuccess: (intent, variables) => {
       if (variables.kind === "subscription") {
+        reportClientMetric({ name: "vooplus_checkout_ready", value: 1 });
         setPlusPaymentError(null);
         applyPaymentIntentResult(intent, setPlusPaymentError, openExternal);
         return;
@@ -112,6 +126,7 @@ export function ShopPageView({
     onError: (error, variables) => {
       const message = error.message;
       if (variables.kind === "subscription") {
+        reportClientMetric({ name: "vooplus_checkout_failed", value: 1 });
         setPlusPaymentError(message);
       } else {
         setDonationMessage(message);
@@ -211,14 +226,14 @@ export function ShopPageView({
 
   return (
     <div className="shop-page space-y-6">
-      <header className="shop-toolbar">
+      <header className="shop-toolbar voople-sticky-section-header">
         <SectionHeaderGlow />
         <div className="flex min-w-0 items-center gap-3">
           <span className="shop-toolbar__mark" aria-hidden>
             <ShoppingBag className="h-4 w-4" />
           </span>
           <div className="min-w-0">
-            <h1 className="truncate text-base font-semibold">Магазин Voople</h1>
+            <h1 className="truncate text-base font-semibold">Магазин Вупл.</h1>
             <p className="hidden text-xs text-[var(--app-muted)] sm:block">Оформление профиля и приложения</p>
           </div>
         </div>
@@ -276,7 +291,7 @@ export function ShopPageView({
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <h2 className="text-2xl font-semibold tracking-[-0.02em]">Найдите свой стиль</h2>
-              <p className="mt-1 text-sm text-[var(--app-muted)]">Украшения, баннеры и рамки для профиля Voople.</p>
+              <p className="mt-1 text-sm text-[var(--app-muted)]">Украшения, баннеры и рамки для профиля Вупл.</p>
             </div>
             <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
               <label className="shop-search">
@@ -330,6 +345,7 @@ export function ShopPageView({
             onBuyRub={(itemId) => createPayment.mutate({ kind: "shop_item", itemId })}
             onEquip={handleEquip}
             onUnequip={handleUnequip}
+            hasSubscription={Boolean(subscriptionQuery.data?.active)}
           />
           <DonationPanel
             pending={createPayment.isPending}
@@ -354,6 +370,7 @@ export function ShopPageView({
               busy={busy}
               onEquip={handleEquip}
               onUnequip={handleUnequip}
+              hasSubscription={Boolean(subscriptionQuery.data?.active)}
             />
           )}
         </section>

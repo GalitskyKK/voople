@@ -1,5 +1,6 @@
 # Voople+ badge (dev fallback)
 
-Prod: `voople-assets/pins/vooplus.gif` на CDN (`NEXT_PUBLIC_ASSETS_CDN_URL`).
+Prod: `voople-assets/pins/vooplus-static.webp` на CDN (`NEXT_PUBLIC_ASSETS_CDN_URL`).
 
-Локально без CDN — положи сюда `vooplus.gif` с тем же именем.
+Локально без CDN — положи сюда `vooplus-static.webp` с тем же именем. Покачивание
+пина выполняется CSS при появлении и hover, поэтому бесконечная GIF не нужна.

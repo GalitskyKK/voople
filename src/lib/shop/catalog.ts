@@ -49,6 +49,8 @@ export type ShopCatalogItem = {
   equipValue?: string;
   sortOrder: number;
   seasonId?: string;
+  /** Каталоговый предмет входит в Voople+ и требует активной подписки при применении. */
+  requiresSubscription?: boolean;
 };
 
 /**

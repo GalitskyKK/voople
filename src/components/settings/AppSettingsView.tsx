@@ -1,28 +1,22 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { KeyRound, Keyboard, MessageCircleMore, Palette, RotateCcw, Scale, ShieldCheck, SlidersHorizontal, Type } from "lucide-react";
+import { KeyRound, Keyboard, RotateCcw, Scale, ShieldCheck, SlidersHorizontal } from "lucide-react";
 
 import { SectionPageHeader } from "@/components/layout/SectionPageHeader";
 import { Button } from "@/components/ui/Button";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
+import { AppearanceSettings } from "@/components/settings/AppearanceSettings";
+import { ChatAppearanceSettings } from "@/components/settings/ChatAppearanceSettings";
 import { HotkeySettings, type HotkeyRuntimeStatus } from "@/components/settings/HotkeySettings";
 import { NotificationSettings } from "@/components/settings/NotificationSettings";
 import {
   SettingsNavigation,
   type SettingsSectionId,
 } from "@/components/settings/SettingsNavigation";
-import { AppThemeSelector } from "@/components/theme/AppThemeSelector";
 import { APP_THEMES, type AppThemeId } from "@/lib/app-themes";
 import { LEGAL_PAGES } from "@/lib/constants/legal";
 import { trpc } from "@/lib/trpc/client";
-import { cn } from "@/lib/utils";
-
-const FONT_OPTIONS = [
-  { id: "small", label: "Компактный", sample: "Aa" },
-  { id: "standard", label: "Стандартный", sample: "Aa" },
-  { id: "large", label: "Крупный", sample: "Aa" },
-] as const;
 
 export type SettingsDestinationRenderer = (props: {
   href: string;
@@ -36,12 +30,14 @@ export function AppSettingsView({
   hotkeyRuntimeStatus,
   desktopWindowSettings,
   desktopCallNotifications = false,
+  desktopNotificationSettings,
   accountSecuritySettings,
 }: {
   renderDestination: SettingsDestinationRenderer;
   hotkeyRuntimeStatus?: HotkeyRuntimeStatus;
   desktopWindowSettings?: ReactNode;
   desktopCallNotifications?: boolean;
+  desktopNotificationSettings?: ReactNode;
   accountSecuritySettings?: ReactNode;
 }) {
   const { preferences, updatePreferences, resetPreferences } = useAppPreferences();
@@ -55,6 +51,7 @@ export function AppSettingsView({
     <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col gap-5 py-4 lg:py-6">
       <SectionPageHeader
         title="Настройки"
+        sticky
         action={
           <Button type="button" size="sm" variant="ghost" onClick={resetPreferences}>
           <RotateCcw className="h-4 w-4" /> Сбросить
@@ -69,78 +66,31 @@ export function AppSettingsView({
         />
         <div className="min-w-0 space-y-5">
 
-      {activeSection === "appearance" ? <>
-      <section id="appearance" className="settings-section">
-        <div className="settings-section__header">
-          <Palette className="h-5 w-5" />
-          <div>
-            <h2>Тема приложения</h2>
-            <p>Две базовые темы доступны всем, цветной набор входит в Voople+.</p>
-          </div>
-        </div>
-        <AppThemeSelector unlockedThemeIds={unlockedThemeIds} />
-        {!subscription.data?.active ? (
-          <>
-            {renderDestination({
-              href: "/shop?tab=plus",
-              className: "settings-subscription-link",
-              children: "Открыть набор тем Voople+",
-            })}
-          </>
-        ) : null}
-      </section>
+      {activeSection === "appearance" ? (
+        <AppearanceSettings
+          unlockedThemeIds={unlockedThemeIds}
+          subscriptionAction={!subscription.data?.active ? renderDestination({
+            href: "/shop?tab=plus",
+            className: "settings-subscription-link",
+            children: "Открыть набор тем Вупл+",
+          }) : undefined}
+        />
+      ) : null}
 
-      <section className="settings-section">
-        <div className="settings-section__header">
-          <Type className="h-5 w-5" />
-          <div>
-            <h2>Размер текста</h2>
-            <p>Меняет масштаб текста во всём приложении.</p>
-          </div>
-        </div>
-        <div className="grid gap-2 sm:grid-cols-3">
-          {FONT_OPTIONS.map((option, index) => (
-            <button
-              key={option.id}
-              type="button"
-              aria-pressed={preferences.fontScale === option.id}
-              onClick={() => updatePreferences({ fontScale: option.id })}
-              className={cn("settings-choice", preferences.fontScale === option.id && "settings-choice--active")}
-            >
-              <span style={{ fontSize: `${0.95 + index * 0.17}rem` }} className="font-semibold">{option.sample}</span>
-              <span>{option.label}</span>
-            </button>
-          ))}
-        </div>
-      </section>
-      </> : null}
-
-      {activeSection === "messages" ? <section id="messages" className="settings-section">
-        <div className="settings-section__header">
-          <MessageCircleMore className="h-5 w-5" />
-          <div>
-            <h2>Сообщения</h2>
-            <p>Фон диалогов. «Аврора» доступна с Voople+.</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {([
-            { id: "plain", label: "Без фона", preview: "var(--app-surface)" },
-            { id: "doodles", label: "Контуры", preview: "radial-gradient(circle at 20% 25%, color-mix(in srgb,var(--theme-accent) 22%,transparent) 0 2px,transparent 3px),var(--app-surface-soft)" },
-            { id: "grid", label: "Сетка", preview: "linear-gradient(color-mix(in srgb,var(--foreground) 8%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--foreground) 8%,transparent) 1px,transparent 1px),var(--app-surface-soft)" },
-            { id: "aurora", label: "Аврора · Plus", preview: "radial-gradient(circle at 20% 20%,#7457c880,transparent 45%),radial-gradient(circle at 80% 80%,#36b7a466,transparent 45%),#11131b", paid: true },
-          ] as const).map((wallpaper) => {
-            const locked = Boolean("paid" in wallpaper && wallpaper.paid && !subscription.data?.active);
-            return <button key={wallpaper.id} type="button" disabled={locked} aria-pressed={preferences.chatWallpaper === wallpaper.id} onClick={() => updatePreferences({ chatWallpaper: wallpaper.id })} className={cn("settings-choice min-h-24 overflow-hidden p-2", preferences.chatWallpaper === wallpaper.id && "settings-choice--active", locked && "opacity-55")}>
-              <span className="block h-12 w-full rounded-lg border border-[var(--app-border)]" style={{ background: wallpaper.preview, backgroundSize: wallpaper.id === "grid" ? "10px 10px" : undefined }} />
-              <span className="mt-1.5 text-xs">{wallpaper.label}</span>
-            </button>;
-          })}
-        </div>
-      </section> : null}
+      {activeSection === "messages" ? (
+        <ChatAppearanceSettings
+          hasSubscription={Boolean(subscription.data?.active)}
+          subscriptionAction={!subscription.data?.active ? renderDestination({
+            href: "/shop?tab=plus",
+            className: "settings-subscription-link",
+            children: "Открыть с Вупл+",
+          }) : undefined}
+        />
+      ) : null}
 
       {activeSection === "notifications" ? <NotificationSettings
         showDesktopCallNotifications={desktopCallNotifications}
+        desktopControls={desktopNotificationSettings}
       /> : null}
 
       {activeSection === "interface" ? <>
@@ -201,7 +151,7 @@ export function AppSettingsView({
           <KeyRound className="h-5 w-5 text-(--theme-accent)" />
           <div>
             <p className="font-medium">Код подтверждения по email</p>
-            <p className="mt-1 text-sm text-[var(--app-muted)]">Voople отправляет одноразовый шестизначный код. Никому его не сообщайте.</p>
+            <p className="mt-1 text-sm text-[var(--app-muted)]">Вупл. отправляет одноразовый шестизначный код. Никому его не сообщайте.</p>
           </div>
         </div>}
       </section> : null}

@@ -41,6 +41,8 @@ import type { ProfileCustomizationView, ProfileViewModel } from "@/types/domain"
 import type { EquippedCustomizationView, ShopItemView } from "@/types/shop";
 import { ProfileEditTrigger } from "./ProfileEditTrigger";
 import { ProfileEditorShopLink } from "./ProfileEditorShopLink";
+import { VooplePlusBadge } from "@/components/subscription/VooplePlusFeatureSurface";
+import { AvatarHistoryPicker } from "@/components/profile/AvatarHistoryPicker";
 type Panel = "profile" | "avatar" | "banner" | "frame" | "feed" | "name";
 type EditorCustomizationPatch = {
   profileFrameId?: string | null;
@@ -204,6 +206,9 @@ function AssetGrid({ items, equipped, busy, onApply, onClear }: AssetGridProps) 
           >
             <div className="profile-editor-asset__preview">
               <ShopCatalogPreview catalog={item.previewMeta} previewUrl={item.previewUrl} />
+              {item.requiresSubscription ? (
+                <VooplePlusBadge className="absolute bottom-2 right-2" />
+              ) : null}
             </div>
             <span className="block truncate text-sm font-medium">{item.name}</span>
             <span className={cn("mt-1 flex items-center gap-1 text-xs", active ? "text-(--theme-accent)" : "text-[var(--app-muted)]")}>
@@ -536,6 +541,14 @@ export function ProfileEditSheet({
   const busy = equip.isPending || clearSlot.isPending || update.isPending;
 
   const apply = (item: ShopItemView) => {
+    if (item.requiresSubscription && !profile.hasVooplePlus) {
+      const base = committedEquipped ?? overview.data?.equipped;
+      if (!base) return;
+      setTrialItemId(item.id);
+      syncPreview(withItem(base, item));
+      setMessage("Режим примерки Voople+: изменение видно только в предпросмотре.");
+      return;
+    }
     if (!item.owned) {
       if (trialItemId === item.id) {
         restoreCommittedPreview();
@@ -743,25 +756,12 @@ export function ProfileEditSheet({
                           onChange={pickAvatar}
                         />
                       </div>
-                      {history.data?.length ? (
-                        <div>
-                          <p className="mb-2 text-sm font-medium">Недавние аватары</p>
-                          <div className="flex flex-wrap gap-2">
-                            {history.data.map((avatar) => (
-                              <button
-                                key={avatar.key}
-                                type="button"
-                                disabled={selectAvatar.isPending}
-                                onClick={() => selectAvatar.mutate({ key: avatar.key })}
-                                className="h-16 w-16 overflow-hidden rounded-full border border-[var(--app-border)] transition hover:border-(--theme-accent)"
-                              >
-                                {/* eslint-disable-next-line @next/next/no-img-element -- uploaded media URL */}
-                                <img src={avatar.url} alt="" className="h-full w-full object-cover" />
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
+                      <AvatarHistoryPicker
+                        avatars={history.data}
+                        hasVooplePlus={Boolean(profile.hasVooplePlus)}
+                        pending={selectAvatar.isPending}
+                        onSelect={(key) => selectAvatar.mutate({ key })}
+                      />
                     </section>
                     {AVATAR_GROUPS.map((group) =>
                       renderGroup(group.title, panelItems.filter((item) => item.kind === group.kind)),
@@ -771,10 +771,10 @@ export function ProfileEditSheet({
 
                 {panel === "banner" ? (
                   <div className="mt-5 space-y-6">
-                    <section className="space-y-3 rounded-2xl border border-[var(--app-border)] p-4">
+                    <section className="profile-editor-plus-zone space-y-3 rounded-2xl border p-4">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <h3 className="text-sm font-semibold">Своё изображение</h3>
+                          <div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-semibold">Своё изображение</h3><VooplePlusBadge locked={!profile.hasVooplePlus} /></div>
                           <p className="mt-1 text-xs text-[var(--app-muted)]">PNG, JPEG, WebP или GIF. Рекомендуемое соотношение 8:3.</p>
                         </div>
                         <Button
@@ -795,7 +795,7 @@ export function ProfileEditSheet({
                         onChange={pickBanner}
                       />
                       {!profile.hasVooplePlus ? (
-                        <p className="text-xs text-[var(--app-muted)]">Свои изображения доступны с Voople+. Бесплатный градиентный баннер остаётся доступен всем.</p>
+                        <p className="text-xs text-[var(--app-muted)]">С Вупл+ можно загрузить собственное изображение или рисунок для баннера.</p>
                       ) : null}
                     </section>
 
@@ -871,7 +871,7 @@ export function ProfileEditSheet({
                                 }}
                               />
                               <span className="mt-2 block text-sm font-medium">{preset.name}</span>
-                              <span className="mt-0.5 block text-xs text-[var(--app-muted)]">{locked ? "Voople+" : active ? "Выбрано" : "Применить"}</span>
+                              <span className="mt-0.5 flex items-center gap-1 text-xs text-[var(--app-muted)]">{locked ? <VooplePlusBadge locked /> : active ? "Выбрано" : "Применить"}</span>
                             </button>
                           );
                         })}
@@ -922,8 +922,8 @@ export function ProfileEditSheet({
                     <section className="space-y-3">
                       <div className="flex items-center justify-between gap-3">
                         <div>
-                          <h3 className="text-sm font-semibold">Шрифт</h3>
-                          <p className="mt-1 text-xs text-[var(--app-muted)]">Варианты Voople+ можно примерить до подписки.</p>
+                          <div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-semibold">Шрифт</h3><VooplePlusBadge locked={!profile.hasVooplePlus} /></div>
+                          <p className="mt-1 text-xs text-[var(--app-muted)]">Варианты Вупл+ можно примерить до подписки.</p>
                         </div>
                         {equipped && (equipped.nicknameColor || equipped.nicknameFont !== "sans" || equipped.nicknameEffect !== "plain") ? (
                           <button type="button" className="profile-editor-reset" onClick={() => clear("nickname_style")}>

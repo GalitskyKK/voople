@@ -2,7 +2,7 @@ import type { Session } from "@supabase/supabase-js";
 import { useCallback, useMemo } from "react";
 
 import { GroupManagementSheetView } from "@/components/chat/GroupManagementSheetView";
-import type { ChatGroupMemberView, GroupCommunityView } from "@/types/chat";
+import type { ChatGroupAuditEntryView, ChatGroupMemberView, GroupCommunityView } from "@/types/chat";
 import type { UserSearchHit } from "@/types/search";
 import { uploadPresignedFile } from "@/lib/uploads/presigned-upload";
 
@@ -83,6 +83,10 @@ export function DesktopGroupInviteSheet({
       }) as Promise<GroupCommunityView>,
     [chatId, client],
   );
+  const loadAudit = useCallback(
+    () => client.query("chat.groupAudit", { chatId, limit: 50 }) as Promise<ChatGroupAuditEntryView[]>,
+    [chatId, client],
+  );
   const uploadAvatar = useCallback(
     async (file: File) => {
       const contentType = file.type.split(";")[0]?.trim().toLowerCase() ?? "";
@@ -121,6 +125,7 @@ export function DesktopGroupInviteSheet({
       groupVisibility={groupVisibility}
       inviteBaseUrl={config.apiUrl}
       loadMembers={loadMembers}
+      loadAudit={loadAudit}
       searchContacts={searchContacts}
       addMembers={addMembers}
       createInvite={createInvite}
@@ -153,6 +158,12 @@ export function DesktopGroupInviteSheet({
       }
       removeMember={(memberId) =>
         client.mutation("chat.removeGroupMember", { chatId, memberId })
+      }
+      changeMemberRole={(memberId, role) =>
+        client.mutation("chat.setGroupMemberRole", { chatId, memberId, role })
+      }
+      transferOwnership={(targetUserId) =>
+        client.mutation("chat.transferGroupOwnership", { chatId, targetUserId })
       }
       leaveGroup={() => client.mutation("chat.leaveGroup", { chatId })}
       deleteGroup={() => client.mutation("chat.deleteGroup", { chatId })}

@@ -1,23 +1,14 @@
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useCallback, useEffect } from "react";
+import { lazy, Suspense } from "react";
 
-import { AuthProvider, useDesktopAuth } from "./auth/AuthProvider";
-import { DesktopLogin } from "./auth/DesktopLogin";
-import { getSupabase } from "./auth/supabase";
-import { DesktopTRPCProvider } from "./api/DesktopTRPCProvider";
-import { getDesktopConfig, type DesktopConfig } from "./config";
-import { DesktopShell } from "./shell/DesktopShell";
-import { VoiceSessionProvider } from "@/components/chat/voice/VoiceSessionProvider";
-import type { SubscribeToVoiceRooms } from "@/components/chat/voice/useIncomingVoiceCalls";
-import type { IncomingCallView } from "@/types/chat";
+import { getDesktopConfig } from "./config";
 import { setPublicAssetBaseUrl } from "@/lib/object-storage";
-import {
-  notifyIncomingCall,
-  prepareDesktopNotifications,
-} from "./notifications/incoming-call";
-import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 import { DesktopTitleBar } from "./shell/DesktopTitleBar";
-import { DesktopPresenceProvider } from "./providers/DesktopPresenceProvider";
+
+const DesktopConfiguredApp = lazy(() =>
+  import("./DesktopConfiguredApp").then((module) => ({
+    default: module.DesktopConfiguredApp,
+  })),
+);
 
 export function App() {
   const config = getDesktopConfig();
@@ -27,7 +18,9 @@ export function App() {
       <DesktopTitleBar />
       <div className="desktop-window-content">
         {config ? (
-          <AuthProvider config={config}><DesktopRouter config={config} /></AuthProvider>
+          <Suspense fallback={<main className="status-page">Открываем Voople…</main>}>
+            <DesktopConfiguredApp config={config} />
+          </Suspense>
         ) : (
           <DesktopSetup />
         )}
@@ -36,63 +29,6 @@ export function App() {
   );
 }
 
-
-function DesktopRouter({ config }: { config: DesktopConfig }) {
-  const { loading, session } = useDesktopAuth();
-  const { preferences } = useAppPreferences();
-  useEffect(() => {
-    if (!session || !preferences.notifyCalls) return;
-    void prepareDesktopNotifications();
-  }, [preferences.notifyCalls, session]);
-  const handleIncomingCall = useCallback(
-    (call: IncomingCallView) => {
-      if (!preferences.notifyCalls) return;
-      void getCurrentWindow().isFocused()
-        .then((focused) => {
-          if (!focused) return notifyIncomingCall(call, preferences.notificationSound);
-        })
-        .catch(() => notifyIncomingCall(call, preferences.notificationSound));
-    },
-    [preferences.notificationSound, preferences.notifyCalls],
-  );
-  const subscribeToVoiceRooms = useCallback<SubscribeToVoiceRooms>(
-    (onChange) => {
-      const realtimeClient = getSupabase(config);
-      const channel = realtimeClient.channel(`voice-calls:${crypto.randomUUID()}`);
-      channel
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "chat_rooms",
-          },
-          onChange,
-        )
-        .subscribe((status) => {
-          if (status === "SUBSCRIBED") onChange();
-        });
-      return () => {
-        void realtimeClient.removeChannel(channel);
-      };
-    },
-    [config],
-  );
-  if (loading) return <main className="status-page">Восстанавливаем сессию…</main>;
-  if (!session) return <DesktopLogin config={config} />;
-  return (
-    <DesktopTRPCProvider config={config} session={session}>
-      <VoiceSessionProvider
-        onIncomingCall={handleIncomingCall}
-        subscribeToVoiceRooms={subscribeToVoiceRooms}
-      >
-        <DesktopPresenceProvider config={config} session={session}>
-          <DesktopShell config={config} session={session} />
-        </DesktopPresenceProvider>
-      </VoiceSessionProvider>
-    </DesktopTRPCProvider>
-  );
-}
 
 function DesktopSetup() {
   return (

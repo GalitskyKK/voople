@@ -2,6 +2,8 @@ import type { Session } from "@supabase/supabase-js";
 import { useMemo, useState } from "react";
 
 import { AccountSecuritySettings } from "@/components/settings/AccountSecuritySettings";
+import { AccountDataControls } from "@/components/settings/AccountDataControls";
+import { downloadAccountExport } from "@/lib/account-export-client";
 import {
   announcePresenceVisibility,
   shouldPublishPresence,
@@ -28,6 +30,7 @@ export function DesktopAccountSecuritySettings({
   );
 
   return (
+    <>
     <AccountSecuritySettings
       currentEmail={session.user.email ?? null}
       showOnlineStatus={showOnlineStatus}
@@ -60,5 +63,12 @@ export function DesktopAccountSecuritySettings({
         announcePresenceVisibility(enabled);
       }}
     />
+    <AccountDataControls
+      exportAccountData={() => downloadAccountExport(
+        new URL("/api/account/export", config.apiUrl).toString(),
+        session.access_token,
+      )}
+    />
+    </>
   );
 }

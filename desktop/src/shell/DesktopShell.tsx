@@ -71,6 +71,11 @@ const DesktopShop = lazy(() =>
     default: module.DesktopShop,
   })),
 );
+const DesktopHelp = lazy(() =>
+  import("../help/DesktopHelp").then((module) => ({
+    default: module.DesktopHelp,
+  })),
+);
 const DesktopCreatePostModal = lazy(() =>
   import("../composer/DesktopCreatePostModal").then((module) => ({
     default: module.DesktopCreatePostModal,
@@ -81,6 +86,7 @@ const RESERVED_PROFILE_SLUGS = new Set([
   "events",
   "explore",
   "feed",
+  "help",
   "login",
   "me",
   "messages",
@@ -240,6 +246,7 @@ export function DesktopShell({
   const isMessagesRoute = pathname === "/messages" || chatId !== null;
   const isWideRoute =
     pathname === "/events" ||
+    pathname === "/help" ||
     pathname === "/settings" ||
     pathname === "/shop";
 
@@ -318,6 +325,8 @@ export function DesktopShell({
             <DesktopSettings config={config} session={session} navigate={navigate} />
           ) : pathname === "/shop" ? (
             <DesktopShop config={config} />
+          ) : pathname === "/help" ? (
+            <DesktopHelp navigate={navigate} />
           ) : isMessagesRoute ? (
             <DesktopMessages
               config={config}
@@ -404,6 +413,7 @@ function routeLabel(pathname: string) {
     "/events": "События",
     "/me": COPY.profile,
     "/shop": COPY.shop,
+    "/help": "Помощь",
     "/settings": "Настройки",
   };
   return labels[pathname] ?? COPY.appName;

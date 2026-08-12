@@ -25,6 +25,12 @@ export function prepareDesktopNotifications() {
   return permissionRequest;
 }
 
+/** Re-check after the user changes Windows notification permissions. */
+export function refreshDesktopNotificationPermission() {
+  permissionRequest = null;
+  return prepareDesktopNotifications();
+}
+
 export async function showDesktopNotification(input: DesktopNotificationInput) {
   try {
     if (!(await prepareDesktopNotifications())) return false;

@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
   type HTMLAttributes,
+  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent,
 } from "react";
 import { createPortal } from "react-dom";
@@ -41,6 +42,7 @@ export function DropdownMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const mounted = useIsClient();
   const [position, setPosition] = useState<MenuPosition | null>(null);
+  const focusedOpenRef = useRef(false);
 
   const updatePosition = useCallback(() => {
     const triggerEl = triggerRef.current;
@@ -95,14 +97,38 @@ export function DropdownMenu({
     };
   }, [onOpenChange, open, updatePosition]);
 
+  useEffect(() => {
+    if (!open) {
+      focusedOpenRef.current = false;
+      return;
+    }
+    if (!position || focusedOpenRef.current) return;
+    focusedOpenRef.current = true;
+    const frame = requestAnimationFrame(() => {
+      menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open, position]);
+
+  const handleMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    const items = Array.from(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+    if (!items.length) return;
+    event.preventDefault();
+    const current = items.indexOf(document.activeElement as HTMLElement);
+    const offset = event.key === "ArrowDown" ? 1 : -1;
+    items[(current + offset + items.length) % items.length]?.focus();
+  };
+
   const menu =
     open && position && mounted
       ? createPortal(
           <div
             ref={menuRef}
             role="menu"
+            onKeyDown={handleMenuKeyDown}
             className={cn(
-              "fixed z-[110] overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] py-1 text-[var(--foreground)] shadow-[var(--app-shadow-md)]",
+              "voople-dropdown-menu fixed z-[110] overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] py-1 text-[var(--foreground)] shadow-[var(--app-shadow-md)]",
               menuClassName,
             )}
             style={{

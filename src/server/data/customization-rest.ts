@@ -5,9 +5,13 @@ import { isAppThemeId, isFreeAppThemeId } from "@/lib/app-themes";
 import { getFramePreset } from "@/lib/customization/frames-registry";
 import { isFreeNicknameColor } from "@/lib/customization/nickname-options";
 import { SHOP_CATALOG_BY_ID } from "@/lib/shop/catalog";
-import { assertActiveSubscriptionRest } from "@/server/data/subscription-rest";
+import { assertActiveSubscriptionRest, hasActiveSubscriptionRest } from "@/server/data/subscription-rest";
 import { getInventoryItemIdsRest, getShopItemRowRest } from "@/server/data/shop-rest";
 import { resolvePublicMediaKey } from "@/server/services/upload.service";
+import {
+  FREE_AVATAR_HISTORY_LIMIT,
+  VOOPLUS_AVATAR_HISTORY_LIMIT,
+} from "@/lib/constants/subscription";
 
 export type CustomizationEquipPatch = {
   profileEffectId?: string | null;
@@ -199,6 +203,7 @@ export async function updateProfileCustomizationRest(
 export async function equipShopItemRest(userId: string, itemId: string) {
   const row = await getShopItemRowRest(itemId);
   if (!row) throw new Error("Предмет не найден");
+  if (row.requires_subscription) await assertActiveSubscriptionRest(userId);
 
   const ownedIds = await getInventoryItemIdsRest(userId);
   if (!ownedIds.has(itemId)) throw new Error("Сначала получите предмет");
@@ -285,11 +290,13 @@ export async function setAvatarPhotoRest(userId: string, mediaKey: string) {
     .maybeSingle();
   if (existingError) throw new Error(existingError.message);
   const previous = (existing?.avatar_data ?? {}) as { url?: string; key?: string; history?: Array<{ url?: string; key?: string }> };
+  const hasVooplePlus = await hasActiveSubscriptionRest(userId);
+  const historyLimit = hasVooplePlus ? VOOPLUS_AVATAR_HISTORY_LIMIT : FREE_AVATAR_HISTORY_LIMIT;
   const history = [
     { url, key },
     ...(previous.url && previous.key ? [{ url: previous.url, key: previous.key }] : []),
     ...(previous.history ?? []).filter((entry) => entry.url && entry.key),
-  ].filter((entry, index, all) => all.findIndex((candidate) => candidate.key === entry.key) === index).slice(0, 3);
+  ].filter((entry, index, all) => all.findIndex((candidate) => candidate.key === entry.key) === index).slice(0, historyLimit);
   const { error } = await admin
     .from("profile_customization")
     .update({
@@ -309,7 +316,9 @@ export async function getAvatarHistoryRest(userId: string): Promise<Array<{ url:
   const { data, error } = await admin.from("profile_customization").select("avatar_data").eq("user_id", userId).maybeSingle();
   if (error) throw new Error(error.message);
   const avatarData = (data?.avatar_data ?? {}) as { history?: Array<{ url?: string; key?: string }> };
-  return (avatarData.history ?? []).filter((entry): entry is { url: string; key: string } => Boolean(entry.url && entry.key)).slice(0, 3);
+  const hasVooplePlus = await hasActiveSubscriptionRest(userId);
+  const historyLimit = hasVooplePlus ? VOOPLUS_AVATAR_HISTORY_LIMIT : FREE_AVATAR_HISTORY_LIMIT;
+  return (avatarData.history ?? []).filter((entry): entry is { url: string; key: string } => Boolean(entry.url && entry.key)).slice(0, historyLimit);
 }
 
 export async function selectAvatarFromHistoryRest(userId: string, key: string) {

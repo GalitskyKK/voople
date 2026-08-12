@@ -46,6 +46,7 @@ export const PUBLIC_SITEMAP_PATHS = [
   "/",
   "/shop",
   "/events",
+  "/legal/privacy",
   "/legal/services",
   "/legal/delivery",
   "/legal/offer",

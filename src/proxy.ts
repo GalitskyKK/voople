@@ -10,6 +10,7 @@ const PUBLIC_PATHS = [
   "/feed",
   "/explore",
   "/shop",
+  "/legal",
   "/invite",
   "/download",
   "/api",

@@ -49,7 +49,7 @@ export function VoiceParticipantCard({
       className={cn(
         "relative flex flex-col items-center justify-end overflow-hidden rounded-2xl border bg-[var(--app-surface-soft)] text-center transition",
         compact ? "min-h-32 gap-2 px-3 py-3" : "min-h-44 gap-3 px-4 py-4",
-        focused && "col-span-2 min-h-72 border-(--theme-accent) lg:col-span-4 lg:min-h-[min(56dvh,32rem)]",
+        focused && "col-span-2 h-full min-h-64 border-(--theme-accent) lg:col-span-4",
         speaking ? "border-emerald-500/50" : "border-[var(--app-border)]",
         className,
       )}

@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { syncPublicUser } from "@/lib/auth/sync-public-user";
 import { getEmailDeliveryErrorMessage } from "@/lib/auth/email-delivery-error";
 import { COPY } from "@/lib/constants/copy";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/constants/legal";
 import { usernameSchema } from "@/lib/validation/username";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
@@ -19,6 +20,7 @@ const schema = z.object({
   email: z.string().email("Некорректный email"),
   username: usernameSchema,
   password: z.string().min(6, "Минимум 6 символов"),
+  acceptedLegal: z.boolean().refine(Boolean, "Подтвердите согласие с условиями и политикой"),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -47,12 +49,20 @@ export default function RegisterPage() {
       return;
     }
     const supabase = createClient();
+    const acceptedAt = new Date().toISOString();
     const { data: signUpData, error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
         captchaToken: captchaToken ?? undefined,
-        data: { username: data.username },
+        data: {
+          username: data.username,
+          privacy_accepted_at: acceptedAt,
+          privacy_version: PRIVACY_VERSION,
+          terms_accepted_at: acceptedAt,
+          terms_version: TERMS_VERSION,
+          legal_consent_source: "web_registration",
+        },
       },
     });
     setCaptchaToken(null);
@@ -158,6 +168,20 @@ export default function RegisterPage() {
         {errors.password && (
           <span className="mt-1 block text-xs text-red-400">{errors.password.message}</span>
         )}
+      </label>
+      <label className="flex items-start gap-2 text-xs leading-5 text-[var(--app-muted)]">
+        <input
+          type="checkbox"
+          className="mt-1 size-4 shrink-0 accent-[var(--theme-accent)]"
+          {...register("acceptedLegal")}
+        />
+        <span>
+          Я принимаю <Link href="/legal/terms" target="_blank" rel="noreferrer" className="voople-link">условия использования</Link>{" "}
+          и <Link href="/legal/privacy" target="_blank" rel="noreferrer" className="voople-link">политику конфиденциальности</Link>.
+          {errors.acceptedLegal && (
+            <span className="mt-1 block text-red-400">{errors.acceptedLegal.message}</span>
+          )}
+        </span>
       </label>
       <TurnstileChallenge
         action="register"

@@ -41,6 +41,12 @@ export {
   setGroupTopicsRest as setGroupTopics,
 } from "@/server/data/chat-management-rest";
 
+export { listGroupAuditRest as listGroupAudit } from "@/server/data/chat-group-audit-rest";
+export {
+  setGroupMemberRoleRest as setGroupMemberRole,
+  transferGroupOwnershipRest as transferGroupOwnership,
+} from "@/server/data/chat-group-roles-rest";
+
 export {
   joinPublicGroupRest as joinPublicGroup,
   listPublicGroupsRest as listPublicGroups,

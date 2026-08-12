@@ -187,6 +187,7 @@ export function mapShopItemRow(
     seasonId: row.season_id,
     assetFolder: resolveRowAssetFolder(row, catalog),
     assetId: resolveRowAssetId(row, catalog),
+    requiresSubscription: row.requires_subscription != null,
   };
 }
 

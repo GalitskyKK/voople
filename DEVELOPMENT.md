@@ -3,6 +3,34 @@
 Start with [ARCHITECTURE.md](./ARCHITECTURE.md). It explains the application
 layers, domain map, shared web/Tauri components, API flow and extension rules.
 `AGENTS.md` contains mandatory engineering constraints.
+Desktop-only planned capabilities and their acceptance criteria live in
+[DESKTOP_ROADMAP.md](./DESKTOP_ROADMAP.md).
+
+Visual changes must follow [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md). It defines
+the shared web/Tauri tokens, typography, layout density, motion and responsive
+review contract.
+
+Messenger changes must also follow [MESSENGER.md](./MESSENGER.md), which maps
+the shared UI, realtime and optimistic-state boundaries, interaction contracts
+and release checks for both web and Tauri.
+
+Group roles, privacy, sections and administrative history must follow
+[GROUPS.md](./GROUPS.md). It defines the authorization matrix, data flow,
+database contract and extension checklist.
+
+Help and first-run changes must follow [HELP_CENTER.md](./HELP_CENTER.md). The
+web and desktop clients share the same content and differ only in navigation.
+
+Error reporting and performance changes must follow
+[OBSERVABILITY.md](./OBSERVABILITY.md). Its privacy contract applies to both
+web and desktop telemetry.
+
+Account export, deletion and retention changes must follow
+[ACCOUNT_LIFECYCLE.md](./ACCOUNT_LIFECYCLE.md) and
+[DATA_RETENTION.md](./DATA_RETENTION.md). Music/game adapters must follow
+[INTEGRATIONS.md](./INTEGRATIONS.md).
+
+Report intake and moderator actions must follow [MODERATION.md](./MODERATION.md).
 
 Call-related releases must also follow [VOICE_TESTING.md](./VOICE_TESTING.md).
 
@@ -82,13 +110,34 @@ clients. For the current unreleased changes, apply these files in order:
 2. `drizzle/0007_user_presence_privacy.sql`;
 3. `drizzle/0008_group_and_section_privacy.sql`;
 4. `drizzle/0009_public_group_join.sql`;
-5. `drizzle/0010_group_customization_and_boosts.sql`.
+5. `drizzle/0010_group_customization_and_boosts.sql`;
+6. `drizzle/0011_group_public_slugs.sql`;
+7. `drizzle/0012_group_avatar.sql`;
+8. `drizzle/31-chat-group-audit.sql`;
+9. `drizzle/32-legal-consents.sql`;
+10. `drizzle/33-account-deletion-requests.sql`;
+11. `drizzle/34-account-deletion-worker.sql`;
+12. `drizzle/35-unified-moderation-reports.sql`.
 
 The first migration may trigger the Supabase warning about a new table without
 RLS. Choose **Run and enable RLS**. Later migrations explicitly enable RLS, but
 still verify it in the dashboard before deployment. These tables are accessed
 through authorized server workflows; do not add permissive browser policies as
 a shortcut.
+
+`32-legal-consents.sql` creates a server-only immutable registration consent
+log and an `auth.users` trigger. Apply it before publishing the registration UI
+that writes `privacy_version` and `terms_version` metadata. The table has RLS
+enabled and no policies for `anon` or `authenticated`.
+
+`33-account-deletion-requests.sql` stores cancellable lifecycle requests.
+`34-account-deletion-worker.sql` adds email verification state, a service-only
+lease/claim RPC and pseudonymous deletion evidence. Apply migrations 32-34 before
+deploying the re-consent gate because authenticated clients fail closed when
+the server cannot verify current document versions.
+
+The account lifecycle design, export scope and deletion operator procedure are
+documented in `ACCOUNT_LIFECYCLE.md`.
 
 ## Required verification
 
@@ -190,6 +239,22 @@ For visual-only changes, begin at the canonical shared component listed in
 Record both clients' states: room id, connection state, published/subscribed
 tracks and server heartbeat response. Do not log LiveKit tokens. Verify mute,
 camera and screen state from the other account, not only the publishing client.
+
+Voice UI is shared by web and Tauri under `src/components/chat/voice`:
+
+- `ChatRoomControl` owns the LiveKit room lifecycle and is the only composition
+  boundary that may coordinate server membership with media tracks;
+- `VoiceRoomSheet` owns the compact/fullscreen shell, while `VoiceRoomStage`
+  owns focus/grid placement and internal participant scrolling;
+- `VoiceSessionDock` is the persistent movable/resizable view outside the room;
+- media capture policy belongs in `voice-room-config.ts`; do not put browser
+  constraints in buttons or views;
+- voice preferences are persisted through `src/lib/livekit/voice-preferences.ts`.
+
+System-output screen capture is intentionally disabled: on Windows it also
+captures remote Voople playback and republishes it as echo. Re-enable shared
+application audio only after the desktop adapter has per-process loopback or an
+equivalent exclusion path. Run the matrix in `VOICE_TESTING.md` after changes.
 
 Before a desktop release, test with two accounts on separate devices:
 

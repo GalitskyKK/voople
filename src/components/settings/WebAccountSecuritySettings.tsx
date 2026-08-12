@@ -8,8 +8,10 @@ import {
   shouldPublishPresence,
 } from "@/lib/presence-privacy";
 import { trpc } from "@/lib/trpc/client";
+import { downloadAccountExport } from "@/lib/account-export-client";
 
 import { AccountSecuritySettings } from "./AccountSecuritySettings";
+import { AccountDataControls } from "./AccountDataControls";
 
 export function WebAccountSecuritySettings() {
   const supabase = useMemo(() => createClient(), []);
@@ -30,6 +32,7 @@ export function WebAccountSecuritySettings() {
   }, [supabase]);
 
   return (
+    <>
     <AccountSecuritySettings
       currentEmail={email}
       showOnlineStatus={showOnlineStatus}
@@ -62,5 +65,7 @@ export function WebAccountSecuritySettings() {
         announcePresenceVisibility(enabled);
       }}
     />
+    <AccountDataControls exportAccountData={() => downloadAccountExport("/api/account/export")} />
+    </>
   );
 }

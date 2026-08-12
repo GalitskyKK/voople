@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Compass, MessageCircle, Sparkles, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { MediaUploadControl } from "@/components/media/MediaUploadControl";
@@ -22,6 +22,7 @@ export function OnboardingFlow({
   const [bio, setBio] = useState("");
   const [moodValue, setMoodValue] = useState(7);
   const [thought, setThought] = useState("");
+  const [nextDestination, setNextDestination] = useState<"profile" | "people" | "messages">("profile");
   const [error, setError] = useState<string | null>(null);
   const updateProfile = trpc.profile.update.useMutation();
   const saveStatus = trpc.status.save.useMutation();
@@ -35,7 +36,12 @@ export function OnboardingFlow({
         updateProfile.mutateAsync({ displayName: displayName.trim() || username, bio: bio.trim() || null }),
         saveStatus.mutateAsync({ moodValue, thought: thought.trim() || null }),
       ]);
-      router.replace(redirectAfter ?? `/${username}`);
+      const destination = nextDestination === "people"
+        ? "/explore"
+        : nextDestination === "messages"
+          ? "/messages"
+          : `/${username}`;
+      router.replace(redirectAfter ?? destination);
       router.refresh();
     } catch (finishError) {
       setError(finishError instanceof Error ? finishError.message : "Не удалось сохранить профиль");
@@ -83,6 +89,13 @@ export function OnboardingFlow({
               <span className="grid h-16 w-16 place-items-center rounded-full bg-emerald-400/15 text-emerald-400"><Check className="h-8 w-8" /></span>
               <h1 className="mt-6 text-3xl font-bold tracking-[-.04em]">Профиль готов</h1>
               <p className="mt-3 max-w-sm text-sm leading-6 text-[var(--app-muted)]">Дальше можно записать первый кружок, выбрать оформление и найти друзей.</p>
+              {!redirectAfter ? <div className="mt-6 grid w-full grid-cols-3 gap-2" role="radiogroup" aria-label="Куда перейти после настройки">
+                {([
+                  ["profile", "Профиль", UserRound],
+                  ["people", "Найти людей", Compass],
+                  ["messages", "Открыть чаты", MessageCircle],
+                ] as const).map(([id, label, Icon]) => <button key={id} type="button" role="radio" aria-checked={nextDestination === id} onClick={() => setNextDestination(id)} className={`rounded-2xl border p-3 text-xs font-medium transition ${nextDestination === id ? "border-(--theme-accent) bg-[var(--app-accent-soft)] text-[var(--foreground)]" : "border-[var(--app-border)] text-[var(--app-muted)] hover:text-[var(--foreground)]"}`}><Icon className="mx-auto mb-2 h-5 w-5" />{label}</button>)}
+              </div> : null}
               <div className="mt-7 w-full rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-4 text-left"><p className="font-semibold">{displayName || username}</p><p className="text-sm text-[var(--app-muted)]">@{username}</p><p className="mt-3 text-sm">{getMoodEmoji(moodValue)} {thought || getMoodLabel(moodValue)}</p></div>
             </div>
           ) : null}
@@ -90,7 +103,7 @@ export function OnboardingFlow({
           {error ? <p className="mx-auto mt-5 max-w-md text-sm text-red-400">{error}</p> : null}
           <div className="mx-auto mt-8 flex max-w-md items-center justify-between gap-3">
             <Button type="button" variant="ghost" disabled={step === 0 || busy} onClick={() => setStep((value) => value - 1)}><ArrowLeft className="h-4 w-4" />Назад</Button>
-            {step < 2 ? <Button type="button" disabled={busy || (step === 0 && !displayName.trim())} onClick={() => setStep((value) => value + 1)}>Дальше<ArrowRight className="h-4 w-4" /></Button> : <Button type="button" disabled={busy} onClick={() => void finish()}>{busy ? "Сохраняем…" : "Открыть профиль"}<ArrowRight className="h-4 w-4" /></Button>}
+            {step < 2 ? <Button type="button" disabled={busy || (step === 0 && !displayName.trim())} onClick={() => setStep((value) => value + 1)}>Дальше<ArrowRight className="h-4 w-4" /></Button> : <Button type="button" disabled={busy} onClick={() => void finish()}>{busy ? "Сохраняем…" : redirectAfter ? "Продолжить" : nextDestination === "people" ? "Найти людей" : nextDestination === "messages" ? "Открыть чаты" : "Открыть профиль"}<ArrowRight className="h-4 w-4" /></Button>}
           </div>
         </section>
       </div>

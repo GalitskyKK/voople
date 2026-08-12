@@ -1,8 +1,10 @@
 import {
   CopyObjectCommand,
+  DeleteObjectsCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -81,6 +83,42 @@ export async function deleteObject(input: { key: string; bucket: StorageBucketKi
   await client.send(
     new DeleteObjectCommand({ Bucket: resolveBucketName(config, input.bucket), Key: input.key }),
   );
+}
+
+export async function deleteObjectPrefix(input: {
+  prefix: string;
+  bucket: StorageBucketKind;
+}) {
+  if (!input.prefix || input.prefix.includes("..")) {
+    throw new Error("Invalid object prefix");
+  }
+  const { client: s3, config } = getS3Client();
+  const bucketName = resolveBucketName(config, input.bucket);
+  let continuationToken: string | undefined;
+  let deleted = 0;
+
+  do {
+    const page = await s3.send(new ListObjectsV2Command({
+      Bucket: bucketName,
+      Prefix: input.prefix,
+      ContinuationToken: continuationToken,
+    }));
+    const objects = (page.Contents ?? [])
+      .flatMap((object) => object.Key ? [{ Key: object.Key }] : []);
+    if (objects.length > 0) {
+      const result = await s3.send(new DeleteObjectsCommand({
+        Bucket: bucketName,
+        Delete: { Objects: objects, Quiet: true },
+      }));
+      if ((result.Errors?.length ?? 0) > 0) {
+        throw new Error("Object storage prefix cleanup failed");
+      }
+      deleted += objects.length;
+    }
+    continuationToken = page.IsTruncated ? page.NextContinuationToken : undefined;
+  } while (continuationToken);
+
+  return deleted;
 }
 
 function resolveBucketName(config: NonNullable<ReturnType<typeof getObjectStorageConfig>>, kind: StorageBucketKind) {

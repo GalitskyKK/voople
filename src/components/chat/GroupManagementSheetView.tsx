@@ -12,10 +12,11 @@ import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { useGroupManagementSheet } from "@/hooks/useGroupManagementSheet";
-import type { ChatGroupMemberView, GroupCommunityView } from "@/types/chat";
+import type { ChatGroupAuditEntryView, ChatGroupMemberView, GroupCommunityView } from "@/types/chat";
 import type { UserSearchHit } from "@/types/search";
 
 import { GroupChatMemberPicker } from "./GroupChatMemberPicker";
+import { GroupAuditLog } from "./GroupAuditLog";
 import { GroupCommunityPanel } from "./GroupCommunityPanel";
 import { GroupInviteLinkPanel } from "./GroupInviteLinkPanel";
 import { GroupMembersList } from "./GroupMembersList";
@@ -42,6 +43,7 @@ type Props = {
   groupVisibility: "private" | "public";
   inviteBaseUrl?: string;
   loadMembers: () => Promise<ChatGroupMemberView[]>;
+  loadAudit: () => Promise<ChatGroupAuditEntryView[]>;
   searchContacts: (query: string) => Promise<UserSearchHit[]>;
   addMembers: (memberIds: string[]) => Promise<unknown>;
   createInvite: () => Promise<{ token: string }>;
@@ -53,6 +55,8 @@ type Props = {
   uploadAvatar?: (file: File) => Promise<{ mediaKey: string; previewUrl: string }>;
   setBoost: (enabled: boolean) => Promise<GroupCommunityView>;
   removeMember: (memberId: string) => Promise<unknown>;
+  changeMemberRole: (memberId: string, role: "admin" | "member") => Promise<unknown>;
+  transferOwnership: (memberId: string) => Promise<unknown>;
   leaveGroup: () => Promise<unknown>;
   deleteGroup: () => Promise<unknown>;
   onMembersChanged?: () => void;
@@ -123,7 +127,7 @@ export function GroupManagementSheetView(props: Props) {
               </div>
             </div>
 
-            <GroupSettingsNavigation section={section} onChange={setSection} />
+            <GroupSettingsNavigation section={section} onChange={setSection} canManage={props.canManage} />
 
             {section === "members" && props.canManage ? (
               <Button
@@ -146,6 +150,10 @@ export function GroupManagementSheetView(props: Props) {
                 renderAvatar={props.renderAvatar}
                 viewerRole={props.viewerRole}
                 removingMemberId={state.removingMemberId}
+                changingRoleMemberId={state.changingRoleMemberId}
+                transferringOwnerMemberId={state.transferringOwnerMemberId}
+                onChangeRole={(member) => void state.changeRole(member)}
+                onTransferOwnership={(member) => void state.transferOwner(member)}
                 onRemoveMember={(member) => void state.remove(member)}
               />
             ) : null}
@@ -181,6 +189,10 @@ export function GroupManagementSheetView(props: Props) {
                   revokeInvite={props.revokeInvite}
                 />
               </div>
+            ) : null}
+
+            {section === "history" && props.canManage ? (
+              <GroupAuditLog load={props.loadAudit} />
             ) : null}
 
             {section === "access" ? <div className="mt-5 border-t border-[var(--app-border)] pt-4">

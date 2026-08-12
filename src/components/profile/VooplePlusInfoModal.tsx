@@ -4,14 +4,14 @@ import Link from "next/link";
 import { Crown } from "lucide-react";
 
 import {
-  VOOPLUS_BENEFITS,
   VOOPLUS_IS_RECURRING,
   VOOPLUS_PLANS,
 } from "@/lib/constants/subscription";
-import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
+import { vooplusBadgeStaticUrl } from "@/lib/constants/vooplus-badge";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { parseDatabaseDate } from "@/lib/format/database-date";
+import { VooplePlusBenefits } from "@/components/subscription/VooplePlusBenefits";
 
 type VooplePlusInfoModalProps = {
   open: boolean;
@@ -33,24 +33,24 @@ export function VooplePlusInfoModal({ open, onClose, expiresAt }: VooplePlusInfo
     <Sheet open={open} onClose={onClose} placement="center">
       <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
         <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-accent)_18%,transparent)]">
-          {/* eslint-disable-next-line @next/next/no-img-element -- mascot */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- CDN subscription pin */}
           <img
-            src={vooplusBadgeUrl()}
+            src={vooplusBadgeStaticUrl()}
             alt=""
             width={64}
             height={64}
-            className="h-16 w-16 object-contain"
+            className="voople-plus-pin__image h-16 w-16 object-contain"
             decoding="async"
           />
         </div>
 
         <p className="inline-flex items-center gap-2 text-sm font-medium text-(--theme-accent)">
           <Crown className="h-4 w-4" aria-hidden />
-          Voople+
+          Вупл+
         </p>
         <h2 className="mt-1 text-xl font-semibold text-[var(--foreground)]">Профиль, который узнают</h2>
         <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--foreground)_55%,transparent)]">
-          Voople+ открывает цельный набор оформления: темы, рамки, собственные медиа и стиль
+          Вупл+ открывает цельный набор оформления: темы, рамки, собственные медиа и стиль
           имени. Доступны оплата на месяц и выгодный годовой вариант.
           {!VOOPLUS_IS_RECURRING && " Автопродление не подключено."}
         </p>
@@ -69,19 +69,12 @@ export function VooplePlusInfoModal({ open, onClose, expiresAt }: VooplePlusInfo
             Активна до {formatDate(expiresAt)}
           </p>
         ) : (
-          <p className="mt-3 text-sm text-[color-mix(in_srgb,var(--foreground)_45%,transparent)]">У пользователя активна подписка Voople+.</p>
+          <p className="mt-3 text-sm text-[color-mix(in_srgb,var(--foreground)_45%,transparent)]">У пользователя активна подписка Вупл+.</p>
         )}
 
-        <ul className="mt-4 w-full space-y-2 text-left text-sm text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
-          {VOOPLUS_BENEFITS.map((benefit) => (
-            <li key={benefit} className="flex gap-2">
-              <span className="text-(--theme-accent)" aria-hidden>
-                •
-              </span>
-              {benefit}
-            </li>
-          ))}
-        </ul>
+        <div className="mt-4 w-full text-left">
+          <VooplePlusBenefits compact />
+        </div>
 
         <div className="mt-6 flex w-full flex-col gap-2 sm:flex-row">
           <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
@@ -89,7 +82,7 @@ export function VooplePlusInfoModal({ open, onClose, expiresAt }: VooplePlusInfo
           </Button>
           <Link href="/shop?tab=plus" className="flex-1" onClick={onClose}>
             <Button type="button" className="w-full">
-              {expiresAt ? "Продлить" : "Оформить Voople+"}
+              {expiresAt ? "Продлить" : "Оформить Вупл+"}
             </Button>
           </Link>
         </div>

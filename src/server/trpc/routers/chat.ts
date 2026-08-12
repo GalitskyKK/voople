@@ -1,6 +1,5 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-
 import { assertRateLimit } from "@/lib/ratelimit-guard";
 import { rateLimits } from "@/lib/ratelimit";
 import { CHAT_REACTION_EMOJIS } from "@/lib/chat/reactions";
@@ -40,10 +39,10 @@ import {
   setChatRoomAccess,
   toggleMessageReaction,
 } from "@/server/services/chat.service";
-
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 import { chatCommunityProcedures } from "./chat-community";
-
+import { chatGroupRoleProcedures } from "./chat-group-roles";
+import { chatModerationProcedures } from "./chat-moderation";
 const sendInputSchema = z
   .object({
     chatId: z.string().uuid(),
@@ -62,7 +61,9 @@ const sendInputSchema = z
   );
 
 export const chatRouter = createTRPCRouter({
+  ...chatModerationProcedures,
   ...chatCommunityProcedures,
+  ...chatGroupRoleProcedures,
   invitePreview: publicProcedure
     .input(z.object({ token: z.string().min(20).max(100) }))
     .query(async ({ input }) => {

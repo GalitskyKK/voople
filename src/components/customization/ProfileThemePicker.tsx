@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Lock, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 import { DEFAULT_THEME } from "@/lib/constants/theme";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import { VooplePlusFeatureSurface } from "@/components/subscription/VooplePlusFeatureSurface";
 
 type ProfileThemePickerProps = {
   /** Текущие цвета из equipped (null → тема профиля не задана). */
@@ -38,17 +39,11 @@ export function ProfileThemePicker({
 
   const gradient = `linear-gradient(135deg, ${primary} 0%, ${accent} 100%)`;
 
-  return (
-    <section className="space-y-3">
+  const content = (
+    <>
       <div className="flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-[var(--theme-accent)]" />
-        <h3 className="text-sm font-semibold text-[var(--foreground)]">Тема профиля</h3>
-        {!isPlus && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-[var(--app-border)] px-2 py-0.5 text-[0.7rem] text-[color-mix(in_srgb,var(--foreground)_55%,transparent)]">
-            <Lock className="h-3 w-3" />
-            Voople+
-          </span>
-        )}
+        <span className="text-sm font-semibold text-[var(--foreground)]">Предпросмотр цветов</span>
       </div>
       <p className="text-xs text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">
         Два цвета — градиент карточки профиля. Без темы карточка следует теме приложения.
@@ -101,12 +96,17 @@ export function ProfileThemePicker({
       </div>
 
       {update.error && <p className="text-xs text-red-400">{update.error.message}</p>}
-      {!isPlus && (
-        <p className="text-xs text-[color-mix(in_srgb,var(--foreground)_45%,transparent)]">
-          Тема профиля доступна с подпиской Voople+.
-        </p>
-      )}
-    </section>
+    </>
+  );
+
+  return (
+    <VooplePlusFeatureSurface
+      title="Точные цвета профиля"
+      description="Соберите собственный градиент карточки. До подписки цвета можно посмотреть в полноценном превью."
+      locked={!isPlus}
+    >
+      {content}
+    </VooplePlusFeatureSurface>
   );
 }
 

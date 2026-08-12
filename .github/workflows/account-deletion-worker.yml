@@ -1,0 +1,37 @@
+name: Account deletion worker
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: Maximum accounts to claim
+        required: false
+        default: "5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: account-deletion-worker
+  cancel-in-progress: false
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Run verified deletion jobs
+        env:
+          WORKER_ORIGIN: ${{ secrets.ACCOUNT_DELETION_WORKER_URL }}
+          WORKER_SECRET: ${{ secrets.ACCOUNT_DELETION_WORKER_SECRET }}
+          REQUEST_LIMIT: ${{ inputs.limit || '5' }}
+        run: |
+          test -n "$WORKER_ORIGIN"
+          test -n "$WORKER_SECRET"
+          curl --fail-with-body --silent --show-error --max-time 70 \
+            --request POST "${WORKER_ORIGIN%/}/api/internal/account-deletion" \
+            --header "Authorization: Bearer $WORKER_SECRET" \
+            --header "Content-Type: application/json" \
+            --data "{\"limit\":${REQUEST_LIMIT}}"

@@ -20,6 +20,7 @@ export function mapAdminShopItemRecord(row: ShopItemRow): AdminShopItemRecord {
     assetId: row.asset_id,
     equipSlot: resolveRowEquipSlot(row),
     equipValue: row.equip_value,
+    requiresSubscription: row.requires_subscription != null,
   };
 }
 

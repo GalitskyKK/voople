@@ -4,6 +4,7 @@ import { Camera, LoaderCircle, Rocket, Save, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { VooplePlusBadge } from "@/components/subscription/VooplePlusFeatureSurface";
 import type { GroupCommunityView } from "@/types/chat";
 
 import { GroupAvatar } from "./GroupAvatar";
@@ -133,7 +134,10 @@ export function GroupCommunityPanel({
       <div className="flex items-start gap-3">
         <GroupAvatar name={groupName} avatarUrl={community.avatarUrl} icon={icon} accentColor={community.effectiveAccentColor} size="md" />
         <div className="min-w-0 flex-1">
-          <h3 id="group-community-title" className="text-sm font-medium">Оформление и бусты</h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 id="group-community-title" className="text-sm font-medium">Оформление и бусты</h3>
+            <VooplePlusBadge locked={!community.canBoost && !community.boostedByMe} />
+          </div>
           <p className="mt-0.5 text-xs leading-5 text-[var(--app-muted)]">
             {community.boostCount} активных бустов. Первый открывает собственный цвет группы.
           </p>
@@ -174,10 +178,14 @@ export function GroupCommunityPanel({
         </div>
       ) : community.description ? <p className="mt-3 text-sm leading-6 text-[var(--app-muted)]">{community.description}</p> : null}
 
-      <Button type="button" className="mt-3 w-full" variant={community.boostedByMe ? "secondary" : undefined} disabled={Boolean(pending) || (!community.canBoost && !community.boostedByMe)} onClick={() => void toggleBoost()}>
-        {pending === "boost" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}{community.boostedByMe ? "Снять мой буст" : "Бустить группу"}
-      </Button>
-      {!community.canBoost && !community.boostedByMe ? <p className="mt-2 text-[11px] leading-4 text-[var(--app-muted)]">Один буст входит в активную подписку Voople+. При переносе он снимается с прошлой группы.</p> : null}
+      <div className="mt-3 rounded-xl border border-[color-mix(in_srgb,var(--voople-brand-400)_40%,var(--app-border))] bg-[color-mix(in_srgb,var(--voople-brand-500)_9%,var(--app-surface-soft))] p-2.5">
+        <Button type="button" className="w-full" variant={community.boostedByMe ? "secondary" : undefined} disabled={Boolean(pending) || (!community.canBoost && !community.boostedByMe)} onClick={() => void toggleBoost()}>
+          {pending === "boost" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}{community.boostedByMe ? "Снять мой буст" : "Бустить группу"}
+        </Button>
+        <p className="mt-2 text-[11px] leading-4 text-[var(--app-muted)]">
+          Один буст входит в Voople+. Первый активный буст открывает собственный цвет группы; при переносе буст снимается с прошлой группы.
+        </p>
+      </div>
       {error ? <p className="mt-2 text-xs text-red-400" role="alert">{error}</p> : null}
     </section>
   );

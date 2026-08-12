@@ -69,7 +69,7 @@ export function AccountSecuritySettings({
         <span className="min-w-0 flex-1">
           <span className="block font-medium">Показывать мой статус онлайн</span>
           <span className="mt-1 block text-sm text-[var(--app-muted)]">
-            Если выключить, Voople перестанет публиковать ваше присутствие другим пользователям.
+            Если выключить, Вупл. перестанет публиковать ваше присутствие другим пользователям.
           </span>
         </span>
         {pending === "presence" ? (

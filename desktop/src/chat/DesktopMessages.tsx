@@ -114,8 +114,8 @@ export function DesktopMessages({
               {chat.otherUser?.hasVooplePlus ? (
                 <img
                   src={badgeUrl}
-                  alt="Voople+"
-                  className="h-[18px] w-[18px] shrink-0 object-contain"
+                  alt="Вупл+"
+                  className="voople-plus-pin__image h-[18px] w-[18px] shrink-0 object-contain"
                 />
               ) : null}
             </span>
@@ -141,8 +141,8 @@ export function DesktopMessages({
               {contact.hasVooplePlus ? (
                 <img
                   src={badgeUrl}
-                  alt="Voople+"
-                  className="h-[18px] w-[18px] shrink-0 object-contain"
+                  alt="Вупл+"
+                  className="voople-plus-pin__image h-[18px] w-[18px] shrink-0 object-contain"
                 />
               ) : null}
             </span>

@@ -5,9 +5,11 @@ import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
 import { useChatMessageEditor } from "@/hooks/useChatMessageEditor";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
-import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
+import { useChatMessageSelection } from "@/hooks/useChatMessageSelection";
 import type { PendingChatUpload } from "@/hooks/useChatUpload";
+import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 import { trpc } from "@/lib/trpc/client";
+import { buildOptimisticMessage } from "@/lib/chat/optimistic-message";
 import type { ChatMessageView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
 import type { ChatReactionEmoji } from "@/lib/chat/reactions";
@@ -20,60 +22,11 @@ import { ChatMediaLightbox } from "./ChatMediaLightbox";
 import { ChatMessageBubble } from "./ChatMessageBubble";
 import { ChatWindowHeader } from "./ChatWindowHeader";
 import { ChatSectionsBar } from "./ChatSectionsBar";
+import { ChatJumpToLatest } from "./ChatJumpToLatest";
+import { ChatSelectionController } from "./ChatSelectionController";
 type ChatWindowProps = {
   chatId: string;
 };
-
-function buildOptimisticMessage(
-  input: {
-    messageId: string;
-    senderId: string;
-    text?: string;
-    replyTo?: ChatMessageView | null;
-    pendingUpload?: PendingChatUpload | null;
-    pendingTrack?: PlaylistTrackView | null;
-  },
-): ChatMessageView {
-  const attachment = input.pendingTrack
-    ? {
-        kind: "track" as const,
-        track: input.pendingTrack,
-        ownerId: input.senderId,
-      }
-    : input.pendingUpload?.kind === "audio" && input.pendingUpload.previewUrl
-      ? {
-          kind: "audio" as const,
-          audioKind: input.pendingUpload.purpose === "voice" ? "voice" as const : "music" as const,
-          url: input.pendingUpload.previewUrl,
-          title: input.pendingUpload.title ?? "Трек",
-          artist: input.pendingUpload.artist ?? "…",
-          fileName: input.pendingUpload.fileName,
-        }
-      : input.pendingUpload?.kind === "circle" && input.pendingUpload.previewUrl
-        ? { kind: "circle" as const, url: input.pendingUpload.previewUrl }
-      : input.pendingUpload?.kind === "image" && input.pendingUpload.previewUrl
-        ? { kind: "image" as const, url: input.pendingUpload.previewUrl }
-        : null;
-
-  return {
-    id: input.messageId,
-    senderId: input.senderId,
-    text: input.text?.trim() || null,
-    createdAt: new Date().toISOString(),
-    isMine: true,
-    readAt: null,
-    replyTo: input.replyTo
-      ? {
-          id: input.replyTo.id,
-          senderId: input.replyTo.senderId,
-          text: input.replyTo.text,
-          isMine: input.replyTo.isMine,
-        }
-      : null,
-    attachment,
-    reactions: [],
-  };
-}
 
 export function ChatWindow({ chatId }: ChatWindowProps) {
   const [text, setText] = useState("");
@@ -100,6 +53,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
       refetchInterval: realtimeDegraded ? 2_500 : 60_000,
     },
   );
+  const selection = useChatMessageSelection(chatId, data?.messages ?? []);
 
   const send = trpc.chat.send.useMutation({
     onMutate: async (input) => {
@@ -171,7 +125,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     },
   });
 
-  const { containerRef: messagesRef, contentRef: messagesContentRef } =
+  const { containerRef: messagesRef, contentRef: messagesContentRef, isAwayFromBottom, scrollToBottom } =
     useChatAutoScroll(chatId, data?.messages.length ?? 0);
 
   const removeMessage = trpc.chat.deleteMessage.useMutation({
@@ -300,7 +254,9 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
 
   return (
     <div className="voople-chat-window flex min-h-0 flex-1 flex-col">
-      <ChatWindowHeader
+      {selection.selecting ? (
+        <ChatSelectionController messages={selection.selectedMessages} onCancel={selection.clear} onDeleteMessage={(messageId) => removeMessage.mutateAsync({ messageId })} />
+      ) : <ChatWindowHeader
         chatId={chatId}
         chatTitle={chatTitle}
         isGroup={isGroup}
@@ -318,7 +274,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         viewerRole={data?.chat.viewerRole ?? "member"}
         other={other}
         otherOnline={otherOnline}
-      />
+      />}
       {isGroup ? <ChatSectionsBar chatId={chatId} /> : null}
 
       <div
@@ -337,6 +293,9 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
               <ChatMessageBubble
                 key={item.message.id}
                 message={item.message}
+                selectionMode={selection.selecting}
+                selected={selection.selectedIds.has(item.message.id)}
+                onSelect={(message) => selection.toggle(message.id)}
                 groupPosition={item.groupPosition}
                 viewerId={viewerId}
                 onReply={setReplyTo}
@@ -346,7 +305,9 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
                   setPendingTrack(null);
                   editor.beginEditing(message);
                 }}
-                onDelete={(msg) => removeMessage.mutate({ messageId: msg.id })}
+                onDelete={(msg) => {
+                  if (window.confirm("Удалить сообщение?")) removeMessage.mutate({ messageId: msg.id });
+                }}
                 onAddToPlaylist={(msg) => setPlaylistConfirmMessage(msg)}
                 onOpenImage={setLightboxUrl}
                 showSender={isGroup}
@@ -357,6 +318,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
             ),
           )}
         </div>
+        {isAwayFromBottom ? <ChatJumpToLatest onClick={scrollToBottom} /> : null}
       </div>
 
       <div className="px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:px-4 lg:pb-3">

@@ -43,9 +43,9 @@ export function ChatListRow({
       {renderDestination({
         chat,
         className: cn(
-          "voople-chat-list__row flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
+          "voople-chat-list__row flex min-h-[4.25rem] w-full items-center gap-3 rounded-xl px-3 py-2 text-left",
           isActive
-            ? "bg-[var(--app-accent-soft)]"
+            ? "voople-chat-list__row--active bg-[var(--app-accent-soft)]"
             : "hover:bg-[var(--app-surface-soft)]",
         ),
         children: (
@@ -74,14 +74,16 @@ export function ChatListRow({
                   />
                 ) : null}
               </div>
-              <p className="truncate text-xs text-[var(--app-muted)]">
-                {isGroup
-                  ? `${chat.memberCount} участников${chat.channels.length ? ` · ${chat.channels.length} разделов` : ""}`
-                  : `@${chat.otherUser?.username ?? ""}`}
-              </p>
-              <p className="mt-0.5 truncate text-sm text-[color-mix(in_srgb,var(--foreground)_72%,transparent)]">
-                {preview}
-              </p>
+              <div className="mt-0.5 flex min-w-0 items-center gap-2">
+                <p className="min-w-0 flex-1 truncate text-sm text-[color-mix(in_srgb,var(--foreground)_68%,transparent)]">
+                  {preview}
+                </p>
+                {isGroup && !chat.lastMessage ? (
+                  <span className="shrink-0 text-[11px] text-[var(--app-muted)]">
+                    {chat.memberCount} участников
+                  </span>
+                ) : null}
+              </div>
             </div>
           </>
         ),

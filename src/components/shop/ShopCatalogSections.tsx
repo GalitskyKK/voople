@@ -12,6 +12,7 @@ type ShopCatalogSectionsProps = {
   onBuyRub?: (itemId: string) => void;
   onEquip?: (item: ShopItemView) => void;
   onUnequip?: (item: ShopItemView) => void;
+  hasSubscription?: boolean;
 };
 
 export function ShopCatalogSections({
@@ -22,6 +23,7 @@ export function ShopCatalogSections({
   onBuyRub,
   onEquip,
   onUnequip,
+  hasSubscription = false,
 }: ShopCatalogSectionsProps) {
   const sections = groupShopItemsBySection(items);
 
@@ -52,6 +54,7 @@ export function ShopCatalogSections({
                 onBuyRub={onBuyRub ? () => onBuyRub(item.id) : undefined}
                 onEquip={onEquip ? () => onEquip(item) : undefined}
                 onUnequip={onUnequip ? () => onUnequip(item) : undefined}
+                hasSubscription={hasSubscription}
               />
             ))}
           </div>

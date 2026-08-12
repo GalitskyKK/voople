@@ -3,9 +3,11 @@ import { z } from "zod"
 
 import { assertRateLimit } from "@/lib/ratelimit-guard"
 import { rateLimits } from "@/lib/ratelimit"
+import { REPORT_REASON_CODES } from "@/lib/moderation/report"
+import { createModerationReportRest } from "@/server/data/moderation-reports-rest"
 import { createComment, deleteComment, listComments } from "@/server/services/comments.service"
 import { toggleLike } from "@/server/services/likes.service"
-import { createPost, createPostReport, deletePost, getPostById, updatePostText } from "@/server/services/post.service"
+import { createPost, deletePost, getPostById, updatePostText } from "@/server/services/post.service"
 import { createRepost, toggleRepost } from "@/server/services/reposts.service"
 import { recordPostView } from "@/server/services/views.service"
 
@@ -80,13 +82,20 @@ export const postRouter = createTRPCRouter({
     .input(
       z.object({
         postId: z.string().uuid(),
+        reasonCode: z.enum(REPORT_REASON_CODES).default("other"),
         reason: z.string().max(500).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.reportPost, ctx.user.id)
       try {
-        return await createPostReport(ctx.user.id, input.postId, input.reason)
+        return await createModerationReportRest({
+          reporterUserId: ctx.user.id,
+          subjectType: "post",
+          subjectId: input.postId,
+          reasonCode: input.reasonCode,
+          details: input.reason,
+        })
       } catch (e) {
         throw new TRPCError({
           code: "BAD_REQUEST",

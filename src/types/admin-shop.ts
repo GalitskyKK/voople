@@ -17,6 +17,7 @@ export type AdminShopItemRecord = {
   assetId: string | null;
   equipSlot: ShopEquipSlot;
   equipValue: string | null;
+  requiresSubscription: boolean;
 };
 
 export type AdminShopItemInput = {
@@ -34,6 +35,7 @@ export type AdminShopItemInput = {
   assetId?: string | null;
   equipSlot: ShopEquipSlot;
   equipValue?: string | null;
+  requiresSubscription: boolean;
 };
 
 export type AdminAssetUploadView = {

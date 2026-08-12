@@ -26,6 +26,8 @@ import {
 } from "@/components/profile/ProfileCardFrame";
 import { ProfileBanner } from "@/components/profile/ProfileBanner";
 import { resolveCustomization } from "@/lib/customization/resolve";
+import { VooplePlusFeatureSurface } from "@/components/subscription/VooplePlusFeatureSurface";
+import { VooplePlusBadge } from "@/components/subscription/VooplePlusFeatureSurface";
 
 /** Мини-превью заливки рамки для сетки выбора. */
 function frameSwatchStyle(preset: FramePreset, customColor: string): React.CSSProperties {
@@ -118,6 +120,7 @@ export function CustomizationEditor({
   const previewFrame = frameLayerProps(previewCustomization.assets.frame);
 
   const handleEquip = (item: ShopItemView) => {
+    if (item.requiresSubscription && !isPlus) return;
     onEquip(item.id);
     if (item.kind === "app_theme" && item.equipValue && isAppThemeId(item.equipValue)) {
       setThemeId(item.equipValue);
@@ -127,7 +130,11 @@ export function CustomizationEditor({
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="space-y-6">
-        <section className="voople-panel space-y-3 p-4">
+        <VooplePlusFeatureSurface
+          title="Премиум-рамки и свой цвет"
+          description="Бесплатные рамки остаются доступны всем. Voople+ открывает светящиеся варианты и точный цвет."
+          locked={!isPlus}
+        >
           <div className="flex items-center justify-between gap-2">
             <div>
               <h3 className="text-sm font-semibold text-[var(--foreground)]">Рамка карточки</h3>
@@ -156,7 +163,7 @@ export function CustomizationEditor({
                   key={preset.id}
                   type="button"
                   disabled={editBusy || locked}
-                  title={locked ? `${preset.name} · Voople+` : preset.name}
+                  title={locked ? `${preset.name} · Вупл+` : preset.name}
                   onClick={() => update.mutate({ profileFrameId: preset.id })}
                   className={cn(
                     "overflow-hidden rounded-xl border text-left transition disabled:opacity-50",
@@ -188,14 +195,13 @@ export function CustomizationEditor({
               />
             </label>
           ) : null}
-          {!isPlus ? (
-            <p className="text-xs text-[color-mix(in_srgb,var(--foreground)_45%,transparent)]">
-              Свой цвет и премиум-рамки — с Voople+.
-            </p>
-          ) : null}
-        </section>
+        </VooplePlusFeatureSurface>
 
-        <section className="voople-panel space-y-3 p-4">
+        <VooplePlusFeatureSurface
+          title="Расширенная основа карточки"
+          description="Зеркало баннера бесплатно. Voople+ добавляет градиент темы и спокойный ровный фон."
+          locked={!isPlus}
+        >
           <div>
             <h3 className="text-sm font-semibold text-[var(--foreground)]">Основа карточки</h3>
             <p className="mt-0.5 text-sm text-[color-mix(in_srgb,var(--foreground)_45%,transparent)]">
@@ -221,7 +227,7 @@ export function CustomizationEditor({
               );
             })}
           </div>
-        </section>
+        </VooplePlusFeatureSurface>
 
         {SHOP_DISPLAY_SECTIONS.map((displaySection) => {
           const slotsInSection = CUSTOMIZE_SLOT_SECTIONS.filter(
@@ -268,7 +274,7 @@ export function CustomizationEditor({
                   <button
                     key={item.id}
                     type="button"
-                    disabled={busy}
+                    disabled={busy || (item.requiresSubscription && !isPlus)}
                     onClick={() => handleEquip(item)}
                     className={cn(
                       "overflow-hidden rounded-xl border text-left transition",
@@ -280,7 +286,10 @@ export function CustomizationEditor({
                     <div className="aspect-square bg-black/30">
                       <ShopCatalogPreview catalog={item.previewMeta} previewUrl={item.previewUrl} />
                     </div>
-                    <span className="block px-2 py-2 text-xs text-[color-mix(in_srgb,var(--foreground)_75%,transparent)]">{item.name}</span>
+                    <span className="flex items-center justify-between gap-2 px-2 py-2 text-xs text-[color-mix(in_srgb,var(--foreground)_75%,transparent)]">
+                      <span className="truncate">{item.name}</span>
+                      {item.requiresSubscription ? <VooplePlusBadge locked={!isPlus} /> : null}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -340,7 +349,7 @@ export function CustomizationEditor({
           <ProfileCardFrameOverlay frame={previewCustomization.assets.frame} />
         </article>
 
-        <div className="voople-panel p-4">
+        <div>
           <ProfileThemePicker
             themePrimary={equipped.themePrimary}
             themeAccent={equipped.themeAccent}

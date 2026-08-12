@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 
@@ -13,8 +14,10 @@ const NOTIFICATION_OPTIONS = [
 
 export function NotificationSettings({
   showDesktopCallNotifications = false,
+  desktopControls,
 }: {
   showDesktopCallNotifications?: boolean;
+  desktopControls?: ReactNode;
 }) {
   const { preferences, updatePreferences } = useAppPreferences();
   return (
@@ -71,6 +74,7 @@ export function NotificationSettings({
           </>
         ) : null}
       </div>
+      {desktopControls}
     </section>
   );
 }

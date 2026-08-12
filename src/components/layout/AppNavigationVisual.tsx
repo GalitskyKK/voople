@@ -7,6 +7,7 @@ import {
   SIDEBAR_FOOTER_ITEMS,
 } from "@/lib/constants/nav";
 import { cn } from "@/lib/utils";
+import { VoopleMark } from "@/components/brand/VoopleMark";
 
 export type NavigationDestinationRenderProps = {
   href: string;
@@ -49,8 +50,8 @@ export function AppSidebarVisual({
           label: COPY.appName,
           active: pathname === "/feed",
           className:
-            "text-[1.125rem] font-semibold tracking-[-0.02em] text-[var(--foreground)] transition-opacity hover:opacity-85",
-          children: COPY.appName,
+            "inline-flex items-center gap-2.5 text-[1.125rem] font-semibold tracking-[-0.02em] text-[var(--foreground)] transition-opacity hover:opacity-85",
+          children: <><VoopleMark className="h-8 w-8" />{COPY.appName}</>,
         })}
       </div>
 
@@ -108,7 +109,7 @@ export function AppSidebarVisual({
                 label,
                 active,
                 className: cn(
-                  "flex w-full items-center gap-3 rounded-[var(--app-radius-lg)] px-3 py-2.5 text-left text-sm transition-all duration-200",
+                  "flex w-full items-center gap-3 rounded-[var(--app-radius-lg)] px-3 py-2.5 text-left text-sm font-medium transition-all duration-200",
                   active
                     ? "bg-[var(--app-accent-soft)] text-[var(--foreground)]"
                     : "text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[color-mix(in_srgb,var(--foreground)_88%,transparent)]",

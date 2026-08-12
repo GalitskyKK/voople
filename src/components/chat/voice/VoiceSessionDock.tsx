@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import {
   GripVertical,
   Mic,
   MicOff,
   PhoneOff,
   Settings2,
+  Scaling,
   Volume2,
   VolumeX,
   Wifi,
@@ -16,6 +17,7 @@ import { ConnectionQuality } from "livekit-client";
 
 import { cn } from "@/lib/utils";
 import type { MediaStatus } from "./voice-room-config";
+import { useVoiceDockGeometry } from "./useVoiceDockGeometry";
 
 type VoiceSessionDockProps = {
   chatName: string;
@@ -53,14 +55,7 @@ export function VoiceSessionDock({
   onLeave,
 }: VoiceSessionDockProps) {
   const dockRef = useRef<HTMLDivElement | null>(null);
-  const dragRef = useRef<{
-    pointerId: number;
-    startX: number;
-    startY: number;
-    originX: number;
-    originY: number;
-  } | null>(null);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const geometry = useVoiceDockGeometry(dockRef);
   const weakConnection =
     connectionQuality === ConnectionQuality.Poor ||
     connectionQuality === ConnectionQuality.Lost;
@@ -69,10 +64,9 @@ export function VoiceSessionDock({
     <div
       ref={dockRef}
       className={cn(
-        "voople-voice-dock fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] left-1/2 z-[70] flex w-[calc(100%-1.5rem)] -translate-x-1/2 flex-col gap-2 rounded-2xl border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_94%,transparent)] p-2 shadow-[var(--app-shadow-nav)] backdrop-blur-xl lg:bottom-4",
-        mediaPreview ? "max-w-sm" : "max-w-lg",
+        "voople-voice-dock fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] left-1/2 z-[70] flex -translate-x-1/2 flex-col gap-2 rounded-2xl border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_94%,transparent)] p-2 shadow-[var(--app-shadow-nav)] backdrop-blur-xl lg:bottom-4",
       )}
-      style={{ translate: `${offset.x}px ${offset.y}px` }}
+      style={geometry.style}
       role="region"
       aria-label="Текущий голосовой разговор"
     >
@@ -83,48 +77,11 @@ export function VoiceSessionDock({
           className="grid h-10 w-5 shrink-0 touch-none cursor-grab place-items-center rounded-lg text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] active:cursor-grabbing"
           aria-label="Переместить окно разговора"
           title="Перетащите окно разговора"
-          onDoubleClick={() => setOffset({ x: 0, y: 0 })}
-          onPointerDown={(event) => {
-            event.currentTarget.setPointerCapture(event.pointerId);
-            dragRef.current = {
-              pointerId: event.pointerId,
-              startX: event.clientX,
-              startY: event.clientY,
-              originX: offset.x,
-              originY: offset.y,
-            };
-          }}
-          onPointerMove={(event) => {
-            const drag = dragRef.current;
-            const dock = dockRef.current;
-            if (!drag || drag.pointerId !== event.pointerId || !dock) return;
-            const rect = dock.getBoundingClientRect();
-            const baseLeft = rect.left - offset.x;
-            const baseTop = rect.top - offset.y;
-            const baseRight = rect.right - offset.x;
-            const baseBottom = rect.bottom - offset.y;
-            const nextX = drag.originX + event.clientX - drag.startX;
-            const nextY = drag.originY + event.clientY - drag.startY;
-            setOffset({
-              x: Math.min(
-                Math.max(nextX, 8 - baseLeft),
-                window.innerWidth - 8 - baseRight,
-              ),
-              y: Math.min(
-                Math.max(nextY, 8 - baseTop),
-                window.innerHeight - 8 - baseBottom,
-              ),
-            });
-          }}
-          onPointerUp={(event) => {
-            if (dragRef.current?.pointerId === event.pointerId) {
-              dragRef.current = null;
-            }
-            event.currentTarget.releasePointerCapture(event.pointerId);
-          }}
-          onPointerCancel={() => {
-            dragRef.current = null;
-          }}
+          onDoubleClick={geometry.resetPosition}
+          onPointerDown={geometry.startMove}
+          onPointerMove={geometry.updateGesture}
+          onPointerUp={geometry.endGesture}
+          onPointerCancel={geometry.cancelGesture}
         >
           <GripVertical className="h-4 w-4" />
         </button>
@@ -198,6 +155,18 @@ export function VoiceSessionDock({
         <PhoneOff className="h-4 w-4" />
       </button>
       </div>
+      <button
+        type="button"
+        className="absolute bottom-1 right-1 z-10 grid h-6 w-6 touch-none cursor-nwse-resize place-items-center rounded-md text-[var(--app-muted)] opacity-45 transition hover:bg-[var(--app-surface-soft)] hover:opacity-100"
+        aria-label="Изменить размер окна разговора"
+        title="Потяните, чтобы изменить размер"
+        onPointerDown={geometry.startResize}
+        onPointerMove={geometry.updateGesture}
+        onPointerUp={geometry.endGesture}
+        onPointerCancel={geometry.cancelGesture}
+      >
+        <Scaling className="h-3.5 w-3.5" />
+      </button>
     </div>
   );
 }

@@ -33,6 +33,7 @@ type VoiceSettingsPanelProps = {
   ) => void | Promise<void>;
   onEndpointChange: (endpointUrl: string) => void;
   onCompatibilityModeChange: (enabled: boolean) => void;
+  onRoomSoundsChange: (enabled: boolean) => void;
   onReconnect: () => void | Promise<void>;
 };
 
@@ -61,6 +62,7 @@ export function VoiceSettingsPanel({
   onAudioProcessingChange,
   onEndpointChange,
   onCompatibilityModeChange,
+  onRoomSoundsChange,
   onReconnect,
 }: VoiceSettingsPanelProps) {
   return (
@@ -161,6 +163,30 @@ export function VoiceSettingsPanel({
           RNNoise обрабатывает голос локально нейросетью. При его включении
           системное шумоподавление отключается, чтобы не искажать голос двойной обработкой.
         </p>
+
+        <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-3">
+          <p className="text-sm font-medium">Демонстрация без возврата голоса</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--app-muted)]">
+            Voople не захватывает системный звук вместе с экраном: иначе звук
+            собеседников с динамиков Windows возвращается им эхом. Отдельный
+            безопасный захват звука приложений появится в desktop-клиенте позже.
+          </p>
+        </div>
+
+        <label className="flex items-start justify-between gap-4 rounded-xl border border-[var(--app-border)] px-3 py-3">
+          <span>
+            <span className="text-sm font-medium">Звуки комнаты</span>
+            <span className="mt-1 block text-xs leading-5 text-[var(--app-muted)]">
+              Короткий сигнал при входе и выходе участника.
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            checked={preferences.roomSounds}
+            onChange={(event) => onRoomSoundsChange(event.target.checked)}
+            className="settings-switch shrink-0"
+          />
+        </label>
 
         {endpoints.length > 1 ? (
           <label className="block text-xs font-medium text-[var(--app-muted)]">

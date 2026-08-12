@@ -31,10 +31,18 @@ possible, different networks.
 7. Set the other participant volume to 0%, 100% and 200%; local recording or
    system volume must not change.
 8. Minimize the room and navigate through feed, profile, shop and settings. The
-   mini stage remains movable, controls still work and opening it restores the
-   room.
+   mini stage remains movable and resizable, stays inside the viewport, controls
+   still work and opening it restores the room. Double-click its drag handle to
+   reset position.
+9. Open the room in fullscreen from web and desktop, switch focus/grid, then
+   exit with the visible control and with Escape. The call and media tracks must
+   remain connected.
 
 ## Message notification matrix
+
+Before the matrix, open **Settings → Notifications → Notifications Windows**,
+press **Check permission**, then **Send test**. The test must appear outside the
+Voople window and its **Open** action must navigate to the notification page.
 
 1. With desktop A minimized, send a direct message from B. A receives one
    Windows notification with the chat title and preview.
@@ -62,6 +70,12 @@ possible, different networks.
    the grid without stopping either track.
 5. Stop sharing from the operating-system picker and from Voople. The remote
    tile must disappear in both cases.
+6. Play the remote participant's voice through speakers while sharing. It must
+   not return to that participant as a second delayed voice. Current echo-safe
+   sharing is video-only and the picker must not offer Voople/system audio.
+7. Join and leave from the second device. The remaining client plays one short
+   local signal for each event. Disable **Room sounds** and repeat without a
+   signal.
 
 ## Network and lifecycle
 

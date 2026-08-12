@@ -46,6 +46,8 @@ export function GroupInviteSheet({
   const updateCustomization = trpc.chat.updateGroupCustomization.useMutation();
   const setBoost = trpc.chat.setGroupBoost.useMutation();
   const removeMember = trpc.chat.removeGroupMember.useMutation();
+  const setMemberRole = trpc.chat.setGroupMemberRole.useMutation();
+  const transferOwnership = trpc.chat.transferGroupOwnership.useMutation();
   const leaveGroup = trpc.chat.leaveGroup.useMutation();
   const deleteGroup = trpc.chat.deleteGroup.useMutation();
   const avatarUpload = useMediaUpload("group-avatar");
@@ -55,6 +57,10 @@ export function GroupInviteSheet({
   );
   const loadCommunity = useCallback(
     () => utils.client.chat.groupCommunity.query({ chatId }),
+    [chatId, utils.client],
+  );
+  const loadAudit = useCallback(
+    () => utils.client.chat.groupAudit.query({ chatId, limit: 50 }),
     [chatId, utils.client],
   );
   const searchContacts = useCallback(
@@ -76,6 +82,7 @@ export function GroupInviteSheet({
       topicsLayout={topicsLayout}
       groupVisibility={groupVisibility}
       loadMembers={loadMembers}
+      loadAudit={loadAudit}
       searchContacts={searchContacts}
       addMembers={(memberIds) => addMembers.mutateAsync({ chatId, memberIds })}
       createInvite={() => createInvite.mutateAsync({ chatId })}
@@ -105,6 +112,8 @@ export function GroupInviteSheet({
       }}
       setBoost={(enabled) => setBoost.mutateAsync({ chatId, enabled })}
       removeMember={(memberId) => removeMember.mutateAsync({ chatId, memberId })}
+      changeMemberRole={(memberId, role) => setMemberRole.mutateAsync({ chatId, memberId, role })}
+      transferOwnership={(targetUserId) => transferOwnership.mutateAsync({ chatId, targetUserId })}
       leaveGroup={() => leaveGroup.mutateAsync({ chatId })}
       deleteGroup={() => deleteGroup.mutateAsync({ chatId })}
       onGroupClosed={() => {

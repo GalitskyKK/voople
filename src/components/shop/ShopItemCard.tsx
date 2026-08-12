@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import type { ShopItemView } from "@/types/shop";
 import { Button } from "@/components/ui/Button";
 import { ShopCatalogPreview } from "@/components/shop/ShopCatalogPreview";
+import { VooplePlusBadge } from "@/components/subscription/VooplePlusFeatureSurface";
 
 type ShopItemCardProps = {
   item: ShopItemView;
@@ -16,6 +17,7 @@ type ShopItemCardProps = {
   onBuyRub?: () => void;
   onEquip?: () => void;
   onUnequip?: () => void;
+  hasSubscription?: boolean;
 };
 
 export function ShopItemCard({
@@ -26,6 +28,7 @@ export function ShopItemCard({
   onBuyRub,
   onEquip,
   onUnequip,
+  hasSubscription = false,
 }: ShopItemCardProps) {
   const futurePrice = !item.isFree && item.priceCoins > 0;
 
@@ -34,6 +37,7 @@ export function ShopItemCard({
       className={cn(
         "flex flex-col overflow-hidden rounded-2xl border bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] transition",
         item.equipped ? "border-(--theme-accent)" : "border-[color-mix(in_srgb,var(--foreground)_10%,transparent)]",
+        item.requiresSubscription && "shop-item-card--plus",
       )}
     >
       <div className="relative aspect-[4/3] bg-black/30">
@@ -47,6 +51,9 @@ export function ShopItemCard({
             Надето
           </span>
         )}
+        {item.requiresSubscription ? (
+          <VooplePlusBadge className="absolute bottom-2 right-2 shadow-[var(--app-shadow-sm)]" />
+        ) : null}
       </div>
 
       <div className="flex flex-1 flex-col p-4">
@@ -87,8 +94,8 @@ export function ShopItemCard({
             </Button>
           )}
           {item.owned && !item.equipped && onEquip && (
-            <Button type="button" size="sm" disabled={busy} onClick={onEquip}>
-              Надеть
+            <Button type="button" size="sm" disabled={busy || (item.requiresSubscription && !hasSubscription)} onClick={onEquip}>
+              {item.requiresSubscription && !hasSubscription ? "Нужен Вупл+" : "Надеть"}
             </Button>
           )}
           {item.owned && item.equipped && onUnequip && (

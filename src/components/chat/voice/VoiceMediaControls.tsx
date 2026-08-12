@@ -18,6 +18,7 @@ type VoiceMediaControlsProps = {
   onOutputToggle: () => void;
   onScreenShareToggle: () => void | Promise<void>;
   onCameraToggle: () => void | Promise<void>;
+  compact?: boolean;
 };
 
 const controlClass =
@@ -36,17 +37,21 @@ export function VoiceMediaControls({
   onOutputToggle,
   onScreenShareToggle,
   onCameraToggle,
+  compact = false,
 }: VoiceMediaControlsProps) {
   const connected = mediaStatus === "connected";
+  const itemClass = compact
+    ? "grid h-11 w-11 place-items-center rounded-xl border transition disabled:opacity-45"
+    : controlClass;
 
   return (
-    <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+    <div className={compact ? "flex flex-wrap items-center justify-center gap-2" : "mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4"}>
       <button
         type="button"
         disabled={mediaActionPending}
         onClick={() => void onMicToggle()}
         className={cn(
-          controlClass,
+          itemClass,
           micMuted
             ? "border-red-500/25 bg-red-500/10"
             : "border-emerald-500/35 bg-emerald-500/10",
@@ -60,7 +65,7 @@ export function VoiceMediaControls({
         ) : (
           <Mic className="h-5 w-5 text-emerald-400" />
         )}
-        {micMuted ? "Микрофон" : "В эфире"}
+        <span className={compact ? "sr-only" : undefined}>{micMuted ? "Микрофон" : "В эфире"}</span>
       </button>
 
       <button
@@ -68,7 +73,7 @@ export function VoiceMediaControls({
         disabled={!connected}
         onClick={onOutputToggle}
         className={cn(
-          controlClass,
+          itemClass,
           outputMuted
             ? "border-red-500/25 bg-red-500/10"
             : "border-[var(--app-border)] bg-[var(--app-surface-soft)]",
@@ -76,7 +81,7 @@ export function VoiceMediaControls({
         aria-label={outputMuted ? "Включить звук собеседников" : "Выключить звук собеседников"}
       >
         {outputMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-        {outputMuted ? "Без звука" : "Звук"}
+        <span className={compact ? "sr-only" : undefined}>{outputMuted ? "Без звука" : "Звук"}</span>
       </button>
 
       <button
@@ -84,7 +89,7 @@ export function VoiceMediaControls({
         disabled={!connected || cameraPending}
         onClick={() => void onCameraToggle()}
         className={cn(
-          controlClass,
+          itemClass,
           cameraEnabled
             ? "border-[color-mix(in_srgb,var(--theme-accent)_45%,var(--app-border))] bg-[var(--app-accent-soft)]"
             : "border-[var(--app-border)] bg-[var(--app-surface-soft)]",
@@ -98,7 +103,7 @@ export function VoiceMediaControls({
         ) : (
           <Camera className="h-5 w-5" />
         )}
-        {cameraEnabled ? "Выключить" : "Камера"}
+        <span className={compact ? "sr-only" : undefined}>{cameraEnabled ? "Выключить" : "Камера"}</span>
       </button>
 
       <button
@@ -106,7 +111,7 @@ export function VoiceMediaControls({
         disabled={!connected || screenSharePending}
         onClick={() => void onScreenShareToggle()}
         className={cn(
-          controlClass,
+          itemClass,
           screenSharing
             ? "border-[color-mix(in_srgb,var(--theme-accent)_45%,var(--app-border))] bg-[var(--app-accent-soft)]"
             : "border-[var(--app-border)] bg-[var(--app-surface-soft)]",
@@ -118,7 +123,7 @@ export function VoiceMediaControls({
         ) : (
           <MonitorUp className="h-5 w-5" />
         )}
-        {screenSharing ? "Остановить" : "Экран"}
+        <span className={compact ? "sr-only" : undefined}>{screenSharing ? "Остановить" : "Экран"}</span>
       </button>
     </div>
   );

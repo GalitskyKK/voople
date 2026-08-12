@@ -20,6 +20,8 @@ export type ShopItemView = {
   seasonId: string | null;
   assetFolder: string | null;
   assetId: string | null;
+  /** Предмет можно получить отдельно, но использовать только при активной подписке. */
+  requiresSubscription: boolean;
 };
 
 export type WalletView = {

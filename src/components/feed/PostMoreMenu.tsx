@@ -105,7 +105,7 @@ export function PostMoreMenu({
 
   const handleReport = () => {
     if (!viewerUsername || isOwner || reportPost.isPending) return;
-    reportPost.mutate({ postId });
+    reportPost.mutate({ postId, reasonCode: "other" });
   };
 
   const handleDelete = () => {

@@ -16,6 +16,7 @@ import { syncRnnoiseProcessor } from "@/lib/livekit/rnnoise-track-processor";
 import { trpc } from "@/lib/trpc/client";
 import {
   getAudioCaptureOptions,
+  ECHO_SAFE_SCREEN_SHARE_OPTIONS,
   getConnectionLabel,
   getMicrophoneMuted,
   reconnectPolicy,
@@ -35,7 +36,7 @@ import { useVoiceHeartbeat } from "./voice/useVoiceHeartbeat";
 import { useVoiceOutput } from "./voice/useVoiceOutput";
 import { useVoiceRoomTermination } from "./voice/useVoiceRoomTermination";
 import { useVoiceVideoStage } from "./voice/useVoiceVideoStage";
-
+import { playVoiceRoomSound } from "./voice/voice-room-sounds";
 type ChatRoomControlProps = {
   chatId: string;
   chatName: string;
@@ -269,6 +270,8 @@ export const ChatRoomControl = forwardRef<
         setMediaStatus("connected");
         setMediaError(null);
       },
+      onParticipantConnected: () => preferencesRef.current.roomSounds && void playVoiceRoomSound("join"),
+      onParticipantDisconnected: () => preferencesRef.current.roomSounds && void playVoiceRoomSound("leave"),
     });
 
     liveRoom.on(RoomEvent.Disconnected, () => {
@@ -488,13 +491,10 @@ export const ChatRoomControl = forwardRef<
     setScreenSharePending(true);
     setMediaError(null);
     try {
-      await liveRoom.localParticipant.setScreenShareEnabled(!screenSharing, {
-        audio: true,
-        video: { displaySurface: "monitor" },
-        contentHint: "detail",
-        systemAudio: "include",
-        surfaceSwitching: "include",
-      });
+      await liveRoom.localParticipant.setScreenShareEnabled(
+        !screenSharing,
+        ECHO_SAFE_SCREEN_SHARE_OPTIONS,
+      );
       const publication = liveRoom.localParticipant.getTrackPublication(Track.Source.ScreenShare);
       setScreenSharing(Boolean(publication && !publication.isMuted));
     } catch (error) {
@@ -754,6 +754,7 @@ export const ChatRoomControl = forwardRef<
             onCompatibilityModeChange={(compatibilityMode) =>
               persistPreferences({ compatibilityMode })
             }
+            onRoomSoundsChange={(roomSounds) => persistPreferences({ roomSounds })}
             onReconnect={reconnectMedia}
           />
         }

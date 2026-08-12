@@ -5,6 +5,7 @@ import { ArrowRight, Crown, Sparkles } from "lucide-react";
 
 import { TEAM_PIN_IDS } from "@/lib/badges/registry";
 import { trpc } from "@/lib/trpc/client";
+import { VooplePlusBadge } from "@/components/subscription/VooplePlusFeatureSurface";
 
 export function SidebarHighlights() {
   const subscription = trpc.shop.subscriptionStatus.useQuery(undefined, {
@@ -38,13 +39,13 @@ export function SidebarHighlights() {
 
       <Link
         href="/shop?tab=plus"
-        className="group flex items-center gap-2.5 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-2.5 transition hover:border-[color-mix(in_srgb,var(--theme-accent)_42%,var(--app-border))] hover:bg-[var(--app-accent-soft)]"
+        className="group flex items-center gap-2.5 rounded-[var(--app-radius-lg)] border border-[color-mix(in_srgb,var(--voople-brand-400)_42%,var(--app-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--voople-brand-500)_14%,var(--app-surface)),var(--app-surface-soft))] p-2.5 transition hover:border-[color-mix(in_srgb,var(--voople-brand-300)_62%,var(--app-border))]"
       >
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[color-mix(in_srgb,var(--theme-accent)_16%,transparent)] text-(--theme-accent)">
           <Crown className="h-4 w-4" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-xs font-semibold text-[var(--foreground)]">Voople+</span>
+          <VooplePlusBadge />
           <span className="block truncate text-[10px] text-[var(--app-muted)]">
             {subscription.data?.active ? "Подписка активна · управление" : "Темы, рамки и стиль имени"}
           </span>

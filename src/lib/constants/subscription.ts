@@ -40,9 +40,40 @@ export const VOOPLUS_IS_RECURRING = false;
 
 export const VOOPLUS_TIER = "plus" as const;
 
-export const VOOPLUS_BENEFITS = [
-  "Свои баннеры и расширенные фоны карточки",
-  "Премиум-рамки, темы приложения и точные цвета",
-  "Шрифты и эффекты имени с примеркой до оплаты",
-  "Пин Voople+ и расширенные возможности общения",
+export const VOOPLUS_AVATAR_HISTORY_LIMIT = 12;
+export const FREE_AVATAR_HISTORY_LIMIT = 3;
+
+export const VOOPLUS_FEATURE_GROUPS = [
+  {
+    id: "identity",
+    title: "Образ, который узнают",
+    description: "Соберите цельный стиль и перенесите его из профиля в ленту и сообщения.",
+    features: [
+      "Свой баннер, фоны и расширенные рамки карточки",
+      "Точные цвета, шрифты и эффекты имени",
+      "Пин Вупл+ рядом с именем в профиле, ленте и сообщениях",
+    ],
+  },
+  {
+    id: "comfort",
+    title: "Приложение под вас",
+    description: "Оформление синхронизируется между web и desktop и остаётся знакомым на каждом устройстве.",
+    features: [
+      "Четыре дополнительные цветовые темы интерфейса",
+      "Фоны диалогов с полноценным предпросмотром",
+      `История из ${VOOPLUS_AVATAR_HISTORY_LIMIT} недавних аватаров с быстрым возвратом`,
+    ],
+  },
+  {
+    id: "groups",
+    title: "Буст своей группы",
+    description: "Выберите главное пространство и сделайте его визуально своим.",
+    features: [
+      "Один активный буст выбранной группы входит в подписку",
+      "Собственный цветовой акцент группы",
+      "Буст можно перенести в другую группу",
+    ],
+  },
 ] as const;
+
+export const VOOPLUS_BENEFITS = VOOPLUS_FEATURE_GROUPS.flatMap((group) => group.features);

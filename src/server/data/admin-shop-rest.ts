@@ -98,6 +98,7 @@ function normalizeInput(input: AdminShopItemInput) {
     asset_id: assetId,
     equip_slot: equipSlot,
     equip_value: equipValue,
+    requires_subscription: input.requiresSubscription ? "plus" : null,
   };
 }
 

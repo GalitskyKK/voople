@@ -1,4 +1,4 @@
-import { CornerDownRight } from "lucide-react";
+import { Check, CornerDownRight, Reply } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { LocalMessageTime } from "@/components/chat/LocalMessageTime";
@@ -15,11 +15,19 @@ type ChatMessageBubbleVisualProps = {
   menu?: ReactNode;
   className?: string;
   onClick?: () => void;
+  onDoubleClick?: React.MouseEventHandler<HTMLDivElement>;
   onContextMenu?: React.MouseEventHandler<HTMLDivElement>;
   onKeyDown?: React.KeyboardEventHandler<HTMLDivElement>;
+  onPointerDown?: React.PointerEventHandler<HTMLDivElement>;
+  onPointerMove?: React.PointerEventHandler<HTMLDivElement>;
+  onPointerUp?: React.PointerEventHandler<HTMLDivElement>;
+  onPointerCancel?: React.PointerEventHandler<HTMLDivElement>;
   interactive?: boolean;
   onToggleReaction?: (emoji: string) => void;
   groupPosition?: "only" | "start" | "middle" | "end";
+  selectionState?: boolean;
+  swipeOffset?: number;
+  swipeDragging?: boolean;
 };
 
 export function ChatMessageBubbleVisual({
@@ -30,13 +38,22 @@ export function ChatMessageBubbleVisual({
   menu,
   className,
   onClick,
+  onDoubleClick,
   onContextMenu,
   onKeyDown,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
   interactive = false,
   onToggleReaction,
   groupPosition = "only",
+  selectionState,
+  swipeOffset = 0,
+  swipeDragging = false,
 }: ChatMessageBubbleVisualProps) {
   const { isMine, text, createdAt, readAt, replyTo } = message;
+  const selectionActive = selectionState !== undefined;
   const hasText = Boolean(text?.trim());
   const messageMeta = (
     <span className="voople-chat-bubble__meta ml-2 inline-flex translate-y-0.5 items-center gap-0.5 whitespace-nowrap text-[10px] leading-none text-[var(--app-muted)]">
@@ -48,11 +65,24 @@ export function ChatMessageBubbleVisual({
   return (
     <div
       className={cn(
-        "voople-chat-bubble-row group/bubble flex w-full items-end gap-2",
+        "voople-chat-bubble-row group/bubble relative flex w-full items-end gap-2",
+        selectionActive && "voople-chat-bubble-row--selection",
+        selectionState && "voople-chat-bubble-row--selected",
         isMine ? "justify-end 2xl:justify-start" : "justify-start",
         (groupPosition === "only" || groupPosition === "start") && "mt-1.5",
         className
-      )}>
+      )}
+      onClick={selectionActive ? onClick : undefined}
+      onContextMenu={selectionActive ? onContextMenu : undefined}
+      onKeyDown={selectionActive ? onKeyDown : undefined}
+      role={selectionActive ? "button" : undefined}
+      tabIndex={selectionActive ? 0 : undefined}
+      aria-pressed={selectionActive ? selectionState : undefined}>
+      {selectionActive ? (
+        <span className="voople-chat-bubble-row__selection-marker" aria-hidden>
+          {selectionState ? <Check className="h-3.5 w-3.5" /> : null}
+        </span>
+      ) : null}
       {/* {showSender && !isMine ? (
         <div className="w-8 shrink-0">
           {groupPosition === "only" || groupPosition === "end" ? senderAvatar : null}
@@ -64,16 +94,31 @@ export function ChatMessageBubbleVisual({
           {groupPosition === "only" || groupPosition === "end" ? senderAvatar : null}
         </div>
       ) : null}
+      {swipeOffset > 0 && !selectionActive ? (
+        <span
+          className="voople-chat-bubble-row__swipe-reply"
+          style={{ opacity: Math.min(1, swipeOffset / 52) }}
+          aria-hidden>
+          <Reply className="h-4 w-4" />
+        </span>
+      ) : null}
       <div
         className={cn(
           "voople-chat-bubble relative max-w-[min(86%,36rem)]",
+          swipeDragging && "voople-chat-bubble--swiping",
           isMine ? "voople-chat-bubble--mine" : "voople-chat-bubble--theirs"
         )}
-        onClick={onClick}
-        onContextMenu={onContextMenu}
-        onKeyDown={onKeyDown}
-        role={interactive ? "button" : undefined}
-        tabIndex={interactive ? 0 : undefined}>
+        style={swipeOffset > 0 ? { transform: `translateX(${swipeOffset}px)` } : undefined}
+        onClick={selectionActive ? undefined : onClick}
+        onDoubleClick={selectionActive ? undefined : onDoubleClick}
+        onContextMenu={selectionActive ? undefined : onContextMenu}
+        onKeyDown={selectionActive ? undefined : onKeyDown}
+        onPointerDown={selectionActive ? undefined : onPointerDown}
+        onPointerMove={selectionActive ? undefined : onPointerMove}
+        onPointerUp={selectionActive ? undefined : onPointerUp}
+        onPointerCancel={selectionActive ? undefined : onPointerCancel}
+        role={!selectionActive && interactive ? "button" : undefined}
+        tabIndex={!selectionActive && interactive ? 0 : undefined}>
         {menu}
         <div
           className={cn(
@@ -133,8 +178,10 @@ export function ChatMessageBubbleVisual({
 
           {message.reactions.length > 0 ? (
             <div
-              className="flex flex-wrap gap-1 pt-0.5"
-              onClick={(event) => event.stopPropagation()}>
+              className={cn("flex flex-wrap gap-1 pt-0.5", selectionActive && "pointer-events-none")}
+              onClick={(event) => {
+                if (!selectionActive) event.stopPropagation();
+              }}>
               {message.reactions.map((reaction) => (
                 <button
                   key={reaction.emoji}

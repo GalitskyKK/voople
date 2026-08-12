@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Crown } from "lucide-react";
+import { ArrowDown, Crown, ShieldCheck, Sparkles } from "lucide-react";
 
 import {
   DEFAULT_VOOPLUS_PLAN_ID,
-  VOOPLUS_BENEFITS,
   VOOPLUS_IS_RECURRING,
   VOOPLUS_PLANS,
   getVooplePlusPlan,
@@ -15,6 +14,8 @@ import { Button } from "@/components/ui/Button";
 import { parseDatabaseDate } from "@/lib/format/database-date";
 import type { PromoPreviewView } from "@/types/promo";
 import type { SubscriptionStatusView } from "@/types/subscription";
+import { VooplePlusBenefits } from "@/components/subscription/VooplePlusBenefits";
+import { VooplePlusShowcase } from "@/components/subscription/VooplePlusShowcase";
 
 type VooplePlusPanelProps = {
   status: SubscriptionStatusView | undefined;
@@ -59,67 +60,72 @@ export function VooplePlusPanel({
   const displayPrice = activeDiscount?.finalAmountRub ?? selectedPlan.priceRub;
 
   return (
-    <section className="voople-panel overflow-hidden border-(--theme-accent)/30 bg-linear-to-br from-(--theme-accent)/15 via-[color-mix(in_srgb,var(--foreground)_5%,transparent)] to-transparent p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-2">
-          <p className="inline-flex items-center gap-2 text-sm font-medium text-(--theme-accent)">
-            <Crown className="h-4 w-4" aria-hidden />
-            Voople+
+    <section className="voople-plus-offer">
+      <div className="voople-plus-offer__hero">
+        <div className="voople-plus-offer__copy">
+          <p className="voople-plus-offer__eyebrow"><Crown className="h-4 w-4" aria-hidden /> Вупл+</p>
+          <h2>Твой Вупл.<br /><span>До последней детали.</span></h2>
+          <p>
+            Собери узнаваемый образ, настрой пространство под себя и поддержи группу,
+            в которой проводишь время. Один набор возможностей — в web и desktop.
           </p>
-          <h2 className="text-xl font-semibold text-[var(--foreground)]">Соберите узнаваемый профиль</h2>
-          <p className="max-w-lg text-sm text-[color-mix(in_srgb,var(--foreground)_55%,transparent)]">
-            Один набор для карточки, имени и темы приложения. Всё можно примерить в редакторе до оплаты.
-            {!VOOPLUS_IS_RECURRING && " Автопродление не подключено — продлить можно вручную."} Оплата через
-            ЮKassa.
-          </p>
+          <a className="voople-plus-offer__jump" href="#voople-plus-plans">
+            Выбрать тариф <ArrowDown className="h-4 w-4" aria-hidden />
+          </a>
         </div>
-        <div className="text-right">
-          <p className="text-2xl font-bold text-[var(--foreground)]">
-            {displayPrice} ₽
-            {activeDiscount && activeDiscount.finalAmountRub < selectedPlan.priceRub && (
-              <span className="ml-2 text-base font-normal text-[color-mix(in_srgb,var(--foreground)_35%,transparent)] line-through">
-                {selectedPlan.priceRub} ₽
-              </span>
-            )}
-          </p>
-          <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_45%,transparent)]">на {selectedPlan.periodDays} дн.</p>
+        <div className="voople-plus-offer__price">
+          <Sparkles className="h-5 w-5" aria-hidden />
+          <span>от</span>
+          <strong>{VOOPLUS_PLANS[0].priceRub} ₽</strong>
+          <span>в месяц</span>
         </div>
       </div>
 
-      <div className="mt-5 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Срок подписки">
-        {VOOPLUS_PLANS.map((plan) => {
-          const selected = plan.id === selectedPlanId;
-          return (
-            <button
-              key={plan.id}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              onClick={() => setSelectedPlanId(plan.id)}
-              className={`rounded-2xl border p-3 text-left transition ${selected ? "border-(--theme-accent) bg-(--theme-accent)/10" : "border-[var(--app-border)] bg-[var(--app-surface-soft)] hover:border-[var(--app-border-strong)]"}`}
-            >
-              <span className="flex items-center justify-between gap-3">
-                <span className="font-semibold text-[var(--foreground)]">{plan.label}</span>
-                <span className="font-semibold text-[var(--foreground)]">{plan.priceRub.toLocaleString("ru-RU")} ₽</span>
-              </span>
-              <span className="mt-1 block text-xs text-[var(--app-muted)]">{plan.note}</span>
-            </button>
-          );
-        })}
+      <VooplePlusShowcase />
+
+      <div className="voople-plus-offer__included">
+        <p>Возможности Вупл+</p>
+        <h2>Не набор галочек.<br />Твой способ быть заметнее.</h2>
+        <VooplePlusBenefits />
       </div>
 
-      <ul className="mt-4 space-y-2 text-sm text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
-        {VOOPLUS_BENEFITS.map((benefit) => (
-          <li key={benefit} className="flex gap-2">
-            <span className="text-(--theme-accent)" aria-hidden>
-              •
-            </span>
-            {benefit}
-          </li>
-        ))}
-      </ul>
+      <section id="voople-plus-plans" className="voople-plus-checkout" aria-labelledby="voople-plus-plans-title">
+        <div className="voople-plus-checkout__heading">
+          <div>
+            <p>Подписка</p>
+            <h2 id="voople-plus-plans-title">Выбери свой Вупл+</h2>
+          </div>
+          <span><ShieldCheck className="h-4 w-4" aria-hidden /> Оплата через ЮKassa</span>
+        </div>
 
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end">
+        <div className="voople-plus-plans" role="radiogroup" aria-label="Срок подписки">
+          {VOOPLUS_PLANS.map((plan) => {
+            const selected = plan.id === selectedPlanId;
+            return (
+              <button
+                key={plan.id}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => setSelectedPlanId(plan.id)}
+                className={`voople-plus-plan ${selected ? "voople-plus-plan--active" : ""}`}
+              >
+                <span className="flex items-center justify-between gap-3">
+                  <span className="flex flex-wrap items-center gap-2 font-semibold text-[var(--foreground)]">
+                    {plan.label}
+                    {plan.id === "annual" ? <span className="voople-plus-badge">2 месяца в подарок</span> : null}
+                  </span>
+                  <span className="font-semibold text-[var(--foreground)]">{plan.priceRub.toLocaleString("ru-RU")} ₽</span>
+                </span>
+                <span className="mt-1 block text-xs text-[var(--app-muted)]">
+                  {plan.id === "annual" ? `${Math.round(plan.priceRub / 12)} ₽ в месяц` : plan.note}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end">
         <label className="flex-1">
           <span className="mb-1 block text-xs text-[color-mix(in_srgb,var(--foreground)_45%,transparent)]">Промокод</span>
           <input
@@ -183,7 +189,7 @@ export function VooplePlusPanel({
           </a>
           .
         </p>
-      </div>
+        </div>
 
       {active && (
         <p className="mt-3 text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">
@@ -191,7 +197,35 @@ export function VooplePlusPanel({
         </p>
       )}
 
-      {paymentError && <p className="mt-3 text-sm text-red-400">{paymentError}</p>}
+        {!VOOPLUS_IS_RECURRING ? (
+          <p className="mt-3 text-xs text-[var(--app-muted)]">Автопродление не подключается. Продлить подписку можно вручную.</p>
+        ) : null}
+        {paymentError && <p className="mt-3 text-sm text-red-400">{paymentError}</p>}
+      </section>
+
+      <VooplePlusFaq />
+    </section>
+  );
+}
+
+function VooplePlusFaq() {
+  const items = [
+    ["Когда начнут работать возможности?", "Сразу после подтверждения оплаты. Статус обновится в профиле и на всех ваших устройствах."],
+    ["Можно ли перенести буст?", "Да. Снимите его с текущей группы и активируйте в другой — отдельная покупка не нужна."],
+    ["Что будет после окончания подписки?", "Оформление вернётся к базовому виду. Полученные предметы останутся в коллекции и снова откроются после продления."],
+  ] as const;
+  return (
+    <section className="voople-plus-faq" aria-labelledby="voople-plus-faq-title">
+      <p>Коротко о важном</p>
+      <h2 id="voople-plus-faq-title">Вопросы о Вупл+</h2>
+      <div>
+        {items.map(([question, answer]) => (
+          <details key={question}>
+            <summary>{question}</summary>
+            <p>{answer}</p>
+          </details>
+        ))}
+      </div>
     </section>
   );
 }

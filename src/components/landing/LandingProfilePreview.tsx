@@ -2,9 +2,9 @@ import { Eye, FileText, Flame, Music2, Sparkles, UserPlus, Users } from "lucide-
 
 export function LandingProfilePreview() {
   return (
-    <div className="relative mx-auto w-full max-w-[390px] lg:mr-0">
-      <div className="absolute -inset-10 -z-10 rounded-full bg-[var(--theme-accent)]/15 blur-3xl" />
-      <div className="rotate-[1.25deg] rounded-[2rem] border border-white/10 bg-[color-mix(in_srgb,var(--app-surface)_88%,transparent)] p-3 shadow-[0_32px_90px_rgba(0,0,0,.34)] backdrop-blur-xl">
+    <div className="landing-profile-preview">
+      <div className="landing-profile-preview__halo" aria-hidden="true" />
+      <div className="landing-profile-preview__shell">
         <article
           className="profile-card profile-card--split relative text-[#f4f4f7]"
           style={{

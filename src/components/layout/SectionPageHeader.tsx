@@ -35,7 +35,7 @@ export function SectionPageHeader({
             )
           : "border-b border-[var(--app-border)] px-4 py-4 lg:px-6",
         sticky &&
-          "sticky top-14 z-20 bg-[color-mix(in_srgb,var(--app-surface)_96%,transparent)] backdrop-blur-xl lg:top-4",
+          "voople-sticky-section-header sticky top-14 z-20 bg-[var(--app-surface)] backdrop-blur-xl lg:top-4",
         className,
       )}
     >

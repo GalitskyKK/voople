@@ -109,6 +109,30 @@ export type ChatGroupMemberView = {
   role: "owner" | "admin" | "member";
 };
 
+export type ChatGroupAuditAction =
+  | "member_added"
+  | "member_removed"
+  | "member_left"
+  | "role_changed"
+  | "ownership_transferred"
+  | "topics_changed"
+  | "visibility_changed";
+
+export type ChatGroupAuditActor = {
+  id: string;
+  username: string;
+  displayName: string;
+};
+
+export type ChatGroupAuditEntryView = {
+  id: string;
+  action: ChatGroupAuditAction;
+  createdAt: string;
+  actor: ChatGroupAuditActor | null;
+  target: ChatGroupAuditActor | null;
+  details: Record<string, string | number | boolean | null>;
+};
+
 export type PublicGroupSearchHit = {
   id: string;
   name: string;

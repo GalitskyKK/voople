@@ -59,7 +59,7 @@ export function RepostPreviewVisual({
           {post.text}
         </p>
       ) : null}
-      {post.mediaUrl ? renderMedia(post) : null}
+      {post.media?.length || post.mediaUrl ? renderMedia(post) : null}
       {post.kind === "appearance" &&
       post.appearance &&
       appearanceCustomization &&

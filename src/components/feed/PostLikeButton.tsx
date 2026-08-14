@@ -7,6 +7,7 @@ import { COPY } from "@/lib/constants/copy";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc/client";
 import type { PostViewModel } from "@/types/domain";
+import { useAuthGate } from "@/components/auth/AuthGateProvider";
 
 type PostLikeButtonProps = {
   postId: string;
@@ -57,6 +58,7 @@ export function PostLikeButton({
     count: number;
   } | null>(null);
   const [pulseKey, setPulseKey] = useState(0);
+  const { requireAuth } = useAuthGate();
   const utils = trpc.useUtils();
   const current =
     optimistic?.postId === postId
@@ -140,10 +142,15 @@ export function PostLikeButton({
 
   if (!canLike) {
     return (
-      <span className="voople-post-action inline-flex items-center gap-1.5 text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">
+      <button
+        type="button"
+        className="voople-post-action inline-flex items-center gap-1.5 text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]"
+        aria-label="Войти, чтобы поставить отметку"
+        onClick={() => requireAuth({ title: "Отметить публикацию", description: "Войдите, чтобы сохранить реакцию и вернуться к публикации." })}
+      >
         <Heart className="h-4 w-4" />
         <span className="text-sm tabular-nums">{current.count}</span>
-      </span>
+      </button>
     );
   }
 

@@ -1,9 +1,12 @@
-import { AppWindow, RefreshCw } from "lucide-react";
+import { AppWindow, BookOpen, RefreshCw } from "lucide-react";
 
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 import { Button } from "@/components/ui/Button";
 
-import { DESKTOP_UPDATE_CHECK_EVENT } from "../updates/events";
+import {
+  DESKTOP_RELEASE_NOTES_EVENT,
+  DESKTOP_UPDATE_CHECK_EVENT,
+} from "../updates/events";
 
 export function DesktopWindowSettings() {
   const { preferences, updatePreferences } = useAppPreferences();
@@ -58,15 +61,26 @@ export function DesktopWindowSettings() {
           Для полного выхода используйте пункт «Выйти» в меню значка Voople.
         </p>
       ) : null}
-      <Button
-        type="button"
-        variant="secondary"
-        className="w-full sm:w-fit"
-        onClick={() => window.dispatchEvent(new Event(DESKTOP_UPDATE_CHECK_EVENT))}
-      >
-        <RefreshCw className="h-4 w-4" />
-        Проверить обновления
-      </Button>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button
+          type="button"
+          variant="secondary"
+          className="w-full sm:w-fit"
+          onClick={() => window.dispatchEvent(new Event(DESKTOP_UPDATE_CHECK_EVENT))}
+        >
+          <RefreshCw className="h-4 w-4" />
+          Проверить обновления
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          className="w-full sm:w-fit"
+          onClick={() => window.dispatchEvent(new Event(DESKTOP_RELEASE_NOTES_EVENT))}
+        >
+          <BookOpen className="h-4 w-4" />
+          Что нового
+        </Button>
+      </div>
     </section>
   );
 }

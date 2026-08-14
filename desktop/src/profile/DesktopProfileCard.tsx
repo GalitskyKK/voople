@@ -11,6 +11,7 @@ import { DesktopProfileAvatar } from "./DesktopProfileAvatar";
 import { DesktopProfileShareButton } from "./DesktopProfileShareButton";
 import { DesktopProfileActions } from "./DesktopProfileActions";
 import { ProfileStatusSection } from "@/components/profile/ProfileStatusSection";
+import { ProfileAvatarViewerTrigger } from "@/components/profile/ProfileAvatarViewerTrigger";
 
 export function DesktopProfileCard({
   profile,
@@ -29,10 +30,15 @@ export function DesktopProfileCard({
 }) {
   const { customization } = profile;
   const avatar = (
-    <DesktopProfileAvatar
+    <ProfileAvatarViewerTrigger
+      url={customization.assets.animatedAvatarUrl}
       displayName={profile.displayName}
-      customization={customization}
-    />
+    >
+      <DesktopProfileAvatar
+        displayName={profile.displayName}
+        customization={customization}
+      />
+    </ProfileAvatarViewerTrigger>
   );
 
   return (

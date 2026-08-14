@@ -1,6 +1,6 @@
 import type { Session } from "@supabase/supabase-js";
 import { ArrowLeft, Hash } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 import { ChatDateDivider } from "@/components/chat/ChatDateDivider";
 import { ChatSectionsBarView } from "@/components/chat/ChatSectionsBarView";
@@ -10,7 +10,7 @@ import { VoiceRoomButton } from "@/components/chat/voice/VoiceRoomButton";
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
-import type { ChatListItem, ChatMessageView } from "@/types/chat";
+import type { ChatListItem, ChatMessageView, GroupEmojiView } from "@/types/chat";
 
 import type { DesktopConfig } from "../config";
 import { DesktopChatAvatar } from "./DesktopChatAvatar";
@@ -20,6 +20,7 @@ import { DesktopChatMessage } from "./DesktopChatMessage";
 import { DesktopSubchatCreator } from "./DesktopSubchatCreator";
 import { DesktopSectionAccessSheet } from "./DesktopSectionAccessSheet";
 import { useDesktopChatThread } from "./useDesktopChatThread";
+import { createDesktopTrpcClient } from "../api/trpc";
 
 export function DesktopChatThread({
   chatId,
@@ -55,8 +56,19 @@ export function DesktopChatThread({
   } = useDesktopChatThread(config, session, chatId, onInboxChange);
   const [replyTo, setReplyTo] = useState<ChatMessageView | null>(null);
   const [editing, setEditing] = useState<ChatMessageView | null>(null);
+  const [groupEmojis, setGroupEmojis] = useState<GroupEmojiView[]>([]);
   const { containerRef: messagesRef, contentRef: messagesContentRef } =
     useChatAutoScroll(chatId, data?.messages.length ?? 0);
+
+  useEffect(() => {
+    if (data?.chat.type !== "group") return;
+    let active = true;
+    const client = createDesktopTrpcClient(config, () => session.access_token);
+    void client.query("chat.groupEmojis", { chatId }).then((value) => {
+      if (active) setGroupEmojis((value as { items: GroupEmojiView[] }).items);
+    }).catch(() => { if (active) setGroupEmojis([]); });
+    return () => { active = false; };
+  }, [chatId, config, data?.chat.type, session.access_token]);
 
   if (loading) {
     return (
@@ -86,8 +98,18 @@ export function DesktopChatThread({
   const isSubchat = Boolean(data.chat.parentChatId);
 
   return (
-    <div className="voople-chat-window flex min-h-0 flex-1 flex-col">
-      <ChatWindowHeaderVisual>
+    <div
+      className="voople-chat-window flex min-h-0 flex-1 flex-col"
+      style={
+        isGroup && data.chat.groupAccentColor
+          ? ({
+              "--group-accent": data.chat.groupAccentColor,
+              "--theme-accent": data.chat.groupAccentColor,
+            } as CSSProperties)
+          : undefined
+      }
+    >
+      <ChatWindowHeaderVisual bannerUrl={data.chat.groupBannerUrl}>
         <button
           type="button"
           onClick={() =>
@@ -108,6 +130,7 @@ export function DesktopChatThread({
             groupIcon={data.chat.groupIcon}
             groupAvatarUrl={data.chat.groupAvatarUrl}
             groupAccentColor={data.chat.groupAccentColor}
+            groupTag={data.chat.groupTag}
             triggerVariant="identity"
             viewerRole={data.chat.viewerRole}
             canManage={data.chat.viewerRole === "owner" || data.chat.viewerRole === "admin"}
@@ -284,6 +307,7 @@ export function DesktopChatThread({
         </p>
       ) : null}
       <DesktopChatComposer
+        chatId={chatId}
         key={editing?.id ?? "new-message"}
         config={config}
         session={session}
@@ -294,6 +318,7 @@ export function DesktopChatThread({
         onSend={sendMessage}
         onEdit={editMessage}
         onCancelEdit={() => setEditing(null)}
+        customEmojis={data.chat.type === "group" ? groupEmojis : []}
       />
     </div>
   );

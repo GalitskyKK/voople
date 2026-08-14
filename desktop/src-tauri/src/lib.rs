@@ -13,6 +13,14 @@ use tauri::{
     Manager, WindowEvent,
 };
 
+mod process_audio;
+#[cfg(feature = "process-audio-publisher")]
+mod process_audio_publisher;
+#[cfg(not(feature = "process-audio-publisher"))]
+#[path = "process_audio_publisher_stub.rs"]
+mod process_audio_publisher;
+mod release_notes;
+
 struct WindowBehavior {
     close_to_tray: AtomicBool,
     minimize_to_tray: AtomicBool,
@@ -53,6 +61,15 @@ struct RuntimeInfo {
     runtime: &'static str,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ProcessAudioCapabilities {
+    publisher_included: bool,
+    publisher_supported: bool,
+    current_windows_build: Option<u32>,
+    minimum_windows_build: u32,
+}
+
 #[tauri::command]
 fn runtime_info() -> RuntimeInfo {
     RuntimeInfo {
@@ -62,6 +79,42 @@ fn runtime_info() -> RuntimeInfo {
         runtime: "tauri",
     }
 }
+
+#[tauri::command]
+fn process_audio_capabilities() -> ProcessAudioCapabilities {
+    const MINIMUM_WINDOWS_BUILD: u32 = 20_348;
+    let current_windows_build = windows_build_number();
+    ProcessAudioCapabilities {
+        publisher_included: cfg!(feature = "process-audio-publisher"),
+        publisher_supported: cfg!(feature = "process-audio-publisher")
+            && current_windows_build.is_some_and(|build| build >= MINIMUM_WINDOWS_BUILD),
+        current_windows_build,
+        minimum_windows_build: MINIMUM_WINDOWS_BUILD,
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn windows_build_number() -> Option<u32> {
+    #[repr(C)]
+    struct RtlOsVersionInfo {
+        size: u32,
+        major: u32,
+        minor: u32,
+        build: u32,
+        platform: u32,
+        service_pack: [u16; 128],
+    }
+    #[link(name = "ntdll")]
+    unsafe extern "system" { fn RtlGetVersion(info: *mut RtlOsVersionInfo) -> i32; }
+    let mut info = RtlOsVersionInfo {
+        size: std::mem::size_of::<RtlOsVersionInfo>() as u32,
+        major: 0, minor: 0, build: 0, platform: 0, service_pack: [0; 128],
+    };
+    (unsafe { RtlGetVersion(&mut info) } >= 0).then_some(info.build)
+}
+
+#[cfg(not(target_os = "windows"))]
+fn windows_build_number() -> Option<u32> { None }
 
 fn restore_main_window(app: &tauri::AppHandle) -> Result<(), String> {
     let window = app
@@ -81,6 +134,27 @@ fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 fn restart_application(app: tauri::AppHandle) {
     app.restart();
+}
+
+#[tauri::command]
+fn list_process_audio_sources() -> Result<Vec<process_audio::ProcessAudioSource>, String> {
+    process_audio::list_process_audio_sources()
+}
+
+#[tauri::command]
+fn start_process_audio_share(
+    state: tauri::State<'_, process_audio_publisher::ProcessAudioPublishers>,
+    input: process_audio_publisher::StartProcessAudioInput,
+) -> Result<(), String> {
+    state.start(input)
+}
+
+#[tauri::command]
+fn stop_process_audio_share(
+    state: tauri::State<'_, process_audio_publisher::ProcessAudioPublishers>,
+    screen_session_id: String,
+) -> Result<(), String> {
+    state.stop(&screen_session_id)
 }
 
 #[tauri::command]
@@ -106,7 +180,7 @@ fn open_external_url(url: String) -> Result<(), String> {
 
 #[tauri::command]
 async fn upload_presigned_media(request: Request<'_>) -> Result<(), String> {
-    const MAX_UPLOAD_BYTES: usize = 40 * 1024 * 1024;
+    const MAX_UPLOAD_BYTES: usize = 100 * 1024 * 1024;
 
     let bytes = match request.body() {
         InvokeBody::Raw(bytes) if !bytes.is_empty() && bytes.len() <= MAX_UPLOAD_BYTES => {
@@ -253,6 +327,7 @@ pub fn run() {
     tauri::Builder::default()
         .manage(WindowBehavior::default())
         .manage(VoiceHeartbeat::default())
+        .manage(process_audio_publisher::ProcessAudioPublishers::default())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -324,13 +399,20 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             runtime_info,
+            process_audio_capabilities,
             show_main_window,
             restart_application,
+            list_process_audio_sources,
+            start_process_audio_share,
+            stop_process_audio_share,
             open_external_url,
             upload_presigned_media,
             set_window_behavior,
             start_voice_heartbeat,
-            stop_voice_heartbeat
+            stop_voice_heartbeat,
+            release_notes::record_installed_update,
+            release_notes::desktop_release_notes,
+            release_notes::acknowledge_desktop_release
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Voople desktop");

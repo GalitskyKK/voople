@@ -6,6 +6,7 @@ import { Loader2, MessageCircle, UsersRound } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { trpc } from "@/lib/trpc/client";
+import { GroupAvatar } from "./GroupAvatar";
 
 export function ChatInvitePage({ token }: { token: string }) {
   const router = useRouter();
@@ -28,17 +29,49 @@ export function ChatInvitePage({ token }: { token: string }) {
 
   return (
     <main id="main-content" className="grid min-h-dvh place-items-center px-4 py-10">
-      <section className="voople-panel w-full max-w-md p-6 text-center">
-        <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[var(--app-accent-soft)] text-(--theme-accent)">
-          {preview.data?.available ? <UsersRound className="h-7 w-7" /> : <MessageCircle className="h-7 w-7" />}
-        </span>
+      <section
+        className="voople-panel relative w-full max-w-md overflow-hidden p-6 text-center"
+        style={preview.data?.groupAccentColor ? {
+          "--group-accent": preview.data.groupAccentColor,
+          background: `linear-gradient(145deg, color-mix(in srgb, ${preview.data.groupAccentColor} 18%, var(--app-surface)), var(--app-surface) 55%)`,
+        } as React.CSSProperties : undefined}
+      >
+        {preview.data?.groupBannerUrl ? (
+          <div
+            className="absolute inset-x-0 top-0 h-28 bg-cover bg-center opacity-65 [mask-image:linear-gradient(to_bottom,black,transparent)]"
+            style={{ backgroundImage: `url("${preview.data.groupBannerUrl}")` }}
+            aria-hidden="true"
+          />
+        ) : null}
+        <div className="relative">
+          {preview.data?.available ? (
+            <GroupAvatar
+              name={preview.data.chatName ?? "Группа"}
+              avatarUrl={preview.data.groupAvatarUrl}
+              icon={preview.data.groupIcon}
+              accentColor={preview.data.groupAccentColor}
+              size="lg"
+              className="mx-auto border-4 border-[var(--app-surface)]"
+            />
+          ) : (
+            <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[var(--app-accent-soft)] text-(--theme-accent)">
+              <MessageCircle className="h-7 w-7" />
+            </span>
+          )}
 
         {preview.isLoading ? (
           <div className="mx-auto mt-5 h-20 w-full animate-pulse rounded-2xl bg-[var(--app-surface-soft)]" />
         ) : preview.data?.available ? (
           <>
             <p className="mt-5 text-sm text-[var(--app-muted)]">Вас приглашают в беседу</p>
-            <h1 className="mt-1 text-2xl font-semibold">{preview.data.chatName}</h1>
+            <h1 className="mt-1 flex items-center justify-center gap-2 text-2xl font-semibold">
+              {preview.data.chatName}
+              {preview.data.groupTag ? (
+                <span className="rounded-md border border-[var(--group-accent,var(--app-border))] px-1.5 py-0.5 text-[10px] text-[var(--group-accent,var(--theme-accent))]">
+                  {preview.data.groupTag}
+                </span>
+              ) : null}
+            </h1>
             <p className="mt-2 text-sm text-[var(--app-muted)]">
               Уже {preview.data.memberCount} участников. Голосовая комната подключается отдельно —
               вступление в чат не включает микрофон.
@@ -83,6 +116,7 @@ export function ChatInvitePage({ token }: { token: string }) {
             </Link>
           </>
         )}
+        </div>
       </section>
     </main>
   );

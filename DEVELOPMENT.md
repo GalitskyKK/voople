@@ -99,6 +99,12 @@ The server verifies ownership, actual object size and MIME before persisting a
 post or chat message. Do not add direct `fetch(presignedUrl)` calls in desktop
 components; use `uploadPresignedFile`.
 
+Web chat attachments use the same presigned flow and must pass the exact `chatId` to
+`upload.createPresigned`. Do not reintroduce multipart uploads through a Next.js route for large
+group files: serverless request-body limits and proxy timeouts will surface as `Failed to fetch`.
+Group file limits are resolved server-side from membership and the effective boost level, then
+verified again by `sendMessage` after `HeadObject` and file-signature inspection.
+
 ## Database migrations
 
 Database changes are applied separately from the public repository. Before
@@ -118,6 +124,34 @@ clients. For the current unreleased changes, apply these files in order:
 10. `drizzle/33-account-deletion-requests.sql`;
 11. `drizzle/34-account-deletion-worker.sql`;
 12. `drizzle/35-unified-moderation-reports.sql`.
+13. `drizzle/36-post-media.sql`;
+14. `drizzle/37-group-boost-slots.sql`;
+15. `drizzle/38-group-emojis.sql`;
+16. `drizzle/39-structured-chat-content.sql`;
+17. `drizzle/40-cloud-post-drafts.sql`.
+18. `drizzle/42-group-banner-tag.sql`.
+19. `drizzle/43-group-sounds.sql`.
+20. `drizzle/44-group-vanity-invite.sql`.
+
+Migrations 36–44 are an expand-first rollout. Post media remains dual-read and new posts mirror
+their first attachment to legacy columns until old desktop versions have aged out. Do not remove
+legacy fields in the same release. Boost slots, custom emoji nodes and drafts require their server
+authorization path; do not expose direct permissive RLS writes.
+
+Migration 42 adds nullable group banner and tag fields. The saved values are retained during a
+boost grace period or level loss, while read mappers expose them to chat/public UI only when the
+effective group level is high enough (banner: 6, tag: 12).
+
+Migration 43 adds the group soundboard. Uploads are staged under the user-owned
+`group-sound` prefix, validated by `HeadObject` and audio metadata, then copied to a stable
+group-owned key. The database function rechecks admin membership and the effective level under
+an advisory transaction lock before enforcing the 8/16/32/48 limits.
+
+Migration 44 adds the unique permanent `/invite/<slug>` address and role colors for level-24
+groups. Preview and membership insertion both re-check the effective level; the database
+function locks the group customization row before checking the member limit and inserting a
+member. Saved link and role colors remain stored when the level drops but are not exposed as
+effective presentation until the level returns.
 
 The first migration may trigger the Supabase warning about a new table without
 RLS. Choose **Run and enable RLS**. Later migrations explicitly enable RLS, but
@@ -151,6 +185,23 @@ cd desktop
 npm run build
 cargo check --manifest-path src-tauri/Cargo.toml
 ```
+
+## Desktop release command
+
+Run `npm run release` only from a clean `master` that exactly matches
+`origin/master`. The interactive command proposes a semantic version, builds
+release notes from commits after the latest `desktop-v*` tag, synchronizes all
+desktop version files and runs the complete web, desktop and E2E verification
+chain. It shows the resulting diff before asking for a separate publish
+confirmation. Answering no restores the edited version files; a failed check
+does not create or push a release tag.
+
+After confirmation the command creates one release commit, an annotated
+`desktop-vX.Y.Z` tag and pushes both atomically. GitHub Actions owns updater
+signing and publication; the local command never reads signing secrets.
+Database migrations under `drizzle/` intentionally remain local in this
+private deployment workflow and must be applied and recorded operationally
+before publishing a release that depends on them.
 
 `npm run lint` may print existing warnings, but new work must not add errors or
 new warnings. `npm run check:architecture` must pass without increasing baseline
@@ -228,6 +279,8 @@ For visual-only changes, begin at the canonical shared component listed in
 - Rust/native commands: `npm run tauri:dev:debug` terminal;
 - occupied ports: `npm run dev:stop`, then start again;
 - updater: inspect the updater status UI and release endpoint response;
+- release notes: Settings → Window → `Что нового` reads only locally recorded,
+  verified update transitions; a clean install correctly has an empty history;
 - native notifications: check Windows notification permissions, then inspect
   the desktop renderer log for the originating realtime/tRPC failure without
   logging message text or access tokens;
@@ -251,10 +304,14 @@ Voice UI is shared by web and Tauri under `src/components/chat/voice`:
   constraints in buttons or views;
 - voice preferences are persisted through `src/lib/livekit/voice-preferences.ts`.
 
-System-output screen capture is intentionally disabled: on Windows it also
-captures remote Voople playback and republishes it as echo. Re-enable shared
-application audio only after the desktop adapter has per-process loopback or an
-equivalent exclusion path. Run the matrix in `VOICE_TESTING.md` after changes.
+Full system-output capture remains disabled. Web and normal desktop builds request audio from the
+selected tab/window through `getDisplayMedia`, exclude the system mix and continue video-only when
+Chromium/WebView returns no audio track. The experimental desktop adapter can enumerate Windows
+audio sessions, capture one process tree through WASAPI Process Loopback and publish it with a
+native LiveKit participant, thereby excluding Вупл. playback. Keep that Cargo feature disabled in
+production until `npm run tauri:build:process-audio`, the GitHub/MSVC toolchain and the full matrix
+in `VOICE_TESTING.md` pass. Native audio automatically replaces browser capture rather than running
+beside it, preventing duplicate screen-audio tracks.
 
 Before a desktop release, test with two accounts on separate devices:
 
@@ -263,3 +320,5 @@ Before a desktop release, test with two accounts on separate devices:
 - voice call, mute state, camera, screen sharing and reconnect;
 - profile editor uploads and live preview;
 - updater discovery, download, signature verification and restart.
+- post-update `Что нового`: it opens once for the installed version, closes with
+  Escape and remains available from Settings without reopening on every launch.

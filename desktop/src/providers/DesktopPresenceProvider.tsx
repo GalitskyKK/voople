@@ -1,26 +1,21 @@
 import type { Session } from "@supabase/supabase-js";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import {
   PRESENCE_VISIBILITY_EVENT,
   shouldPublishPresence,
 } from "@/lib/presence-privacy";
+import {
+  OnlineUsersProvider,
+  useOnlineUsers,
+} from "@/providers/OnlinePresenceProvider";
 
 import { getSupabase } from "../auth/supabase";
 import type { DesktopConfig } from "../config";
 import { createDesktopTrpcClient } from "../api/trpc";
 
-const DesktopPresenceContext = createContext<ReadonlySet<string>>(new Set());
-
 export function useDesktopPresence() {
-  return useContext(DesktopPresenceContext);
+  return useOnlineUsers().onlineUserIds;
 }
 
 export function DesktopPresenceProvider({
@@ -94,10 +89,9 @@ export function DesktopPresenceProvider({
     };
   }, [client, config, publishPresence, session.user.id]);
 
-  const value = useMemo(() => onlineUserIds, [onlineUserIds]);
   return (
-    <DesktopPresenceContext.Provider value={value}>
+    <OnlineUsersProvider onlineUserIds={onlineUserIds}>
       {children}
-    </DesktopPresenceContext.Provider>
+    </OnlineUsersProvider>
   );
 }

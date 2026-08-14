@@ -10,10 +10,36 @@ import { toggleLike } from "@/server/services/likes.service"
 import { createPost, deletePost, getPostById, updatePostText } from "@/server/services/post.service"
 import { createRepost, toggleRepost } from "@/server/services/reposts.service"
 import { recordPostView } from "@/server/services/views.service"
+import { deletePostDraftRest, getPostDraftRest, savePostDraftRest } from "@/server/data/post-drafts-rest"
+import { POST_MEDIA_LIMITS } from "@/lib/post-media"
 
 import { createTRPCRouter, optionalAuthProcedure, protectedProcedure } from "../init"
 
+const postMediaInput = z.object({
+  mediaKey: z.string().min(1).max(500),
+  mediaType: z.enum(["image", "gif", "meme", "video"]),
+  width: z.number().int().positive().max(20_000).optional(),
+  height: z.number().int().positive().max(20_000).optional(),
+  durationSeconds: z.number().nonnegative().max(86_400).optional(),
+});
+
 export const postRouter = createTRPCRouter({
+  draft: protectedProcedure.query(({ ctx }) => getPostDraftRest(ctx.user.id)),
+  saveDraft: protectedProcedure
+    .input(z.object({
+      text: z.string().max(1000),
+      media: z.array(postMediaInput).max(POST_MEDIA_LIMITS.maxItems),
+      expectedRevision: z.number().int().nonnegative(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.savePostDraft, ctx.user.id)
+      try {
+        return await savePostDraftRest({ userId: ctx.user.id, ...input })
+      } catch (error) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось сохранить черновик" })
+      }
+    }),
+  deleteDraft: protectedProcedure.mutation(({ ctx }) => deletePostDraftRest(ctx.user.id)),
   getById: optionalAuthProcedure
     .input(z.object({ postId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
@@ -30,6 +56,7 @@ export const postRouter = createTRPCRouter({
         text: z.string().max(280, "Максимум 280 символов").optional(),
         mediaKey: z.string().min(1).max(500).optional(),
         mediaType: z.enum(["image", "gif", "meme", "video", "circle"]).optional(),
+        media: z.array(postMediaInput).max(POST_MEDIA_LIMITS.maxItems).optional(),
         appearanceScene: z.enum(["midnight", "aurora", "paper"]).optional()
       })
     )

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { HelpCircle, Send } from "lucide-react";
 
 import { trpc } from "@/lib/trpc/client";
@@ -9,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { ShareButton } from "@/components/ui/ShareButton";
+import { useAuthGate } from "@/components/auth/AuthGateProvider";
 
 const QUESTION_MAX_LENGTH = 500;
 const ANSWER_MAX_LENGTH = 1000;
@@ -36,6 +36,7 @@ export function ProfileQuestions({
   autoFocusAsk = false,
 }: ProfileQuestionsProps) {
   const utils = trpc.useUtils();
+  const { requireAuth } = useAuthGate();
 
   const answered = trpc.questions.listAnswered.useQuery({ profileUserId });
   const reactions = trpc.questions.listReactions.useQuery({ profileUserId });
@@ -54,13 +55,14 @@ export function ProfileQuestions({
       )}
 
       {!isOwner && !canAsk && (
-        <Link
-          href="/login"
+        <button
+          type="button"
           className="voople-panel flex items-center gap-2 p-4 text-sm text-[color-mix(in_srgb,var(--foreground)_70%,transparent)] transition hover:text-[var(--foreground)]"
+          onClick={() => requireAuth({ title: "Задать вопрос" })}
         >
           <HelpCircle className="h-4 w-4 text-(--theme-accent)" />
           Войдите, чтобы задать анонимный вопрос
-        </Link>
+        </button>
       )}
 
       {isOwner && inbox.data && inbox.data.length > 0 && (

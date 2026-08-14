@@ -47,7 +47,10 @@ export function ChatPublicGroupResults({
                   size="md"
                 />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{group.name}</span>
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="block min-w-0 truncate text-sm font-medium">{group.name}</span>
+                    {group.tag ? <span className="shrink-0 rounded bg-[var(--app-accent-soft)] px-1 py-0.5 text-[9px] font-bold text-[var(--theme-accent)]">{group.tag}</span> : null}
+                  </span>
                   <span className="flex items-center gap-1 truncate text-xs text-[var(--app-muted)]">
                     {group.publicSlug ? `@${group.publicSlug} · ` : null}
                     <UsersRound className="h-3 w-3 shrink-0" /> {group.memberCount} участников

@@ -39,11 +39,11 @@ export function GroupMembersList({
           <div key={member.id} className="flex items-center gap-2 rounded-xl px-2 py-2">
             {renderAvatar(member)}
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{member.displayName}</p>
+              <p className="truncate text-sm font-medium" style={member.roleColor ? { color: member.roleColor } : undefined}>{member.displayName}</p>
               <p className="truncate text-xs text-[var(--app-muted)]">@{member.username}</p>
             </div>
             {member.role !== "member" ? (
-              <span className="rounded-full bg-[var(--app-accent-soft)] px-2 py-1 text-[0.65rem] font-semibold text-(--theme-accent)">
+              <span className="rounded-full bg-[var(--app-accent-soft)] px-2 py-1 text-[0.65rem] font-semibold text-(--theme-accent)" style={member.roleColor ? { color: member.roleColor } : undefined}>
                 {member.role === "owner" ? "владелец" : "админ"}
               </span>
             ) : null}

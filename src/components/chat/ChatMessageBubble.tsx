@@ -28,7 +28,7 @@ type ChatMessageBubbleProps = {
   showSender?: boolean;
   onToggleReaction?: (
     message: ChatMessageView,
-    emoji: ChatReactionEmoji,
+    reaction: { emoji: string; emojiId?: string | null },
   ) => void;
   groupPosition?: "only" | "start" | "middle" | "end";
   selectionMode?: boolean;
@@ -90,7 +90,7 @@ export function ChatMessageBubble({
       onDoubleClick={(event) => {
         if (!isLg || selectionMode || !onToggleReaction) return;
         event.preventDefault();
-        onToggleReaction(message, "❤️");
+        onToggleReaction(message, { emoji: "❤️" });
       }}
       onContextMenu={(event) => {
         if (!hasMenu) return
@@ -111,7 +111,7 @@ export function ChatMessageBubble({
       selectionState={selectionMode ? selected : undefined}
       onToggleReaction={
         onToggleReaction && !selectionMode
-          ? (emoji) => onToggleReaction(message, emoji as ChatReactionEmoji)
+          ? (reaction) => onToggleReaction(message, reaction)
           : undefined
       }
       senderAvatar={
@@ -139,7 +139,7 @@ export function ChatMessageBubble({
               onAddToPlaylist={onAddToPlaylist}
               isMine={isMine}
               canAddToPlaylist={canSaveToPlaylist}
-              onToggleReaction={onToggleReaction}
+              onToggleReaction={(target, emoji: ChatReactionEmoji) => onToggleReaction?.(target, { emoji })}
               onSelect={onSelect}
               showOnHover={isLg}
               showTrigger={false}

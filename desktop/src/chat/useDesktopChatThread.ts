@@ -8,7 +8,9 @@ import type {
   ChatMessageView,
   ChatPendingUpload,
   ChatThreadSummary,
+  GroupEmojiView,
 } from "@/types/chat";
+import { parseComposerContent } from "@/lib/chat/message-content";
 
 import { createDesktopTrpcClient } from "../api/trpc";
 import { getSupabase } from "../auth/supabase";
@@ -24,6 +26,7 @@ export type DesktopMessageDraft = {
   text: string;
   replyTo: ChatMessageView | null;
   upload: ChatPendingUpload | null;
+  customEmojis?: GroupEmojiView[];
 };
 
 function parseThread(value: unknown): DesktopChatThreadData {
@@ -59,12 +62,14 @@ function attachmentFromUpload(
 
 function toggleOptimisticReaction(
   reactions: ChatMessageReaction[],
-  emoji: string,
+  reactionInput: { emoji: string; emojiId?: string | null },
 ) {
   const next = [...reactions];
-  const index = next.findIndex((reaction) => reaction.emoji === emoji);
+  const index = next.findIndex((reaction) => reactionInput.emojiId
+    ? reaction.emojiId === reactionInput.emojiId
+    : reaction.emoji === reactionInput.emoji);
   if (index < 0) {
-    next.push({ emoji, count: 1, reactedByMe: true });
+    next.push({ ...reactionInput, count: 1, reactedByMe: true });
     return next;
   }
   const reaction = next[index]!;
@@ -163,7 +168,8 @@ export function useDesktopChatThread(
   }, [chatId, config, load, onInboxChange]);
 
   const sendMessage = useCallback(
-    async ({ text, replyTo, upload }: DesktopMessageDraft) => {
+    async (draft: DesktopMessageDraft) => {
+      const { text, replyTo, upload } = draft;
       const trimmed = text.trim();
       if ((!trimmed && !upload) || sending) return false;
       const messageId = crypto.randomUUID();
@@ -210,6 +216,9 @@ export function useDesktopChatThread(
           chatId,
           messageId,
           text: trimmed || undefined,
+          content: draft.customEmojis?.length && trimmed
+            ? parseComposerContent(trimmed, draft.customEmojis)
+            : undefined,
           mediaKey: upload?.mediaKey,
           mediaTitle:
             upload?.kind === "audio"
@@ -335,7 +344,7 @@ export function useDesktopChatThread(
   );
 
   const toggleReaction = useCallback(
-    async (messageId: string, emoji: string) => {
+    async (messageId: string, reaction: { emoji: string; emojiId?: string | null }) => {
       const previous = data;
       setError(null);
       setData((current) =>
@@ -348,7 +357,7 @@ export function useDesktopChatThread(
                       ...message,
                       reactions: toggleOptimisticReaction(
                         message.reactions,
-                        emoji,
+                        reaction,
                       ),
                     }
                   : message,
@@ -359,7 +368,7 @@ export function useDesktopChatThread(
       try {
         const result = (await client.mutation("chat.toggleReaction", {
           messageId,
-          emoji,
+          ...(reaction.emojiId ? { emojiId: reaction.emojiId } : { emoji: reaction.emoji }),
         })) as { messageId: string; reactions: ChatMessageReaction[] };
         setData((current) =>
           current

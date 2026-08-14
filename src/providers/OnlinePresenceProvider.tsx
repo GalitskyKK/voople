@@ -21,6 +21,21 @@ export function useOnlineUsers() {
   return useContext(OnlinePresenceContext);
 }
 
+export function OnlineUsersProvider({
+  onlineUserIds,
+  children,
+}: {
+  onlineUserIds: ReadonlySet<string>;
+  children: React.ReactNode;
+}) {
+  const value = useMemo(() => ({ onlineUserIds }), [onlineUserIds]);
+  return (
+    <OnlinePresenceContext.Provider value={value}>
+      {children}
+    </OnlinePresenceContext.Provider>
+  );
+}
+
 export function OnlinePresenceProvider({ children }: { children: React.ReactNode }) {
   const { data: me } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
   const touchPresence = trpc.user.touchPresence.useMutation();
@@ -83,7 +98,5 @@ export function OnlinePresenceProvider({ children }: { children: React.ReactNode
     };
   }, [me?.id, publishPresence, touchPresenceMutate]);
 
-  const value = useMemo(() => ({ onlineUserIds }), [onlineUserIds]);
-
-  return <OnlinePresenceContext.Provider value={value}>{children}</OnlinePresenceContext.Provider>;
+  return <OnlineUsersProvider onlineUserIds={onlineUserIds}>{children}</OnlineUsersProvider>;
 }

@@ -2,9 +2,10 @@
 
 import { useCallback, useState } from "react";
 
-import { readJsonResponse } from "@/lib/http/json-response";
 import { chatAttachmentKindFromKey } from "@/lib/object-storage";
 import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
+import { trpc } from "@/lib/trpc/client";
+import { uploadPresignedFile } from "@/lib/uploads/presigned-upload";
 import type { ChatPendingUpload } from "@/types/chat";
 
 export type PendingChatUpload = ChatPendingUpload;
@@ -16,33 +17,10 @@ export type PendingChatAudioDraft = {
   durationSeconds: number | null;
 };
 
-async function uploadViaServer(file: File, purpose?: "voice" | "circle"): Promise<string> {
-  const formData = new FormData();
-  formData.append("file", file);
-  if (purpose) formData.append("purpose", purpose);
-
-  const response = await fetch("/api/upload/chat", {
-    method: "POST",
-    body: formData,
-    credentials: "include",
-  });
-
-  const payload = await readJsonResponse<{ key?: string; error?: string }>(response);
-
-  if (!response.ok) {
-    throw new Error(payload?.error ?? `Ошибка загрузки (${response.status})`);
-  }
-
-  if (!payload?.key) {
-    throw new Error(payload?.error ?? "Сервер не вернул ключ файла");
-  }
-
-  return payload.key;
-}
-
-export function useChatUpload() {
+export function useChatUpload(chatId: string) {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const presign = trpc.upload.createPresigned.useMutation();
 
   const uploadFile = useCallback(async (
     file: File,
@@ -64,7 +42,19 @@ export function useChatUpload() {
 
     setIsUploading(true);
     try {
-      const mediaKey = await uploadViaServer(file, options?.purpose);
+      const prepared = await presign.mutateAsync({
+        purpose: "chat",
+        contentType,
+        sizeBytes: file.size,
+        chatMediaKind: options?.purpose,
+        chatId,
+      });
+      await uploadPresignedFile({
+        url: prepared.uploadUrl,
+        file,
+        contentType,
+      });
+      const mediaKey = prepared.key;
       const resolvedKind = chatAttachmentKindFromKey(mediaKey);
       // Keep a local object URL for optimistic playback while the server is
       // producing a short-lived private download URL.
@@ -84,7 +74,7 @@ export function useChatUpload() {
     } finally {
       setIsUploading(false);
     }
-  }, []);
+  }, [chatId, presign]);
 
   return {
     uploadFile,

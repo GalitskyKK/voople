@@ -10,16 +10,19 @@ import {
 } from "@/components/layout/AppNavigationVisual";
 import { AppShellFrame } from "@/components/layout/AppShellFrame";
 import { AppPageContent } from "@/components/layout/AppPageContent";
+import { AccountChipVisual } from "@/components/layout/AccountChipVisual";
+import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { COPY } from "@/lib/constants/copy";
+import { resolveRingStyle } from "@/lib/customization/rings";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 import { useVoiceSession } from "@/components/chat/voice/VoiceSessionProvider";
 
 import { syncDesktopUser } from "../api/sync-user";
+import { createDesktopTrpcClient } from "../api/trpc";
 import { getSupabase } from "../auth/supabase";
 import type { DesktopConfig } from "../config";
 import { useDesktopHotkeys } from "../hooks/useDesktopHotkeys";
 import { useNativeVoiceHeartbeat } from "../hooks/useNativeVoiceHeartbeat";
-import { DesktopAutoUpdater } from "../updates/DesktopAutoUpdater";
 import { DesktopNotificationBridge } from "../notifications/DesktopNotificationBridge";
 const DesktopFeed = lazy(() =>
   import("../feed/DesktopFeed").then((module) => ({
@@ -136,6 +139,13 @@ export function DesktopShell({
   const [composerOpen, setComposerOpen] = useState(false);
   const [feedVersion, setFeedVersion] = useState(0);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [viewerSummary, setViewerSummary] = useState<{
+    username: string;
+    displayName: string;
+    avatarUrl?: string | null;
+    avatarDecorationUrl?: string | null;
+    avatarRingId?: string | null;
+  } | null>(null);
   const { preferences } = useAppPreferences();
   const voiceSession = useVoiceSession();
   useNativeVoiceHeartbeat({
@@ -159,6 +169,27 @@ export function DesktopShell({
       active = false;
     };
   }, [config, session]);
+
+  useEffect(() => {
+    let active = true;
+    const client = createDesktopTrpcClient(config, () => session.access_token);
+    void client.query("user.me").then((value) => {
+      if (!active || !value || typeof value !== "object") return;
+      const summary = value as Record<string, unknown>;
+      if (typeof summary.username !== "string" || typeof summary.displayName !== "string") return;
+      setViewerSummary({
+        username: summary.username,
+        displayName: summary.displayName,
+        avatarUrl: typeof summary.avatarUrl === "string" ? summary.avatarUrl : null,
+        avatarDecorationUrl:
+          typeof summary.avatarDecorationUrl === "string" ? summary.avatarDecorationUrl : null,
+        avatarRingId: typeof summary.avatarRingId === "string" ? summary.avatarRingId : null,
+      });
+    }).catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [config, session.access_token]);
 
   useEffect(() => {
     if (!("__TAURI_INTERNALS__" in window)) return;
@@ -265,6 +296,30 @@ export function DesktopShell({
           pathname={pathname}
           notificationBadge={notificationBadge}
           renderDestination={renderDestination}
+          footerAfter={
+            viewerSummary ? (
+              <button
+                type="button"
+                className="mt-2 block w-full border-t border-[var(--app-border)] pt-3"
+                aria-label="Открыть свой профиль"
+                onClick={() => navigate("/me")}
+              >
+                <AccountChipVisual
+                  displayName={viewerSummary.displayName}
+                  username={viewerSummary.username}
+                  avatar={
+                    <ProfileAvatarVisual
+                      displayName={viewerSummary.displayName}
+                      size="sm"
+                      ringClassName={resolveRingStyle(viewerSummary.avatarRingId)?.className}
+                      avatarImage={viewerSummary.avatarUrl ? <img src={viewerSummary.avatarUrl} alt="" className="h-full w-full object-cover" /> : undefined}
+                      decorationImage={viewerSummary.avatarDecorationUrl ? <img src={viewerSummary.avatarDecorationUrl} alt="" className="h-full w-full object-contain" /> : undefined}
+                    />
+                  }
+                />
+              </button>
+            ) : undefined
+          }
         />
       }
       mainClassName={
@@ -393,7 +448,6 @@ export function DesktopShell({
           />
         </Suspense>
       )}
-      <DesktopAutoUpdater />
     </AppShellFrame>
   );
 }

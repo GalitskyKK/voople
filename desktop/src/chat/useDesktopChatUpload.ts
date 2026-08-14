@@ -17,6 +17,7 @@ type DesktopChatUploadOptions = {
 export function useDesktopChatUpload(
   config: DesktopConfig,
   session: Session,
+  chatId: string,
 ) {
   const [upload, setUpload] = useState<ChatPendingUpload | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -58,8 +59,8 @@ export function useDesktopChatUpload(
         return null;
       }
 
-      if (file.size <= 0 || file.size > 15 * 1024 * 1024) {
-        setError("Файл должен быть не больше 15 МБ");
+      if (file.size <= 0 || file.size > 100 * 1024 * 1024) {
+        setError("Файл должен быть не больше 100 МБ");
         return null;
       }
 
@@ -70,6 +71,7 @@ export function useDesktopChatUpload(
           contentType,
           sizeBytes: file.size,
           chatMediaKind: options?.purpose,
+          chatId,
         })) as { key?: string; uploadUrl?: string };
         if (!presigned.key || !presigned.uploadUrl) {
           throw new Error("Сервер не подготовил загрузку");
@@ -110,7 +112,7 @@ export function useDesktopChatUpload(
         setUploading(false);
       }
     },
-    [clear, client],
+    [chatId, clear, client],
   );
 
   const updateAudioMetadata = useCallback(

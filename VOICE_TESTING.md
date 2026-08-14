@@ -70,12 +70,27 @@ Voople window and its **Open** action must navigate to the notification page.
    the grid without stopping either track.
 5. Stop sharing from the operating-system picker and from Voople. The remote
    tile must disappear in both cases.
-6. Play the remote participant's voice through speakers while sharing. It must
-   not return to that participant as a second delayed voice. Current echo-safe
-   sharing is video-only and the picker must not offer Voople/system audio.
-7. Join and leave from the second device. The remaining client plays one short
+6. Share a Chromium media tab/window with its audio permission enabled. The
+   remote side hears that surface, but the picker must not offer the full system
+   mix. Repeat with a surface that does not expose audio: video must continue and
+   Voople must show the explicit video-only warning.
+7. Play the remote participant's voice through speakers while sharing. It must
+   not return to that participant as a second delayed voice. Confirm that the
+   initiating Voople tab is excluded and `restrictOwnAudio` is applied where
+   Chromium supports it.
+8. Join and leave from the second device. The remaining client plays one short
    local signal for each event. Disable **Room sounds** and repeat without a
    signal.
+9. Start a share but do not press **Смотреть** remotely. Confirm that its screen video/audio
+   publications remain unsubscribed. Start viewing, set screen volume to 0%, 100% and 200%, then
+   stop viewing without leaving the room.
+10. Minimize or blur the sharing desktop window. The local preview shows a paused placeholder,
+   while the remote video and audio continue. Return to Вупл. and confirm the preview resumes.
+11. In an experimental process-audio build select Spotify, a browser and a game in turn. Only the
+    selected process tree is audible; remote voices and Windows notification sounds never return.
+    Close the selected process and stop sharing from the system picker: the service participant and
+    track must both disappear. Repeat on a Windows build below 20348 if available and verify a
+    video-only fallback instead of an error.
 
 ## Network and lifecycle
 

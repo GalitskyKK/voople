@@ -9,6 +9,7 @@ import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import type { PostViewModel } from "@/types/domain";
 import { PostMedia } from "@/components/media/PostMedia";
+import { PostMediaGallery } from "@/components/media/PostMediaGallery";
 import { ProfileAppearanceCard } from "@/components/profile/ProfileAppearanceCard";
 import { ProfileReactions } from "@/components/profile/ProfileReactions";
 import { PostAuthorRow } from "./PostAuthorRow";
@@ -23,6 +24,7 @@ import {
   PostCardSurface,
 } from "./PostCardVisual";
 import { RepostContent } from "./RepostContent";
+import { useAuthGate } from "@/components/auth/AuthGateProvider";
 
 type PostCardProps = {
   post: PostViewModel;
@@ -47,6 +49,7 @@ export function PostCard({
   const appearanceCustomization = post.appearance?.customization ?? c;
   const isStatus = post.kind === "status" && post.status;
   const utils = trpc.useUtils();
+  const { requireAuth } = useAuthGate();
   const [commentsOpen, setCommentsOpen] = useState(commentsAlwaysOpen);
   const [repostPanelOpen, setRepostPanelOpen] = useState(false);
   const [quoteText, setQuoteText] = useState("");
@@ -141,7 +144,9 @@ export function PostCard({
           {displayText && (
             <p className="voople-post-card__text text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">{displayText}</p>
           )}
-          {post.mediaUrl && (
+          {post.media?.length ? (
+            <PostMediaGallery post={post} className="mt-3" />
+          ) : post.mediaUrl && (
             <PostMedia url={post.mediaUrl} mediaType={post.mediaType} className="mt-3" />
           )}
           {post.kind === "appearance" && post.appearance && appearanceCustomization ? (
@@ -215,10 +220,13 @@ export function PostCard({
             </span>
             <button
               type="button"
-              disabled={!viewerId || plainRepost.isPending || quoteRepost.isPending}
-              onClick={() => setRepostPanelOpen((open) => !open)}
+              disabled={plainRepost.isPending || quoteRepost.isPending}
+              onClick={() => {
+                if (!viewerId && !requireAuth({ title: "Сделать репост" })) return;
+                setRepostPanelOpen((open) => !open);
+              }}
               className={cn(
-                "voople-post-action inline-flex items-center gap-1.5 disabled:cursor-default disabled:opacity-50",
+                "voople-post-action inline-flex items-center gap-1.5 disabled:opacity-50",
                 viewerReposted && "text-[var(--foreground)]",
               )}
               aria-pressed={viewerReposted}

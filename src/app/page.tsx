@@ -43,7 +43,7 @@ export default function HomePage() {
             Voople
           </Link>
           <nav className="landing-header__nav" aria-label="Основная навигация">
-            <Link href="/explore" className="landing-header__link">Посмотреть</Link>
+            <Link href="/feed" className="landing-header__link">Открыть в браузере</Link>
             <LandingAccountActions />
           </nav>
         </div>
@@ -64,8 +64,8 @@ export default function HomePage() {
               и ссылки на встречу.
             </p>
             <div className="landing-hero__actions">
-              <Link href="/register" className="landing-button landing-button--primary">
-                Забрать свой @username <ArrowRight aria-hidden="true" />
+              <Link href="/feed" className="landing-button landing-button--primary">
+                Открыть в браузере <ArrowRight aria-hidden="true" />
               </Link>
               <Link
                 href="/download/desktop"
@@ -74,9 +74,6 @@ export default function HomePage() {
               >
                 <Download aria-hidden="true" />
                 Скачать для Windows
-              </Link>
-              <Link href="/feed" className="landing-button landing-button--quiet">
-                Сначала посмотреть
               </Link>
             </div>
             <div className="landing-hero__meta" aria-label="Условия использования">

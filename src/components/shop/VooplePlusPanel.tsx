@@ -16,6 +16,7 @@ import type { PromoPreviewView } from "@/types/promo";
 import type { SubscriptionStatusView } from "@/types/subscription";
 import { VooplePlusBenefits } from "@/components/subscription/VooplePlusBenefits";
 import { VooplePlusShowcase } from "@/components/subscription/VooplePlusShowcase";
+import { VooplePlusGroupLevels } from "@/components/subscription/VooplePlusGroupLevels";
 
 type VooplePlusPanelProps = {
   status: SubscriptionStatusView | undefined;
@@ -82,6 +83,8 @@ export function VooplePlusPanel({
       </div>
 
       <VooplePlusShowcase />
+
+      <VooplePlusGroupLevels />
 
       <div className="voople-plus-offer__included">
         <p>Возможности Вупл+</p>
@@ -211,7 +214,7 @@ export function VooplePlusPanel({
 function VooplePlusFaq() {
   const items = [
     ["Когда начнут работать возможности?", "Сразу после подтверждения оплаты. Статус обновится в профиле и на всех ваших устройствах."],
-    ["Можно ли перенести буст?", "Да. Снимите его с текущей группы и активируйте в другой — отдельная покупка не нужна."],
+    ["Можно ли перенести буст?", "Да. В подписке три слота. Каждый назначенный слот можно перенести в другую группу раз в 7 дней."],
     ["Что будет после окончания подписки?", "Оформление вернётся к базовому виду. Полученные предметы останутся в коллекции и снова откроются после продления."],
   ] as const;
   return (

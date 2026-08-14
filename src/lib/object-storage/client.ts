@@ -175,6 +175,45 @@ export async function headObject(input: {
   }
 }
 
+export async function readObjectPrefix(input: {
+  key: string;
+  bucket: StorageBucketKind;
+  bytes?: number;
+}): Promise<Uint8Array | null> {
+  const { client: s3, config } = getS3Client();
+  const bucketName = resolveBucketName(config, input.bucket);
+  const bytes = Math.max(16, Math.min(input.bytes ?? 64, 4096));
+
+  try {
+    const result = await s3.send(new GetObjectCommand({
+      Bucket: bucketName,
+      Key: input.key,
+      Range: `bytes=0-${bytes - 1}`,
+    }));
+    return result.Body ? await result.Body.transformToByteArray() : null;
+  } catch (error) {
+    if (error instanceof Error && (error.name === "NotFound" || error.name === "NoSuchKey")) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+export async function readObjectBytes(input: {
+  key: string;
+  bucket: StorageBucketKind;
+}): Promise<Uint8Array | null> {
+  const { client: s3, config } = getS3Client();
+  const bucketName = resolveBucketName(config, input.bucket);
+  try {
+    const result = await s3.send(new GetObjectCommand({ Bucket: bucketName, Key: input.key }));
+    return result.Body ? await result.Body.transformToByteArray() : null;
+  } catch (error) {
+    if (error instanceof Error && (error.name === "NotFound" || error.name === "NoSuchKey")) return null;
+    throw error;
+  }
+}
+
 export async function createPresignedGetUrl(input: {
   key: string;
   bucket?: StorageBucketKind;

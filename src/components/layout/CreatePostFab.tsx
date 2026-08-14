@@ -7,19 +7,20 @@ import { COPY } from "@/lib/constants/copy";
 import { mobileFabBottomWithPlayer, MOBILE_FAB_BOTTOM_DEFAULT } from "@/lib/layout/mobile-chrome";
 import { trpc } from "@/lib/trpc/client";
 import { usePlayerStore } from "@/stores/player.store";
-import { MediaUploadControl } from "@/components/media/MediaUploadControl";
+import { PostMediaUploadControl } from "@/components/media/PostMediaUploadControl";
 import { PostComposer } from "@/components/feed/PostComposer";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
-import type { UploadedMedia } from "@/hooks/useMediaUpload";
+import { usePostMediaUploads } from "@/hooks/usePostMediaUploads";
+import { useCloudPostDraft } from "@/hooks/useCloudPostDraft";
 
 export function CreatePostFab() {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
-  const [media, setMedia] = useState<UploadedMedia | null>(null);
-  const [uploadResetKey, setUploadResetKey] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
   const utils = trpc.useUtils();
+  const galleryUploads = usePostMediaUploads();
+  const cloudDraft = useCloudPostDraft({ text, setText, uploads: galleryUploads, enabled: open });
 
   const { data: sessionUser } = trpc.user.viewer.useQuery(undefined, {
     retry: false,
@@ -29,10 +30,10 @@ export function CreatePostFab() {
   const createPost = trpc.post.create.useMutation({
     onSuccess: (newPost) => {
       setText("");
-      setMedia(null);
-      setUploadResetKey((key) => key + 1);
+      galleryUploads.reset();
       setFormError(null);
       setOpen(false);
+      void cloudDraft.clear();
       void utils.feed.getPage.invalidate();
       if (sessionUser?.username) {
         utils.profile.getPostsByUsername.setData(
@@ -51,14 +52,13 @@ export function CreatePostFab() {
   const handlePublish = () => {
     setFormError(null);
     const trimmed = text.trim();
-    if (!trimmed && !media) {
+    if (!trimmed && galleryUploads.media.length === 0) {
       setFormError("Добавьте текст или изображение");
       return;
     }
     createPost.mutate({
       text: trimmed || undefined,
-      mediaKey: media?.mediaKey,
-      mediaType: media?.mediaType,
+      media: galleryUploads.media,
     });
   };
 
@@ -104,20 +104,14 @@ export function CreatePostFab() {
           disabled={createPost.isPending}
           autoFocus
         />
-        <MediaUploadControl
-          key={uploadResetKey}
-          purpose="post"
-          onChange={setMedia}
-          disabled={createPost.isPending}
-          className="mt-3"
-          dropzone
-        />
+        <PostMediaUploadControl uploads={galleryUploads} disabled={createPost.isPending} className="mt-3" />
+        {cloudDraft.active ? <p className="mt-2 text-xs text-[var(--app-muted)]">{cloudDraft.saving ? "Сохраняем облачный черновик…" : cloudDraft.error ?? "Черновик синхронизируется с desktop"}</p> : null}
         {formError && <p className="mt-2 text-sm text-red-400">{formError}</p>}
         <Button
           type="button"
           variant="primary"
           className="mt-4 w-full"
-          disabled={createPost.isPending}
+          disabled={createPost.isPending || galleryUploads.busy}
           onClick={handlePublish}
         >
           {createPost.isPending ? "…" : COPY.publish}

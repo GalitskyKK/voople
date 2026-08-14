@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { createPortal } from "react-dom";
 
@@ -11,6 +11,7 @@ type MediaLightboxProps = {
 };
 
 export function MediaLightbox({ url, alt = "Изображение", onClose }: MediaLightboxProps) {
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
   useEffect(() => {
     if (!url) return;
     const onKey = (event: KeyboardEvent) => {
@@ -32,6 +33,17 @@ export function MediaLightbox({ url, alt = "Изображение", onClose }: 
       role="dialog"
       aria-modal
       aria-label="Просмотр изображения"
+      onPointerDown={(event) => {
+        pointerStart.current = { x: event.clientX, y: event.clientY };
+      }}
+      onPointerUp={(event) => {
+        const start = pointerStart.current;
+        pointerStart.current = null;
+        if (!start) return;
+        const verticalDistance = event.clientY - start.y;
+        const horizontalDistance = Math.abs(event.clientX - start.x);
+        if (verticalDistance > 80 && verticalDistance > horizontalDistance) onClose();
+      }}
     >
       <button
         type="button"

@@ -1,10 +1,20 @@
 import "server-only";
 
 import { createHash, randomBytes } from "node:crypto";
-import { AccessToken } from "livekit-server-sdk";
+import { AccessToken, TrackSource } from "livekit-server-sdk";
 
 import { getAdminClient } from "@/lib/supabase/admin";
+import { screenShareQualityForEntitlements } from "@/lib/group-perks";
 import { getChatMembershipRest } from "@/server/data/chat-access-rest";
+import {
+  acceptGroupVanityInviteRest,
+  previewGroupVanityInviteRest,
+} from "@/server/data/chat-vanity-invites-rest";
+import {
+  getGroupCommunityRest,
+  loadGroupCommunitySummariesRest,
+} from "@/server/data/chat-community-rest";
+import { hasActiveSubscriptionRest } from "@/server/data/subscription-rest";
 import {
   toProfileCustomizationView,
   type CustomizationRow,
@@ -136,22 +146,33 @@ export async function previewChatInviteRest(token: string): Promise<ChatInvitePr
 
   if (error) throw new Error(error.message);
   if (!data) {
+    const vanityPreview = await previewGroupVanityInviteRest(token);
+    if (vanityPreview) return vanityPreview;
     return {
       available: false,
       reason: "missing",
       chatId: null,
       chatName: null,
+      groupIcon: null,
+      groupAvatarUrl: null,
+      groupBannerUrl: null,
+      groupTag: null,
+      groupAccentColor: null,
       memberCount: 0,
       expiresAt: null,
     };
   }
 
   const chat = Array.isArray(data.chats) ? data.chats[0] : data.chats;
-  const { count, error: countError } = await admin
-    .from("chat_members")
-    .select("user_id", { count: "exact", head: true })
-    .eq("chat_id", data.chat_id);
+  const [{ count, error: countError }, communities] = await Promise.all([
+    admin
+      .from("chat_members")
+      .select("user_id", { count: "exact", head: true })
+      .eq("chat_id", data.chat_id),
+    loadGroupCommunitySummariesRest([data.chat_id], ""),
+  ]);
   if (countError) throw new Error(countError.message);
+  const community = communities.get(data.chat_id);
 
   const isExpired = new Date(data.expires_at).getTime() <= Date.now();
   const reason = data.revoked_at
@@ -167,12 +188,19 @@ export async function previewChatInviteRest(token: string): Promise<ChatInvitePr
     reason,
     chatId: data.chat_id,
     chatName: typeof chat?.name === "string" ? chat.name : "Группа",
+    groupIcon: community?.icon ?? null,
+    groupAvatarUrl: community?.avatarUrl ?? null,
+    groupBannerUrl: community?.effectiveBannerUrl ?? null,
+    groupTag: community?.effectiveTag ?? null,
+    groupAccentColor: community?.effectiveAccentColor ?? null,
     memberCount: count ?? 0,
     expiresAt: data.expires_at,
   };
 }
 
 export async function acceptChatInviteRest(token: string, userId: string) {
+  const vanityResult = await acceptGroupVanityInviteRest(token, userId);
+  if (vanityResult) return vanityResult;
   const admin = getAdminClient();
   const { data, error } = await admin.rpc("accept_chat_invite", {
     p_token_hash: hashInviteToken(token),
@@ -374,13 +402,23 @@ export async function enterChatRoomRest(chatId: string, userId: string, micMuted
 }
 
 export async function createChatRoomMediaTokenRest(chatId: string, userId: string) {
-  await getMembership(chatId, userId);
+  const membership = await getMembership(chatId, userId);
+  const [hasVooplePlus, community] = await Promise.all([
+    hasActiveSubscriptionRest(userId),
+    membership.type === "group"
+      ? getGroupCommunityRest(membership.accessChatId, userId)
+      : Promise.resolve(null),
+  ]);
+  const screenShareQuality = screenShareQualityForEntitlements(
+    hasVooplePlus,
+    community?.groupLevel ?? 0,
+  );
 
   const endpoints = getLiveKitEndpoints();
   const apiKey = process.env.LIVEKIT_API_KEY?.trim();
   const apiSecret = process.env.LIVEKIT_API_SECRET?.trim();
   if (!endpoints.length || !apiKey || !apiSecret) {
-    return { enabled: false as const };
+    return { enabled: false as const, screenShareQuality };
   }
 
   const admin = getAdminClient();
@@ -421,7 +459,42 @@ export async function createChatRoomMediaTokenRest(chatId: string, userId: strin
     url: endpoints[0]!.url,
     endpoints,
     token: await token.toJwt(),
+    screenShareQuality,
   };
+}
+
+export async function createChatRoomScreenAudioTokenRest(chatId: string, userId: string, screenSessionId: string) {
+  if (!/^[a-f0-9-]{36}$/i.test(screenSessionId)) throw new Error("Некорректная сессия демонстрации");
+  const endpoints = getLiveKitEndpoints();
+  const apiKey = process.env.LIVEKIT_API_KEY?.trim();
+  const apiSecret = process.env.LIVEKIT_API_SECRET?.trim();
+  if (!endpoints.length || !apiKey || !apiSecret) throw new Error("Медиасервер недоступен");
+
+  const admin = getAdminClient();
+  const [{ data: participant, error: participantError }, { data: user, error: userError }] = await Promise.all([
+    admin.from("chat_room_participants").select("user_id").eq("chat_id", chatId).eq("user_id", userId).maybeSingle(),
+    admin.from("users").select("display_name").eq("id", userId).maybeSingle(),
+  ]);
+  if (participantError) throw new Error(participantError.message);
+  if (!participant) throw new Error("Сначала войдите в комнату");
+  if (userError) throw new Error(userError.message);
+
+  const token = new AccessToken(apiKey, apiSecret, {
+    identity: `screen-audio:${userId}:${screenSessionId}`,
+    name: user?.display_name ?? "Звук демонстрации",
+    ttl: "2h",
+    metadata: JSON.stringify({ kind: "screen-audio", ownerId: userId, screenSessionId }),
+    attributes: { "voople.kind": "screen-audio", "voople.ownerId": userId, "voople.screenSessionId": screenSessionId },
+  });
+  token.addGrant({
+    roomJoin: true,
+    room: `chat-${chatId}`,
+    canPublish: true,
+    canSubscribe: false,
+    canPublishData: false,
+    canPublishSources: [TrackSource.SCREEN_SHARE_AUDIO],
+  });
+  return { url: endpoints[0]!.url, token: await token.toJwt(), screenSessionId };
 }
 
 export async function heartbeatChatRoomRest(chatId: string, userId: string, micMuted: boolean) {

@@ -12,18 +12,20 @@ import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { useGroupManagementSheet } from "@/hooks/useGroupManagementSheet";
-import type { ChatGroupAuditEntryView, ChatGroupMemberView, GroupCommunityView } from "@/types/chat";
+import type { ChatGroupAuditEntryView, ChatGroupMemberView, GroupCommunityView, GroupCustomizationInput, GroupEmojiView, GroupSoundView } from "@/types/chat";
 import type { UserSearchHit } from "@/types/search";
 
 import { GroupChatMemberPicker } from "./GroupChatMemberPicker";
 import { GroupAuditLog } from "./GroupAuditLog";
 import { GroupCommunityPanel } from "./GroupCommunityPanel";
+import { GroupEmojiManager } from "./GroupEmojiManager";
 import { GroupInviteLinkPanel } from "./GroupInviteLinkPanel";
 import { GroupMembersList } from "./GroupMembersList";
 import { GroupTopicsSettings } from "./GroupTopicsSettings";
 import { GroupVisibilitySettings } from "./GroupVisibilitySettings";
 import { GroupAvatar } from "./GroupAvatar";
 import { GroupManagementTrigger } from "./GroupManagementTrigger";
+import { GroupSoundManager } from "./GroupSoundManager";
 import {
   GroupSettingsNavigation,
   type GroupSettingsSection,
@@ -35,6 +37,7 @@ type Props = {
   groupIcon: string | null;
   groupAvatarUrl: string | null;
   groupAccentColor: string | null;
+  groupTag: string | null;
   triggerVariant?: "toolbar" | "identity";
   viewerRole: "owner" | "admin" | "member";
   canManage: boolean;
@@ -51,9 +54,18 @@ type Props = {
   updateTopics: (enabled: boolean, layout: "tabs" | "list") => Promise<unknown>;
   updateVisibility: (visibility: "private" | "public") => Promise<unknown>;
   loadCommunity: () => Promise<GroupCommunityView>;
-  updateCustomization: (input: { description: string | null; icon: string | null; publicSlug: string | null; accentColor: string | null; avatarKey?: string | null }) => Promise<GroupCommunityView>;
+  updateCustomization: (input: GroupCustomizationInput) => Promise<GroupCommunityView>;
   uploadAvatar?: (file: File) => Promise<{ mediaKey: string; previewUrl: string }>;
-  setBoost: (enabled: boolean) => Promise<GroupCommunityView>;
+  uploadBanner?: (file: File) => Promise<{ mediaKey: string; previewUrl: string }>;
+  loadEmojis: () => Promise<{ items: GroupEmojiView[]; limit: number }>;
+  createEmoji: (input: { name: string; uploadKey: string; rightsConfirmed: true }) => Promise<GroupEmojiView>;
+  deleteEmoji: (emojiId: string) => Promise<unknown>;
+  uploadEmoji?: (file: File) => Promise<{ mediaKey: string }>;
+  loadSounds: () => Promise<{ items: GroupSoundView[]; limit: number }>;
+  createSound: (input: { name: string; uploadKey: string; rightsConfirmed: true }) => Promise<GroupSoundView>;
+  deleteSound: (soundId: string) => Promise<unknown>;
+  uploadSound?: (file: File) => Promise<{ mediaKey: string }>;
+  setBoost: (enabled: boolean, slot?: 1 | 2 | 3, idempotencyKey?: string) => Promise<GroupCommunityView>;
   removeMember: (memberId: string) => Promise<unknown>;
   changeMemberRole: (memberId: string, role: "admin" | "member") => Promise<unknown>;
   transferOwnership: (memberId: string) => Promise<unknown>;
@@ -71,7 +83,7 @@ export function GroupManagementSheetView(props: Props) {
 
   return (
     <>
-      <GroupManagementTrigger variant={props.triggerVariant ?? "toolbar"} onClick={() => state.setOpen(true)} chatName={props.chatName} memberCount={props.memberCount} groupIcon={props.groupIcon} groupAvatarUrl={props.groupAvatarUrl} groupAccentColor={props.groupAccentColor} />
+      <GroupManagementTrigger variant={props.triggerVariant ?? "toolbar"} onClick={() => state.setOpen(true)} chatName={props.chatName} memberCount={props.memberCount} groupIcon={props.groupIcon} groupAvatarUrl={props.groupAvatarUrl} groupAccentColor={props.groupAccentColor} groupTag={props.groupTag} />
 
       <Sheet
         open={state.open}
@@ -171,15 +183,32 @@ export function GroupManagementSheetView(props: Props) {
             />
             </> : null}
 
-            {section === "appearance" ? <GroupCommunityPanel
-              canManage={props.canManage}
-              groupName={props.chatName}
-              load={props.loadCommunity}
-              save={props.updateCustomization}
-              setBoost={props.setBoost}
-              uploadAvatar={props.uploadAvatar}
-              onChanged={props.onMembersChanged}
-            /> : null}
+            {section === "appearance" ? <>
+              <GroupCommunityPanel
+                canManage={props.canManage}
+                groupName={props.chatName}
+                load={props.loadCommunity}
+                save={props.updateCustomization}
+                setBoost={props.setBoost}
+                uploadAvatar={props.uploadAvatar}
+                uploadBanner={props.uploadBanner}
+                onChanged={props.onMembersChanged}
+              />
+              <GroupEmojiManager
+                canManage={props.canManage}
+                load={props.loadEmojis}
+                create={props.createEmoji}
+                remove={props.deleteEmoji}
+                upload={props.uploadEmoji}
+              />
+              <GroupSoundManager
+                canManage={props.canManage}
+                load={props.loadSounds}
+                create={props.createSound}
+                remove={props.deleteSound}
+                upload={props.uploadSound}
+              />
+            </> : null}
 
             {section === "invites" && props.canManage ? (
               <div className="mt-4">
@@ -187,6 +216,12 @@ export function GroupManagementSheetView(props: Props) {
                   inviteBaseUrl={props.inviteBaseUrl}
                   createInvite={props.createInvite}
                   revokeInvite={props.revokeInvite}
+                  loadVanityInvite={async () => {
+                    const community = await props.loadCommunity();
+                    return community.boostUnlocksVanityInvite
+                      ? community.vanityInviteSlug
+                      : null;
+                  }}
                 />
               </div>
             ) : null}

@@ -81,6 +81,28 @@ intentional: only the trusted server client may access it.
 Never add a broad authenticated `SELECT` policy to the audit table. Membership
 and role checks are contextual and remain in the server data layer.
 
+## Group perks and permanent invitations
+
+Boost perks are derived on the server from the effective group level. The
+canonical thresholds and limits live in `src/lib/group-perks.ts`; UI code must
+not reproduce that table. Stored customization is retained when a subscription
+ends, while gated presentation and mutations use the effective level (including
+the 72-hour grace period).
+
+Level 24 unlocks a unique permanent invitation slug and custom role colours.
+`drizzle/44-group-vanity-invite.sql` owns the uniqueness constraint and the
+`accept_group_vanity_invite` transaction. The RPC rechecks the effective boost
+level, membership and the group-size limit before inserting a member, so a
+copied URL cannot bypass an expired entitlement or client-side controls.
+
+The public invite route resolves ordinary random tokens first and then the
+vanity slug. Preview data exposes only public group identity and effective
+perks; it never exposes member-only configuration. The invitation UI displays
+the permanent URL only while its level-24 entitlement is active.
+
+Role colours are decoration, not authorization. Owner/admin/member permission
+checks always use the stored role enum, regardless of a configured colour.
+
 ## Adding a permission or audit action
 
 1. Add the action to `ChatGroupAuditAction` and the SQL check constraint in a

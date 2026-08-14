@@ -11,6 +11,7 @@ function createLimit(requests: number, window: `${number} s` | `${number} m` | `
 
 export const rateLimits = {
   createPost: () => createLimit(30, "1 h"),
+  savePostDraft: () => createLimit(120, "1 h"),
   updatePost: () => createLimit(30, "10 m"),
   deletePost: () => createLimit(30, "10 m"),
   reportPost: () => createLimit(10, "1 h"),

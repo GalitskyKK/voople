@@ -13,7 +13,8 @@
     "tauri:dev": "tauri dev",
     "tauri:dev:debug": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/dev-debug.ps1",
     "dev:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/stop-dev.ps1",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "tauri:build:process-audio": "tauri build --features process-audio-publisher"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.1",

@@ -4,6 +4,9 @@ import { COPY } from "@/lib/constants/copy";
 import {
   MAIN_NAV_ITEMS,
   MOBILE_NAV_ITEMS,
+  PUBLIC_MOBILE_NAV_ITEMS,
+  PUBLIC_NAV_ITEMS,
+  PUBLIC_SIDEBAR_FOOTER_ITEMS,
   SIDEBAR_FOOTER_ITEMS,
 } from "@/lib/constants/nav";
 import { cn } from "@/lib/utils";
@@ -25,6 +28,7 @@ type NavigationVisualProps = {
   pathname: string;
   renderDestination: NavigationDestinationRenderer;
   notificationBadge?: ReactNode;
+  mode?: "authenticated" | "public";
 };
 
 type AppSidebarVisualProps = NavigationVisualProps & {
@@ -38,7 +42,12 @@ export function AppSidebarVisual({
   notificationBadge,
   navAfter,
   footerAfter,
+  mode = "authenticated",
 }: AppSidebarVisualProps) {
+  const navigationItems = mode === "public" ? PUBLIC_NAV_ITEMS : MAIN_NAV_ITEMS;
+  const footerItems =
+    mode === "public" ? PUBLIC_SIDEBAR_FOOTER_ITEMS : SIDEBAR_FOOTER_ITEMS;
+
   return (
     <aside
       data-nosnippet
@@ -59,7 +68,7 @@ export function AppSidebarVisual({
         className="voople-sidebar__nav voople-scroll flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3"
         aria-label="Основная навигация"
       >
-        {MAIN_NAV_ITEMS.map(({ href, label, icon: Icon, match }) => {
+        {navigationItems.map(({ href, label, icon: Icon, match }) => {
           const active = match(pathname);
           return (
             <Fragment key={href}>
@@ -100,7 +109,7 @@ export function AppSidebarVisual({
       {navAfter}
 
       <div className="voople-sidebar__footer shrink-0 border-t border-[var(--app-border)] px-3 pb-7 pt-5">
-        {SIDEBAR_FOOTER_ITEMS.map(({ href, label, icon: Icon }) => {
+        {footerItems.map(({ href, label, icon: Icon }) => {
           const active = pathname.startsWith(href) && href !== "/login";
           return (
             <Fragment key={href}>
@@ -134,7 +143,11 @@ export function AppBottomNavigationVisual({
   pathname,
   renderDestination,
   notificationBadge,
+  mode = "authenticated",
 }: NavigationVisualProps) {
+  const navigationItems =
+    mode === "public" ? PUBLIC_MOBILE_NAV_ITEMS : MOBILE_NAV_ITEMS;
+
   return (
     <nav
       data-nosnippet
@@ -142,7 +155,7 @@ export function AppBottomNavigationVisual({
       aria-label="Основная навигация"
     >
       <ul className="pointer-events-auto flex h-[3.625rem] items-center gap-0.5 rounded-full border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_92%,transparent)] px-2 shadow-[var(--app-shadow-nav)] backdrop-blur-xl">
-        {MOBILE_NAV_ITEMS.map(({ href, label, icon: Icon, match }) => {
+        {navigationItems.map(({ href, label, icon: Icon, match }) => {
           const active = match(pathname);
           return (
             <li key={href}>

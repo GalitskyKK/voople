@@ -1,22 +1,11 @@
 "use client";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
-import {
-  ConnectionQuality,
-  ConnectionState,
-  LocalAudioTrack,
-  Room,
-  RoomEvent,
-  Track,
-  type RemoteParticipant,
-  type RemoteTrack,
-  type RemoteTrackPublication,
-} from "livekit-client";
+import { ConnectionQuality, ConnectionState, LocalAudioTrack, Room, RoomEvent, Track, type RemoteParticipant, type RemoteTrack, type RemoteTrackPublication } from "livekit-client";
 import { loadVoicePreferences, saveVoicePreferences, type VoicePreferences } from "@/lib/livekit/voice-preferences";
 import { syncRnnoiseProcessor } from "@/lib/livekit/rnnoise-track-processor";
 import { trpc } from "@/lib/trpc/client";
 import {
   getAudioCaptureOptions,
-  ECHO_SAFE_SCREEN_SHARE_OPTIONS,
   getConnectionLabel,
   getMicrophoneMuted,
   reconnectPolicy,
@@ -37,6 +26,10 @@ import { useVoiceOutput } from "./voice/useVoiceOutput";
 import { useVoiceRoomTermination } from "./voice/useVoiceRoomTermination";
 import { useVoiceVideoStage } from "./voice/useVoiceVideoStage";
 import { playVoiceRoomSound } from "./voice/voice-room-sounds";
+import { useScreenShareSubscription } from "./voice/useScreenShareSubscription";
+import { getDirectCallPhase } from "./voice/call-phase";
+import { useDesktopScreenAudioPublisher } from "./voice/useDesktopScreenAudioPublisher";
+import { useGroupSoundboard } from "./voice/useGroupSoundboard";
 type ChatRoomControlProps = {
   chatId: string;
   chatName: string;
@@ -45,13 +38,8 @@ type ChatRoomControlProps = {
   initialOpen?: boolean;
   onStateChange?: (state: VoiceControlState) => void;
 };
-
 export type ChatRoomControlHandle = { open: () => void; join: () => void; toggleMicrophone: () => void; toggleOutput: () => void; leave: () => void };
-
-export const ChatRoomControl = forwardRef<
-  ChatRoomControlHandle,
-  ChatRoomControlProps
->(function ChatRoomControl({
+export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControlProps>(function ChatRoomControl({
   chatId,
   chatName,
   chatType,
@@ -77,12 +65,12 @@ export const ChatRoomControl = forwardRef<
   const [outputDevices, setOutputDevices] = useState<MediaDeviceInfo[]>([]);
   const [micTestActive, setMicTestActive] = useState(false);
   const [micTestLevel, setMicTestLevel] = useState(0);
-
   const liveRoomRef = useRef<Room | null>(null);
   const connectPromiseRef = useRef<Promise<void> | null>(null);
   const connectSequenceRef = useRef(0);
   const mountedRef = useRef(true);
   const preferencesRef = useRef(preferences);
+  const screenShareQualityRef = useRef<"standard" | "plus">("standard");
   const mediaActionRef = useRef(false);
   const micTestStreamRef = useRef<MediaStream | null>(null);
   const micTestContextRef = useRef<AudioContext | null>(null);
@@ -95,6 +83,10 @@ export const ChatRoomControl = forwardRef<
     screenSharing,
     setScreenSharing,
     screenShareOwner,
+    screenShareAvailable,
+    setScreenShareAvailable,
+    watchingScreenShare,
+    setWatchingScreenShare,
     cameraEnabled,
     setCameraEnabled,
     cameraParticipantIds,
@@ -103,6 +95,7 @@ export const ChatRoomControl = forwardRef<
     detachRemoteVideo,
     detachLocalVideo,
     clearLocalCamera,
+    clearRemoteScreen,
     showParkedMedia,
     parkVisibleMedia,
     clearVideoMedia,
@@ -111,17 +104,26 @@ export const ChatRoomControl = forwardRef<
     audioContainerRef,
     outputMuted,
     participantVolumes,
+    screenShareVolume,
     attachAudio,
     clearAudio,
     toggleOutput,
     setParticipantVolume,
+    setScreenShareVolume,
   } = useVoiceOutput(liveRoomRef);
+  const screenSubscription = useScreenShareSubscription({
+    roomRef: liveRoomRef,
+    clearRemoteScreen,
+    setAvailable: setScreenShareAvailable,
+    setWatching: setWatchingScreenShare,
+  });
+  const { toggle: toggleDesktopScreenAudio, stop: stopDesktopScreenAudio, error: desktopScreenAudioError } = useDesktopScreenAudioPublisher(chatId);
   const utils = trpc.useUtils();
+  const groupSoundboard = useGroupSoundboard(chatId, chatType === "group", liveRoomRef);
   const room = trpc.chat.room.useQuery(
     { chatId },
     { staleTime: 5_000, refetchInterval: open ? 5_000 : 15_000 },
   );
-
   const enter = trpc.chat.enterRoom.useMutation();
   const mediaToken = trpc.chat.roomMediaToken.useMutation();
   const leave = trpc.chat.leaveRoom.useMutation({
@@ -151,7 +153,6 @@ export const ChatRoomControl = forwardRef<
   useEffect(() => {
     onStateChange?.({ inside, mediaStatus, participantCount, micMuted, outputMuted });
   }, [inside, mediaStatus, micMuted, onStateChange, outputMuted, participantCount]);
-
   const persistPreferences = (patch: Partial<VoicePreferences>) => {
     const next = { ...preferencesRef.current, ...patch };
     preferencesRef.current = next;
@@ -211,9 +212,10 @@ export const ChatRoomControl = forwardRef<
       stopMicTest(false);
       const current = liveRoomRef.current;
       liveRoomRef.current = null;
+      void stopDesktopScreenAudio();
       void current?.disconnect();
     };
-  }, []);
+  }, [stopDesktopScreenAudio]);
 
   const clearAttachedMedia = useCallback(() => {
     clearAudio();
@@ -226,12 +228,13 @@ export const ChatRoomControl = forwardRef<
     const current = liveRoomRef.current;
     liveRoomRef.current = null;
     clearAttachedMedia();
+    void stopDesktopScreenAudio();
     void current?.disconnect();
     setMicMuted(true);
     setMediaStatus("idle");
     setConnectionQuality(ConnectionQuality.Unknown);
     setCurrentEndpoint(null);
-  }, [clearAttachedMedia]);
+  }, [clearAttachedMedia, stopDesktopScreenAudio]);
 
   useVoiceRoomTermination(
     inside, room.isFetching, value?.endReason ?? null, disconnectMedia, setMediaError,
@@ -246,7 +249,6 @@ export const ChatRoomControl = forwardRef<
       attachAudio(track, participant);
       return;
     }
-
     attachRemoteVideo(track, publication, participant);
   };
 
@@ -257,7 +259,10 @@ export const ChatRoomControl = forwardRef<
       onRemoteTrack: attachRemoteTrack,
       onRemoteTrackDetached: detachRemoteVideo,
       onLocalVideoPublished: attachLocalVideo,
-      onLocalVideoUnpublished: detachLocalVideo,
+      onLocalVideoUnpublished: (publication) => {
+        detachLocalVideo(publication);
+        if (publication.source === Track.Source.ScreenShare) void stopDesktopScreenAudio();
+      },
       onMicrophonesChange: (localMuted, remoteMutedById) => {
         setMicMuted(localMuted);
         setRemoteMicMutedById(remoteMutedById);
@@ -272,6 +277,9 @@ export const ChatRoomControl = forwardRef<
       },
       onParticipantConnected: () => preferencesRef.current.roomSounds && void playVoiceRoomSound("join"),
       onParticipantDisconnected: () => preferencesRef.current.roomSounds && void playVoiceRoomSound("leave"),
+      onRemotePublication: screenSubscription.syncPublication,
+      onRemotePublicationRemoved: screenSubscription.removePublication,
+      onDataReceived: groupSoundboard.onDataReceived,
     });
 
     liveRoom.on(RoomEvent.Disconnected, () => {
@@ -307,7 +315,7 @@ export const ChatRoomControl = forwardRef<
           setMediaStatus("unavailable");
           return;
         }
-
+        screenShareQualityRef.current = credentials.screenShareQuality;
         const availableEndpoints = credentials.endpoints?.length
           ? credentials.endpoints
           : [{ url: credentials.url, label: "Авто" }];
@@ -344,6 +352,7 @@ export const ChatRoomControl = forwardRef<
           try {
             await liveRoom.prepareConnection(endpoint.url, credentials.token);
             await liveRoom.connect(endpoint.url, credentials.token, {
+              autoSubscribe: false,
               maxRetries: 3,
               websocketTimeout: 15_000,
               peerConnectionTimeout: 20_000,
@@ -367,6 +376,7 @@ export const ChatRoomControl = forwardRef<
           setCurrentEndpoint(endpoint.url);
           setMediaStatus("connected");
           setConnectionQuality(liveRoom.localParticipant.connectionQuality);
+          screenSubscription.syncExisting(liveRoom);
           await liveRoom.startAudio().catch(() => setAudioBlocked(true));
           if (preferencesRef.current.outputDeviceId !== "default") {
             await liveRoom
@@ -491,12 +501,10 @@ export const ChatRoomControl = forwardRef<
     setScreenSharePending(true);
     setMediaError(null);
     try {
-      await liveRoom.localParticipant.setScreenShareEnabled(
-        !screenSharing,
-        ECHO_SAFE_SCREEN_SHARE_OPTIONS,
-      );
-      const publication = liveRoom.localParticipant.getTrackPublication(Track.Source.ScreenShare);
-      setScreenSharing(Boolean(publication && !publication.isMuted));
+      const result = await toggleDesktopScreenAudio(liveRoom, screenSharing,
+        preferencesRef.current.screenAudioProcessId, screenShareQualityRef.current);
+      setScreenSharing(result.enabled);
+      if (result.warning) setMediaError(result.warning);
     } catch (error) {
       setMediaError(
         error instanceof Error ? error.message : "Не удалось включить демонстрацию экрана.",
@@ -643,6 +651,7 @@ export const ChatRoomControl = forwardRef<
   };
 
   const isDirect = chatType === "direct";
+  const callPhase = getDirectCallPhase({ direct: isDirect, room: value, starter: meIsStarter });
   const connectionLabel = getConnectionLabel(mediaStatus);
   const selectedEndpoint =
     preferences.endpointUrl === "auto" ||
@@ -707,6 +716,7 @@ export const ChatRoomControl = forwardRef<
         }}
         screenContainerRef={bindScreenContainer}
         isDirect={isDirect}
+        callPhase={callPhase}
         chatName={chatName}
         active={active}
         durationLabel={durationLabel}
@@ -714,7 +724,11 @@ export const ChatRoomControl = forwardRef<
         mediaStatus={mediaStatus}
         connectionQuality={connectionQuality}
         screenShareOwner={screenShareOwner}
+        screenShareAvailable={screenShareAvailable}
+        watchingScreenShare={watchingScreenShare}
+        screenShareVolume={screenShareVolume}
         participants={value?.participants ?? []}
+        groupSounds={groupSoundboard.sounds}
         participantVolumes={participantVolumes}
         micMuted={micMuted}
         outputMuted={outputMuted}
@@ -734,6 +748,10 @@ export const ChatRoomControl = forwardRef<
         onResumeAudio={resumeAudio}
         onCameraContainerChange={bindCameraContainer}
         onParticipantVolumeChange={setParticipantVolume}
+        onScreenShareVolumeChange={setScreenShareVolume}
+        onGroupSoundPlay={(sound) => void groupSoundboard.play(sound)}
+        onWatchScreenShare={screenSubscription.watch}
+        onStopWatchingScreenShare={screenSubscription.stopWatching}
         settingsPanel={
           <VoiceSettingsPanel
             preferences={preferences}
@@ -755,6 +773,8 @@ export const ChatRoomControl = forwardRef<
               persistPreferences({ compatibilityMode })
             }
             onRoomSoundsChange={(roomSounds) => persistPreferences({ roomSounds })}
+            onScreenAudioProcessChange={(screenAudioProcessId) =>
+              persistPreferences({ screenAudioProcessId })}
             onReconnect={reconnectMedia}
           />
         }
@@ -774,6 +794,7 @@ export const ChatRoomControl = forwardRef<
           leave.error?.message ??
           access.error?.message ??
           mediaToken.error?.message ??
+          desktopScreenAudioError ??
           null
         }
         leavePending={leave.isPending}

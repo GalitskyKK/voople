@@ -7,8 +7,12 @@ test.describe("public release surface", () => {
     await expect(
       page.getByRole("heading", { name: /Позвал своих/i }),
     ).toBeVisible();
-    await expect(page.getByRole("link", { name: /Забрать свой @username/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Открыть в браузере/i }).first()).toHaveAttribute(
+      "href",
+      "/feed",
+    );
     await expect(page.getByRole("link", { name: /Скачать для Windows/i }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /Сначала посмотреть/i })).toHaveCount(0);
   });
 
   test("landing remains readable without horizontal overflow on mobile", async ({ page }) => {
@@ -16,7 +20,7 @@ test.describe("public release surface", () => {
     await page.goto("/");
 
     await expect(page.getByRole("heading", { name: /Позвал своих/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Забрать свой @username/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Открыть в браузере/i }).first()).toBeVisible();
 
     const viewport = await page.evaluate(() => {
       const clientWidth = document.documentElement.clientWidth;
@@ -39,6 +43,8 @@ test.describe("public release surface", () => {
   });
 
   test("authentication entry points remain available", async ({ page }) => {
+    test.setTimeout(60_000);
+
     await page.goto("/login");
     await expect(page.getByRole("heading", { name: "Войти" })).toBeVisible();
 

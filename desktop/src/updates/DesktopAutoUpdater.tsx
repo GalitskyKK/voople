@@ -1,9 +1,11 @@
 import { Download, LoaderCircle, RefreshCw, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { getVersion } from "@tauri-apps/api/app";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 
 import { DESKTOP_UPDATE_CHECK_EVENT } from "./events";
+import { reportClientMetric } from "@/lib/telemetry/client";
 
 type UpdateState =
   | { mode: "idle" }
@@ -95,6 +97,8 @@ export function DesktopAutoUpdater() {
     if (!update || state.mode === "installing") return;
 
     const version = update.version;
+    const previousVersion = await getVersion().catch(() => null);
+    const releaseNotes = update.body?.trim() || null;
     let downloaded = 0;
     let total: number | undefined;
     setState({ mode: "installing", version, progress: null });
@@ -111,6 +115,16 @@ export function DesktopAutoUpdater() {
           progress: total ? Math.min(100, Math.round((downloaded / total) * 100)) : null,
         });
       });
+      if (previousVersion) {
+        await invoke("record_installed_update", {
+          previousVersion,
+          installedVersion: version,
+          notes: releaseNotes,
+        }).catch((error) => {
+          reportClientMetric({ name: "desktop-release-note-record-error", value: 1 });
+          console.error("Desktop release-note transition could not be recorded", error);
+        });
+      }
       await invoke("restart_application");
     } catch (error) {
       setState({

@@ -8,6 +8,7 @@ import {
   acceptChatInvite,
   createChatInvite,
   createChatRoomMediaToken,
+  createChatRoomScreenAudioToken,
   declineChatRoomCall,
   deleteGroup,
   deleteMessage,
@@ -43,29 +44,14 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 import { chatCommunityProcedures } from "./chat-community";
 import { chatGroupRoleProcedures } from "./chat-group-roles";
 import { chatModerationProcedures } from "./chat-moderation";
-const sendInputSchema = z
-  .object({
-    chatId: z.string().uuid(),
-    messageId: z.string().uuid(),
-    text: z.string().max(1000).optional(),
-    mediaKey: z.string().min(10).max(500).optional(),
-    mediaTitle: z.string().min(1).max(100).optional(),
-    mediaArtist: z.string().min(1).max(100).optional(),
-    sharedTrackId: z.string().uuid().optional(),
-    replyToMessageId: z.string().uuid().optional(),
-  })
-  .refine(
-    (value) =>
-      Boolean(value.text?.trim()) || Boolean(value.mediaKey) || Boolean(value.sharedTrackId),
-    { message: "Добавьте текст или вложение" },
-  );
+import { sendChatMessageInputSchema } from "../schemas/chat-message";
 
 export const chatRouter = createTRPCRouter({
   ...chatModerationProcedures,
   ...chatCommunityProcedures,
   ...chatGroupRoleProcedures,
   invitePreview: publicProcedure
-    .input(z.object({ token: z.string().min(20).max(100) }))
+    .input(z.object({ token: z.string().min(5).max(100) }))
     .query(async ({ input }) => {
       try {
         return await previewChatInvite(input.token);
@@ -89,7 +75,7 @@ export const chatRouter = createTRPCRouter({
     }),
 
   acceptInvite: protectedProcedure
-    .input(z.object({ token: z.string().min(20).max(100) }))
+    .input(z.object({ token: z.string().min(5).max(100) }))
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.acceptChatInvite, ctx.user.id);
       try {
@@ -154,6 +140,16 @@ export const chatRouter = createTRPCRouter({
           code: "BAD_REQUEST",
           message: error instanceof Error ? error.message : "Не удалось подключить голос",
         });
+      }
+    }),
+
+  roomScreenAudioToken: protectedProcedure.input(z.object({ chatId: z.string().uuid(), screenSessionId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
+      try {
+        return await createChatRoomScreenAudioToken(input.chatId, ctx.user.id, input.screenSessionId);
+      } catch (error) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось подключить звук демонстрации" });
       }
     }),
 
@@ -562,11 +558,15 @@ export const chatRouter = createTRPCRouter({
     }),
 
   toggleReaction: protectedProcedure
-    .input(z.object({ messageId: z.string().uuid(), emoji: z.enum(CHAT_REACTION_EMOJIS) }))
+    .input(z.object({
+      messageId: z.string().uuid(),
+      emoji: z.enum(CHAT_REACTION_EMOJIS).optional(),
+      emojiId: z.string().uuid().optional(),
+    }).refine((value) => Boolean(value.emoji) !== Boolean(value.emojiId), { message: "Выберите одну реакцию" }))
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.like, ctx.user.id);
       try {
-        return await toggleMessageReaction(input.messageId, ctx.user.id, input.emoji);
+        return await toggleMessageReaction(input.messageId, ctx.user.id, { emoji: input.emoji, emojiId: input.emojiId });
       } catch (e) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -575,7 +575,7 @@ export const chatRouter = createTRPCRouter({
       }
     }),
 
-  send: protectedProcedure.input(sendInputSchema).mutation(async ({ ctx, input }) => {
+  send: protectedProcedure.input(sendChatMessageInputSchema).mutation(async ({ ctx, input }) => {
     await assertRateLimit(rateLimits.sendMessage, ctx.user.id);
     try {
       return await sendMessage({

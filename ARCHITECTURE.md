@@ -69,6 +69,15 @@ Dependencies must never point backwards:
 | `desktop/src/shell/DesktopShell.tsx` | desktop routing adapter and shell composition |
 | `desktop/src-tauri/src/lib.rs` | Tauri commands and native application lifecycle |
 
+The process-audio boundary is deliberately split further:
+
+- `src/lib/livekit/desktop-process-audio.ts` is the client-safe bridge contract;
+- `DesktopScreenAudioSettings` and `useDesktopScreenAudioPublisher` are shared UI/orchestration;
+- `desktop/src-tauri/src/process_audio.rs` discovers Windows audio sessions;
+- `process_audio_publisher.rs` owns WASAPI Process Loopback and native LiveKit publication;
+- the normal release uses `process_audio_publisher_stub.rs` until the Rust LiveKit C++ toolchain
+  passes cleanly in GitHub Actions. Do not move PCM through Tauri IPC as a shortcut.
+
 ### Shared client code
 
 | Path | Responsibility |
@@ -114,6 +123,7 @@ must remain adapters, not alternative designs:
 | `desktop/src/hotkeys` | local/global shortcut registration |
 | `desktop/src/notifications` | Windows permission, realtime bridge and safe native actions |
 | `desktop/src/updates` | signed updater checks and restart flow |
+| `desktop/src-tauri/src/release_notes.rs` | bounded native history of verified update transitions |
 | `desktop/src/providers` | desktop equivalents of application-wide providers |
 
 ### Domain ownership map
@@ -218,6 +228,37 @@ If a class appears in both web and desktop CSS, move it to the shared stylesheet
 or replace it with a shared visual component.
 
 ## 7. Data and API flow
+
+### Screen-share media contract
+
+Screen video and application audio are separate tracks. Remote screen tracks use manual
+subscription, so an offer does not consume screen bandwidth until the participant presses
+**Смотреть**. Desktop application audio connects as a service participant whose metadata contains
+`kind=screen-audio`, `ownerId` and `screenSessionId`; it must stay out of participant counters and
+camera grids. Its `ScreenShareAudio` track follows the same watch/stop state as the video and uses
+an independent `0–200%` local volume.
+
+`chat.roomMediaToken` also returns the server-derived screen-share quality entitlement. The
+publisher must use `720p/30` for the standard profile and may request `1080p/60` only for an
+active Voople+ subscription or a room whose root group has effective level 24. Never derive this
+entitlement from client storage or a UI flag.
+
+The native publisher requires Windows build 20348 or newer. Capability is checked through Tauri
+before the source selector is enabled. Web and ordinary desktop builds request selected-surface
+audio through `getDisplayMedia` with the full system mix excluded. If Chromium/WebView does not
+return an audio track, sharing remains video-only without failing the call or installer build.
+When native process audio is active, browser screen audio is disabled to prevent duplicate tracks.
+
+### Post media contract
+
+`src/lib/post-media.ts` is the platform-neutral contract for gallery ordering,
+legacy `posts.media_url/media_type` fallback, the ten-item limit and free/Plus
+byte limits. Web controls, desktop controls and server services must import it
+instead of repeating numeric limits. Presigning is only an optimistic client
+check: `upload.service.ts` rechecks ownership, S3 `HeadObject`, MIME and magic
+bytes, while `post.service.ts` rechecks the complete ordered batch before the
+database write. `post_media` is authoritative; legacy columns remain a rollout
+mirror until every deployed client uses the dual-read mapper.
 
 ### Web
 
@@ -324,6 +365,9 @@ client -> upload.createPresigned -> S3 presigned PUT -> domain mutation
 - Web uploads through the shared `uploadPresignedFile` adapter.
 - Tauri registers a native implementation in `desktop/src/main.tsx` and sends
   bytes through the Rust `upload_presigned_media` command.
+- Chat presign requests include `chatId`. The server derives the effective root-group boost
+  level and allows 15 MB normally, 50 MB from level 6 and 100 MB from level 12. The same limit,
+  object ownership, declared MIME and magic bytes are checked again when the message is sent.
 - Never persist a client-provided public URL directly.
 - Never add a direct WebView `fetch(presignedUrl)` workaround; it reintroduces
   CORS-dependent `Failed to fetch` failures.
@@ -432,7 +476,18 @@ Current group-boost semantics:
   deleting historical configuration;
 - effective perks are derived on read from active allocations;
 - owners/admins may save the group icon and description; the first active boost
-  unlocks the effective custom accent colour.
+  unlocks the effective custom accent colour;
+- a stored group banner becomes effective at level 6 and a stored 2–5 character
+  tag at level 12. Losing the level hides the perk without deleting its value;
+- avatar and banner keys are accepted only after ownership, object size, MIME
+  and signature validation in the upload service. Data modules never trust a
+  client-provided storage URL.
+- group sounds unlock at level 3. LiveKit transports a rate-limited sound ID,
+  not arbitrary URLs or audio bytes; receivers resolve that ID from their
+  authorized group-sound list and play the validated CDN asset locally.
+- level-24 vanity invitations and role colors remain server-authorized. The public invitation
+  preview and the database membership RPC both re-evaluate the current boost/grace level; clients
+  never turn a stored vanity slug into an active invitation by themselves.
 
 Future boost perks must use the same derived count. Do not add `is_boosted` or
 persist a level that can drift from subscriptions.

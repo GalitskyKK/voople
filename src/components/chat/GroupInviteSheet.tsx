@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { trpc } from "@/lib/trpc/client";
+import { uploadPresignedFile } from "@/lib/uploads/presigned-upload";
 
 import { GroupManagementSheetView } from "./GroupManagementSheetView";
 
@@ -16,6 +17,7 @@ export function GroupInviteSheet({
   groupIcon,
   groupAvatarUrl,
   groupAccentColor,
+  groupTag,
   triggerVariant = "toolbar",
   viewerRole,
   canManage,
@@ -29,6 +31,7 @@ export function GroupInviteSheet({
   groupIcon: string | null;
   groupAvatarUrl: string | null;
   groupAccentColor: string | null;
+  groupTag: string | null;
   triggerVariant?: "toolbar" | "identity";
   viewerRole: "owner" | "admin" | "member";
   canManage: boolean;
@@ -45,12 +48,19 @@ export function GroupInviteSheet({
   const setVisibility = trpc.chat.setGroupVisibility.useMutation();
   const updateCustomization = trpc.chat.updateGroupCustomization.useMutation();
   const setBoost = trpc.chat.setGroupBoost.useMutation();
+  const createEmoji = trpc.chat.createGroupEmoji.useMutation();
+  const deleteEmoji = trpc.chat.deleteGroupEmoji.useMutation();
+  const createSound = trpc.chat.createGroupSound.useMutation();
+  const deleteSound = trpc.chat.deleteGroupSound.useMutation();
+  const presignSound = trpc.upload.createPresigned.useMutation();
   const removeMember = trpc.chat.removeGroupMember.useMutation();
   const setMemberRole = trpc.chat.setGroupMemberRole.useMutation();
   const transferOwnership = trpc.chat.transferGroupOwnership.useMutation();
   const leaveGroup = trpc.chat.leaveGroup.useMutation();
   const deleteGroup = trpc.chat.deleteGroup.useMutation();
   const avatarUpload = useMediaUpload("group-avatar");
+  const bannerUpload = useMediaUpload("banner");
+  const emojiUpload = useMediaUpload("group-emoji");
   const loadMembers = useCallback(
     () => utils.client.chat.groupMembers.query({ chatId }),
     [chatId, utils.client],
@@ -61,6 +71,14 @@ export function GroupInviteSheet({
   );
   const loadAudit = useCallback(
     () => utils.client.chat.groupAudit.query({ chatId, limit: 50 }),
+    [chatId, utils.client],
+  );
+  const loadEmojis = useCallback(
+    () => utils.client.chat.groupEmojis.query({ chatId }),
+    [chatId, utils.client],
+  );
+  const loadSounds = useCallback(
+    () => utils.client.chat.groupSounds.query({ chatId }),
     [chatId, utils.client],
   );
   const searchContacts = useCallback(
@@ -75,6 +93,7 @@ export function GroupInviteSheet({
       groupIcon={groupIcon}
       groupAvatarUrl={groupAvatarUrl}
       groupAccentColor={groupAccentColor}
+      groupTag={groupTag}
       triggerVariant={triggerVariant}
       viewerRole={viewerRole}
       canManage={canManage}
@@ -110,7 +129,30 @@ export function GroupInviteSheet({
         if (!uploaded) throw new Error("Не удалось загрузить аватарку группы");
         return { mediaKey: uploaded.mediaKey, previewUrl: uploaded.previewUrl };
       }}
-      setBoost={(enabled) => setBoost.mutateAsync({ chatId, enabled })}
+      uploadBanner={async (file) => {
+        const uploaded = await bannerUpload.uploadFile(file);
+        if (!uploaded) throw new Error("Не удалось загрузить баннер группы");
+        return { mediaKey: uploaded.mediaKey, previewUrl: uploaded.previewUrl };
+      }}
+      setBoost={(enabled, slot, idempotencyKey) => setBoost.mutateAsync({ chatId, enabled, slot, idempotencyKey })}
+      loadEmojis={loadEmojis}
+      createEmoji={(input) => createEmoji.mutateAsync({ chatId, ...input })}
+      deleteEmoji={(emojiId) => deleteEmoji.mutateAsync({ emojiId })}
+      uploadEmoji={async (file) => {
+        const uploaded = await emojiUpload.uploadFile(file);
+        if (!uploaded) throw new Error(emojiUpload.error ?? "Не удалось загрузить эмодзи");
+        return { mediaKey: uploaded.mediaKey };
+      }}
+      loadSounds={loadSounds}
+      createSound={(input) => createSound.mutateAsync({ chatId, ...input })}
+      deleteSound={(soundId) => deleteSound.mutateAsync({ soundId })}
+      uploadSound={async (file) => {
+        const contentType = file.type.split(";")[0]?.trim().toLowerCase() ?? "";
+        if (file.size <= 0 || file.size > 1024 * 1024) throw new Error("Звук должен быть не больше 1 МБ");
+        const signed = await presignSound.mutateAsync({ purpose: "group-sound", contentType, sizeBytes: file.size });
+        await uploadPresignedFile({ url: signed.uploadUrl, file, contentType });
+        return { mediaKey: signed.key };
+      }}
       removeMember={(memberId) => removeMember.mutateAsync({ chatId, memberId })}
       changeMemberRole={(memberId, role) => setMemberRole.mutateAsync({ chatId, memberId, role })}
       transferOwnership={(targetUserId) => transferOwnership.mutateAsync({ chatId, targetUserId })}

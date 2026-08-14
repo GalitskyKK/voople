@@ -9,6 +9,7 @@ export type VoicePreferences = {
   enhancedNoiseSuppression: boolean;
   roomSounds: boolean;
   compatibilityMode: boolean;
+  screenAudioProcessId: number | null;
 };
 
 const STORAGE_KEY = "voople:voice-preferences:v1";
@@ -24,6 +25,7 @@ export const DEFAULT_VOICE_PREFERENCES: VoicePreferences = {
   enhancedNoiseSuppression: true,
   roomSounds: true,
   compatibilityMode: false,
+  screenAudioProcessId: null,
 };
 
 export function loadVoicePreferences(): VoicePreferences {

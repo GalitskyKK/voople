@@ -213,7 +213,7 @@ export const cardReactions = pgTable(
     reactorUserId: uuid("reactor_user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    emoji: varchar("emoji", { length: 10 }).notNull(),
+    emoji: varchar("emoji", { length: 10 }),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => ({
@@ -503,6 +503,7 @@ export const messages = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     text: varchar("text", { length: 1000 }),
+    content: jsonb("content"),
     mediaUrl: varchar("media_url", { length: 500 }),
     mediaTitle: varchar("media_title", { length: 100 }),
     mediaArtist: varchar("media_artist", { length: 100 }),
@@ -534,10 +535,12 @@ export const messageReactions = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     emoji: varchar("emoji", { length: 10 }).notNull(),
+    emojiId: uuid("emoji_id"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => ({
-    pk: primaryKey({ columns: [t.messageId, t.userId, t.emoji] }),
+    nativeUnique: uniqueIndex("message_reactions_native_unique").on(t.messageId, t.userId, t.emoji),
+    customUnique: uniqueIndex("message_reactions_custom_unique").on(t.messageId, t.userId, t.emojiId),
     chatIdx: index("message_reactions_chat_idx").on(t.chatId),
     messageIdx: index("message_reactions_message_idx").on(t.messageId),
   }),

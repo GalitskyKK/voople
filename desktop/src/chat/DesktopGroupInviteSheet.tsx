@@ -2,7 +2,7 @@ import type { Session } from "@supabase/supabase-js";
 import { useCallback, useMemo } from "react";
 
 import { GroupManagementSheetView } from "@/components/chat/GroupManagementSheetView";
-import type { ChatGroupAuditEntryView, ChatGroupMemberView, GroupCommunityView } from "@/types/chat";
+import type { ChatGroupAuditEntryView, ChatGroupMemberView, GroupCommunityView, GroupEmojiView, GroupSoundView } from "@/types/chat";
 import type { UserSearchHit } from "@/types/search";
 import { uploadPresignedFile } from "@/lib/uploads/presigned-upload";
 
@@ -17,6 +17,7 @@ export function DesktopGroupInviteSheet({
   groupIcon,
   groupAvatarUrl,
   groupAccentColor,
+  groupTag,
   triggerVariant = "toolbar",
   viewerRole,
   canManage,
@@ -34,6 +35,7 @@ export function DesktopGroupInviteSheet({
   groupIcon: string | null;
   groupAvatarUrl: string | null;
   groupAccentColor: string | null;
+  groupTag: string | null;
   triggerVariant?: "toolbar" | "identity";
   viewerRole: "owner" | "admin" | "member";
   canManage: boolean;
@@ -109,6 +111,53 @@ export function DesktopGroupInviteSheet({
     },
     [client],
   );
+  const uploadBanner = useCallback(
+    async (file: File) => {
+      const contentType = file.type.split(";")[0]?.trim().toLowerCase() ?? "";
+      if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(contentType)) {
+        throw new Error("Допустимы JPEG, PNG, WebP или GIF");
+      }
+      if (file.size <= 0 || file.size > 5 * 1024 * 1024) {
+        throw new Error("Баннер должен быть не больше 5 МБ");
+      }
+      const presigned = (await client.mutation("upload.createPresigned", {
+        purpose: "banner",
+        contentType,
+        sizeBytes: file.size,
+      })) as { key?: string; uploadUrl?: string; publicUrl?: string | null };
+      if (!presigned.key || !presigned.uploadUrl || !presigned.publicUrl) {
+        throw new Error("Сервер не подготовил загрузку");
+      }
+      await uploadPresignedFile({ url: presigned.uploadUrl, file, contentType });
+      return { mediaKey: presigned.key, previewUrl: presigned.publicUrl };
+    },
+    [client],
+  );
+  const loadEmojis = useCallback(
+    () => client.query("chat.groupEmojis", { chatId }) as Promise<{ items: GroupEmojiView[]; limit: number }>,
+    [chatId, client],
+  );
+  const uploadEmoji = useCallback(async (file: File) => {
+    const contentType = file.type.split(";")[0]?.trim().toLowerCase() ?? "";
+    if (!["image/png", "image/webp", "image/gif"].includes(contentType)) throw new Error("Допустимы PNG, WebP или GIF");
+    if (file.size <= 0 || file.size > 256 * 1024) throw new Error("Эмодзи должен быть не больше 256 КБ");
+    const presigned = await client.mutation("upload.createPresigned", { purpose: "group-emoji", contentType, sizeBytes: file.size }) as { key?: string; uploadUrl?: string };
+    if (!presigned.key || !presigned.uploadUrl) throw new Error("Сервер не подготовил загрузку");
+    await uploadPresignedFile({ url: presigned.uploadUrl, file, contentType });
+    return { mediaKey: presigned.key };
+  }, [client]);
+  const loadSounds = useCallback(
+    () => client.query("chat.groupSounds", { chatId }) as Promise<{ items: GroupSoundView[]; limit: number }>,
+    [chatId, client],
+  );
+  const uploadSound = useCallback(async (file: File) => {
+    const contentType = file.type.split(";")[0]?.trim().toLowerCase() ?? "";
+    if (file.size <= 0 || file.size > 1024 * 1024) throw new Error("Звук должен быть не больше 1 МБ");
+    const presigned = await client.mutation("upload.createPresigned", { purpose: "group-sound", contentType, sizeBytes: file.size }) as { key?: string; uploadUrl?: string };
+    if (!presigned.key || !presigned.uploadUrl) throw new Error("Сервер не подготовил загрузку");
+    await uploadPresignedFile({ url: presigned.uploadUrl, file, contentType });
+    return { mediaKey: presigned.key };
+  }, [client]);
 
   return (
     <GroupManagementSheetView
@@ -117,6 +166,7 @@ export function DesktopGroupInviteSheet({
       groupIcon={groupIcon}
       groupAvatarUrl={groupAvatarUrl}
       groupAccentColor={groupAccentColor}
+      groupTag={groupTag}
       triggerVariant={triggerVariant}
       viewerRole={viewerRole}
       canManage={canManage}
@@ -150,12 +200,23 @@ export function DesktopGroupInviteSheet({
         }) as Promise<GroupCommunityView>
       }
       uploadAvatar={uploadAvatar}
-      setBoost={(enabled) =>
+      uploadBanner={uploadBanner}
+      setBoost={(enabled, slot, idempotencyKey) =>
         client.mutation("chat.setGroupBoost", {
           chatId,
           enabled,
+          slot,
+          idempotencyKey,
         }) as Promise<GroupCommunityView>
       }
+      loadEmojis={loadEmojis}
+      createEmoji={(input) => client.mutation("chat.createGroupEmoji", { chatId, ...input }) as Promise<GroupEmojiView>}
+      deleteEmoji={(emojiId) => client.mutation("chat.deleteGroupEmoji", { emojiId })}
+      uploadEmoji={uploadEmoji}
+      loadSounds={loadSounds}
+      createSound={(input) => client.mutation("chat.createGroupSound", { chatId, ...input }) as Promise<GroupSoundView>}
+      deleteSound={(soundId) => client.mutation("chat.deleteGroupSound", { soundId })}
+      uploadSound={uploadSound}
       removeMember={(memberId) =>
         client.mutation("chat.removeGroupMember", { chatId, memberId })
       }

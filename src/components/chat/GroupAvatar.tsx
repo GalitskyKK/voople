@@ -29,11 +29,11 @@ export function GroupAvatar({
   return (
     <span
       className={cn(
-        "relative grid shrink-0 place-items-center overflow-hidden rounded-full bg-[var(--app-accent-soft)] font-semibold text-[var(--theme-accent)]",
+        "relative grid shrink-0 place-items-center overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--group-accent,var(--theme-accent))_16%,var(--app-surface-soft))] font-semibold text-[var(--group-accent,var(--theme-accent))]",
         sizeClass,
         className,
       )}
-      style={accentColor ? { color: accentColor } : undefined}
+      style={accentColor ? { "--group-accent": accentColor } as React.CSSProperties : undefined}
       aria-hidden="true"
     >
       {showImage ? (

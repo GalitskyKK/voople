@@ -6,13 +6,13 @@ import {
   parseChatUploadMime,
   putObject,
   sniffUploadKind,
-  UPLOAD_LIMITS,
 } from "@/lib/object-storage";
 import { formatStorageError } from "@/lib/object-storage/errors";
 import { desktopCorsPreflight, withDesktopCors } from "@/lib/http/desktop-cors";
 import { rateLimits } from "@/lib/ratelimit";
 import { checkRateLimit } from "@/lib/ratelimit-guard";
 import { createClient } from "@/lib/supabase/server";
+import { getChatUploadByteLimit } from "@/server/services/upload.service";
 
 export const runtime = "nodejs";
 
@@ -42,6 +42,10 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const file = formData.get("file");
     const purpose = formData.get("purpose");
+    const rawChatId = formData.get("chatId");
+    const chatId = typeof rawChatId === "string" && /^[a-f0-9-]{36}$/i.test(rawChatId)
+      ? rawChatId
+      : undefined;
     if (!(file instanceof File)) {
       return json({ error: "Файл не передан" }, { status: 400 });
     }
@@ -59,7 +63,7 @@ export async function POST(request: Request) {
       return json({ error: message }, { status: 400 });
     }
 
-    const limit = UPLOAD_LIMITS.chat.maxBytes;
+    const limit = await getChatUploadByteLimit(user.id, chatId);
     if (file.size <= 0 || file.size > limit) {
       return json(
         { error: `Файл больше ${Math.round(limit / (1024 * 1024))} МБ` },

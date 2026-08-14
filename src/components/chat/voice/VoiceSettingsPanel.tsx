@@ -5,6 +5,7 @@ import { Mic, MicOff, RefreshCw, RotateCcw, ShieldCheck } from "lucide-react";
 import type { VoicePreferences } from "@/lib/livekit/voice-preferences";
 
 import type { LiveKitEndpoint, MediaStatus } from "./voice-room-config";
+import { DesktopScreenAudioSettings } from "./DesktopScreenAudioSettings";
 
 type AudioProcessingKey =
   | "echoCancellation"
@@ -34,6 +35,7 @@ type VoiceSettingsPanelProps = {
   onEndpointChange: (endpointUrl: string) => void;
   onCompatibilityModeChange: (enabled: boolean) => void;
   onRoomSoundsChange: (enabled: boolean) => void;
+  onScreenAudioProcessChange: (processId: number | null) => void;
   onReconnect: () => void | Promise<void>;
 };
 
@@ -63,6 +65,7 @@ export function VoiceSettingsPanel({
   onEndpointChange,
   onCompatibilityModeChange,
   onRoomSoundsChange,
+  onScreenAudioProcessChange,
   onReconnect,
 }: VoiceSettingsPanelProps) {
   return (
@@ -164,14 +167,10 @@ export function VoiceSettingsPanel({
           системное шумоподавление отключается, чтобы не искажать голос двойной обработкой.
         </p>
 
-        <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-3">
-          <p className="text-sm font-medium">Демонстрация без возврата голоса</p>
-          <p className="mt-1 text-xs leading-5 text-[var(--app-muted)]">
-            Voople не захватывает системный звук вместе с экраном: иначе звук
-            собеседников с динамиков Windows возвращается им эхом. Отдельный
-            безопасный захват звука приложений появится в desktop-клиенте позже.
-          </p>
-        </div>
+        <DesktopScreenAudioSettings
+          processId={preferences.screenAudioProcessId}
+          onProcessChange={onScreenAudioProcessChange}
+        />
 
         <label className="flex items-start justify-between gap-4 rounded-xl border border-[var(--app-border)] px-3 py-3">
           <span>

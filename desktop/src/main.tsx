@@ -7,6 +7,7 @@ import { App } from "./App";
 import { AppPreferencesProvider } from "@/components/settings/AppPreferencesProvider";
 import { AppThemeProvider } from "@/components/theme/AppThemeProvider";
 import { setPresignedUploadAdapter } from "@/lib/uploads/presigned-upload";
+import { setDesktopProcessAudioBridge } from "@/lib/livekit/desktop-process-audio";
 import { setPublicAssetBaseUrl } from "@/lib/object-storage";
 import {
   initializeClientTelemetry,
@@ -37,6 +38,15 @@ if ("__TAURI_INTERNALS__" in window) {
       release,
     }))
     .catch(() => undefined);
+}
+
+if ("__TAURI_INTERNALS__" in window) {
+  setDesktopProcessAudioBridge({
+    capabilities: () => invoke("process_audio_capabilities"),
+    listSources: () => invoke("list_process_audio_sources"),
+    start: (input) => invoke("start_process_audio_share", { input }),
+    stop: (screenSessionId) => invoke("stop_process_audio_share", { screenSessionId }),
+  });
 }
 
 if ("__TAURI_INTERNALS__" in window) {

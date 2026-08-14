@@ -6,10 +6,10 @@ import { Paperclip } from "lucide-react";
 import { COPY } from "@/lib/constants/copy";
 import { trpc } from "@/lib/trpc/client";
 import type { ProfileViewModel } from "@/types/domain";
-import { MediaUploadControl } from "@/components/media/MediaUploadControl";
+import { PostMediaUploadControl } from "@/components/media/PostMediaUploadControl";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { Button } from "@/components/ui/Button";
-import type { UploadedMedia } from "@/hooks/useMediaUpload";
+import { usePostMediaUploads } from "@/hooks/usePostMediaUploads";
 import { PostComposer } from "./PostComposer";
 
 type CreatePostBlockProps = {
@@ -27,16 +27,14 @@ export function CreatePostBlock({
 }: CreatePostBlockProps) {
   const [mediaOpen, setMediaOpen] = useState(false);
   const [text, setText] = useState("");
-  const [media, setMedia] = useState<UploadedMedia | null>(null);
-  const [uploadResetKey, setUploadResetKey] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
   const utils = trpc.useUtils();
+  const galleryUploads = usePostMediaUploads();
 
   const createPost = trpc.post.create.useMutation({
     onSuccess: (newPost) => {
       setText("");
-      setMedia(null);
-      setUploadResetKey((key) => key + 1);
+      galleryUploads.reset();
       setFormError(null);
       setMediaOpen(false);
       void utils.feed.getPage.invalidate();
@@ -59,14 +57,13 @@ export function CreatePostBlock({
   const handlePublish = () => {
     setFormError(null);
     const trimmed = text.trim();
-    if (!trimmed && !media) {
+    if (!trimmed && galleryUploads.media.length === 0) {
       setFormError("Добавьте текст или изображение");
       return;
     }
     createPost.mutate({
       text: trimmed || undefined,
-      mediaKey: media?.mediaKey,
-      mediaType: media?.mediaType,
+      media: galleryUploads.media,
     });
   };
 
@@ -96,12 +93,7 @@ export function CreatePostBlock({
       </div>
       {mediaOpen && (
         <div className="voople-compose-block__editor mt-3 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] pt-3">
-          <MediaUploadControl
-            key={uploadResetKey}
-            purpose="post"
-            onChange={setMedia}
-            disabled={createPost.isPending}
-          />
+          <PostMediaUploadControl uploads={galleryUploads} disabled={createPost.isPending} />
         </div>
       )}
       <div className="voople-compose-block__toolbar mt-3 flex items-center justify-between gap-2 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] pt-3">
@@ -121,7 +113,7 @@ export function CreatePostBlock({
           variant="primary"
           size="md"
           className="voople-compose-block__publish shrink-0"
-          disabled={createPost.isPending}
+          disabled={createPost.isPending || galleryUploads.busy}
           onClick={handlePublish}
         >
           {createPost.isPending ? "…" : COPY.publish}

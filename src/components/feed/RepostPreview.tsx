@@ -1,4 +1,5 @@
 import { PostMedia } from "@/components/media/PostMedia";
+import { PostMediaGallery } from "@/components/media/PostMediaGallery";
 import { ProfileAppearanceCard } from "@/components/profile/ProfileAppearanceCard";
 import type { PostViewModel } from "@/types/domain";
 import { StatusPostBody } from "./StatusPostBody";
@@ -16,11 +17,11 @@ export function RepostPreview({
       post={post}
       depth={depth}
       renderMedia={(item) => (
-        <PostMedia
-          url={item.mediaUrl!}
-          mediaType={item.mediaType}
-          className="mt-3"
-        />
+        item.media?.length ? (
+          <PostMediaGallery post={item} className="mt-3" />
+        ) : (
+          <PostMedia url={item.mediaUrl!} mediaType={item.mediaType} className="mt-3" />
+        )
       )}
       renderAppearance={(item, customization) => (
         <ProfileAppearanceCard

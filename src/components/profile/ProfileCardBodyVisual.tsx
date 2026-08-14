@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 
 import type { ProfileViewModel } from "@/types/domain";
-import { RelativeTime } from "@/components/ui/RelativeTime";
 import { ProfileMeta } from "./ProfileMeta";
 import { ProfileStats } from "./ProfileStats";
+import { ProfilePresenceLabel } from "./ProfilePresenceLabel";
 
 type ProfileCardBodyVisualProps = {
   profile: ProfileViewModel;
@@ -29,7 +29,7 @@ export function ProfileCardBodyVisual({
       ) : null}
       {profile.lastSeenAt ? (
         <p className="mt-2 text-xs text-[var(--app-muted)]">
-          Был(а) в сети <RelativeTime iso={profile.lastSeenAt} />
+          <ProfilePresenceLabel userId={profile.id} lastSeenAt={profile.lastSeenAt} />
         </p>
       ) : null}
       {relationshipActions ? (

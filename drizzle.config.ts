@@ -22,7 +22,11 @@ loadEnvFile(".env");
 const url = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
 
 export default defineConfig({
-  schema: ["./src/server/db/schema.ts", "./src/server/db/community-schema.ts"],
+  schema: [
+    "./src/server/db/schema.ts",
+    "./src/server/db/community-schema.ts",
+    "./src/server/db/post-schema.ts",
+  ],
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {

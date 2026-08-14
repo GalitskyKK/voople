@@ -6,14 +6,15 @@ import { usePathname } from "next/navigation";
 import { NotificationNavBadge } from "@/components/notifications/NotificationNavBadge";
 import { AppBottomNavigationVisual } from "./AppNavigationVisual";
 
-export function BottomNav() {
+export function BottomNav({ authenticated }: { authenticated: boolean }) {
   const pathname = usePathname();
 
   return (
     <AppBottomNavigationVisual
       pathname={pathname}
+      mode={authenticated ? "authenticated" : "public"}
       notificationBadge={
-        <NotificationNavBadge className="-right-0.5 -top-0.5" />
+        authenticated ? <NotificationNavBadge className="-right-0.5 -top-0.5" /> : undefined
       }
       renderDestination={({ href, label, className, active, children }) => (
         <Link

@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
-import { DesktopMediaDropzone } from "./DesktopMediaDropzone";
-import { useDesktopMediaUpload } from "./useDesktopMediaUpload";
+import { PostMediaUploadControl } from "@/components/media/PostMediaUploadControl";
+import { useDesktopPostMediaUploads } from "./useDesktopPostMediaUploads";
+import { useDesktopCloudPostDraft } from "./useDesktopCloudPostDraft";
 
 export function DesktopCreatePostModal({
   config,
@@ -25,7 +26,8 @@ export function DesktopCreatePostModal({
     () => createDesktopTrpcClient(config, () => session.access_token),
     [config, session.access_token],
   );
-  const upload = useDesktopMediaUpload(config, session);
+  const uploads = useDesktopPostMediaUploads(config, session);
+  const cloudDraft = useDesktopCloudPostDraft(config, session, text, setText, uploads);
 
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -37,7 +39,7 @@ export function DesktopCreatePostModal({
 
   const publish = async () => {
     const trimmed = text.trim();
-    if (!trimmed && !upload.media) {
+    if (!trimmed && uploads.media.length === 0) {
       setError("Добавьте текст или медиа");
       return;
     }
@@ -46,9 +48,9 @@ export function DesktopCreatePostModal({
     try {
       await client.mutation("post.create", {
         text: trimmed || undefined,
-        mediaKey: upload.media?.mediaKey,
-        mediaType: upload.media?.mediaType,
+        media: uploads.media,
       });
+      await cloudDraft.clear();
       onCreated();
       onClose();
     } catch (publishError) {
@@ -83,20 +85,15 @@ export function DesktopCreatePostModal({
           onChange={(event) => setText(event.target.value)}
           disabled={busy}
         />
-        <DesktopMediaDropzone
-          error={upload.error}
-          media={upload.media}
-          uploading={upload.uploading}
-          onUpload={(file) => void upload.upload(file)}
-          onRemove={upload.remove}
-        />
+        <PostMediaUploadControl uploads={uploads} disabled={busy} />
+        {cloudDraft.active ? <p className="composer-draft-status">{cloudDraft.saving ? "Сохраняем облачный черновик…" : cloudDraft.error ?? "Черновик синхронизирован с web"}</p> : null}
         <div className="composer-footer">
           <span>{text.length}/280</span>
           <button
             type="button"
             className="primary-button"
             onClick={publish}
-            disabled={busy || upload.uploading}
+            disabled={busy || uploads.busy}
           >
             <Send size={16} />
             {busy ? "Публикуем…" : "Опубликовать"}

@@ -14,7 +14,7 @@ import { readTrackMetadata } from "@/lib/player/metadata";
 import { getChatClipboardFile } from "@/lib/chat/clipboard";
 import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
 import { cn } from "@/lib/utils";
-import type { ChatMessageView } from "@/types/chat";
+import type { ChatMessageView, GroupEmojiView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
 
 import { ChatAttachMenu } from "./ChatAttachMenu";
@@ -27,6 +27,7 @@ import { ChatMusicAttachSheet } from "./ChatMusicAttachSheet";
 import { ChatVoiceRecorder, type ChatRecordMode } from "./ChatVoiceRecorder";
 
 type ChatComposerProps = {
+  chatId: string;
   text: string;
   onTextChange: (value: string) => void;
   replyTo: ChatMessageView | null;
@@ -40,9 +41,11 @@ type ChatComposerProps = {
   onSend: () => void;
   isSending: boolean;
   disabled?: boolean;
+  customEmojis?: GroupEmojiView[];
 };
 
 export function ChatComposer({
+  chatId,
   text,
   onTextChange,
   replyTo,
@@ -56,6 +59,7 @@ export function ChatComposer({
   onSend,
   isSending,
   disabled,
+  customEmojis = [],
 }: ChatComposerProps) {
   const inputId = useId();
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -65,7 +69,7 @@ export function ChatComposer({
   const [musicSheetOpen, setMusicSheetOpen] = useState(false);
   const [pendingAudioDraft, setPendingAudioDraft] = useState<PendingChatAudioDraft | null>(null);
   const [isParsingAudio, setIsParsingAudio] = useState(false);
-  const { uploadFile, isUploading, error, setError } = useChatUpload();
+  const { uploadFile, isUploading, error, setError } = useChatUpload(chatId);
 
   const clearPendingUpload = () => {
     if (pendingUpload?.previewUrl) URL.revokeObjectURL(pendingUpload.previewUrl);
@@ -288,6 +292,7 @@ export function ChatComposer({
           open={emojiOpen}
           onClose={() => setEmojiOpen(false)}
           onPick={(emoji) => onTextChange(text + emoji)}
+          customEmojis={customEmojis}
           className="absolute bottom-full right-12 z-10 mb-2"
         />
 

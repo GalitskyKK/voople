@@ -42,7 +42,7 @@ export default async function UserProfilePage({ params, searchParams }: PageProp
 
   const { profile, posts, canvasStrokes } = pageData
 
-  const canFollow = Boolean(viewerId && viewerId !== profile.id)
+  const canFollow = viewerId !== profile.id
 
   return (
     <>

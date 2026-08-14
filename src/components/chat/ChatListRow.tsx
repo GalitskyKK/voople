@@ -39,13 +39,21 @@ export function ChatListRow({
     chat.channels.some((section) => section.id === activeChatId);
 
   return (
-    <li>
+    <li
+      style={
+        isGroup && chat.groupAccentColor
+          ? ({ "--group-accent": chat.groupAccentColor } as React.CSSProperties)
+          : undefined
+      }
+    >
       {renderDestination({
         chat,
         className: cn(
           "voople-chat-list__row flex min-h-[4.25rem] w-full items-center gap-3 rounded-xl px-3 py-2 text-left",
           isActive
-            ? "voople-chat-list__row--active bg-[var(--app-accent-soft)]"
+            ? isGroup
+              ? "voople-chat-list__row--active bg-[color-mix(in_srgb,var(--group-accent,var(--theme-accent))_14%,var(--app-surface-soft))] shadow-[inset_3px_0_0_var(--group-accent,var(--theme-accent))]"
+              : "voople-chat-list__row--active bg-[var(--app-accent-soft)]"
             : "hover:bg-[var(--app-surface-soft)]",
         ),
         children: (
@@ -65,7 +73,10 @@ export function ChatListRow({
                 {renderTitle ? (
                   renderTitle(chat, title)
                 ) : (
-                  <span className="min-w-0 truncate font-medium">{title}</span>
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="min-w-0 truncate font-medium">{title}</span>
+                    {isGroup && chat.groupTag ? <span className="shrink-0 rounded bg-[color-mix(in_srgb,var(--group-accent,var(--theme-accent))_14%,var(--app-surface-soft))] px-1 py-0.5 text-[9px] font-bold tracking-wide text-[var(--group-accent,var(--theme-accent))]">{chat.groupTag}</span> : null}
+                  </span>
                 )}
                 {chat.lastMessage ? (
                   <RelativeTime

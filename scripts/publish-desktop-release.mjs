@@ -4,6 +4,8 @@ import { basename, resolve } from "node:path";
 
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
+import { extractReleaseNotes } from "./release-notes.mjs";
+
 const [installerArgument, versionArgument, signatureArgument] = process.argv.slice(2);
 
 function requiredEnvironment(name) {
@@ -53,6 +55,8 @@ const installer = await readFile(installerPath);
 const updaterSignature = (await readFile(signaturePath, "utf8")).trim();
 if (!updaterSignature) throw new Error("The Tauri updater signature is empty.");
 const installerStats = await stat(installerPath);
+const changelog = await readFile(resolve("CHANGELOG.md"), "utf8");
+const releaseNotes = extractReleaseNotes(changelog, versionArgument);
 const sha256 = createHash("sha256").update(installer).digest("hex");
 const checksum = Buffer.from(`${sha256}  Voople-Setup-x64.exe\n`, "utf8");
 const publishedAt = new Date().toISOString();
@@ -63,7 +67,7 @@ const latestManifest = Buffer.from(
   `${JSON.stringify(
     {
       version: versionArgument,
-      notes: `Voople Desktop ${versionArgument}`,
+      notes: releaseNotes ?? `Voople Desktop ${versionArgument}`,
       pub_date: publishedAt,
       platforms: {
         "windows-x86_64": {

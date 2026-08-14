@@ -47,7 +47,13 @@ function useScrollMode(pathname: string): ScrollContainerMode {
   return isMessagesPath(pathname) || isLg ? "element" : "window";
 }
 
-export function MainShell({ children }: { children: React.ReactNode }) {
+export function MainShell({
+  children,
+  authenticated,
+}: {
+  children: React.ReactNode;
+  authenticated: boolean;
+}) {
   const pathname = usePathname();
   const shellScrollRef = useRef<HTMLDivElement>(null);
   const isLg = useIsLgViewport();
@@ -77,8 +83,8 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       routeKind={
         isProfileRoute ? "profile" : isMessagesRoute ? "messages" : "standard"
       }
-      sidebar={<DesktopSidebar />}
-      overlay={<PlayerShell />}
+      sidebar={<DesktopSidebar authenticated={authenticated} />}
+      overlay={authenticated ? <PlayerShell /> : undefined}
       fixedViewport={isMessagesRoute}
       columnClassName={cn(isMessagesRoute && "h-full min-h-0")}
       workspaceClassName={cn(isMessagesRoute && "h-full min-h-0")}
@@ -89,7 +95,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         !usesWindowScroll && "h-full min-h-0 overflow-hidden",
       )}
     >
-      {!hideMobileTopBar && <AppTopBar />}
+      {!hideMobileTopBar && <AppTopBar authenticated={authenticated} />}
       <Suspense fallback={null}>
         <FeedHeader />
       </Suspense>
@@ -129,8 +135,8 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           </AppPageContent>
         </div>
       </ScrollContainerProvider>
-      {showFab && <CreatePostFab />}
-      {!hideMobileBottomNav && <BottomNav />}
+      {authenticated && showFab && <CreatePostFab />}
+      {!hideMobileBottomNav && <BottomNav authenticated={authenticated} />}
     </AppShellFrame>
   );
 }

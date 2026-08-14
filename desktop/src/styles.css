@@ -41,7 +41,6 @@ button { color: inherit; }
   position: relative;
   min-height: 0;
   overflow: hidden;
-  padding-top: 0.375rem;
   background: var(--background);
 }
 .desktop-window-content > .status-page,

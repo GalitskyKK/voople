@@ -59,6 +59,31 @@ export type StatusPostPayload = {
 
 export type PostMediaType = "image" | "gif" | "meme" | "video" | "circle";
 
+export type PostMediaView = {
+  id: string;
+  position: number;
+  url: string;
+  type: Exclude<PostMediaType, "circle">;
+  width?: number | null;
+  height?: number | null;
+  durationSeconds?: number | null;
+  sizeBytes?: number | null;
+};
+
+export type PostDraftView = {
+  text: string;
+  media: Array<{
+    mediaKey: string;
+    mediaType: Exclude<PostMediaType, "circle">;
+    url: string;
+    width?: number;
+    height?: number;
+    durationSeconds?: number;
+  }>;
+  revision: number;
+  updatedAt: string;
+};
+
 export type PostViewModel = {
   id: string;
   author: PostAuthorView;
@@ -73,6 +98,7 @@ export type PostViewModel = {
   status?: StatusPostPayload;
   mediaUrl?: string | null;
   mediaType?: PostMediaType | null;
+  media?: PostMediaView[];
   repostComment?: string;
   repost?: {
     target: PostViewModel;

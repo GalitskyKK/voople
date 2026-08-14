@@ -9,8 +9,31 @@ export type ChatMessageReplyPreview = {
 
 export type ChatMessageReaction = {
   emoji: string;
+  emojiId?: string | null;
+  emojiUrl?: string | null;
+  emojiName?: string | null;
   count: number;
   reactedByMe: boolean;
+};
+
+export type ChatMessageContentNode =
+  | { type: "text"; text: string }
+  | { type: "customEmoji"; emojiId: string; name: string; url: string | null };
+
+export type GroupEmojiView = {
+  id: string;
+  name: string;
+  url: string;
+  animated: boolean;
+  createdBy: string;
+};
+
+export type GroupSoundView = {
+  id: string;
+  name: string;
+  url: string;
+  durationMs: number;
+  createdBy: string;
 };
 
 export type ChatMessageAttachment =
@@ -41,6 +64,7 @@ export type ChatMessageView = {
   id: string;
   senderId: string;
   text: string | null;
+  content?: ChatMessageContentNode[] | null;
   createdAt: string;
   isMine: boolean;
   sender?: {
@@ -75,6 +99,8 @@ export type ChatListItem = {
   sectionAccessMode: "inherit" | "restricted";
   groupIcon: string | null;
   groupAvatarUrl: string | null;
+  groupBannerUrl: string | null;
+  groupTag: string | null;
   groupAccentColor: string | null;
   boostCount: number;
   boostedByMe: boolean;
@@ -107,6 +133,7 @@ export type ChatGroupMemberView = {
   hasVooplePlus?: boolean;
   avatarUrl?: string | null;
   role: "owner" | "admin" | "member";
+  roleColor: string | null;
 };
 
 export type ChatGroupAuditAction =
@@ -139,14 +166,40 @@ export type PublicGroupSearchHit = {
   publicSlug: string | null;
   icon: string | null;
   avatarUrl: string | null;
+  tag: string | null;
   memberCount: number;
   joined: boolean;
+};
+
+export type PublicGroupPageView = PublicGroupSearchHit & {
+  description: string | null;
+  accentColor: string | null;
+  bannerUrl: string | null;
+};
+
+export type GroupCustomizationInput = {
+  description: string | null;
+  icon: string | null;
+  publicSlug: string | null;
+  accentColor: string | null;
+  tag: string | null;
+  vanityInviteSlug: string | null;
+  roleColors: Record<"owner" | "admin" | "member", string | null>;
+  avatarKey?: string | null;
+  bannerKey?: string | null;
 };
 
 export type GroupCommunityView = {
   description: string | null;
   icon: string | null;
   avatarUrl: string | null;
+  bannerUrl: string | null;
+  effectiveBannerUrl: string | null;
+  tag: string | null;
+  effectiveTag: string | null;
+  vanityInviteSlug: string | null;
+  roleColors: Record<"owner" | "admin" | "member", string | null>;
+  effectiveRoleColors: Record<"owner" | "admin" | "member", string | null>;
   publicSlug: string | null;
   accentColor: string | null;
   effectiveAccentColor: string | null;
@@ -154,6 +207,18 @@ export type GroupCommunityView = {
   boostedByMe: boolean;
   canBoost: boolean;
   boostUnlocksAccent: boolean;
+  boostUnlocksBanner: boolean;
+  boostUnlocksTag: boolean;
+  boostUnlocksVanityInvite: boolean;
+  boostUnlocksRoleStyles: boolean;
+  boostSlots: Array<{
+    slot: 1 | 2 | 3;
+    chatId: string | null;
+    assignedHere: boolean;
+    cooldownUntil: string | null;
+  }>;
+  groupLevel: 0 | 1 | 3 | 6 | 12 | 24;
+  graceUntil: string | null;
 };
 
 export type ChatThreadSummary = Pick<
@@ -169,6 +234,8 @@ export type ChatThreadSummary = Pick<
   | "sectionAccessMode"
   | "groupIcon"
   | "groupAvatarUrl"
+  | "groupBannerUrl"
+  | "groupTag"
   | "groupAccentColor"
   | "boostCount"
   | "boostedByMe"
@@ -218,6 +285,11 @@ export type ChatInvitePreview = {
   reason: "active" | "expired" | "revoked" | "used" | "missing";
   chatId: string | null;
   chatName: string | null;
+  groupIcon: string | null;
+  groupAvatarUrl: string | null;
+  groupBannerUrl: string | null;
+  groupTag: string | null;
+  groupAccentColor: string | null;
   memberCount: number;
   expiresAt: string | null;
 };

@@ -2,7 +2,7 @@ import type { Session } from "@supabase/supabase-js";
 import { useState, type FormEvent } from "react";
 
 import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
-import type { ChatMessageView } from "@/types/chat";
+import type { ChatMessageView, GroupEmojiView } from "@/types/chat";
 import { ChatComposerFrame } from "@/components/chat/ChatComposerVisual";
 
 import type { DesktopConfig } from "../config";
@@ -12,6 +12,7 @@ import type { DesktopMessageDraft } from "./useDesktopChatThread";
 import { useDesktopChatUpload } from "./useDesktopChatUpload";
 
 export function DesktopChatComposer({
+  chatId,
   config,
   session,
   replyTo,
@@ -21,7 +22,9 @@ export function DesktopChatComposer({
   onSend,
   onEdit,
   onCancelEdit,
+  customEmojis = [],
 }: {
+  chatId: string;
   config: DesktopConfig;
   session: Session;
   replyTo: ChatMessageView | null;
@@ -31,6 +34,7 @@ export function DesktopChatComposer({
   onSend: (draft: DesktopMessageDraft) => Promise<boolean>;
   onEdit: (messageId: string, text: string) => Promise<boolean>;
   onCancelEdit: () => void;
+  customEmojis?: GroupEmojiView[];
 }) {
   const [text, setText] = useState(() => editing?.text ?? "");
   const {
@@ -41,7 +45,7 @@ export function DesktopChatComposer({
     upload,
     uploadFile,
     uploading,
-  } = useDesktopChatUpload(config, session);
+  } = useDesktopChatUpload(config, session, chatId);
 
   const audioMetadataReady =
     upload?.kind !== "audio" ||
@@ -63,7 +67,7 @@ export function DesktopChatComposer({
       }
       return;
     }
-    const sent = await onSend({ text, replyTo, upload });
+    const sent = await onSend({ text, replyTo, upload, customEmojis });
     if (!sent) return;
     setText("");
     clear();
@@ -140,6 +144,7 @@ export function DesktopChatComposer({
               void uploadFile(file, { purpose, durationSeconds });
             }}
             onError={setError}
+            customEmojis={customEmojis}
           />
           {text.length >= 800 ? (
             <span className="mt-1 block text-right text-[10px] tabular-nums text-[var(--app-muted)]">

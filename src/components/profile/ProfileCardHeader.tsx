@@ -5,6 +5,7 @@ import { ProfileBanner } from "./ProfileBanner"
 import { ProfileCardIdentityVisual } from "./ProfileCardIdentityVisual"
 import { ProfileEffect } from "./ProfileEffect"
 import { CssEffectLayer } from "./effects/CssEffectLayer"
+import { ProfileAvatarViewerTrigger } from "./ProfileAvatarViewerTrigger"
 
 export type ProfileCardHeaderProps = {
   userId?: string
@@ -51,14 +52,19 @@ export function ProfileCardHeader({
         subscriptionExpiresAt={subscriptionExpiresAt}
         compact={compact}
         avatar={
-          <ProfileAvatarWithPresence
-            userId={userId}
+          <ProfileAvatarViewerTrigger
+            url={assets.animatedAvatarUrl}
             displayName={displayName}
-            ring={flags.hasAvatarRing}
-            ringId={customization.avatarRingId}
-            decorationUrl={assets.avatarDecorationUrl}
-            animatedAvatarUrl={assets.animatedAvatarUrl}
-          />
+          >
+            <ProfileAvatarWithPresence
+              userId={userId}
+              displayName={displayName}
+              ring={flags.hasAvatarRing}
+              ringId={customization.avatarRingId}
+              decorationUrl={assets.avatarDecorationUrl}
+              animatedAvatarUrl={assets.animatedAvatarUrl}
+            />
+          </ProfileAvatarViewerTrigger>
         }
         badges={
           userId && !compact ? (

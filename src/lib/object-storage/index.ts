@@ -1,5 +1,14 @@
 export { getObjectStorageConfig, UPLOAD_LIMITS } from "./config";
-export { copyObject, createPresignedGetUrl, createPresignedPutUrl, deleteObject, headObject, putObject } from "./client";
+export {
+  copyObject,
+  createPresignedGetUrl,
+  createPresignedPutUrl,
+  deleteObject,
+  headObject,
+  putObject,
+  readObjectBytes,
+  readObjectPrefix,
+} from "./client";
 export { resolveForcePathStyle } from "./config";
 export { parseChatUploadMime, chatAttachmentKindFromKey, chatAudioKindFromKey } from "./chat-mime";
 export { sniffUploadKind } from "./sniff";

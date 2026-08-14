@@ -1,8 +1,19 @@
 export type { ChatListItem } from "@/types/chat";
 export type { ChatMessageView } from "@/types/chat";
 import { sendMessageRest } from "@/server/data/chat-rest";
-import { updateGroupCustomizationRest } from "@/server/data/chat-community-rest";
-import { resolvePublicMediaKey } from "@/server/services/upload.service";
+import {
+  getGroupCommunityRest,
+  updateGroupCustomizationRest,
+} from "@/server/data/chat-community-rest";
+import {
+  isAnimatedPublicImageKey,
+  resolvePublicMediaKey,
+} from "@/server/services/upload.service";
+import { prepareMessageContentRest } from "@/server/data/chat-content-rest";
+import {
+  groupAnimatedBannerEnabled,
+  groupAnimatedIconEnabled,
+} from "@/lib/group-perks";
 
 export {
   addGroupMembersRest as addGroupMembers,
@@ -23,9 +34,18 @@ export async function sendMessage(
   input: Parameters<typeof sendMessageRest>[0],
 ) {
   if (input.mediaKey) {
-    await resolvePublicMediaKey(input.mediaKey, input.senderId, "chat");
+    await resolvePublicMediaKey(input.mediaKey, input.senderId, "chat", {
+      chatId: input.chatId,
+    });
   }
-  return sendMessageRest(input);
+  const prepared = input.content?.length
+    ? await prepareMessageContentRest(input.chatId, input.senderId, input.content)
+    : null;
+  return sendMessageRest({
+    ...input,
+    text: prepared?.fallback ?? input.text,
+    storedContent: prepared?.stored,
+  });
 }
 
 export {
@@ -34,12 +54,12 @@ export {
   leaveGroupRest as leaveGroup,
   listChatContactsRest as listChatContacts,
   listGroupContactsRest as listGroupContacts,
-  listGroupMembersRest as listGroupMembers,
   removeGroupMemberRest as removeGroupMember,
   setGroupVisibilityRest as setGroupVisibility,
   setSectionAccessRest as setSectionAccess,
   setGroupTopicsRest as setGroupTopics,
 } from "@/server/data/chat-management-rest";
+export { listGroupMembersRest as listGroupMembers } from "@/server/data/chat-group-members-rest";
 
 export { listGroupAuditRest as listGroupAudit } from "@/server/data/chat-group-audit-rest";
 export {
@@ -48,6 +68,7 @@ export {
 } from "@/server/data/chat-group-roles-rest";
 
 export {
+  getPublicGroupBySlugRest as getPublicGroupBySlug,
   joinPublicGroupRest as joinPublicGroup,
   listPublicGroupsRest as listPublicGroups,
 } from "@/server/data/chat-discovery-rest";
@@ -56,6 +77,16 @@ export {
   getGroupCommunityRest as getGroupCommunity,
   setGroupBoostRest as setGroupBoost,
 } from "@/server/data/chat-community-rest";
+export {
+  createGroupEmojiRest as createGroupEmoji,
+  deleteGroupEmojiRest as deleteGroupEmoji,
+  listGroupEmojisRest as listGroupEmojis,
+} from "@/server/data/group-emojis-rest";
+export {
+  createGroupSoundRest as createGroupSound,
+  deleteGroupSoundRest as deleteGroupSound,
+  listGroupSoundsRest as listGroupSounds,
+} from "@/server/data/group-sounds-rest";
 
 export async function updateGroupCustomization(
   chatId: string,
@@ -66,13 +97,39 @@ export async function updateGroupCustomization(
     patch.avatarKey === undefined
       ? undefined
       : await resolvePublicMediaKey(patch.avatarKey, userId, "group-avatar");
-  return updateGroupCustomizationRest(chatId, userId, { ...patch, avatarKey });
+  const bannerKey =
+    patch.bannerKey === undefined
+      ? undefined
+      : await resolvePublicMediaKey(patch.bannerKey, userId, "banner");
+  if (avatarKey || bannerKey) {
+    const community = await getGroupCommunityRest(chatId, userId);
+    if (
+      avatarKey &&
+      !groupAnimatedIconEnabled(community.groupLevel) &&
+      await isAnimatedPublicImageKey(avatarKey)
+    ) {
+      throw new Error("Анимированная иконка группы открывается на 3-м уровне");
+    }
+    if (
+      bannerKey &&
+      !groupAnimatedBannerEnabled(community.groupLevel) &&
+      await isAnimatedPublicImageKey(bannerKey)
+    ) {
+      throw new Error("Анимированный баннер группы открывается на 12-м уровне");
+    }
+  }
+  return updateGroupCustomizationRest(chatId, userId, {
+    ...patch,
+    avatarKey,
+    bannerKey,
+  });
 }
 
 export {
   acceptChatInviteRest as acceptChatInvite,
   createChatInviteRest as createChatInvite,
-  createChatRoomMediaTokenRest as createChatRoomMediaToken,
+    createChatRoomMediaTokenRest as createChatRoomMediaToken,
+    createChatRoomScreenAudioTokenRest as createChatRoomScreenAudioToken,
   enterChatRoomRest as enterChatRoom,
   getChatRoomRest as getChatRoom,
   heartbeatChatRoomRest as heartbeatChatRoom,

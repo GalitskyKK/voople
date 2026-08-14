@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, Settings, ShoppingBag, Sparkles } from "lucide-react";
+import { Download, LogIn, Search, Settings, ShoppingBag, Sparkles } from "lucide-react";
 
 import { COPY } from "@/lib/constants/copy";
 import { VoopleMark } from "@/components/brand/VoopleMark";
+import { AppAccountChip } from "./AppAccountChip";
 
 /** Mobile-only top bar; logo + shop. Desktop uses sidebar. */
-export function AppTopBar() {
+export function AppTopBar({ authenticated }: { authenticated: boolean }) {
   const pathname = usePathname();
   const hideShop = pathname.startsWith("/shop");
 
@@ -28,7 +29,7 @@ export function AppTopBar() {
             <Search className="h-5 w-5" strokeWidth={1.75} />
           </Link>
         )}
-        {!pathname.startsWith("/events") && (
+        {authenticated && !pathname.startsWith("/events") && (
           <Link
             href="/events"
             className="relative flex items-center rounded-[var(--app-radius-sm)] px-2 py-1.5 text-(--theme-accent) transition hover:bg-[var(--app-accent-soft)]"
@@ -47,13 +48,32 @@ export function AppTopBar() {
             <ShoppingBag className="h-5 w-5" strokeWidth={1.75} />
           </Link>
         )}
-        {!pathname.startsWith("/settings") && (
+        {authenticated && !pathname.startsWith("/settings") && (
           <Link
             href="/settings"
             className="flex items-center gap-1.5 rounded-[var(--app-radius-sm)] px-2 py-1.5 text-sm text-[var(--app-muted)] transition-all duration-200 hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
             aria-label="Настройки"
           >
             <Settings className="h-5 w-5" strokeWidth={1.75} />
+          </Link>
+        )}
+        <Link
+          href="/download/desktop"
+          prefetch={false}
+          className="flex items-center rounded-[var(--app-radius-sm)] px-2 py-1.5 text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
+          aria-label="Скачать приложение"
+        >
+          <Download className="h-5 w-5" strokeWidth={1.75} />
+        </Link>
+        {authenticated ? (
+          <AppAccountChip compact />
+        ) : (
+          <Link
+            href={`/login?redirect=${encodeURIComponent(pathname)}`}
+            className="flex items-center gap-1.5 rounded-[var(--app-radius-sm)] bg-[var(--app-accent-soft)] px-2.5 py-1.5 text-xs font-semibold text-[var(--foreground)]"
+          >
+            <LogIn className="h-4 w-4" />
+            Войти
           </Link>
         )}
       </div>

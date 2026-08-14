@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/Button";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { getChatClipboardFile } from "@/lib/chat/clipboard";
 import { cn } from "@/lib/utils";
+import type { GroupEmojiView } from "@/types/chat";
 
 export function DesktopChatComposerInput({
   text,
@@ -30,6 +31,7 @@ export function DesktopChatComposerInput({
   onPastedFile,
   onVoiceRecorded,
   onError,
+  customEmojis = [],
 }: {
   text: string;
   canSend: boolean;
@@ -48,6 +50,7 @@ export function DesktopChatComposerInput({
     purpose: "voice" | "circle",
   ) => void;
   onError: (message: string) => void;
+  customEmojis?: GroupEmojiView[];
 }) {
   const [attachOpen, setAttachOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
@@ -156,6 +159,7 @@ export function DesktopChatComposerInput({
             open={emojiOpen}
             onClose={() => setEmojiOpen(false)}
             onPick={(emoji) => onTextChange(`${text}${emoji}`.slice(0, 1000))}
+            customEmojis={customEmojis}
             className="absolute bottom-12 left-0 z-30 w-72"
           />
         </div>

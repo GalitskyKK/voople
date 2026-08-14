@@ -8,7 +8,6 @@ import {
   mapUserSearchRow,
   type UserSearchRow,
 } from "@/server/mappers/user-search";
-import type { ChatGroupMemberView } from "@/types/chat";
 import type { UserSearchHit } from "@/types/search";
 
 const USER_CARD_SELECT =
@@ -111,36 +110,6 @@ export async function listGroupContactsRest(
 export async function listChatContactsRest(userId: string, query = "") {
   const { followerIds, followingIds } = await getFollowContactIds(userId);
   return loadContactCards([...new Set([...followerIds, ...followingIds])], query);
-}
-
-export async function listGroupMembersRest(
-  chatId: string,
-  userId: string,
-): Promise<ChatGroupMemberView[]> {
-  const membership = await assertChatMemberRest(chatId, userId);
-  if (membership.type !== "group") throw new Error("Это не групповая беседа");
-
-  const admin = getAdminClient();
-  const { data, error } = await admin
-    .from("chat_members")
-    .select(`user_id, role, joined_at, users (${USER_CARD_SELECT})`)
-    .eq("chat_id", membership.accessChatId)
-    .order("joined_at", { ascending: true });
-  if (error) throw new Error(error.message);
-
-  return (data ?? [])
-    .flatMap((row) => {
-      const relation = row.users as UserSearchRow | UserSearchRow[] | null;
-      const user = Array.isArray(relation) ? relation[0] : relation;
-      if (!user) return [];
-      const role: ChatGroupMemberView["role"] =
-        row.role === "owner" || row.role === "admin" ? row.role : "member";
-      return [{ ...mapUserSearchRow(user), role } satisfies ChatGroupMemberView];
-    })
-    .sort((a, b) => {
-      const priority = { owner: 0, admin: 1, member: 2 } as const;
-      return priority[a.role] - priority[b.role];
-    });
 }
 
 export async function addGroupMembersRest(

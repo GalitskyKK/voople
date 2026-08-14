@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Copy, Link2, Loader2, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 
@@ -9,22 +9,37 @@ export function GroupInviteLinkPanel({
   inviteBaseUrl,
   createInvite,
   revokeInvite,
+  loadVanityInvite,
 }: {
   inviteBaseUrl?: string;
   createInvite: () => Promise<{ token: string }>;
   revokeInvite: (token: string) => Promise<unknown>;
+  loadVanityInvite?: () => Promise<string | null>;
 }) {
   const [token, setToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [creating, setCreating] = useState(false);
   const [revoking, setRevoking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [vanitySlug, setVanitySlug] = useState<string | null>(null);
   const baseUrl =
     inviteBaseUrl ??
     (typeof window === "undefined" ? "" : window.location.origin);
   const inviteUrl = token
     ? `${baseUrl.replace(/\/+$/, "")}/invite/${token}`
     : null;
+
+  useEffect(() => {
+    let active = true;
+    void loadVanityInvite?.()
+      .then((value) => {
+        if (active) setVanitySlug(value ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [loadVanityInvite]);
 
   const create = async () => {
     if (creating) return;
@@ -114,6 +129,19 @@ export function GroupInviteLinkPanel({
           Создать ссылку
         </Button>
       )}
+
+      {vanitySlug ? (
+        <div className="mt-3 border-t border-[var(--app-border)] pt-3">
+          <p className="text-xs font-medium">Постоянная ссылка 24-го уровня</p>
+          <button
+            type="button"
+            className="mt-1 w-full break-all rounded-xl bg-[var(--app-surface)] px-3 py-2 text-left text-xs transition hover:text-[var(--theme-accent)]"
+            onClick={() => void navigator.clipboard.writeText(`${baseUrl.replace(/\/+$/, "")}/invite/${vanitySlug}`)}
+          >
+            {`${baseUrl.replace(/\/+$/, "")}/invite/${vanitySlug}`}
+          </button>
+        </div>
+      ) : null}
 
       {error ? <p className="mt-2 text-xs text-red-400" role="alert">{error}</p> : null}
     </section>

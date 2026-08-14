@@ -6,6 +6,7 @@ import { COPY } from "@/lib/constants/copy";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import { useAuthGate } from "@/components/auth/AuthGateProvider";
 
 type ProfileFollowButtonProps = {
   username: string;
@@ -45,10 +46,11 @@ export function ProfileFollowButton({
   layout = "default",
 }: ProfileFollowButtonProps) {
   const utils = trpc.useUtils();
+  const { authenticated, requireAuth } = useAuthGate();
 
   const { data: followState, isLoading } = trpc.profile.getFollowState.useQuery(
     { username },
-    { enabled: canFollow, staleTime: 30_000 },
+    { enabled: canFollow && authenticated, staleTime: 30_000 },
   );
 
   const mutation = trpc.profile.toggleFollow.useMutation({
@@ -63,7 +65,11 @@ export function ProfileFollowButton({
   const following = followState?.following ?? false;
   const followsYou = followState?.followsYou ?? false;
   const showFollowBack = followsYou && !following;
-  const pending = mutation.isPending || isLoading;
+  const pending = mutation.isPending || (authenticated && isLoading);
+  const toggleFollow = () => {
+    if (!requireAuth({ title: "Подписаться на профиль" })) return;
+    mutation.mutate({ username });
+  };
 
   const actionLabel = following
     ? COPY.unsubscribe
@@ -80,7 +86,7 @@ export function ProfileFollowButton({
         className="shrink-0"
         disabled={pending}
         aria-label={actionLabel}
-        onClick={() => mutation.mutate({ username })}
+        onClick={toggleFollow}
       >
         {following ? (
           <UserMinus className="h-4 w-4" />
@@ -101,7 +107,7 @@ export function ProfileFollowButton({
         className="w-full"
         disabled={pending}
         aria-pressed={following}
-        onClick={() => mutation.mutate({ username })}
+        onClick={toggleFollow}
       >
         {following ? (
           <>

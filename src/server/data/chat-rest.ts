@@ -1,27 +1,26 @@
-import {
-  assertOwnedUploadKey,
-  chatAudioKindFromKey,
-  chatAttachmentKindFromKey,
-  createPresignedGetUrl,
-  isPrivateChatMediaKey,
-  publicAssetUrl,
-} from "@/lib/object-storage";
+import { assertOwnedUploadKey, chatAttachmentKindFromKey } from "@/lib/object-storage";
 import { getAdminClient } from "@/lib/supabase/admin";
 import {
   toProfileCustomizationView,
   type CustomizationRow,
 } from "@/server/mappers/customization";
 import { mapSubscriptionFields } from "@/server/mappers/profile";
-import type {
-  ChatMessageAttachment,
-  ChatMessageView,
-  ChatThreadSummary,
-} from "@/types/chat";
-import type { PlaylistTrackView } from "@/types/playlist";
+import type { ChatMessageView, ChatThreadSummary } from "@/types/chat";
 import { assertChatMemberRest } from "@/server/data/chat-access-rest";
 import { loadGroupCommunitySummariesRest } from "@/server/data/chat-community-rest";
-import { loadMessageReactionsRest } from "@/server/data/chat-reactions-rest";
 import { getOrCreateDirectChatRest } from "@/server/data/chat-management-rest";
+import {
+  type ChatMessageContentInputNode,
+  type StoredChatMessageContentNode,
+} from "@/server/data/chat-content-rest";
+import {
+  hydrateMessages,
+  isMissingMessageContentColumn,
+  LEGACY_MESSAGE_SELECT,
+  loadMessageRows,
+  MESSAGE_SELECT,
+  type MessageRow,
+} from "@/server/data/chat-message-hydration-rest";
 
 export {
   addGroupMembersRest,
@@ -46,160 +45,6 @@ function compactAvatarFields(
     avatarDecorationUrl: customization.assets.avatarDecorationUrl ?? null,
     avatarRingId: customization.avatarRingId ?? null,
   };
-}
-
-type MessageRow = {
-  id: string;
-  sender_id: string;
-  text: string | null;
-  media_url: string | null;
-  media_title: string | null;
-  media_artist: string | null;
-  shared_track_id: string | null;
-  reply_to_message_id: string | null;
-  created_at: string;
-  read_at: string | null;
-};
-
-type TrackRow = {
-  id: string;
-  user_id: string;
-  title: string;
-  artist: string;
-  file_url: string;
-  duration_seconds: number | null;
-};
-
-function mapTrackRow(row: TrackRow): PlaylistTrackView {
-  return {
-    id: row.id,
-    title: row.title,
-    artist: row.artist,
-    streamUrl: publicAssetUrl(row.file_url) ?? row.file_url,
-    durationSeconds: row.duration_seconds,
-  };
-}
-
-async function resolveMediaUrl(key: string | null): Promise<string | null> {
-  if (!key) return null;
-  if (key.startsWith("http://") || key.startsWith("https://")) return key;
-  if (isPrivateChatMediaKey(key)) {
-    const { downloadUrl } = await createPresignedGetUrl({ key, bucket: "private" });
-    return downloadUrl;
-  }
-  return publicAssetUrl(key);
-}
-
-function fileNameFromKey(key: string) {
-  const segment = key.split("/").pop() ?? "audio";
-  return segment.includes(".") ? segment : `${segment}.mp3`;
-}
-
-async function buildAttachment(
-  row: MessageRow,
-  tracksById: Map<string, TrackRow>,
-): Promise<ChatMessageAttachment | null> {
-  if (row.shared_track_id) {
-    const track = tracksById.get(row.shared_track_id);
-    if (!track) return null;
-    return {
-      kind: "track",
-      track: mapTrackRow(track),
-      ownerId: track.user_id,
-    };
-  }
-
-  if (!row.media_url) return null;
-
-  const url = await resolveMediaUrl(row.media_url);
-  if (!url) return null;
-
-  const kind = chatAttachmentKindFromKey(row.media_url);
-  if (kind === "image") return { kind: "image", url };
-  if (kind === "circle") return { kind: "circle", url };
-  if (kind === "audio") {
-    const fileName = fileNameFromKey(row.media_url);
-    const fallbackTitle = fileName.replace(/\.[^.]+$/i, "") || "Аудио";
-    const audioKind = chatAudioKindFromKey(row.media_url) === "voice" || row.media_title === "Голосовое сообщение"
-      ? "voice"
-      : "music";
-    return {
-      kind: "audio",
-      audioKind,
-      url,
-      fileName,
-      title: row.media_title?.trim() || fallbackTitle,
-      artist: row.media_artist?.trim() || "Аудиосообщение",
-    };
-  }
-
-  return null;
-}
-
-function mapMessageRow(
-  row: MessageRow,
-  viewerId: string,
-  repliesById: Map<string, MessageRow>,
-  tracksById: Map<string, TrackRow>,
-  attachmentsById: Map<string, ChatMessageAttachment | null>,
-): ChatMessageView {
-  const replyRow = row.reply_to_message_id ? repliesById.get(row.reply_to_message_id) : undefined;
-
-  return {
-    id: row.id,
-    senderId: row.sender_id,
-    text: row.text ?? null,
-    createdAt: row.created_at,
-    isMine: row.sender_id === viewerId,
-    readAt: row.read_at,
-    replyTo: replyRow
-      ? {
-          id: replyRow.id,
-          senderId: replyRow.sender_id,
-          text: replyRow.text,
-          isMine: replyRow.sender_id === viewerId,
-        }
-      : null,
-    attachment: attachmentsById.get(row.id) ?? null,
-    reactions: [],
-  };
-}
-
-async function hydrateMessages(rows: MessageRow[], viewerId: string): Promise<ChatMessageView[]> {
-  const repliesById = new Map(rows.map((row) => [row.id, row]));
-  const trackIds = [...new Set(rows.map((r) => r.shared_track_id).filter(Boolean))] as string[];
-  const reactionsPromise = loadMessageReactionsRest(
-    rows.map((row) => row.id),
-    viewerId,
-  );
-
-  const tracksById = new Map<string, TrackRow>();
-  if (trackIds.length > 0) {
-    const admin = getAdminClient();
-    const { data, error } = await admin
-      .from("playlist_tracks")
-      .select("id, user_id, title, artist, file_url, duration_seconds")
-      .in("id", trackIds);
-
-    if (error) throw new Error(error.message);
-    for (const track of (data ?? []) as TrackRow[]) {
-      tracksById.set(track.id, track);
-    }
-  }
-
-  const attachmentsById = new Map<string, ChatMessageAttachment | null>();
-  await Promise.all(
-    rows.map(async (row) => {
-      attachmentsById.set(row.id, await buildAttachment(row, tracksById));
-    }),
-  );
-
-  const reactionsByMessage = await reactionsPromise;
-
-  return rows.map((row) => ({
-    ...mapMessageRow(row, viewerId, repliesById, tracksById, attachmentsById),
-    reactions: reactionsByMessage.get(row.id) ?? [],
-  }));
 }
 
 async function assertReplyInChat(chatId: string, replyToMessageId: string) {
@@ -382,6 +227,8 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
       sectionAccessMode: sectionAccessByChat.get(id) ?? "inherit",
       groupIcon: community?.icon ?? null,
       groupAvatarUrl: community?.avatarUrl ?? null,
+      groupBannerUrl: community?.effectiveBannerUrl ?? null,
+      groupTag: community?.effectiveTag ?? null,
       groupAccentColor: community?.effectiveAccentColor ?? null,
       boostCount: community?.boostCount ?? 0,
       boostedByMe: community?.boostedByMe ?? false,
@@ -447,9 +294,6 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
   return items;
 }
 
-const MESSAGE_SELECT =
-  "id, sender_id, text, media_url, media_title, media_artist, shared_track_id, reply_to_message_id, created_at, read_at";
-
 export async function listMessagesRest(
   chatId: string,
   userId: string,
@@ -462,12 +306,7 @@ export async function listMessagesRest(
   const admin = getAdminClient();
 
   const [msgResult, membersResult, chatResult] = await Promise.all([
-    admin
-      .from("messages")
-      .select(MESSAGE_SELECT)
-      .eq("chat_id", chatId)
-      .order("created_at", { ascending: true })
-      .limit(200),
+    loadMessageRows(admin, chatId),
     admin
       .from("chat_members")
       .select("user_id, role, users (id, username, display_name, last_seen_at, show_online_status, subscriptions (started_at, expires_at), profile_customization (avatar_type, avatar_data, animated_avatar_id, avatar_decoration_id, avatar_ring_id))")
@@ -598,6 +437,8 @@ export async function listMessagesRest(
       sectionAccessMode: chatResult.data.section_access_mode === "restricted" ? "restricted" : "inherit",
       groupIcon: community?.icon ?? null,
       groupAvatarUrl: community?.avatarUrl ?? null,
+      groupBannerUrl: community?.effectiveBannerUrl ?? null,
+      groupTag: community?.effectiveTag ?? null,
       groupAccentColor: community?.effectiveAccentColor ?? null,
       boostCount: community?.boostCount ?? 0,
       boostedByMe: community?.boostedByMe ?? false,
@@ -633,6 +474,8 @@ export type SendMessageInput = {
   mediaArtist?: string;
   sharedTrackId?: string;
   replyToMessageId?: string;
+  content?: ChatMessageContentInputNode[];
+  storedContent?: StoredChatMessageContentNode[];
 };
 
 export async function sendMessageRest(input: SendMessageInput) {
@@ -694,27 +537,51 @@ export async function sendMessageRest(input: SendMessageInput) {
     chat_id: input.chatId,
     sender_id: input.senderId,
     text: hasText ? trimmed : null,
+    content: input.storedContent?.length ? input.storedContent : null,
     media_url: input.mediaKey ?? null,
     ...audioMeta,
     shared_track_id: input.sharedTrackId ?? null,
     reply_to_message_id: input.replyToMessageId ?? null,
   };
 
-  const { data: row, error } = await admin
+  let { data: row, error } = await admin
     .from("messages")
     .insert(payload)
     .select(MESSAGE_SELECT)
     .single();
 
+  if (isMissingMessageContentColumn(error)) {
+    const legacyPayload = {
+      id: payload.id,
+      chat_id: payload.chat_id,
+      sender_id: payload.sender_id,
+      text: payload.text,
+      media_url: payload.media_url,
+      media_title: payload.media_title,
+      media_artist: payload.media_artist,
+      shared_track_id: payload.shared_track_id,
+      reply_to_message_id: payload.reply_to_message_id,
+    };
+    const legacyInsert = await admin.from("messages").insert(legacyPayload).select(LEGACY_MESSAGE_SELECT).single();
+    row = legacyInsert.data ? { ...legacyInsert.data, content: null } : null;
+    error = legacyInsert.error;
+  }
+
   if (error) {
     if (error.code !== "23505") throw new Error(error.message);
 
-    const { data: existing, error: existingErr } = await admin
+    let { data: existing, error: existingErr } = await admin
       .from("messages")
       .select(MESSAGE_SELECT)
       .eq("id", input.messageId)
       .eq("chat_id", input.chatId)
       .maybeSingle();
+
+    if (isMissingMessageContentColumn(existingErr)) {
+      const legacyExisting = await admin.from("messages").select(LEGACY_MESSAGE_SELECT).eq("id", input.messageId).eq("chat_id", input.chatId).maybeSingle();
+      existing = legacyExisting.data ? { ...legacyExisting.data, content: null } : null;
+      existingErr = legacyExisting.error;
+    }
 
     if (existingErr) throw new Error(existingErr.message);
     if (!existing) throw new Error("Не удалось подтвердить отправку сообщения");
@@ -748,13 +615,18 @@ export async function editMessageRest(
   }
   await assertChatMemberRest(message.chat_id as string, userId);
 
-  const { data: updated, error } = await admin
+  let { data: updated, error } = await admin
     .from("messages")
-    .update({ text: trimmed })
+    .update({ text: trimmed, content: null })
     .eq("id", messageId)
     .eq("sender_id", userId)
     .select(MESSAGE_SELECT)
     .single();
+  if (isMissingMessageContentColumn(error)) {
+    const legacyUpdate = await admin.from("messages").update({ text: trimmed }).eq("id", messageId).eq("sender_id", userId).select(LEGACY_MESSAGE_SELECT).single();
+    updated = legacyUpdate.data ? { ...legacyUpdate.data, content: null } : null;
+    error = legacyUpdate.error;
+  }
   if (error) throw new Error(error.message);
 
   const [result] = await hydrateMessages([updated as MessageRow], userId);

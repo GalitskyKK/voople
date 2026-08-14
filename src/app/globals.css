@@ -2387,6 +2387,7 @@ html[data-density="compact"] .shop-category {
   --app-accent-soft: rgba(124, 109, 219, 0.16);
   --app-muted: rgba(247, 244, 255, 0.62);
   min-height: 100dvh;
+  overflow-x: clip;
   background:
     radial-gradient(circle at 72% 7%, rgba(124, 109, 219, 0.12), transparent 26rem),
     var(--background);
@@ -4126,6 +4127,118 @@ html[data-density="compact"] .shop-category {
 .settings-hotkey-add:hover {
   background: var(--app-surface);
   color: var(--foreground);
+}
+
+.voople-plus-levels {
+  margin: clamp(1.5rem, 4vw, 4rem) 0;
+  padding: clamp(1rem, 3vw, 2rem);
+  border: 1px solid color-mix(in srgb, var(--voople-brand-400) 32%, var(--app-border));
+  border-radius: clamp(1.25rem, 3vw, 2rem);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--voople-brand-500) 10%, var(--app-surface)), var(--app-surface));
+}
+
+.voople-plus-levels__heading > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--theme-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.voople-plus-levels__heading h2 {
+  margin-top: 0.6rem;
+  font-size: clamp(1.65rem, 4vw, 3.2rem);
+  font-weight: 750;
+  letter-spacing: -0.045em;
+  line-height: 0.98;
+}
+
+.voople-plus-levels__heading p {
+  max-width: 44rem;
+  margin-top: 0.9rem;
+  color: var(--app-muted);
+  line-height: 1.65;
+}
+
+.voople-plus-levels__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 1.5rem;
+}
+
+.voople-plus-level-card {
+  min-height: 13.5rem;
+  padding: 1rem;
+  border: 1px solid var(--app-border);
+  border-radius: 1.1rem;
+  background: color-mix(in srgb, var(--app-surface) 88%, transparent);
+}
+
+.voople-plus-level-card header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.voople-plus-level-card header > span {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: var(--app-accent-soft);
+  color: var(--theme-accent);
+  font-weight: 800;
+}
+
+.voople-plus-level-card header div,
+.voople-plus-level-card ul {
+  display: flex;
+  flex-direction: column;
+}
+
+.voople-plus-level-card header small,
+.voople-plus-level-card li,
+.voople-plus-levels__base {
+  color: var(--app-muted);
+}
+
+.voople-plus-level-card ul {
+  gap: 0.55rem;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+}
+
+.voople-plus-level-card li,
+.voople-plus-levels__base {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.voople-plus-level-card li svg {
+  flex: none;
+  margin-top: 0.12rem;
+  color: var(--theme-accent);
+}
+
+.voople-plus-levels__base {
+  margin-top: 0.9rem;
+  align-items: center;
+  font-size: 0.75rem;
+}
+
+@media (max-width: 1023px) {
+  .voople-plus-levels__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 639px) {
+  .voople-plus-levels__grid { grid-template-columns: 1fr; }
+  .voople-plus-level-card { min-height: auto; }
 }
 
 .settings-hotkey-field select:focus-visible,

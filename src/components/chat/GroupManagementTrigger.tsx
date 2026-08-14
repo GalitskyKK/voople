@@ -10,6 +10,7 @@ type GroupIdentityProps = {
   groupIcon: string | null;
   groupAvatarUrl: string | null;
   groupAccentColor: string | null;
+  groupTag: string | null;
 };
 
 export function GroupIdentity({
@@ -18,12 +19,16 @@ export function GroupIdentity({
   groupIcon,
   groupAvatarUrl,
   groupAccentColor,
+  groupTag,
 }: GroupIdentityProps) {
   return (
     <>
       <GroupAvatar name={chatName} avatarUrl={groupAvatarUrl} icon={groupIcon} accentColor={groupAccentColor} />
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-semibold">{chatName}</span>
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span className="block min-w-0 truncate font-semibold">{chatName}</span>
+          {groupTag ? <span className="shrink-0 rounded bg-[var(--app-accent-soft)] px-1 py-0.5 text-[9px] font-bold tracking-wide text-[var(--theme-accent)]">{groupTag}</span> : null}
+        </span>
         <span className="block truncate text-xs font-normal text-[var(--app-muted)]">{memberCount} участников</span>
       </span>
     </>

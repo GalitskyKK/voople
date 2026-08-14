@@ -27,6 +27,8 @@
 # Deployment applies migrations separately; neither directory belongs in the public repository.
 /docs/
 /drizzle/
+# Local toolchain experiment for the feature-gated Windows process-audio build.
+/desktop/src-tauri/.cargo/
 
 # misc
 .DS_Store

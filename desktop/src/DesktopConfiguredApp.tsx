@@ -3,6 +3,8 @@ import { lazy, Suspense } from "react";
 import { AuthProvider, useDesktopAuth } from "./auth/AuthProvider";
 import { DesktopLogin } from "./auth/DesktopLogin";
 import type { DesktopConfig } from "./config";
+import { DesktopAutoUpdater } from "./updates/DesktopAutoUpdater";
+import { DesktopReleaseNotesDialog } from "./updates/DesktopReleaseNotesDialog";
 
 const DesktopAuthenticatedApp = lazy(() =>
   import("./DesktopAuthenticatedApp").then((module) => ({
@@ -12,9 +14,13 @@ const DesktopAuthenticatedApp = lazy(() =>
 
 export function DesktopConfiguredApp({ config }: { config: DesktopConfig }) {
   return (
-    <AuthProvider config={config}>
-      <DesktopSessionRouter config={config} />
-    </AuthProvider>
+    <>
+      <DesktopAutoUpdater />
+      <DesktopReleaseNotesDialog />
+      <AuthProvider config={config}>
+        <DesktopSessionRouter config={config} />
+      </AuthProvider>
+    </>
   );
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
 import { useChatMessageEditor } from "@/hooks/useChatMessageEditor";
@@ -14,6 +14,7 @@ import type { ChatMessageView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
 import type { ChatReactionEmoji } from "@/lib/chat/reactions";
 import { playlistMetadataDefaultsFromMessage } from "@/lib/chat/playlist-from-message";
+import { parseComposerContent } from "@/lib/chat/message-content";
 import { Toast } from "@/components/ui/Toast";
 import { ChatComposer } from "./ChatComposer";
 import { ChatTrackMetadataDialog } from "./ChatTrackMetadataDialog";
@@ -52,6 +53,11 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
       refetchOnWindowFocus: false,
       refetchInterval: realtimeDegraded ? 2_500 : 60_000,
     },
+  );
+  const isGroupChat = data?.chat.type === "group";
+  const { data: groupEmojis } = trpc.chat.groupEmojis.useQuery(
+    { chatId },
+    { enabled: isGroupChat },
   );
   const selection = useChatMessageSelection(chatId, data?.messages ?? []);
 
@@ -92,6 +98,8 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
                   sectionAccessMode: "inherit",
                   groupIcon: null,
                   groupAvatarUrl: null,
+                  groupBannerUrl: null,
+                  groupTag: null,
                   groupAccentColor: null,
                   boostCount: 0,
                   boostedByMe: false,
@@ -159,7 +167,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   });
 
   const toggleReaction = trpc.chat.toggleReaction.useMutation({
-    onMutate: async ({ messageId, emoji }) => {
+    onMutate: async ({ messageId, emoji, emojiId }) => {
       await utils.chat.getMessages.cancel({ chatId });
       const previous = utils.chat.getMessages.getData({ chatId });
       utils.chat.getMessages.setData({ chatId }, (current) => {
@@ -169,9 +177,11 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
           messages: current.messages.map((message) => {
             if (message.id !== messageId) return message;
             const reactions = [...message.reactions];
-            const index = reactions.findIndex((reaction) => reaction.emoji === emoji);
+            const index = reactions.findIndex((reaction) => emojiId
+              ? reaction.emojiId === emojiId
+              : reaction.emoji === emoji);
             if (index < 0) {
-              reactions.push({ emoji, count: 1, reactedByMe: true });
+              reactions.push({ emoji: emoji ?? "Эмодзи", emojiId: emojiId ?? null, count: 1, reactedByMe: true });
             } else {
               const reaction = reactions[index]!;
               if (reaction.reactedByMe && reaction.count <= 1) reactions.splice(index, 1);
@@ -217,6 +227,9 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
       chatId,
       messageId: crypto.randomUUID(),
       text: trimmed || undefined,
+      content: groupEmojis?.items.length && trimmed
+        ? parseComposerContent(trimmed, groupEmojis.items)
+        : undefined,
       mediaKey: pendingUpload?.mediaKey,
       mediaTitle: isAudio ? pendingUpload?.title : undefined,
       mediaArtist: isAudio ? pendingUpload?.artist : undefined,
@@ -253,7 +266,17 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     : null;
 
   return (
-    <div className="voople-chat-window flex min-h-0 flex-1 flex-col">
+    <div
+      className="voople-chat-window flex min-h-0 flex-1 flex-col"
+      style={
+        isGroup && data?.chat.groupAccentColor
+          ? ({
+              "--group-accent": data.chat.groupAccentColor,
+              "--theme-accent": data.chat.groupAccentColor,
+            } as CSSProperties)
+          : undefined
+      }
+    >
       {selection.selecting ? (
         <ChatSelectionController messages={selection.selectedMessages} onCancel={selection.clear} onDeleteMessage={(messageId) => removeMessage.mutateAsync({ messageId })} />
       ) : <ChatWindowHeader
@@ -270,7 +293,9 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         groupVisibility={data?.chat.groupVisibility ?? "private"}
         groupIcon={data?.chat.groupIcon ?? null}
         groupAvatarUrl={data?.chat.groupAvatarUrl ?? null}
+        groupBannerUrl={data?.chat.groupBannerUrl ?? null}
         groupAccentColor={data?.chat.groupAccentColor ?? null}
+        groupTag={data?.chat.groupTag ?? null}
         viewerRole={data?.chat.viewerRole ?? "member"}
         other={other}
         otherOnline={otherOnline}
@@ -311,8 +336,11 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
                 onAddToPlaylist={(msg) => setPlaylistConfirmMessage(msg)}
                 onOpenImage={setLightboxUrl}
                 showSender={isGroup}
-                onToggleReaction={(message, emoji: ChatReactionEmoji) => {
-                  if (!toggleReaction.isPending) toggleReaction.mutate({ messageId: message.id, emoji });
+                onToggleReaction={(message, reaction) => {
+                  if (!toggleReaction.isPending) toggleReaction.mutate({
+                    messageId: message.id,
+                    ...(reaction.emojiId ? { emojiId: reaction.emojiId } : { emoji: reaction.emoji as ChatReactionEmoji }),
+                  });
                 }}
               />
             ),
@@ -323,6 +351,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
 
       <div className="px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:px-4 lg:pb-3">
         <ChatComposer
+          chatId={chatId}
           text={text}
           onTextChange={setText}
           replyTo={replyTo}
@@ -337,6 +366,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
           onPendingTrackChange={setPendingTrack}
           onSend={handleSend}
           isSending={send.isPending || editor.mutation.isPending}
+          customEmojis={groupEmojis?.items ?? []}
         />
       </div>
 

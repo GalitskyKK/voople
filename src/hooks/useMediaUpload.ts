@@ -48,9 +48,12 @@ export function useMediaUpload(purpose: UploadPurpose) {
       setError(null);
       const contentType = file.type.split(";")[0]?.trim().toLowerCase() ?? "";
       const videoAllowed = purpose === "post" && VIDEO_MIME.has(contentType);
-      if (!IMAGE_MIME.has(contentType) && !videoAllowed) {
+      const emojiAllowed = purpose !== "group-emoji" || ["image/png", "image/webp", "image/gif"].includes(contentType);
+      if ((!IMAGE_MIME.has(contentType) && !videoAllowed) || !emojiAllowed) {
         setError(
-          purpose === "post"
+          purpose === "group-emoji"
+            ? "Допустимы PNG, WebP или GIF"
+            : purpose === "post"
             ? "Допустимы JPEG, PNG, WebP, GIF, MP4 или WebM"
             : "Допустимы только JPEG, PNG, WebP или GIF",
         );

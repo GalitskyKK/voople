@@ -1,6 +1,73 @@
 import { publicAssetUrl } from "@/lib/object-storage";
 import { getAdminClient } from "@/lib/supabase/admin";
-import type { PublicGroupSearchHit } from "@/types/chat";
+import { loadGroupCommunitySummariesRest } from "@/server/data/chat-community-rest";
+import type { PublicGroupPageView, PublicGroupSearchHit } from "@/types/chat";
+
+export async function getPublicGroupBySlugRest(
+  slug: string,
+  viewerId?: string | null,
+): Promise<PublicGroupPageView | null> {
+  const normalizedSlug = slug.trim().toLowerCase();
+  if (!/^[a-z0-9_]{5,32}$/.test(normalizedSlug)) return null;
+  const admin = getAdminClient();
+  const { data: customization, error: customizationError } = await admin
+    .from("group_customization")
+    .select("chat_id, public_slug, description, icon, avatar_key, accent_color")
+    .eq("public_slug", normalizedSlug)
+    .maybeSingle();
+  if (customizationError) throw new Error(customizationError.message);
+  if (!customization) return null;
+
+  const chatId = customization.chat_id as string;
+  const [{ data: group, error: groupError }, { count, error: countError }, membership] =
+    await Promise.all([
+      admin
+        .from("chats")
+        .select("id, name")
+        .eq("id", chatId)
+        .eq("type", "group")
+        .is("parent_chat_id", null)
+        .eq("group_visibility", "public")
+        .maybeSingle(),
+      admin
+        .from("chat_members")
+        .select("chat_id", { count: "exact", head: true })
+        .eq("chat_id", chatId),
+      viewerId
+        ? admin
+            .from("chat_members")
+            .select("chat_id")
+            .eq("chat_id", chatId)
+            .eq("user_id", viewerId)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+  if (groupError) throw new Error(groupError.message);
+  if (countError) throw new Error(countError.message);
+  if (membership.error) throw new Error(membership.error.message);
+  if (!group?.name) return null;
+
+  const community = (await loadGroupCommunitySummariesRest(
+    [chatId],
+    viewerId ?? "",
+  )).get(chatId);
+
+  return {
+    id: chatId,
+    name: group.name as string,
+    publicSlug: customization.public_slug as string,
+    description: (customization.description as string | null | undefined) ?? null,
+    icon: (customization.icon as string | null | undefined) ?? null,
+    avatarUrl: publicAssetUrl(
+      (customization.avatar_key as string | null | undefined) ?? null,
+    ),
+    tag: community?.effectiveTag ?? null,
+    bannerUrl: community?.effectiveBannerUrl ?? null,
+    accentColor: community?.effectiveAccentColor ?? null,
+    memberCount: count ?? 0,
+    joined: Boolean(membership.data),
+  };
+}
 
 export async function listPublicGroupsRest(
   userId: string,
@@ -52,7 +119,7 @@ export async function listPublicGroupsRest(
   ).slice(0, 20);
   const groupIds = groups.map((group) => group.id as string);
   if (groupIds.length === 0) return [];
-  const [membershipsResult, customizationResult] = await Promise.all([
+  const [membershipsResult, customizationResult, communityByChat] = await Promise.all([
     admin
       .from("chat_members")
       .select("chat_id, user_id")
@@ -61,6 +128,7 @@ export async function listPublicGroupsRest(
       .from("group_customization")
       .select("chat_id, public_slug, icon, avatar_key")
       .in("chat_id", groupIds),
+    loadGroupCommunitySummariesRest(groupIds, userId),
   ]);
   const { data: memberships, error: membershipsError } = membershipsResult;
   if (membershipsError) throw new Error(membershipsError.message);
@@ -93,6 +161,7 @@ export async function listPublicGroupsRest(
               | null
               | undefined) ?? null,
           ),
+          tag: communityByChat.get(group.id as string)?.effectiveTag ?? null,
           memberCount: counts.get(group.id as string) ?? 0,
           joined: joined.has(group.id as string),
         }]

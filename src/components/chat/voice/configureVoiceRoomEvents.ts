@@ -40,6 +40,15 @@ type ConfigureVoiceRoomEventsOptions = {
   onReconnected: () => void;
   onParticipantConnected?: () => void;
   onParticipantDisconnected?: () => void;
+  onRemotePublication?: (
+    publication: RemoteTrackPublication,
+    participant: RemoteParticipant,
+  ) => void;
+  onRemotePublicationRemoved?: (
+    publication: RemoteTrackPublication,
+    participant: RemoteParticipant,
+  ) => void;
+  onDataReceived?: (payload: Uint8Array, participant?: RemoteParticipant, topic?: string) => void;
 };
 
 export function configureVoiceRoomEvents({
@@ -57,6 +66,9 @@ export function configureVoiceRoomEvents({
   onReconnected,
   onParticipantConnected,
   onParticipantDisconnected,
+  onRemotePublication,
+  onRemotePublicationRemoved,
+  onDataReceived,
 }: ConfigureVoiceRoomEventsOptions) {
   const syncMicrophones = () => {
     if (!isCurrent()) return;
@@ -70,8 +82,14 @@ export function configureVoiceRoomEvents({
   };
 
   room
-    .on(RoomEvent.TrackPublished, syncMicrophones)
-    .on(RoomEvent.TrackUnpublished, syncMicrophones)
+    .on(RoomEvent.TrackPublished, (publication, participant) => {
+      onRemotePublication?.(publication, participant);
+      syncMicrophones();
+    })
+    .on(RoomEvent.TrackUnpublished, (publication, participant) => {
+      onRemotePublicationRemoved?.(publication, participant);
+      syncMicrophones();
+    })
     .on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
       onRemoteTrack(track, publication, participant);
       syncMicrophones();
@@ -103,6 +121,9 @@ export function configureVoiceRoomEvents({
     })
     .on(RoomEvent.AudioPlaybackStatusChanged, () => {
       onAudioBlockedChange(!room.canPlaybackAudio);
+    })
+    .on(RoomEvent.DataReceived, (payload, participant, _kind, topic) => {
+      onDataReceived?.(payload, participant, topic);
     })
     .on(RoomEvent.SignalReconnecting, onReconnecting)
     .on(RoomEvent.Reconnecting, onReconnecting)

@@ -15,11 +15,39 @@ import {
   postMediaTypeForMime,
   parseChatUploadMime,
   publicAssetUrl,
+  readObjectBytes,
+  readObjectPrefix,
+  sniffUploadKind,
   UPLOAD_LIMITS,
   type PresignedUploadView,
   type UploadPurpose,
 } from "@/lib/object-storage";
-import { extensionForAudioMime } from "@/lib/object-storage/audio-mime";
+import { assertAllowedAudioMime, extensionForAudioMime } from "@/lib/object-storage/audio-mime";
+import sharp from "sharp";
+import { groupFileLimitBytes } from "@/lib/group-perks";
+import { assertChatMemberRest } from "@/server/data/chat-access-rest";
+import { getGroupCommunityRest } from "@/server/data/chat-community-rest";
+import { hasActiveSubscriptionRest } from "@/server/data/subscription-rest";
+import { POST_MEDIA_LIMITS } from "@/lib/post-media";
+
+export const POST_UPLOAD_LIMITS = POST_MEDIA_LIMITS;
+const GROUP_EMOJI_MIME = new Set(["image/png", "image/webp", "image/gif"]);
+
+export async function getChatUploadByteLimit(userId: string, chatId?: string) {
+  if (!chatId) return UPLOAD_LIMITS.chat.maxBytes;
+  const membership = await assertChatMemberRest(chatId, userId);
+  if (membership.type !== "group") return UPLOAD_LIMITS.chat.maxBytes;
+  const community = await getGroupCommunityRest(membership.accessChatId, userId);
+  return groupFileLimitBytes(community.groupLevel);
+}
+
+async function uploadByteLimit(purpose: UploadPurpose, userId: string, chatId?: string) {
+  if (purpose === "chat") return getChatUploadByteLimit(userId, chatId);
+  if (purpose !== "post") return UPLOAD_LIMITS[purpose].maxBytes;
+  return (await hasActiveSubscriptionRest(userId))
+    ? POST_UPLOAD_LIMITS.plusFileBytes
+    : POST_UPLOAD_LIMITS.freeFileBytes;
+}
 
 export async function createPresignedUpload(input: {
   userId: string;
@@ -27,15 +55,16 @@ export async function createPresignedUpload(input: {
   contentType: string;
   sizeBytes: number;
   chatMediaKind?: "voice" | "circle";
+  chatId?: string;
 }): Promise<PresignedUploadView> {
   if (!getObjectStorageConfig()) {
     throw new Error("Загрузка файлов не настроена (S3 env)");
   }
 
-  const limit = UPLOAD_LIMITS[input.purpose];
+  const maxBytes = await uploadByteLimit(input.purpose, input.userId, input.chatId);
   if (input.sizeBytes <= 0) throw new Error("Пустой файл");
-  if (input.sizeBytes > limit.maxBytes) {
-    throw new Error(`Файл больше ${Math.round(limit.maxBytes / (1024 * 1024))} МБ`);
+  if (input.sizeBytes > maxBytes) {
+    throw new Error(`Файл больше ${Math.round(maxBytes / (1024 * 1024))} МБ`);
   }
 
   const chatUpload =
@@ -46,12 +75,15 @@ export async function createPresignedUpload(input: {
   ) {
     throw new Error("Для кружка требуется видеофайл");
   }
+  if (input.purpose === "group-emoji" && !GROUP_EMOJI_MIME.has(input.contentType.toLowerCase())) {
+    throw new Error("Для эмодзи допустимы PNG, WebP или GIF");
+  }
   if (input.chatMediaKind === "voice" && chatUpload?.kind !== "audio") {
     throw new Error("Для голосового сообщения требуется аудиофайл");
   }
 
   const extension =
-    input.purpose === "track"
+    input.purpose === "track" || input.purpose === "group-sound"
       ? extensionForAudioMime(input.contentType)
       : input.purpose === "chat"
         ? chatUpload!.extension
@@ -59,7 +91,7 @@ export async function createPresignedUpload(input: {
           ? extensionForPostMediaMime(input.contentType)
           : extensionForMime(input.contentType);
   const mediaType =
-    input.purpose === "track" || input.purpose === "chat"
+    input.purpose === "track" || input.purpose === "group-sound" || input.purpose === "chat"
       ? null
       : input.purpose === "post"
         ? postMediaTypeForMime(input.contentType)
@@ -106,6 +138,7 @@ export async function resolvePublicMediaKey(
   key: string | null | undefined,
   userId: string,
   purpose: UploadPurpose,
+  options?: { chatId?: string },
 ) {
   if (!key) return null;
   assertOwnedUploadKey(key, userId, purpose);
@@ -113,18 +146,68 @@ export async function resolvePublicMediaKey(
   const meta = await headObject({ key, bucket: bucketForPurpose(purpose) });
   if (!meta) throw new Error("Файл не найден в хранилище");
 
-  const limit = UPLOAD_LIMITS[purpose];
+  const maxBytes = await uploadByteLimit(purpose, userId, options?.chatId);
   if (meta.contentLength <= 0) throw new Error("Пустой файл");
-  if (meta.contentLength > limit.maxBytes) {
-    throw new Error(`Файл больше ${Math.round(limit.maxBytes / (1024 * 1024))} МБ`);
+  if (meta.contentLength > maxBytes) {
+    throw new Error(`Файл больше ${Math.round(maxBytes / (1024 * 1024))} МБ`);
   }
 
   if (!meta.contentType) throw new Error("У файла отсутствует Content-Type");
   if (purpose === "post") assertAllowedPostMediaMime(meta.contentType);
-  else if (purpose === "chat") parseChatUploadMime(meta.contentType);
-  else if (purpose !== "track") assertAllowedImageMime(meta.contentType);
+  else if (purpose === "group-emoji" && !GROUP_EMOJI_MIME.has(meta.contentType.toLowerCase())) {
+    throw new Error("Для эмодзи допустимы PNG, WebP или GIF");
+  }
+  else if (purpose === "chat") {
+    const parsed = parseChatUploadMime(meta.contentType);
+    const prefix = await readObjectPrefix({ key, bucket: "private" });
+    const detected = prefix ? sniffUploadKind(prefix) : null;
+    const containerMatches = detected === "container" &&
+      (parsed.kind === "audio" || parsed.kind === "circle");
+    if (detected !== parsed.kind && !containerMatches) {
+      throw new Error("Содержимое файла не соответствует его типу");
+    }
+  }
+  else if (purpose === "track" || purpose === "group-sound") {
+    assertAllowedAudioMime(meta.contentType);
+    const prefix = await readObjectPrefix({ key, bucket: "public" });
+    const detected = prefix ? sniffUploadKind(prefix) : null;
+    if (detected !== "audio" && detected !== "container") {
+      throw new Error("Содержимое аудиофайла не соответствует его типу");
+    }
+  }
+  else assertAllowedImageMime(meta.contentType);
 
   return key;
+}
+
+export async function isAnimatedPublicImageKey(key: string) {
+  const source = await readObjectBytes({ key, bucket: "public" });
+  if (!source) throw new Error("Файл не найден в хранилище");
+  const metadata = await sharp(source, {
+    animated: true,
+    limitInputPixels: 16_777_216,
+  }).metadata();
+  return (metadata.pages ?? 1) > 1;
+}
+
+export async function resolvePostMediaKey(key: string, userId: string) {
+  const resolvedKey = await resolvePublicMediaKey(key, userId, "post");
+  const meta = await headObject({ key: resolvedKey!, bucket: "public" });
+  if (!meta?.contentType) throw new Error("Не удалось проверить загруженный файл");
+  const mediaType = postMediaTypeForMime(meta.contentType);
+  const prefix = await readObjectPrefix({ key: resolvedKey!, bucket: "public" });
+  const detectedKind = prefix ? sniffUploadKind(prefix) : null;
+  const signatureMatches = mediaType === "video"
+    ? detectedKind === "container"
+    : detectedKind === "image";
+  if (!signatureMatches) {
+    throw new Error("Содержимое файла не соответствует заявленному типу");
+  }
+  return {
+    key: resolvedKey!,
+    sizeBytes: meta.contentLength,
+    mediaType,
+  };
 }
 
 export { publicAssetUrl };

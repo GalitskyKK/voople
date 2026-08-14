@@ -1,4 +1,4 @@
-import { Check, History, MessageCircleMore, Palette, Rocket, Sparkles, UsersRound } from "lucide-react";
+import { Check, Cloud, History, MessageCircleMore, Palette, Rocket, SmilePlus, Sparkles, UsersRound } from "lucide-react";
 
 import { VOOPLUS_FEATURE_GROUPS } from "@/lib/constants/subscription";
 import { vooplusBadgeStaticUrl } from "@/lib/constants/vooplus-badge";
@@ -8,6 +8,8 @@ const ICONS = {
   identity: Sparkles,
   comfort: Palette,
   groups: UsersRound,
+  media: Cloud,
+  emoji: SmilePlus,
 } as const;
 
 function BenefitVisual({ groupId }: { groupId: (typeof VOOPLUS_FEATURE_GROUPS)[number]["id"] }) {
@@ -30,6 +32,12 @@ function BenefitVisual({ groupId }: { groupId: (typeof VOOPLUS_FEATURE_GROUPS)[n
         <span><History className="h-4 w-4" /> 12 образов</span>
       </div>
     );
+  }
+  if (groupId === "media") {
+    return <div className="voople-plus-benefit-card__visual voople-plus-benefit-card__visual--comfort" aria-hidden><span><Cloud className="h-4 w-4" /> 500 МБ</span><span>1080p · 60</span></div>;
+  }
+  if (groupId === "emoji") {
+    return <div className="voople-plus-benefit-card__visual voople-plus-benefit-card__visual--groups" aria-hidden><SmilePlus className="h-5 w-5" /><span><strong>Эмодзи</strong> · везде</span><i /></div>;
   }
   return (
     <div className="voople-plus-benefit-card__visual voople-plus-benefit-card__visual--groups" aria-hidden>

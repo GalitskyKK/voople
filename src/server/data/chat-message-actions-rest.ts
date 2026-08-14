@@ -82,11 +82,12 @@ export async function deleteMessageRest(messageId: string, userId: string) {
 export async function toggleMessageReactionRest(
   messageId: string,
   userId: string,
-  emoji: string,
+  reaction: { emoji?: string; emojiId?: string },
 ) {
-  if (!CHAT_REACTION_EMOJIS.includes(emoji as (typeof CHAT_REACTION_EMOJIS)[number])) {
+  if (reaction.emoji && !CHAT_REACTION_EMOJIS.includes(reaction.emoji as (typeof CHAT_REACTION_EMOJIS)[number])) {
     throw new Error("Эта реакция не поддерживается");
   }
+  if (Boolean(reaction.emoji) === Boolean(reaction.emojiId)) throw new Error("Выберите одну реакцию");
   const admin = getAdminClient();
   const { data: message, error: messageError } = await admin
     .from("messages")
@@ -97,19 +98,27 @@ export async function toggleMessageReactionRest(
   if (!message) throw new Error("Сообщение не найдено");
 
   const chatId = message.chat_id as string;
-  await assertChatMemberRest(chatId, userId);
-  const { data: existing, error: existingError } = await admin
+  const membership = await assertChatMemberRest(chatId, userId);
+  if (reaction.emojiId) {
+    const { data: custom, error: customError } = await admin.from("group_emojis").select("id, chat_id, moderation_status").eq("id", reaction.emojiId).maybeSingle();
+    if (customError) throw new Error(customError.message);
+    if (!custom || custom.moderation_status !== "automated_approved") throw new Error("Эмодзи недоступен");
+    if (custom.chat_id !== membership.accessChatId) throw new Error("Для реакции используйте эмодзи этой группы");
+  }
+  let existingQuery = admin
     .from("message_reactions")
     .select("message_id")
     .eq("message_id", messageId)
-    .eq("user_id", userId)
-    .eq("emoji", emoji)
-    .maybeSingle();
+    .eq("user_id", userId);
+  existingQuery = reaction.emojiId ? existingQuery.eq("emoji_id", reaction.emojiId) : existingQuery.eq("emoji", reaction.emoji!);
+  const { data: existing, error: existingError } = await existingQuery.maybeSingle();
   if (existingError) throw new Error(existingError.message);
 
+  let deleteQuery = admin.from("message_reactions").delete().eq("message_id", messageId).eq("user_id", userId);
+  deleteQuery = reaction.emojiId ? deleteQuery.eq("emoji_id", reaction.emojiId) : deleteQuery.eq("emoji", reaction.emoji!);
   const query = existing
-    ? admin.from("message_reactions").delete().eq("message_id", messageId).eq("user_id", userId).eq("emoji", emoji)
-    : admin.from("message_reactions").insert({ message_id: messageId, chat_id: chatId, user_id: userId, emoji });
+    ? deleteQuery
+    : admin.from("message_reactions").insert({ message_id: messageId, chat_id: chatId, user_id: userId, emoji: reaction.emoji ?? null, emoji_id: reaction.emojiId ?? null });
   const { error } = await query;
   if (error) throw new Error(error.message);
 

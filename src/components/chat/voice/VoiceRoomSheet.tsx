@@ -9,6 +9,7 @@ import {
   LockOpen,
   Maximize2,
   Minimize2,
+  Music2,
   PhoneOff,
   Settings2,
   Volume2,
@@ -17,21 +18,24 @@ import {
 } from "lucide-react";
 import { ConnectionQuality } from "livekit-client";
 
+import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { cn } from "@/lib/utils";
-import type { ChatRoomParticipantView } from "@/types/chat";
+import type { ChatRoomParticipantView, GroupSoundView } from "@/types/chat";
 
 import { getQualityLabel, type MediaStatus } from "./voice-room-config";
 import { useVoiceRoomFullscreen } from "./useVoiceRoomFullscreen";
 import { VoiceMediaControls } from "./VoiceMediaControls";
 import { VoiceRoomStage } from "./VoiceRoomStage";
+import { VoiceSoundboardPanel } from "./VoiceSoundboardPanel";
 
 type VoiceRoomSheetProps = {
   open: boolean;
   onClose: () => void;
   screenContainerRef: (element: HTMLDivElement | null) => void;
   isDirect: boolean;
+  callPhase: "idle" | "dialing" | "ringing" | "connected" | "ended" | null;
   chatName: string;
   active: boolean;
   durationLabel: string | null;
@@ -39,7 +43,11 @@ type VoiceRoomSheetProps = {
   mediaStatus: MediaStatus;
   connectionQuality: ConnectionQuality;
   screenShareOwner: string | null;
+  screenShareAvailable: string | null;
+  watchingScreenShare: boolean;
+  screenShareVolume: number;
   participants: ChatRoomParticipantView[];
+  groupSounds: GroupSoundView[];
   participantVolumes: Record<string, number>;
   micMuted: boolean;
   outputMuted: boolean;
@@ -59,6 +67,10 @@ type VoiceRoomSheetProps = {
   onResumeAudio: () => void | Promise<void>;
   onCameraContainerChange: (participantId: string, element: HTMLDivElement | null) => void;
   onParticipantVolumeChange: (participantId: string, volume: number) => void;
+  onScreenShareVolumeChange: (volume: number) => void;
+  onGroupSoundPlay: (sound: GroupSoundView) => void;
+  onWatchScreenShare: () => void;
+  onStopWatchingScreenShare: () => void;
   settingsPanel: ReactNode;
   canManageAccess: boolean;
   accessMode: "open" | "locked";
@@ -76,17 +88,20 @@ type VoiceRoomSheetProps = {
 
 export function VoiceRoomSheet(props: VoiceRoomSheetProps) {
   const {
-    open, onClose, screenContainerRef, isDirect, chatName, active, durationLabel,
-    connectionLabel, mediaStatus, connectionQuality, screenShareOwner, participants,
+    open, onClose, screenContainerRef, isDirect, callPhase, chatName, active, durationLabel,
+    connectionLabel, mediaStatus, connectionQuality, screenShareOwner, screenShareAvailable,
+    watchingScreenShare, screenShareVolume, participants, groupSounds,
     participantVolumes, micMuted, outputMuted, remoteMicMutedById, activeSpeakerIds,
     mediaActionPending, screenSharePending, screenSharing, cameraParticipantIds,
     cameraEnabled, cameraPending, audioBlocked, onMicToggle, onOutputToggle,
     onScreenShareToggle, onCameraToggle, onResumeAudio, onCameraContainerChange,
-    onParticipantVolumeChange, settingsPanel, canManageAccess, accessMode,
+    onParticipantVolumeChange, onScreenShareVolumeChange, onGroupSoundPlay, onWatchScreenShare,
+    onStopWatchingScreenShare, settingsPanel, canManageAccess, accessMode,
     accessPending, onAccessToggle, inside, errorMessage, leavePending, onLeave,
     connectPending, connectDisabled, onConnect, connectLabel,
   } = props;
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [soundboardOpen, setSoundboardOpen] = useState(false);
   const { fullscreen, toggleFullscreen, exitFullscreen } = useVoiceRoomFullscreen();
   const connected = mediaStatus === "connected" || mediaStatus === "reconnecting";
   const weakConnection =
@@ -151,6 +166,9 @@ export function VoiceRoomSheet(props: VoiceRoomSheetProps) {
           </div>
 
           <div className="flex shrink-0 items-center gap-1">
+            {!isDirect && active && groupSounds.length ? (
+              <button type="button" onClick={() => setSoundboardOpen(true)} className="grid h-9 w-9 place-items-center rounded-xl text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]" aria-label="Открыть звуки группы" title="Звуки группы"><Music2 className="h-4 w-4" /></button>
+            ) : null}
             {canManageAccess ? (
               <button type="button" disabled={accessPending} onClick={onAccessToggle} className="grid h-9 w-9 place-items-center rounded-xl text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] disabled:opacity-45" aria-label={accessMode === "locked" ? "Открыть свободный вход" : "Закрыть свободный вход"} title={accessMode === "locked" ? "Открыть комнату" : "Закрыть комнату"}>
                 {accessMode === "locked" ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
@@ -167,8 +185,38 @@ export function VoiceRoomSheet(props: VoiceRoomSheetProps) {
           </div>
         </header>
 
-        {active ? (
+        {isDirect && callPhase && callPhase !== "connected" && callPhase !== "idle" ? (
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center">
+            <div className="relative">
+              <div className={cn("absolute -inset-5 rounded-full bg-[var(--theme-accent)]/20 blur-xl", callPhase !== "ended" && "animate-pulse")} />
+              <ProfileAvatarVisual displayName={chatName} size="lg" className={cn(callPhase === "dialing" && "opacity-75 blur-[1px]")} />
+            </div>
+            <h3 className="mt-5 text-xl font-semibold">{chatName}</h3>
+            <p className="mt-2 text-sm text-[var(--app-muted)]">
+              {callPhase === "dialing" ? "Ждём ответа…" : callPhase === "ringing" ? "Входящий звонок" : "Звонок завершён"}
+            </p>
+          </div>
+        ) : active ? (
           <div className="min-h-0 flex-1 p-3 sm:p-4">
+            {screenShareAvailable && !watchingScreenShare && !screenSharing ? (
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_35%,var(--app-border))] bg-[var(--app-accent-soft)] p-3">
+                <div>
+                  <p className="text-sm font-semibold">Идёт демонстрация</p>
+                  <p className="text-xs text-[var(--app-muted)]">{screenShareAvailable} показывает экран. Трафик начнёт расходоваться после подключения.</p>
+                </div>
+                <Button type="button" onClick={onWatchScreenShare}>Смотреть</Button>
+              </div>
+            ) : null}
+            {watchingScreenShare && !screenSharing ? (
+              <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2">
+                <label className="flex min-w-48 flex-1 items-center gap-3 text-xs font-medium">
+                  Звук демонстрации
+                  <input type="range" min={0} max={200} step={5} value={Math.round(screenShareVolume * 100)} onChange={(event) => onScreenShareVolumeChange(Number(event.target.value) / 100)} className="min-w-24 flex-1 accent-[var(--theme-accent)]" aria-label="Громкость демонстрации" />
+                  <span className="w-10 text-right tabular-nums">{Math.round(screenShareVolume * 100)}%</span>
+                </label>
+                <button type="button" onClick={onStopWatchingScreenShare} className="rounded-lg px-3 py-1.5 text-xs text-[var(--app-muted)] hover:bg-[var(--app-surface-hover)] hover:text-[var(--foreground)]">Не смотреть</button>
+              </div>
+            ) : null}
             <VoiceRoomStage
               screenContainerRef={screenContainerRef}
               screenShareOwner={screenShareOwner}
@@ -231,6 +279,13 @@ export function VoiceRoomSheet(props: VoiceRoomSheetProps) {
       <Sheet open={open && settingsOpen} onClose={() => setSettingsOpen(false)} className="max-w-xl" ariaLabel="Настройки звука и соединения">
         <div className="mb-5 pr-10"><h3 className="text-xl font-semibold">Звук и соединение</h3><p className="mt-1 text-sm text-[var(--app-muted)]">Устройства, обработка голоса и маршрут медиасервера.</p></div>
         {settingsPanel}
+      </Sheet>
+      <Sheet open={open && soundboardOpen} onClose={() => setSoundboardOpen(false)} className="max-w-lg" ariaLabel="Звуки группы">
+        <div className="mb-5 pr-10"><h3 className="text-xl font-semibold">Звуки группы</h3><p className="mt-1 text-sm text-[var(--app-muted)]">Звук услышат все участники комнаты.</p></div>
+        <VoiceSoundboardPanel sounds={groupSounds} onPlay={(sound) => {
+          onGroupSoundPlay(sound);
+          setSoundboardOpen(false);
+        }} />
       </Sheet>
     </Sheet>
   );

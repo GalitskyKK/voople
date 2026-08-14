@@ -22,7 +22,7 @@ export function ProfileFeedTabs({ active, onChange, className }: ProfileFeedTabs
   return (
     <nav
       className={cn(
-        "voople-profile-feed-tabs sticky top-0 z-10 flex gap-1 border-b border-[var(--app-border)] bg-[color-mix(in_srgb,var(--background)_94%,transparent)] py-1 text-sm backdrop-blur-xl",
+        "voople-profile-feed-tabs sticky top-0 z-20 flex gap-1 border-b border-[var(--app-border)] bg-[var(--background)] py-1 text-sm shadow-[0_-12px_0_var(--background)]",
         className,
       )}
       aria-label="Разделы ленты профиля"

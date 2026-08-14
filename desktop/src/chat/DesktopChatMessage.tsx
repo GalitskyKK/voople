@@ -24,7 +24,7 @@ export function DesktopChatMessage({
   onReply: (message: ChatMessageView) => void;
   onEdit: (message: ChatMessageView) => void;
   onDelete: (messageId: string) => void;
-  onToggleReaction: (messageId: string, emoji: string) => void;
+  onToggleReaction: (messageId: string, reaction: { emoji: string; emojiId?: string | null }) => void;
   groupPosition: "only" | "start" | "middle" | "end";
 }) {
   const isLg = useIsLgViewport();
@@ -50,7 +50,7 @@ export function DesktopChatMessage({
           openMenu();
         }
       }}
-      onToggleReaction={(emoji) => onToggleReaction(message.id, emoji)}
+      onToggleReaction={(reaction) => onToggleReaction(message.id, reaction)}
       senderAvatar={
         message.sender ? (
           <DesktopChatAvatar
@@ -97,7 +97,7 @@ export function DesktopChatMessage({
             onToggleReaction={(
               _message,
               emoji: ChatReactionEmoji,
-            ) => onToggleReaction(message.id, emoji)}
+            ) => onToggleReaction(message.id, { emoji })}
             showOnHover={isLg}
             showTrigger={false}
           />

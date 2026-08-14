@@ -6,6 +6,7 @@ import { MessageReadTicks } from "@/components/chat/MessageReadTicks";
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { cn } from "@/lib/utils";
 import type { ChatMessageView } from "@/types/chat";
+import { ChatMessageContent } from "./ChatMessageContent";
 
 type ChatMessageBubbleVisualProps = {
   message: ChatMessageView;
@@ -23,7 +24,7 @@ type ChatMessageBubbleVisualProps = {
   onPointerUp?: React.PointerEventHandler<HTMLDivElement>;
   onPointerCancel?: React.PointerEventHandler<HTMLDivElement>;
   interactive?: boolean;
-  onToggleReaction?: (emoji: string) => void;
+  onToggleReaction?: (reaction: ChatMessageView["reactions"][number]) => void;
   groupPosition?: "only" | "start" | "middle" | "end";
   selectionState?: boolean;
   swipeOffset?: number;
@@ -171,7 +172,7 @@ export function ChatMessageBubbleVisual({
           {attachment}
           {hasText ? (
             <p className="whitespace-pre-wrap break-words">
-              {text}
+              <ChatMessageContent nodes={message.content} fallback={text ?? ""} />
               <span className="float-right">{messageMeta}</span>
             </p>
           ) : null}
@@ -186,7 +187,7 @@ export function ChatMessageBubbleVisual({
                 <button
                   key={reaction.emoji}
                   type="button"
-                  onClick={() => onToggleReaction?.(reaction.emoji)}
+                  onClick={() => onToggleReaction?.(reaction)}
                   disabled={!onToggleReaction}
                   aria-pressed={reaction.reactedByMe}
                   className={cn(
@@ -194,7 +195,10 @@ export function ChatMessageBubbleVisual({
                     reaction.reactedByMe &&
                       "border-[color-mix(in_srgb,var(--theme-accent)_42%,var(--app-border))] bg-[var(--app-accent-soft)] text-[var(--foreground)]"
                   )}>
-                  <span>{reaction.emoji}</span>
+                  {reaction.emojiUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={reaction.emojiUrl} alt={reaction.emoji} className="h-4 w-4 object-contain" />
+                  ) : <span>{reaction.emoji}</span>}
                   <span className="text-[10px] tabular-nums">{reaction.count}</span>
                 </button>
               ))}

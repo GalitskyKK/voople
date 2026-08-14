@@ -2,9 +2,11 @@ import {
   AudioPresets,
   ConnectionQuality,
   DefaultReconnectPolicy,
+  ScreenSharePresets,
   Track,
   type AudioCaptureOptions,
   type ScreenShareCaptureOptions,
+  type TrackPublishOptions,
   type Room,
 } from "livekit-client";
 
@@ -46,19 +48,57 @@ export const VOICE_PUBLISH_OPTIONS = {
   red: true,
 } as const;
 
+export type ScreenShareQuality = "standard" | "plus";
+
 /**
- * System output includes the remote voices played by Voople on Windows. Until
- * desktop has native per-process loopback, video-only capture prevents that
- * audio from being published back to the same room as echo.
+ * Ask Chromium for audio belonging to the selected surface without offering
+ * the full system mix. `restrictOwnAudio` is best-effort and currently
+ * Chromium-only; the desktop native publisher remains the authoritative way
+ * to isolate one Windows process and its children.
  */
-export const ECHO_SAFE_SCREEN_SHARE_OPTIONS = {
-  audio: false,
-  video: { displaySurface: "monitor" },
+const SELECTED_SURFACE_AUDIO = {
+  autoGainControl: false,
+  channelCount: { ideal: 2 },
+  echoCancellation: false,
+  noiseSuppression: false,
+  restrictOwnAudio: true,
+  sampleRate: { ideal: 48_000 },
+} satisfies AudioCaptureOptions;
+
+const SCREEN_SHARE_BASE = {
+  video: { displaySurface: "window" },
   contentHint: "detail",
   selfBrowserSurface: "exclude",
   systemAudio: "exclude",
   surfaceSwitching: "include",
-} satisfies ScreenShareCaptureOptions;
+} as const;
+
+export function getScreenShareCaptureOptions(
+  quality: ScreenShareQuality,
+  nativeProcessAudio = false,
+): ScreenShareCaptureOptions {
+  return {
+    ...SCREEN_SHARE_BASE,
+    audio: nativeProcessAudio ? false : SELECTED_SURFACE_AUDIO,
+    resolution:
+      quality === "plus"
+        ? { width: 1920, height: 1080, frameRate: 60 }
+        : ScreenSharePresets.h720fps30.resolution,
+  };
+}
+
+export function getScreenSharePublishOptions(
+  quality: ScreenShareQuality,
+): TrackPublishOptions {
+  return {
+    screenShareEncoding:
+      quality === "plus"
+        ? { maxBitrate: 8_000_000, maxFramerate: 60, priority: "high" }
+        : ScreenSharePresets.h720fps30.encoding,
+    degradationPreference: "maintain-resolution",
+    simulcast: true,
+  };
+}
 
 export function getAudioCaptureOptions(preferences: VoicePreferences): AudioCaptureOptions {
   return {

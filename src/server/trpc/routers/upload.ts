@@ -16,14 +16,17 @@ export const uploadRouter = createTRPCRouter({
           "comment",
           "avatar",
           "group-avatar",
+          "group-emoji",
+          "group-sound",
           "banner",
           "track",
           "chat",
         ]),
         contentType: z.string().min(3).max(100),
         chatMediaKind: z.enum(["voice", "circle"]).optional(),
+        chatId: z.string().uuid().optional(),
         // Абсолютный потолок; точный лимит на назначение проверяет createPresignedUpload.
-        sizeBytes: z.number().int().min(1).max(30 * 1024 * 1024),
+        sizeBytes: z.number().int().min(1).max(100 * 1024 * 1024),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -35,6 +38,7 @@ export const uploadRouter = createTRPCRouter({
           contentType: input.contentType,
           sizeBytes: input.sizeBytes,
           chatMediaKind: input.chatMediaKind,
+          chatId: input.chatId,
         });
       } catch (e) {
         throw new TRPCError({

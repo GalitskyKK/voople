@@ -1,4 +1,5 @@
-import localFont from "next/font/local";
+import { GeistMono } from "geist/font/mono";
+import { GeistSans } from "geist/font/sans";
 
 import { WebsiteJsonLd } from "@/components/seo/WebsiteJsonLd";
 import { TRPCReactProvider } from "@/lib/trpc/client";
@@ -10,20 +11,6 @@ import { WebVitalsReporter } from "@/components/telemetry/WebVitalsReporter";
 
 import "./globals.css";
 
-const geistSans = localFont({
-  src: "../../node_modules/next/dist/next-devtools/server/font/geist-latin.woff2",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-  display: "swap",
-});
-
-const geistMono = localFont({
-  src: "../../node_modules/next/dist/next-devtools/server/font/geist-mono-latin.woff2",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-  display: "swap",
-});
-
 export const metadata = createRootMetadata();
 
 export default function RootLayout({
@@ -32,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="ru" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="relative min-h-dvh bg-background text-foreground antialiased">
         <WebsiteJsonLd />
         <a href="#main-content" className="voople-skip-link">

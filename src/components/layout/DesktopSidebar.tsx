@@ -18,6 +18,7 @@ export function DesktopSidebar({ authenticated }: { authenticated: boolean }) {
       pathname={pathname}
       mode={authenticated ? "authenticated" : "public"}
       notificationBadge={authenticated ? <NotificationNavBadge /> : undefined}
+      accountNavigation={authenticated ? <AppAccountChip /> : undefined}
       navAfter={
         authenticated ? <>
           <SidebarHighlights />
@@ -26,7 +27,7 @@ export function DesktopSidebar({ authenticated }: { authenticated: boolean }) {
       }
       footerAfter={
         <div className="mt-2 space-y-1 border-t border-[var(--app-border)] pt-3">
-          {authenticated ? <AppAccountChip /> : (
+          {!authenticated ? (
             <>
               <Link
                 href={`/login?redirect=${encodeURIComponent(pathname)}`}
@@ -41,7 +42,7 @@ export function DesktopSidebar({ authenticated }: { authenticated: boolean }) {
                 <UserPlus className="h-5 w-5" /> Создать профиль
               </Link>
             </>
-          )}
+          ) : null}
           <Link
             href="/download/desktop"
             prefetch={false}

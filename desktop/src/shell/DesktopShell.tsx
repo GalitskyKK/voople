@@ -296,11 +296,11 @@ export function DesktopShell({
           pathname={pathname}
           notificationBadge={notificationBadge}
           renderDestination={renderDestination}
-          footerAfter={
+          accountNavigation={
             viewerSummary ? (
               <button
                 type="button"
-                className="mt-2 block w-full border-t border-[var(--app-border)] pt-3"
+                className="block w-full"
                 aria-label="Открыть свой профиль"
                 onClick={() => navigate("/me")}
               >

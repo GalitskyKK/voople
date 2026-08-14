@@ -32,6 +32,7 @@ type NavigationVisualProps = {
 };
 
 type AppSidebarVisualProps = NavigationVisualProps & {
+  accountNavigation?: ReactNode;
   navAfter?: ReactNode;
   footerAfter?: ReactNode;
 };
@@ -40,6 +41,7 @@ export function AppSidebarVisual({
   pathname,
   renderDestination,
   notificationBadge,
+  accountNavigation,
   navAfter,
   footerAfter,
   mode = "authenticated",
@@ -104,6 +106,7 @@ export function AppSidebarVisual({
             </Fragment>
           );
         })}
+        {accountNavigation ? <div className="mt-0.5">{accountNavigation}</div> : null}
       </nav>
 
       {navAfter}

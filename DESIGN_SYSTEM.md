@@ -67,8 +67,12 @@ without checking the theme name or hardcoding a light/dark page colour.
 
 ## Typography
 
-Geist is the canonical type family in both clients. Tauri packages the same
-font locally; browser and native views must not introduce a second UI font.
+Geist is the canonical type family in both clients. The root `geist` dependency
+is the only font source: Next.js loads `geist/font/sans` and `geist/font/mono`,
+while Tauri bundles the matching variable WOFF2 files from that package. Do not
+reference Next.js devtools fonts, fetch fonts at runtime or introduce a second
+UI font. This keeps Cyrillic glyph coverage and font metrics identical in web
+and desktop builds without a network request from the client.
 
 | Role | Guidance |
 | --- | --- |

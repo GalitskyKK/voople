@@ -70,7 +70,7 @@ export function DesktopChatThread({
     return () => { active = false; };
   }, [chatId, config, data?.chat.type, session.access_token]);
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="voople-chat-window flex min-h-0 flex-1 animate-pulse bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]" />
     );

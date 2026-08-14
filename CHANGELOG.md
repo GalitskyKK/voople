@@ -2,6 +2,23 @@
 
 All notable user-facing changes to Voople are documented here.
 
+## [0.1.18] - 2026-08-14
+
+### Changed
+
+- Restored the full official Geist variable font files as the single bundled typography source for web and desktop.
+- Moved the signed-in account card back to the main navigation position previously occupied by «Профиль».
+
+### Fixed
+
+- Group settings and member dialogs in desktop no longer close during the periodic inbox refresh or after a background thread reload.
+- An already loaded desktop chat remains mounted while it refreshes, preserving open dialogs and local interaction state.
+
+### Deployment notes
+
+- No database migrations or new environment variables are required for this hotfix.
+- The updater artifacts remain cryptographically signed by the existing Tauri updater key.
+
 ## [0.1.17] - 2026-08-14
 
 ### Added

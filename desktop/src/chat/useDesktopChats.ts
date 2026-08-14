@@ -81,11 +81,14 @@ export function useDesktopChats(
     };
   }, [config, load, session.user.id]);
 
+  const refresh = useCallback(() => load({ silent: true }), [load]);
+  const retry = useCallback(() => load(), [load]);
+
   return {
     chats,
     error,
     loading,
-    refresh: () => load({ silent: true }),
-    retry: () => load(),
+    refresh,
+    retry,
   };
 }

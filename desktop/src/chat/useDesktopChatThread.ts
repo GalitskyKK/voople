@@ -97,6 +97,7 @@ export function useDesktopChatThread(
   const [sending, setSending] = useState(false);
   const [live, setLive] = useState(false);
   const requestId = useRef(0);
+  const onInboxChangeRef = useRef(onInboxChange);
   const client = useMemo(
     () => createDesktopTrpcClient(config, () => session.access_token),
     [config, session.access_token],
@@ -128,6 +129,10 @@ export function useDesktopChatThread(
   );
 
   useEffect(() => {
+    onInboxChangeRef.current = onInboxChange;
+  }, [onInboxChange]);
+
+  useEffect(() => {
     void Promise.resolve().then(() => load());
     const supabase = getSupabase(config);
     const channel = supabase
@@ -142,7 +147,7 @@ export function useDesktopChatThread(
         },
         () => {
           void load({ silent: true });
-          onInboxChange();
+          onInboxChangeRef.current();
         },
       )
       .on(
@@ -165,7 +170,7 @@ export function useDesktopChatThread(
       window.clearInterval(pollId);
       void supabase.removeChannel(channel);
     };
-  }, [chatId, config, load, onInboxChange]);
+  }, [chatId, config, load]);
 
   const sendMessage = useCallback(
     async (draft: DesktopMessageDraft) => {

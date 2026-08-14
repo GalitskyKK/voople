@@ -2,6 +2,42 @@
 
 All notable user-facing changes to Voople are documented here.
 
+## [0.1.17] - 2026-08-14
+
+### Added
+
+- Public guest browsing with clear authentication gates, an account chip and direct web/Windows actions on the landing page.
+- Post galleries with up to ten ordered media attachments, per-file upload progress, cloud drafts and a full-screen viewer.
+- Group boost levels, identity perks, custom emoji, soundboard sounds, role styles, vanity invites and public group pages.
+- Desktop release history and a «Что нового» dialog integrated with the signed updater flow.
+- A guarded `npm run release` workflow that prepares versions, changelog, verification, release commit and tag without reading release secrets.
+
+### Changed
+
+- Unified navigation, profile, presence, media and loading surfaces between web and desktop, including shared Geist typography and corrected titlebar geometry.
+- Expanded calls with explicit dialing/ringing states, compact and fullscreen stages, manual screen-share viewing, independent voice/screen volume and room sounds.
+- Screen sharing now requests audio from the selected browser tab or window in web and desktop WebView builds and falls back clearly to video-only when the source exposes no audio track.
+- Group color now drives the shared group accent across avatars, selected conversations, headers, sections, rooms and invitations.
+- Structured chat content now supports custom emoji with a text fallback and stable emoji identifiers for reactions.
+
+### Fixed
+
+- Fixed stale online and microphone indicators, desktop profile action/pin differences and several web/desktop shell alignment issues.
+- Fixed desktop media upload and preview delivery paths used by the profile editor, shop and post composer.
+- Fixed message and gallery layout edge cases, protected-route guest navigation and slow cold-start smoke tests.
+
+### Security and reliability
+
+- Added server-side media count, MIME, magic-byte, ownership, object-size and aggregate-size validation for post and chat uploads.
+- Made boost assignment and grace-period calculation server-authoritative and idempotent.
+- Added contract tests for post media, group perks, release notes and screen-share policy plus public production smoke coverage.
+
+### Deployment notes
+
+- Database migrations `36` through `44` must be applied before enabling all gallery, group-perk and structured-message features; they were applied before this release.
+- Native per-process Windows audio capture remains feature-gated for a later release. Version `0.1.17` uses the Chromium/WebView selected-surface audio path.
+- The Windows installer may remain unsigned by a commercial code-signing certificate; updater artifacts are still cryptographically signed by Tauri.
+
 ## [0.1.13] - 2026-08-12
 
 ### Added

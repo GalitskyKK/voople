@@ -4989,7 +4989,7 @@ dependencies = [
 
 [[package]]
 name = "tokio-stream"
-version = "0.1.20"
+version = "0.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a3d06f0b082ba57c26b79407372e57cf2a1e28124f78e9479fe80322cf53420b"
 dependencies = [
@@ -5416,7 +5416,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "voople-desktop"
-version = "0.1.20"
+version = "0.1.21"
 dependencies = [
  "cxx",
  "livekit",

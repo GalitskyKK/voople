@@ -121,7 +121,7 @@ function PostGalleryLightbox({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[130] flex flex-col bg-black/95 text-white"
+      className="fixed inset-0 z-[130] p-12 flex flex-col bg-black/95 text-white"
       role="dialog"
       aria-modal="true"
       aria-label={`Вложение ${index + 1} из ${items.length}`}

@@ -4,16 +4,20 @@ import type { ChatMessageAttachment } from "@/types/chat";
 
 export function DesktopChatAttachment({
   attachment,
+  onOpenImage,
 }: {
   attachment: ChatMessageAttachment;
+  onOpenImage?: (url: string) => void;
 }) {
   if (attachment.kind === "image") {
     return (
-      <a
-        href={attachment.url}
-        target="_blank"
-        rel="noreferrer"
-        className="voople-chat-image block overflow-hidden rounded-[var(--app-radius-md)]"
+      <button
+        type="button"
+        className="voople-chat-image block overflow-hidden rounded-[var(--app-radius-md)] text-left"
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpenImage?.(attachment.url);
+        }}
       >
         <img
           src={attachment.url}
@@ -21,7 +25,7 @@ export function DesktopChatAttachment({
           className="max-h-72 max-w-full object-cover"
           loading="lazy"
         />
-      </a>
+      </button>
     );
   }
 
@@ -59,6 +63,7 @@ export function DesktopChatAttachment({
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--app-accent-soft)] text-[var(--theme-accent)]">
         <Music2 className="h-4 w-4" />
       </span>
+
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">
           {attachment.track.title}
@@ -67,6 +72,7 @@ export function DesktopChatAttachment({
           {attachment.track.artist}
         </p>
       </div>
+
       <audio
         src={attachment.track.streamUrl}
         controls

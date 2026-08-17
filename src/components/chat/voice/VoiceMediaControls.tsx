@@ -54,7 +54,7 @@ export function VoiceMediaControls({
           itemClass,
           micMuted
             ? "border-red-500/25 bg-red-500/10"
-            : "border-emerald-500/35 bg-emerald-500/10",
+            : "border-[var(--app-border)] bg-[var(--app-surface-soft)]",
         )}
         aria-label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
       >
@@ -65,7 +65,7 @@ export function VoiceMediaControls({
         ) : (
           <Mic className="h-5 w-5 text-emerald-400" />
         )}
-        <span className={compact ? "sr-only" : undefined}>{micMuted ? "Микрофон" : "В эфире"}</span>
+        <span className={compact ? "sr-only" : undefined}>Микрофон</span>
       </button>
 
       <button

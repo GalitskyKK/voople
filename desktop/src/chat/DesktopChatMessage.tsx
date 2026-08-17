@@ -17,6 +17,7 @@ export function DesktopChatMessage({
   onEdit,
   onDelete,
   onToggleReaction,
+  onOpenImage,
   groupPosition,
 }: {
   message: ChatMessageView;
@@ -24,7 +25,11 @@ export function DesktopChatMessage({
   onReply: (message: ChatMessageView) => void;
   onEdit: (message: ChatMessageView) => void;
   onDelete: (messageId: string) => void;
-  onToggleReaction: (messageId: string, reaction: { emoji: string; emojiId?: string | null }) => void;
+  onToggleReaction: (
+    messageId: string,
+    reaction: { emoji: string; emojiId?: string | null },
+  ) => void;
+  onOpenImage?: (url: string) => void;
   groupPosition: "only" | "start" | "middle" | "end";
 }) {
   const isLg = useIsLgViewport();
@@ -62,7 +67,10 @@ export function DesktopChatMessage({
       }
       attachment={
         message.attachment ? (
-          <DesktopChatAttachment attachment={message.attachment} />
+          <DesktopChatAttachment
+            attachment={message.attachment}
+            onOpenImage={onOpenImage}
+          />
         ) : null
       }
       menu={

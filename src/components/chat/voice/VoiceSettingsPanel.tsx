@@ -70,10 +70,10 @@ export function VoiceSettingsPanel({
 }: VoiceSettingsPanelProps) {
   return (
     <div className="space-y-4">
-        <p className="rounded-xl bg-[var(--app-accent-soft)] px-3 py-2 text-xs leading-5 text-[var(--app-muted)]">
+        {/*<p className="rounded-xl bg-[var(--app-accent-soft)] px-3 py-2 text-xs leading-5 text-[var(--app-muted)]">
           Голос передаётся в Opus до 96 кбит/с с защитой от потери пакетов и без
           обрезания первых слогов после тишины. Обработка применяется локально.
-        </p>
+        </p>*/}
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs text-[var(--app-muted)]">
             Названия появляются после разрешения доступа к микрофону.

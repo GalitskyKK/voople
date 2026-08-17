@@ -230,13 +230,15 @@ export function VoiceRoomSheet(props: VoiceRoomSheetProps) {
               onParticipantVolumeChange={onParticipantVolumeChange}
             />
           </div>
-        ) : (
-          <div className="m-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-4">
-            <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--app-accent-soft)] text-(--theme-accent)"><DoorOpen className="h-5 w-5" /></span>
-              <div><p className="text-sm font-medium">{isDirect ? "Начать разговор" : "Открыть комнату"}</p><p className="text-xs text-[var(--app-muted)]">Микрофон включается отдельно.</p></div>
-            </div>
-          </div>
+          ) : (
+
+            null
+              // <div className="m-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-4">
+          //   <div className="flex items-center gap-3">
+          //     <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--app-accent-soft)] text-(--theme-accent)"><DoorOpen className="h-5 w-5" /></span>
+          //     <div><p className="text-sm font-medium">{isDirect ? "Начать разговор" : "Открыть комнату"}</p><p className="text-xs text-[var(--app-muted)]">Микрофон включается отдельно.</p></div>
+          //   </div>
+          // </div>
         )}
 
         <footer className="shrink-0 border-t border-[var(--app-border)] bg-[color-mix(in_srgb,var(--background)_94%,transparent)] p-3 backdrop-blur-xl">

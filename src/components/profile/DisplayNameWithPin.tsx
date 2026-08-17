@@ -17,6 +17,7 @@ type DisplayNameWithPinProps = {
   children: ReactNode;
   hasVooplePlus?: boolean;
   size?: DisplayNameWithPinSize;
+  pinInteractive?: boolean;
   /** Дата окончания подписки (если есть — в модалке). */
   subscriptionExpiresAt?: string | null;
   badgeUrl?: string;
@@ -32,6 +33,7 @@ type DisplayNameWithPinProps = {
 export function DisplayNameWithPin({
   children,
   hasVooplePlus = false,
+  pinInteractive = true,
   size = "sm",
   subscriptionExpiresAt,
   badgeUrl,
@@ -52,6 +54,7 @@ export function DisplayNameWithPin({
           size={size}
           expiresAt={subscriptionExpiresAt}
           badgeUrl={badgeUrl}
+          interactive={pinInteractive}
         />
       ) : null}
     </Tag>

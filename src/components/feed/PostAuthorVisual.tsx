@@ -69,6 +69,7 @@ export function PostAuthorVisual({
                 <DisplayNameWithPin
                   hasVooplePlus={hasVooplePlus}
                   badgeUrl={badgeUrl}
+                  pinInteractive={false}
                   size="sm"
                   className="ml-20 min-w-0 max-w-[calc(100%_-_6rem)]"
                   nameClassName={cn(

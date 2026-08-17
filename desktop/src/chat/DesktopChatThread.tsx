@@ -8,6 +8,7 @@ import { ChatWindowHeaderVisual } from "@/components/chat/ChatWindowHeaderVisual
 import { ChatPeerPresence } from "@/components/chat/ChatPeerPresence";
 import { VoiceRoomButton } from "@/components/chat/voice/VoiceRoomButton";
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
+import { ChatMediaLightbox } from "@/components/chat/ChatMediaLightbox";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import type { ChatListItem, ChatMessageView, GroupEmojiView } from "@/types/chat";
@@ -56,6 +57,7 @@ export function DesktopChatThread({
   } = useDesktopChatThread(config, session, chatId, onInboxChange);
   const [replyTo, setReplyTo] = useState<ChatMessageView | null>(null);
   const [editing, setEditing] = useState<ChatMessageView | null>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [groupEmojis, setGroupEmojis] = useState<GroupEmojiView[]>([]);
   const { containerRef: messagesRef, contentRef: messagesContentRef } =
     useChatAutoScroll(chatId, data?.messages.length ?? 0);
@@ -295,6 +297,7 @@ export function DesktopChatThread({
                 onToggleReaction={(messageId, emoji) =>
                   void toggleReaction(messageId, emoji)
                 }
+                onOpenImage={setLightboxUrl}
               />
             ),
           )}
@@ -319,6 +322,10 @@ export function DesktopChatThread({
         onEdit={editMessage}
         onCancelEdit={() => setEditing(null)}
         customEmojis={data.chat.type === "group" ? groupEmojis : []}
+      />
+      <ChatMediaLightbox
+        url={lightboxUrl}
+        onClose={() => setLightboxUrl(null)}
       />
     </div>
   );

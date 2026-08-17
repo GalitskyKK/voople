@@ -5,6 +5,7 @@ import { lazy, Suspense, useState } from "react";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
 import { cn } from "@/lib/utils";
 import type { DisplayNameWithPinSize } from "./DisplayNameWithPin";
+
 const VooplePlusInfoModal = lazy(() =>
   import("./VooplePlusInfoModal").then((module) => ({
     default: module.VooplePlusInfoModal,
@@ -22,6 +23,7 @@ type VooplePlusPinButtonProps = {
   expiresAt?: string | null;
   badgeUrl?: string;
   className?: string;
+  interactive?: boolean;
 };
 
 export function VooplePlusPinButton({
@@ -29,9 +31,40 @@ export function VooplePlusPinButton({
   expiresAt,
   badgeUrl,
   className,
+  interactive = true,
 }: VooplePlusPinButtonProps) {
   const [open, setOpen] = useState(false);
   const pin = PIN_BY_SIZE[size];
+
+  const image = (
+    // eslint-disable-next-line @next/next/no-img-element -- CDN mascot pin
+    <img
+      src={badgeUrl ?? vooplusBadgeUrl()}
+      alt=""
+      width={pin.px}
+      height={pin.px}
+      className={cn(
+        "voople-plus-pin__image object-contain object-center",
+        pin.className,
+        "drop-shadow-[0_1px_4px_color-mix(in_srgb,var(--theme-accent)_45%,transparent)]",
+      )}
+      decoding="async"
+    />
+  );
+
+  if (!interactive) {
+    return (
+      <span
+        className={cn(
+          "voople-plus-pin inline-flex shrink-0 p-0.5",
+          className,
+        )}
+        aria-hidden="true"
+      >
+        {image}
+      </span>
+    );
+  }
 
   return (
     <>
@@ -48,20 +81,9 @@ export function VooplePlusPinButton({
         )}
         aria-label="Подробнее о Вупл+"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element -- CDN mascot pin */}
-        <img
-          src={badgeUrl ?? vooplusBadgeUrl()}
-          alt=""
-          width={pin.px}
-          height={pin.px}
-          className={cn(
-            "voople-plus-pin__image object-contain object-center",
-            pin.className,
-            "drop-shadow-[0_1px_4px_color-mix(in_srgb,var(--theme-accent)_45%,transparent)]",
-          )}
-          decoding="async"
-        />
+        {image}
       </button>
+
       {open ? (
         <Suspense fallback={null}>
           <VooplePlusInfoModal

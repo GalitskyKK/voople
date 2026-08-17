@@ -105,16 +105,24 @@ fn windows_build_number() -> Option<u32> {
         service_pack: [u16; 128],
     }
     #[link(name = "ntdll")]
-    unsafe extern "system" { fn RtlGetVersion(info: *mut RtlOsVersionInfo) -> i32; }
+    unsafe extern "system" {
+        fn RtlGetVersion(info: *mut RtlOsVersionInfo) -> i32;
+    }
     let mut info = RtlOsVersionInfo {
         size: std::mem::size_of::<RtlOsVersionInfo>() as u32,
-        major: 0, minor: 0, build: 0, platform: 0, service_pack: [0; 128],
+        major: 0,
+        minor: 0,
+        build: 0,
+        platform: 0,
+        service_pack: [0; 128],
     };
     (unsafe { RtlGetVersion(&mut info) } >= 0).then_some(info.build)
 }
 
 #[cfg(not(target_os = "windows"))]
-fn windows_build_number() -> Option<u32> { None }
+fn windows_build_number() -> Option<u32> {
+    None
+}
 
 fn restore_main_window(app: &tauri::AppHandle) -> Result<(), String> {
     let window = app
@@ -324,14 +332,18 @@ fn stop_voice_heartbeat(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .manage(WindowBehavior::default())
         .manage(VoiceHeartbeat::default())
         .manage(process_audio_publisher::ProcessAudioPublishers::default())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_window_state::Builder::default().build());
+
+    #[cfg(not(debug_assertions))]
+    let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+
+    builder
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             let _ = restore_main_window(app);
         }))

@@ -48,7 +48,7 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
   onStateChange,
 }, ref) {
   const [open, setOpen] = useState(initialOpen);
-  const [micMuted, setMicMuted] = useState(true);
+  const [micMuted, setMicMuted] = useState(false); // Микрофон всегда сразу включен
   const [mediaStatus, setMediaStatus] = useState<MediaStatus>("idle");
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [mediaActionPending, setMediaActionPending] = useState(false);

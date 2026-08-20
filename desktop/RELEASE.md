@@ -35,7 +35,13 @@ Configure these repository secrets:
 - `DESKTOP_PRODUCTION_DATABASE_URL` (store this in the protected
   `desktop-stable` environment)
 - `E2E_SUPABASE_URL`, `E2E_SUPABASE_ANON_KEY`,
-  `E2E_SUPABASE_SERVICE_ROLE_KEY` and `E2E_USER_EMAIL`
+  `E2E_SUPABASE_SERVICE_ROLE_KEY` and `E2E_USER_EMAIL` (optional as a complete
+  set; without it only the public browser smoke project runs)
+
+`desktop-v0.1.22` has a one-release exception for a missing staging database,
+approved after production migration readiness passed manually. Every later tag
+fails closed until `DESKTOP_STAGING_DATABASE_URL` is configured. Remove the
+exception after staging is provisioned.
 
 Configure these repository variables:
 

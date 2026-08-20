@@ -139,6 +139,8 @@ jobs:
         run: Write-Warning "Voople 0.1.22 was explicitly approved without a staging database. Configure DESKTOP_STAGING_DATABASE_URL before the next release."
 
       - name: Run public and authenticated browser smoke tests
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           npx playwright install --with-deps chromium
           npm run test:e2e

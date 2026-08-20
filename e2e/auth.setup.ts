@@ -2,6 +2,8 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { expect, test as setup } from "@playwright/test";
 
+import { PRIVACY_VERSION, TERMS_VERSION } from "../src/lib/constants/legal";
+
 const authStatePath = "playwright/.auth/user.json";
 
 type StoredCookie = {
@@ -42,6 +44,14 @@ setup("create an isolated authenticated browser state", async ({ context, baseUR
   expect(error, error?.message).toBeNull();
   expect(data.user?.id).toBeTruthy();
 
+  if (serviceRoleKey && data.user?.id) {
+    await ensureCurrentLegalConsent({
+      supabaseUrl,
+      serviceRoleKey,
+      userId: data.user.id,
+    });
+  }
+
   await context.addCookies(
     [...cookieJar.values()].map(({ name, value, options }) => ({
       name,
@@ -57,28 +67,44 @@ setup("create an isolated authenticated browser state", async ({ context, baseUR
     })),
   );
 
-  // Legal document versions may change independently of the dedicated E2E
-  // account. Confirm them through the real UI so protected smoke tests verify
-  // the application surface instead of stopping at the re-consent boundary.
+  // Verify the fixture by opening a real protected route. The idempotent setup
+  // above is limited to the dedicated E2E account and does not touch user content.
   const page = await context.newPage();
   await page.goto(new URL("/settings", applicationUrl).toString(), {
     waitUntil: "domcontentloaded",
     timeout: 60_000,
   });
-  const settingsHeading = page.getByRole("heading", { name: "Настройки" });
-  const consentHeading = page.getByRole("heading", {
-    name: "Проверьте актуальные условия",
+  await expect(page.getByRole("heading", { name: "Настройки" })).toBeVisible({
+    timeout: 30_000,
   });
-  await expect(settingsHeading.or(consentHeading)).toBeVisible({ timeout: 30_000 });
-
-  if (await consentHeading.isVisible()) {
-    await page.getByRole("checkbox").check();
-    await page.getByRole("button", { name: "Принять и продолжить" }).click();
-    await expect(settingsHeading).toBeVisible({ timeout: 30_000 });
-  }
 
   await context.storageState({ path: authStatePath });
 });
+
+async function ensureCurrentLegalConsent({
+  supabaseUrl,
+  serviceRoleKey,
+  userId,
+}: {
+  supabaseUrl: string;
+  serviceRoleKey: string;
+  userId: string;
+}) {
+  const admin = createAdminClient(supabaseUrl, serviceRoleKey);
+  const { error } = await admin.from("user_legal_consents").upsert(
+    {
+      user_id: userId,
+      privacy_version: PRIVACY_VERSION,
+      terms_version: TERMS_VERSION,
+      source: "web_reconsent",
+    },
+    {
+      onConflict: "user_id,privacy_version,terms_version",
+      ignoreDuplicates: true,
+    },
+  );
+  expect(error, error?.message).toBeNull();
+}
 
 async function createCaptchaSafeTestSession({
   supabase,
@@ -91,13 +117,7 @@ async function createCaptchaSafeTestSession({
   serviceRoleKey: string;
   email: string;
 }) {
-  const admin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-      persistSession: false,
-    },
-  });
+  const admin = createAdminClient(supabaseUrl, serviceRoleKey);
   // Recovery links fail for unknown users, unlike magic links which may create one.
   // That makes a typo in E2E_USER_EMAIL fail closed instead of mutating production Auth.
   const generated = await admin.auth.admin.generateLink({ type: "recovery", email });
@@ -107,6 +127,16 @@ async function createCaptchaSafeTestSession({
   return supabase.auth.verifyOtp({
     token_hash: generated.data.properties.hashed_token,
     type: "recovery",
+  });
+}
+
+function createAdminClient(supabaseUrl: string, serviceRoleKey: string) {
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      persistSession: false,
+    },
   });
 }
 

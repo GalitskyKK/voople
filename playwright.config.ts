@@ -3,9 +3,12 @@ import path from "node:path";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL?.trim() || "http://127.0.0.1:3000";
 const nextCliPath = path.resolve("node_modules/next/dist/bin/next");
-// Webpack keeps the local/CI smoke server deterministic on Windows runners
-// where Turbopack's pooled PostCSS child process can be denied by the sandbox.
+// Webpack keeps the local smoke server deterministic on Windows machines where
+// Turbopack's pooled PostCSS child process can be denied by the sandbox. CI
+// exercises the optimized build produced by the preceding release gate.
 const localDevCommand = `"${process.execPath}" "${nextCliPath}" dev --webpack --hostname 127.0.0.1`;
+const localProductionCommand = `"${process.execPath}" "${nextCliPath}" start --hostname 127.0.0.1`;
+const localServerCommand = process.env.CI ? localProductionCommand : localDevCommand;
 const hasAuthTarget = [
   process.env.E2E_SUPABASE_URL,
   process.env.E2E_SUPABASE_ANON_KEY,
@@ -64,7 +67,7 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined
     : {
-        command: localDevCommand,
+        command: localServerCommand,
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

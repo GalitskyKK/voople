@@ -11,6 +11,7 @@ type StoredCookie = {
 };
 
 setup("create an isolated authenticated browser state", async ({ context, baseURL }) => {
+  setup.setTimeout(90_000);
   const supabaseUrl = requiredEnvironmentValue("E2E_SUPABASE_URL");
   const supabaseAnonKey = requiredEnvironmentValue("E2E_SUPABASE_ANON_KEY");
   const email = requiredEnvironmentValue("E2E_USER_EMAIL");
@@ -55,6 +56,27 @@ setup("create an isolated authenticated browser state", async ({ context, baseUR
           : undefined,
     })),
   );
+
+  // Legal document versions may change independently of the dedicated E2E
+  // account. Confirm them through the real UI so protected smoke tests verify
+  // the application surface instead of stopping at the re-consent boundary.
+  const page = await context.newPage();
+  await page.goto(new URL("/settings", applicationUrl).toString(), {
+    waitUntil: "domcontentloaded",
+    timeout: 60_000,
+  });
+  const settingsHeading = page.getByRole("heading", { name: "Настройки" });
+  const consentHeading = page.getByRole("heading", {
+    name: "Проверьте актуальные условия",
+  });
+  await expect(settingsHeading.or(consentHeading)).toBeVisible({ timeout: 30_000 });
+
+  if (await consentHeading.isVisible()) {
+    await page.getByRole("checkbox").check();
+    await page.getByRole("button", { name: "Принять и продолжить" }).click();
+    await expect(settingsHeading).toBeVisible({ timeout: 30_000 });
+  }
+
   await context.storageState({ path: authStatePath });
 });
 

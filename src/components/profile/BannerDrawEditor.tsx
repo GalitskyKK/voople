@@ -171,7 +171,6 @@ function BannerDrawToolbar({
 
 type BannerDrawSurfaceProps = {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
-  backgroundColor: string;
   busy: boolean;
   displayClassName?: string;
   brushColor: CanvasBrushColor;
@@ -184,7 +183,6 @@ type BannerDrawSurfaceProps = {
 
 function BannerDrawSurface({
   canvasRef,
-  backgroundColor,
   busy,
   displayClassName,
   brushColor,
@@ -312,7 +310,6 @@ export function BannerDrawEditor({
 
   const surfaceProps = {
     canvasRef,
-    backgroundColor,
     busy,
     brushColor,
     brushSize,

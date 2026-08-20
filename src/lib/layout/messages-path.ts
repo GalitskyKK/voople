@@ -1,6 +1,6 @@
 /** UUID диалога из `/messages/[chatId]`, иначе `null`. */
 export function activeMessagesChatId(pathname: string): string | null {
-  const match = pathname.match(/^\/messages\/([^/]+)$/);
+  const match = pathname.match(/^\/messages\/([^/]+)(?:\/|$)/);
   return match?.[1] ?? null;
 }
 

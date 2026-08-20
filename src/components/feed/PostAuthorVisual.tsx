@@ -7,6 +7,7 @@ import { displayNamePresentation } from "@/lib/customization/display-name-style"
 import { cn } from "@/lib/utils";
 import type { ProfileCustomizationView } from "@/types/domain";
 import { FeedAuthorChipBackdrop } from "./FeedAuthorChipBackdrop";
+import { MiniProfilePopover } from "./MiniProfilePopover";
 
 type PostAuthorVisualProps = {
   username: string;
@@ -56,6 +57,7 @@ export function PostAuthorVisual({
           <FeedAuthorChipBackdrop
             backgroundUrl={customization.assets.feedCardBackgroundUrl}
           />
+          <MiniProfilePopover author={{ username, displayName, hasVooplePlus, customization }}>
           {renderDestination({
             href: `/${username}`,
             label: displayName,
@@ -89,6 +91,7 @@ export function PostAuthorVisual({
               </>
             ),
           })}
+          </MiniProfilePopover>
         </div>
         <div className="ml-auto shrink-0">{time}</div>
         {trailing}
@@ -100,6 +103,7 @@ export function PostAuthorVisual({
     <header className="voople-post-card__header flex items-start gap-3 px-4 pt-4">
       {avatar}
       <div className="min-w-0 flex-1">
+        <MiniProfilePopover author={{ username, displayName, hasVooplePlus, customization }}>
         {renderDestination({
           href: `/${username}`,
           label: displayName,
@@ -126,6 +130,7 @@ export function PostAuthorVisual({
             </DisplayNameWithPin>
           ),
         })}
+        </MiniProfilePopover>
         {time}
       </div>
       {trailing}

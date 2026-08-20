@@ -1,5 +1,25 @@
 export type GroupBoostLevel = 0 | 1 | 3 | 6 | 12 | 24;
 
+export type GroupPerkDefinition = {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  milestone: Exclude<GroupBoostLevel, 0>;
+  icon: "palette" | "smile" | "image" | "upload" | "tag" | "link" | "roles" | "hd";
+};
+
+export const GROUP_PERKS: readonly GroupPerkDefinition[] = [
+  { id: "accent", name: "Цвет сообщества", description: "Фирменный accent в группе", cost: 1, milestone: 1, icon: "palette" },
+  { id: "emoji_sound", name: "Эмодзи и звуки", description: "Расширенный набор реакций и soundboard", cost: 1, milestone: 3, icon: "smile" },
+  { id: "banner", name: "Расширенное оформление", description: "Баннер и animated identity", cost: 2, milestone: 6, icon: "image" },
+  { id: "uploads", name: "Большие файлы", description: "Лимит загрузки до 50–100 МБ", cost: 3, milestone: 6, icon: "upload" },
+  { id: "tag", name: "Тег сообщества", description: "Короткая метка рядом с названием", cost: 2, milestone: 12, icon: "tag" },
+  { id: "vanity", name: "Постоянная ссылка", description: "Запоминающийся invite без срока", cost: 2, milestone: 24, icon: "link" },
+  { id: "roles", name: "Стили ролей", description: "Отдельные цвета владельца и команды", cost: 2, milestone: 24, icon: "roles" },
+  { id: "hd", name: "HD-комната", description: "Повышенное качество демонстрации", cost: 3, milestone: 24, icon: "hd" },
+] as const;
+
 export function groupBoostLevel(boostCount: number): GroupBoostLevel {
   if (boostCount >= 24) return 24;
   if (boostCount >= 12) return 12;

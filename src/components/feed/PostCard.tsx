@@ -5,6 +5,7 @@ import { MessageCircle, Repeat2 } from "lucide-react";
 import { type CSSProperties, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { RichText } from "@/components/ui/RichText";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import type { PostViewModel } from "@/types/domain";
@@ -138,11 +139,11 @@ export function PostCard({
         <PostCardBody>
           {displayRepostComment && (
             <p className="voople-post-card__text mb-3 text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">
-              {displayRepostComment}
+              <RichText text={displayRepostComment} />
             </p>
           )}
           {displayText && (
-            <p className="voople-post-card__text text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">{displayText}</p>
+            <p className="voople-post-card__text text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]"><RichText text={displayText} /></p>
           )}
           {post.media?.length ? (
             <PostMediaGallery post={post} className="mt-3" />

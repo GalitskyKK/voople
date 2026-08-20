@@ -72,6 +72,8 @@ export function MainShell({
 
   const contentMaxWidth = isMessagesRoute
     ? "max-w-none"
+    : pathname === "/feed"
+      ? "max-w-7xl"
     : isShopRoute
       ? "max-w-[1440px]"
       : isProfileRoute

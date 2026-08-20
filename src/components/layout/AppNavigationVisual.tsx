@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from "react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 import { COPY } from "@/lib/constants/copy";
 import {
@@ -35,6 +36,8 @@ type AppSidebarVisualProps = NavigationVisualProps & {
   accountNavigation?: ReactNode;
   navAfter?: ReactNode;
   footerAfter?: ReactNode;
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
 };
 
 export function AppSidebarVisual({
@@ -44,6 +47,8 @@ export function AppSidebarVisual({
   accountNavigation,
   navAfter,
   footerAfter,
+  collapsed = false,
+  onCollapsedChange,
   mode = "authenticated",
 }: AppSidebarVisualProps) {
   const navigationItems = mode === "public" ? PUBLIC_NAV_ITEMS : MAIN_NAV_ITEMS;
@@ -53,17 +58,29 @@ export function AppSidebarVisual({
   return (
     <aside
       data-nosnippet
+      data-collapsed={collapsed ? "true" : "false"}
       className="voople-sidebar fixed left-0 top-0 hidden h-full w-[var(--voople-sidebar-width)] shrink-0 flex-col lg:flex"
     >
-      <div className="voople-sidebar__brand shrink-0 px-5 pb-7 pt-7">
+      <div className="voople-sidebar__brand flex shrink-0 items-center justify-between gap-2 px-4 pb-7 pt-7">
         {renderDestination({
           href: "/feed",
           label: COPY.appName,
           active: pathname === "/feed",
           className:
             "inline-flex items-center gap-2.5 text-[1.125rem] font-semibold tracking-[-0.02em] text-[var(--foreground)] transition-opacity hover:opacity-85",
-          children: <><VoopleMark className="h-8 w-8" />{COPY.appName}</>,
+          children: <><VoopleMark className="h-8 w-8" /><span className="voople-sidebar__label">{COPY.appName}</span></>,
         })}
+        {onCollapsedChange ? (
+          <button
+            type="button"
+            onClick={() => onCollapsedChange(!collapsed)}
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
+            aria-label={collapsed ? "Развернуть боковую панель" : "Свернуть боковую панель"}
+            title={collapsed ? "Развернуть" : "Свернуть"}
+          >
+            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
+        ) : null}
       </div>
 
       <nav
@@ -99,7 +116,7 @@ export function AppSidebarVisual({
                       />
                       {href === "/notifications" && notificationBadge}
                     </span>
-                    {label}
+                    <span className="voople-sidebar__label">{label}</span>
                   </>
                 ),
               })}
@@ -109,7 +126,7 @@ export function AppSidebarVisual({
         {accountNavigation ? <div className="mt-0.5">{accountNavigation}</div> : null}
       </nav>
 
-      {navAfter}
+      {!collapsed ? navAfter : null}
 
       <div className="voople-sidebar__footer shrink-0 border-t border-[var(--app-border)] px-3 pb-7 pt-5">
         {footerItems.map(({ href, label, icon: Icon }) => {
@@ -129,14 +146,14 @@ export function AppSidebarVisual({
                 children: (
                   <>
                     <Icon className="h-5 w-5 shrink-0" strokeWidth={1.75} />
-                    {label}
+                    <span className="voople-sidebar__label">{label}</span>
                   </>
                 ),
               })}
             </Fragment>
           );
         })}
-        {footerAfter}
+        {!collapsed ? footerAfter : null}
       </div>
     </aside>
   );
@@ -167,7 +184,7 @@ export function AppBottomNavigationVisual({
                 label,
                 active,
                 className: cn(
-                  "relative flex min-w-[4.25rem] flex-col items-center gap-0.5 rounded-full border-0 bg-transparent px-2.5 py-2 text-[10px] font-medium tracking-wide transition-all duration-200",
+                  "relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-full border-0 bg-transparent px-1.5 py-2 text-[10px] font-medium tracking-wide transition-all duration-200 sm:px-2.5",
                   active
                     ? "text-[var(--foreground)]"
                     : "text-[var(--app-muted)] hover:text-[color-mix(in_srgb,var(--foreground)_82%,transparent)]",

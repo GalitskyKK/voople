@@ -35,7 +35,13 @@ export function useCloudPostDraft({
         setText(draft.text);
         restore(draft.media);
         setRevision(draft.revision);
-        lastSavedSignature.current = JSON.stringify({ text: draft.text, media: draft.media.map(({ url: _url, ...item }) => item) });
+        lastSavedSignature.current = JSON.stringify({
+          text: draft.text,
+          media: draft.media.map(({ url, ...item }) => {
+            void url;
+            return item;
+          }),
+        });
       }
       setRestored(true);
       applying.current = false;

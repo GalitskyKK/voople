@@ -1,4 +1,4 @@
-import { FileText, Hash, UserRound } from "lucide-react";
+import { FileText, Hash, UsersRound, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
@@ -6,6 +6,8 @@ import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import type { PostAuthorView } from "@/types/domain";
 import type { ExploreSearchResult } from "@/types/search";
+import type { PublicGroupSearchHit } from "@/types/chat";
+import { GroupAvatar } from "@/components/chat/GroupAvatar";
 
 export type ExploreAvatarRenderer = (props: {
   author: PostAuthorView;
@@ -13,11 +15,15 @@ export type ExploreAvatarRenderer = (props: {
 
 export function ExploreSearchResults({
   result,
+  communities,
+  scope,
   renderDestination,
   renderAvatar,
   badgeUrl,
 }: {
   result: ExploreSearchResult;
+  communities: PublicGroupSearchHit[];
+  scope: "all" | "people" | "posts" | "communities";
   renderDestination: NavigationDestinationRenderer;
   renderAvatar: ExploreAvatarRenderer;
   badgeUrl?: string;
@@ -27,7 +33,7 @@ export function ExploreSearchResults({
 
   return (
     <div className="space-y-6">
-      {result.hashtags.length > 0 && (
+      {scope === "all" && result.hashtags.length > 0 && (
         <ResultSection title="Хэштеги" icon={<Hash />}>
           <ul className="space-y-2">
             {result.hashtags.map((item) => (
@@ -56,7 +62,7 @@ export function ExploreSearchResults({
           </ul>
         </ResultSection>
       )}
-      {result.users.length > 0 && (
+      {(scope === "all" || scope === "people") && result.users.length > 0 && (
         <ResultSection title="Люди" icon={<UserRound />}>
           <ul className="space-y-2">
             {result.users.map((item) => (
@@ -101,7 +107,7 @@ export function ExploreSearchResults({
           </ul>
         </ResultSection>
       )}
-      {result.posts.length > 0 && (
+      {(scope === "all" || scope === "posts") && result.posts.length > 0 && (
         <ResultSection title="Посты" icon={<FileText />}>
           <ul className="space-y-2">
             {result.posts.map((post) => (
@@ -134,6 +140,27 @@ export function ExploreSearchResults({
                       </div>
                     </>
                   ),
+                })}
+              </li>
+            ))}
+          </ul>
+        </ResultSection>
+      )}
+      {(scope === "all" || scope === "communities") && communities.length > 0 && (
+        <ResultSection title="Сообщества" icon={<UsersRound />}>
+          <ul className="space-y-2">
+            {communities.map((group) => (
+              <li key={group.id}>
+                {renderDestination({
+                  href: group.publicSlug ? `/group/${group.publicSlug}` : `/messages/${group.id}`,
+                  label: group.name,
+                  active: false,
+                  className: itemClass,
+                  children: <>
+                    <GroupAvatar name={group.name} avatarUrl={group.avatarUrl} icon={group.icon} accentColor={null} />
+                    <div className="min-w-0 flex-1"><p className="truncate font-medium">{group.name}</p><p className="truncate text-sm text-[var(--app-muted)]">{group.memberCount} участников{group.publicSlug ? ` · @${group.publicSlug}` : ""}</p></div>
+                    {group.joined ? <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-[10px] font-medium text-emerald-500">Вы участник</span> : null}
+                  </>,
                 })}
               </li>
             ))}

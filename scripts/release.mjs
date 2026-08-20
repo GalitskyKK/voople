@@ -28,6 +28,18 @@ function run(command, args, options = {}) {
   return (result.stdout ?? "").trim();
 }
 
+function runOptional(command, args, options = {}) {
+  const result = spawnSync(command, args, {
+    cwd: options.cwd,
+    encoding: "utf8",
+    stdio: "inherit",
+    shell: false,
+  });
+  if (result.status === 0) return true;
+  process.stdout.write(`\nOptional check skipped after failure: ${command} ${args.join(" ")}\n`);
+  return false;
+}
+
 function git(...args) {
   return run("git", args, { capture: true });
 }
@@ -73,15 +85,15 @@ async function main() {
   const commits = git("log", "--pretty=format:%s", commitRange).split(/\r?\n/).filter(Boolean);
   const defaultTitle = `Voople Desktop ${nextVersion}`;
   const title = (await prompt.question(`Release title (${defaultTitle}): `)).trim() || defaultTitle;
-  process.stdout.write("Release notes. Empty line finishes; Enter immediately uses commit subjects.\n");
+  process.stdout.write("Напишите от 1 до 5 коротких заметок для пользователей. Пустая строка завершает ввод.\n");
   const notes = [];
-  while (true) {
+  while (notes.length < 5) {
     const line = (await prompt.question("- ")).trim();
     if (!line) break;
     notes.push(line.replace(/^-\s*/, ""));
   }
-  const releaseNotes = notes.length ? notes : commits;
-  if (!releaseNotes.length) throw new Error("Release notes cannot be empty");
+  const releaseNotes = notes;
+  if (!releaseNotes.length) throw new Error("Добавьте хотя бы одну понятную пользователю заметку о релизе");
 
   desktopPackage.version = nextVersion;
   await writeFile("desktop/package.json", `${JSON.stringify(desktopPackage, null, 2)}\n`);
@@ -102,14 +114,20 @@ async function main() {
     { args: ["node_modules/eslint/bin/eslint.js", "."] },
     { args: ["node_modules/typescript/bin/tsc", "--noEmit"] },
     { args: ["node_modules/next/dist/bin/next", "build"] },
+    { args: ["scripts/check-migration-readiness.mjs"] },
     { args: ["node_modules/typescript/bin/tsc", "--noEmit"], cwd: "desktop" },
     { args: ["node_modules/vite/bin/vite.js", "build"], cwd: "desktop" },
     { args: ["node_modules/@playwright/test/cli.js", "test"] },
-    { args: ["node_modules/@tauri-apps/cli/tauri.js", "build"], cwd: "desktop" },
   ];
-  for (const check of checks) run(process.execPath, check.args, { cwd: check.cwd });
+  for (const check of checks) run(check.command ?? process.execPath, check.args, { cwd: check.cwd });
+  if (process.platform === "win32" && process.env.VERIFY_NATIVE_AUDIO === "1") {
+    runOptional("cargo", ["test", "--features", "process-audio-publisher", "--target", "x86_64-pc-windows-msvc"], { cwd: "desktop/src-tauri" });
+    runOptional("cargo", ["check", "--features", "process-audio-publisher", "--target", "x86_64-pc-windows-msvc"], { cwd: "desktop/src-tauri" });
+  } else {
+    process.stdout.write("Native installer checks are delegated to GitHub Actions.\n");
+  }
 
-  process.stdout.write(`\nDry run\n  ${currentVersion} -> ${nextVersion}\n  tag: ${tag}\n  commits: ${releaseNotes.length}\n`);
+  process.stdout.write(`\nDry run\n  ${currentVersion} -> ${nextVersion}\n  tag: ${tag}\n  release notes: ${releaseNotes.length}\n  technical commits: ${commits.length}\n`);
   run("git", ["diff", "--stat"]);
   const confirm = (await prompt.question("Create release commit, tag and atomically push? [y/N]: ")).trim().toLowerCase();
   if (confirm !== "y" && confirm !== "yes") {

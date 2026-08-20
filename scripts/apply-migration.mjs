@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "fs";
 import { resolve } from "path";
 import postgres from "postgres";
@@ -27,6 +28,24 @@ function createClient(url) {
 }
 
 const skipCodes = new Set(["42P06", "42710", "42P07", "42701"]);
+const releaseVersion = process.env.RELEASE_VERSION?.trim()
+  || JSON.parse(readFileSync(resolve(process.cwd(), "desktop/package.json"), "utf8")).version;
+
+async function recordMigration(sql, file, source) {
+  const [{ registry }] = await sql`
+    select to_regclass('public.app_schema_migrations')::text as registry
+  `;
+  if (!registry) return;
+  const checksum = createHash("sha256").update(source).digest("hex");
+  await sql`
+    insert into public.app_schema_migrations (id, checksum, release_version, applied_at)
+    values (${file}, ${checksum}, ${releaseVersion}, now())
+    on conflict (id) do update
+      set checksum = excluded.checksum,
+          release_version = excluded.release_version,
+          applied_at = excluded.applied_at
+  `;
+}
 
 async function runStatement(url, client, statement, index, total) {
   const maxAttempts = 3;
@@ -112,6 +131,7 @@ async function main() {
         process.exit(1);
       }
     }
+    await recordMigration(sql, file, raw);
     console.log(`✅ ${file} применён`);
   }
 

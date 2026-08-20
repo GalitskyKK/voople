@@ -3,7 +3,9 @@ import {
   mapUserSearchRow,
   type UserSearchRow,
 } from "@/server/mappers/user-search";
-import { searchPostsRest } from "@/server/data/posts-rest";
+import { getTopPostsRest, searchPostsRest } from "@/server/data/posts-rest";
+import { getTopUsersRest } from "@/server/data/search-highlights-rest";
+import { listTopPublicGroupsRest } from "@/server/data/chat-discovery-rest";
 import {
   getTrendingHashtagsRest,
   searchHashtagsRest,
@@ -12,6 +14,7 @@ import type {
   ExploreSearchResult,
   SearchHit,
   UserSearchHit,
+  ExploreHighlights,
 } from "@/types/search";
 
 export type {
@@ -98,6 +101,15 @@ export async function searchExplore(
 
 export async function getTrendingHashtags(limit = 10) {
   return getTrendingHashtagsRest(limit);
+}
+
+export async function getExploreHighlights(viewerId?: string | null): Promise<ExploreHighlights> {
+  const [users, posts, communities] = await Promise.all([
+    getTopUsersRest(viewerId, 5),
+    getTopPostsRest(viewerId, 5),
+    listTopPublicGroupsRest(viewerId, 5),
+  ]);
+  return { users, posts, communities };
 }
 
 export async function searchAll(query: string, limit = 20): Promise<SearchHit[]> {

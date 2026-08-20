@@ -2,10 +2,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { publicAssetUrl } from "@/lib/object-storage";
 import { createNotification } from "@/server/services/notifications.service";
 import { resolvePublicMediaKey } from "@/server/services/upload.service";
-import {
-  toProfileCustomizationView,
-  type CustomizationRow,
-} from "@/server/mappers/customization";
+import { toProfileCustomizationView } from "@/server/mappers/customization";
 import { mapUserToAuthor, type UserRow } from "@/server/mappers/profile";
 import type { CommentViewModel, PostMediaType } from "@/types/domain";
 

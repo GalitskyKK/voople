@@ -1,7 +1,9 @@
 "use client";
 
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  ChevronDown,
+  ChevronUp,
   GripVertical,
   Mic,
   MicOff,
@@ -37,6 +39,15 @@ type VoiceSessionDockProps = {
   onLeave: () => void;
 };
 
+type VoiceDockMode = "mini" | "compact" | "minimal";
+const DOCK_MODE_KEY = "voople:voice-dock-mode:v1";
+
+function initialDockMode(): VoiceDockMode {
+  if (typeof window === "undefined") return "mini";
+  const stored = window.localStorage.getItem(DOCK_MODE_KEY);
+  return stored === "compact" || stored === "minimal" ? stored : "mini";
+}
+
 export function VoiceSessionDock({
   chatName,
   participantCount,
@@ -56,9 +67,47 @@ export function VoiceSessionDock({
 }: VoiceSessionDockProps) {
   const dockRef = useRef<HTMLDivElement | null>(null);
   const geometry = useVoiceDockGeometry(dockRef);
+  const [mode, setMode] = useState<VoiceDockMode>(initialDockMode);
   const weakConnection =
     connectionQuality === ConnectionQuality.Poor ||
     connectionQuality === ConnectionQuality.Lost;
+
+  useEffect(() => {
+    window.localStorage.setItem(DOCK_MODE_KEY, mode);
+  }, [mode]);
+
+  if (mode === "minimal") {
+    return (
+      <button
+        type="button"
+        onClick={() => setMode("compact")}
+        className={cn(
+          "fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] right-3 z-[70] grid h-12 w-12 place-items-center rounded-full border bg-[var(--app-surface)] shadow-[var(--app-shadow-nav)] transition hover:scale-105 lg:bottom-4",
+          mediaStatus === "connected" ? "border-emerald-500/40 text-emerald-500" : "border-amber-500/40 text-amber-500",
+        )}
+        aria-label={`Развернуть разговор ${chatName}`}
+        title={`${chatName}${durationLabel ? ` · ${durationLabel}` : ""}`}
+      >
+        {weakConnection ? <WifiOff className="h-5 w-5" /> : micMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+        <span className="absolute right-0 top-0 h-3 w-3 rounded-full border-2 border-[var(--app-surface)] bg-emerald-500" />
+      </button>
+    );
+  }
+
+  if (mode === "compact") {
+    return (
+      <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] left-1/2 z-[70] flex h-[52px] w-[min(440px,calc(100vw-1rem))] -translate-x-1/2 items-center gap-2 rounded-2xl border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_96%,transparent)] p-1.5 shadow-[var(--app-shadow-nav)] backdrop-blur-xl lg:bottom-4" role="region" aria-label="Компактный голосовой разговор">
+        <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-1 text-left hover:bg-[var(--app-surface-soft)]">
+          <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", mediaStatus === "connected" ? "bg-emerald-500" : "bg-amber-500")} />
+          <span className="min-w-0"><span className="block truncate text-xs font-semibold">{chatName}</span><span className="block text-[10px] text-[var(--app-muted)]">{participantCount} · {durationLabel ?? connectionLabel ?? "Подключаем…"}</span></span>
+        </button>
+        <button type="button" onClick={onToggleMic} disabled={mediaActionPending || mediaStatus !== "connected"} className={cn("grid h-9 w-9 place-items-center rounded-full", micMuted ? "bg-red-500/10 text-red-500" : "bg-[var(--theme-accent)] text-white")} aria-label={micMuted ? "Включить микрофон" : "Выключить микрофон"}>{micMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}</button>
+        <button type="button" onClick={() => setMode("mini")} className="grid h-9 w-9 place-items-center rounded-xl text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)]" aria-label="Развернуть мини-комнату"><ChevronUp className="h-4 w-4" /></button>
+        <button type="button" onClick={() => setMode("minimal")} className="grid h-9 w-9 place-items-center rounded-xl text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)]" aria-label="Свернуть до индикатора"><ChevronDown className="h-4 w-4" /></button>
+        <button type="button" disabled={leavePending} onClick={onLeave} className="grid h-9 w-9 place-items-center rounded-xl bg-red-500 text-white disabled:opacity-50" aria-label="Выйти из разговора"><PhoneOff className="h-4 w-4" /></button>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -84,6 +133,15 @@ export function VoiceSessionDock({
           onPointerCancel={geometry.cancelGesture}
         >
           <GripVertical className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("compact")}
+          className="grid h-10 w-8 shrink-0 place-items-center rounded-lg text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)]"
+          aria-label="Свернуть разговор"
+          title="Компактный режим"
+        >
+          <ChevronDown className="h-4 w-4" />
         </button>
         <button
         type="button"
@@ -118,7 +176,7 @@ export function VoiceSessionDock({
           "grid h-10 w-10 shrink-0 place-items-center rounded-xl border transition disabled:opacity-50",
           micMuted
             ? "border-red-500/25 bg-red-500/10 text-red-500"
-            : "border-[var(--app-border)] bg-[var(--app-surface-soft)] text-emerald-500",
+            : "border-[var(--theme-accent)] bg-[var(--theme-accent)] text-white",
         )}
         aria-label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
       >

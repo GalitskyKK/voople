@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { extractReleaseNotes } from "../scripts/release-notes.mjs";
+import { extractReleaseCatalog, extractReleaseNotes } from "../scripts/release-notes.mjs";
 
 test("extracts only the requested changelog section", () => {
   const changelog = `# Changelog\r\n\r\n## [1.2.0] - 2026-08-14\r\n\r\n### Added\r\n\r\n- New room.\r\n\r\n## [1.1.0] - 2026-08-01\r\n\r\n- Older change.\r\n`;
@@ -21,4 +21,17 @@ test("bounds updater metadata notes", () => {
     extractReleaseNotes("## [1.2.0]\n123456", "1.2.0", 4),
     "1234",
   );
+});
+
+test("builds a bounded versioned release catalog", () => {
+  const catalog = extractReleaseCatalog(`# Changelog\n\n## [1.2.0] - 2026-08-14\n\n### Calls\n\n- Reconnect.\n\n## [1.1.0] - 2026-08-01\n\n- Older.\n`, 1);
+  assert.equal(catalog.schemaVersion, 1);
+  assert.equal(catalog.releases.length, 1);
+  assert.deepEqual(catalog.releases[0], {
+    version: "1.2.0",
+    title: "Calls",
+    notes: "### Calls\n\n- Reconnect.",
+    publishedAt: "2026-08-14T00:00:00.000Z",
+    previousVersion: "1.1.0",
+  });
 });

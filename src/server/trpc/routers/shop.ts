@@ -109,6 +109,8 @@ export const shopRouter = createTRPCRouter({
           kind: z.enum(["shop_item", "coin_pack", "donation", "subscription"]),
           amountRub: z.number().int().min(1).max(500_000).optional(),
           itemId: z.string().min(1).max(100).optional(),
+          recipientId: z.string().uuid().optional(),
+          giftMessage: z.string().trim().max(280).optional(),
           promoCode: z.string().min(1).max(50).optional(),
           subscriptionPlan: z.enum(["monthly", "annual"]).optional(),
         })
@@ -139,6 +141,8 @@ export const shopRouter = createTRPCRouter({
           kind: input.kind,
           amountRub: input.amountRub,
           itemId: input.itemId,
+          recipientId: input.recipientId,
+          giftMessage: input.giftMessage,
           promoCode: input.promoCode,
           subscriptionPlan: input.subscriptionPlan,
         });

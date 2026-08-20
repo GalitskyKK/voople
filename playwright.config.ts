@@ -3,7 +3,9 @@ import path from "node:path";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL?.trim() || "http://127.0.0.1:3000";
 const nextCliPath = path.resolve("node_modules/next/dist/bin/next");
-const localDevCommand = `"${process.execPath}" "${nextCliPath}" dev --hostname 127.0.0.1`;
+// Webpack keeps the local/CI smoke server deterministic on Windows runners
+// where Turbopack's pooled PostCSS child process can be denied by the sandbox.
+const localDevCommand = `"${process.execPath}" "${nextCliPath}" dev --webpack --hostname 127.0.0.1`;
 const hasAuthTarget = [
   process.env.E2E_SUPABASE_URL,
   process.env.E2E_SUPABASE_ANON_KEY,
@@ -51,7 +53,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI ? 1 : 2,
   reporter: process.env.CI ? [["line"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL,

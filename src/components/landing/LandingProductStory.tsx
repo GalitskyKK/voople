@@ -106,18 +106,28 @@ export function LandingProductStory() {
   const stepRefs = useRef(new Map<StoryId, HTMLElement>());
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        const id = visible?.target.getAttribute("data-story-id") as StoryId | null;
-        if (id) setActive(id);
-      },
-      { rootMargin: "-28% 0px -42%", threshold: [0.25, 0.55, 0.8] },
-    );
-    for (const element of stepRefs.current.values()) observer.observe(element);
-    return () => observer.disconnect();
+    let animationFrame = 0;
+    const updateActiveStep = () => {
+      cancelAnimationFrame(animationFrame);
+      animationFrame = requestAnimationFrame(() => {
+        const focusLine = window.innerHeight * 0.42;
+        const closest = [...stepRefs.current.entries()]
+          .map(([id, element]) => {
+            const rect = element.getBoundingClientRect();
+            return { id, distance: Math.abs(rect.top + rect.height / 2 - focusLine) };
+          })
+          .sort((a, b) => a.distance - b.distance)[0];
+        if (closest) setActive(closest.id);
+      });
+    };
+    updateActiveStep();
+    window.addEventListener("scroll", updateActiveStep, { passive: true });
+    window.addEventListener("resize", updateActiveStep);
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      window.removeEventListener("scroll", updateActiveStep);
+      window.removeEventListener("resize", updateActiveStep);
+    };
   }, []);
 
   return (

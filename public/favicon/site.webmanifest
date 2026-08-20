@@ -1,12 +1,13 @@
 {
   "name": "Voople",
   "short_name": "Voople",
-  "description": "Социальная сеть с живыми профилями",
+  "description": "Место для своего круга: общение, комнаты и живые профили",
   "lang": "ru",
   "start_url": "/feed",
+  "scope": "/",
   "display": "standalone",
-  "theme_color": "#0c0c11",
-  "background_color": "#0c0c11",
+  "theme_color": "#0b0b10",
+  "background_color": "#0b0b10",
   "icons": [
     {
       "src": "/favicon/android-chrome-192x192.png",

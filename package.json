@@ -18,6 +18,8 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:check": "node scripts/db-check.mjs",
+    "db:check:release": "node scripts/check-migration-readiness.mjs",
+    "db:promote:release": "node scripts/promote-release-migrations.mjs",
     "shop:seed:sql": "npx tsx scripts/generate-shop-seed.ts",
     "release": "node scripts/release.mjs"
   },

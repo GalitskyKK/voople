@@ -6,7 +6,7 @@ import {
   publicAssetUrl,
 } from "@/lib/object-storage";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { hydrateMessageContentRest, type StoredChatMessageContentNode } from "@/server/data/chat-content-rest";
+import { hydrateLegacyMessageContentRest, hydrateMessageContentRest, type StoredChatMessageContentNode } from "@/server/data/chat-content-rest";
 import { loadMessageReactionsRest } from "@/server/data/chat-reactions-rest";
 import type { ChatMessageAttachment, ChatMessageView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
@@ -105,11 +105,22 @@ function mapMessageRow(
   };
 }
 
-export async function hydrateMessages(rows: MessageRow[], viewerId: string): Promise<ChatMessageView[]> {
+export async function hydrateMessages(rows: MessageRow[], viewerId: string, chatId: string): Promise<ChatMessageView[]> {
   const repliesById = new Map(rows.map((row) => [row.id, row]));
   const trackIds = [...new Set(rows.map((row) => row.shared_track_id).filter(Boolean))] as string[];
   const reactionsPromise = loadMessageReactionsRest(rows.map((row) => row.id), viewerId);
-  const contentPromise = hydrateMessageContentRest(new Map(rows.map((row) => [row.id, row.content])));
+  const contentPromise = Promise.all([
+    hydrateMessageContentRest(new Map(rows.map((row) => [row.id, row.content]))),
+    hydrateLegacyMessageContentRest(
+      chatId,
+      new Map(rows.filter((row) => !row.content?.length).map((row) => [row.id, row.text])),
+    ),
+  ]).then(([structured, legacy]) => {
+    for (const [messageId, nodes] of legacy) {
+      if (!structured.get(messageId)?.length) structured.set(messageId, nodes);
+    }
+    return structured;
+  });
   const tracksById = new Map<string, TrackRow>();
   if (trackIds.length > 0) {
     const { data, error } = await getAdminClient().from("playlist_tracks").select("id, user_id, title, artist, file_url, duration_seconds").in("id", trackIds);

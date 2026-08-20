@@ -14,6 +14,7 @@ import { readTrackMetadata } from "@/lib/player/metadata";
 import { getChatClipboardFile } from "@/lib/chat/clipboard";
 import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
 import { cn } from "@/lib/utils";
+import { useAutosizeTextarea } from "@/hooks/useAutosizeTextarea";
 import type { ChatMessageView, GroupEmojiView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
 
@@ -21,6 +22,7 @@ import { ChatAttachMenu } from "./ChatAttachMenu";
 import {
   ChatComposerContextPreview,
   ChatComposerFrame,
+  CHAT_COMPOSER_SURFACE_CLASS,
 } from "./ChatComposerVisual";
 import { ChatEmojiPicker } from "./ChatEmojiPicker";
 import { ChatMusicAttachSheet } from "./ChatMusicAttachSheet";
@@ -64,6 +66,7 @@ export function ChatComposer({
   const inputId = useId();
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useAutosizeTextarea(text);
   const [attachOpen, setAttachOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [musicSheetOpen, setMusicSheetOpen] = useState(false);
@@ -282,7 +285,7 @@ export function ChatComposer({
       />
 
       <form
-        className="relative flex items-end gap-1.5"
+        className={cn("relative flex items-end gap-1.5", CHAT_COMPOSER_SURFACE_CLASS)}
         onSubmit={(e) => {
           e.preventDefault();
           if (canSend) onSend();
@@ -310,9 +313,9 @@ export function ChatComposer({
         <label htmlFor={inputId} className="sr-only">
           Сообщение
         </label>
-        <input
+        <textarea
+          ref={textareaRef}
           id={inputId}
-          type="text"
           value={text}
           onChange={(e) => onTextChange(e.target.value)}
           onPaste={(event) => {
@@ -322,9 +325,16 @@ export function ChatComposer({
             void handlePastedFile(file);
           }}
           placeholder="Сообщение…"
+          rows={1}
           maxLength={1000}
           disabled={disabled || Boolean(pendingAudioDraft)}
-          className="voople-input min-w-0 flex-1 py-2.5 text-sm"
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              if (canSend) onSend();
+            }
+          }}
+          className="min-h-10 min-w-0 flex-1 resize-none overflow-y-auto border-0 bg-transparent px-2 py-2.5 text-sm outline-none placeholder:text-[var(--app-muted)] disabled:opacity-50"
         />
 
         <button
@@ -352,6 +362,7 @@ export function ChatComposer({
           <Send className="h-4 w-4" />
         </Button>
       </form>
+      {text.length >= 800 ? <span className="mt-1 block text-right text-[10px] tabular-nums text-[var(--app-muted)]">{text.length}/1000</span> : null}
     </ChatComposerFrame>
   );
 }

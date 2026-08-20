@@ -1,5 +1,7 @@
 "use client";
 
+// src/components/chat/ChatWindow.tsx
+
 import { useState, type CSSProperties } from "react";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";

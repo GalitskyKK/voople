@@ -2,6 +2,7 @@ import type {
   ClientErrorSource,
   ClientTelemetryEvent,
   TelemetryPlatform,
+  ProductEventName,
 } from "./types";
 
 type TelemetryConfig = {
@@ -21,6 +22,7 @@ let config = DEFAULT_CONFIG;
 let initialized = false;
 let errorCount = 0;
 let metricCount = 0;
+let productEventCount = 0;
 const recentErrors = new Map<string, number>();
 
 export function initializeClientTelemetry(nextConfig: TelemetryConfig) {
@@ -74,6 +76,25 @@ export function reportClientMetric(input: {
     navigationType: input.navigationType
       ? sanitizeText(input.navigationType, 40)
       : undefined,
+  });
+}
+
+export function reportProductEvent(
+  name: ProductEventName,
+  properties?: Record<string, string | number | boolean>,
+) {
+  if (!config.enabled || productEventCount >= 100) return;
+  productEventCount += 1;
+  const sanitizedProperties = properties
+    ? Object.fromEntries(Object.entries(properties).slice(0, 12).map(([key, value]) => [
+        sanitizeText(key, 40),
+        typeof value === "string" ? sanitizeText(value, 80) : value,
+      ]))
+    : undefined;
+  sendTelemetry({
+    ...baseEvent("product"),
+    name,
+    properties: sanitizedProperties,
   });
 }
 

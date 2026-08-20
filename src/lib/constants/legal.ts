@@ -23,8 +23,8 @@ export const LEGAL_COMPACT_LINKS = [
   { href: "/legal/contacts", label: "Контакты" },
 ] as const;
 
-export const LEGAL_UPDATED = "11 августа 2026 г.";
+export const LEGAL_UPDATED = "20 августа 2026 г.";
 
 /** Версии сохраняются в auth metadata в момент явного согласия пользователя. */
-export const PRIVACY_VERSION = "2026-08-11";
+export const PRIVACY_VERSION = "2026-08-20";
 export const TERMS_VERSION = "2026-08-11";

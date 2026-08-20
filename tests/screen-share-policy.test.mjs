@@ -3,10 +3,10 @@ import test from "node:test";
 
 import { getScreenShareCaptureOptions } from "../src/components/chat/voice/voice-room-config.ts";
 
-test("browser screen share requests selected-surface audio without the system mix", () => {
+test("browser screen share asks the picker for audio from the selected surface", () => {
   const options = getScreenShareCaptureOptions("standard");
 
-  assert.equal(options.systemAudio, "exclude");
+  assert.equal(options.systemAudio, "include");
   assert.equal(options.selfBrowserSurface, "exclude");
   assert.equal(options.video.displaySurface, "window");
   assert.deepEqual(options.audio, {
@@ -23,7 +23,7 @@ test("native process audio disables the browser audio track to prevent duplicate
   const options = getScreenShareCaptureOptions("plus", true);
 
   assert.equal(options.audio, false);
-  assert.equal(options.systemAudio, "exclude");
+  assert.equal(options.systemAudio, "include");
   assert.equal(options.resolution?.width, 1920);
   assert.equal(options.resolution?.frameRate, 60);
 });

@@ -50,7 +50,7 @@ export function VoiceParticipantCard({
         "relative flex flex-col items-center justify-end overflow-hidden rounded-2xl border bg-[var(--app-surface-soft)] text-center transition",
         compact ? "min-h-32 gap-2 px-3 py-3" : "min-h-44 gap-3 px-4 py-4",
         focused && "col-span-2 h-full min-h-64 border-(--theme-accent) lg:col-span-4",
-        speaking ? "border-emerald-500/50" : "border-[var(--app-border)]",
+        speaking ? "border-[var(--theme-accent)] shadow-[0_0_0_2px_color-mix(in_srgb,var(--theme-accent)_20%,transparent)]" : "border-[var(--app-border)]",
         className,
       )}
     >
@@ -116,7 +116,7 @@ export function VoiceParticipantCard({
           <MicOff className="h-4 w-4" aria-label="Микрофон выключен" />
         </span>
       ) : (
-        <span className="absolute right-3 top-3 z-10 rounded-full bg-black/55 p-1.5 text-emerald-400">
+        <span className="absolute right-3 top-3 z-10 rounded-full bg-[var(--theme-accent)] p-1.5 text-white">
           <Mic className="h-4 w-4" aria-label="Микрофон включён" />
         </span>
       )}

@@ -5,13 +5,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { VooplePlusPinButton } from "./VooplePlusPinButton";
 
-const PIN_BY_SIZE = {
-  xs: "xs",
-  sm: "sm",
-  md: "md",
-} as const;
-
-export type DisplayNameWithPinSize = keyof typeof PIN_BY_SIZE;
+export type DisplayNameWithPinSize = "xs" | "sm" | "md";
 
 type DisplayNameWithPinProps = {
   children: ReactNode;

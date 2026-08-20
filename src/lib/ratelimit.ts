@@ -42,6 +42,7 @@ export const rateLimits = {
   // Входящие вебхуки (ключ — IP источника): троттлинг до обращения к внешнему API.
   webhook: () => createLimit(120, "1 m"),
   telemetry: () => createLimit(120, "1 m"),
+  checkLinkSafety: () => createLimit(60, "10 m"),
   adminUpload: () => createLimit(30, "1 h"),
   accountExport: () => createLimit(3, "24 h"),
   accountDeletion: () => createLimit(5, "24 h"),

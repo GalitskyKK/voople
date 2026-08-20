@@ -126,7 +126,7 @@ export function ChatMessageBubble({
       menu={
         hasMenu && onReply && !selectionMode ? (
           <div
-            className={cn("absolute top-1 z-20", isMine ? "left-1" : "right-1")}
+            className={cn("absolute top-1/2 z-20 -translate-y-1/2", isMine ? "-left-9" : "-right-9")}
             onClick={(event) => event.stopPropagation()}
             onKeyDown={(event) => event.stopPropagation()}>
             <ChatMessageMenu
@@ -142,7 +142,7 @@ export function ChatMessageBubble({
               onToggleReaction={(target, emoji: ChatReactionEmoji) => onToggleReaction?.(target, { emoji })}
               onSelect={onSelect}
               showOnHover={isLg}
-              showTrigger={false}
+              showTrigger={isLg}
             />
           </div>
         ) : null

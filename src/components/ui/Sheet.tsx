@@ -7,7 +7,7 @@ import { X } from "lucide-react";
 import { useIsClient } from "@/hooks/useIsClient";
 import { cn } from "@/lib/utils";
 
-type SheetPlacement = "center" | "bottom";
+type SheetPlacement = "center" | "bottom" | "right";
 
 export function Sheet({
   open,
@@ -30,6 +30,7 @@ export function Sheet({
 }) {
   const mounted = useIsClient();
   const isBottom = placement === "bottom";
+  const isRight = placement === "right";
 
   useEffect(() => {
     if (!open) return;
@@ -54,7 +55,11 @@ export function Sheet({
     <div
       className={cn(
         "fixed inset-0 z-[100] flex justify-center",
-        isBottom ? "items-end" : "items-center p-4 sm:p-6",
+        isBottom
+          ? "items-end"
+          : isRight
+            ? "items-stretch justify-end"
+            : "items-center p-4 sm:p-6",
         containerClassName,
       )}
       role="presentation"
@@ -71,7 +76,11 @@ export function Sheet({
         aria-label={ariaLabel}
         className={cn(
           "relative z-[101] voople-scroll max-h-[min(90dvh,720px)] w-full max-w-lg overflow-y-auto border border-[var(--app-border)] bg-[var(--background)] p-4 pt-5 shadow-[var(--app-shadow-md)]",
-          isBottom ? "rounded-t-2xl pb-6" : "rounded-2xl",
+          isBottom
+            ? "rounded-t-2xl pb-6"
+            : isRight
+              ? "h-dvh max-h-none max-w-sm rounded-none border-y-0 border-r-0 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))]"
+              : "rounded-2xl",
           className,
         )}
       >

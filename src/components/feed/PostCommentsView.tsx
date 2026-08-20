@@ -5,6 +5,7 @@ import type { FormEvent, ReactNode } from "react";
 
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { Button } from "@/components/ui/Button";
+import { RichText } from "@/components/ui/RichText";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import type { CommentViewModel } from "@/types/domain";
 
@@ -107,7 +108,7 @@ export function PostCommentsView({
               </DisplayNameWithPin>
               {comment.text ? (
                 <p className="whitespace-pre-wrap break-words text-sm text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]">
-                  {comment.text}
+                  <RichText text={comment.text} />
                 </p>
               ) : null}
               {comment.mediaUrl ? renderMedia(comment) : null}

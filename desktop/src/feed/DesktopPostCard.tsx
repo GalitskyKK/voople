@@ -12,6 +12,7 @@ import {
 import { RepostPreviewVisual } from "@/components/feed/RepostPreviewVisual";
 import { StatusPostBodyVisual } from "@/components/feed/StatusPostBodyVisual";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
+import { RichText } from "@/components/ui/RichText";
 
 import type { DesktopConfig } from "../config";
 import { DesktopAppearanceCard } from "./DesktopAppearanceCard";
@@ -70,12 +71,12 @@ export function DesktopPostCard({
       <PostCardBody>
         {post.repostComment ? (
           <p className="voople-post-card__text mb-3 text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">
-            {post.repostComment}
+            <RichText text={post.repostComment} />
           </p>
         ) : null}
         {post.text ? (
           <p className="voople-post-card__text text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">
-            {post.text}
+            <RichText text={post.text} />
           </p>
         ) : null}
         <DesktopPostMedia post={post} />

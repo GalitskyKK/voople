@@ -1,10 +1,12 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 
 import { AuthProvider, useDesktopAuth } from "./auth/AuthProvider";
 import { DesktopLogin } from "./auth/DesktopLogin";
 import type { DesktopConfig } from "./config";
 import { DesktopAutoUpdater } from "./updates/DesktopAutoUpdater";
 import { DesktopReleaseNotesDialog } from "./updates/DesktopReleaseNotesDialog";
+import { registerExternalLinkOpener } from "@/lib/platform/external-links";
 
 const DesktopAuthenticatedApp = lazy(() =>
   import("./DesktopAuthenticatedApp").then((module) => ({
@@ -13,6 +15,7 @@ const DesktopAuthenticatedApp = lazy(() =>
 );
 
 export function DesktopConfiguredApp({ config }: { config: DesktopConfig }) {
+  useEffect(() => registerExternalLinkOpener((url) => invoke("open_external_url", { url })), []);
   return (
     <>
       <DesktopAutoUpdater />

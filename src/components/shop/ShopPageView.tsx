@@ -18,6 +18,7 @@ import { ShopCatalogSections } from "@/components/shop/ShopCatalogSections";
 import { VooplePlusPanel } from "@/components/shop/VooplePlusPanel";
 import { SHOP_DISPLAY_SECTIONS, type ShopDisplaySectionId } from "@/lib/shop/categories";
 import { reportClientMetric } from "@/lib/telemetry/client";
+import { ShopGiftDialog } from "@/components/shop/ShopGiftDialog";
 
 export type ShopTab = "catalog" | "inventory" | "customize" | "plus";
 
@@ -45,6 +46,7 @@ export function ShopPageView({
   const [promoDiscount, setPromoDiscount] = useState<PromoPreviewView | null>(null);
   const [promoMessage, setPromoMessage] = useState<string | null>(null);
   const [equipMessage, setEquipMessage] = useState<string | null>(null);
+  const [giftItem, setGiftItem] = useState<ShopItemView | null>(null);
   const [catalogCategory, setCatalogCategory] = useState<ShopDisplaySectionId | "all">("all");
   const [catalogSearch, setCatalogSearch] = useState("");
   const [catalogSort, setCatalogSort] = useState<"featured" | "new" | "name" | "price">("featured");
@@ -121,6 +123,7 @@ export function ShopPageView({
         applyPaymentIntentResult(intent, setPlusPaymentError, openExternal);
         return;
       }
+      if (variables.recipientId) setGiftItem(null);
       applyPaymentIntentResult(intent, setDonationMessage, openExternal);
     },
     onError: (error, variables) => {
@@ -345,6 +348,7 @@ export function ShopPageView({
             onBuyRub={(itemId) => createPayment.mutate({ kind: "shop_item", itemId })}
             onEquip={handleEquip}
             onUnequip={handleUnequip}
+            onGift={setGiftItem}
             hasSubscription={Boolean(subscriptionQuery.data?.active)}
           />
           <DonationPanel
@@ -386,6 +390,7 @@ export function ShopPageView({
           busy={busy}
         />
       )}
+      <ShopGiftDialog item={giftItem} pending={createPayment.isPending} error={giftItem ? createPayment.error?.message : null} onClose={() => setGiftItem(null)} onConfirm={(recipientId, giftMessage) => giftItem && createPayment.mutate({ kind: "shop_item", itemId: giftItem.id, recipientId, giftMessage })} />
     </div>
   );
 }

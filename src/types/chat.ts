@@ -18,7 +18,14 @@ export type ChatMessageReaction = {
 
 export type ChatMessageContentNode =
   | { type: "text"; text: string }
-  | { type: "customEmoji"; emojiId: string; name: string; url: string | null };
+  | { type: "customEmoji"; emojiId: string; name: string; url: string | null }
+  | { type: "gift"; itemId: string; itemName: string; message: string | null }
+  | {
+      type: "roomEvent";
+      event: "started" | "ended" | "missed" | "declined" | "cancelled";
+      durationSeconds: number | null;
+      roomKind?: "direct" | "group";
+    };
 
 export type GroupEmojiView = {
   id: string;
@@ -118,6 +125,7 @@ export type ChatListItem = {
   } | null;
   lastMessage: {
     text: string | null;
+    preview: string;
     createdAt: string;
     senderId: string;
   } | null;

@@ -10,7 +10,7 @@ import type { ChatListItem } from "@/types/chat";
 import { ChatMobileNavigation } from "./ChatMobileNavigation";
 import { ChatPeerPresence } from "./ChatPeerPresence";
 import { ChatWindowHeaderVisual } from "./ChatWindowHeaderVisual";
-import { GroupInviteSheet } from "./GroupInviteSheet";
+import { GroupInfoDrawer } from "./GroupInfoDrawer";
 import { SectionAccessSheet } from "./SectionAccessSheet";
 import { SubchatCreator } from "./SubchatCreator";
 import { VoiceRoomButton } from "./voice/VoiceRoomButton";
@@ -46,9 +46,7 @@ export function ChatWindowHeader({
   parentName,
   memberCount,
   topicsEnabled,
-  topicsLayout,
   topicIcon,
-  groupVisibility,
   groupIcon,
   groupAvatarUrl,
   groupBannerUrl,
@@ -62,7 +60,7 @@ export function ChatWindowHeader({
     isGroup && !isSubchat && (viewerRole === "owner" || viewerRole === "admin");
 
   return (
-    <ChatWindowHeaderVisual bannerUrl={groupBannerUrl}>
+    <ChatWindowHeaderVisual>
       <Link
         href={isSubchat && parentChatId ? `/messages/${parentChatId}` : "/messages"}
         className="shrink-0 rounded-[var(--app-radius-sm)] p-1 text-[var(--app-muted)] transition-colors hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] lg:hidden"
@@ -71,20 +69,16 @@ export function ChatWindowHeader({
         <ArrowLeft className="h-5 w-5" />
       </Link>
       {isGroup && !isSubchat ? (
-        <GroupInviteSheet
+        <GroupInfoDrawer
           chatId={chatId}
           chatName={chatTitle}
           memberCount={memberCount}
           groupIcon={groupIcon}
           groupAvatarUrl={groupAvatarUrl}
+          groupBannerUrl={groupBannerUrl}
           groupAccentColor={groupAccentColor}
           groupTag={groupTag}
-          triggerVariant="identity"
-          viewerRole={viewerRole}
           canManage={canManageGroup}
-          topicsEnabled={topicsEnabled}
-          topicsLayout={topicsLayout}
-          groupVisibility={groupVisibility}
         />
       ) : isSubchat ? (
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--app-accent-soft)] text-(--theme-accent)">

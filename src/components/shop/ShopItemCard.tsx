@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Lock } from "lucide-react";
+import { Check, Gift, Lock } from "lucide-react";
+import { useState } from "react";
 
 import { shopKindLabel } from "@/lib/shop/categories";
 import { cn } from "@/lib/utils";
@@ -8,6 +9,7 @@ import type { ShopItemView } from "@/types/shop";
 import { Button } from "@/components/ui/Button";
 import { ShopCatalogPreview } from "@/components/shop/ShopCatalogPreview";
 import { VooplePlusBadge } from "@/components/subscription/VooplePlusFeatureSurface";
+import { ShopItemDetailSheet } from "@/components/shop/ShopItemDetailSheet";
 
 type ShopItemCardProps = {
   item: ShopItemView;
@@ -17,6 +19,7 @@ type ShopItemCardProps = {
   onBuyRub?: () => void;
   onEquip?: () => void;
   onUnequip?: () => void;
+  onGift?: () => void;
   hasSubscription?: boolean;
 };
 
@@ -28,20 +31,22 @@ export function ShopItemCard({
   onBuyRub,
   onEquip,
   onUnequip,
+  onGift,
   hasSubscription = false,
 }: ShopItemCardProps) {
+  const [previewOpen, setPreviewOpen] = useState(false);
   const futurePrice = !item.isFree && item.priceCoins > 0;
 
   return (
     <article
       className={cn(
-        "flex flex-col overflow-hidden rounded-2xl border bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] transition",
+        "group/shop-item flex flex-col overflow-hidden rounded-2xl border bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-1 hover:shadow-[var(--app-shadow-lg)]",
         item.equipped ? "border-(--theme-accent)" : "border-[color-mix(in_srgb,var(--foreground)_10%,transparent)]",
         item.requiresSubscription && "shop-item-card--plus",
       )}
     >
-      <div className="relative aspect-[4/3] bg-black/30">
-        <ShopCatalogPreview catalog={item.previewMeta} previewUrl={item.previewUrl} />
+      <button type="button" onClick={() => setPreviewOpen(true)} className="relative aspect-[4/3] overflow-hidden bg-black/30 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--theme-accent)]" aria-label={`Открыть предпросмотр товара ${item.name}`}>
+        <ShopCatalogPreview catalog={item.previewMeta} previewUrl={item.previewUrl} className="transition-transform duration-300 group-hover/shop-item:scale-[1.035]" />
         <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[11px] text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]">
           {shopKindLabel(item.kind)}
         </span>
@@ -54,7 +59,7 @@ export function ShopItemCard({
         {item.requiresSubscription ? (
           <VooplePlusBadge className="absolute bottom-2 right-2 shadow-[var(--app-shadow-sm)]" />
         ) : null}
-      </div>
+      </button>
 
       <div className="flex flex-1 flex-col p-4">
         <h3 className="font-semibold text-[var(--foreground)]">{item.name}</h3>
@@ -93,6 +98,9 @@ export function ShopItemCard({
               Купить за ₽
             </Button>
           )}
+          {!item.isFree && item.priceRub > 0 && onGift ? (
+            <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={onGift} aria-label={`Подарить ${item.name}`}><Gift className="h-4 w-4" />Подарить</Button>
+          ) : null}
           {item.owned && !item.equipped && onEquip && (
             <Button type="button" size="sm" disabled={busy || (item.requiresSubscription && !hasSubscription)} onClick={onEquip}>
               {item.requiresSubscription && !hasSubscription ? "Нужен Вупл+" : "Надеть"}
@@ -108,6 +116,7 @@ export function ShopItemCard({
           )}
         </div>
       </div>
+      <ShopItemDetailSheet item={item} open={previewOpen} onClose={() => setPreviewOpen(false)} />
     </article>
   );
 }

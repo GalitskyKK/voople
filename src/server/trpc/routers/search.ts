@@ -1,11 +1,18 @@
 import { TRPCError } from "@trpc/server"
 import { z } from "zod"
 
-import { getTrendingHashtags, searchExplore } from "@/server/services/search.service"
+import { getExploreHighlights, getTrendingHashtags, searchExplore } from "@/server/services/search.service"
 
 import { createTRPCRouter, optionalAuthProcedure, publicProcedure } from "../init"
 
 export const searchRouter = createTRPCRouter({
+  highlights: optionalAuthProcedure.query(async ({ ctx }) => {
+    try {
+      return await getExploreHighlights(ctx.user?.id)
+    } catch (e) {
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: e instanceof Error ? e.message : "Не удалось загрузить рекомендации" })
+    }
+  }),
   explore: optionalAuthProcedure
     .input(z.object({ q: z.string().max(50) }))
     .query(async ({ ctx, input }) => {

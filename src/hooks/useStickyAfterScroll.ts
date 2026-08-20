@@ -9,6 +9,9 @@ import { useEffect, useRef, useState } from "react";
 export function useStickyAfterScroll(options?: IntersectionObserverInit) {
   const ref = useRef<HTMLDivElement>(null);
   const [scrolledPast, setScrolledPast] = useState(false);
+  const root = options?.root ?? null;
+  const rootMargin = options?.rootMargin;
+  const threshold = options?.threshold ?? 0;
 
   useEffect(() => {
     const el = ref.current;
@@ -16,11 +19,11 @@ export function useStickyAfterScroll(options?: IntersectionObserverInit) {
 
     const observer = new IntersectionObserver(([entry]) => {
       setScrolledPast(!entry.isIntersecting);
-    }, { threshold: 0, ...options });
+    }, { root, rootMargin, threshold });
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [options?.root, options?.rootMargin, options?.threshold]);
+  }, [root, rootMargin, threshold]);
 
   return { ref, scrolledPast };
 }

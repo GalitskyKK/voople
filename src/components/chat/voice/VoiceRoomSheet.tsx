@@ -2,7 +2,6 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import {
-  DoorOpen,
   Headphones,
   Loader2,
   Lock,
@@ -28,6 +27,7 @@ import { getQualityLabel, type MediaStatus } from "./voice-room-config";
 import { useVoiceRoomFullscreen } from "./useVoiceRoomFullscreen";
 import { VoiceMediaControls } from "./VoiceMediaControls";
 import { VoiceRoomStage } from "./VoiceRoomStage";
+import { VoiceRoomEmptyState } from "./VoiceRoomEmptyState";
 import { VoiceSoundboardPanel } from "./VoiceSoundboardPanel";
 
 type VoiceRoomSheetProps = {
@@ -197,7 +197,7 @@ export function VoiceRoomSheet(props: VoiceRoomSheetProps) {
             </p>
           </div>
         ) : active ? (
-          <div className="min-h-0 flex-1 p-3 sm:p-4">
+          <div className="voople-room-surface min-h-0 flex-1 p-3 sm:p-4">
             {screenShareAvailable && !watchingScreenShare && !screenSharing ? (
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_35%,var(--app-border))] bg-[var(--app-accent-soft)] p-3">
                 <div>
@@ -217,7 +217,9 @@ export function VoiceRoomSheet(props: VoiceRoomSheetProps) {
                 <button type="button" onClick={onStopWatchingScreenShare} className="rounded-lg px-3 py-1.5 text-xs text-[var(--app-muted)] hover:bg-[var(--app-surface-hover)] hover:text-[var(--foreground)]">Не смотреть</button>
               </div>
             ) : null}
-            <VoiceRoomStage
+            {!isDirect && participants.length <= 1 && !screenShareOwner && cameraParticipantIds.size === 0 ? (
+              <VoiceRoomEmptyState participant={participants[0]} state="inside" onInvite={close} />
+            ) : <VoiceRoomStage
               screenContainerRef={screenContainerRef}
               screenShareOwner={screenShareOwner}
               participants={participants}
@@ -228,17 +230,20 @@ export function VoiceRoomSheet(props: VoiceRoomSheetProps) {
               cameraParticipantIds={cameraParticipantIds}
               onCameraContainerChange={onCameraContainerChange}
               onParticipantVolumeChange={onParticipantVolumeChange}
-            />
+            />}
           </div>
           ) : (
-
-            null
-              // <div className="m-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-4">
-          //   <div className="flex items-center gap-3">
-          //     <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--app-accent-soft)] text-(--theme-accent)"><DoorOpen className="h-5 w-5" /></span>
-          //     <div><p className="text-sm font-medium">{isDirect ? "Начать разговор" : "Открыть комнату"}</p><p className="text-xs text-[var(--app-muted)]">Микрофон включается отдельно.</p></div>
-          //   </div>
-          // </div>
+            isDirect ? (
+              <div className="flex min-h-72 flex-col items-center justify-center px-6 py-10 text-center">
+                <ProfileAvatarVisual displayName={chatName} size="lg" />
+                <h3 className="mt-5 text-xl font-semibold">Начать разговор</h3>
+                <p className="mt-2 max-w-sm text-sm leading-6 text-[var(--app-muted)]">Собеседник увидит входящий звонок. Микрофон можно выключить до подключения.</p>
+              </div>
+            ) : (
+              <div className="voople-room-surface min-h-0 flex-1 p-3 sm:p-4">
+                <VoiceRoomEmptyState state="preview" />
+              </div>
+            )
         )}
 
         <footer className="shrink-0 border-t border-[var(--app-border)] bg-[color-mix(in_srgb,var(--background)_94%,transparent)] p-3 backdrop-blur-xl">

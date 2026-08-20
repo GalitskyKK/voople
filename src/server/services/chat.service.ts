@@ -128,8 +128,6 @@ export async function updateGroupCustomization(
 export {
   acceptChatInviteRest as acceptChatInvite,
   createChatInviteRest as createChatInvite,
-    createChatRoomMediaTokenRest as createChatRoomMediaToken,
-    createChatRoomScreenAudioTokenRest as createChatRoomScreenAudioToken,
   enterChatRoomRest as enterChatRoom,
   getChatRoomRest as getChatRoom,
   heartbeatChatRoomRest as heartbeatChatRoom,
@@ -138,6 +136,11 @@ export {
   revokeChatInviteRest as revokeChatInvite,
   setChatRoomAccessRest as setChatRoomAccess,
 } from "@/server/data/chat-rooms-rest";
+
+export {
+  createChatRoomMediaTokenRest as createChatRoomMediaToken,
+  createChatRoomScreenAudioTokenRest as createChatRoomScreenAudioToken,
+} from "@/server/data/chat-room-media-rest";
 
 export {
   declineChatRoomCallRest as declineChatRoomCall,

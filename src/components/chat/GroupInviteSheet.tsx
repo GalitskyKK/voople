@@ -24,6 +24,7 @@ export function GroupInviteSheet({
   topicsEnabled,
   topicsLayout,
   groupVisibility,
+  presentation = "sheet",
 }: {
   chatId: string;
   chatName: string;
@@ -38,6 +39,7 @@ export function GroupInviteSheet({
   topicsEnabled: boolean;
   topicsLayout: "tabs" | "list";
   groupVisibility: "private" | "public";
+  presentation?: "sheet" | "page";
 }) {
   const router = useRouter();
   const utils = trpc.useUtils();
@@ -88,6 +90,7 @@ export function GroupInviteSheet({
 
   return (
     <GroupManagementSheetView
+      chatId={chatId}
       chatName={chatName}
       memberCount={memberCount}
       groupIcon={groupIcon}
@@ -100,6 +103,7 @@ export function GroupInviteSheet({
       topicsEnabled={topicsEnabled}
       topicsLayout={topicsLayout}
       groupVisibility={groupVisibility}
+      presentation={presentation}
       loadMembers={loadMembers}
       loadAudit={loadAudit}
       searchContacts={searchContacts}

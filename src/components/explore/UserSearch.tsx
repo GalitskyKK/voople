@@ -23,6 +23,18 @@ export function UserSearch() {
       staleTime: 60_000,
     },
   );
+  const communities = trpc.chat.publicGroups.useQuery(
+    { q: debouncedQuery },
+    {
+      enabled: debouncedQuery.length >= 2,
+      staleTime: 10_000,
+      retry: false,
+    },
+  );
+  const highlights = trpc.search.highlights.useQuery(undefined, {
+    enabled: debouncedQuery.length === 0,
+    staleTime: 60_000,
+  });
 
   return (
     <ExploreView
@@ -30,11 +42,15 @@ export function UserSearch() {
       debouncedQuery={debouncedQuery}
       onQueryChange={setQuery}
       result={search.data}
+      communities={communities.data ?? []}
       searching={search.isFetching}
       searchError={search.error?.message}
       trending={trending.data ?? []}
       trendingLoading={trending.isLoading}
       trendingError={trending.error?.message}
+      highlights={highlights.data}
+      highlightsLoading={highlights.isLoading}
+      highlightsError={highlights.error?.message}
       renderDestination={({ href, label, className, children }) => (
         <Link href={href} aria-label={label} className={className}>
           {children}

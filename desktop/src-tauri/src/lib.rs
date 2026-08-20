@@ -168,8 +168,8 @@ fn stop_process_audio_share(
 #[tauri::command]
 fn open_external_url(url: String) -> Result<(), String> {
     let parsed = reqwest::Url::parse(&url).map_err(|error| error.to_string())?;
-    if parsed.scheme() != "https" {
-        return Err("External URL must use HTTPS".to_owned());
+    if parsed.scheme() != "https" && parsed.scheme() != "http" {
+        return Err("External URL must use HTTP or HTTPS".to_owned());
     }
 
     #[cfg(target_os = "windows")]

@@ -29,6 +29,18 @@ const bodySchema = z.discriminatedUnion("kind", [
     rating: z.enum(["good", "needs-improvement", "poor"]).optional(),
     navigationType: z.string().min(1).max(40).optional(),
   }),
+  baseSchema.extend({
+    kind: z.literal("product"),
+    name: z.enum([
+      "home_view", "chat_open", "message_send", "voice_join", "voice_reconnect",
+      "voice_reconnect_failed", "screen_audio_start", "screen_audio_stop",
+      "external_link_verdict", "shop_view", "group_boost_view", "desktop_update_install",
+    ]),
+    properties: z.record(
+      z.string().min(1).max(40),
+      z.union([z.string().max(80), z.number().finite(), z.boolean()]),
+    ).optional(),
+  }),
 ]);
 
 export async function POST(request: Request) {

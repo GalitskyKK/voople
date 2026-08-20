@@ -10,7 +10,14 @@ export type ChatMessageContentInputNode =
 
 export type StoredChatMessageContentNode =
   | { type: "text"; text: string }
-  | { type: "customEmoji"; emojiId: string; name: string };
+  | { type: "customEmoji"; emojiId: string; name: string }
+  | { type: "gift"; itemId: string; itemName: string; message: string | null }
+  | {
+      type: "roomEvent";
+      event: "started" | "ended" | "missed" | "declined" | "cancelled";
+      durationSeconds: number | null;
+      roomKind?: "direct" | "group";
+    };
 
 export async function prepareMessageContentRest(
   chatId: string,
@@ -54,7 +61,12 @@ export async function prepareMessageContentRest(
     if (emoji.moderation_status !== "automated_approved") throw new Error("Эмодзи ожидает модерации");
     stored.push({ type: "customEmoji", emojiId: node.emojiId, name: emoji.name as string });
   }
-  const fallback = stored.map((node) => node.type === "text" ? node.text : `:${node.name}:`).join("");
+  const fallback = stored.map((node) => {
+    if (node.type === "text") return node.text;
+    if (node.type === "customEmoji") return `:${node.name}:`;
+    if (node.type === "gift") return `🎁 Подарок: ${node.itemName}`;
+    return node.event === "started" ? "Начата встреча" : "Событие встречи";
+  }).join("");
   if (!fallback.trim() || fallback.length > 1000) throw new Error("Сообщение должно содержать от 1 до 1000 символов");
   return { stored, fallback };
 }
@@ -75,8 +87,50 @@ export async function hydrateMessageContentRest(
   ] as const));
   return new Map([...contentByMessage].map(([messageId, nodes]) => [
     messageId,
-    nodes?.map((node): ChatMessageContentNode => node.type === "text"
-      ? node
-      : { ...node, url: urls.get(node.emojiId) ?? null }) ?? null,
+    nodes?.map((node): ChatMessageContentNode => node.type === "customEmoji"
+      ? { ...node, url: urls.get(node.emojiId) ?? null }
+      : node) ?? null,
   ]));
+}
+
+export async function hydrateLegacyMessageContentRest(
+  chatId: string,
+  textByMessage: Map<string, string | null>,
+) {
+  const names = [...new Set([...textByMessage.values()].flatMap((text) =>
+    [...(text ?? "").matchAll(/:([a-z0-9_]{2,32}):/g)].map((match) => match[1]!),
+  ))];
+  if (!names.length) return new Map<string, ChatMessageContentNode[]>();
+  const { data, error } = await getAdminClient()
+    .from("group_emojis")
+    .select("id, name, storage_key, moderation_status")
+    .eq("chat_id", chatId)
+    .in("name", names);
+  if (error) throw new Error(error.message);
+  const emojis = new Map((data ?? [])
+    .filter((row) => row.moderation_status === "automated_approved")
+    .map((row) => [row.name as string, {
+      emojiId: row.id as string,
+      name: row.name as string,
+      url: publicAssetUrl(row.storage_key as string),
+    }] as const));
+
+  const result = new Map<string, ChatMessageContentNode[]>();
+  for (const [messageId, text] of textByMessage) {
+    if (!text) continue;
+    const nodes: ChatMessageContentNode[] = [];
+    let cursor = 0;
+    for (const match of text.matchAll(/:([a-z0-9_]{2,32}):/g)) {
+      const emoji = emojis.get(match[1]!);
+      if (!emoji) continue;
+      const index = match.index ?? 0;
+      if (index > cursor) nodes.push({ type: "text", text: text.slice(cursor, index) });
+      nodes.push({ type: "customEmoji", ...emoji });
+      cursor = index + match[0].length;
+    }
+    if (!nodes.length) continue;
+    if (cursor < text.length) nodes.push({ type: "text", text: text.slice(cursor) });
+    result.set(messageId, nodes);
+  }
+  return result;
 }

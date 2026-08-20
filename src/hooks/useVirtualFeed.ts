@@ -10,7 +10,6 @@ const ESTIMATED_POST_HEIGHT = 160;
 function measureScrollMargin(
   listAnchor: HTMLElement,
   mode: ScrollContainerMode,
-  scrollRef: RefObject<HTMLElement | null>,
 ) {
   if (mode === "window") {
     const rect = listAnchor.getBoundingClientRect();
@@ -36,7 +35,7 @@ export function useVirtualFeed(
     }
 
     const updateScrollMargin = () => {
-      setScrollMargin(measureScrollMargin(listAnchor, mode, scrollRef));
+      setScrollMargin(measureScrollMargin(listAnchor, mode));
     };
 
     updateScrollMargin();
@@ -62,6 +61,8 @@ export function useVirtualFeed(
     };
   }, [count, mode, scrollRef]);
 
+  // TanStack Virtual intentionally exposes an imperative object that React Compiler cannot memoize.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const elementVirtualizer = useVirtualizer({
     count: mode === "element" ? count : 0,
     getScrollElement: () => scrollRef.current,

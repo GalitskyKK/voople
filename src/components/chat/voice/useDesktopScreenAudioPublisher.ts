@@ -15,6 +15,22 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
   const token = trpc.chat.roomScreenAudioToken.useMutation();
   const sessionIdRef = useRef<string | null>(null);
   const nativePublisherSupportedRef = useRef(false);
+  const refreshTimerRef = useRef<number | null>(null);
+  const startRef = useRef<(processId: number) => Promise<string | null>>(async () => null);
+
+  const scheduleRefresh = useCallback((processId: number, delay: number) => {
+    if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current);
+    const run = () => {
+      void startRef.current(processId).catch((error) => {
+        console.warn("Screen audio lease refresh failed", {
+          message: error instanceof Error ? error.message : String(error),
+          retryAfterMs: 30_000,
+        });
+        refreshTimerRef.current = window.setTimeout(run, 30_000);
+      });
+    };
+    refreshTimerRef.current = window.setTimeout(run, delay);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -32,6 +48,8 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
   }, []);
 
   const stop = useCallback(async () => {
+    if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current);
+    refreshTimerRef.current = null;
     const sessionId = sessionIdRef.current;
     sessionIdRef.current = null;
     const bridge = getDesktopProcessAudioBridge();
@@ -39,17 +57,27 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
   }, []);
 
   const start = useCallback(async (processId: number | null) => {
-    await stop();
     const bridge = getDesktopProcessAudioBridge();
     if (!bridge || processId === null) return null;
     const capabilities = await bridge.capabilities();
     if (!capabilities.publisherSupported) return "Демонстрация запущена без звука приложения: аудиомодуль недоступен в этой системе.";
     const screenSessionId = crypto.randomUUID();
     const credentials = await token.mutateAsync({ chatId, screenSessionId });
+    await stop();
     await bridge.start({ processId, livekitUrl: credentials.url, token: credentials.token, screenSessionId });
     sessionIdRef.current = screenSessionId;
+    const refreshDelay = Math.max(30_000, Date.parse(credentials.refreshAfter) - Date.now());
+    console.info("Screen audio lease acquired", {
+      expiresAt: credentials.expiresAt,
+      refreshAfter: credentials.refreshAfter,
+    });
+    scheduleRefresh(processId, refreshDelay);
     return null;
-  }, [chatId, stop, token]);
+  }, [chatId, scheduleRefresh, stop, token]);
+
+  useEffect(() => {
+    startRef.current = start;
+  }, [start]);
 
   const toggle = useCallback(async (
     room: Room,

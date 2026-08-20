@@ -4,6 +4,7 @@ import type { ChatGroupMemberView } from "@/types/chat";
 import type { UserSearchHit } from "@/types/search";
 
 type Options = {
+  alwaysActive?: boolean;
   loadMembers: () => Promise<ChatGroupMemberView[]>;
   searchContacts: (query: string) => Promise<UserSearchHit[]>;
   addMembers: (memberIds: string[]) => Promise<unknown>;
@@ -17,6 +18,7 @@ type Options = {
 };
 
 export function useGroupManagementSheet({
+  alwaysActive = false,
   loadMembers,
   searchContacts,
   addMembers,
@@ -56,13 +58,13 @@ export function useGroupManagementSheet({
   }, [loadMembers]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open && !alwaysActive) return;
     const timer = window.setTimeout(() => void refreshMembers(), 0);
     return () => window.clearTimeout(timer);
-  }, [open, refreshMembers]);
+  }, [alwaysActive, open, refreshMembers]);
 
   useEffect(() => {
-    if (!open || !adding) return;
+    if ((!open && !alwaysActive) || !adding) return;
     let active = true;
     const timer = window.setTimeout(() => {
       setSearching(true);
@@ -83,7 +85,7 @@ export function useGroupManagementSheet({
       active = false;
       window.clearTimeout(timer);
     };
-  }, [adding, open, query, searchContacts]);
+  }, [adding, alwaysActive, open, query, searchContacts]);
 
   const close = () => {
     if (saving) return;

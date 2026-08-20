@@ -41,7 +41,7 @@ export function VoiceMediaControls({
 }: VoiceMediaControlsProps) {
   const connected = mediaStatus === "connected";
   const itemClass = compact
-    ? "grid h-11 w-11 place-items-center rounded-xl border transition disabled:opacity-45"
+    ? "grid h-11 w-11 place-items-center rounded-full border transition duration-200 disabled:opacity-45"
     : controlClass;
 
   return (
@@ -54,7 +54,7 @@ export function VoiceMediaControls({
           itemClass,
           micMuted
             ? "border-red-500/25 bg-red-500/10"
-            : "border-[var(--app-border)] bg-[var(--app-surface-soft)]",
+            : "border-[var(--theme-accent)] bg-[var(--theme-accent)] text-white shadow-[0_0_0_4px_color-mix(in_srgb,var(--theme-accent)_14%,transparent)] hover:brightness-110",
         )}
         aria-label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
       >
@@ -63,7 +63,7 @@ export function VoiceMediaControls({
         ) : micMuted ? (
           <MicOff className="h-5 w-5" />
         ) : (
-          <Mic className="h-5 w-5 text-emerald-400" />
+          <Mic className="h-5 w-5" />
         )}
         <span className={compact ? "sr-only" : undefined}>Микрофон</span>
       </button>
@@ -91,7 +91,7 @@ export function VoiceMediaControls({
         className={cn(
           itemClass,
           cameraEnabled
-            ? "border-[color-mix(in_srgb,var(--theme-accent)_45%,var(--app-border))] bg-[var(--app-accent-soft)]"
+            ? "border-[var(--theme-accent)] bg-[var(--theme-accent)] text-white"
             : "border-[var(--app-border)] bg-[var(--app-surface-soft)]",
         )}
         aria-label={cameraEnabled ? "Выключить камеру" : "Включить камеру"}
@@ -113,7 +113,7 @@ export function VoiceMediaControls({
         className={cn(
           itemClass,
           screenSharing
-            ? "border-[color-mix(in_srgb,var(--theme-accent)_45%,var(--app-border))] bg-[var(--app-accent-soft)]"
+            ? "border-[var(--theme-accent)] bg-[var(--theme-accent)] text-white"
             : "border-[var(--app-border)] bg-[var(--app-surface-soft)]",
         )}
         aria-label={screenSharing ? "Остановить демонстрацию" : "Показать экран"}

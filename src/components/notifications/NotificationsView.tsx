@@ -19,6 +19,24 @@ import {
   notificationText,
 } from "./notification-ui";
 
+type NotificationFilter = "all" | "mentions" | "reactions" | "follows" | "groups";
+
+const FILTERS: Array<{ id: NotificationFilter; label: string }> = [
+  { id: "all", label: "Все" },
+  { id: "mentions", label: "Упоминания" },
+  { id: "reactions", label: "Реакции" },
+  { id: "follows", label: "Подписки" },
+  { id: "groups", label: "Группы" },
+];
+
+function matchesFilter(item: NotificationView, filter: NotificationFilter) {
+  if (filter === "all") return true;
+  if (filter === "mentions") return item.type === "mention" || item.type === "reply";
+  if (filter === "reactions") return ["like", "profile_reaction", "repost"].includes(item.type);
+  if (filter === "follows") return item.type === "follow";
+  return item.type.startsWith("group_") || item.type.startsWith("room_");
+}
+
 type NotificationsViewProps = {
   items: NotificationView[];
   loading: boolean;
@@ -40,9 +58,8 @@ export function NotificationsView({
   renderDestination,
   badgeUrl = vooplusBadgeUrl(),
 }: NotificationsViewProps) {
-  const [filter, setFilter] = useState<"all" | "unread">("all");
-  const visibleItems =
-    filter === "unread" ? items.filter((item) => !item.read) : items;
+  const [filter, setFilter] = useState<NotificationFilter>("all");
+  const visibleItems = items.filter((item) => matchesFilter(item, filter));
   const hasUnread = items.some((item) => !item.read);
 
   return (
@@ -51,28 +68,13 @@ export function NotificationsView({
         title={COPY.notifications}
         density="compact"
         sticky
-        action={
-          <div
-            className="settings-segmented"
-            aria-label="Фильтр уведомлений"
-          >
-            <button
-              type="button"
-              aria-pressed={filter === "all"}
-              onClick={() => setFilter("all")}
-            >
-              Все
-            </button>
-            <button
-              type="button"
-              aria-pressed={filter === "unread"}
-              onClick={() => setFilter("unread")}
-            >
-              Новые
-            </button>
-          </div>
-        }
       />
+
+      <div className="voople-scroll -mt-2 flex gap-1 overflow-x-auto rounded-2xl bg-[var(--app-surface-soft)] p-1" aria-label="Категория уведомлений">
+        {FILTERS.map(({ id, label }) => (
+          <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)} className={cn("min-w-24 flex-1 rounded-xl px-3 py-2 text-xs font-medium transition", filter === id ? "bg-[var(--app-surface)] text-[var(--foreground)] shadow-[var(--app-shadow-sm)]" : "text-[var(--app-muted)] hover:text-[var(--foreground)]")}>{label}</button>
+        ))}
+      </div>
 
       {loading ? (
         <div
@@ -115,9 +117,7 @@ export function NotificationsView({
 
           {visibleItems.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[var(--app-border)] px-4 py-10 text-center text-sm text-[var(--app-muted)]">
-              {filter === "unread"
-                ? "Новых уведомлений нет"
-                : "Пока здесь ничего нет"}
+              {filter === "all" ? "Пока здесь ничего нет" : "В этой категории уведомлений нет"}
             </div>
           ) : (
             <ul className="space-y-2">

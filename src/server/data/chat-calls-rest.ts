@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getAdminClient } from "@/lib/supabase/admin";
-import { DIRECT_CALL_RING_MS } from "@/server/data/chat-rooms-rest";
+import { DIRECT_CALL_RING_MS, insertRoomTimelineEventRest } from "@/server/data/chat-rooms-rest";
 import {
   toProfileCustomizationView,
   type CustomizationRow,
@@ -34,7 +34,7 @@ export async function declineChatRoomCallRest(chatId: string, userId: string) {
     .eq("chat_id", chatId)
     .eq("status", "ringing")
     .neq("started_by", userId)
-    .select("chat_id")
+    .select("chat_id, started_by, started_at")
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Звонок уже завершён");
@@ -44,6 +44,12 @@ export async function declineChatRoomCallRest(chatId: string, userId: string) {
     .delete()
     .eq("chat_id", chatId);
   if (participantsError) throw new Error(participantsError.message);
+  await insertRoomTimelineEventRest({
+    chatId,
+    startedBy: data.started_by as string,
+    startedAt: data.started_at as string,
+    event: "declined",
+  });
   return { ok: true as const };
 }
 

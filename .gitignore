@@ -23,10 +23,18 @@
 # production
 /build
 
-# Local project notes and database migrations are intentionally kept on developer machines.
-# Deployment applies migrations separately; neither directory belongs in the public repository.
-/docs/
-/drizzle/
+# Local project notes and ad-hoc SQL stay on developer machines. The shared
+# component map and release-required migrations are explicit repository contracts.
+/docs/*
+!/docs/component-platform-map.md
+!/docs/redesign-implementation-matrix.md
+/drizzle/*
+!/drizzle/38-group-emojis.sql
+!/drizzle/39-structured-chat-content.sql
+!/drizzle/43-group-sounds.sql
+!/drizzle/45-app-schema-migrations.sql
+!/drizzle/46-legacy-emoji-backfill.sql
+!/drizzle/47-message-reactions-replica-identity.sql
 # Local toolchain experiment for the feature-gated Windows process-audio build.
 /desktop/src-tauri/.cargo/
 

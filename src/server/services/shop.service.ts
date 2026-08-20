@@ -18,8 +18,11 @@ import {
   purchaseShopItemWithCoinsRest,
   updatePaymentIntentStatusRest,
 } from "@/server/data/shop-rest";
+import { getOrCreateDirectChatRest } from "@/server/data/chat-management-rest";
+import { sendMessageRest } from "@/server/data/chat-rest";
 import { extendVooplePlusRest, getSubscriptionStatusRest } from "@/server/data/subscription-rest";
 import { createYooKassaPayment } from "@/server/integrations/yookassa-client";
+import { getAdminClient } from "@/lib/supabase/admin";
 import {
   finalizeSubscriptionPromoRedemption,
   resolveSubscriptionPromo,
@@ -69,6 +72,8 @@ export async function createRubPaymentIntent(input: {
   kind: "shop_item" | "coin_pack" | "donation" | "subscription";
   amountRub?: number;
   itemId?: string;
+  recipientId?: string;
+  giftMessage?: string;
   promoCode?: string;
   subscriptionPlan?: VooplePlusPlanId;
 }): Promise<PaymentIntentView> {
@@ -94,12 +99,28 @@ export async function createRubPaymentIntent(input: {
     if (row.is_free) throw new Error("Предмет бесплатный — получите в каталоге");
     if (row.price_rub <= 0) throw new Error("Предмет недоступен за рубли");
 
-    const owned = await getInventoryItemIdsRest(input.userId);
+    if (input.recipientId === input.userId) throw new Error("Нельзя отправить подарок самому себе");
+    const inventoryOwnerId = input.recipientId ?? input.userId;
+    if (input.recipientId) {
+      const { data: recipient, error: recipientError } = await getAdminClient()
+        .from("users")
+        .select("id")
+        .eq("id", input.recipientId)
+        .maybeSingle();
+      if (recipientError) throw new Error(recipientError.message);
+      if (!recipient) throw new Error("Получатель не найден");
+    }
+    const owned = await getInventoryItemIdsRest(inventoryOwnerId);
     if (owned.has(input.itemId)) throw new Error("Предмет уже в инвентаре");
 
     amountRub = row.price_rub;
     description = `Покупка: ${row.name}`;
     metadata.itemId = input.itemId;
+    if (input.recipientId) {
+      metadata.giftRecipientId = input.recipientId;
+      metadata.giftMessage = input.giftMessage?.trim().slice(0, 280) || null;
+      description = `Подарок: ${row.name}`;
+    }
   } else {
     amountRub = input.amountRub ?? 0;
     if (amountRub < 1) throw new Error("Минимальная сумма — 1 ₽");
@@ -176,7 +197,20 @@ export async function fulfillSucceededPaymentIntent(intentId: string, externalId
     if (intent.amount_rub !== row.price_rub) {
       throw new Error("Сумма платежа не совпадает с ценой предмета");
     }
-    await grantInventoryItemRest(userId, itemId, "purchase");
+    const giftRecipientId = typeof metadata.giftRecipientId === "string" ? metadata.giftRecipientId : null;
+    const inventoryOwnerId = giftRecipientId ?? userId;
+    await grantInventoryItemRest(inventoryOwnerId, itemId, giftRecipientId ? "gifted" : "purchase");
+    if (giftRecipientId) {
+      const chatId = await getOrCreateDirectChatRest(userId, giftRecipientId);
+      const giftMessage = typeof metadata.giftMessage === "string" ? metadata.giftMessage : null;
+      await sendMessageRest({
+        chatId,
+        senderId: userId,
+        messageId: intent.id,
+        text: `🎁 Подарок: ${row.name}${giftMessage ? ` — ${giftMessage}` : ""}`,
+        storedContent: [{ type: "gift", itemId, itemName: row.name, message: giftMessage }],
+      });
+    }
   }
 
   if (intent.kind === "subscription") {

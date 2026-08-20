@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { findLastOwnStroke } from "@/lib/canvas/strokes";
 import { trpc } from "@/lib/trpc/client";
@@ -33,7 +33,7 @@ export function useProfileCanvasStrokes({
     },
   );
 
-  const strokes = listQuery.data ?? [];
+  const strokes = useMemo(() => listQuery.data ?? [], [listQuery.data]);
 
   useEffect(() => {
     if (saveStatus !== "saved") return;

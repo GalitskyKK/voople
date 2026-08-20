@@ -24,6 +24,7 @@ type VoiceSettingsPanelProps = {
   selectedEndpoint: string;
   currentEndpoint: string | null;
   mediaStatus: MediaStatus;
+  outputGain: number;
   onInputDeviceChange: (deviceId: string) => void | Promise<void>;
   onOutputDeviceChange: (deviceId: string) => void | Promise<void>;
   onMicTestToggle: () => void | Promise<void>;
@@ -35,6 +36,8 @@ type VoiceSettingsPanelProps = {
   onEndpointChange: (endpointUrl: string) => void;
   onCompatibilityModeChange: (enabled: boolean) => void;
   onRoomSoundsChange: (enabled: boolean) => void;
+  onMicrophoneGainChange: (value: number) => void | Promise<void>;
+  onOutputGainChange: (value: number) => void;
   onScreenAudioProcessChange: (processId: number | null) => void;
   onReconnect: () => void | Promise<void>;
 };
@@ -57,6 +60,7 @@ export function VoiceSettingsPanel({
   selectedEndpoint,
   currentEndpoint,
   mediaStatus,
+  outputGain,
   onInputDeviceChange,
   onOutputDeviceChange,
   onMicTestToggle,
@@ -65,6 +69,8 @@ export function VoiceSettingsPanel({
   onEndpointChange,
   onCompatibilityModeChange,
   onRoomSoundsChange,
+  onMicrophoneGainChange,
+  onOutputGainChange,
   onScreenAudioProcessChange,
   onReconnect,
 }: VoiceSettingsPanelProps) {
@@ -123,6 +129,44 @@ export function VoiceSettingsPanel({
               ))}
           </select>
         </label>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="rounded-xl border border-[var(--app-border)] p-3 text-xs font-medium text-[var(--app-muted)]">
+            <span className="flex items-center justify-between gap-3">
+              Исходящий микрофон
+              <output className="tabular-nums text-[var(--foreground)]">{preferences.microphoneGain}%</output>
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={preferences.microphoneGain}
+              onChange={(event) => void onMicrophoneGainChange(Number(event.target.value))}
+              className="mt-3 w-full accent-[var(--theme-accent)]"
+              aria-label="Громкость исходящего микрофона"
+            />
+            <span className="mt-1 block font-normal leading-5">100% — исходный уровень, без прослушивания себя.</span>
+          </label>
+
+          <label className="rounded-xl border border-[var(--app-border)] p-3 text-xs font-medium text-[var(--app-muted)]">
+            <span className="flex items-center justify-between gap-3">
+              Общий звук Voople
+              <output className="tabular-nums text-[var(--foreground)]">{Math.round(outputGain * 100)}%</output>
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={200}
+              step={1}
+              value={Math.round(outputGain * 100)}
+              onChange={(event) => onOutputGainChange(Number(event.target.value) / 100)}
+              className="mt-3 w-full accent-[var(--theme-accent)]"
+              aria-label="Общая громкость Voople"
+            />
+            <span className="mt-1 block font-normal leading-5">Применяется поверх уровней отдельных участников.</span>
+          </label>
+        </div>
 
         <div>
           <div className="flex items-center gap-2">

@@ -6,11 +6,12 @@ import {
   Send,
   Smile,
 } from "lucide-react";
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
 
 import { ChatEmojiPicker } from "@/components/chat/ChatEmojiPicker";
 import { ChatVoiceRecorder } from "@/components/chat/ChatVoiceRecorder";
-import { CHAT_COMPOSER_ICON_BUTTON_CLASS } from "@/components/chat/ChatComposerVisual";
+import { CHAT_COMPOSER_ICON_BUTTON_CLASS, CHAT_COMPOSER_SURFACE_CLASS } from "@/components/chat/ChatComposerVisual";
+import { useAutosizeTextarea } from "@/hooks/useAutosizeTextarea";
 import { Button } from "@/components/ui/Button";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { getChatClipboardFile } from "@/lib/chat/clipboard";
@@ -56,14 +57,7 @@ export function DesktopChatComposerInput({
   const [emojiOpen, setEmojiOpen] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    textarea.style.height = "0px";
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 128)}px`;
-  }, [text]);
+  const textareaRef = useAutosizeTextarea(text);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -95,7 +89,7 @@ export function DesktopChatComposerInput({
         }}
       />
 
-      <div className="relative flex items-end gap-1.5">
+      <div className={cn("relative flex items-end gap-1.5", CHAT_COMPOSER_SURFACE_CLASS)}>
         {!editing ? <DropdownMenu
           open={attachOpen}
           onOpenChange={setAttachOpen}
@@ -179,7 +173,7 @@ export function DesktopChatComposerInput({
           maxLength={1000}
           placeholder="Сообщение"
           aria-label="Сообщение"
-          className="voople-input min-w-0 flex-1 resize-none py-2.5 text-sm"
+          className="min-h-10 min-w-0 flex-1 resize-none overflow-y-auto border-0 bg-transparent px-2 py-2.5 text-sm outline-none placeholder:text-[var(--app-muted)]"
         />
 
         {!editing && !text.trim() && !hasUpload ? (

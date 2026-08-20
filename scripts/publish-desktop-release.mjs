@@ -4,7 +4,7 @@ import { basename, resolve } from "node:path";
 
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
-import { extractReleaseNotes } from "./release-notes.mjs";
+import { extractReleaseCatalog, extractReleaseNotes } from "./release-notes.mjs";
 
 const [installerArgument, versionArgument, signatureArgument] = process.argv.slice(2);
 
@@ -57,6 +57,9 @@ if (!updaterSignature) throw new Error("The Tauri updater signature is empty.");
 const installerStats = await stat(installerPath);
 const changelog = await readFile(resolve("CHANGELOG.md"), "utf8");
 const releaseNotes = extractReleaseNotes(changelog, versionArgument);
+const releaseCatalog = extractReleaseCatalog(changelog);
+const currentRelease = releaseCatalog.releases.find((entry) => entry.version === versionArgument);
+if (!currentRelease) throw new Error(`CHANGELOG.md has no release entry for ${versionArgument}.`);
 const sha256 = createHash("sha256").update(installer).digest("hex");
 const checksum = Buffer.from(`${sha256}  Voople-Setup-x64.exe\n`, "utf8");
 const publishedAt = new Date().toISOString();
@@ -81,6 +84,12 @@ const latestManifest = Buffer.from(
   )}\n`,
   "utf8",
 );
+const catalogBody = Buffer.from(`${JSON.stringify(releaseCatalog, null, 2)}\n`, "utf8");
+const releaseEntryBody = Buffer.from(`${JSON.stringify({
+  schemaVersion: 1,
+  generatedAt: releaseCatalog.generatedAt,
+  releases: [currentRelease],
+}, null, 2)}\n`, "utf8");
 
 const client = new S3Client({
   endpoint: endpoint.toString(),
@@ -117,6 +126,10 @@ await upload(`${versionedKey}.sig`, Buffer.from(`${updaterSignature}\n`, "utf8")
   ContentType: "text/plain; charset=utf-8",
   CacheControl: "public, max-age=31536000, immutable",
 });
+await upload(`desktop/releases/${versionArgument}/release.json`, releaseEntryBody, {
+  ContentType: "application/json; charset=utf-8",
+  CacheControl: "public, max-age=31536000, immutable",
+});
 await upload(stableKey, installer, {
   ...installerHeaders,
   CacheControl: "public, max-age=300, must-revalidate",
@@ -126,6 +139,10 @@ await upload(`${stableKey}.sha256`, checksum, {
   CacheControl: "public, max-age=300, must-revalidate",
 });
 await upload("desktop/latest.json", latestManifest, {
+  ContentType: "application/json; charset=utf-8",
+  CacheControl: "public, max-age=300, must-revalidate",
+});
+await upload("desktop/release-catalog.json", catalogBody, {
   ContentType: "application/json; charset=utf-8",
   CacheControl: "public, max-age=300, must-revalidate",
 });

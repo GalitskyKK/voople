@@ -7,6 +7,7 @@ import {
   Trash2,
   UserPlus,
 } from "lucide-react";
+import Link from "next/link";
 import { useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/Button";
@@ -17,10 +18,12 @@ import type { UserSearchHit } from "@/types/search";
 
 import { GroupChatMemberPicker } from "./GroupChatMemberPicker";
 import { GroupAuditLog } from "./GroupAuditLog";
+import { GroupBoostPanel } from "./GroupBoostPanel";
 import { GroupCommunityPanel } from "./GroupCommunityPanel";
 import { GroupEmojiManager } from "./GroupEmojiManager";
 import { GroupInviteLinkPanel } from "./GroupInviteLinkPanel";
 import { GroupMembersList } from "./GroupMembersList";
+import { GroupRolesOverview } from "./GroupRolesOverview";
 import { GroupTopicsSettings } from "./GroupTopicsSettings";
 import { GroupVisibilitySettings } from "./GroupVisibilitySettings";
 import { GroupAvatar } from "./GroupAvatar";
@@ -31,7 +34,8 @@ import {
   type GroupSettingsSection,
 } from "./GroupSettingsNavigation";
 
-type Props = {
+export type GroupManagementProps = {
+  chatId: string;
   chatName: string;
   memberCount: number;
   groupIcon: string | null;
@@ -74,24 +78,16 @@ type Props = {
   onMembersChanged?: () => void;
   onGroupClosed: () => void;
   renderAvatar: (user: UserSearchHit) => ReactNode;
+  presentation?: "sheet" | "page";
 };
 
-export function GroupManagementSheetView(props: Props) {
-  const state = useGroupManagementSheet(props);
-  const [section, setSection] = useState<GroupSettingsSection>("members");
+export function GroupManagementSheetView(props: GroupManagementProps) {
+  const isPage = props.presentation === "page";
+  const state = useGroupManagementSheet({ ...props, alwaysActive: isPage });
+  const [section, setSection] = useState<GroupSettingsSection>("main");
   const slotsLeft = Math.max(0, 20 - state.members.length);
 
-  return (
-    <>
-      <GroupManagementTrigger variant={props.triggerVariant ?? "toolbar"} onClick={() => state.setOpen(true)} chatName={props.chatName} memberCount={props.memberCount} groupIcon={props.groupIcon} groupAvatarUrl={props.groupAvatarUrl} groupAccentColor={props.groupAccentColor} groupTag={props.groupTag} />
-
-      <Sheet
-        open={state.open}
-        onClose={state.close}
-        className="max-w-lg"
-        ariaLabel={state.adding ? "Добавление участников" : "Участники группы"}
-      >
-        {state.adding ? (
+  const content = state.adding ? (
           <>
             <button
               type="button"
@@ -130,16 +126,27 @@ export function GroupManagementSheetView(props: Props) {
           </>
         ) : (
           <>
-            <div className="flex items-center gap-3 pr-10">
+            <div className={isPage ? "flex items-center gap-3" : "flex items-center gap-3 pr-10"}>
               <GroupAvatar name={props.chatName} avatarUrl={props.groupAvatarUrl} icon={props.groupIcon} accentColor={props.groupAccentColor} size="lg" />
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-(--theme-accent)">Группа</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-(--theme-accent)">Настройки сообщества</p>
                 <h2 className="mt-1 truncate text-xl font-semibold">{props.chatName}</h2>
                 <p className="mt-1 text-sm text-[var(--app-muted)]">{state.members.length} из 20 участников</p>
               </div>
             </div>
 
-            <GroupSettingsNavigation section={section} onChange={setSection} canManage={props.canManage} />
+            <div className={isPage ? "mt-6 grid min-h-0 gap-6 lg:grid-cols-[220px_minmax(0,720px)]" : ""}>
+              <GroupSettingsNavigation section={section} onChange={setSection} canManage={props.canManage} layout={isPage ? "sidebar" : "tabs"} className={isPage ? "lg:sticky lg:top-0 lg:self-start" : "mt-4"} />
+              <div className="min-w-0">
+            {section === "main" ? (
+              <>
+                <section className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
+                  <h3 className="font-semibold">Основное</h3>
+                  <p className="mt-1 text-sm leading-6 text-[var(--app-muted)]">Название, доступность и базовые параметры сообщества. Внешний вид настраивается отдельно, чтобы изменения было проще проверить перед сохранением.</p>
+                </section>
+                <GroupVisibilitySettings value={props.groupVisibility} canManage={props.canManage} onChange={props.updateVisibility} />
+              </>
+            ) : null}
 
             {section === "members" && props.canManage ? (
               <Button
@@ -170,30 +177,23 @@ export function GroupManagementSheetView(props: Props) {
               />
             ) : null}
 
-            {section === "access" ? <><GroupTopicsSettings
-              enabled={props.topicsEnabled}
-              canManage={props.canManage}
-              onChange={props.updateTopics}
-            />
+            {section === "roles" ? <GroupRolesOverview members={state.members} /> : null}
 
-            <GroupVisibilitySettings
-              value={props.groupVisibility}
-              canManage={props.canManage}
-              onChange={props.updateVisibility}
-            />
-            </> : null}
+            {section === "sections" ? <GroupTopicsSettings enabled={props.topicsEnabled} canManage={props.canManage} onChange={props.updateTopics} /> : null}
 
-            {section === "appearance" ? <>
+            {section === "appearance" ? (
               <GroupCommunityPanel
                 canManage={props.canManage}
                 groupName={props.chatName}
                 load={props.loadCommunity}
                 save={props.updateCustomization}
-                setBoost={props.setBoost}
                 uploadAvatar={props.uploadAvatar}
                 uploadBanner={props.uploadBanner}
                 onChanged={props.onMembersChanged}
               />
+            ) : null}
+
+            {section === "media" ? <>
               <GroupEmojiManager
                 canManage={props.canManage}
                 load={props.loadEmojis}
@@ -210,7 +210,9 @@ export function GroupManagementSheetView(props: Props) {
               />
             </> : null}
 
-            {section === "invites" && props.canManage ? (
+            {section === "boosts" ? <GroupBoostPanel load={props.loadCommunity} setBoost={props.setBoost} onChanged={props.onMembersChanged} /> : null}
+
+            {section === "links" && props.canManage ? (
               <div className="mt-4">
                 <GroupInviteLinkPanel
                   inviteBaseUrl={props.inviteBaseUrl}
@@ -226,11 +228,11 @@ export function GroupManagementSheetView(props: Props) {
               </div>
             ) : null}
 
-            {section === "history" && props.canManage ? (
+            {section === "audit" && props.canManage ? (
               <GroupAuditLog load={props.loadAudit} />
             ) : null}
 
-            {section === "access" ? <div className="mt-5 border-t border-[var(--app-border)] pt-4">
+            {section === "roles" ? <div className="mt-5 border-t border-[var(--app-border)] pt-4">
               {props.viewerRole === "owner" ? (
                 <Button
                   type="button"
@@ -263,11 +265,28 @@ export function GroupManagementSheetView(props: Props) {
                 </Button>
               )}
             </div> : null}
+              </div>
+            </div>
           </>
-        )}
+        );
 
-        {state.error ? <p className="mt-3 text-sm text-red-400" role="alert">{state.error}</p> : null}
-      </Sheet>
-    </>
-  );
+  const body = <>{content}{state.error ? <p className="mt-3 text-sm text-red-400" role="alert">{state.error}</p> : null}</>;
+
+  if (isPage) {
+    return (
+      <div className="voople-scroll min-h-0 flex-1 overflow-y-auto bg-[var(--app-canvas)] px-4 py-5 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl">
+          <Link href={`/messages/${props.chatId}`} className="mb-5 inline-flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]">
+            <ArrowLeft className="h-4 w-4" /> Вернуться в чат
+          </Link>
+          {body}
+        </div>
+      </div>
+    );
+  }
+
+  return <>
+    <GroupManagementTrigger variant={props.triggerVariant ?? "toolbar"} onClick={() => state.setOpen(true)} chatName={props.chatName} memberCount={props.memberCount} groupIcon={props.groupIcon} groupAvatarUrl={props.groupAvatarUrl} groupAccentColor={props.groupAccentColor} groupTag={props.groupTag} />
+    <Sheet open={state.open} onClose={state.close} className="max-w-lg" ariaLabel={state.adding ? "Добавление участников" : "Участники группы"}>{body}</Sheet>
+  </>;
 }

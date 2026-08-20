@@ -91,7 +91,7 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
   const allChatIds = [...chatIds, ...channelIds];
   const msgsResult = await admin
     .from("messages")
-    .select("chat_id, text, created_at, sender_id")
+    .select("chat_id, text, media_url, media_title, shared_track_id, created_at, sender_id")
     .in("chat_id", allChatIds)
     .order("created_at", { ascending: false })
     .limit(Math.min(allChatIds.length * 5, 300));
@@ -197,13 +197,25 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
   }
   const lastByChat = new Map<
     string,
-    { text: string | null; createdAt: string; senderId: string }
+    { text: string | null; preview: string; createdAt: string; senderId: string }
   >();
   for (const m of msgsResult.data ?? []) {
     const cid = m.chat_id as string;
     if (!lastByChat.has(cid)) {
       lastByChat.set(cid, {
         text: (m.text as string | null) ?? null,
+        preview: (() => {
+          const text = (m.text as string | null)?.trim();
+          if (text) return text;
+          if (m.shared_track_id) return "Трек";
+          const mediaKey = m.media_url as string | null;
+          if (!mediaKey) return "Сообщение";
+          const kind = chatAttachmentKindFromKey(mediaKey);
+          if (kind === "image") return "Фото";
+          if (kind === "circle") return "Видеосообщение";
+          if (kind === "audio") return (m.media_title as string | null)?.trim() || "Аудио";
+          return "Вложение";
+        })(),
         createdAt: m.created_at as string,
         senderId: m.sender_id as string,
       });
@@ -238,6 +250,7 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
       lastMessage: last
         ? {
             text: last.text,
+            preview: last.preview,
             createdAt: last.createdAt,
             senderId: last.senderId,
           }
@@ -408,7 +421,7 @@ export async function listMessagesRest(
       });
     }
   }
-  const messages = (await hydrateMessages(rows, userId)).map((message) => ({
+  const messages = (await hydrateMessages(rows, userId, chatId)).map((message) => ({
     ...message,
     sender: membersById.get(message.senderId) ?? null,
   }));
@@ -587,11 +600,11 @@ export async function sendMessageRest(input: SendMessageInput) {
     if (!existing) throw new Error("Не удалось подтвердить отправку сообщения");
     if (existing.sender_id !== input.senderId) throw new Error("ID сообщения уже занят");
 
-    const [message] = await hydrateMessages([existing as MessageRow], input.senderId);
+    const [message] = await hydrateMessages([existing as MessageRow], input.senderId, input.chatId);
     return message;
   }
 
-  const [message] = await hydrateMessages([row as MessageRow], input.senderId);
+  const [message] = await hydrateMessages([row as MessageRow], input.senderId, input.chatId);
   return message;
 }
 
@@ -629,7 +642,7 @@ export async function editMessageRest(
   }
   if (error) throw new Error(error.message);
 
-  const [result] = await hydrateMessages([updated as MessageRow], userId);
+  const [result] = await hydrateMessages([updated as MessageRow], userId, message.chat_id as string);
   return result;
 }
 

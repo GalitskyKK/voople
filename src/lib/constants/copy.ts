@@ -1,6 +1,6 @@
 export const COPY = {
   appName: "вупл.",
-  feed: "Лента",
+  feed: "Главная",
   explore: "Обзор",
   following: "Подписки",
   search: "Поиск",

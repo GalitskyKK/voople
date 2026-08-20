@@ -111,7 +111,7 @@ export function DesktopChatThread({
           : undefined
       }
     >
-      <ChatWindowHeaderVisual bannerUrl={data.chat.groupBannerUrl}>
+      <ChatWindowHeaderVisual>
         <button
           type="button"
           onClick={() =>

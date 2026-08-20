@@ -4,7 +4,9 @@ import { getSignedR2Url } from "@/lib/r2";
 export class AudioService {
   constructor(private readonly database: Database) {}
 
-  async getStreamUrl(_trackId: string, _userId: string): Promise<string> {
+  async getStreamUrl(trackId: string, userId: string): Promise<string> {
+    void trackId;
+    void userId;
     throw new Error("Not implemented");
   }
 

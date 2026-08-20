@@ -1,4 +1,5 @@
 import type { PostViewModel } from "./domain";
+import type { PublicGroupSearchHit } from "./chat";
 
 export type HashtagSearchHit = {
   name: string;
@@ -25,4 +26,10 @@ export type ExploreSearchResult = {
   users: UserSearchHit[];
   hashtags: HashtagSearchHit[];
   posts: PostViewModel[];
+};
+
+export type ExploreHighlights = {
+  users: UserSearchHit[];
+  posts: PostViewModel[];
+  communities: PublicGroupSearchHit[];
 };

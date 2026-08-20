@@ -31,7 +31,13 @@ export function useDesktopCloudPostDraft(config: DesktopConfig, session: Session
         setText(draft.text);
         restore(draft.media);
         setRevision(draft.revision);
-        lastSaved.current = JSON.stringify({ text: draft.text, media: draft.media.map(({ url: _url, ...item }) => item) });
+        lastSaved.current = JSON.stringify({
+          text: draft.text,
+          media: draft.media.map(({ url, ...item }) => {
+            void url;
+            return item;
+          }),
+        });
       }
       restored.current = true;
     }).catch(() => { restored.current = true; });

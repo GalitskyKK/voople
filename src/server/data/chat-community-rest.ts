@@ -51,7 +51,7 @@ async function activeBoostRows(chatIds: string[]) {
 
 export async function loadGroupCommunitySummariesRest(
   chatIds: string[],
-  viewerId: string,
+  viewerId?: string | null,
 ) {
   const uniqueIds = [...new Set(chatIds)];
   const admin = getAdminClient();

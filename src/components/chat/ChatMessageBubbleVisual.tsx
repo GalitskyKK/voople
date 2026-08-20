@@ -54,6 +54,7 @@ export function ChatMessageBubbleVisual({
   swipeDragging = false,
 }: ChatMessageBubbleVisualProps) {
   const { isMine, text, createdAt, readAt, replyTo } = message;
+  const isRoomEvent = message.content?.some((node) => node.type === "roomEvent") ?? false;
   const selectionActive = selectionState !== undefined;
   const hasText = Boolean(text?.trim());
   const messageMeta = (
@@ -62,6 +63,19 @@ export function ChatMessageBubbleVisual({
       {isMine ? <MessageReadTicks readAt={readAt} /> : null}
     </span>
   );
+
+  if (isRoomEvent) {
+    return (
+      <div className="my-3 flex w-full items-center justify-center gap-2 px-4 text-[11px] text-[var(--app-muted)]" role="status">
+        <span className="h-px max-w-20 flex-1 bg-[var(--app-border)]" />
+        <span className="inline-flex items-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-1.5">
+          <ChatMessageContent nodes={message.content} fallback={text ?? ""} />
+          <LocalMessageTime iso={createdAt} />
+        </span>
+        <span className="h-px max-w-20 flex-1 bg-[var(--app-border)]" />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -91,7 +105,11 @@ export function ChatMessageBubbleVisual({
       ) : null} */}
       {senderAvatar ? (
         <div
-          className={cn("w-8 shrink-0", showSender && !isMine ? "block" : "hidden", "2xl:block")}>
+          className={cn(
+            "w-8 shrink-0",
+            showSender && !isMine ? "block" : "hidden",
+            "2xl:block",
+          )}>
           {groupPosition === "only" || groupPosition === "end" ? senderAvatar : null}
         </div>
       ) : null}

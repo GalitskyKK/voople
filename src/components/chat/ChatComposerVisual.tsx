@@ -60,3 +60,6 @@ export function ChatComposerContextPreview({
 
 export const CHAT_COMPOSER_ICON_BUTTON_CLASS =
   "rounded-[var(--app-radius-sm)] p-2 text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]";
+
+export const CHAT_COMPOSER_SURFACE_CLASS =
+  "rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-1.5 shadow-[var(--app-shadow-sm)] transition-[border-color,box-shadow] duration-200 focus-within:border-[color-mix(in_srgb,var(--theme-accent)_55%,var(--app-border))] focus-within:shadow-[0_0_0_3px_color-mix(in_srgb,var(--theme-accent)_12%,transparent)]";

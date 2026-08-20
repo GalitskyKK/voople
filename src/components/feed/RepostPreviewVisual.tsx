@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
+import { RichText } from "@/components/ui/RichText";
 import type {
   PostViewModel,
   ProfileCustomizationView,
@@ -51,12 +52,12 @@ export function RepostPreviewVisual({
 
       {post.repostComment ? (
         <p className="mb-3 text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">
-          {post.repostComment}
+          <RichText text={post.repostComment} />
         </p>
       ) : null}
       {post.text ? (
         <p className="text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_85%,transparent)]">
-          {post.text}
+          <RichText text={post.text} />
         </p>
       ) : null}
       {post.media?.length || post.mediaUrl ? renderMedia(post) : null}

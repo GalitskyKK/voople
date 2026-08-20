@@ -161,6 +161,7 @@ export function DesktopGroupInviteSheet({
 
   return (
     <GroupManagementSheetView
+      chatId={chatId}
       chatName={chatName}
       memberCount={memberCount}
       groupIcon={groupIcon}

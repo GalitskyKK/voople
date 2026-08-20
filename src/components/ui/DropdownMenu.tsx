@@ -23,6 +23,7 @@ type DropdownMenuProps = {
   trigger: React.ReactNode;
   children: React.ReactNode;
   align?: "start" | "end";
+  side?: "bottom" | "left" | "right" | "inward";
   menuClassName?: string;
   className?: string;
 };
@@ -35,6 +36,7 @@ export function DropdownMenu({
   trigger,
   children,
   align = "end",
+  side = "bottom",
   menuClassName,
   className,
 }: DropdownMenuProps) {
@@ -49,24 +51,38 @@ export function DropdownMenu({
     if (!triggerEl) return;
 
     const rect = triggerEl.getBoundingClientRect();
-    const menuWidth = Math.max(200, rect.width);
+    const menuWidth = menuRef.current?.offsetWidth ?? Math.max(200, rect.width);
     const menuHeight = menuRef.current?.offsetHeight ?? 160;
     const gap = 4;
 
-    let top = rect.bottom + gap;
+    const resolvedSide = side === "inward"
+      ? rect.left + rect.width / 2 > window.innerWidth / 2 ? "left" : "right"
+      : side;
+    let top = resolvedSide === "bottom" ? rect.bottom + gap : rect.top;
     let left = align === "end" ? rect.right - menuWidth : rect.left;
 
-    if (top + menuHeight > window.innerHeight - 8) {
-      top = Math.max(8, rect.top - gap - menuHeight);
+    if (resolvedSide === "left") {
+      left = rect.left - gap - menuWidth;
+      if (left < 8) left = rect.right + gap;
+    } else if (resolvedSide === "right") {
+      left = rect.right + gap;
+      if (left + menuWidth > window.innerWidth - 8) {
+        left = rect.left - gap - menuWidth;
+      }
+    } else if (top + menuHeight > window.innerHeight - 8) {
+      top = rect.top - gap - menuHeight;
     }
+    top = Math.max(8, Math.min(top, window.innerHeight - menuHeight - 8));
     left = Math.max(8, Math.min(left, window.innerWidth - menuWidth - 8));
 
     setPosition({ top, left, minWidth: menuWidth });
-  }, [align]);
+  }, [align, side]);
 
   useLayoutEffect(() => {
     if (!open) return;
     updatePosition();
+    const frame = requestAnimationFrame(updatePosition);
+    return () => cancelAnimationFrame(frame);
   }, [open, updatePosition, children]);
 
   useEffect(() => {

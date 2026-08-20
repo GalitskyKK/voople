@@ -5,6 +5,7 @@ import { ArrowRight, UsersRound } from "lucide-react";
 
 import { useAuthGate } from "@/components/auth/AuthGateProvider";
 import { Button } from "@/components/ui/Button";
+import { RichText } from "@/components/ui/RichText";
 import { trpc } from "@/lib/trpc/client";
 import type { PublicGroupPageView } from "@/types/chat";
 import { GroupAvatar } from "./GroupAvatar";
@@ -58,7 +59,7 @@ export function PublicGroupPage({ group }: { group: PublicGroupPageView }) {
         <p className="mt-1 text-sm text-[var(--app-muted)]">@{group.publicSlug}</p>
         {group.description ? (
           <p className="mt-4 max-w-prose text-sm leading-6 text-[color-mix(in_srgb,var(--foreground)_78%,transparent)]">
-            {group.description}
+            <RichText text={group.description} />
           </p>
         ) : null}
         <p className="mt-5 inline-flex items-center gap-2 text-sm text-[var(--app-muted)]">

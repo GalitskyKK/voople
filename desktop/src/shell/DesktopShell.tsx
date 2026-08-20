@@ -16,6 +16,7 @@ import { COPY } from "@/lib/constants/copy";
 import { resolveRingStyle } from "@/lib/customization/rings";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 import { useVoiceSession } from "@/components/chat/voice/VoiceSessionProvider";
+import { useSidebarPreference } from "@/hooks/useSidebarPreference";
 
 import { syncDesktopUser } from "../api/sync-user";
 import { createDesktopTrpcClient } from "../api/trpc";
@@ -147,6 +148,7 @@ export function DesktopShell({
     avatarRingId?: string | null;
   } | null>(null);
   const { preferences } = useAppPreferences();
+  const { collapsed: sidebarCollapsed, setCollapsed: setSidebarCollapsed } = useSidebarPreference();
   const voiceSession = useVoiceSession();
   useNativeVoiceHeartbeat({
     config,
@@ -294,6 +296,8 @@ export function DesktopShell({
       sidebar={
         <AppSidebarVisual
           pathname={pathname}
+          collapsed={sidebarCollapsed}
+          onCollapsedChange={setSidebarCollapsed}
           notificationBadge={notificationBadge}
           renderDestination={renderDestination}
           accountNavigation={
@@ -307,6 +311,7 @@ export function DesktopShell({
                 <AccountChipVisual
                   displayName={viewerSummary.displayName}
                   username={viewerSummary.username}
+                  compact={sidebarCollapsed}
                   avatar={
                     <ProfileAvatarVisual
                       displayName={viewerSummary.displayName}

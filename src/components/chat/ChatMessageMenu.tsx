@@ -47,6 +47,7 @@ export function ChatMessageMenu({
       open={open}
       onOpenChange={onOpenChange}
       align={isMine ? "end" : "start"}
+      side="inward"
       menuClassName="voople-chat-message-menu"
       className={cn(
         "transition-opacity",

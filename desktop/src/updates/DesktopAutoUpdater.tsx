@@ -5,7 +5,7 @@ import { getVersion } from "@tauri-apps/api/app";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 
 import { DESKTOP_UPDATE_CHECK_EVENT } from "./events";
-import { reportClientMetric } from "@/lib/telemetry/client";
+import { reportClientMetric, reportProductEvent } from "@/lib/telemetry/client";
 
 type UpdateState =
   | { mode: "idle" }
@@ -115,6 +115,7 @@ export function DesktopAutoUpdater() {
           progress: total ? Math.min(100, Math.round((downloaded / total) * 100)) : null,
         });
       });
+      reportProductEvent("desktop_update_install", { version });
       if (previousVersion) {
         await invoke("record_installed_update", {
           previousVersion,

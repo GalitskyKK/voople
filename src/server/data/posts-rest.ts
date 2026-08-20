@@ -92,3 +92,19 @@ export async function searchPostsRest(
     repostedByViewer: repostedIds.has(post.id),
   }));
 }
+
+export async function getTopPostsRest(viewerId?: string | null, limit = 6) {
+  const safeLimit = Math.min(Math.max(limit, 1), 12);
+  const { data, error } = await getAdminClient()
+    .from("posts")
+    .select(getPostSelect())
+    .order("view_count", { ascending: false })
+    .order("like_count", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(safeLimit);
+  if (error) throw new Error(error.message);
+  const posts = await mapPostRowsWithReposts((data ?? []) as unknown as PostRow[], { viewerId });
+  if (!viewerId || posts.length === 0) return posts;
+  const repostedIds = await loadRepostedPostIdsRest(viewerId, posts.map((post) => post.id));
+  return posts.map((post) => ({ ...post, repostedByViewer: repostedIds.has(post.id) }));
+}

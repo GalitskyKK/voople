@@ -1,20 +1,16 @@
 import "server-only";
 
 import { createHash, randomBytes } from "node:crypto";
-import { AccessToken, TrackSource } from "livekit-server-sdk";
 
 import { getAdminClient } from "@/lib/supabase/admin";
-import { screenShareQualityForEntitlements } from "@/lib/group-perks";
 import { getChatMembershipRest } from "@/server/data/chat-access-rest";
 import {
   acceptGroupVanityInviteRest,
   previewGroupVanityInviteRest,
 } from "@/server/data/chat-vanity-invites-rest";
 import {
-  getGroupCommunityRest,
   loadGroupCommunitySummariesRest,
 } from "@/server/data/chat-community-rest";
-import { hasActiveSubscriptionRest } from "@/server/data/subscription-rest";
 import {
   toProfileCustomizationView,
   type CustomizationRow,
@@ -45,32 +41,43 @@ function utcTimestampMs(value: string | null | undefined) {
   return Date.parse(normalized);
 }
 
-function normalizeLiveKitUrl(value: string) {
-  try {
-    const url = new URL(value.trim());
-    if (url.protocol !== "wss:" && url.protocol !== "ws:") return null;
-    return url.toString().replace(/\/$/, "");
-  } catch {
-    return null;
-  }
+type RoomTimelineEvent = "started" | "ended" | "missed" | "declined" | "cancelled";
+
+function roomTimelineMessageId(chatId: string, startedAt: string, event: RoomTimelineEvent) {
+  const hex = createHash("sha256").update(`${chatId}:${startedAt}:${event}`).digest("hex").slice(0, 32);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20)}`;
 }
 
-function getLiveKitEndpoints() {
-  const primary = normalizeLiveKitUrl(
-    process.env.LIVEKIT_URL ?? process.env.NEXT_PUBLIC_LIVEKIT_URL ?? "",
-  );
-  const fallbacks = (process.env.LIVEKIT_FALLBACK_URLS ?? "")
-    .split(/[\n,;]/)
-    .map(normalizeLiveKitUrl)
-    .filter((url): url is string => Boolean(url));
-
-  return [...new Set([primary, ...fallbacks].filter((url): url is string => Boolean(url)))].map(
-    (url, index) => ({
-      url,
-      label: index === 0 ? "Авто" : new URL(url).hostname,
-    }),
-  );
+export async function insertRoomTimelineEventRest(input: {
+  chatId: string;
+  startedBy: string;
+  startedAt: string;
+  event: RoomTimelineEvent;
+  roomKind?: "direct" | "group";
+}) {
+  const durationSeconds = input.event === "ended"
+    ? Math.max(0, Math.round((Date.now() - utcTimestampMs(input.startedAt)) / 1000))
+    : null;
+  const text = input.event === "started"
+    ? input.roomKind === "group" ? "Комната открыта" : "Начат звонок"
+    : input.event === "ended"
+      ? `Встреча завершена · ${durationSeconds ?? 0} сек.`
+      : input.event === "missed"
+        ? "Пропущенный звонок"
+        : input.event === "declined"
+          ? "Звонок отклонён"
+          : "Звонок отменён";
+  const { error } = await getAdminClient().from("messages").upsert({
+    id: roomTimelineMessageId(input.chatId, input.startedAt, input.event),
+    chat_id: input.chatId,
+    sender_id: input.startedBy,
+    text,
+    content: [{ type: "roomEvent", event: input.event, durationSeconds, roomKind: input.roomKind }],
+    created_at: new Date().toISOString(),
+  }, { onConflict: "id", ignoreDuplicates: true });
+  if (error) throw new Error(error.message);
 }
+
 
 function hashInviteToken(token: string) {
   return createHash("sha256").update(token, "utf8").digest("hex");
@@ -256,17 +263,34 @@ async function finishRoom(
 ) {
   const admin = getAdminClient();
   const now = new Date().toISOString();
-  const { error: roomError } = await admin
+  const { data: room, error: readError } = await admin
+    .from("chat_rooms")
+    .select("status, started_by, started_at")
+    .eq("chat_id", chatId)
+    .maybeSingle();
+  if (readError) throw new Error(readError.message);
+  if (!room || !["active", "ringing"].includes(room.status as string)) return;
+  const { data: updated, error: roomError } = await admin
     .from("chat_rooms")
     .update({ status, ended_at: now, updated_at: now })
-    .eq("chat_id", chatId);
+    .eq("chat_id", chatId)
+    .eq("status", room.status)
+    .select("chat_id")
+    .maybeSingle();
   if (roomError) throw new Error(roomError.message);
+  if (!updated) return;
 
   const { error: participantsError } = await admin
     .from("chat_room_participants")
     .delete()
     .eq("chat_id", chatId);
   if (participantsError) throw new Error(participantsError.message);
+  await insertRoomTimelineEventRest({
+    chatId,
+    startedBy: room.started_by as string,
+    startedAt: room.started_at as string,
+    event: status,
+  });
 }
 
 export async function getChatRoomRest(chatId: string, userId: string): Promise<ChatRoomView> {
@@ -310,10 +334,7 @@ export async function getChatRoomRest(chatId: string, userId: string): Promise<C
     storedStatus === "ringing" && !ringExpired && participantRows.length > 0;
 
   if (!active && storedStatus === "active") {
-    await admin
-      .from("chat_rooms")
-      .update({ status: "ended", ended_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-      .eq("chat_id", chatId);
+    await finishRoom(chatId, "ended");
   }
 
   const participants = participantRows.flatMap((row) => {
@@ -357,6 +378,7 @@ export async function enterChatRoomRest(chatId: string, userId: string, micMuted
   const current = await getChatRoomRest(chatId, userId);
   const admin = getAdminClient();
   const now = new Date().toISOString();
+  const startsNewRoom = current.status === "empty";
 
   if (current.status === "active" && current.accessMode === "locked" && !current.isInside) {
     throw new Error("Комната закрыта. Запрос на вход появится на следующем этапе");
@@ -398,103 +420,17 @@ export async function enterChatRoomRest(chatId: string, userId: string, micMuted
   });
   if (error) throw new Error(error.message);
 
-  return getChatRoomRest(chatId, userId);
-}
-
-export async function createChatRoomMediaTokenRest(chatId: string, userId: string) {
-  const membership = await getMembership(chatId, userId);
-  const [hasVooplePlus, community] = await Promise.all([
-    hasActiveSubscriptionRest(userId),
-    membership.type === "group"
-      ? getGroupCommunityRest(membership.accessChatId, userId)
-      : Promise.resolve(null),
-  ]);
-  const screenShareQuality = screenShareQualityForEntitlements(
-    hasVooplePlus,
-    community?.groupLevel ?? 0,
-  );
-
-  const endpoints = getLiveKitEndpoints();
-  const apiKey = process.env.LIVEKIT_API_KEY?.trim();
-  const apiSecret = process.env.LIVEKIT_API_SECRET?.trim();
-  if (!endpoints.length || !apiKey || !apiSecret) {
-    return { enabled: false as const, screenShareQuality };
+  if (startsNewRoom) {
+    await insertRoomTimelineEventRest({
+      chatId,
+      startedBy: userId,
+      startedAt: now,
+      event: "started",
+      roomKind: membership.type,
+    });
   }
 
-  const admin = getAdminClient();
-  const [{ data: participant, error: participantError }, { data: user, error: userError }] =
-    await Promise.all([
-      admin
-        .from("chat_room_participants")
-        .select("user_id")
-        .eq("chat_id", chatId)
-        .eq("user_id", userId)
-        .maybeSingle(),
-      admin
-        .from("users")
-        .select("display_name")
-        .eq("id", userId)
-        .maybeSingle(),
-    ]);
-
-  if (participantError) throw new Error(participantError.message);
-  if (!participant) throw new Error("Сначала войдите в комнату");
-  if (userError) throw new Error(userError.message);
-
-  const token = new AccessToken(apiKey, apiSecret, {
-    identity: userId,
-    name: user?.display_name ?? "Участник",
-    ttl: "6h",
-  });
-  token.addGrant({
-    roomJoin: true,
-    room: `chat-${chatId}`,
-    canPublish: true,
-    canSubscribe: true,
-    canPublishData: true,
-  });
-
-  return {
-    enabled: true as const,
-    url: endpoints[0]!.url,
-    endpoints,
-    token: await token.toJwt(),
-    screenShareQuality,
-  };
-}
-
-export async function createChatRoomScreenAudioTokenRest(chatId: string, userId: string, screenSessionId: string) {
-  if (!/^[a-f0-9-]{36}$/i.test(screenSessionId)) throw new Error("Некорректная сессия демонстрации");
-  const endpoints = getLiveKitEndpoints();
-  const apiKey = process.env.LIVEKIT_API_KEY?.trim();
-  const apiSecret = process.env.LIVEKIT_API_SECRET?.trim();
-  if (!endpoints.length || !apiKey || !apiSecret) throw new Error("Медиасервер недоступен");
-
-  const admin = getAdminClient();
-  const [{ data: participant, error: participantError }, { data: user, error: userError }] = await Promise.all([
-    admin.from("chat_room_participants").select("user_id").eq("chat_id", chatId).eq("user_id", userId).maybeSingle(),
-    admin.from("users").select("display_name").eq("id", userId).maybeSingle(),
-  ]);
-  if (participantError) throw new Error(participantError.message);
-  if (!participant) throw new Error("Сначала войдите в комнату");
-  if (userError) throw new Error(userError.message);
-
-  const token = new AccessToken(apiKey, apiSecret, {
-    identity: `screen-audio:${userId}:${screenSessionId}`,
-    name: user?.display_name ?? "Звук демонстрации",
-    ttl: "2h",
-    metadata: JSON.stringify({ kind: "screen-audio", ownerId: userId, screenSessionId }),
-    attributes: { "voople.kind": "screen-audio", "voople.ownerId": userId, "voople.screenSessionId": screenSessionId },
-  });
-  token.addGrant({
-    roomJoin: true,
-    room: `chat-${chatId}`,
-    canPublish: true,
-    canSubscribe: false,
-    canPublishData: false,
-    canPublishSources: [TrackSource.SCREEN_SHARE_AUDIO],
-  });
-  return { url: endpoints[0]!.url, token: await token.toJwt(), screenSessionId };
+  return getChatRoomRest(chatId, userId);
 }
 
 export async function heartbeatChatRoomRest(chatId: string, userId: string, micMuted: boolean) {
@@ -548,10 +484,7 @@ export async function leaveChatRoomRest(chatId: string, userId: string) {
   if (countError) throw new Error(countError.message);
 
   if (!count) {
-    await admin
-      .from("chat_rooms")
-      .update({ status: "ended", ended_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-      .eq("chat_id", chatId);
+    await finishRoom(chatId, "ended");
   }
 
   return { ok: true as const };

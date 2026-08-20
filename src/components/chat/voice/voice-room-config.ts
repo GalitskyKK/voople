@@ -51,8 +51,8 @@ export const VOICE_PUBLISH_OPTIONS = {
 export type ScreenShareQuality = "standard" | "plus";
 
 /**
- * Ask Chromium for audio belonging to the selected surface without offering
- * the full system mix. `restrictOwnAudio` is best-effort and currently
+ * Ask Chromium for audio belonging to the surface explicitly selected by the
+ * user. `restrictOwnAudio` is best-effort and currently
  * Chromium-only; the desktop native publisher remains the authoritative way
  * to isolate one Windows process and its children.
  */
@@ -69,7 +69,7 @@ const SCREEN_SHARE_BASE = {
   video: { displaySurface: "window" },
   contentHint: "detail",
   selfBrowserSurface: "exclude",
-  systemAudio: "exclude",
+  systemAudio: "include",
   surfaceSwitching: "include",
 } as const;
 

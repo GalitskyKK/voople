@@ -534,7 +534,7 @@ export const messageReactions = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    emoji: varchar("emoji", { length: 10 }).notNull(),
+    emoji: varchar("emoji", { length: 10 }),
     emojiId: uuid("emoji_id"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },

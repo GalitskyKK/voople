@@ -1,12 +1,10 @@
 "use client";
 
-import { LoaderCircle, Rocket, Save } from "lucide-react";
+import { LoaderCircle, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { VooplePlusBadge } from "@/components/subscription/VooplePlusFeatureSurface";
 import type { GroupCommunityView, GroupCustomizationInput } from "@/types/chat";
-import { cn } from "@/lib/utils";
 
 import { GroupAvatar } from "./GroupAvatar";
 import { GroupIdentityPerksEditor } from "./GroupIdentityPerksEditor";
@@ -19,7 +17,6 @@ type Props = {
   groupName: string;
   load: () => Promise<GroupCommunityView>;
   save: (input: GroupCustomizationInput) => Promise<GroupCommunityView>;
-  setBoost: (enabled: boolean, slot?: 1 | 2 | 3, idempotencyKey?: string) => Promise<GroupCommunityView>;
   uploadAvatar?: (file: File) => Promise<{ mediaKey: string; previewUrl: string }>;
   uploadBanner?: (file: File) => Promise<{ mediaKey: string; previewUrl: string }>;
   onChanged?: () => void;
@@ -30,7 +27,6 @@ export function GroupCommunityPanel({
   groupName,
   load,
   save,
-  setBoost,
   uploadAvatar,
   uploadBanner,
   onChanged,
@@ -44,7 +40,7 @@ export function GroupCommunityPanel({
   const [vanityInviteSlug, setVanityInviteSlug] = useState("");
   const [roleColors, setRoleColors] = useState({ owner: "#f59e0b", admin: "#8b7bd8", member: "#94a3b8" });
   const [loading, setLoading] = useState(true);
-  const [pending, setPending] = useState<"save" | "boost" | "avatar" | "banner" | null>(null);
+  const [pending, setPending] = useState<"save" | "avatar" | "banner" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -128,35 +124,6 @@ export function GroupCommunityPanel({
     }
   };
 
-  const assignBoost = async (enabled: boolean, slot?: 1 | 2 | 3) => {
-    if (pending || !community) return;
-    setPending("boost");
-    setError(null);
-    try {
-      setCommunity(await setBoost(enabled, slot, crypto.randomUUID()));
-      onChanged?.();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Не удалось изменить буст");
-    } finally {
-      setPending(null);
-    }
-  };
-
-  const freeSlot = community?.boostSlots.find((slot) => slot.chatId === null);
-  const assignedHere = community?.boostSlots.find((slot) => slot.assignedHere);
-
-  const toggleBoost = () => {
-    if (community?.boostedByMe && assignedHere) {
-      void assignBoost(false, assignedHere.slot);
-      return;
-    }
-    if (freeSlot) {
-      void assignBoost(true, freeSlot.slot);
-      return;
-    }
-    setError("Все три буста распределены. Выберите доступный для переноса слот ниже.");
-  };
-
   if (loading) return <div className="mt-4 h-32 animate-pulse rounded-2xl bg-[var(--app-surface-soft)]" />;
   if (!community) return error ? <p className="mt-4 text-sm text-red-400">{error}</p> : null;
 
@@ -166,11 +133,10 @@ export function GroupCommunityPanel({
         <GroupAvatar name={groupName} avatarUrl={community.avatarUrl} icon={icon} accentColor={community.effectiveAccentColor} size="md" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 id="group-community-title" className="text-sm font-medium">Оформление и бусты</h3>
-            <VooplePlusBadge locked={!community.canBoost && !community.boostedByMe} />
+            <h3 id="group-community-title" className="text-sm font-medium">Оформление сообщества</h3>
           </div>
           <p className="mt-0.5 text-xs leading-5 text-[var(--app-muted)]">
-            {community.boostCount} активных бустов · уровень {community.groupLevel}. Первый открывает собственный цвет группы.
+            Баннер, аватар, описание и визуальные особенности группы.
           </p>
         </div>
       </div>
@@ -208,40 +174,6 @@ export function GroupCommunityPanel({
         </div>
       ) : community.description ? <p className="mt-3 text-sm leading-6 text-[var(--app-muted)]">{community.description}</p> : null}
 
-      <div className="mt-3 rounded-xl border border-[color-mix(in_srgb,var(--voople-brand-400)_40%,var(--app-border))] bg-[color-mix(in_srgb,var(--voople-brand-500)_9%,var(--app-surface-soft))] p-2.5">
-        <Button type="button" className="w-full" variant={community.boostedByMe ? "secondary" : undefined} disabled={Boolean(pending) || (!community.canBoost && !community.boostedByMe)} onClick={toggleBoost}>
-          {pending === "boost" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}{community.boostedByMe ? "Снять мой буст" : "Бустить группу"}
-        </Button>
-        <div className="mt-2 grid grid-cols-3 gap-1.5" aria-label="Слоты бустов Вупл+">
-          {community.boostSlots.map((slot) => {
-            const canMove = Boolean(community.canBoost && !slot.cooldownUntil && !slot.assignedHere);
-            const canRemove = slot.assignedHere;
-            return (
-              <button
-                key={slot.slot}
-                type="button"
-                disabled={Boolean(pending) || (!canMove && !canRemove)}
-                onClick={() => void assignBoost(!slot.assignedHere, slot.slot)}
-                className={cn(
-                  "rounded-lg border px-2 py-1.5 text-center text-[10px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-accent)] disabled:cursor-not-allowed disabled:opacity-60",
-                  slot.assignedHere
-                    ? "border-[var(--theme-accent)] bg-[var(--app-accent-soft)] text-[var(--theme-accent)]"
-                    : slot.chatId === null
-                      ? "border-[var(--app-border)] text-[var(--app-muted)] enabled:hover:border-[var(--theme-accent)]"
-                      : "border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-muted)] enabled:hover:border-[var(--theme-accent)]",
-                )}
-                title={slot.cooldownUntil ? `Перенос доступен после ${new Date(slot.cooldownUntil).toLocaleString("ru-RU")}` : undefined}
-                aria-label={slot.assignedHere ? `Снять буст ${slot.slot} с этой группы` : `Назначить буст ${slot.slot} этой группе`}
-              >
-                Буст {slot.slot}<br />{slot.assignedHere ? "эта группа" : slot.chatId === null ? "свободен" : slot.cooldownUntil ? "закреплён" : "перенести"}
-              </button>
-            );
-          })}
-        </div>
-        <p className="mt-2 text-[11px] leading-4 text-[var(--app-muted)]">
-          В Вупл+ входят три буста. Свободный слот: {freeSlot ? `№${freeSlot.slot}` : "нет"}. Перенос назначенного слота доступен раз в 7 дней.
-        </p>
-      </div>
       {error ? <p className="mt-2 text-xs text-red-400" role="alert">{error}</p> : null}
     </section>
   );

@@ -4,6 +4,7 @@ import type { ProfileViewModel } from "@/types/domain";
 import { ProfileMeta } from "./ProfileMeta";
 import { ProfileStats } from "./ProfileStats";
 import { ProfilePresenceLabel } from "./ProfilePresenceLabel";
+import { RichText } from "@/components/ui/RichText";
 
 type ProfileCardBodyVisualProps = {
   profile: ProfileViewModel;
@@ -24,7 +25,7 @@ export function ProfileCardBodyVisual({
     <div className="relative px-4 pb-4">
       {profile.bio ? (
         <p className="mt-2 text-sm leading-5 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">
-          {profile.bio}
+          <RichText text={profile.bio} />
         </p>
       ) : null}
       {profile.lastSeenAt ? (

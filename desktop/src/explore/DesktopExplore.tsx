@@ -31,11 +31,15 @@ export function DesktopExplore({
         debouncedQuery={debouncedQuery}
         onQueryChange={setQuery}
         result={explore.result}
+        communities={explore.communities}
         searching={explore.searching}
         searchError={explore.searchError}
         trending={explore.trending}
         trendingLoading={explore.trendingLoading}
         trendingError={explore.trendingError}
+        highlights={explore.highlights}
+        highlightsLoading={explore.trendingLoading}
+        highlightsError={explore.highlightsError}
         renderDestination={renderDestination}
         badgeUrl={vooplusBadgeUrl(config.assetsCdnUrl)}
         renderAvatar={({ author }) => (

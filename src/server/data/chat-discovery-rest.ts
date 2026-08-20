@@ -169,6 +169,60 @@ export async function listPublicGroupsRest(
   );
 }
 
+export async function listTopPublicGroupsRest(
+  userId?: string | null,
+  limit = 6,
+): Promise<PublicGroupSearchHit[]> {
+  const admin = getAdminClient();
+  const { data: groups, error: groupsError } = await admin
+    .from("chats")
+    .select("id, name")
+    .eq("type", "group")
+    .is("parent_chat_id", null)
+    .eq("group_visibility", "public")
+    .order("created_at", { ascending: false })
+    .limit(60);
+  if (groupsError) throw new Error(groupsError.message);
+  const groupIds = (groups ?? []).map((group) => group.id as string);
+  if (!groupIds.length) return [];
+  const { data: memberships, error: membershipsError } = await admin
+    .from("chat_members")
+    .select("chat_id, user_id")
+    .in("chat_id", groupIds);
+  if (membershipsError) throw new Error(membershipsError.message);
+  const counts = new Map<string, number>();
+  const joined = new Set<string>();
+  for (const membership of memberships ?? []) {
+    const chatId = membership.chat_id as string;
+    counts.set(chatId, (counts.get(chatId) ?? 0) + 1);
+    if (membership.user_id === userId) joined.add(chatId);
+  }
+  const topGroups = [...(groups ?? [])]
+    .sort((left, right) => (counts.get(right.id as string) ?? 0) - (counts.get(left.id as string) ?? 0))
+    .slice(0, Math.min(Math.max(limit, 1), 12));
+  const topIds = topGroups.map((group) => group.id as string);
+  const [{ data: customization, error: customizationError }, communities] = await Promise.all([
+    admin.from("group_customization").select("chat_id, public_slug, icon, avatar_key").in("chat_id", topIds),
+    loadGroupCommunitySummariesRest(topIds, userId),
+  ]);
+  if (customizationError) throw new Error(customizationError.message);
+  const byChat = new Map((customization ?? []).map((row) => [row.chat_id as string, row] as const));
+  return topGroups.map((group) => {
+    const id = group.id as string;
+    const identity = byChat.get(id);
+    return {
+      id,
+      name: group.name as string,
+      publicSlug: (identity?.public_slug as string | null | undefined) ?? null,
+      icon: (identity?.icon as string | null | undefined) ?? null,
+      avatarUrl: publicAssetUrl((identity?.avatar_key as string | null | undefined) ?? null),
+      tag: communities.get(id)?.effectiveTag ?? null,
+      memberCount: counts.get(id) ?? 0,
+      joined: joined.has(id),
+    };
+  });
+}
+
 export async function joinPublicGroupRest(chatId: string, userId: string) {
   const { data, error } = await getAdminClient().rpc("join_public_group", {
     p_chat_id: chatId,

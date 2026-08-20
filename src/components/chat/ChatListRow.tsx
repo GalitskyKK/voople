@@ -32,7 +32,7 @@ export function ChatListRow({
     ? chat.name || "Группа"
     : chat.otherUser?.displayName ?? "Чат";
   const preview =
-    chat.lastMessage?.text?.trim() ||
+    chat.lastMessage?.preview ||
     (chat.lastMessage ? "Вложение" : "Нет сообщений");
   const isActive =
     activeChatId === chat.id ||

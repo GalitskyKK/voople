@@ -9,16 +9,20 @@ import { GlobalPlayer } from "@/components/player/GlobalPlayer";
 import { SidebarHighlights } from "./SidebarHighlights";
 import { AppSidebarVisual } from "./AppNavigationVisual";
 import { AppAccountChip } from "./AppAccountChip";
+import { useSidebarPreference } from "@/hooks/useSidebarPreference";
 
 export function DesktopSidebar({ authenticated }: { authenticated: boolean }) {
   const pathname = usePathname();
+  const { collapsed, setCollapsed } = useSidebarPreference();
 
   return (
     <AppSidebarVisual
       pathname={pathname}
+      collapsed={collapsed}
+      onCollapsedChange={setCollapsed}
       mode={authenticated ? "authenticated" : "public"}
       notificationBadge={authenticated ? <NotificationNavBadge /> : undefined}
-      accountNavigation={authenticated ? <AppAccountChip /> : undefined}
+      accountNavigation={authenticated ? <AppAccountChip compact={collapsed} /> : undefined}
       navAfter={
         authenticated ? <>
           <SidebarHighlights />

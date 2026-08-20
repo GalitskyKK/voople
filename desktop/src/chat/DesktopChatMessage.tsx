@@ -76,8 +76,8 @@ export function DesktopChatMessage({
       menu={
         <div
           className={cn(
-            "absolute top-1 z-20",
-            message.isMine ? "left-1" : "right-1",
+            "absolute top-1/2 z-20 -translate-y-1/2",
+            message.isMine ? "-left-9" : "-right-9",
           )}
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
@@ -107,7 +107,7 @@ export function DesktopChatMessage({
               emoji: ChatReactionEmoji,
             ) => onToggleReaction(message.id, { emoji })}
             showOnHover={isLg}
-            showTrigger={false}
+            showTrigger={isLg}
           />
         </div>
       }

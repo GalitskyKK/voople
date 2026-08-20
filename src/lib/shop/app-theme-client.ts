@@ -1,4 +1,4 @@
-import { DEFAULT_APP_THEME_ID, getAppTheme, isAppThemeId, type AppThemeId } from "@/lib/app-themes";
+import { DEFAULT_APP_THEME_ID, isAppThemeId, type AppThemeId } from "@/lib/app-themes";
 
 /** Применить shop-тему shell после equip (только если в БД есть `app_theme_id`). */
 export function applyEquippedAppTheme(

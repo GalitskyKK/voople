@@ -25,6 +25,7 @@
 
 # Local project notes and ad-hoc SQL stay on developer machines. The shared
 # component map and release-required migrations are explicit repository contracts.
+/temp_info_for_redesign_and_improvement/
 /docs/*
 !/docs/component-platform-map.md
 !/docs/redesign-implementation-matrix.md

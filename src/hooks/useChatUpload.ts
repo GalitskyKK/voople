@@ -2,8 +2,10 @@
 
 import { useCallback, useState } from "react";
 
-import { chatAttachmentKindFromKey } from "@/lib/object-storage";
-import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
+import {
+  chatAttachmentKindFromKey,
+  parseChatUploadMime,
+} from "@/lib/object-storage/chat-mime";
 import { trpc } from "@/lib/trpc/client";
 import { uploadPresignedFile } from "@/lib/uploads/presigned-upload";
 import type { ChatPendingUpload } from "@/types/chat";

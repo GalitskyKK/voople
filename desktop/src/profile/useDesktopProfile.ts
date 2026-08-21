@@ -11,6 +11,7 @@ type DesktopProfileData = {
   profile: ProfileViewModel;
   posts: PostViewModel[];
   pinnedPost: PostViewModel | null;
+  badgeIds: string[];
   canvasStrokes: Stroke[];
   isOwner: boolean;
 };
@@ -58,6 +59,13 @@ function parseCanvasStrokes(value: unknown): Stroke[] {
   return value as Stroke[];
 }
 
+function parseBadgeIds(value: unknown): string[] {
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    throw new Error("Сервер вернул некорректные пины профиля");
+  }
+  return value;
+}
+
 export function useDesktopProfile(
   config: DesktopConfig,
   session: Session,
@@ -88,12 +96,13 @@ export function useDesktopProfile(
           username,
         });
         const profile = parseProfile(profileValue);
-        const [postsValue, pinnedPostValue, strokesValue] = await Promise.all([
+        const [postsValue, pinnedPostValue, strokesValue, badgeIdsValue] = await Promise.all([
           client.query("profile.getPostsByUsername", { username }),
           client.query("profile.getPinnedPostByUsername", { username }),
           client.query("profileCanvas.listStrokes", {
             profileUserId: profile.id,
           }),
+          client.query("engagement.badges", { userId: profile.id }),
         ]);
         if (currentRequest !== requestId.current) return;
         setData({
@@ -103,6 +112,7 @@ export function useDesktopProfile(
             pinnedPostValue === null
               ? null
               : (parsePosts([pinnedPostValue])[0] ?? null),
+          badgeIds: parseBadgeIds(badgeIdsValue),
           canvasStrokes: parseCanvasStrokes(strokesValue),
           isOwner: profile.username === viewerUsername,
         });

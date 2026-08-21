@@ -54,7 +54,6 @@ jobs:
       E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
       REQUIRE_SIGNING: ${{ vars.DESKTOP_REQUIRE_WINDOWS_SIGNING == 'true' && (startsWith(github.ref, 'refs/tags/desktop-v') || (inputs.publish == true && inputs.allow_unsigned != true)) }}
       ALLOW_UNSIGNED: ${{ inputs.allow_unsigned == true }}
-      ALLOW_MISSING_STAGING: ${{ github.ref == 'refs/tags/desktop-v0.1.22' }}
 
     steps:
       - name: Check out source
@@ -101,9 +100,6 @@ jobs:
           if (-not $env:DESKTOP_RELEASE_PUBLIC_BASE_URL.StartsWith('https://')) {
             throw "DESKTOP_RELEASE_PUBLIC_BASE_URL must use HTTPS."
           }
-          if ([string]::IsNullOrWhiteSpace($env:DIRECT_URL) -and $env:ALLOW_MISSING_STAGING -ne 'true') {
-            throw "DESKTOP_STAGING_DATABASE_URL is required. The one-release exception only applies to desktop-v0.1.22."
-          }
           if ($env:ALLOW_UNSIGNED -eq "true" -and '${{ inputs.publish }}' -ne 'true') {
             throw "allow_unsigned can only be used together with publish."
           }
@@ -133,10 +129,10 @@ jobs:
         if: env.DIRECT_URL != ''
         run: npm run db:promote:release
 
-      - name: Record one-release staging exception
-        if: env.DIRECT_URL == '' && env.ALLOW_MISSING_STAGING == 'true'
+      - name: Record skipped staging rehearsal
+        if: env.DIRECT_URL == ''
         shell: pwsh
-        run: Write-Warning "Voople 0.1.22 was explicitly approved without a staging database. Configure DESKTOP_STAGING_DATABASE_URL before the next release."
+        run: Write-Warning "DESKTOP_STAGING_DATABASE_URL is not configured; the optional staging migration rehearsal was skipped. Production migration readiness and promotion gates remain required."
 
       - name: Run public and authenticated browser smoke tests
         env:

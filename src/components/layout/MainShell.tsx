@@ -1,12 +1,18 @@
 "use client";
 
-import { Suspense, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { Suspense, useEffect, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 import { PlayerShell } from "@/components/player/PlayerShell";
 import { useIsLgViewport } from "@/hooks/useIsLgViewport";
 import { isMessagesThreadPath } from "@/lib/layout/messages-path";
+import {
+  getAppRouteLayout,
+  isAppMessagesPath,
+  isAppProfilePath,
+} from "@/lib/layout/route-layout";
 import { cn } from "@/lib/utils";
+import { registerInternalNavigationAdapter } from "@/lib/platform/internal-navigation";
 import { AppShellFrame } from "./AppShellFrame";
 import { AppPageContent } from "./AppPageContent";
 import { AppTopBar } from "./AppTopBar";
@@ -19,32 +25,9 @@ import {
   type ScrollContainerMode,
 } from "./ScrollContainerContext";
 
-const RESERVED_SLUGS = new Set([
-  "feed",
-  "messages",
-  "notifications",
-  "explore",
-  "shop",
-  "me",
-  "post",
-  "login",
-  "register",
-  "settings",
-  "events",
-]);
-
-function isProfilePath(pathname: string) {
-  const slug = pathname.slice(1);
-  return /^\/[a-z0-9_]+$/i.test(pathname) && !RESERVED_SLUGS.has(slug);
-}
-
-function isMessagesPath(pathname: string) {
-  return pathname.startsWith("/messages");
-}
-
 function useScrollMode(pathname: string): ScrollContainerMode {
   const isLg = useIsLgViewport();
-  return isMessagesPath(pathname) || isLg ? "element" : "window";
+  return isAppMessagesPath(pathname) || isLg ? "element" : "window";
 }
 
 export function MainShell({
@@ -55,13 +38,14 @@ export function MainShell({
   authenticated: boolean;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const shellScrollRef = useRef<HTMLDivElement>(null);
   const isLg = useIsLgViewport();
   const scrollMode = useScrollMode(pathname);
   const usesWindowScroll = scrollMode === "window";
-  const isProfileRoute = isProfilePath(pathname);
-  const isMessagesRoute = isMessagesPath(pathname);
-  const isShopRoute = pathname.startsWith("/shop");
+  const routeLayout = getAppRouteLayout(pathname);
+  const isProfileRoute = isAppProfilePath(pathname);
+  const isMessagesRoute = isAppMessagesPath(pathname);
   const isMobileMessagesThread =
     isMessagesRoute && !isLg && isMessagesThreadPath(pathname);
   const hideMobileTopBar = isMessagesRoute && !isLg;
@@ -70,28 +54,21 @@ export function MainShell({
     !pathname.startsWith("/messages") &&
     (pathname === "/feed" || pathname === "/me" || isProfileRoute);
 
-  const contentMaxWidth = isMessagesRoute
-    ? "max-w-none"
-    : pathname === "/feed"
-      ? "max-w-7xl"
-    : isShopRoute
-      ? "max-w-[1440px]"
-      : isProfileRoute
-        ? "max-w-6xl"
-        : "max-w-2xl";
+  useEffect(
+    () => registerInternalNavigationAdapter((href) => router.push(href)),
+    [router],
+  );
 
   return (
     <AppShellFrame
-      routeKind={
-        isProfileRoute ? "profile" : isMessagesRoute ? "messages" : "standard"
-      }
+      routeKind={routeLayout.routeKind}
       sidebar={<DesktopSidebar authenticated={authenticated} />}
       overlay={authenticated ? <PlayerShell /> : undefined}
       fixedViewport={isMessagesRoute}
       columnClassName={cn(isMessagesRoute && "h-full min-h-0")}
       workspaceClassName={cn(isMessagesRoute && "h-full min-h-0")}
       mainClassName={cn(
-        contentMaxWidth,
+        routeLayout.contentClassName,
         !usesWindowScroll && "min-h-0 flex-1",
         isMessagesRoute && "h-full min-h-0 overflow-hidden",
         !usesWindowScroll && "h-full min-h-0 overflow-hidden",

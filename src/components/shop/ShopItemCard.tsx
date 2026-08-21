@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Gift, Lock } from "lucide-react";
+import { Check, Eye, Gift, Lock } from "lucide-react";
 import { useState } from "react";
 
 import { shopKindLabel } from "@/lib/shop/categories";
@@ -83,6 +83,7 @@ export function ShopItemCard({
         </div>
 
         <div className="mt-auto flex flex-wrap gap-2 pt-4">
+          <Button type="button" size="sm" variant="ghost" onClick={() => setPreviewOpen(true)} aria-label={`Подробнее о ${item.name}`}><Eye className="h-4 w-4" />Подробнее</Button>
           {!item.owned && item.isFree && onClaimFree && (
             <Button type="button" size="sm" disabled={busy} onClick={onClaimFree}>
               Получить

@@ -70,7 +70,7 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
       : [];
   });
   const now = takeUniqueItems(
-    [...activeRooms, ...direct.filter((item) => item.online), ...direct, ...groups],
+    [...activeRooms, ...direct.filter((item) => item.online)],
     5,
   );
   return {

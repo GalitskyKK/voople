@@ -26,9 +26,6 @@
     "desktop/src/post/DesktopPostComments.tsx",
     "desktop/src/post/DesktopPostDetail.tsx",
     "desktop/src/profile/DesktopProfile.tsx",
-    "desktop/src/profile/DesktopProfileActions.tsx",
-    "desktop/src/profile/DesktopProfileAvatar.tsx",
-    "desktop/src/profile/DesktopProfileCard.tsx",
     "desktop/src/profile/DesktopProfileShareButton.tsx",
     "desktop/src/shop/DesktopShop.tsx"
   ],

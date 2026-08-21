@@ -1,9 +1,12 @@
 import { existsSync, readFileSync } from "node:fs";
-import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 import postgres from "postgres";
 
 import { REQUIRED_MIGRATIONS } from "./migration-manifest.mjs";
+import {
+  acceptedMigrationChecksums,
+  migrationChecksum,
+} from "./migration-checksum.mjs";
 
 function loadEnvFile(filename) {
   const path = resolve(process.cwd(), filename);
@@ -50,13 +53,24 @@ try {
   const applied = new Set(rows.map((row) => row.id));
   const missing = REQUIRED_MIGRATIONS.filter((id) => !applied.has(id));
   if (missing.length) throw new Error(`Missing required migrations: ${missing.join(", ")}`);
+  const migrationSources = new Map(REQUIRED_MIGRATIONS.map((id) => [
+    id,
+    readFileSync(resolve("drizzle", id), "utf8"),
+  ]));
   const expectedChecksums = new Map(REQUIRED_MIGRATIONS.map((id) => [
     id,
-    createHash("sha256").update(readFileSync(resolve("drizzle", id), "utf8")).digest("hex"),
+    migrationChecksum(migrationSources.get(id)),
   ]));
-  const mismatched = rows.filter((row) => expectedChecksums.get(row.id) !== row.checksum);
+  const mismatched = rows.filter(
+    (row) => !acceptedMigrationChecksums(migrationSources.get(row.id)).has(row.checksum),
+  );
   if (mismatched.length) {
-    throw new Error(`Migration checksum mismatch: ${mismatched.map((row) => row.id).join(", ")}`);
+    const details = mismatched.map((row) => {
+      const expected = expectedChecksums.get(row.id)?.slice(0, 12) ?? "missing";
+      const actual = String(row.checksum).slice(0, 12);
+      return `${row.id} (${actual} -> ${expected}, recorded ${row.release_version})`;
+    });
+    throw new Error(`Migration checksum mismatch: ${details.join(", ")}`);
   }
 
   const [{ replicaIdentity }] = await sql`

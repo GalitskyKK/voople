@@ -11,7 +11,7 @@ import {
 import { CssEffectLayer } from "@/components/profile/effects/CssEffectLayer";
 import { FeedAuthorChipBackdrop } from "@/components/feed/FeedAuthorChipBackdrop";
 import { cn } from "@/lib/utils";
-import { publicAssetUrl } from "@/lib/object-storage";
+import { publicAssetUrl } from "@/lib/object-storage/urls";
 import {
   catalogItemUsesCdn,
   getCssCatalogPreviewStyle,

@@ -5,22 +5,26 @@ import {
   ProfileAppearanceCardVisual,
   type AppearanceSceneId,
 } from "@/components/profile/ProfileAppearanceCardVisual";
+import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
+import { ProfileBadgesView } from "@/components/profile/ProfileBadgesView";
 import { ProfileShareView } from "@/components/profile/ProfileShareView";
 import type { ProfileViewModel } from "@/types/domain";
 
 import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
-import { DesktopProfileAvatar } from "./DesktopProfileAvatar";
-
 export function DesktopProfileShareButton({
   profile,
+  badgeIds,
   config,
   session,
+  navigate,
   onPublished,
 }: {
   profile: ProfileViewModel;
+  badgeIds: string[];
   config: DesktopConfig;
   session: Session;
+  navigate: (href: string) => void;
   onPublished: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -95,9 +99,32 @@ export function DesktopProfileShareButton({
           scene={scene}
           className="max-w-[25rem]"
           avatar={
-            <DesktopProfileAvatar
+            <ProfileAvatar
               displayName={profile.displayName}
-              customization={profile.customization}
+              size="md"
+              ring={profile.customization.flags.hasAvatarRing}
+              ringId={profile.customization.avatarRingId}
+              decorationUrl={profile.customization.assets.avatarDecorationUrl}
+              animatedAvatarUrl={profile.customization.assets.animatedAvatarUrl}
+            />
+          }
+          badges={
+            <ProfileBadgesView
+              badgeIds={badgeIds}
+              className="relative z-20 mt-2"
+              compact
+              renderEventAction={(dismiss) => (
+                <button
+                  type="button"
+                  className="mt-4 text-sm font-medium text-(--theme-accent)"
+                  onClick={() => {
+                    dismiss();
+                    navigate("/events");
+                  }}
+                >
+                  Открыть событие
+                </button>
+              )}
             />
           }
         />

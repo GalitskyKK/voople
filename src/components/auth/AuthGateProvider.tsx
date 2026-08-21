@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import {
-  createContext,
   useCallback,
-  useContext,
   useMemo,
   useState,
   type ReactNode,
@@ -12,21 +10,7 @@ import {
 import { LogIn, UserPlus } from "lucide-react";
 
 import { Sheet } from "@/components/ui/Sheet";
-
-type AuthIntent = {
-  title?: string;
-  description?: string;
-};
-
-type AuthGateContextValue = {
-  authenticated: boolean;
-  requireAuth: (intent?: AuthIntent) => boolean;
-};
-
-const AuthGateContext = createContext<AuthGateContextValue>({
-  authenticated: true,
-  requireAuth: () => true,
-});
+import { AuthGateContext, type AuthIntent } from "./AuthGateContext";
 
 function currentReturnPath() {
   if (typeof window === "undefined") return "/feed";
@@ -103,6 +87,4 @@ export function AuthGateProvider({
   );
 }
 
-export function useAuthGate() {
-  return useContext(AuthGateContext);
-}
+export { useAuthGate } from "./AuthGateContext";

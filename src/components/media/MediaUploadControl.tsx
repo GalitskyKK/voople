@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { CircleDot, Loader2, Paperclip, Video, X } from "lucide-react";
 import { useRef, useState, type DragEvent } from "react";
 
@@ -190,13 +189,11 @@ function PostMediaPreview({ url, mediaType }: { url: string; mediaType: Uploaded
           preload="metadata"
         />
       ) : (
-        <Image
+        // eslint-disable-next-line @next/next/no-img-element -- upload preview is a local blob/CDN URL shared with Tauri.
+        <img
           src={url}
           alt="Превью"
-          width={320}
-          height={160}
           className="max-h-48 w-auto object-contain"
-          unoptimized={mediaType === "gif"}
         />
       )}
     </div>

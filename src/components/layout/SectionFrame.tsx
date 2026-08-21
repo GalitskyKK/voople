@@ -2,18 +2,24 @@ import { cn } from "@/lib/utils";
 
 type SectionFrameProps = {
   children: React.ReactNode;
-  /** Широкий каркас для мессенджера (две колонки). */
+  /** @deprecated Use size="wide". */
   wide?: boolean;
+  size?: "reading" | "wide" | "full";
   className?: string;
 };
 
 /** Единая колонка контента как в Поиске / Уведомлениях. */
-export function SectionFrame({ children, wide = false, className }: SectionFrameProps) {
+export function SectionFrame({ children, wide = false, size, className }: SectionFrameProps) {
+  const resolvedSize = size ?? (wide ? "wide" : "reading");
   return (
     <div
       className={cn(
         "voople-section-frame mx-auto flex w-full min-h-0 flex-1 flex-col",
-        wide ? "max-w-5xl" : "max-w-2xl",
+        resolvedSize === "full"
+          ? "max-w-none"
+          : resolvedSize === "wide"
+            ? "max-w-6xl"
+            : "max-w-2xl",
         className,
       )}
     >

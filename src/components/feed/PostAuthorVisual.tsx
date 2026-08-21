@@ -57,7 +57,7 @@ export function PostAuthorVisual({
           <FeedAuthorChipBackdrop
             backgroundUrl={customization.assets.feedCardBackgroundUrl}
           />
-          <MiniProfilePopover author={{ username, displayName, hasVooplePlus, customization }}>
+          <MiniProfilePopover author={{ username, displayName, hasVooplePlus, customization }} renderDestination={renderDestination}>
           {renderDestination({
             href: `/${username}`,
             label: displayName,
@@ -103,7 +103,7 @@ export function PostAuthorVisual({
     <header className="voople-post-card__header flex items-start gap-3 px-4 pt-4">
       {avatar}
       <div className="min-w-0 flex-1">
-        <MiniProfilePopover author={{ username, displayName, hasVooplePlus, customization }}>
+        <MiniProfilePopover author={{ username, displayName, hasVooplePlus, customization }} renderDestination={renderDestination}>
         {renderDestination({
           href: `/${username}`,
           label: displayName,

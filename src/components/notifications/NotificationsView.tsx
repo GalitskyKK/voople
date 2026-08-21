@@ -63,19 +63,21 @@ export function NotificationsView({
   const hasUnread = items.some((item) => !item.read);
 
   return (
-    <SectionFrame className="gap-5 py-4 lg:py-6">
+    <SectionFrame size="wide" className="gap-5 py-4 lg:py-6">
       <SectionPageHeader
         title={COPY.notifications}
         density="compact"
         sticky
       />
 
-      <div className="voople-scroll -mt-2 flex gap-1 overflow-x-auto rounded-2xl bg-[var(--app-surface-soft)] p-1" aria-label="Категория уведомлений">
+      <div className="grid items-start gap-5 xl:grid-cols-[14rem_minmax(0,1fr)]">
+      <div className="voople-scroll -mt-2 flex gap-1 overflow-x-auto rounded-2xl bg-[var(--app-surface-soft)] p-1 xl:sticky xl:top-24 xl:mt-0 xl:flex-col xl:overflow-visible" aria-label="Категория уведомлений">
         {FILTERS.map(({ id, label }) => (
-          <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)} className={cn("min-w-24 flex-1 rounded-xl px-3 py-2 text-xs font-medium transition", filter === id ? "bg-[var(--app-surface)] text-[var(--foreground)] shadow-[var(--app-shadow-sm)]" : "text-[var(--app-muted)] hover:text-[var(--foreground)]")}>{label}</button>
+          <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)} className={cn("min-w-24 flex-1 rounded-xl px-3 py-2 text-xs font-medium transition xl:w-full xl:flex-none xl:text-left", filter === id ? "bg-[var(--app-surface)] text-[var(--foreground)] shadow-[var(--app-shadow-sm)]" : "text-[var(--app-muted)] hover:text-[var(--foreground)]")}>{label}</button>
         ))}
       </div>
 
+      <div className="min-w-0">
       {loading ? (
         <div
           className="h-32 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]"
@@ -185,6 +187,8 @@ export function NotificationsView({
           )}
         </div>
       )}
+      </div>
+      </div>
     </SectionFrame>
   );
 }

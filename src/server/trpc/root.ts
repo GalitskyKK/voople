@@ -5,6 +5,7 @@ import { customizationRouter } from "./routers/customization";
 import { engagementRouter } from "./routers/engagement";
 import { feedRouter } from "./routers/feed";
 import { healthRouter } from "./routers/health";
+import { homeRouter } from "./routers/home";
 import { linkSafetyRouter } from "./routers/link-safety";
 import { notificationsRouter } from "./routers/notifications";
 import { playlistRouter } from "./routers/playlist";
@@ -21,6 +22,7 @@ import { userRouter } from "./routers/user";
 export const appRouter = createTRPCRouter({
   admin: adminRouter,
   health: healthRouter,
+  home: homeRouter,
   linkSafety: linkSafetyRouter,
   user: userRouter,
   post: postRouter,

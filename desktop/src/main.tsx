@@ -8,7 +8,7 @@ import { AppPreferencesProvider } from "@/components/settings/AppPreferencesProv
 import { AppThemeProvider } from "@/components/theme/AppThemeProvider";
 import { setPresignedUploadAdapter } from "@/lib/uploads/presigned-upload";
 import { setDesktopProcessAudioBridge } from "@/lib/livekit/desktop-process-audio";
-import { setPublicAssetBaseUrl } from "@/lib/object-storage";
+import { setPublicAssetBaseUrl } from "@/lib/object-storage/urls";
 import {
   initializeClientTelemetry,
   reportClientMetric,

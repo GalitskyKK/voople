@@ -2,13 +2,21 @@ import type { Session } from "@supabase/supabase-js";
 
 import { ProfilePageView } from "@/components/profile/ProfilePageView";
 import { ProfileQuestions } from "@/components/profile/ProfileQuestions";
+import { ProfileBadgesView } from "@/components/profile/ProfileBadgesView";
+import { ProfileCardView } from "@/components/profile/ProfileCardView";
+import { ProfileEditSheet } from "@/components/profile/ProfileEditSheet";
+import { ProfileFollowButton } from "@/components/profile/ProfileFollowButton";
+import { ProfileMessageAction } from "@/components/profile/ProfileMessageAction";
+import { ProfileReactions } from "@/components/profile/ProfileReactions";
+import { ProfileStatusSection } from "@/components/profile/ProfileStatusSection";
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { ProfileFlipCard } from "@/components/profile/canvas/ProfileFlipCard";
 import { AppPageContent } from "@/components/layout/AppPageContent";
+import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
 
 import type { DesktopConfig } from "../config";
 import { DesktopPostCard } from "../feed/DesktopPostCard";
-import { DesktopProfileCard } from "./DesktopProfileCard";
+import { DesktopProfileShareButton } from "./DesktopProfileShareButton";
 import { useDesktopProfile } from "./useDesktopProfile";
 
 export function DesktopProfile({
@@ -67,13 +75,79 @@ export function DesktopProfile({
             initialStrokes={data.canvasStrokes}
             realtimeEnabled={false}
             front={
-              <DesktopProfileCard
+              <ProfileCardView
                 profile={data.profile}
-                config={config}
-                session={session}
-                isOwner={data.isOwner}
-                onAppearancePublished={reload}
-                navigate={navigate}
+                badgeUrl={vooplusBadgeUrl(config.assetsCdnUrl)}
+                badges={
+                  <ProfileBadgesView
+                    badgeIds={data.badgeIds}
+                    compact
+                    className="mt-0 min-w-0 flex-nowrap overflow-hidden"
+                    renderEventAction={(dismiss) => (
+                      <button
+                        type="button"
+                        className="mt-4 text-sm font-medium text-(--theme-accent)"
+                        onClick={() => {
+                          dismiss();
+                          navigate("/events");
+                        }}
+                      >
+                        Открыть событие
+                      </button>
+                    )}
+                  />
+                }
+                relationshipActions={
+                  data.isOwner ? undefined : (
+                    <>
+                      <ProfileFollowButton
+                        username={data.profile.username}
+                        canFollow
+                      />
+                      <ProfileMessageAction
+                        username={data.profile.username}
+                        size="sm"
+                        onNavigate={navigate}
+                      />
+                    </>
+                  )
+                }
+                status={
+                  <ProfileStatusSection
+                    username={data.profile.username}
+                    initialStatus={data.profile.status}
+                    isOwner={data.isOwner}
+                    onPublished={reload}
+                  />
+                }
+                reactions={
+                  <ProfileReactions
+                    profileUserId={data.profile.id}
+                    canReact={!data.isOwner}
+                    realtimeEnabled={false}
+                  />
+                }
+                shareAction={
+                  data.isOwner ? (
+                    <DesktopProfileShareButton
+                      profile={data.profile}
+                      badgeIds={data.badgeIds}
+                      config={config}
+                      session={session}
+                      navigate={navigate}
+                      onPublished={reload}
+                    />
+                  ) : undefined
+                }
+                editAction={
+                  data.isOwner ? (
+                    <ProfileEditSheet
+                      profile={data.profile}
+                      onUpdated={reload}
+                      onNavigate={navigate}
+                    />
+                  ) : undefined
+                }
               />
             }
           />

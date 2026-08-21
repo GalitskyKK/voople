@@ -14,6 +14,8 @@ import { AccountChipVisual } from "@/components/layout/AccountChipVisual";
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { COPY } from "@/lib/constants/copy";
 import { resolveRingStyle } from "@/lib/customization/rings";
+import { getAppRouteLayout } from "@/lib/layout/route-layout";
+import { registerInternalNavigationAdapter } from "@/lib/platform/internal-navigation";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 import { useVoiceSession } from "@/components/chat/voice/VoiceSessionProvider";
 import { useSidebarPreference } from "@/hooks/useSidebarPreference";
@@ -58,6 +60,11 @@ const DesktopPostDetail = lazy(() =>
 const DesktopMessages = lazy(() =>
   import("../chat/DesktopMessages").then((module) => ({
     default: module.DesktopMessages,
+  })),
+);
+const DesktopGroupSettingsPage = lazy(() =>
+  import("../chat/DesktopGroupInviteSheet").then((module) => ({
+    default: module.DesktopGroupSettingsPage,
   })),
 );
 const DesktopEvents = lazy(() =>
@@ -115,6 +122,12 @@ function postIdFromPath(pathname: string) {
 function chatIdFromPath(pathname: string) {
   return pathname.match(
     /^\/messages\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i,
+  )?.[1] ?? null;
+}
+
+function groupSettingsChatIdFromPath(pathname: string) {
+  return pathname.match(
+    /^\/messages\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/settings$/i,
   )?.[1] ?? null;
 }
 
@@ -211,6 +224,11 @@ export function DesktopShell({
     },
     [config],
   );
+
+  useEffect(
+    () => registerInternalNavigationAdapter(navigate),
+    [navigate],
+  );
   const revealMainWindow = useCallback(() => {
     if ("__TAURI_INTERNALS__" in window) {
       void invoke<void>("show_main_window").catch(() => undefined);
@@ -274,24 +292,15 @@ export function DesktopShell({
   const profileUsername = profileUsernameFromPath(pathname);
   const postId = postIdFromPath(pathname);
   const chatId = chatIdFromPath(pathname);
+  const groupSettingsChatId = groupSettingsChatIdFromPath(pathname);
   const hashtag = hashtagFromPath(pathname);
   const isProfileRoute = pathname === "/me" || profileUsername !== null;
-  const isMessagesRoute = pathname === "/messages" || chatId !== null;
-  const isWideRoute =
-    pathname === "/events" ||
-    pathname === "/help" ||
-    pathname === "/settings" ||
-    pathname === "/shop";
+  const isMessagesRoute = pathname === "/messages" || chatId !== null || groupSettingsChatId !== null;
+  const routeLayout = getAppRouteLayout(pathname);
 
   return (
     <AppShellFrame
-      routeKind={
-        isMessagesRoute
-          ? "messages"
-          : isProfileRoute
-            ? "profile"
-            : "standard"
-      }
+      routeKind={routeLayout.routeKind}
       fixedViewport
       sidebar={
         <AppSidebarVisual
@@ -327,15 +336,7 @@ export function DesktopShell({
           }
         />
       }
-      mainClassName={
-        isMessagesRoute
-          ? "max-w-none"
-          : isProfileRoute
-            ? "max-w-6xl"
-            : isWideRoute
-              ? "max-w-6xl"
-              : "max-w-2xl"
-      }
+      mainClassName={routeLayout.contentClassName}
     >
       <DesktopNotificationBridge
         config={config}
@@ -387,6 +388,13 @@ export function DesktopShell({
             <DesktopShop config={config} />
           ) : pathname === "/help" ? (
             <DesktopHelp navigate={navigate} />
+          ) : groupSettingsChatId ? (
+            <DesktopGroupSettingsPage
+              chatId={groupSettingsChatId}
+              config={config}
+              session={session}
+              navigate={navigate}
+            />
           ) : isMessagesRoute ? (
             <DesktopMessages
               config={config}
@@ -435,7 +443,7 @@ export function DesktopShell({
         </button>
       )}
 
-      {!chatId ? (
+      {!chatId && !groupSettingsChatId ? (
         <AppBottomNavigationVisual
           pathname={pathname}
           notificationBadge={notificationBadge}

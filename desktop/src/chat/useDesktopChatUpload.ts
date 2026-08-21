@@ -1,8 +1,10 @@
 import type { Session } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { chatAttachmentKindFromKey } from "@/lib/object-storage";
-import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
+import {
+  chatAttachmentKindFromKey,
+  parseChatUploadMime,
+} from "@/lib/object-storage/chat-mime";
 import { uploadPresignedFile } from "@/lib/uploads/presigned-upload";
 import type { ChatPendingUpload } from "@/types/chat";
 

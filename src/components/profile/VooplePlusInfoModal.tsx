@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Crown } from "lucide-react";
 
 import {
@@ -12,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { parseDatabaseDate } from "@/lib/format/database-date";
 import { VooplePlusBenefits } from "@/components/subscription/VooplePlusBenefits";
+import { AppInternalLink } from "@/components/ui/AppInternalLink";
 
 type VooplePlusInfoModalProps = {
   open: boolean;
@@ -80,11 +80,11 @@ export function VooplePlusInfoModal({ open, onClose, expiresAt }: VooplePlusInfo
           <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
             Закрыть
           </Button>
-          <Link href="/shop?tab=plus" className="flex-1" onClick={onClose}>
+          <AppInternalLink href="/shop?tab=plus" className="flex-1" onClick={onClose}>
             <Button type="button" className="w-full">
               {expiresAt ? "Продлить" : "Оформить Вупл+"}
             </Button>
-          </Link>
+          </AppInternalLink>
         </div>
       </div>
     </Sheet>

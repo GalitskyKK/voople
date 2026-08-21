@@ -8,7 +8,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { inferMediaBaseFromAssetId, normalizeMediaBase, posterAssetIdForBase, suggestMediaBase, usesAssetPack, type AssetPackFileRole } from "@/lib/shop/asset-packs";
 import { uploadAdminCustomizationAsset } from "@/lib/admin/upload-customization-asset";
-import { extensionForCustomizationMime } from "@/lib/object-storage";
+import { extensionForCustomizationMime } from "@/lib/object-storage/customization-paths";
 import {
   defaultAssetFolderForKind,
   defaultEquipSlotForKind,

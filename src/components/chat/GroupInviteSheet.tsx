@@ -104,6 +104,7 @@ export function GroupInviteSheet({
       topicsLayout={topicsLayout}
       groupVisibility={groupVisibility}
       presentation={presentation}
+      onBack={() => router.push(`/messages/${chatId}`)}
       loadMembers={loadMembers}
       loadAudit={loadAudit}
       searchContacts={searchContacts}

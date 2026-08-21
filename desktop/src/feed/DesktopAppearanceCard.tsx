@@ -1,6 +1,7 @@
 import { ProfileAppearanceCardVisual } from "@/components/profile/ProfileAppearanceCardVisual";
+import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
+import { ProfileBadgesView } from "@/components/profile/ProfileBadgesView";
 import type { PostViewModel, ProfileCustomizationView } from "@/types/domain";
-import { DesktopProfileAvatar } from "../profile/DesktopProfileAvatar";
 
 export function DesktopAppearanceCard({
   post,
@@ -26,11 +27,20 @@ export function DesktopAppearanceCard({
       variant="feed"
       className={className}
       avatar={
-        <DesktopProfileAvatar
+        <ProfileAvatar
           displayName={post.author.displayName}
-          customization={customization}
-          fallbackAvatarUrl={post.author.avatarUrl}
           size="md"
+          ring={customization.flags.hasAvatarRing}
+          ringId={customization.avatarRingId}
+          decorationUrl={customization.assets.avatarDecorationUrl}
+          animatedAvatarUrl={customization.assets.animatedAvatarUrl ?? post.author.avatarUrl}
+        />
+      }
+      badges={
+        <ProfileBadgesView
+          badgeIds={post.appearance.badgeIds ?? []}
+          className="relative z-20 mt-2"
+          compact
         />
       }
     />

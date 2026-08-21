@@ -1,7 +1,7 @@
-import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "fs";
 import { resolve } from "path";
 import postgres from "postgres";
+import { migrationChecksum } from "./migration-checksum.mjs";
 
 function loadEnvFile(filename) {
   const path = resolve(process.cwd(), filename);
@@ -36,7 +36,7 @@ async function recordMigration(sql, file, source) {
     select to_regclass('public.app_schema_migrations')::text as registry
   `;
   if (!registry) return;
-  const checksum = createHash("sha256").update(source).digest("hex");
+  const checksum = migrationChecksum(source);
   await sql`
     insert into public.app_schema_migrations (id, checksum, release_version, applied_at)
     values (${file}, ${checksum}, ${releaseVersion}, now())

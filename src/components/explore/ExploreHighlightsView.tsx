@@ -25,9 +25,9 @@ export function ExploreHighlightsView({
   badgeUrl?: string;
 }) {
   return (
-    <div className="space-y-6">
+    <div className="grid gap-6 xl:grid-cols-2">
       {(scope === "all" || scope === "people") && highlights.users.length ? (
-        <section aria-labelledby="popular-people-title">
+        <section className="min-w-0 xl:col-span-2" aria-labelledby="popular-people-title">
           <SectionTitle id="popular-people-title" icon={<UserRound />} title="Люди" />
           <ul className="voople-scroll mt-3 flex gap-2 overflow-x-auto pb-1">
             {highlights.users.map((user) => (
@@ -50,9 +50,9 @@ export function ExploreHighlightsView({
       ) : null}
 
       {(scope === "all" || scope === "posts") && highlights.posts.length ? (
-        <section aria-labelledby="popular-posts-title">
+        <section className={scope === "posts" ? "min-w-0 xl:col-span-2" : "min-w-0"} aria-labelledby="popular-posts-title">
           <SectionTitle id="popular-posts-title" icon={<FileText />} title="Популярные посты" />
-          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+          <ul className={scope === "posts" ? "mt-3 grid gap-2 sm:grid-cols-2" : "mt-3 grid gap-2"}>
             {highlights.posts.slice(0, 4).map((post) => (
               <li key={post.id}>
                 {renderDestination({
@@ -75,9 +75,9 @@ export function ExploreHighlightsView({
       ) : null}
 
       {(scope === "all" || scope === "communities") && highlights.communities.length ? (
-        <section aria-labelledby="popular-groups-title">
+        <section className={scope === "communities" ? "min-w-0 xl:col-span-2" : "min-w-0"} aria-labelledby="popular-groups-title">
           <SectionTitle id="popular-groups-title" icon={<UsersRound />} title="Открытые сообщества" />
-          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+          <ul className={scope === "communities" ? "mt-3 grid gap-2 sm:grid-cols-2" : "mt-3 grid gap-2"}>
             {highlights.communities.slice(0, 4).map((group) => (
               <li key={group.id}>
                 {renderDestination({
@@ -98,7 +98,7 @@ export function ExploreHighlightsView({
       ) : null}
 
       {scope === "all" && trending.length ? (
-        <section aria-labelledby="popular-topics-title">
+        <section className="min-w-0 xl:col-span-2" aria-labelledby="popular-topics-title">
           <SectionTitle id="popular-topics-title" icon={<Hash />} title="Темы" />
           <ul className="mt-3 flex flex-wrap gap-2">
             {trending.slice(0, 6).map((item) => <li key={item.name}>{renderDestination({ href: `/hashtag/${encodeURIComponent(item.name)}`, label: `#${item.name}`, active: false, className: "inline-flex items-center gap-2 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm transition hover:border-[var(--theme-accent)] hover:bg-[var(--app-accent-soft)]", children: <><span className="text-[var(--theme-accent)]">#</span>{item.name}<span className="text-xs text-[var(--app-muted)]">{item.postCount}</span></> })}</li>)}

@@ -8,6 +8,7 @@ import { trpc } from "@/lib/trpc/client";
 import type { PostViewModel, ProfileViewModel } from "@/types/domain";
 import type { Stroke } from "@/types/canvas";
 import { ProfilePageView } from "./ProfilePageView";
+import { ProfileCard } from "./ProfileCard";
 import { ProfileQuestions } from "./ProfileQuestions";
 import { ProfileFlipCard } from "./canvas/ProfileFlipCard";
 import { StickyProfileHeader } from "./StickyProfileHeader";
@@ -148,9 +149,16 @@ export function ProfilePage({
         <ProfileFlipCard
           profile={profile}
           isOwner={isOwner}
-          canFollow={canFollow}
           viewerId={viewerId}
           initialStrokes={initialCanvasStrokes}
+          front={
+            <ProfileCard
+              profile={profile}
+              isOwner={isOwner}
+              canFollow={canFollow}
+              className="h-full"
+            />
+          }
         />
       }
       renderStickyHeader={(visible) => (

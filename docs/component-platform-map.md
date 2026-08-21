@@ -6,10 +6,10 @@
 
 | Домен | Канонический слой | Web boundary | Desktop boundary | Допустимое отличие desktop |
 |---|---|---|---|---|
-| Shell и навигация | `components/layout/AppShellFrame`, `AppNavigationVisual` | `MainShell`, Next `Link` | `DesktopShell`, state-router renderer | Window chrome, tray, hotkeys |
+| Shell и навигация | `components/layout/AppShellFrame`, `AppNavigationVisual`, `lib/layout/route-layout` | `MainShell`, Next `Link` | `DesktopShell`, state-router renderer | Window chrome, tray, hotkeys |
 | Главная и лента | `components/home`, `components/feed/*Visual` | Server page загружает initial data | tRPC adapter загружает те же view-models | Нет Server Components; Tauri navigation renderer |
-| Профиль | `components/profile/*Visual`, `ProfilePageView`, `feed/MiniProfilePopover` | Dynamic profile route/metadata | Desktop profile data adapter | Native file picker при выборе локального файла |
-| Чаты | `MessagesLayoutView`, `ChatWindowHeaderVisual`, `GroupInfoDrawer`, `GroupManagementSheetView` | Messages route; settings route; Supabase realtime hook | Desktop auth/realtime adapter вокруг тех же View | Native notifications; desktop settings пока открываются shared Sheet, web — full page |
+| Профиль | `ProfileCardView`, `ProfileBadgesView`, `ProfilePageView`, `ProfileFlipCard`, `feed/MiniProfilePopover` | `ProfileCard` подключает web queries и Next metadata | `DesktopProfile` передаёт те же view-models и только navigation/native adapters | Realtime можно отключить; системный share и desktop navigation |
+| Чаты | `MessagesLayoutView`, `ChatWindowHeaderVisual`, `GroupInfoDrawer`, `GroupManagementSheetView` | Messages route; settings route; Supabase realtime hook | Desktop auth/realtime adapter; `/messages/:id/settings` использует тот же full-page View | Native notifications и transport realtime |
 | Голос и комнаты | `components/chat/voice`, `VoiceSessionProvider`, `VoiceSessionDock` | Web media devices и browser picker | Тот же UI + Tauri process-audio bridge | WASAPI process loopback, global hotkeys |
 | Магазин, подарки и Plus | `components/shop`, `ShopGiftDialog`, `components/subscription` | Server payment/API composition | tRPC/API adapter | Открытие checkout во внешнем браузере |
 | Discovery | `ExploreView`, `ExploreSearchResults`, `NotificationsView`, `EventsPage` | Optional/protected tRPC adapters | Shared view + desktop navigation renderer | Только способ навигации |
@@ -27,3 +27,18 @@
 В `desktop/src` допустимы shell, auth, API bridge, updater, notifications,
 hotkeys и Windows media integration. Карточки, формы, профиль, сообщения,
 комнаты и дизайн-токены должны импортироваться из корневого `src`.
+
+## Контролируемый переход без второго UI
+
+`.architecture-baseline.json` содержит старые desktop-файлы, существовавшие до
+этого правила. Это не список разрешённых дублей: проверка запрещает добавлять
+новые переносимые `.tsx` в desktop-домены. При работе над экраном старый файл
+должен превращаться в data/native adapter, а DOM, состояние представления и
+responsive-правила — переноситься в корневой `src/components`.
+
+Общие `HomeOverviewView`, Search, Notifications, Shop, полноэкранные настройки
+группы и карточка профиля уже следуют этой схеме. `DesktopProfileCard` и
+`DesktopProfileAvatar` и `DesktopProfileActions` удалены: положение edit-action,
+баннер, identity, пины, подписка и переход в сообщения теперь меняются только в
+корневом `src`. Следующие кандидаты на удаление из baseline: `DesktopPostCard`,
+`DesktopChatThread`/composer и share-controller профиля.

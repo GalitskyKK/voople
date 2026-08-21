@@ -68,8 +68,8 @@ export function ExploreView({
   const isEmpty = hasQuery && !searching && Boolean(result) && scopedResultCount === 0;
 
   return (
-    <SectionFrame className="gap-5 py-4 lg:py-6">
-      <SectionPageHeader title={COPY.search} />
+    <SectionFrame size="wide" className="gap-5 py-4 lg:py-6">
+      <SectionPageHeader title={COPY.search} density="compact" sticky />
       <div className="voople-user-search space-y-6 pb-4">
         <label className="relative block">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]" />

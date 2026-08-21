@@ -9,6 +9,7 @@ import { ChatPeerPresence } from "@/components/chat/ChatPeerPresence";
 import { VoiceRoomButton } from "@/components/chat/voice/VoiceRoomButton";
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { ChatMediaLightbox } from "@/components/chat/ChatMediaLightbox";
+import { GroupManagementTrigger } from "@/components/chat/GroupManagementTrigger";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import type { ChatListItem, ChatMessageView, GroupEmojiView } from "@/types/chat";
@@ -16,7 +17,6 @@ import type { ChatListItem, ChatMessageView, GroupEmojiView } from "@/types/chat
 import type { DesktopConfig } from "../config";
 import { DesktopChatAvatar } from "./DesktopChatAvatar";
 import { DesktopChatComposer } from "./DesktopChatComposer";
-import { DesktopGroupInviteSheet } from "./DesktopGroupInviteSheet";
 import { DesktopChatMessage } from "./DesktopChatMessage";
 import { DesktopSubchatCreator } from "./DesktopSubchatCreator";
 import { DesktopSectionAccessSheet } from "./DesktopSectionAccessSheet";
@@ -32,6 +32,7 @@ export function DesktopChatThread({
   onInboxChange,
   onNavigateChat,
   onNavigateProfile,
+  onOpenGroupSettings,
   onlineUserIds,
 }: {
   chatId: string;
@@ -42,6 +43,7 @@ export function DesktopChatThread({
   onInboxChange: () => void;
   onNavigateChat: (chatId: string) => void;
   onNavigateProfile: (username: string) => void;
+  onOpenGroupSettings: (chatId: string) => void;
   onlineUserIds: ReadonlySet<string>;
 }) {
   const {
@@ -125,27 +127,15 @@ export function DesktopChatThread({
           <ArrowLeft className="h-5 w-5" />
         </button>
         {isGroup && !isSubchat ? (
-          <DesktopGroupInviteSheet
-            chatId={chatId}
+          <GroupManagementTrigger
+            onClick={() => onOpenGroupSettings(chatId)}
             chatName={title}
             memberCount={data.chat.memberCount}
             groupIcon={data.chat.groupIcon}
             groupAvatarUrl={data.chat.groupAvatarUrl}
             groupAccentColor={data.chat.groupAccentColor}
             groupTag={data.chat.groupTag}
-            triggerVariant="identity"
-            viewerRole={data.chat.viewerRole}
-            canManage={data.chat.viewerRole === "owner" || data.chat.viewerRole === "admin"}
-            topicsEnabled={data.chat.topicsEnabled}
-            topicsLayout={data.chat.topicsLayout}
-            groupVisibility={data.chat.groupVisibility}
-            config={config}
-            session={session}
-            onMembersChanged={() => {
-              onInboxChange();
-              retry();
-            }}
-            onGroupClosed={onBack}
+            variant="identity"
           />
         ) : isSubchat ? (
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--app-accent-soft)] text-[var(--theme-accent)]">

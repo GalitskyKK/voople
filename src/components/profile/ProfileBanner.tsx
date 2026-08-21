@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 import type { ProfileCustomizationView } from "@/types/domain";
 import { ProfileBannerVisual } from "./ProfileBannerVisual";
 
@@ -15,13 +13,11 @@ export function ProfileBanner({ customization, className }: ProfileBannerProps) 
       customization={customization}
       className={className}
       renderImage={(url) => (
-        <Image
+        // eslint-disable-next-line @next/next/no-img-element -- portable CDN image shared with Tauri.
+        <img
           src={url}
           alt=""
-          fill
-          unoptimized
-          sizes="(max-width: 768px) 100vw, 672px"
-          className="object-cover object-center"
+          className="absolute inset-0 h-full w-full object-cover object-center"
           draggable={false}
         />
       )}

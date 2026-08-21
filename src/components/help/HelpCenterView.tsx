@@ -66,7 +66,7 @@ export function HelpCenterView({ renderDestination }: { renderDestination: HelpD
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col gap-5 py-4 lg:py-6">
-      <SectionPageHeader eyebrow="Помощь" title="Справочный центр" description="Короткие ответы по чатам, комнатам, приложению и безопасности." />
+      <SectionPageHeader eyebrow="Помощь" title="Справочный центр" description="Короткие ответы по чатам, комнатам, приложению и безопасности." sticky />
 
       <label className="relative block">
         <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--app-muted)]" aria-hidden />

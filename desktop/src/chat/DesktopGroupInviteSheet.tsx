@@ -9,6 +9,9 @@ import { uploadPresignedFile } from "@/lib/uploads/presigned-upload";
 import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
 import { DesktopChatAvatar } from "./DesktopChatAvatar";
+import { useDesktopChatThread } from "./useDesktopChatThread";
+
+const ignoreInboxChange = () => undefined;
 
 export function DesktopGroupInviteSheet({
   chatId,
@@ -28,6 +31,8 @@ export function DesktopGroupInviteSheet({
   session,
   onMembersChanged,
   onGroupClosed,
+  presentation = "sheet",
+  onBack,
 }: {
   chatId: string;
   chatName: string;
@@ -46,6 +51,8 @@ export function DesktopGroupInviteSheet({
   session: Session;
   onMembersChanged: () => void;
   onGroupClosed: () => void;
+  presentation?: "sheet" | "page";
+  onBack?: () => void;
 }) {
   const client = useMemo(
     () => createDesktopTrpcClient(config, () => session.access_token),
@@ -169,6 +176,8 @@ export function DesktopGroupInviteSheet({
       groupAccentColor={groupAccentColor}
       groupTag={groupTag}
       triggerVariant={triggerVariant}
+      presentation={presentation}
+      onBack={onBack}
       viewerRole={viewerRole}
       canManage={canManage}
       topicsEnabled={topicsEnabled}
@@ -237,6 +246,55 @@ export function DesktopGroupInviteSheet({
           avatarUrl={user.avatarUrl}
         />
       )}
+    />
+  );
+}
+
+export function DesktopGroupSettingsPage({ chatId, config, session, navigate }: {
+  chatId: string;
+  config: DesktopConfig;
+  session: Session;
+  navigate: (href: string) => void;
+}) {
+  const { data, error, loading, retry } = useDesktopChatThread(config, session, chatId, ignoreInboxChange);
+  if (loading && !data) {
+    return <div className="m-5 min-h-80 flex-1 animate-pulse rounded-3xl bg-[var(--app-surface-soft)]" />;
+  }
+  if (!data) {
+    return (
+      <div className="grid min-h-0 flex-1 place-items-center p-6 text-center">
+        <div>
+          <h1 className="text-xl font-semibold">Настройки недоступны</h1>
+          <p className="mt-2 text-sm text-[var(--app-muted)]">{error ?? "Группа не найдена"}</p>
+          <button type="button" onClick={() => navigate(`/messages/${chatId}`)} className="voople-link mt-4">Вернуться в чат</button>
+        </div>
+      </div>
+    );
+  }
+  const chat = data.chat;
+  if (chat.type !== "group" || chat.parentChatId) {
+    return <div className="grid min-h-0 flex-1 place-items-center p-6 text-center"><p className="text-sm text-[var(--app-muted)]">Настройки доступны только для основной группы.</p></div>;
+  }
+  return (
+    <DesktopGroupInviteSheet
+      chatId={chatId}
+      chatName={chat.name || "Группа"}
+      memberCount={chat.memberCount}
+      groupIcon={chat.groupIcon}
+      groupAvatarUrl={chat.groupAvatarUrl}
+      groupAccentColor={chat.groupAccentColor}
+      groupTag={chat.groupTag}
+      viewerRole={chat.viewerRole}
+      canManage={chat.viewerRole === "owner" || chat.viewerRole === "admin"}
+      topicsEnabled={chat.topicsEnabled}
+      topicsLayout={chat.topicsLayout}
+      groupVisibility={chat.groupVisibility}
+      config={config}
+      session={session}
+      presentation="page"
+      onBack={() => navigate(`/messages/${chatId}`)}
+      onMembersChanged={retry}
+      onGroupClosed={() => navigate("/messages")}
     />
   );
 }

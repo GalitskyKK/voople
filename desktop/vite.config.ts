@@ -20,6 +20,11 @@ export default defineConfig({
   },
   server: {
     host: "127.0.0.1",
+    // Shared source and the canonical Geist font live in the repository root.
+    // Keep the allow-list narrow while letting Vite serve those files in dev.
+    fs: {
+      allow: [fileURLToPath(new URL("..", import.meta.url))],
+    },
   },
   build: {
     target: "es2022",

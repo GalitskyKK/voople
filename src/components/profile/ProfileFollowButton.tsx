@@ -6,7 +6,7 @@ import { COPY } from "@/lib/constants/copy";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
-import { useAuthGate } from "@/components/auth/AuthGateProvider";
+import { useAuthGate } from "@/components/auth/AuthGateContext";
 
 type ProfileFollowButtonProps = {
   username: string;

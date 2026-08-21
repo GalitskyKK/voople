@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import type { BadgeDef } from "@/lib/badges/registry";
-import { publicAssetUrl } from "@/lib/object-storage";
+import { publicAssetUrl } from "@/lib/object-storage/urls";
 import { cn } from "@/lib/utils";
 
 export function BadgeArtwork({ badge, className }: { badge: BadgeDef; className?: string }) {

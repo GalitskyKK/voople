@@ -7,7 +7,6 @@ import {
   Trash2,
   UserPlus,
 } from "lucide-react";
-import Link from "next/link";
 import { useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/Button";
@@ -79,6 +78,7 @@ export type GroupManagementProps = {
   onGroupClosed: () => void;
   renderAvatar: (user: UserSearchHit) => ReactNode;
   presentation?: "sheet" | "page";
+  onBack?: () => void;
 };
 
 export function GroupManagementSheetView(props: GroupManagementProps) {
@@ -276,9 +276,9 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
     return (
       <div className="voople-scroll min-h-0 flex-1 overflow-y-auto bg-[var(--app-canvas)] px-4 py-5 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
-          <Link href={`/messages/${props.chatId}`} className="mb-5 inline-flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]">
+          <button type="button" onClick={props.onBack} className="mb-5 inline-flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]">
             <ArrowLeft className="h-4 w-4" /> Вернуться в чат
-          </Link>
+          </button>
           {body}
         </div>
       </div>

@@ -5,7 +5,6 @@ import { useCallback, useState, type ReactNode } from "react";
 import { useProfileCanvasStrokes } from "@/hooks/useProfileCanvasStrokes";
 import type { ProfileViewModel } from "@/types/domain";
 import type { Stroke } from "@/types/canvas";
-import { ProfileCard } from "@/components/profile/ProfileCard";
 import { FlipCard } from "./FlipCard";
 import { ProfileCanvas } from "./ProfileCanvas";
 import { ProfileCanvasPreview } from "./ProfileCanvasPreview";
@@ -13,10 +12,9 @@ import { ProfileCanvasPreview } from "./ProfileCanvasPreview";
 type ProfileFlipCardProps = {
   profile: ProfileViewModel;
   isOwner?: boolean;
-  canFollow?: boolean;
   viewerId?: string | null;
   initialStrokes?: Stroke[];
-  front?: ReactNode;
+  front: ReactNode;
   realtimeEnabled?: boolean;
   className?: string;
 };
@@ -24,7 +22,6 @@ type ProfileFlipCardProps = {
 export function ProfileFlipCard({
   profile,
   isOwner = false,
-  canFollow = false,
   viewerId = null,
   initialStrokes = [],
   front,
@@ -61,14 +58,7 @@ export function ProfileFlipCard({
       className={className}
       flipped={flipped}
       onFlippedChange={setFlipped}
-      front={front ?? (
-        <ProfileCard
-          profile={profile}
-          isOwner={isOwner}
-          canFollow={canFollow}
-          className="h-full"
-        />
-      )}
+      front={front}
       renderBack={(isEditing) =>
         isEditing ? (
           <div className={backShellClassName}>

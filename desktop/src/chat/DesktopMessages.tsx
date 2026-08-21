@@ -169,6 +169,7 @@ export function DesktopMessages({
             onInboxChange={refresh}
             onNavigateChat={(chatId) => navigate(`/messages/${chatId}`)}
             onNavigateProfile={(username) => navigate(`/${username}`)}
+            onOpenGroupSettings={(chatId) => navigate(`/messages/${chatId}/settings`)}
             onlineUserIds={onlineUserIds}
           />
         ) : null

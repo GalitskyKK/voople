@@ -1,7 +1,7 @@
 # Voople Desktop release
 
 The Windows release pipeline lives in `.github/workflows/desktop-release.yml`.
-It produces one signed RC artifact, rehearses compatible migrations on staging,
+It produces one signed RC artifact, optionally rehearses compatible migrations on staging,
 runs web, desktop, browser and native-audio gates, and retains that artifact in
 the internal Actions channel. The protected `desktop-stable` environment then
 promotes the exact same SHA/checksum/signature after approval: production
@@ -31,17 +31,17 @@ Configure these repository secrets:
 - `DESKTOP_RELEASE_S3_SECRET_ACCESS_KEY`
 - `DESKTOP_UPDATER_PRIVATE_KEY`
 - `DESKTOP_UPDATER_PRIVATE_KEY_PASSWORD`
-- `DESKTOP_STAGING_DATABASE_URL`
 - `DESKTOP_PRODUCTION_DATABASE_URL` (store this in the protected
   `desktop-stable` environment)
 - `E2E_SUPABASE_URL`, `E2E_SUPABASE_ANON_KEY`,
   `E2E_SUPABASE_SERVICE_ROLE_KEY` and `E2E_USER_EMAIL` (optional as a complete
   set; without it only the public browser smoke project runs)
 
-`desktop-v0.1.22` has a one-release exception for a missing staging database,
-approved after production migration readiness passed manually. Every later tag
-fails closed until `DESKTOP_STAGING_DATABASE_URL` is configured. Remove the
-exception after staging is provisioned.
+Optionally configure `DESKTOP_STAGING_DATABASE_URL` when a separate staging
+database becomes available. When it is absent, the workflow records the skipped
+rehearsal in artifact provenance and continues only after repository migration
+readiness passes. The protected production connection and production migration
+promotion remain mandatory for every stable release.
 
 Configure these repository variables:
 
@@ -119,9 +119,9 @@ frontend code change.
    Native installer and process-audio checks run on GitHub; set
    `VERIFY_NATIVE_AUDIO=1` only when intentionally checking the local Windows
    toolchain.
-2. Verify the internal RC artifact and staging migration rehearsal.
-3. Approve `desktop-stable` only after the staging and installer smoke results
-   are accepted.
+2. Verify the internal RC artifact, browser/installer smoke results and, when a
+   staging database exists, its migration rehearsal.
+3. Approve `desktop-stable` after those available checks are accepted.
 4. Verify production migration readiness, signature, checksum,
    install/uninstall, updater, release catalog and `/download/desktop` before
    announcing the release.

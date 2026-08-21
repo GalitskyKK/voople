@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { AppInternalLink } from "@/components/ui/AppInternalLink";
 
 const SHOP_HREF = "/shop?tab=catalog";
 
@@ -13,9 +13,13 @@ export function ProfileEditorShopLink({
 }) {
   if (!onNavigate) {
     return (
-      <Link href={SHOP_HREF} className="profile-editor-shop-link">
+      <AppInternalLink
+        href={SHOP_HREF}
+        className="profile-editor-shop-link"
+        onClick={onBeforeNavigate}
+      >
         Открыть магазин
-      </Link>
+      </AppInternalLink>
     );
   }
 

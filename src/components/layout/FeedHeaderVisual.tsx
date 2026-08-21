@@ -15,7 +15,7 @@ export function FeedHeaderVisual({
   return (
     <div
       data-nosnippet
-      className="voople-feed-header shrink-0 px-4 pt-3 lg:px-6 lg:pt-4"
+      className="voople-feed-header sticky top-0 z-30 shrink-0 bg-[linear-gradient(to_bottom,var(--background)_0_82%,transparent)] px-4 pt-3 backdrop-blur-xl lg:px-6 lg:pt-4"
     >
       <SectionPageHeader
         title={COPY.feed}

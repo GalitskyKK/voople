@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { DEFAULT_RING, resolveRingStyle } from "@/lib/customization/rings";
 
@@ -15,8 +13,6 @@ export type ProfileAvatarProps = {
   animatedAvatarUrl?: string | null;
   isOnline?: boolean;
 };
-
-const imageSizes = { sm: 32, md: 72, lg: 80 } as const;
 
 export function ProfileAvatar({
   displayName,
@@ -39,25 +35,21 @@ export function ProfileAvatar({
       isOnline={isOnline}
       decorationImage={
         decorationUrl ? (
-          <Image
+          // eslint-disable-next-line @next/next/no-img-element -- portable CDN image shared with Tauri.
+          <img
             src={decorationUrl}
             alt=""
-            width={288}
-            height={288}
-            unoptimized
             className="h-full w-full max-w-none object-contain object-center"
           />
         ) : undefined
       }
       avatarImage={
         animatedAvatarUrl ? (
-          <Image
+          // eslint-disable-next-line @next/next/no-img-element -- portable CDN image shared with Tauri.
+          <img
             src={animatedAvatarUrl}
             alt=""
-            width={imageSizes[size]}
-            height={imageSizes[size]}
             className="h-full w-full object-cover"
-            unoptimized
           />
         ) : undefined
       }

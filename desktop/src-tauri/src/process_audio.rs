@@ -59,9 +59,7 @@ pub fn list_process_audio_sources() -> Result<Vec<ProcessAudioSource>, String> {
                 eMultimedia, eRender, AudioSessionStateActive, IAudioSessionControl2,
                 IAudioSessionManager2, IMMDeviceEnumerator, MMDeviceEnumerator,
             },
-            System::Com::{
-                CoCreateInstance, CoInitializeEx, CLSCTX_ALL, COINIT_MULTITHREADED,
-            },
+            System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_ALL, COINIT_MULTITHREADED},
         },
     };
 
@@ -83,7 +81,9 @@ pub fn list_process_audio_sources() -> Result<Vec<ProcessAudioSource>, String> {
         let current_process = std::process::id();
 
         for index in 0..sessions.GetCount().map_err(|error| error.to_string())? {
-            let control = sessions.GetSession(index).map_err(|error| error.to_string())?;
+            let control = sessions
+                .GetSession(index)
+                .map_err(|error| error.to_string())?;
             let control2: IAudioSessionControl2 = match control.cast() {
                 Ok(value) => value,
                 Err(_) => continue,

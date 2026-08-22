@@ -5432,6 +5432,7 @@ dependencies = [
  "tauri-plugin-window-state",
  "tokio",
  "windows",
+ "windows-core 0.61.2",
 ]
 
 [[package]]

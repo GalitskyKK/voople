@@ -14,6 +14,8 @@ use tauri::{
 };
 
 mod process_audio;
+#[cfg(target_os = "windows")]
+mod process_audio_capture;
 #[cfg(feature = "process-audio-publisher")]
 mod process_audio_publisher;
 #[cfg(not(feature = "process-audio-publisher"))]

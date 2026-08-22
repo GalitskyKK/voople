@@ -31,6 +31,7 @@ livekit = { version = "=0.8.3", features = ["rustls-tls-native-roots"], optional
 cxx = { version = "=1.0.186", optional = true }
 
 [target.'cfg(windows)'.dependencies]
+windows-core = { version = "=0.61.2" }
 windows = { version = "0.61", features = [
   "Win32_Foundation",
   "Win32_Media_Audio",

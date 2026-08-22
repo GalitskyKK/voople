@@ -1,4 +1,5 @@
 import { getAdminClient } from "@/lib/supabase/admin";
+import { canViewPrivateFieldRest, getUserPrivacySettingsRest } from "@/server/data/privacy-rest";
 
 const ACTIVE_PARTICIPANT_WINDOW_MS = 3 * 60_000;
 
@@ -17,4 +18,101 @@ export async function getActiveRoomCountsRest(chatIds: string[]) {
     counts.set(chatId, (counts.get(chatId) ?? 0) + 1);
   }
   return counts;
+}
+
+export async function getHomeChatAttentionRest(chatIds: string[], userId: string) {
+  const result = new Map<string, { unreadCount: number }>();
+  if (!chatIds.length) return result;
+  const { data, error } = await getAdminClient()
+    .from("messages")
+    .select("chat_id")
+    .in("chat_id", chatIds)
+    .neq("sender_id", userId)
+    .is("read_at", null)
+    .limit(1_000);
+  if (error) throw new Error(error.message);
+  for (const row of data ?? []) {
+    const chatId = String(row.chat_id);
+    const current = result.get(chatId) ?? { unreadCount: 0 };
+    current.unreadCount += 1;
+    result.set(chatId, current);
+  }
+  return result;
+}
+
+export async function getVisibleListeningActivityRest(viewerId: string, userIds: string[]) {
+  const result = new Map<string, { title: string; artist: string | null }>();
+  if (!userIds.length) return result;
+  const activeAfter = new Date(Date.now() - 30 * 60_000).toISOString();
+  const { data, error } = await getAdminClient()
+    .from("user_status")
+    .select("user_id, track_title, track_artist, updated_at")
+    .in("user_id", userIds)
+    .not("track_title", "is", null)
+    .gte("updated_at", activeAfter);
+  if (error) throw new Error(error.message);
+  await Promise.all((data ?? []).map(async (row) => {
+    const userId = String(row.user_id);
+    const privacy = await getUserPrivacySettingsRest(userId);
+    if (!(await canViewPrivateFieldRest(userId, viewerId, privacy.musicScope))) return;
+    result.set(userId, {
+      title: String(row.track_title),
+      artist: typeof row.track_artist === "string" ? row.track_artist : null,
+    });
+  }));
+  return result;
+}
+
+export async function getRelationshipScoresRest(
+  userId: string,
+  candidates: Array<{ userId: string; chatId: string }>,
+) {
+  const scores = new Map(candidates.map((candidate) => [candidate.userId, 40]));
+  if (!candidates.length) return scores;
+  const candidateIds = candidates.map((candidate) => candidate.userId);
+  const chatIds = candidates.map((candidate) => candidate.chatId);
+  const admin = getAdminClient();
+  const [outgoing, incoming, viewerInterests, candidateInterests, viewerGroups, directMessages] = await Promise.all([
+    admin.from("follows").select("following_id").eq("follower_id", userId).in("following_id", candidateIds),
+    admin.from("follows").select("follower_id").eq("following_id", userId).in("follower_id", candidateIds),
+    admin.from("user_interests").select("interest_slug").eq("user_id", userId),
+    admin.from("user_interests").select("user_id, interest_slug").in("user_id", candidateIds),
+    admin.from("chat_members").select("chat_id, chats!inner(type)").eq("user_id", userId).eq("chats.type", "group"),
+    admin.from("messages").select("chat_id, sender_id, created_at").in("chat_id", chatIds).order("created_at", { ascending: false }).limit(500),
+  ]);
+  const failure = [outgoing, incoming, viewerInterests, candidateInterests, viewerGroups, directMessages].find((value) => value.error)?.error;
+  if (failure) throw new Error(failure.message);
+
+  const outgoingIds = new Set((outgoing.data ?? []).map((row) => String(row.following_id)));
+  const incomingIds = new Set((incoming.data ?? []).map((row) => String(row.follower_id)));
+  for (const candidateId of candidateIds) if (outgoingIds.has(candidateId) && incomingIds.has(candidateId)) scores.set(candidateId, (scores.get(candidateId) ?? 0) + 15);
+
+  const ownInterests = new Set((viewerInterests.data ?? []).map((row) => String(row.interest_slug)));
+  const sharedInterestUsers = new Set((candidateInterests.data ?? []).filter((row) => ownInterests.has(String(row.interest_slug))).map((row) => String(row.user_id)));
+  for (const candidateId of sharedInterestUsers) scores.set(candidateId, (scores.get(candidateId) ?? 0) + 10);
+
+  const groupIds = (viewerGroups.data ?? []).map((row) => String(row.chat_id));
+  if (groupIds.length) {
+    const groupMembers = await admin.from("chat_members").select("user_id").in("chat_id", groupIds).in("user_id", candidateIds);
+    if (groupMembers.error) throw new Error(groupMembers.error.message);
+    for (const candidateId of new Set((groupMembers.data ?? []).map((row) => String(row.user_id)))) scores.set(candidateId, (scores.get(candidateId) ?? 0) + 30);
+  }
+
+  const candidateByChat = new Map(candidates.map((candidate) => [candidate.chatId, candidate.userId]));
+  const sendersByChat = new Map<string, Set<string>>();
+  const newestByChat = new Map<string, string>();
+  for (const row of directMessages.data ?? []) {
+    const chatId = String(row.chat_id);
+    const senders = sendersByChat.get(chatId) ?? new Set<string>();
+    senders.add(String(row.sender_id)); sendersByChat.set(chatId, senders);
+    if (!newestByChat.has(chatId)) newestByChat.set(chatId, String(row.created_at));
+  }
+  for (const [chatId, senders] of sendersByChat) {
+    const candidateId = candidateByChat.get(chatId);
+    if (!candidateId || !senders.has(userId) || !senders.has(candidateId)) continue;
+    const ageDays = (Date.now() - Date.parse(newestByChat.get(chatId) ?? "")) / 86_400_000;
+    const decayed = ageDays <= 3 ? 25 : ageDays <= 14 ? 15 : ageDays <= 60 ? 5 : 0;
+    scores.set(candidateId, (scores.get(candidateId) ?? 0) + decayed);
+  }
+  return scores;
 }

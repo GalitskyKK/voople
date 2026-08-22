@@ -13,6 +13,10 @@ import { TURNSTILE_SITE_KEY, TurnstileChallenge } from "@/components/auth/Turnst
 import { syncPublicUser } from "@/lib/auth/sync-public-user";
 import { COPY } from "@/lib/constants/copy";
 import { createClient } from "@/lib/supabase/client";
+import {
+  startTrustedPasswordLogin,
+  trustCurrentDevice,
+} from "@/lib/auth/trusted-device-client";
 
 const schema = z.object({ email: z.string().email("Некорректный email"), password: z.string().min(6, "Минимум 6 символов") });
 type FormValues = z.infer<typeof schema>;
@@ -31,8 +35,11 @@ export default function LoginPage() {
   const codeInputs = useRef<Array<HTMLInputElement | null>>([]);
   const { register, handleSubmit, formState: { errors, isSubmitting }, setError, getValues } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
-  const finishLogin = async () => {
+  const finishLogin = async (trustAccessToken?: string) => {
     const { username, created } = await syncPublicUser();
+    if (trustAccessToken) {
+      await trustCurrentDevice({ accessToken: trustAccessToken, platform: "web" }).catch(() => undefined);
+    }
     const requestedRedirect = new URLSearchParams(window.location.search).get("redirect");
     const safeRedirect =
       requestedRedirect?.startsWith("/") && !requestedRedirect.startsWith("//")
@@ -49,14 +56,34 @@ export default function LoginPage() {
     if (TURNSTILE_SITE_KEY && !captchaToken) {
       return setError("root", { message: captchaError ?? "Пройдите антибот-проверку" });
     }
-    const { error } = await createClient().auth.signInWithPassword({
-      ...data,
-      options: { captchaToken: captchaToken ?? undefined },
-    });
-    setCaptchaToken(null);
-    setCaptchaResetKey((value) => value + 1);
-    if (error) return setError("root", { message: error.message });
-    try { await finishLogin(); } catch (error) { setError("root", { message: error instanceof Error ? error.message : "Не удалось создать профиль" }); }
+    try {
+      const result = await startTrustedPasswordLogin({
+        email: data.email.trim(),
+        password: data.password,
+        captchaToken: captchaToken ?? undefined,
+      });
+      setCaptchaToken(null);
+      setCaptchaResetKey((value) => value + 1);
+      if (result.verificationRequired) {
+        setCodeMode(true);
+        setCodeSentTo(null);
+        setCode("");
+        setCodeError("Это новое устройство. Получите код из письма, чтобы подтвердить вход.");
+        return;
+      }
+      if (!result.accessToken || !result.refreshToken) throw new Error("Сервер входа вернул неполную сессию");
+      const supabase = createClient();
+      const { data: sessionData, error } = await supabase.auth.setSession({
+        access_token: result.accessToken,
+        refresh_token: result.refreshToken,
+      });
+      if (error || !sessionData.session) throw error ?? new Error("Не удалось открыть сессию");
+      await finishLogin();
+    } catch (error) {
+      setCaptchaToken(null);
+      setCaptchaResetKey((value) => value + 1);
+      setError("root", { message: error instanceof Error ? error.message : "Не удалось войти" });
+    }
   };
   const sendCode = async () => {
     const email = getValues("email").trim();
@@ -77,9 +104,9 @@ export default function LoginPage() {
   const verifyCode = async () => {
     if (!codeSentTo || code.length !== CODE_LENGTH) return setCodeError("Введите код из шести цифр");
     setCodeBusy(true); setCodeError(null);
-    const { error } = await createClient().auth.verifyOtp({ email: codeSentTo, token: code, type: "email" });
-    if (error) { setCodeBusy(false); return setCodeError(error.message); }
-    try { await finishLogin(); } catch (error) { setCodeBusy(false); setCodeError(error instanceof Error ? error.message : "Не удалось создать профиль"); }
+    const { data, error } = await createClient().auth.verifyOtp({ email: codeSentTo, token: code, type: "email" });
+    if (error || !data.session) { setCodeBusy(false); return setCodeError(error?.message ?? "Не удалось подтвердить код"); }
+    try { await finishLogin(data.session.access_token); } catch (error) { setCodeBusy(false); setCodeError(error instanceof Error ? error.message : "Не удалось создать профиль"); }
   };
   const setCodeDigit = (index: number, raw: string) => {
     const digits = raw.replace(/\D/g, "").slice(0, CODE_LENGTH);

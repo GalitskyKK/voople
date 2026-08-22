@@ -1,6 +1,7 @@
 import type { Session } from "@supabase/supabase-js";
 
 import type { DesktopConfig } from "../config";
+import { readJsonResponse } from "@/lib/http/json-response";
 
 type SyncUserResult = {
   created?: boolean;
@@ -21,7 +22,10 @@ export async function syncDesktopUser(
     },
     body: "{}",
   });
-  const result = (await response.json()) as SyncUserResult;
-  if (!response.ok) throw new Error(result.error ?? "Не удалось синхронизировать профиль");
+  const result = await readJsonResponse<SyncUserResult>(response);
+  if (!response.ok) {
+    throw new Error(result?.error ?? `Не удалось синхронизировать профиль (${response.status})`);
+  }
+  if (!result) throw new Error("Сервер вернул неполный ответ. Повторите попытку.");
   return result;
 }

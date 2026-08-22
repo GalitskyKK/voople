@@ -1,9 +1,10 @@
 "use client";
 
 import { Pin } from "lucide-react";
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { useElementScrolledPast } from "@/hooks/useElementScrolledPast";
+import { reportProductEvent } from "@/lib/telemetry/client";
 import type { PostViewModel } from "@/types/domain";
 import { ProfileFeedTabs, type ProfileFeedTab } from "./ProfileFeedTabs";
 
@@ -16,6 +17,7 @@ type ProfilePageViewProps = {
   renderQuestions?: () => ReactNode;
   renderStickyHeader?: (visible: boolean) => ReactNode;
   initialTab?: ProfileFeedTab;
+  telemetryKey?: string;
 };
 
 export function ProfilePageView({
@@ -27,6 +29,7 @@ export function ProfilePageView({
   renderQuestions,
   renderStickyHeader,
   initialTab = "posts",
+  telemetryKey,
 }: ProfilePageViewProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [feedTab, setFeedTab] = useState<ProfileFeedTab>(initialTab);
@@ -43,6 +46,10 @@ export function ProfilePageView({
   const showPinnedPost = Boolean(
     pinnedPost && feedTab !== "questions" && (feedTab !== "media" || pinnedPost.mediaUrl),
   );
+
+  useEffect(() => {
+    reportProductEvent("profile_opened", { surface: "profile" });
+  }, [telemetryKey]);
 
   return (
     <>

@@ -19,6 +19,7 @@ export const rateLimits = {
   recordView: () => createLimit(300, "10 m"),
   like: () => createLimit(100, "10 m"),
   updateStatus: () => createLimit(20, "1 h"),
+  updateSocialProfile: () => createLimit(30, "1 h"),
   uploadTrack: () => createLimit(10, "24 h"),
   uploadChat: () => createLimit(30, "1 h"),
   // Жёсткий лимит против перебора промокодов.
@@ -42,6 +43,8 @@ export const rateLimits = {
   // Входящие вебхуки (ключ — IP источника): троттлинг до обращения к внешнему API.
   webhook: () => createLimit(120, "1 m"),
   telemetry: () => createLimit(120, "1 m"),
+  passwordLogin: () => createLimit(10, "10 m"),
+  trustDevice: () => createLimit(20, "1 h"),
   checkLinkSafety: () => createLimit(60, "10 m"),
   adminUpload: () => createLimit(30, "1 h"),
   accountExport: () => createLimit(3, "24 h"),

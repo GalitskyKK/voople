@@ -12,6 +12,12 @@ test("web and desktop compose the canonical profile card view", () => {
   assert.equal(existsSync("desktop/src/profile/DesktopProfileActions.tsx"), false);
 });
 
+test("profile sharing uses one controller on web and desktop", () => {
+  assert.match(read("src/components/profile/ProfileShareCardButton.tsx"), /ProfileShareController/);
+  assert.match(read("desktop/src/adapters/DesktopProfileShareAdapter.tsx"), /ProfileShareController/);
+  assert.equal(existsSync("desktop/src/profile/DesktopProfileShareButton.tsx"), false);
+});
+
 test("desktop profile loads and renders profile pins", () => {
   assert.match(read("desktop/src/profile/useDesktopProfile.ts"), /engagement\.badges/);
   assert.match(read("desktop/src/profile/DesktopProfile.tsx"), /ProfileBadgesView/);

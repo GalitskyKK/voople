@@ -15,6 +15,7 @@ import { profileRouter } from "./routers/profile";
 import { questionsRouter } from "./routers/questions";
 import { searchRouter } from "./routers/search";
 import { shopRouter } from "./routers/shop";
+import { socialRouter } from "./routers/social";
 import { statusRouter } from "./routers/status";
 import { uploadRouter } from "./routers/upload";
 import { userRouter } from "./routers/user";
@@ -37,6 +38,7 @@ export const appRouter = createTRPCRouter({
   customization: customizationRouter,
   engagement: engagementRouter,
   shop: shopRouter,
+  social: socialRouter,
   upload: uploadRouter,
   notifications: notificationsRouter,
 });

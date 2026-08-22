@@ -1,8 +1,8 @@
 "use client";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { ConnectionQuality, Room, RoomEvent, Track, type RemoteParticipant, type RemoteTrack, type RemoteTrackPublication } from "livekit-client";
+import { ConnectionQuality, Room } from "livekit-client";
 import { loadVoicePreferences, saveVoicePreferences, type VoicePreferences } from "@/lib/livekit/voice-preferences";
-import { trpc } from "@/lib/trpc/client";
+import { reportProductEvent } from "@/lib/telemetry/client";
 import {
   getConnectionLabel,
   type MediaStatus,
@@ -11,7 +11,6 @@ import {
 import { VoiceRoomSheet } from "./voice/VoiceRoomSheet";
 import { VoiceRoomTrigger } from "./voice/VoiceRoomTrigger";
 import { VoiceSettingsPanel } from "./voice/VoiceSettingsPanel";
-import { configureVoiceRoomEvents } from "./voice/configureVoiceRoomEvents";
 import { VoiceMiniStage } from "./voice/VoiceMiniStage";
 import { VoiceSessionDock } from "./voice/VoiceSessionDock";
 import { useCallDuration } from "./voice/useCallDuration";
@@ -19,7 +18,6 @@ import { useVoiceHeartbeat } from "./voice/useVoiceHeartbeat";
 import { useVoiceOutput } from "./voice/useVoiceOutput";
 import { useVoiceRoomTermination } from "./voice/useVoiceRoomTermination";
 import { useVoiceVideoStage } from "./voice/useVoiceVideoStage";
-import { playVoiceRoomSound } from "./voice/voice-room-sounds";
 import { useScreenShareSubscription } from "./voice/useScreenShareSubscription";
 import { getDirectCallPhase } from "./voice/call-phase";
 import { useDesktopScreenAudioPublisher } from "./voice/useDesktopScreenAudioPublisher";
@@ -28,6 +26,9 @@ import { useTerminalVoiceRecovery } from "./voice/useTerminalVoiceRecovery";
 import { useVoiceDeviceSettings } from "./voice/useVoiceDeviceSettings";
 import { useVoiceMediaActions } from "./voice/useVoiceMediaActions";
 import { useVoiceMediaConnection } from "./voice/useVoiceMediaConnection";
+import { useVoiceRoomEventConfigurator } from "./voice/useVoiceRoomEventConfigurator";
+import { useVoiceRoomServerSession } from "./voice/useVoiceRoomServerSession";
+import { playVoiceRoomSound } from "./voice/voice-room-sounds";
 type ChatRoomControlProps = {
   chatId: string;
   chatName: string;
@@ -128,24 +129,9 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
     setWatching: setWatchingScreenShare,
   });
   const { toggle: toggleDesktopScreenAudio, stop: stopDesktopScreenAudio, error: desktopScreenAudioError } = useDesktopScreenAudioPublisher(chatId);
-  const utils = trpc.useUtils();
   const groupSoundboard = useGroupSoundboard(chatId, chatType === "group", liveRoomRef);
-  const room = trpc.chat.room.useQuery(
-    { chatId },
-    { staleTime: 5_000, refetchInterval: open ? 5_000 : 15_000 },
-  );
-  const enter = trpc.chat.enterRoom.useMutation();
-  const mediaToken = trpc.chat.roomMediaToken.useMutation();
-  const leave = trpc.chat.leaveRoom.useMutation({
-    onSuccess: () => {
-      void utils.chat.room.invalidate({ chatId });
-    },
-  });
-
-  const access = trpc.chat.setRoomAccess.useMutation({
-    onSuccess: () => void utils.chat.room.invalidate({ chatId }),
-  });
-
+  const { access, enter, leave, mediaToken, room, utils } =
+    useVoiceRoomServerSession(chatId, open);
   const value = room.data;
   const active = value?.status === "active" || value?.status === "ringing";
   const inside = Boolean(value?.isInside);
@@ -201,7 +187,6 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
     toggleDesktopScreenAudio,
     setError: setMediaError,
   });
-
   useEffect(() => {
     onStateChange?.({ inside, mediaStatus, participantCount, micMuted, outputMuted });
   }, [inside, mediaStatus, micMuted, onStateChange, outputMuted, participantCount]);
@@ -213,50 +198,27 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
     return () => window.clearTimeout(timer);
   }, [open, showParkedMedia]);
 
-  const attachRemoteTrack = (
-    track: RemoteTrack,
-    publication: RemoteTrackPublication,
-    participant: RemoteParticipant,
-  ) => {
-    if (track.kind === Track.Kind.Audio) {
-      attachAudio(track, participant);
-      return;
-    }
-    attachRemoteVideo(track, publication, participant);
-  };
-
-  const configureRoomEvents = (liveRoom: Room) => {
-    configureVoiceRoomEvents({
-      room: liveRoom,
-      isCurrent: () => liveRoomRef.current === liveRoom,
-      onRemoteTrack: attachRemoteTrack,
-      onRemoteTrackDetached: detachRemoteVideo,
-      onLocalVideoPublished: attachLocalVideo,
-      onLocalVideoUnpublished: (publication) => {
-        detachLocalVideo(publication);
-        if (publication.source === Track.Source.ScreenShare) void stopDesktopScreenAudio();
-      },
-      onMicrophonesChange: (localMuted, remoteMutedById) => {
-        setMicMuted(localMuted);
-        setRemoteMicMutedById(remoteMutedById);
-      },
-      onActiveSpeakersChange: setActiveSpeakerIds,
-      onConnectionQualityChange: setConnectionQuality,
-      onAudioBlockedChange: setAudioBlocked,
-      onReconnecting: () => setMediaStatus("reconnecting"),
-      onReconnected: () => {
-        setMediaStatus("connected");
-        setMediaError(null);
-      },
-      onParticipantConnected: () => preferencesRef.current.roomSounds && void playVoiceRoomSound("join"),
-      onParticipantDisconnected: () => preferencesRef.current.roomSounds && void playVoiceRoomSound("leave"),
-      onRemotePublication: screenSubscription.syncPublication,
-      onRemotePublicationRemoved: screenSubscription.removePublication,
-      onDataReceived: groupSoundboard.onDataReceived,
-    });
-
-    liveRoom.on(RoomEvent.Disconnected, (reason) => handleDisconnected(liveRoom, reason));
-  };
+  const configureRoomEvents = useVoiceRoomEventConfigurator({
+    roomRef: liveRoomRef,
+    roomSoundsEnabled: () => preferencesRef.current.roomSounds,
+    attachAudio,
+    attachRemoteVideo,
+    detachRemoteVideo,
+    attachLocalVideo,
+    detachLocalVideo,
+    stopDesktopScreenAudio,
+    setMicMuted,
+    setRemoteMicMutedById,
+    setActiveSpeakerIds,
+    setConnectionQuality,
+    setAudioBlocked,
+    setMediaStatus,
+    setMediaError,
+    syncRemotePublication: screenSubscription.syncPublication,
+    removeRemotePublication: screenSubscription.removePublication,
+    onDataReceived: groupSoundboard.onDataReceived,
+    handleDisconnected,
+  });
 
   const {
     endpoints,
@@ -293,8 +255,10 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
       if (!inside) {
         const nextRoom = await enter.mutateAsync({ chatId, micMuted });
         utils.chat.room.setData({ chatId }, nextRoom);
+        if (!active) reportProductEvent("room_created", { kind: chatType });
       }
       await connectMedia();
+      reportProductEvent("room_joined", { kind: chatType });
     } catch {
       // Ошибка мутации уже отображается ниже.
     }
@@ -303,16 +267,24 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
   const leaveRoom = async () => {
     disconnectMedia();
     await leave.mutateAsync({ chatId });
+    reportProductEvent("room_left", { durationSeconds: value?.startedAt ? Math.max(0, Math.round((Date.now() - new Date(value.startedAt).getTime()) / 1000)) : 0 });
+  };
+
+  const toggleOutputWithMicrophone = async () => {
+    if (!outputMuted && !micMuted) await toggleMic();
+    const muted = toggleOutput();
+    void playVoiceRoomSound(muted ? "deafen" : "undeafen");
   };
 
   const openRoom = useCallback(() => {
     setMediaError(null);
     setOpen(true);
-  }, []);
+    reportProductEvent("room_opened", { kind: chatType });
+  }, [chatType]);
 
   useImperativeHandle(ref, () => ({
     open: openRoom, join: () => void enterAndConnect(),
-    toggleMicrophone: () => void toggleMic(), toggleOutput,
+    toggleMicrophone: () => void toggleMic(), toggleOutput: () => void toggleOutputWithMicrophone(),
     leave: () => { if (inside) void leaveRoom(); },
   }));
 
@@ -383,7 +355,7 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
           }
           onOpen={openRoom}
           onToggleMic={() => void toggleMic()}
-          onToggleOutput={toggleOutput}
+          onToggleOutput={() => void toggleOutputWithMicrophone()}
           onLeave={() => void leaveRoom()}
         />
       ) : null}
@@ -423,7 +395,7 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
         cameraPending={cameraPending}
         audioBlocked={audioBlocked}
         onMicToggle={toggleMic}
-        onOutputToggle={toggleOutput}
+        onOutputToggle={() => void toggleOutputWithMicrophone()}
         onScreenShareToggle={toggleScreenShare}
         onCameraToggle={toggleCamera}
         onResumeAudio={resumeAudio}

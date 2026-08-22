@@ -28,6 +28,18 @@ export function ProfileCardBodyVisual({
           <RichText text={profile.bio} />
         </p>
       ) : null}
+      {profile.interests?.length ? (
+        <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Интересы">
+          {profile.interests.map((interest) => (
+            <span
+              key={interest.slug}
+              className="rounded-full border border-[color-mix(in_srgb,var(--theme-accent)_24%,var(--app-border))] bg-[color-mix(in_srgb,var(--theme-accent)_9%,var(--app-surface-soft))] px-2.5 py-1 text-xs text-[var(--app-foreground)]"
+            >
+              {interest.name}
+            </span>
+          ))}
+        </div>
+      ) : null}
       {profile.lastSeenAt ? (
         <p className="mt-2 text-xs text-[var(--app-muted)]">
           <ProfilePresenceLabel userId={profile.id} lastSeenAt={profile.lastSeenAt} />

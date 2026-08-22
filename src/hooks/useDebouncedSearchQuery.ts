@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-export function useDebouncedSearchQuery(delay = 300) {
-  const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+export function useDebouncedSearchQuery(delay = 300, initialQuery = "") {
+  const [query, setQuery] = useState(initialQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery.trim());
 
   useEffect(() => {
     const timeoutId = window.setTimeout(

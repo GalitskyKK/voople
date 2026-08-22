@@ -1,5 +1,6 @@
 import { assertOwnedUploadKey, chatAttachmentKindFromKey } from "@/lib/object-storage";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { normalizeGroupJoinPolicy, normalizeGroupVisibility } from "@/lib/chat/group-access";
 import {
   toProfileCustomizationView,
   type CustomizationRow,
@@ -9,6 +10,7 @@ import type { ChatMessageView, ChatThreadSummary } from "@/types/chat";
 import { assertChatMemberRest } from "@/server/data/chat-access-rest";
 import { loadGroupCommunitySummariesRest } from "@/server/data/chat-community-rest";
 import { getOrCreateDirectChatRest } from "@/server/data/chat-management-rest";
+import { canViewPrivateFieldRest, getUserPrivacySettingsRest } from "@/server/data/privacy-rest";
 import {
   type ChatMessageContentInputNode,
   type StoredChatMessageContentNode,
@@ -74,11 +76,11 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
   const chatIds = memberships.map((m) => m.chat_id as string);
 
   const [chatsResult, membersResult, channelsResult] = await Promise.all([
-    admin.from("chats").select("id, type, name, parent_chat_id, topics_enabled, topics_layout, topic_icon, group_visibility, section_access_mode").in("id", chatIds),
+    admin.from("chats").select("id, type, name, parent_chat_id, topics_enabled, topics_layout, topic_icon, group_visibility, join_policy, section_access_mode").in("id", chatIds),
     admin.from("chat_members").select("chat_id, user_id, role").in("chat_id", chatIds),
     admin
       .from("chats")
-      .select("id, type, name, parent_chat_id, topics_enabled, topics_layout, topic_icon, group_visibility, section_access_mode")
+      .select("id, type, name, parent_chat_id, topics_enabled, topics_layout, topic_icon, group_visibility, join_policy, section_access_mode")
       .in("parent_chat_id", chatIds),
   ]);
 
@@ -102,7 +104,8 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
   const topicsEnabledByChat = new Map<string, boolean>();
   const topicsLayoutByChat = new Map<string, "tabs" | "list">();
   const topicIconByChat = new Map<string, string | null>();
-  const groupVisibilityByChat = new Map<string, "private" | "public">();
+  const groupVisibilityByChat = new Map<string, ChatListItem["groupVisibility"]>();
+  const joinPolicyByChat = new Map<string, ChatListItem["joinPolicy"]>();
   const sectionAccessByChat = new Map<string, "inherit" | "restricted">();
   for (const c of [...(chatsResult.data ?? []), ...channelRows]) {
     typeByChat.set(c.id as string, (c.type as "direct" | "group") ?? "direct");
@@ -110,7 +113,8 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
     topicsEnabledByChat.set(c.id as string, Boolean(c.topics_enabled));
     topicsLayoutByChat.set(c.id as string, c.topics_layout === "tabs" ? "tabs" : "list");
     topicIconByChat.set(c.id as string, (c.topic_icon as string | null) ?? null);
-    groupVisibilityByChat.set(c.id as string, c.group_visibility === "public" ? "public" : "private");
+    groupVisibilityByChat.set(c.id as string, normalizeGroupVisibility(c.group_visibility));
+    joinPolicyByChat.set(c.id as string, normalizeGroupJoinPolicy(c.join_policy));
     sectionAccessByChat.set(c.id as string, c.section_access_mode === "restricted" ? "restricted" : "inherit");
     if (c.parent_chat_id) {
       parentByChat.set(c.id as string, c.parent_chat_id as string);
@@ -163,6 +167,16 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
 
     if (usersErr) throw new Error(usersErr.message);
 
+    const onlineVisibility = new Map<string, boolean>();
+    await Promise.all((users ?? []).map(async (user) => {
+      const otherUserId = String(user.id);
+      const privacy = await getUserPrivacySettingsRest(otherUserId);
+      onlineVisibility.set(
+        otherUserId,
+        await canViewPrivateFieldRest(otherUserId, userId, privacy.onlineScope),
+      );
+    }));
+
     const userById = new Map(
       (users ?? []).map((u) => {
         const subs = u.subscriptions as
@@ -178,7 +192,7 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
             username: u.username as string,
             displayName: u.display_name as string,
             hasVooplePlus,
-            lastSeenAt: u.show_online_status === false ? null : (u.last_seen_at as string | null),
+            lastSeenAt: u.show_online_status === false || !onlineVisibility.get(String(u.id)) ? null : (u.last_seen_at as string | null),
             ...compactAvatarFields(
               u.profile_customization as
                 | CustomizationRow
@@ -236,6 +250,7 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
       topicsLayout: topicsLayoutByChat.get(id) ?? "list",
       topicIcon: topicIconByChat.get(id) ?? null,
       groupVisibility: groupVisibilityByChat.get(id) ?? "private",
+      joinPolicy: joinPolicyByChat.get(id) ?? "invite_only",
       sectionAccessMode: sectionAccessByChat.get(id) ?? "inherit",
       groupIcon: community?.icon ?? null,
       groupAvatarUrl: community?.avatarUrl ?? null,
@@ -326,7 +341,7 @@ export async function listMessagesRest(
       .eq("chat_id", membership.accessChatId),
     admin
       .from("chats")
-      .select("id, type, name, parent_chat_id, topics_enabled, topics_layout, topic_icon, group_visibility, section_access_mode")
+      .select("id, type, name, parent_chat_id, topics_enabled, topics_layout, topic_icon, group_visibility, join_policy, section_access_mode")
       .eq("id", chatId)
       .single(),
   ]);
@@ -362,6 +377,8 @@ export async function listMessagesRest(
       | null;
     const user = Array.isArray(u) ? u[0] : u;
     if (user) {
+      const privacy = await getUserPrivacySettingsRest(user.id);
+      const canSeeOnline = await canViewPrivateFieldRest(user.id, userId, privacy.onlineScope);
       const subs = user.subscriptions;
       const sub = Array.isArray(subs) ? subs[0] : subs;
       const { hasVooplePlus } = mapSubscriptionFields(sub ?? undefined);
@@ -370,7 +387,7 @@ export async function listMessagesRest(
         username: user.username,
         displayName: user.display_name,
         hasVooplePlus,
-        lastSeenAt: user.show_online_status === false ? null : (user.last_seen_at ?? null),
+        lastSeenAt: user.show_online_status === false || !canSeeOnline ? null : (user.last_seen_at ?? null),
         ...compactAvatarFields(user.profile_customization),
       };
       break;
@@ -446,7 +463,8 @@ export async function listMessagesRest(
       topicsEnabled: Boolean(chatResult.data.topics_enabled),
       topicsLayout: chatResult.data.topics_layout === "tabs" ? "tabs" : "list",
       topicIcon: (chatResult.data.topic_icon as string | null) ?? null,
-      groupVisibility: chatResult.data.group_visibility === "public" ? "public" : "private",
+      groupVisibility: normalizeGroupVisibility(chatResult.data.group_visibility),
+      joinPolicy: normalizeGroupJoinPolicy(chatResult.data.join_policy),
       sectionAccessMode: chatResult.data.section_access_mode === "restricted" ? "restricted" : "inherit",
       groupIcon: community?.icon ?? null,
       groupAvatarUrl: community?.avatarUrl ?? null,

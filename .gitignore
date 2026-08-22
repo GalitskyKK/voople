@@ -29,6 +29,11 @@
 /docs/*
 !/docs/component-platform-map.md
 !/docs/redesign-implementation-matrix.md
+!/docs/product-spec-implementation-audit.md
+!/docs/final-product-social-ux-implementation-audit.md
+!/docs/README.md
+!/docs/next-feature-release-backlog.md
+!/docs/current-stabilization-release-readiness.md
 /drizzle/*
 !/drizzle/38-group-emojis.sql
 !/drizzle/39-structured-chat-content.sql
@@ -36,6 +41,14 @@
 !/drizzle/45-app-schema-migrations.sql
 !/drizzle/46-legacy-emoji-backfill.sql
 !/drizzle/47-message-reactions-replica-identity.sql
+!/drizzle/48-group-baseline-identity.sql
+!/drizzle/49-client-product-analytics.sql
+!/drizzle/50-trusted-login-devices.sql
+!/drizzle/51-group-perk-allocations.sql
+!/drizzle/52-group-discovery-access.sql
+!/drizzle/53-interests-topics.sql
+!/drizzle/54-presence-privacy.sql
+!/drizzle/55-contact-pins.sql
 # Local toolchain experiment for the feature-gated Windows process-audio build.
 /desktop/src-tauri/.cargo/
 

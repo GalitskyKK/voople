@@ -66,12 +66,46 @@ const SELECTED_SURFACE_AUDIO = {
 } satisfies AudioCaptureOptions;
 
 const SCREEN_SHARE_BASE = {
+  // Preselect applications/windows without removing tabs or full screens.
+  // The selected surface still comes exclusively from the browser picker.
   video: { displaySurface: "window" },
   contentHint: "detail",
   selfBrowserSurface: "exclude",
   systemAudio: "include",
   surfaceSwitching: "include",
 } as const;
+
+export type VoopleDisplayMediaOptions = DisplayMediaStreamOptions & {
+  monitorTypeSurfaces?: "include" | "exclude";
+  selfBrowserSurface?: "include" | "exclude";
+  surfaceSwitching?: "include" | "exclude";
+  systemAudio?: "include" | "exclude";
+  windowAudio?: "exclude" | "system" | "window";
+};
+
+export function getBrowserDisplayMediaOptions(
+  quality: ScreenShareQuality,
+): VoopleDisplayMediaOptions {
+  const resolution = quality === "plus"
+    ? { width: 1920, height: 1080, frameRate: 60 }
+    : ScreenSharePresets.h720fps30.resolution;
+  return {
+    audio: SELECTED_SURFACE_AUDIO,
+    video: {
+      displaySurface: "window",
+      width: { ideal: resolution.width },
+      height: { ideal: resolution.height },
+      frameRate: resolution.frameRate,
+    },
+    monitorTypeSurfaces: "include",
+    selfBrowserSurface: "exclude",
+    surfaceSwitching: "include",
+    systemAudio: "include",
+    // Newer Chromium builds can offer audio belonging only to the selected
+    // application window. Older browsers safely ignore this picker hint.
+    windowAudio: "window",
+  };
+}
 
 export function getScreenShareCaptureOptions(
   quality: ScreenShareQuality,

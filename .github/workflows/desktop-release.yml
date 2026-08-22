@@ -150,8 +150,8 @@ jobs:
         continue-on-error: true
         working-directory: desktop/src-tauri
         run: |
-          cargo test --features process-audio-publisher --target x86_64-pc-windows-msvc
-          cargo check --features process-audio-publisher --target x86_64-pc-windows-msvc
+          cargo test --locked --features process-audio-publisher --target x86_64-pc-windows-msvc
+          cargo check --locked --features process-audio-publisher --target x86_64-pc-windows-msvc
 
       - name: Prepare updater and optional Authenticode signing
         shell: pwsh
@@ -221,8 +221,12 @@ jobs:
         run: |
           $included = '${{ steps.native_audio_build.outcome }}' -eq 'success'
           "PROCESS_AUDIO_INCLUDED=$($included.ToString().ToLowerInvariant())" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          '## Windows application audio' | Out-File $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
           if (-not $included) {
             Write-Warning "Native process audio is unavailable in this RC; publishing the video-only fallback build."
+            '⚠️ RC uses the explicitly allowed video-only fallback (`processAudioPublisher: false`). Windows application audio is now a blocking P0 of the next feature release; see `docs/next-feature-release-backlog.md`.' | Out-File $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          } else {
+            '✅ Native process audio publisher is included (`processAudioPublisher: true`).' | Out-File $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
           }
 
       - name: Normalize and attest RC artifact

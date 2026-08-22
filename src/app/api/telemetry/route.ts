@@ -5,6 +5,10 @@ import { desktopCorsPreflight, withDesktopCors } from "@/lib/http/desktop-cors";
 import { rateLimits } from "@/lib/ratelimit";
 import { checkRateLimit } from "@/lib/ratelimit-guard";
 import { recordClientTelemetry } from "@/server/services/client-telemetry.service";
+import {
+  PRODUCT_EVENT_NAMES,
+  PRODUCT_EVENT_PROPERTY_KEYS,
+} from "@/lib/telemetry/types";
 
 const baseSchema = z.object({
   version: z.literal(1),
@@ -31,15 +35,16 @@ const bodySchema = z.discriminatedUnion("kind", [
   }),
   baseSchema.extend({
     kind: z.literal("product"),
-    name: z.enum([
-      "home_view", "chat_open", "message_send", "voice_join", "voice_reconnect",
-      "voice_reconnect_failed", "screen_audio_start", "screen_audio_stop",
-      "external_link_verdict", "shop_view", "group_boost_view", "desktop_update_install",
-    ]),
+    name: z.enum(PRODUCT_EVENT_NAMES),
     properties: z.record(
       z.string().min(1).max(40),
       z.union([z.string().max(80), z.number().finite(), z.boolean()]),
-    ).optional(),
+    ).optional().refine(
+      (properties) => !properties || Object.keys(properties).every(
+        (key) => (PRODUCT_EVENT_PROPERTY_KEYS as readonly string[]).includes(key),
+      ),
+      "Unsupported telemetry property",
+    ),
   }),
 ]);
 
@@ -75,8 +80,8 @@ export async function POST(request: Request) {
     return respond(NextResponse.json({ error: "Invalid telemetry event" }, { status: 400 }));
   }
 
-  recordClientTelemetry(parsed.data);
-  return respond(NextResponse.json({ accepted: true }, { status: 202 }));
+  const persisted = await recordClientTelemetry(parsed.data);
+  return respond(NextResponse.json({ accepted: true, persisted }, { status: 202 }));
 }
 
 export function OPTIONS(request: Request) {

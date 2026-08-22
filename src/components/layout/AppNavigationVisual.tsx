@@ -19,6 +19,7 @@ export type NavigationDestinationRenderProps = {
   className: string;
   active: boolean;
   children: ReactNode;
+  onNavigate?: () => void;
 };
 
 export type NavigationDestinationRenderer = (

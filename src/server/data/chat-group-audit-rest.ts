@@ -56,6 +56,7 @@ function isAuditAction(value: unknown): value is ChatGroupAuditAction {
     "ownership_transferred",
     "topics_changed",
     "visibility_changed",
+    "group_name_changed",
   ].includes(String(value));
 }
 

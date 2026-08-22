@@ -13,6 +13,7 @@ import {
   purchaseShopItemWithCoins,
 } from "@/server/services/shop.service";
 import { createTRPCRouter, protectedProcedure } from "../init";
+import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
 
 export const shopRouter = createTRPCRouter({
   subscriptionStatus: protectedProcedure.query(async ({ ctx }) => {
@@ -67,7 +68,9 @@ export const shopRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       try {
         await purchaseShopItemWithCoins(ctx.user.id, input.itemId);
-        return getShopOverview(ctx.user.id);
+        const result = await getShopOverview(ctx.user.id);
+        await recordServerProductEvent({ name: "purchase_completed", actorId: ctx.user.id, route: "/trpc/shop.purchaseWithCoins", properties: { kind: "voops" } });
+        return result;
       } catch (e) {
         throw new TRPCError({
           code: "BAD_REQUEST",

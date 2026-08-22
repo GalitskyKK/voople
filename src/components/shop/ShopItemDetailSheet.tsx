@@ -1,10 +1,12 @@
 "use client";
 
 import { Eye, Sparkles } from "lucide-react";
+import { useEffect } from "react";
 
 import { Sheet } from "@/components/ui/Sheet";
 import { shopKindLabel } from "@/lib/shop/categories";
 import type { ShopItemView } from "@/types/shop";
+import { reportProductEvent } from "@/lib/telemetry/client";
 
 import { ShopCatalogPreview } from "./ShopCatalogPreview";
 
@@ -18,6 +20,9 @@ const CONTEXT_LABELS: Partial<Record<ShopItemView["kind"], string>> = {
 };
 
 export function ShopItemDetailSheet({ item, open, onClose }: { item: ShopItemView; open: boolean; onClose: () => void }) {
+  useEffect(() => {
+    if (open) reportProductEvent("item_viewed", { itemKind: item.kind, surface: "store_detail" });
+  }, [item.kind, open]);
   return (
     <Sheet open={open} onClose={onClose} className="max-w-2xl" ariaLabel={`Предпросмотр товара ${item.name}`}>
       <div className="flex items-start gap-3 pr-10">

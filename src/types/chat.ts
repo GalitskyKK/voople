@@ -94,6 +94,9 @@ export type ChatMessageNotificationView = {
   previewText: string;
 };
 
+export type GroupVisibility = "private" | "unlisted" | "public";
+export type GroupJoinPolicy = "open" | "request" | "invite_only";
+
 export type ChatListItem = {
   id: string;
   type: "direct" | "group";
@@ -102,7 +105,8 @@ export type ChatListItem = {
   topicsEnabled: boolean;
   topicsLayout: "tabs" | "list";
   topicIcon: string | null;
-  groupVisibility: "private" | "public";
+  groupVisibility: GroupVisibility;
+  joinPolicy: GroupJoinPolicy;
   sectionAccessMode: "inherit" | "restricted";
   groupIcon: string | null;
   groupAvatarUrl: string | null;
@@ -151,7 +155,8 @@ export type ChatGroupAuditAction =
   | "role_changed"
   | "ownership_transferred"
   | "topics_changed"
-  | "visibility_changed";
+  | "visibility_changed"
+  | "group_name_changed";
 
 export type ChatGroupAuditActor = {
   id: string;
@@ -177,6 +182,8 @@ export type PublicGroupSearchHit = {
   tag: string | null;
   memberCount: number;
   joined: boolean;
+  joinPolicy: GroupJoinPolicy;
+  joinRequestPending: boolean;
 };
 
 export type PublicGroupPageView = PublicGroupSearchHit & {
@@ -226,7 +233,33 @@ export type GroupCommunityView = {
     cooldownUntil: string | null;
   }>;
   groupLevel: 0 | 1 | 3 | 6 | 12 | 24;
+  perkCapacity: number;
+  perkUsed: number;
+  perks: Array<{
+    id: string;
+    name: string;
+    description: string;
+    cost: number;
+    milestone: 1 | 3 | 6 | 12 | 24;
+    icon: "palette" | "smile" | "image" | "upload" | "tag" | "link" | "roles" | "hd";
+    selected: boolean;
+    status: "active" | "available" | "locked" | "suspended";
+  }>;
+  animatedIconEnabled: boolean;
+  animatedBannerEnabled: boolean;
+  emojiSoundEnabled: boolean;
+  largeUploadsEnabled: boolean;
+  hdRoomEnabled: boolean;
   graceUntil: string | null;
+};
+
+export type GroupJoinRequestView = {
+  id: string;
+  userId: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  createdAt: string;
 };
 
 export type ChatThreadSummary = Pick<
@@ -239,6 +272,7 @@ export type ChatThreadSummary = Pick<
   | "topicsLayout"
   | "topicIcon"
   | "groupVisibility"
+  | "joinPolicy"
   | "sectionAccessMode"
   | "groupIcon"
   | "groupAvatarUrl"
@@ -299,5 +333,7 @@ export type ChatInvitePreview = {
   groupTag: string | null;
   groupAccentColor: string | null;
   memberCount: number;
+  onlineCount: number;
+  roomParticipantCount: number;
   expiresAt: string | null;
 };

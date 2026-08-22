@@ -3,9 +3,9 @@ import { publicAssetUrl } from "@/lib/object-storage";
 import {
   groupBannerEnabled,
   groupBoostLevel,
+  isGroupPerkActive,
+  resolveGroupPerkStates,
   groupTagEnabled,
-  groupVanityInviteEnabled,
-  groupRoleStylesEnabled,
 } from "@/lib/group-perks";
 import { assertChatMemberRest } from "@/server/data/chat-access-rest";
 import type { GroupCommunityView } from "@/types/chat";
@@ -99,9 +99,7 @@ export async function loadGroupCommunitySummariesRest(
             ? ((row?.tag as string | null | undefined) ?? null)
             : null,
           effectiveAccentColor:
-            effectiveLevel > 0
-              ? ((row?.accent_color as string | null | undefined) ?? null)
-              : null,
+            (row?.accent_color as string | null | undefined) ?? null,
           boostCount,
           boostedByMe: boostedByViewer.has(chatId),
           groupLevel: effectiveLevel,
@@ -120,7 +118,7 @@ export async function getGroupCommunityRest(
     throw new Error("Кастомизация доступна в основной группе");
   }
   const admin = getAdminClient();
-  const [{ data: customization, error }, summaries, { data: subscription }, { data: boostRows, error: boostRowsError }] =
+  const [{ data: customization, error }, summaries, { data: subscription }, { data: boostRows, error: boostRowsError }, { data: allocationRows, error: allocationError }] =
     await Promise.all([
       admin
         .from("group_customization")
@@ -138,9 +136,15 @@ export async function getGroupCommunityRest(
         .from("group_boosts")
         .select("slot, chat_id, moved_at")
         .eq("user_id", userId),
+      admin
+        .from("group_perk_allocations")
+        .select("perk_id, enabled_at")
+        .eq("chat_id", chatId)
+        .order("enabled_at", { ascending: true }),
     ]);
   if (error) throw new Error(error.message);
   if (boostRowsError) throw new Error(boostRowsError.message);
+  if (allocationError) throw new Error(allocationError.message);
   const summary = summaries.get(chatId);
   const boosts = summary?.boostCount ?? 0;
   const graceUntil = (customization?.boost_grace_until as string | null | undefined) ?? null;
@@ -149,6 +153,22 @@ export async function getGroupCommunityRest(
     boosts,
     graceActive ? Number(customization?.boost_grace_level ?? 0) : 0,
   ));
+  const perkCapacity = Math.max(
+    boosts,
+    graceActive ? Number(customization?.boost_grace_level ?? 0) : 0,
+  );
+  const resolvedPerks = resolveGroupPerkStates({
+    capacity: perkCapacity,
+    level: effectiveLevel,
+    selectedIds: (allocationRows ?? []).map((row) => row.perk_id as string),
+  });
+  const animatedIconEnabled = isGroupPerkActive(resolvedPerks.perks, "animated_icon");
+  const animatedBannerEnabled = isGroupPerkActive(resolvedPerks.perks, "animated_banner");
+  const emojiSoundEnabled = isGroupPerkActive(resolvedPerks.perks, "emoji_sound");
+  const largeUploadsEnabled = isGroupPerkActive(resolvedPerks.perks, "uploads");
+  const vanityEnabled = isGroupPerkActive(resolvedPerks.perks, "vanity");
+  const roleStylesEnabled = isGroupPerkActive(resolvedPerks.perks, "roles");
+  const hdRoomEnabled = isGroupPerkActive(resolvedPerks.perks, "hd");
   const roleColors = {
     owner: (customization?.owner_role_color as string | null | undefined) ?? null,
     admin: (customization?.admin_role_color as string | null | undefined) ?? null,
@@ -167,7 +187,7 @@ export async function getGroupCommunityRest(
     effectiveTag: summary?.effectiveTag ?? null,
     vanityInviteSlug: (customization?.vanity_invite_slug as string | null | undefined) ?? null,
     roleColors,
-    effectiveRoleColors: groupRoleStylesEnabled(effectiveLevel)
+    effectiveRoleColors: roleStylesEnabled
       ? roleColors
       : { owner: null, admin: null, member: null },
     publicSlug: (customization?.public_slug as string | null | undefined) ?? null,
@@ -176,11 +196,11 @@ export async function getGroupCommunityRest(
     boostCount: boosts,
     boostedByMe: summary?.boostedByMe ?? false,
     canBoost: Boolean(subscription),
-    boostUnlocksAccent: effectiveLevel > 0,
+    boostUnlocksAccent: true,
     boostUnlocksBanner: groupBannerEnabled(effectiveLevel),
     boostUnlocksTag: groupTagEnabled(effectiveLevel),
-    boostUnlocksVanityInvite: groupVanityInviteEnabled(effectiveLevel),
-    boostUnlocksRoleStyles: groupRoleStylesEnabled(effectiveLevel),
+    boostUnlocksVanityInvite: vanityEnabled,
+    boostUnlocksRoleStyles: roleStylesEnabled,
     boostSlots: ([1, 2, 3] as const).map((slot) => {
       const row = bySlot.get(slot);
       const movedAt = row?.moved_at ? new Date(row.moved_at as string).getTime() : 0;
@@ -193,8 +213,54 @@ export async function getGroupCommunityRest(
       };
     }),
     groupLevel: effectiveLevel,
+    perkCapacity,
+    perkUsed: resolvedPerks.used,
+    perks: resolvedPerks.perks,
+    animatedIconEnabled,
+    animatedBannerEnabled,
+    emojiSoundEnabled,
+    largeUploadsEnabled,
+    hdRoomEnabled,
     graceUntil: graceActive ? graceUntil : null,
   };
+}
+
+export async function setGroupPerkAllocationRest(
+  chatId: string,
+  userId: string,
+  perkId: string,
+  enabled: boolean,
+) {
+  const membership = await assertChatMemberRest(chatId, userId);
+  if (membership.type !== "group" || membership.parentChatId) {
+    throw new Error("Перки настраиваются только для основной группы");
+  }
+  if (membership.role !== "owner" && membership.role !== "admin") {
+    throw new Error("Перки могут настраивать владелец и администраторы");
+  }
+  const community = await getGroupCommunityRest(chatId, userId);
+  const perk = community.perks.find((item) => item.id === perkId);
+  if (!perk) throw new Error("Неизвестный perk");
+  const admin = getAdminClient();
+  if (!enabled) {
+    const { error } = await admin.from("group_perk_allocations").delete().eq("chat_id", chatId).eq("perk_id", perkId);
+    if (error) throw new Error(error.message);
+    return getGroupCommunityRest(chatId, userId);
+  }
+  if (perk.status === "locked") throw new Error(`Perk открывается на milestone ${perk.milestone}`);
+  if (!perk.selected && community.perkUsed + perk.cost > community.perkCapacity) {
+    throw new Error(`Не хватает ${community.perkUsed + perk.cost - community.perkCapacity} point вместимости`);
+  }
+  const now = new Date().toISOString();
+  const { error } = await admin.from("group_perk_allocations").upsert({
+    chat_id: chatId,
+    perk_id: perkId,
+    enabled_by: userId,
+    enabled_at: now,
+    updated_at: now,
+  }, { onConflict: "chat_id,perk_id" });
+  if (error) throw new Error(error.message);
+  return getGroupCommunityRest(chatId, userId);
 }
 
 export async function updateGroupCustomizationRest(

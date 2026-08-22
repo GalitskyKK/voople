@@ -4,12 +4,12 @@ import { useCallback, useMemo } from "react";
 import { ChatListView } from "@/components/chat/ChatListView";
 import { MessagesLayoutView } from "@/components/chat/MessagesLayoutView";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
-import type { ChatListItem, PublicGroupSearchHit } from "@/types/chat";
+import type { ChatListItem } from "@/types/chat";
 import type { UserSearchHit } from "@/types/search";
 
 import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
-import { DesktopChatAvatar } from "./DesktopChatAvatar";
+import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { DesktopGroupChatCreator } from "./DesktopGroupChatCreator";
 import { DesktopChatThread } from "./DesktopChatThread";
 import { useDesktopChats } from "./useDesktopChats";
@@ -32,18 +32,12 @@ export function DesktopMessages({
   );
   const searchContacts = useCallback(
     async (query: string) => {
-      const contacts = (await client.query(
-        query.trim() ? "user.search" : "chat.contacts",
-        { q: query.trim() },
-      )) as UserSearchHit[];
+      const contacts = (await client.query("chat.contacts", {
+        q: query.trim(),
+      })) as UserSearchHit[];
       return contacts.filter((contact) => contact.id !== session.user.id);
     },
     [client, session.user.id],
-  );
-  const searchPublicGroups = useCallback(
-    async (query: string) =>
-      (await client.query("chat.publicGroups", { q: query })) as PublicGroupSearchHit[],
-    [client],
   );
   const onlineUserIds = useDesktopPresence();
   const { chats, error, loading, refresh } = useDesktopChats(
@@ -97,9 +91,10 @@ export function DesktopMessages({
             </button>
           )}
           renderAvatar={(chat, title) => (
-            <DesktopChatAvatar
+            <ProfileAvatar
               displayName={title}
-              avatarUrl={chat.otherUser?.avatarUrl}
+              size="sm"
+              animatedAvatarUrl={chat.otherUser?.avatarUrl}
               decorationUrl={chat.otherUser?.avatarDecorationUrl}
               ringId={chat.otherUser?.avatarRingId}
               isOnline={Boolean(
@@ -129,9 +124,10 @@ export function DesktopMessages({
             navigate(`/messages/${result.chatId}`);
           }}
           renderContactAvatar={(contact) => (
-            <DesktopChatAvatar
+            <ProfileAvatar
               displayName={contact.displayName}
-              avatarUrl={contact.avatarUrl}
+              size="sm"
+              animatedAvatarUrl={contact.avatarUrl}
               isOnline={onlineUserIds.has(contact.id)}
             />
           )}
@@ -147,14 +143,11 @@ export function DesktopMessages({
               ) : null}
             </span>
           )}
-          searchPublicGroups={searchPublicGroups}
-          openPublicGroup={async (group) => {
-            const result = (await client.mutation("chat.joinPublicGroup", {
-              chatId: group.id,
-            })) as { chatId: string };
-            await refresh();
-            navigate(`/messages/${result.chatId}`);
-          }}
+          renderGlobalSearchAction={(query) => (
+            <button type="button" className="voople-link mt-3 font-medium" onClick={() => navigate("/explore")}>
+              Искать «{query}» во всём Voople →
+            </button>
+          )}
         />
       }
       thread={

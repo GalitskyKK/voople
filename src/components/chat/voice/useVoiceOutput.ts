@@ -83,6 +83,7 @@ export function useVoiceOutput(
         participantVolumesRef.current[participant.identity] ?? 1,
       );
     });
+    return next;
   }, [applyParticipantVolume, roomRef]);
 
   const setParticipantVolume = useCallback(

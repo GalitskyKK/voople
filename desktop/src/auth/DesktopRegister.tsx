@@ -3,6 +3,8 @@ import { useState, type FormEvent } from "react";
 import { usernameSchema } from "@/lib/validation/username";
 import { getEmailDeliveryErrorMessage } from "@/lib/auth/email-delivery-error";
 import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/constants/legal";
+import { reportProductEvent } from "@/lib/telemetry/client";
+import { trustCurrentDevice } from "@/lib/auth/trusted-device-client";
 
 import type { DesktopConfig } from "../config";
 import { DesktopTurnstile } from "./DesktopTurnstile";
@@ -46,6 +48,7 @@ export function DesktopRegister({
     setError(null);
     setConfirmationEmail(null);
     const acceptedAt = new Date().toISOString();
+    reportProductEvent("signup_started", { source: "desktop" });
     const { data, error: signUpError } = await getSupabase(config).auth.signUp({
       email: email.trim(),
       password,
@@ -68,6 +71,17 @@ export function DesktopRegister({
     if (signUpError) {
       setError(getEmailDeliveryErrorMessage(signUpError));
       return;
+    }
+    reportProductEvent("signup_completed", {
+      source: "desktop",
+      state: data.session ? "authenticated" : "email_confirmation",
+    });
+    if (data.session) {
+      await trustCurrentDevice({
+        apiUrl: config.apiUrl,
+        accessToken: data.session.access_token,
+        platform: "desktop",
+      }).catch(() => undefined);
     }
     if (!data.session) {
       setConfirmationEmail(email.trim());

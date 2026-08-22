@@ -7,6 +7,8 @@ import {
   type UserRow
 } from "@/server/mappers/profile"
 import { listProfileCanvasStrokesRest } from "@/server/data/profile-canvas-rest"
+import { getPublicUserInterestsRest } from "@/server/data/interests-rest"
+import { canViewPrivateFieldRest, getUserPrivacySettingsRest } from "@/server/data/privacy-rest"
 import { getPostSelect, mapPostRowsWithReposts } from "@/server/data/post-hydration"
 import type { PostViewModel, ProfileViewModel } from "@/types/domain"
 
@@ -74,6 +76,33 @@ async function fetchPostsByAuthorId(authorId: string, limit = 50) {
   return (data ?? []) as unknown as PostRow[]
 }
 
+async function hydrateProfileRest(
+  user: UserRow,
+  stats: ProfileViewModel["stats"],
+  viewerId?: string | null,
+) {
+  const privacy = await getUserPrivacySettingsRest(user.id)
+  const [canSeeOnline, canSeeMusic, interests] = await Promise.all([
+    canViewPrivateFieldRest(user.id, viewerId ?? null, privacy.onlineScope),
+    canViewPrivateFieldRest(user.id, viewerId ?? null, privacy.musicScope),
+    privacy.showInterests || viewerId === user.id
+      ? getPublicUserInterestsRest(user.id)
+      : Promise.resolve([]),
+  ])
+  const profile = mapUserToProfile(user, stats)
+  return {
+    ...profile,
+    lastSeenAt: canSeeOnline ? profile.lastSeenAt : null,
+    interests,
+    status: canSeeMusic ? profile.status : {
+      ...profile.status,
+      trackId: null,
+      trackTitle: null,
+      trackArtist: null,
+    },
+  }
+}
+
 export async function getProfilePageDataRest(username: string, viewerId?: string | null) {
   const user = await fetchUserRowByUsername(username)
   if (!user) return null
@@ -87,8 +116,10 @@ export async function getProfilePageDataRest(username: string, viewerId?: string
     listProfileCanvasStrokesRest(user.id)
   ])
 
+  const profile = await hydrateProfileRest(userRow, stats, viewerId)
+
   return {
-    profile: mapUserToProfile(userRow, stats),
+    profile,
     posts: await mapPostRowsWithReposts(postRows, {
       viewerId,
       authorById: new Map([[user.id, author]])
@@ -97,11 +128,11 @@ export async function getProfilePageDataRest(username: string, viewerId?: string
   }
 }
 
-export async function getProfileByUsernameRest(username: string): Promise<ProfileViewModel | null> {
+export async function getProfileByUsernameRest(username: string, viewerId?: string | null): Promise<ProfileViewModel | null> {
   const user = await fetchUserRowByUsername(username)
   if (!user) return null
   const stats = await loadStats(user.id)
-  return mapUserToProfile(user, stats)
+  return hydrateProfileRest(user, stats, viewerId)
 }
 
 export async function getPostsByUsernameRest(

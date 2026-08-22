@@ -54,6 +54,7 @@ export async function createChatRoomMediaTokenRest(chatId: string, userId: strin
   const screenShareQuality = screenShareQualityForEntitlements(
     hasVooplePlus,
     community?.groupLevel ?? 0,
+    community?.hdRoomEnabled ?? false,
   );
   const endpoints = getLiveKitEndpoints();
   const apiKey = process.env.LIVEKIT_API_KEY?.trim();

@@ -10,11 +10,13 @@ export function ChatPublicGroupResults({
   groups,
   loading,
   openingId,
+  requestedIds,
   onOpen,
 }: {
   groups: PublicGroupSearchHit[];
   loading: boolean;
   openingId: string | null;
+  requestedIds: ReadonlySet<string>;
   onOpen: (group: PublicGroupSearchHit) => void;
 }) {
   if (!loading && groups.length === 0) return null;
@@ -37,7 +39,7 @@ export function ChatPublicGroupResults({
               <button
                 type="button"
                 onClick={() => onOpen(group)}
-                disabled={openingId === group.id}
+                disabled={openingId === group.id || group.joinRequestPending || requestedIds.has(group.id) || (!group.joined && group.joinPolicy === "invite_only")}
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-[var(--app-surface-soft)] disabled:opacity-60"
               >
                 <GroupAvatar
@@ -57,7 +59,17 @@ export function ChatPublicGroupResults({
                   </span>
                 </span>
                 <span className="text-xs font-medium text-[var(--theme-accent)]">
-                  {openingId === group.id ? "Открываем…" : group.joined ? "Открыть" : "Вступить"}
+                  {openingId === group.id
+                    ? "Открываем…"
+                    : group.joined
+                      ? "Открыть"
+                      : group.joinRequestPending || requestedIds.has(group.id)
+                        ? "Заявка отправлена"
+                        : group.joinPolicy === "invite_only"
+                          ? "По приглашению"
+                          : group.joinPolicy === "request"
+                            ? "Подать заявку"
+                            : "Вступить"}
                 </span>
               </button>
             </li>

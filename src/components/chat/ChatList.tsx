@@ -31,19 +31,11 @@ export function ChatList({ activeChatId = null }: ChatListProps) {
   const openDirect = trpc.chat.openDirect.useMutation();
   const searchContacts = useCallback(
     async (query: string) => {
-      const contacts = query.trim()
-        ? await utils.client.user.search.query({ q: query.trim() })
-        : await utils.client.chat.contacts.query({ q: "" });
+      const contacts = await utils.client.chat.contacts.query({ q: query.trim() });
       return contacts.filter((contact) => contact.id !== me?.id);
     },
     [me?.id, utils.client],
   );
-  const searchPublicGroups = useCallback(
-    (query: string) => utils.client.chat.publicGroups.query({ q: query }),
-    [utils.client],
-  );
-  const joinPublicGroup = trpc.chat.joinPublicGroup.useMutation();
-
   return (
     <ChatListView
       chats={data ?? []}
@@ -108,12 +100,11 @@ export function ChatList({ activeChatId = null }: ChatListProps) {
           {contact.displayName}
         </DisplayNameWithPin>
       )}
-      searchPublicGroups={searchPublicGroups}
-      openPublicGroup={async (group) => {
-        const result = await joinPublicGroup.mutateAsync({ chatId: group.id });
-        await utils.chat.list.invalidate();
-        router.push(`/messages/${result.chatId}`);
-      }}
+      renderGlobalSearchAction={(query) => (
+        <Link href={`/explore?q=${encodeURIComponent(query)}`} className="voople-link mt-3 inline-flex font-medium">
+          Искать «{query}» во всём Voople →
+        </Link>
+      )}
     />
   );
 }

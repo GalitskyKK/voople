@@ -64,6 +64,9 @@ export async function buildAccountDataExport(input: {
     notifications,
     legalConsents,
     deletionRequests,
+    interests,
+    privacySettings,
+    contactPins,
   ] = await Promise.all([
     fetchOwnedRows("users", "id, username, display_name, bio, pinned_thought, show_online_status, created_at, updated_at", { column: "id", value: userId }),
     fetchOwnedRows("profile_customization", "*", { column: "user_id", value: userId }),
@@ -91,6 +94,9 @@ export async function buildAccountDataExport(input: {
     fetchOwnedRows("notifications", "*", { column: "user_id", value: userId }),
     fetchOwnedRows("user_legal_consents", "privacy_version, terms_version, source, recorded_at", { column: "user_id", value: userId }),
     fetchOwnedRows("account_deletion_requests", "status, requested_at, execute_after, cancelled_at, completed_at", { column: "user_id", value: userId }),
+    fetchOwnedRows("user_interests", "interest_slug, selected_at", { column: "user_id", value: userId }),
+    fetchOwnedRows("user_privacy_settings", "online_scope, gaming_scope, music_scope, rooms_scope, invite_scope, connection_request_scope, appear_in_recommendations, show_interests, updated_at", { column: "user_id", value: userId }),
+    fetchOwnedRows("user_contact_pins", "pinned_user_id, position, created_at", { column: "user_id", value: userId }),
   ]);
 
   return {
@@ -135,6 +141,9 @@ export async function buildAccountDataExport(input: {
       notifications,
       legalConsents,
       deletionRequests,
+      interests,
+      privacySettings,
+      contactPins,
     },
   };
 }

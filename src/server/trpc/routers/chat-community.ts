@@ -10,14 +10,18 @@ import {
   deleteGroupEmoji,
   deleteGroupSound,
   joinPublicGroup,
+  listGroupJoinRequests,
   listGroupEmojis,
   listGroupSounds,
   listPublicGroups,
   setGroupBoost,
+  setGroupPerkAllocation,
+  resolveGroupJoinRequest,
   updateGroupCustomization,
 } from "@/server/services/chat.service";
 
 import { protectedProcedure } from "../init";
+import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
 
 export const chatCommunityProcedures = {
   publicGroups: protectedProcedure
@@ -34,7 +38,11 @@ export const chatCommunityProcedures = {
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.joinPublicGroup, ctx.user.id);
       try {
-        return await joinPublicGroup(input.chatId, ctx.user.id);
+        const result = await joinPublicGroup(input.chatId, ctx.user.id);
+        if (result.status === "joined") {
+          await recordServerProductEvent({ name: "group_joined", actorId: ctx.user.id, route: "/trpc/chat.joinPublicGroup", properties: { source: "discovery" } });
+        }
+        return result;
       } catch (error) {
         throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось вступить в группу" });
       }
@@ -68,7 +76,9 @@ export const chatCommunityProcedures = {
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
       try {
-        return await updateGroupCustomization(input.chatId, ctx.user.id, input);
+        const result = await updateGroupCustomization(input.chatId, ctx.user.id, input);
+        await recordServerProductEvent({ name: "appearance_changed", actorId: ctx.user.id, route: "/trpc/chat.updateGroupCustomization", properties: { surface: "group_settings" } });
+        return result;
       } catch (error) {
         throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось сохранить оформление группы" });
       }
@@ -83,9 +93,51 @@ export const chatCommunityProcedures = {
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
       try {
-        return await setGroupBoost(input.chatId, ctx.user.id, input.enabled, input.slot, input.idempotencyKey);
+        const result = await setGroupBoost(input.chatId, ctx.user.id, input.enabled, input.slot, input.idempotencyKey);
+        await recordServerProductEvent({ name: "boost_assigned", actorId: ctx.user.id, route: "/trpc/chat.setGroupBoost", properties: { action: input.enabled ? "assign" : "remove" } });
+        return result;
       } catch (error) {
         throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось изменить буст" });
+      }
+    }),
+  groupJoinRequests: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        return await listGroupJoinRequests(input.chatId, ctx.user.id);
+      } catch (error) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось загрузить заявки" });
+      }
+    }),
+  resolveGroupJoinRequest: protectedProcedure
+    .input(z.object({ requestId: z.string().uuid(), approve: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      try {
+        return await resolveGroupJoinRequest(input.requestId, ctx.user.id, input.approve);
+      } catch (error) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось обработать заявку" });
+      }
+    }),
+  setGroupPerk: protectedProcedure
+    .input(z.object({
+      chatId: z.string().uuid(),
+      perkId: z.enum(["animated_icon", "emoji_sound", "animated_banner", "uploads", "vanity", "roles", "hd"]),
+      enabled: z.boolean(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      try {
+        const result = await setGroupPerkAllocation(input.chatId, ctx.user.id, input.perkId, input.enabled);
+        await recordServerProductEvent({
+          name: input.enabled ? "perk_enabled" : "perk_disabled",
+          actorId: ctx.user.id,
+          route: "/trpc/chat.setGroupPerk",
+          properties: { kind: input.perkId },
+        });
+        return result;
+      } catch (error) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось изменить perk" });
       }
     }),
   groupEmojis: protectedProcedure
@@ -107,7 +159,9 @@ export const chatCommunityProcedures = {
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
       try {
-        return await createGroupEmoji({ ...input, userId: ctx.user.id });
+        const result = await createGroupEmoji({ ...input, userId: ctx.user.id });
+        await recordServerProductEvent({ name: "custom_emoji_added", actorId: ctx.user.id, route: "/trpc/chat.createGroupEmoji", properties: { surface: "group_settings" } });
+        return result;
       } catch (error) {
         throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось добавить эмодзи" });
       }
@@ -141,7 +195,9 @@ export const chatCommunityProcedures = {
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
       try {
-        return await createGroupSound({ ...input, userId: ctx.user.id });
+        const result = await createGroupSound({ ...input, userId: ctx.user.id });
+        await recordServerProductEvent({ name: "custom_sound_added", actorId: ctx.user.id, route: "/trpc/chat.createGroupSound", properties: { surface: "group_settings" } });
+        return result;
       } catch (error) {
         throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось добавить звук" });
       }

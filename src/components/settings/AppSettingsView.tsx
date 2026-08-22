@@ -16,7 +16,6 @@ import {
 } from "@/components/settings/SettingsNavigation";
 import { APP_THEMES, type AppThemeId } from "@/lib/app-themes";
 import { LEGAL_PAGES } from "@/lib/constants/legal";
-import { trpc } from "@/lib/trpc/client";
 
 export type SettingsDestinationRenderer = (props: {
   href: string;
@@ -32,6 +31,8 @@ export function AppSettingsView({
   desktopCallNotifications = false,
   desktopNotificationSettings,
   accountSecuritySettings,
+  socialSettings,
+  subscriptionActive,
 }: {
   renderDestination: SettingsDestinationRenderer;
   hotkeyRuntimeStatus?: HotkeyRuntimeStatus;
@@ -39,11 +40,12 @@ export function AppSettingsView({
   desktopCallNotifications?: boolean;
   desktopNotificationSettings?: ReactNode;
   accountSecuritySettings?: ReactNode;
+  socialSettings?: ReactNode;
+  subscriptionActive?: boolean;
 }) {
   const { preferences, updatePreferences, resetPreferences } = useAppPreferences();
   const [activeSection, setActiveSection] = useState<SettingsSectionId>("appearance");
-  const subscription = trpc.shop.subscriptionStatus.useQuery(undefined, { retry: false });
-  const unlockedThemeIds: AppThemeId[] = subscription.data?.active
+  const unlockedThemeIds: AppThemeId[] = subscriptionActive
     ? APP_THEMES.filter((theme) => theme.paid).map((theme) => theme.id)
     : [];
 
@@ -69,7 +71,7 @@ export function AppSettingsView({
       {activeSection === "appearance" ? (
         <AppearanceSettings
           unlockedThemeIds={unlockedThemeIds}
-          subscriptionAction={!subscription.data?.active ? renderDestination({
+          subscriptionAction={subscriptionActive === false ? renderDestination({
             href: "/shop?tab=plus",
             className: "settings-subscription-link",
             children: "Открыть набор тем Вупл+",
@@ -79,8 +81,8 @@ export function AppSettingsView({
 
       {activeSection === "messages" ? (
         <ChatAppearanceSettings
-          hasSubscription={Boolean(subscription.data?.active)}
-          subscriptionAction={!subscription.data?.active ? renderDestination({
+          hasSubscription={Boolean(subscriptionActive)}
+          subscriptionAction={subscriptionActive === false ? renderDestination({
             href: "/shop?tab=plus",
             className: "settings-subscription-link",
             children: "Открыть с Вупл+",
@@ -123,6 +125,8 @@ export function AppSettingsView({
 
       {desktopWindowSettings}
       </> : null}
+
+      {activeSection === "privacy" ? socialSettings : null}
 
       {activeSection === "hotkeys" ? <section id="hotkeys" className="settings-section">
         <div className="settings-section__header">

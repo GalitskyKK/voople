@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ArrowRight, UsersRound } from "lucide-react";
+import { useState } from "react";
 
 import { useAuthGate } from "@/components/auth/AuthGateProvider";
 import { Button } from "@/components/ui/Button";
@@ -13,8 +14,12 @@ import { GroupAvatar } from "./GroupAvatar";
 export function PublicGroupPage({ group }: { group: PublicGroupPageView }) {
   const router = useRouter();
   const { requireAuth } = useAuthGate();
+  const [requestPending, setRequestPending] = useState(group.joinRequestPending);
   const join = trpc.chat.joinPublicGroup.useMutation({
-    onSuccess: ({ chatId }) => router.push(`/messages/${chatId}`),
+    onSuccess: ({ chatId, status }) => {
+      if (status === "joined") router.push(`/messages/${chatId}`);
+      else setRequestPending(true);
+    },
   });
 
   const openGroup = () => {
@@ -23,8 +28,18 @@ export function PublicGroupPage({ group }: { group: PublicGroupPageView }) {
       description: "После входа вернём вас к этой группе.",
     })) return;
     if (group.joined) router.push(`/messages/${group.id}`);
-    else join.mutate({ chatId: group.id });
+    else if (group.joinPolicy !== "invite_only" && !requestPending) join.mutate({ chatId: group.id });
   };
+
+  const actionLabel = group.joined
+    ? "Открыть"
+    : requestPending
+      ? "Заявка отправлена"
+      : group.joinPolicy === "invite_only"
+        ? "Только по приглашению"
+        : group.joinPolicy === "request"
+          ? "Подать заявку"
+          : "Вступить";
 
   return (
     <article
@@ -45,9 +60,9 @@ export function PublicGroupPage({ group }: { group: PublicGroupPageView }) {
             size="lg"
             className="border-4 border-[var(--app-surface)]"
           />
-          <Button type="button" onClick={openGroup} disabled={join.isPending}>
-            {join.isPending ? "Вступаем…" : group.joined ? "Открыть" : "Вступить"}
-            <ArrowRight className="h-4 w-4" />
+          <Button type="button" onClick={openGroup} disabled={join.isPending || requestPending || (!group.joined && group.joinPolicy === "invite_only")}>
+            {join.isPending ? "Отправляем…" : actionLabel}
+            {group.joined || group.joinPolicy === "open" ? <ArrowRight className="h-4 w-4" /> : null}
           </Button>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-2">

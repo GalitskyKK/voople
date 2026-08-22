@@ -7,8 +7,8 @@ import { useDebouncedSearchQuery } from "@/hooks/useDebouncedSearchQuery";
 import { trpc } from "@/lib/trpc/client";
 import { ExploreView } from "./ExploreView";
 
-export function UserSearch() {
-  const { query, setQuery, debouncedQuery } = useDebouncedSearchQuery();
+export function UserSearch({ initialQuery = "" }: { initialQuery?: string }) {
+  const { query, setQuery, debouncedQuery } = useDebouncedSearchQuery(300, initialQuery);
   const search = trpc.search.explore.useQuery(
     { q: debouncedQuery },
     {

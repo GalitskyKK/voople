@@ -381,12 +381,12 @@ export const chats = pgTable("chats", {
   topicsLayout: varchar("topics_layout", { length: 20 }).notNull().default("list"),
   topicIcon: varchar("topic_icon", { length: 16 }),
   groupVisibility: varchar("group_visibility", { length: 20 }).notNull().default("private"),
+  joinPolicy: varchar("join_policy", { length: 20 }).notNull().default("invite_only"),
   sectionAccessMode: varchar("section_access_mode", { length: 20 }).notNull().default("inherit"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (t) => ({
   parentIdx: index("chats_parent_chat_idx").on(t.parentChatId, t.createdAt),
 }));
-
 export const directChatPairs = pgTable(
   "direct_chat_pairs",
   {
@@ -447,8 +447,8 @@ export const chatInvites = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     tokenHash: varchar("token_hash", { length: 64 }).notNull(),
-    expiresAt: timestamp("expires_at").notNull(),
-    maxUses: integer("max_uses").notNull().default(20),
+    expiresAt: timestamp("expires_at"),
+    maxUses: integer("max_uses"),
     useCount: integer("use_count").notNull().default(0),
     revokedAt: timestamp("revoked_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -642,6 +642,7 @@ export const userStreaks = pgTable("user_streaks", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export { clientTelemetryEvents } from "./analytics-schema";
 export const usersRelations = relations(users, ({ one, many }) => ({
   customization: one(profileCustomization, {
     fields: [users.id],

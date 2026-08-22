@@ -1,11 +1,17 @@
 "use client";
 
 import { CalendarDays, Gift, Sparkles } from "lucide-react";
+import { useEffect } from "react";
 
 import { TeamPinQuiz } from "@/components/settings/TeamPinQuiz";
 import { SectionHeaderGlow } from "@/components/layout/SectionHeaderGlow";
+import { reportProductEvent } from "@/lib/telemetry/client";
 
 export function EventsPage() {
+  useEffect(() => {
+    reportProductEvent("events_opened", { surface: "events" });
+  }, []);
+
   return (
     <div className="mx-auto w-full max-w-4xl space-y-5 py-4 lg:py-6">
       <header className="relative overflow-hidden rounded-[var(--app-radius-xl)] border border-[var(--app-border)] bg-[var(--app-surface)] p-5 sm:p-7">

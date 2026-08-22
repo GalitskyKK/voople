@@ -2,7 +2,6 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { assertRateLimit } from "@/lib/ratelimit-guard";
 import { rateLimits } from "@/lib/ratelimit";
-import { CHAT_REACTION_EMOJIS } from "@/lib/chat/reactions";
 import {
   addGroupMembers,
   acceptChatInvite,
@@ -11,13 +10,10 @@ import {
   createChatRoomScreenAudioToken,
   declineChatRoomCall,
   deleteGroup,
-  deleteMessage,
-  editMessage,
   createGroupChat,
   createSubchat,
   enterChatRoom,
   getSectionAccess,
-  getDirectChatByUsername,
   getMessageNotification,
   getChatRoom,
   heartbeatChatRoom,
@@ -29,24 +25,26 @@ import {
   listGroupMembers,
   setGroupTopics,
   setGroupVisibility,
+  setGroupName,
   setSectionAccess,
   listChats,
-  listMessages,
-  markMessagesRead,
   previewChatInvite,
   removeGroupMember,
   revokeChatInvite,
-  sendMessage,
   setChatRoomAccess,
-  toggleMessageReaction,
 } from "@/server/services/chat.service";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 import { chatCommunityProcedures } from "./chat-community";
 import { chatGroupRoleProcedures } from "./chat-group-roles";
 import { chatModerationProcedures } from "./chat-moderation";
-import { sendChatMessageInputSchema } from "../schemas/chat-message";
+import {
+  markRoomActivation,
+  recordServerProductEvent,
+} from "@/server/services/client-telemetry.service";
+import { chatMessageProcedures } from "./chat-messages";
 
 export const chatRouter = createTRPCRouter({
+  ...chatMessageProcedures,
   ...chatModerationProcedures,
   ...chatCommunityProcedures,
   ...chatGroupRoleProcedures,
@@ -79,7 +77,9 @@ export const chatRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.acceptChatInvite, ctx.user.id);
       try {
-        return await acceptChatInvite(input.token, ctx.user.id);
+        const result = await acceptChatInvite(input.token, ctx.user.id);
+        await recordServerProductEvent({ name: "group_joined", actorId: ctx.user.id, route: "/trpc/chat.acceptInvite", properties: { source: "invite" } });
+        return result;
       } catch (error) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -120,7 +120,10 @@ export const chatRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
       try {
-        return await enterChatRoom(input.chatId, ctx.user.id, input.micMuted);
+        const result = await enterChatRoom(input.chatId, ctx.user.id, input.micMuted);
+        await recordServerProductEvent({ name: "room_joined", actorId: ctx.user.id, route: "/trpc/chat.enterRoom", properties: { count: result.participants.length } });
+        if (result.participants.length > 1) await markRoomActivation(ctx.user.id);
+        return result;
       } catch (error) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -244,7 +247,9 @@ export const chatRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.createGroupChat, ctx.user.id);
       try {
-        return await createGroupChat(ctx.user.id, input.name, input.memberIds);
+        const result = await createGroupChat(ctx.user.id, input.name, input.memberIds);
+        await recordServerProductEvent({ name: "group_created", actorId: ctx.user.id, route: "/trpc/chat.createGroup", properties: { count: input.memberIds.length + 1 } });
+        return result;
       } catch (error) {
         throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось создать группу" });
       }
@@ -372,7 +377,7 @@ export const chatRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.createGroupChat, ctx.user.id);
       try {
-        return await createSubchat(
+        const result = await createSubchat(
           input.parentChatId,
           ctx.user.id,
           input.name,
@@ -380,6 +385,8 @@ export const chatRouter = createTRPCRouter({
           input.accessMode,
           input.memberIds,
         );
+        await recordServerProductEvent({ name: "section_created", actorId: ctx.user.id, route: "/trpc/chat.createSubchat", properties: { kind: input.accessMode } });
+        return result;
       } catch (error) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -421,17 +428,31 @@ export const chatRouter = createTRPCRouter({
     .input(
       z.object({
         chatId: z.string().uuid(),
-        visibility: z.enum(["private", "public"]),
+        visibility: z.enum(["private", "unlisted", "public"]),
+        joinPolicy: z.enum(["open", "request", "invite_only"]),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
       try {
-        return await setGroupVisibility(input.chatId, ctx.user.id, input.visibility);
+        return await setGroupVisibility(input.chatId, ctx.user.id, input.visibility, input.joinPolicy);
       } catch (error) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: error instanceof Error ? error.message : "Не удалось изменить тип группы",
+        });
+      }
+    }),
+  setGroupName: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid(), name: z.string().trim().min(2).max(50) }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      try {
+        return await setGroupName(input.chatId, ctx.user.id, input.name);
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось переименовать группу",
         });
       }
     }),
@@ -481,118 +502,6 @@ export const chatRouter = createTRPCRouter({
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: e instanceof Error ? e.message : "Не удалось загрузить чаты",
-      });
-    }
-  }),
-
-  openDirect: protectedProcedure
-    .input(z.object({ username: z.string().min(1).max(30) }))
-    .mutation(async ({ ctx, input }) => {
-      try {
-        return await getDirectChatByUsername(ctx.user.id, input.username);
-      } catch (e) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: e instanceof Error ? e.message : "Не удалось открыть чат",
-        });
-      }
-    }),
-
-  getMessages: protectedProcedure
-    .input(z.object({ chatId: z.string().uuid() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        return await listMessages(input.chatId, ctx.user.id);
-      } catch (e) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: e instanceof Error ? e.message : "Не удалось загрузить сообщения",
-        });
-      }
-    }),
-
-  markRead: protectedProcedure
-    .input(z.object({ chatId: z.string().uuid() }))
-    .mutation(async ({ ctx, input }) => {
-      try {
-        return await markMessagesRead(input.chatId, ctx.user.id);
-      } catch (e) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: e instanceof Error ? e.message : "Не удалось обновить статус прочтения",
-        });
-      }
-    }),
-
-  deleteMessage: protectedProcedure
-    .input(z.object({ messageId: z.string().uuid() }))
-    .mutation(async ({ ctx, input }) => {
-      try {
-        return await deleteMessage(input.messageId, ctx.user.id);
-      } catch (e) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: e instanceof Error ? e.message : "Не удалось удалить сообщение",
-        });
-      }
-    }),
-
-  editMessage: protectedProcedure
-    .input(
-      z.object({
-        messageId: z.string().uuid(),
-        text: z.string().trim().min(1).max(1000),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      await assertRateLimit(rateLimits.openDirectChat, ctx.user.id);
-      await assertRateLimit(rateLimits.sendMessage, ctx.user.id);
-      try {
-        return await editMessage(input.messageId, ctx.user.id, input.text);
-      } catch (error) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: error instanceof Error ? error.message : "Не удалось изменить сообщение",
-        });
-      }
-    }),
-
-  toggleReaction: protectedProcedure
-    .input(z.object({
-      messageId: z.string().uuid(),
-      emoji: z.enum(CHAT_REACTION_EMOJIS).optional(),
-      emojiId: z.string().uuid().optional(),
-    }).refine((value) => Boolean(value.emoji) !== Boolean(value.emojiId), { message: "Выберите одну реакцию" }))
-    .mutation(async ({ ctx, input }) => {
-      await assertRateLimit(rateLimits.like, ctx.user.id);
-      try {
-        return await toggleMessageReaction(input.messageId, ctx.user.id, { emoji: input.emoji, emojiId: input.emojiId });
-      } catch (e) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: e instanceof Error ? e.message : "Не удалось изменить реакцию",
-        });
-      }
-    }),
-
-  send: protectedProcedure.input(sendChatMessageInputSchema).mutation(async ({ ctx, input }) => {
-    await assertRateLimit(rateLimits.sendMessage, ctx.user.id);
-    try {
-      return await sendMessage({
-        chatId: input.chatId,
-        messageId: input.messageId,
-        senderId: ctx.user.id,
-        text: input.text,
-        mediaKey: input.mediaKey,
-        mediaTitle: input.mediaTitle,
-        mediaArtist: input.mediaArtist,
-        sharedTrackId: input.sharedTrackId,
-        replyToMessageId: input.replyToMessageId,
-      });
-    } catch (e) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: e instanceof Error ? e.message : "Не удалось отправить",
       });
     }
   }),

@@ -2,6 +2,8 @@ import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import { createClient } from "@supabase/supabase-js";
 import postgres from "postgres";
+import { REQUIRED_MIGRATIONS } from "./migration-manifest.mjs";
+import { acceptedMigrationChecksums } from "./migration-checksum.mjs";
 
 function loadEnv() {
   for (const file of [".env.local", ".env"]) {
@@ -47,7 +49,42 @@ if (error) {
   console.log("OK  REST public.users — доступна, строк:", count ?? 0);
 }
 
-if (direct) {
+for (const table of [
+  "group_join_requests",
+  "interest_categories",
+  "interests",
+  "user_interests",
+  "group_discovery_profiles",
+  "group_interests",
+  "user_privacy_settings",
+  "user_contact_pins",
+]) {
+  const { error: tableError } = await admin.from(table).select("*", { count: "exact", head: true });
+  if (tableError) console.error(`FAIL REST public.${table}:`, tableError.message);
+  else console.log(`OK  REST public.${table}`);
+}
+
+const { data: ledgerRows, error: ledgerError } = await admin
+  .from("app_schema_migrations")
+  .select("id, checksum, release_version")
+  .in("id", REQUIRED_MIGRATIONS);
+if (ledgerError) {
+  console.error("FAIL REST migration ledger:", ledgerError.message);
+} else {
+  const ledger = new Map((ledgerRows ?? []).map((row) => [row.id, row]));
+  const missing = REQUIRED_MIGRATIONS.filter((id) => !ledger.has(id));
+  const mismatched = REQUIRED_MIGRATIONS.filter((id) => {
+    const row = ledger.get(id);
+    if (!row) return false;
+    const source = readFileSync(resolve("drizzle", id), "utf8");
+    return !acceptedMigrationChecksums(source).has(row.checksum);
+  });
+  if (missing.length) console.error("FAIL ledger missing:", missing.join(", "));
+  if (mismatched.length) console.error("FAIL ledger checksum:", mismatched.join(", "));
+  if (!missing.length && !mismatched.length) console.log(`OK  migration ledger — ${REQUIRED_MIGRATIONS.length} обязательных миграций`);
+}
+
+if (direct && process.env.VOOPLE_SKIP_DIRECT_DB_CHECK !== "1") {
   const sql = postgres(direct, {
     max: 1,
     prepare: direct.includes(":6543") ? false : undefined,

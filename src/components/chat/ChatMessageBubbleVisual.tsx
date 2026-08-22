@@ -83,7 +83,7 @@ export function ChatMessageBubbleVisual({
         "voople-chat-bubble-row group/bubble relative flex w-full items-end gap-2",
         selectionActive && "voople-chat-bubble-row--selection",
         selectionState && "voople-chat-bubble-row--selected",
-        isMine ? "justify-end 2xl:justify-start" : "justify-start",
+        isMine ? "justify-end" : "justify-start",
         (groupPosition === "only" || groupPosition === "start") && "mt-1.5",
         className
       )}
@@ -108,7 +108,6 @@ export function ChatMessageBubbleVisual({
           className={cn(
             "w-8 shrink-0",
             showSender && !isMine ? "block" : "hidden",
-            "2xl:block",
           )}>
           {groupPosition === "only" || groupPosition === "end" ? senderAvatar : null}
         </div>

@@ -10,10 +10,7 @@ import type { ChatReactionEmoji } from "@/lib/chat/reactions";
 import { cn } from "@/lib/utils";
 import type { ChatMessageView } from "@/types/chat";
 
-import { ChatAttachmentAudio } from "./ChatAttachmentAudio";
-import { ChatAttachmentCircle } from "./ChatAttachmentCircle";
-import { ChatAttachmentImage } from "./ChatAttachmentImage";
-import { ChatAttachmentTrack } from "./ChatAttachmentTrack";
+import { ChatMessageAttachment } from "./ChatMessageAttachment";
 import { ChatMessageBubbleVisual } from "./ChatMessageBubbleVisual";
 import { ChatMessageMenu } from "./ChatMessageMenu";
 
@@ -148,28 +145,12 @@ export function ChatMessageBubble({
         ) : null
       }
       attachment={
-        <>
-          {attachment?.kind === "image" ? (
-            <ChatAttachmentImage
-              url={attachment.url}
-              onOpen={() => onOpenImage?.(attachment.url)}
-            />
-          ) : null}
-          {attachment?.kind === "audio" ? (
-            <ChatAttachmentAudio
-              messageId={message.id}
-              url={attachment.url}
-              title={attachment.title}
-              artist={attachment.artist}
-              audioKind={attachment.audioKind}
-              isMine={isMine}
-            />
-          ) : null}
-          {attachment?.kind === "circle" ? <ChatAttachmentCircle url={attachment.url} /> : null}
-          {attachment?.kind === "track" ? (
-            <ChatAttachmentTrack messageId={message.id} attachment={attachment} isMine={isMine} />
-          ) : null}
-        </>
+        <ChatMessageAttachment
+          messageId={message.id}
+          attachment={attachment}
+          isMine={isMine}
+          onOpenImage={onOpenImage}
+        />
       }
     />
   )

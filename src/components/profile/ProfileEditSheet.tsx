@@ -1,5 +1,4 @@
 "use client";
-
 import { useMemo, useRef, useState } from "react";
 import {
   Check,
@@ -9,7 +8,6 @@ import {
   RotateCcw,
   Upload,
 } from "lucide-react";
-
 import { FeedAuthorChipBackdrop } from "@/components/feed/FeedAuthorChipBackdrop";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { ProfileBanner } from "@/components/profile/ProfileBanner";
@@ -36,6 +34,7 @@ import { FREE_NICKNAME_COLORS } from "@/lib/customization/nickname-options";
 import { resolveCustomization } from "@/lib/customization/resolve";
 import type { CardBaseMode, NicknameEffect, NicknameFont } from "@/lib/customization/types";
 import { trpc } from "@/lib/trpc/client";
+import { reportProductEvent } from "@/lib/telemetry/client";
 import { cn } from "@/lib/utils";
 import type { ProfileCustomizationView, ProfileViewModel } from "@/types/domain";
 import type { EquippedCustomizationView, ShopItemView } from "@/types/shop";
@@ -53,7 +52,6 @@ type EditorCustomizationPatch = {
   nicknameFont?: NicknameFont | null;
   nicknameEffect?: NicknameEffect | null;
 };
-
 const PANELS: Array<{ id: Panel; label: string; hint: string }> = [
   { id: "profile", label: "Основной профиль", hint: "Имя и описание" },
   { id: "avatar", label: "Аватар и украшение", hint: "Фото, украшение и кольцо" },
@@ -70,7 +68,6 @@ const PANEL_KINDS: Record<Exclude<Panel, "profile">, ShopItemView["kind"][]> = {
   feed: ["feed_card"],
   name: [],
 };
-
 const AVATAR_GROUPS: Array<{ kind: ShopItemView["kind"]; title: string }> = [
   { kind: "decoration", title: "Украшения и кольца" },
   { kind: "ring", title: "CSS-кольца" },
@@ -489,6 +486,7 @@ export function ProfileEditSheet({
   const equip = trpc.customization.equip.useMutation({
     onSuccess: async (next) => {
       commitPreview(next);
+      reportProductEvent("cosmetic_equipped", { surface: "profile_editor" });
       await refresh();
     },
     onError: (error) => {
@@ -546,6 +544,7 @@ export function ProfileEditSheet({
       if (!base) return;
       setTrialItemId(item.id);
       syncPreview(withItem(base, item));
+      reportProductEvent("cosmetic_previewed", { itemKind: item.kind, surface: "profile_editor" });
       setMessage("Режим примерки Voople+: изменение видно только в предпросмотре.");
       return;
     }
@@ -558,6 +557,7 @@ export function ProfileEditSheet({
       if (!base) return;
       setTrialItemId(item.id);
       syncPreview(withItem(base, item));
+      reportProductEvent("cosmetic_previewed", { itemKind: item.kind, surface: "profile_editor" });
       setMessage("Режим примерки: изменение видно только в предпросмотре.");
       return;
     }

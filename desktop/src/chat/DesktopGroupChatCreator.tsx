@@ -6,7 +6,7 @@ import type { UserSearchHit } from "@/types/search";
 
 import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
-import { DesktopChatAvatar } from "./DesktopChatAvatar";
+import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 
 export function DesktopGroupChatCreator({
   config,
@@ -40,7 +40,7 @@ export function DesktopGroupChatCreator({
       createGroup={createGroup}
       onCreated={onCreated}
       renderAvatar={(user) => (
-        <DesktopChatAvatar displayName={user.displayName} avatarUrl={user.avatarUrl} />
+        <ProfileAvatar displayName={user.displayName} animatedAvatarUrl={user.avatarUrl} size="sm" />
       )}
     />
   );

@@ -1,8 +1,16 @@
 import "server-only";
 
 import { listChats } from "@/server/services/chat.service";
-import { getActiveRoomCountsRest } from "@/server/data/home-overview-rest";
+import {
+  getActiveRoomCountsRest,
+  getHomeChatAttentionRest,
+  getRelationshipScoresRest,
+  getVisibleListeningActivityRest,
+} from "@/server/data/home-overview-rest";
+import { listVisibleOnlineUserIdsRest } from "@/server/data/privacy-rest";
+import { listContactPinsRest } from "@/server/data/contact-pins-rest";
 import { fetchCurrentUserSummary } from "@/server/data/users-rest";
+import { scoreHomeContinue, scoreHomeNow } from "@/lib/social/home-ranking";
 import type { HomeNowItem, HomeOverviewView } from "@/types/home";
 
 function lastConversationPreview(
@@ -23,7 +31,7 @@ function directItem(chat: Awaited<ReturnType<typeof listChats>>[number], userId:
     href: `/messages/${chat.id}`,
     avatarUrl: chat.otherUser.avatarUrl,
     userId: chat.otherUser.id,
-    online: Boolean(chat.otherUser.lastSeenAt && Date.parse(chat.otherUser.lastSeenAt) > Date.now() - 5 * 60_000),
+    online: false,
   };
 }
 
@@ -56,21 +64,45 @@ function takeUniqueItems(items: HomeNowItem[], limit: number) {
 export async function getHomeOverview(userId: string): Promise<HomeOverviewView> {
   const chats = await listChats(userId);
   const rootChats = chats.filter((chat) => !chat.parentChatId);
-  const [viewer, roomCounts] = await Promise.all([
+  const directChats = rootChats.filter((chat) => chat.type === "direct" && chat.otherUser);
+  const relationshipCandidates = directChats.map((chat) => ({ userId: chat.otherUser!.id, chatId: chat.id }));
+  const [viewer, roomCounts, attention, visibleOnlineIds, listeningActivity, relationshipScores, pinnedUserIds] = await Promise.all([
     fetchCurrentUserSummary(userId),
     getActiveRoomCountsRest(rootChats.map((chat) => chat.id)),
+    getHomeChatAttentionRest(rootChats.map((chat) => chat.id), userId),
+    listVisibleOnlineUserIdsRest(userId),
+    getVisibleListeningActivityRest(userId, relationshipCandidates.map((candidate) => candidate.userId)),
+    getRelationshipScoresRest(userId, relationshipCandidates),
+    listContactPinsRest(userId),
   ]);
-  const direct = chats.map((chat) => directItem(chat, userId)).filter((item): item is HomeNowItem => Boolean(item));
+  const visibleOnline = new Set(visibleOnlineIds);
+  const pinnedUsers = new Set(pinnedUserIds);
+  const direct = chats.map((chat) => directItem(chat, userId)).filter((item): item is HomeNowItem => Boolean(item)).map((item) => {
+    const chat = rootChats.find((candidate) => candidate.id === item.id);
+    const lastInteractionAt = chat?.lastMessage?.createdAt;
+    const listening = item.userId ? listeningActivity.get(item.userId) : null;
+    const online = Boolean(item.userId && visibleOnline.has(item.userId));
+    const relationshipScore = item.userId ? relationshipScores.get(item.userId) ?? 0 : 0;
+    const pinned = Boolean(item.userId && pinnedUsers.has(item.userId));
+    return {
+      ...item,
+      online,
+      activity: listening ? "listening" as const : online ? "online" as const : undefined,
+      subtitle: listening ? `Слушает ${[listening.artist, listening.title].filter(Boolean).join(" — ")}` : item.subtitle,
+      pinned,
+      score: scoreHomeNow({ pinned, listening: Boolean(listening), online, lastInteractionAt, relationshipScore: relationshipScore + (pinned ? 30 : 0) }),
+    };
+  });
   const groups = chats.map((chat) => groupItem(chat, userId)).filter((item): item is HomeNowItem => Boolean(item));
   const itemById = new Map([...direct, ...groups].map((item) => [item.id, item]));
   const activeRooms = groups.flatMap((item) => {
     const participantCount = roomCounts.get(item.id) ?? 0;
     return participantCount > 0
-      ? [{ ...item, kind: "room" as const, subtitle: `${participantCount} в комнате · Зайти` }]
+      ? [{ ...item, kind: "room" as const, activity: "in_room" as const, score: scoreHomeNow({ activeRoom: true }), subtitle: `${participantCount} в комнате · Зайти` }]
       : [];
   });
   const now = takeUniqueItems(
-    [...activeRooms, ...direct.filter((item) => item.online)],
+    [...activeRooms, ...direct.filter((item) => item.activity)].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)),
     5,
   );
   return {
@@ -87,8 +119,17 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
     now,
     continue: rootChats.flatMap((chat) => {
       const item = itemById.get(chat.id);
-      return item?.subtitle ? [item] : [];
-    }).slice(0, 3),
+      if (!item?.subtitle || activeRooms.some((room) => room.id === chat.id)) return [];
+      const unreadCount = attention.get(chat.id)?.unreadCount ?? 0;
+      const relationshipScore = item.userId ? relationshipScores.get(item.userId) ?? 0 : 0;
+      const score = scoreHomeContinue({
+        unreadCount,
+        lastInteractionAt: chat.lastMessage?.createdAt,
+        reciprocal: relationshipScore >= 65,
+        recentlyOpened: true,
+      });
+      return [{ ...item, unreadCount, score }];
+    }).sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).slice(0, 4),
     communities: groups.slice(0, 3).map((item) => ({
       ...item,
       subtitle: `${chats.find((chat) => chat.id === item.id)?.memberCount ?? 0} участников`,

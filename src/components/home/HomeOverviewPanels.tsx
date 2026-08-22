@@ -7,8 +7,8 @@ import type { HomeOverviewView } from "@/types/home";
 
 import { HomeNowPanelView, HomeSecondaryRailView } from "./HomeOverviewPanelsView";
 
-const renderDestination: NavigationDestinationRenderer = ({ href, label, className, active, children }) => (
-  <Link href={href} aria-label={label} aria-current={active ? "page" : undefined} className={className}>{children}</Link>
+const renderDestination: NavigationDestinationRenderer = ({ href, label, className, active, children, onNavigate }) => (
+  <Link href={href} aria-label={label} aria-current={active ? "page" : undefined} className={className} onClick={onNavigate}>{children}</Link>
 );
 
 export function HomeNowPanel({ overview }: { overview: HomeOverviewView }) {

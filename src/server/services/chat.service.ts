@@ -10,11 +10,6 @@ import {
   resolvePublicMediaKey,
 } from "@/server/services/upload.service";
 import { prepareMessageContentRest } from "@/server/data/chat-content-rest";
-import {
-  groupAnimatedBannerEnabled,
-  groupAnimatedIconEnabled,
-} from "@/lib/group-perks";
-
 export {
   addGroupMembersRest as addGroupMembers,
   deleteMessageRest as deleteMessage,
@@ -59,7 +54,12 @@ export {
   setSectionAccessRest as setSectionAccess,
   setGroupTopicsRest as setGroupTopics,
 } from "@/server/data/chat-management-rest";
+export { setGroupNameRest as setGroupName } from "@/server/data/chat-group-identity-rest";
 export { listGroupMembersRest as listGroupMembers } from "@/server/data/chat-group-members-rest";
+export {
+  listGroupJoinRequestsRest as listGroupJoinRequests,
+  resolveGroupJoinRequestRest as resolveGroupJoinRequest,
+} from "@/server/data/chat-join-requests-rest";
 
 export { listGroupAuditRest as listGroupAudit } from "@/server/data/chat-group-audit-rest";
 export {
@@ -76,6 +76,7 @@ export {
 export {
   getGroupCommunityRest as getGroupCommunity,
   setGroupBoostRest as setGroupBoost,
+  setGroupPerkAllocationRest as setGroupPerkAllocation,
 } from "@/server/data/chat-community-rest";
 export {
   createGroupEmojiRest as createGroupEmoji,
@@ -105,17 +106,17 @@ export async function updateGroupCustomization(
     const community = await getGroupCommunityRest(chatId, userId);
     if (
       avatarKey &&
-      !groupAnimatedIconEnabled(community.groupLevel) &&
+      !community.animatedIconEnabled &&
       await isAnimatedPublicImageKey(avatarKey)
     ) {
-      throw new Error("Анимированная иконка группы открывается на 3-м уровне");
+      throw new Error("Сначала включите Boost-перк «Живой значок»");
     }
     if (
       bannerKey &&
-      !groupAnimatedBannerEnabled(community.groupLevel) &&
+      !community.animatedBannerEnabled &&
       await isAnimatedPublicImageKey(bannerKey)
     ) {
-      throw new Error("Анимированный баннер группы открывается на 12-м уровне");
+      throw new Error("Сначала включите Boost-перк «Живой баннер»");
     }
   }
   return updateGroupCustomizationRest(chatId, userId, {

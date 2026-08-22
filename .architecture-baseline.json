@@ -1,11 +1,7 @@
 {
   "desktopPortableUi": [
-    "desktop/src/chat/DesktopChatAttachment.tsx",
-    "desktop/src/chat/DesktopChatAvatar.tsx",
     "desktop/src/chat/DesktopChatComposer.tsx",
-    "desktop/src/chat/DesktopChatComposerInput.tsx",
     "desktop/src/chat/DesktopChatComposerPreview.tsx",
-    "desktop/src/chat/DesktopChatMessage.tsx",
     "desktop/src/chat/DesktopChatThread.tsx",
     "desktop/src/chat/DesktopGroupChatCreator.tsx",
     "desktop/src/chat/DesktopGroupInviteSheet.tsx",
@@ -26,7 +22,6 @@
     "desktop/src/post/DesktopPostComments.tsx",
     "desktop/src/post/DesktopPostDetail.tsx",
     "desktop/src/profile/DesktopProfile.tsx",
-    "desktop/src/profile/DesktopProfileShareButton.tsx",
     "desktop/src/shop/DesktopShop.tsx"
   ],
   "exceptions": {
@@ -35,11 +30,11 @@
       "reason": "Legacy admin form; split asset metadata, media upload and preview panels."
     },
     "src/components/chat/ChatRoomControl.tsx": {
-      "maxLines": 830,
-      "reason": "Legacy voice orchestration; continue extracting session state and controls into chat/voice."
+      "maxLines": 490,
+      "reason": "Voice server state and event/media lifecycles are extracted; the remaining sheet/dock composition must be split next."
     },
     "src/components/chat/ChatWindow.tsx": {
-      "maxLines": 406,
+      "maxLines": 404,
       "reason": "Legacy chat surface; extract header and message-list orchestration."
     },
     "src/components/profile/ProfileEditSheet.tsx": {

@@ -1,13 +1,11 @@
 "use client";
-
-// src/components/chat/ChatWindow.tsx
-
 import { useState, type CSSProperties } from "react";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
 import { useChatMessageEditor } from "@/hooks/useChatMessageEditor";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import { useChatMessageSelection } from "@/hooks/useChatMessageSelection";
+import { useChatOpenedTelemetry } from "@/hooks/useChatOpenedTelemetry";
 import type { PendingChatUpload } from "@/hooks/useChatUpload";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 import { trpc } from "@/lib/trpc/client";
@@ -17,10 +15,12 @@ import type { PlaylistTrackView } from "@/types/playlist";
 import type { ChatReactionEmoji } from "@/lib/chat/reactions";
 import { playlistMetadataDefaultsFromMessage } from "@/lib/chat/playlist-from-message";
 import { parseComposerContent } from "@/lib/chat/message-content";
+import { reportProductEvent } from "@/lib/telemetry/client";
 import { Toast } from "@/components/ui/Toast";
 import { ChatComposer } from "./ChatComposer";
 import { ChatTrackMetadataDialog } from "./ChatTrackMetadataDialog";
 import { ChatDateDivider } from "./ChatDateDivider";
+import { ChatRoomActivitySummary } from "./ChatRoomActivitySummary";
 import { ChatMediaLightbox } from "./ChatMediaLightbox";
 import { ChatMessageBubble } from "./ChatMessageBubble";
 import { ChatWindowHeader } from "./ChatWindowHeader";
@@ -30,7 +30,6 @@ import { ChatSelectionController } from "./ChatSelectionController";
 type ChatWindowProps = {
   chatId: string;
 };
-
 export function ChatWindow({ chatId }: ChatWindowProps) {
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<ChatMessageView | null>(null);
@@ -44,10 +43,9 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   const { onlineUserIds } = useOnlineUsers();
   const utils = trpc.useUtils();
   const editor = useChatMessageEditor(chatId, setText);
-
+  useChatOpenedTelemetry(chatId);
   const { data: me } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
   const { realtimeDegraded } = useRealtimeChat(chatId, me?.id);
-
   const { data, isLoading, error } = trpc.chat.getMessages.useQuery(
     { chatId },
     {
@@ -62,7 +60,6 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     { enabled: isGroupChat },
   );
   const selection = useChatMessageSelection(chatId, data?.messages ?? []);
-
   const send = trpc.chat.send.useMutation({
     onMutate: async (input) => {
       await utils.chat.getMessages.cancel({ chatId });
@@ -70,7 +67,6 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
       const replyMessage = input.replyToMessageId
         ? prev?.messages.find((m) => m.id === input.replyToMessageId) ?? replyTo
         : null;
-
       const optimistic = buildOptimisticMessage({
         messageId: input.messageId,
         senderId: me?.id ?? "me",
@@ -79,7 +75,6 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         pendingUpload,
         pendingTrack,
       });
-
       utils.chat.getMessages.setData({ chatId }, (current) =>
         current?.messages.some((message) => message.id === optimistic.id)
           ? current
@@ -97,6 +92,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
                   topicsLayout: "list",
                   topicIcon: null,
                   groupVisibility: "private",
+                  joinPolicy: "invite_only",
                   sectionAccessMode: "inherit",
                   groupIcon: null,
                   groupAvatarUrl: null,
@@ -110,7 +106,6 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
                 },
               },
       );
-
       setText("");
       setReplyTo(null);
       setPendingUpload(null);
@@ -123,7 +118,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
       }
       if (ctx?.previewUrl) URL.revokeObjectURL(ctx.previewUrl);
     },
-    onSuccess: (msg, _input, ctx) => {
+    onSuccess: (msg, input, ctx) => {
       utils.chat.getMessages.setData({ chatId }, (current) => {
         if (!current) return current;
         const messages = current.messages.map((m) => (m.id === msg.id ? msg : m));
@@ -132,6 +127,16 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
       });
       void utils.chat.list.invalidate();
       if (ctx?.previewUrl) URL.revokeObjectURL(ctx.previewUrl);
+      reportProductEvent("message_sent", {
+        hasAttachment: Boolean(input.mediaKey || input.sharedTrackId),
+        hasReply: Boolean(input.replyToMessageId),
+      });
+      if (input.replyToMessageId)
+        reportProductEvent("message_replied", { source: "composer" });
+      if (input.mediaKey || input.sharedTrackId)
+        reportProductEvent("attachment_sent", {
+          kind: input.mediaKey ? "upload" : "track",
+        });
     },
   });
 
@@ -211,6 +216,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
           ? { ...message, reactions: result.reactions }
           : message),
       } : current);
+      reportProductEvent("reaction_used", { surface: "chat" });
     },
   });
 
@@ -292,7 +298,6 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         topicsEnabled={data?.chat.topicsEnabled ?? false}
         topicsLayout={data?.chat.topicsLayout ?? "list"}
         topicIcon={data?.chat.topicIcon ?? null}
-        groupVisibility={data?.chat.groupVisibility ?? "private"}
         groupIcon={data?.chat.groupIcon ?? null}
         groupAvatarUrl={data?.chat.groupAvatarUrl ?? null}
         groupBannerUrl={data?.chat.groupBannerUrl ?? null}
@@ -316,6 +321,8 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
           {timeline.map((item) =>
             item.type === "date" ? (
               <ChatDateDivider key={item.key} label={item.label} />
+            ) : item.type === "roomSummary" ? (
+              <ChatRoomActivitySummary key={item.key} dayLabel={item.dayLabel} durationSeconds={item.durationSeconds} sessions={item.sessions} />
             ) : (
               <ChatMessageBubble
                 key={item.message.id}

@@ -1,66 +1,73 @@
 "use client";
 
-import { Globe2, LockKeyhole } from "lucide-react";
+import { EyeOff, Globe2, Link2, LockKeyhole, UserCheck, UserPlus } from "lucide-react";
 import { useState } from "react";
 
 import { cn } from "@/lib/utils";
+import type { GroupJoinPolicy, GroupVisibility } from "@/types/chat";
 
-export function GroupVisibilitySettings({
-  value,
-  canManage,
-  onChange,
-}: {
-  value: "private" | "public";
+const VISIBILITY_OPTIONS = [
+  { id: "private", label: "Закрытая", description: "Только приглашения", icon: LockKeyhole },
+  { id: "unlisted", label: "По ссылке", description: "Не видна в поиске", icon: Link2 },
+  { id: "public", label: "Открытая", description: "Видна в рекомендациях", icon: Globe2 },
+] as const;
+
+const JOIN_OPTIONS = [
+  { id: "open", label: "Свободный вход", description: "Участник входит сразу", icon: UserPlus },
+  { id: "request", label: "По заявке", description: "Нужно одобрение команды", icon: UserCheck },
+  { id: "invite_only", label: "Только приглашение", description: "Нужна действующая ссылка", icon: EyeOff },
+] as const;
+
+export function GroupVisibilitySettings({ value, joinPolicy, canManage, onChange }: {
+  value: GroupVisibility;
+  joinPolicy: GroupJoinPolicy;
   canManage: boolean;
-  onChange: (value: "private" | "public") => Promise<unknown>;
+  onChange: (value: GroupVisibility, joinPolicy: GroupJoinPolicy) => Promise<unknown>;
 }) {
   const [current, setCurrent] = useState(value);
+  const [currentJoinPolicy, setCurrentJoinPolicy] = useState(joinPolicy);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const update = async (next: "private" | "public") => {
-    if (!canManage || pending || next === current) return;
+  const update = async (nextVisibility: GroupVisibility, nextJoinPolicy: GroupJoinPolicy) => {
+    if (!canManage || pending || (nextVisibility === current && nextJoinPolicy === currentJoinPolicy)) return;
     setPending(true);
     setError(null);
     try {
-      await onChange(next);
-      setCurrent(next);
+      await onChange(nextVisibility, nextJoinPolicy);
+      setCurrent(nextVisibility);
+      setCurrentJoinPolicy(nextJoinPolicy);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Не удалось изменить тип группы");
+      setError(cause instanceof Error ? cause.message : "Не удалось изменить доступ к группе");
     } finally {
       setPending(false);
     }
   };
 
   return (
-    <section className="mt-4 rounded-2xl border border-[var(--app-border)] p-3" aria-labelledby="group-visibility-title">
-      <h3 id="group-visibility-title" className="text-sm font-medium">Доступ к группе</h3>
-      <p className="mt-1 text-xs leading-5 text-[var(--app-muted)]">
-        Закрытая группа доступна после добавления или по приглашению. Открытую можно найти и покинуть самостоятельно.
-      </p>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        {([
-          ["private", "Закрытая", LockKeyhole],
-          ["public", "Открытая", Globe2],
-        ] as const).map(([id, label, Icon]) => (
-          <button
-            key={id}
-            type="button"
-            disabled={!canManage || pending}
-            aria-pressed={current === id}
-            onClick={() => void update(id)}
-            className={cn(
-              "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border px-3 text-sm transition disabled:cursor-not-allowed disabled:opacity-60",
-              current === id
-                ? "border-[var(--theme-accent)] bg-[var(--app-accent-soft)] text-[var(--theme-accent)]"
-                : "border-[var(--app-border)] text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)]",
-            )}
-          >
-            <Icon className="h-4 w-4" /> {label}
+    <section className="mt-4 rounded-2xl border border-[var(--app-border)] p-4" aria-labelledby="group-visibility-title">
+      <h3 id="group-visibility-title" className="text-sm font-semibold">Видимость и вступление</h3>
+      <p className="mt-1 text-xs leading-5 text-[var(--app-muted)]">Видимость отвечает за поиск группы, а способ вступления — за доступ новых участников.</p>
+      <p className="mt-4 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--app-muted)]">Кто видит группу</p>
+      <div className="mt-2 grid gap-2 sm:grid-cols-3">
+        {VISIBILITY_OPTIONS.map(({ id, label, description, icon: Icon }) => (
+          <button key={id} type="button" disabled={!canManage || pending} aria-pressed={current === id} onClick={() => void update(id, id === "private" ? "invite_only" : currentJoinPolicy)} className={cn("min-h-20 rounded-xl border p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-60", current === id ? "border-[var(--theme-accent)] bg-[var(--app-accent-soft)]" : "border-[var(--app-border)] hover:bg-[var(--app-surface-soft)]")}>
+            <span className="flex items-center gap-2 text-sm font-medium"><Icon className="h-4 w-4 text-[var(--theme-accent)]" />{label}</span>
+            <span className="mt-1 block text-xs text-[var(--app-muted)]">{description}</span>
           </button>
         ))}
       </div>
-      {error ? <p className="mt-2 text-xs text-red-400" role="alert">{error}</p> : null}
+      <p className="mt-4 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--app-muted)]">Как вступают</p>
+      <div className="mt-2 grid gap-2 sm:grid-cols-3">
+        {JOIN_OPTIONS.map(({ id, label, description, icon: Icon }) => (
+          <button key={id} type="button" disabled={!canManage || pending || (current === "private" && id !== "invite_only")} aria-pressed={currentJoinPolicy === id} onClick={() => void update(current, id)} className={cn("min-h-20 rounded-xl border p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-60", currentJoinPolicy === id ? "border-[var(--theme-accent)] bg-[var(--app-accent-soft)]" : "border-[var(--app-border)] hover:bg-[var(--app-surface-soft)]")}>
+            <span className="flex items-center gap-2 text-sm font-medium"><Icon className="h-4 w-4 text-[var(--theme-accent)]" />{label}</span>
+            <span className="mt-1 block text-xs text-[var(--app-muted)]">{description}</span>
+          </button>
+        ))}
+      </div>
+      {current === "private" ? <p className="mt-2 text-xs text-[var(--app-muted)]">Для закрытой группы используется только вход по приглашению.</p> : null}
+      {error ? <p className="mt-3 text-xs text-red-400" role="alert">{error}</p> : null}
     </section>
   );
 }

@@ -142,6 +142,7 @@ export function ProfilePage({
 
   return (
     <ProfilePageView
+      telemetryKey={profile.id}
       posts={posts}
       pinnedPost={pinnedPost}
       initialTab={askDeepLink ? "questions" : "posts"}

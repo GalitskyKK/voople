@@ -1,4 +1,4 @@
-type VoiceRoomSound = "join" | "leave";
+type VoiceRoomSound = "join" | "leave" | "mute" | "unmute" | "deafen" | "undeafen";
 
 let audioContext: AudioContext | null = null;
 
@@ -15,7 +15,17 @@ export async function playVoiceRoomSound(sound: VoiceRoomSound) {
     if (context.state === "suspended") await context.resume();
 
     const now = context.currentTime;
-    const frequencies = sound === "join" ? [440, 660] : [520, 330];
+    const frequencies = sound === "join"
+      ? [440, 660]
+      : sound === "leave"
+        ? [520, 330]
+        : sound === "mute"
+          ? [360, 250]
+          : sound === "unmute"
+            ? [300, 460]
+            : sound === "deafen"
+              ? [420, 300, 220]
+              : [240, 340, 480];
     const gain = context.createGain();
     gain.gain.setValueAtTime(0.0001, now);
     gain.gain.exponentialRampToValueAtTime(0.08, now + 0.015);

@@ -16,7 +16,7 @@ import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
 
 import type { DesktopConfig } from "../config";
 import { DesktopPostCard } from "../feed/DesktopPostCard";
-import { DesktopProfileShareButton } from "./DesktopProfileShareButton";
+import { DesktopProfileShareAdapter } from "../adapters/DesktopProfileShareAdapter";
 import { useDesktopProfile } from "./useDesktopProfile";
 
 export function DesktopProfile({
@@ -65,6 +65,7 @@ export function DesktopProfile({
   return (
     <AppPageContent>
       <ProfilePageView
+        telemetryKey={data.profile.id}
         posts={data.posts}
         pinnedPost={data.pinnedPost}
         card={
@@ -129,7 +130,7 @@ export function DesktopProfile({
                 }
                 shareAction={
                   data.isOwner ? (
-                    <DesktopProfileShareButton
+                    <DesktopProfileShareAdapter
                       profile={data.profile}
                       badgeIds={data.badgeIds}
                       config={config}

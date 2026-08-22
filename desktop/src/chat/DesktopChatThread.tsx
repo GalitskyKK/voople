@@ -1,23 +1,25 @@
 import type { Session } from "@supabase/supabase-js";
 import { ArrowLeft, Hash } from "lucide-react";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { ChatDateDivider } from "@/components/chat/ChatDateDivider";
+import { ChatRoomActivitySummary } from "@/components/chat/ChatRoomActivitySummary";
 import { ChatSectionsBarView } from "@/components/chat/ChatSectionsBarView";
 import { ChatWindowHeaderVisual } from "@/components/chat/ChatWindowHeaderVisual";
 import { ChatPeerPresence } from "@/components/chat/ChatPeerPresence";
+import { GroupInfoDrawerView, type GroupInfoDrawerTab } from "@/components/chat/GroupInfoDrawerView";
 import { VoiceRoomButton } from "@/components/chat/voice/VoiceRoomButton";
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
+import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { ChatMediaLightbox } from "@/components/chat/ChatMediaLightbox";
-import { GroupManagementTrigger } from "@/components/chat/GroupManagementTrigger";
+import { ChatMessageBubble } from "@/components/chat/ChatMessageBubble";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
-import type { ChatListItem, ChatMessageView, GroupEmojiView } from "@/types/chat";
+import type { ChatGroupMemberView, ChatListItem, ChatMessageView, GroupCommunityView, GroupEmojiView } from "@/types/chat";
+import type { GroupDiscoveryProfileView, InterestCatalogView } from "@/types/social";
 
 import type { DesktopConfig } from "../config";
-import { DesktopChatAvatar } from "./DesktopChatAvatar";
 import { DesktopChatComposer } from "./DesktopChatComposer";
-import { DesktopChatMessage } from "./DesktopChatMessage";
 import { DesktopSubchatCreator } from "./DesktopSubchatCreator";
 import { DesktopSectionAccessSheet } from "./DesktopSectionAccessSheet";
 import { useDesktopChatThread } from "./useDesktopChatThread";
@@ -61,6 +63,15 @@ export function DesktopChatThread({
   const [editing, setEditing] = useState<ChatMessageView | null>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [groupEmojis, setGroupEmojis] = useState<GroupEmojiView[]>([]);
+  const [groupDrawerOpen, setGroupDrawerOpen] = useState(false);
+  const [groupDrawerTab, setGroupDrawerTab] = useState<GroupInfoDrawerTab>("info");
+  const [groupCommunity, setGroupCommunity] = useState<GroupCommunityView | null>(null);
+  const [groupMembers, setGroupMembers] = useState<ChatGroupMemberView[]>([]);
+  const [roomParticipantIds, setRoomParticipantIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [groupTopicNames, setGroupTopicNames] = useState<string[]>([]);
+  const [groupPanelLoading, setGroupPanelLoading] = useState(false);
+  const [groupPanelError, setGroupPanelError] = useState<string | null>(null);
+  const groupRequestIdRef = useRef(0);
   const { containerRef: messagesRef, contentRef: messagesContentRef } =
     useChatAutoScroll(chatId, data?.messages.length ?? 0);
 
@@ -73,6 +84,38 @@ export function DesktopChatThread({
     }).catch(() => { if (active) setGroupEmojis([]); });
     return () => { active = false; };
   }, [chatId, config, data?.chat.type, session.access_token]);
+
+  const loadGroupPanel = () => {
+    if (data?.chat.type !== "group") return;
+    const requestId = ++groupRequestIdRef.current;
+    setGroupPanelLoading(true);
+    setGroupPanelError(null);
+    const client = createDesktopTrpcClient(config, () => session.access_token);
+    const request = Promise.all([
+      client.query("chat.groupCommunity", { chatId }),
+      client.query("chat.groupMembers", { chatId }),
+      client.query("chat.room", { chatId }),
+      client.query("social.groupDiscoveryProfile", { chatId }),
+      client.query("social.interestCatalog"),
+    ]).then(([communityValue, membersValue, roomValue, discoveryValue, catalogValue]) => {
+      if (requestId !== groupRequestIdRef.current) return;
+      setGroupCommunity(communityValue as GroupCommunityView);
+      setGroupMembers(membersValue as ChatGroupMemberView[]);
+      const room = roomValue as { participants?: Array<{ id: string }> };
+      setRoomParticipantIds(new Set(room.participants?.map((participant) => participant.id) ?? []));
+      const discovery = discoveryValue as GroupDiscoveryProfileView;
+      const catalog = catalogValue as InterestCatalogView;
+      const interests = catalog.categories.flatMap((category) => category.interests);
+      setGroupTopicNames(discovery.topicSlugs.map((slug) => interests.find((interest) => interest.slug === slug)?.name ?? slug));
+    });
+    void request
+      .catch((cause) => {
+        if (requestId === groupRequestIdRef.current) setGroupPanelError(cause instanceof Error ? cause.message : "Не удалось загрузить информацию о группе");
+      })
+      .finally(() => {
+        if (requestId === groupRequestIdRef.current) setGroupPanelLoading(false);
+      });
+  };
 
   if (loading && !data) {
     return (
@@ -127,15 +170,51 @@ export function DesktopChatThread({
           <ArrowLeft className="h-5 w-5" />
         </button>
         {isGroup && !isSubchat ? (
-          <GroupManagementTrigger
-            onClick={() => onOpenGroupSettings(chatId)}
+          <GroupInfoDrawerView
+            open={groupDrawerOpen}
+            tab={groupDrawerTab}
             chatName={title}
             memberCount={data.chat.memberCount}
             groupIcon={data.chat.groupIcon}
             groupAvatarUrl={data.chat.groupAvatarUrl}
+            groupBannerUrl={data.chat.groupBannerUrl}
             groupAccentColor={data.chat.groupAccentColor}
             groupTag={data.chat.groupTag}
-            variant="identity"
+            canManage={data.chat.viewerRole !== "member"}
+            description={groupCommunity?.description}
+            members={groupMembers}
+            onlineUserIds={onlineUserIds}
+            roomParticipantIds={roomParticipantIds}
+            infoLoading={groupPanelLoading && groupDrawerTab === "info"}
+            membersLoading={groupPanelLoading && groupDrawerTab === "members"}
+            error={groupPanelError}
+            topics={groupTopicNames}
+            sections={rootChat?.channels.map((section) => ({ id: section.id, name: section.name || "Раздел" })) ?? []}
+            roomAction={roomParticipantIds.size ? <VoiceRoomButton chatId={chatId} chatName={title} chatType="group" /> : undefined}
+            onOpenChange={(open) => {
+              setGroupDrawerOpen(open);
+              if (open) loadGroupPanel();
+            }}
+            onTabChange={(tab) => {
+              setGroupDrawerTab(tab);
+              loadGroupPanel();
+            }}
+            onManage={() => {
+              setGroupDrawerOpen(false);
+              onOpenGroupSettings(chatId);
+            }}
+            onInvite={() => {
+              setGroupDrawerOpen(false);
+              onOpenGroupSettings(chatId);
+            }}
+            onOpenSection={(sectionId) => {
+              setGroupDrawerOpen(false);
+              onNavigateChat(sectionId);
+            }}
+            onOpenProfile={(username) => {
+              setGroupDrawerOpen(false);
+              onNavigateProfile(username);
+            }}
           />
         ) : isSubchat ? (
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--app-accent-soft)] text-[var(--theme-accent)]">
@@ -152,9 +231,10 @@ export function DesktopChatThread({
             className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]"
             aria-label={`Открыть профиль ${other.displayName}`}
           >
-            <DesktopChatAvatar
+            <ProfileAvatar
               displayName={other.displayName}
-              avatarUrl={other.avatarUrl}
+              size="sm"
+              animatedAvatarUrl={other.avatarUrl}
               decorationUrl={other.avatarDecorationUrl}
               ringId={other.avatarRingId}
               isOnline={onlineUserIds.has(other.id)}
@@ -269,10 +349,13 @@ export function DesktopChatThread({
           {timeline.map((item) =>
             item.type === "date" ? (
               <ChatDateDivider key={item.key} label={item.label} />
+            ) : item.type === "roomSummary" ? (
+              <ChatRoomActivitySummary key={item.key} dayLabel={item.dayLabel} durationSeconds={item.durationSeconds} sessions={item.sessions} />
             ) : (
-              <DesktopChatMessage
+              <ChatMessageBubble
                 key={item.message.id}
                 message={item.message}
+                viewerId={session.user.id}
                 groupPosition={item.groupPosition}
                 showSender={isGroup}
                 onReply={setReplyTo}
@@ -280,12 +363,12 @@ export function DesktopChatThread({
                   setReplyTo(null);
                   setEditing(message);
                 }}
-                onDelete={(messageId) => {
-                  if (replyTo?.id === messageId) setReplyTo(null);
-                  void deleteMessage(messageId);
+                onDelete={(message) => {
+                  if (replyTo?.id === message.id) setReplyTo(null);
+                  void deleteMessage(message.id);
                 }}
-                onToggleReaction={(messageId, emoji) =>
-                  void toggleReaction(messageId, emoji)
+                onToggleReaction={(message, emoji) =>
+                  void toggleReaction(message.id, emoji)
                 }
                 onOpenImage={setLightboxUrl}
               />

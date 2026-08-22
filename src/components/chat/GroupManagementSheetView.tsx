@@ -12,8 +12,9 @@ import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { useGroupManagementSheet } from "@/hooks/useGroupManagementSheet";
-import type { ChatGroupAuditEntryView, ChatGroupMemberView, GroupCommunityView, GroupCustomizationInput, GroupEmojiView, GroupSoundView } from "@/types/chat";
+import type { ChatGroupAuditEntryView, ChatGroupMemberView, GroupCommunityView, GroupCustomizationInput, GroupEmojiView, GroupJoinPolicy, GroupJoinRequestView, GroupSoundView, GroupVisibility } from "@/types/chat";
 import type { UserSearchHit } from "@/types/search";
+import type { GroupDiscoveryProfileView, InterestCatalogView } from "@/types/social";
 
 import { GroupChatMemberPicker } from "./GroupChatMemberPicker";
 import { GroupAuditLog } from "./GroupAuditLog";
@@ -28,6 +29,9 @@ import { GroupVisibilitySettings } from "./GroupVisibilitySettings";
 import { GroupAvatar } from "./GroupAvatar";
 import { GroupManagementTrigger } from "./GroupManagementTrigger";
 import { GroupSoundManager } from "./GroupSoundManager";
+import { GroupNameEditor } from "./GroupNameEditor";
+import { GroupJoinRequestsPanel } from "./GroupJoinRequestsPanel";
+import { GroupDiscoverySettingsPanel } from "@/components/social/GroupDiscoverySettingsPanel";
 import {
   GroupSettingsNavigation,
   type GroupSettingsSection,
@@ -46,7 +50,8 @@ export type GroupManagementProps = {
   canManage: boolean;
   topicsEnabled: boolean;
   topicsLayout: "tabs" | "list";
-  groupVisibility: "private" | "public";
+  groupVisibility: GroupVisibility;
+  joinPolicy: GroupJoinPolicy;
   inviteBaseUrl?: string;
   loadMembers: () => Promise<ChatGroupMemberView[]>;
   loadAudit: () => Promise<ChatGroupAuditEntryView[]>;
@@ -55,7 +60,13 @@ export type GroupManagementProps = {
   createInvite: () => Promise<{ token: string }>;
   revokeInvite: (token: string) => Promise<unknown>;
   updateTopics: (enabled: boolean, layout: "tabs" | "list") => Promise<unknown>;
-  updateVisibility: (visibility: "private" | "public") => Promise<unknown>;
+  updateVisibility: (visibility: GroupVisibility, joinPolicy: GroupJoinPolicy) => Promise<unknown>;
+  loadJoinRequests: () => Promise<GroupJoinRequestView[]>;
+  resolveJoinRequest: (requestId: string, approve: boolean) => Promise<unknown>;
+  loadInterestCatalog: () => Promise<InterestCatalogView>;
+  loadDiscoveryProfile: () => Promise<GroupDiscoveryProfileView>;
+  updateDiscoveryProfile: (value: Omit<GroupDiscoveryProfileView, "topicLimit">) => Promise<GroupDiscoveryProfileView>;
+  updateName: (name: string) => Promise<{ name: string }>;
   loadCommunity: () => Promise<GroupCommunityView>;
   updateCustomization: (input: GroupCustomizationInput) => Promise<GroupCommunityView>;
   uploadAvatar?: (file: File) => Promise<{ mediaKey: string; previewUrl: string }>;
@@ -69,6 +80,7 @@ export type GroupManagementProps = {
   deleteSound: (soundId: string) => Promise<unknown>;
   uploadSound?: (file: File) => Promise<{ mediaKey: string }>;
   setBoost: (enabled: boolean, slot?: 1 | 2 | 3, idempotencyKey?: string) => Promise<GroupCommunityView>;
+  setPerk: (perkId: string, enabled: boolean) => Promise<GroupCommunityView>;
   removeMember: (memberId: string) => Promise<unknown>;
   changeMemberRole: (memberId: string, role: "admin" | "member") => Promise<unknown>;
   transferOwnership: (memberId: string) => Promise<unknown>;
@@ -85,6 +97,7 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
   const isPage = props.presentation === "page";
   const state = useGroupManagementSheet({ ...props, alwaysActive: isPage });
   const [section, setSection] = useState<GroupSettingsSection>("main");
+  const [groupName, setGroupName] = useState(props.chatName);
   const slotsLeft = Math.max(0, 20 - state.members.length);
 
   const content = state.adding ? (
@@ -127,10 +140,10 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
         ) : (
           <>
             <div className={isPage ? "flex items-center gap-3" : "flex items-center gap-3 pr-10"}>
-              <GroupAvatar name={props.chatName} avatarUrl={props.groupAvatarUrl} icon={props.groupIcon} accentColor={props.groupAccentColor} size="lg" />
+              <GroupAvatar name={groupName} avatarUrl={props.groupAvatarUrl} icon={props.groupIcon} accentColor={props.groupAccentColor} size="lg" />
               <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-(--theme-accent)">Настройки сообщества</p>
-                <h2 className="mt-1 truncate text-xl font-semibold">{props.chatName}</h2>
+                <h2 className="mt-1 truncate text-xl font-semibold">{groupName}</h2>
                 <p className="mt-1 text-sm text-[var(--app-muted)]">{state.members.length} из 20 участников</p>
               </div>
             </div>
@@ -144,7 +157,9 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
                   <h3 className="font-semibold">Основное</h3>
                   <p className="mt-1 text-sm leading-6 text-[var(--app-muted)]">Название, доступность и базовые параметры сообщества. Внешний вид настраивается отдельно, чтобы изменения было проще проверить перед сохранением.</p>
                 </section>
-                <GroupVisibilitySettings value={props.groupVisibility} canManage={props.canManage} onChange={props.updateVisibility} />
+                <GroupNameEditor value={groupName} canManage={props.canManage} save={props.updateName} onChanged={(name) => { setGroupName(name); props.onMembersChanged?.(); }} />
+                <GroupVisibilitySettings value={props.groupVisibility} joinPolicy={props.joinPolicy} canManage={props.canManage} onChange={props.updateVisibility} />
+                <GroupDiscoverySettingsPanel canManage={props.canManage} loadCatalog={props.loadInterestCatalog} load={props.loadDiscoveryProfile} save={props.updateDiscoveryProfile} />
               </>
             ) : null}
 
@@ -184,13 +199,17 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
             {section === "appearance" ? (
               <GroupCommunityPanel
                 canManage={props.canManage}
-                groupName={props.chatName}
+                groupName={groupName}
                 load={props.loadCommunity}
                 save={props.updateCustomization}
                 uploadAvatar={props.uploadAvatar}
                 uploadBanner={props.uploadBanner}
                 onChanged={props.onMembersChanged}
               />
+            ) : null}
+
+            {section === "members" && props.canManage ? (
+              <GroupJoinRequestsPanel load={props.loadJoinRequests} resolve={props.resolveJoinRequest} />
             ) : null}
 
             {section === "media" ? <>
@@ -210,7 +229,7 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
               />
             </> : null}
 
-            {section === "boosts" ? <GroupBoostPanel load={props.loadCommunity} setBoost={props.setBoost} onChanged={props.onMembersChanged} /> : null}
+            {section === "boosts" ? <GroupBoostPanel load={props.loadCommunity} setBoost={props.setBoost} setPerk={props.setPerk} onChanged={props.onMembersChanged} /> : null}
 
             {section === "links" && props.canManage ? (
               <div className="mt-4">
@@ -286,7 +305,7 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
   }
 
   return <>
-    <GroupManagementTrigger variant={props.triggerVariant ?? "toolbar"} onClick={() => state.setOpen(true)} chatName={props.chatName} memberCount={props.memberCount} groupIcon={props.groupIcon} groupAvatarUrl={props.groupAvatarUrl} groupAccentColor={props.groupAccentColor} groupTag={props.groupTag} />
+    <GroupManagementTrigger variant={props.triggerVariant ?? "toolbar"} onClick={() => state.setOpen(true)} chatName={groupName} memberCount={props.memberCount} groupIcon={props.groupIcon} groupAvatarUrl={props.groupAvatarUrl} groupAccentColor={props.groupAccentColor} groupTag={props.groupTag} />
     <Sheet open={state.open} onClose={state.close} className="max-w-lg" ariaLabel={state.adding ? "Добавление участников" : "Участники группы"}>{body}</Sheet>
   </>;
 }

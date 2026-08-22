@@ -6,20 +6,24 @@ import { useEffect, useState } from "react";
 import { VooplePlusBadge } from "@/components/subscription/VooplePlusFeatureSurface";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
-import { GROUP_PERKS, type GroupPerkDefinition } from "@/lib/group-perks";
+import type { GroupPerkDefinition } from "@/lib/group-perks";
 import type { GroupCommunityView } from "@/types/chat";
+import { reportProductEvent } from "@/lib/telemetry/client";
 
 export function GroupBoostPanel({
   load,
   setBoost,
+  setPerk,
   onChanged,
 }: {
   load: () => Promise<GroupCommunityView>;
   setBoost: (enabled: boolean, slot?: 1 | 2 | 3, idempotencyKey?: string) => Promise<GroupCommunityView>;
+  setPerk: (perkId: string, enabled: boolean) => Promise<GroupCommunityView>;
   onChanged?: () => void;
 }) {
   const [community, setCommunity] = useState<GroupCommunityView | null>(null);
   const [pending, setPending] = useState(false);
+  const [pendingPerkId, setPendingPerkId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,11 +46,27 @@ export function GroupBoostPanel({
     setError(null);
     try {
       setCommunity(await setBoost(enabled, slot, crypto.randomUUID()));
+      reportProductEvent("boost_assigned", { action: enabled ? "assign" : "remove" });
       onChanged?.();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось изменить буст");
     } finally {
       setPending(false);
+    }
+  };
+
+  const togglePerk = async (perkId: string, enabled: boolean) => {
+    if (pendingPerkId) return;
+    setPendingPerkId(perkId);
+    setError(null);
+    try {
+      setCommunity(await setPerk(perkId, enabled));
+      reportProductEvent(enabled ? "perk_enabled" : "perk_disabled", { kind: perkId });
+      onChanged?.();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Не удалось изменить perk");
+    } finally {
+      setPendingPerkId(null);
     }
   };
 
@@ -58,8 +78,8 @@ export function GroupBoostPanel({
   const assignedHere = community.boostSlots.find((slot) => slot.assignedHere);
   const freeSlot = community.boostSlots.find((slot) => slot.chatId === null);
   const progress = Math.min(100, (community.boostCount / 24) * 100);
-  const activePerks = GROUP_PERKS.filter((perk) => community.groupLevel >= perk.milestone);
-  const usedPoints = Math.min(community.boostCount, activePerks.reduce((total, perk) => total + perk.cost, 0));
+  const activePerks = community.perks.filter((perk) => perk.status === "active");
+  const usedPoints = community.perkUsed;
   const nextMilestone = [1, 3, 6, 12, 24].find((milestone) => milestone > community.boostCount) ?? 24;
 
   const toggle = () => {
@@ -94,7 +114,7 @@ export function GroupBoostPanel({
       <div className="mt-5 grid grid-cols-3 gap-2">
         <BoostMetric label="Всего" value={community.boostCount} />
         <BoostMetric label="Используется" value={usedPoints} />
-        <BoostMetric label="Свободно" value={Math.max(0, community.boostCount - usedPoints)} />
+        <BoostMetric label="Свободно" value={Math.max(0, community.perkCapacity - usedPoints)} />
       </div>
       <p className="mt-3 rounded-xl bg-[var(--app-surface-soft)] px-3 py-2 text-xs text-[var(--app-muted)]">
         Следующий milestone: <strong className="text-[var(--foreground)]">{nextMilestone}</strong>. Каждый Boost одновременно двигает шкалу и добавляет 1 point вместимости.
@@ -106,7 +126,14 @@ export function GroupBoostPanel({
           <span className="text-xs text-[var(--app-muted)]">{activePerks.length} активно</span>
         </div>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          {GROUP_PERKS.map((perk) => <PerkCard key={perk.id} perk={perk} level={community.groupLevel} />)}
+          {community.perks.map((perk) => (
+            <PerkCard
+              key={perk.id}
+              perk={perk}
+              pending={pendingPerkId === perk.id}
+              onToggle={() => void togglePerk(perk.id, !perk.selected)}
+            />
+          ))}
         </div>
       </div>
 
@@ -142,13 +169,22 @@ export function GroupBoostPanel({
 
 const PERK_ICONS = { palette: Palette, smile: SmilePlus, image: Image, upload: Upload, tag: Tag, link: Link2, roles: Shield, hd: Video } as const;
 
-function PerkCard({ perk, level }: { perk: GroupPerkDefinition; level: number }) {
+function PerkCard({
+  perk,
+  pending,
+  onToggle,
+}: {
+  perk: GroupPerkDefinition & { selected: boolean; status: "active" | "available" | "locked" | "suspended" };
+  pending: boolean;
+  onToggle: () => void;
+}) {
   const Icon = PERK_ICONS[perk.icon];
-  const active = level >= perk.milestone;
+  const active = perk.status === "active";
+  const statusLabel = active ? "Активен" : perk.status === "available" ? "Доступен" : perk.status === "suspended" ? "Приостановлен" : `Milestone ${perk.milestone}`;
   return (
-    <article className={cn("flex items-start gap-3 rounded-2xl border p-3 transition", active ? "border-[color-mix(in_srgb,var(--theme-accent)_35%,var(--app-border))] bg-[var(--app-accent-soft)]" : "border-[var(--app-border)] bg-[var(--app-surface-soft)] opacity-75")}>
+    <article className={cn("flex items-start gap-3 rounded-2xl border p-3 transition", active ? "border-[color-mix(in_srgb,var(--theme-accent)_35%,var(--app-border))] bg-[var(--app-accent-soft)]" : "border-[var(--app-border)] bg-[var(--app-surface-soft)]", perk.status === "locked" && "opacity-70")}>
       <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-xl", active ? "bg-[var(--theme-accent)] text-white" : "bg-[var(--app-surface)] text-[var(--app-muted)]")}><Icon className="h-4 w-4" /></span>
-      <span className="min-w-0 flex-1"><span className="flex items-center gap-1.5 text-xs font-semibold">{perk.name}{active ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : null}</span><span className="mt-0.5 block text-[11px] leading-4 text-[var(--app-muted)]">{perk.description}</span><span className="mt-2 block text-[10px] font-medium uppercase tracking-wide text-[var(--app-muted)]">{perk.cost} {perk.cost === 1 ? "point" : "points"} · milestone {perk.milestone}</span></span>
+      <span className="min-w-0 flex-1"><span className="flex items-center gap-1.5 text-xs font-semibold">{perk.name}{active ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : null}</span><span className="mt-0.5 block text-[11px] leading-4 text-[var(--app-muted)]">{perk.description}</span><span className="mt-2 block text-[10px] font-medium uppercase tracking-wide text-[var(--app-muted)]">{perk.cost} {perk.cost === 1 ? "point" : "points"} · {statusLabel}</span><Button type="button" size="sm" variant={perk.selected ? "secondary" : "ghost"} className="mt-2 h-7 px-2 text-[11px]" disabled={pending || perk.status === "locked"} onClick={onToggle}>{pending ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : perk.selected ? "Отключить" : "Включить"}</Button></span>
     </article>
   );
 }

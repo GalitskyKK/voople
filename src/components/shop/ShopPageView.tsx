@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Crown, Package, Palette, Search, ShoppingBag } from "lucide-react";
 
 import { trpc } from "@/lib/trpc/client";
@@ -17,8 +17,9 @@ import { DonationPanel, ShopWalletBar } from "@/components/shop/ShopWalletBar";
 import { ShopCatalogSections } from "@/components/shop/ShopCatalogSections";
 import { VooplePlusPanel } from "@/components/shop/VooplePlusPanel";
 import { SHOP_DISPLAY_SECTIONS, type ShopDisplaySectionId } from "@/lib/shop/categories";
-import { reportClientMetric } from "@/lib/telemetry/client";
+import { reportClientMetric, reportProductEvent } from "@/lib/telemetry/client";
 import { ShopGiftDialog } from "@/components/shop/ShopGiftDialog";
+import { useShopPageTelemetry } from "@/hooks/useShopPageTelemetry";
 
 export type ShopTab = "catalog" | "inventory" | "customize" | "plus";
 
@@ -52,13 +53,7 @@ export function ShopPageView({
   const [catalogSort, setCatalogSort] = useState<"featured" | "new" | "name" | "price">("featured");
   const utils = trpc.useUtils();
   const { setThemeId } = useAppTheme();
-  const reportedPlusView = useRef(false);
-
-  useEffect(() => {
-    if (tab !== "plus" || reportedPlusView.current) return;
-    reportedPlusView.current = true;
-    reportClientMetric({ name: "vooplus_offer_viewed", value: 1 });
-  }, [tab]);
+  useShopPageTelemetry(tab);
 
   const overviewQuery = trpc.shop.overview.useQuery(undefined, {
     retry: false,
@@ -84,6 +79,7 @@ export function ShopPageView({
   const purchaseCoins = trpc.shop.purchaseWithCoins.useMutation({
     onSuccess: (data) => {
       utils.shop.overview.setData(undefined, data);
+      reportProductEvent("purchase_completed", { kind: "voops", surface: "store" });
     },
   });
 
@@ -112,8 +108,13 @@ export function ShopPageView({
 
   const createPayment = trpc.shop.createPaymentIntent.useMutation({
     onMutate: (variables) => {
+      reportProductEvent("checkout_started", {
+        kind: variables.kind,
+        source: variables.recipientId ? "gift" : "self",
+      });
       if (variables.kind === "subscription") {
         reportClientMetric({ name: "vooplus_checkout_started", value: 1 });
+        reportProductEvent("plus_started", { source: "store" });
       }
     },
     onSuccess: (intent, variables) => {
@@ -143,6 +144,7 @@ export function ShopPageView({
       applyEquippedAppTheme(setThemeId, equipped.appThemeId);
       await utils.shop.overview.invalidate();
       await utils.customization.getEquipped.invalidate();
+      reportProductEvent("cosmetic_equipped", { surface: "store" });
     },
     onError: (error) => {
       setEquipMessage(error.message);
@@ -220,6 +222,7 @@ export function ShopPageView({
   if (!overview) return null;
 
   const handleEquip = (item: ShopItemView) => {
+    reportProductEvent("cosmetic_previewed", { itemKind: item.kind, surface: "store" });
     equip.mutate({ itemId: item.id });
   };
 

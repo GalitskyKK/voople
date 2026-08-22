@@ -3,20 +3,32 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, MessageCircle, UsersRound } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { trpc } from "@/lib/trpc/client";
+import { reportProductEvent } from "@/lib/telemetry/client";
 import { GroupAvatar } from "./GroupAvatar";
 
 export function ChatInvitePage({ token }: { token: string }) {
   const router = useRouter();
+  const openedReported = useRef(false);
   const preview = trpc.chat.invitePreview.useQuery({ token }, { retry: false });
   const accept = trpc.chat.acceptInvite.useMutation({
     onSuccess: ({ chatId }) => {
+      reportProductEvent("invite_joined", { source: "group_invite" });
       router.replace(`/messages/${chatId}`);
       router.refresh();
     },
   });
+
+  useEffect(() => {
+    if (!preview.data || openedReported.current) return;
+    openedReported.current = true;
+    reportProductEvent("invite_opened", {
+      result: preview.data.available ? "available" : preview.data.reason,
+    });
+  }, [preview.data]);
 
   const unavailableText =
     preview.data?.reason === "expired"
@@ -76,6 +88,12 @@ export function ChatInvitePage({ token }: { token: string }) {
               Уже {preview.data.memberCount} участников. Голосовая комната подключается отдельно —
               вступление в чат не включает микрофон.
             </p>
+            {preview.data.onlineCount > 0 || preview.data.roomParticipantCount > 0 ? (
+              <div className="mt-3 flex flex-wrap justify-center gap-2 text-xs">
+                {preview.data.onlineCount > 0 ? <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-emerald-300">● {preview.data.onlineCount} онлайн</span> : null}
+                {preview.data.roomParticipantCount > 0 ? <span className="rounded-full border border-[color-mix(in_srgb,var(--theme-accent)_40%,transparent)] bg-[var(--app-accent-soft)] px-2.5 py-1 text-[var(--theme-accent)]">🎙 {preview.data.roomParticipantCount} разговаривают</span> : null}
+              </div>
+            ) : null}
             <Button
               type="button"
               className="mt-6 w-full"
@@ -87,7 +105,11 @@ export function ChatInvitePage({ token }: { token: string }) {
             </Button>
             {accept.error ? (
               <>
-                <p className="mt-3 text-sm text-red-400">{accept.error.message}</p>
+                <p className="mt-3 text-sm text-red-400">
+                  {accept.error.data?.code === "UNAUTHORIZED"
+                    ? "Войдите или создайте профиль, чтобы принять приглашение."
+                    : accept.error.message}
+                </p>
                 {accept.error.data?.code === "UNAUTHORIZED" ? (
                   <div className="mt-3 flex items-center justify-center gap-4 text-sm">
                     <Link

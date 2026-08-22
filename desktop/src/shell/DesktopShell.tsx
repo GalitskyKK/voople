@@ -266,13 +266,16 @@ export function DesktopShell({
   useDesktopHotkeys(preferences.hotkeys, hotkeyActions, pathname === "/settings");
 
   const renderDestination = useCallback<NavigationDestinationRenderer>(
-    ({ href, label, className, active, children }) => (
+    ({ href, label, className, active, children, onNavigate }) => (
       <button
         type="button"
         aria-label={label}
         aria-current={active ? "page" : undefined}
         className={className}
-        onClick={() => navigate(href)}
+        onClick={() => {
+          onNavigate?.();
+          navigate(href);
+        }}
       >
         {children}
       </button>

@@ -5,6 +5,7 @@ import { Track, type Room } from "livekit-client";
 
 import { syncVoiceTrackProcessor } from "@/lib/livekit/rnnoise-track-processor";
 import type { VoicePreferences } from "@/lib/livekit/voice-preferences";
+import { reportProductEvent } from "@/lib/telemetry/client";
 
 import {
   getAudioCaptureOptions,
@@ -13,13 +14,14 @@ import {
   type MediaStatus,
   type ScreenShareQuality,
 } from "./voice-room-config";
+import { playVoiceRoomSound } from "./voice-room-sounds";
 
 type DesktopScreenShareToggle = (
   room: Room,
   sharing: boolean,
   processId: number | null,
   quality: ScreenShareQuality,
-) => Promise<{ enabled: boolean; warning: string | null }>;
+) => Promise<{ enabled: boolean; hasAudio: boolean; warning: string | null }>;
 
 export function useVoiceMediaActions({
   roomRef,
@@ -91,6 +93,7 @@ export function useVoiceMediaActions({
       if (actualMuted === targetEnabled) {
         throw new Error("Медиасервер не подтвердил изменение микрофона");
       }
+      void playVoiceRoomSound(actualMuted ? "mute" : "unmute");
       void sendHeartbeat();
       await refreshDevices();
     } catch (cause) {
@@ -121,6 +124,11 @@ export function useVoiceMediaActions({
         screenShareQualityRef.current,
       );
       setScreenSharing(result.enabled);
+      if (result.enabled && !screenSharing) {
+        reportProductEvent("screen_share_started", { hasAudio: result.hasAudio });
+        if (result.hasAudio) reportProductEvent("screen_audio_start", { source: "screen_share" });
+      }
+      if (!result.enabled && screenSharing) reportProductEvent("screen_audio_stop", { source: "screen_share" });
       if (result.warning) setError(result.warning);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось включить демонстрацию экрана.");
@@ -140,6 +148,7 @@ export function useVoiceMediaActions({
       const publication = room.localParticipant.getTrackPublication(Track.Source.Camera);
       const enabled = Boolean(publication && !publication.isMuted);
       setCameraEnabled(enabled);
+      if (enabled && enabling) reportProductEvent("camera_started", { source: "room_controls" });
       if (!enabled) clearLocalCamera();
     } catch (cause) {
       const publication = room.localParticipant.getTrackPublication(Track.Source.Camera);

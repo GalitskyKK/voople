@@ -8,12 +8,12 @@
 |---|---|---|---|---|
 | Shell и навигация | `components/layout/AppShellFrame`, `AppNavigationVisual`, `lib/layout/route-layout` | `MainShell`, Next `Link` | `DesktopShell`, state-router renderer | Window chrome, tray, hotkeys |
 | Главная и лента | `components/home`, `components/feed/*Visual` | Server page загружает initial data | tRPC adapter загружает те же view-models | Нет Server Components; Tauri navigation renderer |
-| Профиль | `ProfileCardView`, `ProfileBadgesView`, `ProfilePageView`, `ProfileFlipCard`, `feed/MiniProfilePopover` | `ProfileCard` подключает web queries и Next metadata | `DesktopProfile` передаёт те же view-models и только navigation/native adapters | Realtime можно отключить; системный share и desktop navigation |
-| Чаты | `MessagesLayoutView`, `ChatWindowHeaderVisual`, `GroupInfoDrawer`, `GroupManagementSheetView` | Messages route; settings route; Supabase realtime hook | Desktop auth/realtime adapter; `/messages/:id/settings` использует тот же full-page View | Native notifications и transport realtime |
+| Профиль | `ProfileCardView`, `ProfileBadgesView`, `ProfilePageView`, `ProfileFlipCard`, `ProfileShareController`, `feed/MiniProfilePopover` | `ProfileCard` и `ProfileShareCardButton` подключают web queries/metadata | `DesktopProfile` и `DesktopProfileShareAdapter` передают те же view-models и callbacks | Realtime можно отключить; transport публикации и desktop navigation остаются адаптерами |
+| Чаты | `MessagesLayoutView`, `ChatMessageBubble`, `ChatMessageAttachment`, `ChatComposerInputView`, `ChatWindowHeaderVisual`, `GroupInfoDrawerView`, `GroupManagementSheetView` | `GroupInfoDrawer` и Messages route подключают tRPC/Next navigation | Desktop auth/realtime/upload adapters передают данные в те же Views; `/messages/:id/settings` использует тот же full-page View | Native notifications, transport realtime и способ загрузки файла |
 | Голос и комнаты | `components/chat/voice`, `VoiceSessionProvider`, `VoiceSessionDock` | Web media devices и browser picker | Тот же UI + Tauri process-audio bridge | WASAPI process loopback, global hotkeys |
 | Магазин, подарки и Plus | `components/shop`, `ShopGiftDialog`, `components/subscription` | Server payment/API composition | tRPC/API adapter | Открытие checkout во внешнем браузере |
 | Discovery | `ExploreView`, `ExploreSearchResults`, `NotificationsView`, `EventsPage` | Optional/protected tRPC adapters | Shared view + desktop navigation renderer | Только способ навигации |
-| Настройки | `components/settings` | Browser permissions/storage | Те же секции + native settings panels | Tray, startup, updater, hotkeys |
+| Настройки и приватность | `components/settings`, `components/social/UserPrivacySettingsPanel`, `UserInterestsSettingsPanel` | tRPC/Supabase adapters передают данные и auth-действия | Те же Views получают данные из desktop tRPC/auth adapters | Tray, startup, updater, hotkeys; DOM форм интересов и приватности общий |
 | Безопасные ссылки | `components/ui/RichText`, `SafeExternalLink` | `window.open` после interstitial | Registered Tauri external-link opener | Только системный browser command |
 | Release notes | Общий parser и safe link renderer | Может читать опубликованный catalog | Bundled changelog + updater history | Установка, restart и acknowledgement в Rust |
 
@@ -40,5 +40,14 @@ responsive-правила — переноситься в корневой `src/
 группы и карточка профиля уже следуют этой схеме. `DesktopProfileCard` и
 `DesktopProfileAvatar` и `DesktopProfileActions` удалены: положение edit-action,
 баннер, identity, пины, подписка и переход в сообщения теперь меняются только в
-корневом `src`. Следующие кандидаты на удаление из baseline: `DesktopPostCard`,
-`DesktopChatThread`/composer и share-controller профиля.
+корневом `src`. Desktop уже не содержит отдельных avatar, message bubble,
+attachment и composer input: контекстное меню, сторона action-кнопки, реакции,
+вложения, emoji/voice controls и responsive-поведение меняются только в корневом
+`src`. Следующие кандидаты на удаление из baseline: `DesktopPostCard`, внешний
+`DesktopChatThread`/upload-controller; общий share-controller профиля уже вынесен.
+
+Настройки интересов, групповых тем и матрица приватности также следуют этому
+правилу: все поля, состояния, лимиты и responsive-разметка находятся в
+`src/components/social`; desktop-файлы только вызывают тот же tRPC-контракт.
+Online presence больше не публикуется в общий клиентский канал: web и desktop
+получают одинаковый серверно отфильтрованный набор видимых пользователей.

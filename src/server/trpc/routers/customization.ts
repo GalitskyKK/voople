@@ -13,6 +13,7 @@ import {
 } from "@/server/services/customization.service";
 
 import { createTRPCRouter, protectedProcedure } from "../init";
+import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
 
 export const customizationRouter = createTRPCRouter({
   getEquipped: protectedProcedure.query(async ({ ctx }) => {
@@ -77,7 +78,9 @@ export const customizationRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       try {
         await equipShopItem(ctx.user.id, input.itemId);
-        return getEquippedCustomization(ctx.user.id);
+        const result = await getEquippedCustomization(ctx.user.id);
+        await recordServerProductEvent({ name: "cosmetic_equipped", actorId: ctx.user.id, route: "/trpc/customization.equip" });
+        return result;
       } catch (e) {
         throw new TRPCError({
           code: "BAD_REQUEST",

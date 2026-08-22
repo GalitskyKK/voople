@@ -26,7 +26,6 @@ type ChatWindowHeaderProps = {
   topicsEnabled: boolean;
   topicsLayout: "tabs" | "list";
   topicIcon: string | null;
-  groupVisibility: "private" | "public";
   groupIcon: string | null;
   groupAvatarUrl: string | null;
   groupBannerUrl: string | null;

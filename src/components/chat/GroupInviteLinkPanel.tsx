@@ -91,7 +91,7 @@ export function GroupInviteLinkPanel({
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium">Пригласить по ссылке</p>
           <p className="mt-0.5 text-xs leading-5 text-[var(--app-muted)]">
-            Для людей без взаимной подписки: участник сам подтверждает вход.
+            Постоянная ссылка действует, пока вы её не отзовёте. Участник сам подтверждает вход.
           </p>
         </div>
       </div>
@@ -132,7 +132,7 @@ export function GroupInviteLinkPanel({
 
       {vanitySlug ? (
         <div className="mt-3 border-t border-[var(--app-border)] pt-3">
-          <p className="text-xs font-medium">Постоянная ссылка 24-го уровня</p>
+          <p className="text-xs font-medium">Красивый Boost-адрес</p>
           <button
             type="button"
             className="mt-1 w-full break-all rounded-xl bg-[var(--app-surface)] px-3 py-2 text-left text-xs transition hover:text-[var(--theme-accent)]"

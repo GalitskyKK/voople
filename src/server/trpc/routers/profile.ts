@@ -18,13 +18,13 @@ import {
 } from "@/server/services/profile.service"
 import { recordProfileView } from "@/server/services/views.service"
 
-import { createTRPCRouter, optionalAuthProcedure, protectedProcedure, publicProcedure } from "../init"
+import { createTRPCRouter, optionalAuthProcedure, protectedProcedure } from "../init"
 
 export const profileRouter = createTRPCRouter({
-  getByUsername: publicProcedure
+  getByUsername: optionalAuthProcedure
     .input(z.object({ username: z.string().min(1).max(30) }))
-    .query(async ({ input }) => {
-      const profile = await getProfileByUsername(input.username)
+    .query(async ({ input, ctx }) => {
+      const profile = await getProfileByUsername(input.username, ctx.user?.id ?? null)
       if (!profile) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Профиль не найден" })
       }
@@ -57,7 +57,7 @@ export const profileRouter = createTRPCRouter({
   getFollowState: optionalAuthProcedure
     .input(z.object({ username: z.string().min(1).max(30) }))
     .query(async ({ input, ctx }) => {
-      const profile = await getProfileByUsername(input.username)
+      const profile = await getProfileByUsername(input.username, ctx.user?.id ?? null)
       if (!profile) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Профиль не найден" })
       }
@@ -92,7 +92,7 @@ export const profileRouter = createTRPCRouter({
   toggleFollow: protectedProcedure
     .input(z.object({ username: z.string().min(1).max(30) }))
     .mutation(async ({ input, ctx }) => {
-      const profile = await getProfileByUsername(input.username)
+      const profile = await getProfileByUsername(input.username, ctx.user.id)
       if (!profile) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Профиль не найден" })
       }

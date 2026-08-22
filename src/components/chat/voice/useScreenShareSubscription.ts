@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, type RefObject } from "react";
+import { useCallback, useRef, type RefObject } from "react";
 import { Track, type RemoteParticipant, type RemoteTrackPublication, type Room } from "livekit-client";
 
 export function isRemoteScreenPublication(publication: RemoteTrackPublication) {
@@ -18,12 +18,18 @@ export function useScreenShareSubscription({
   setAvailable: (owner: string | null) => void;
   setWatching: (watching: boolean) => void;
 }) {
+  // Screen video and screen audio are published separately. The audio
+  // publication can arrive after the viewer has already pressed "Смотреть".
+  // Remember the viewer's intent so late publications inherit the same
+  // subscription state instead of being silently disabled.
+  const watchingRef = useRef(false);
+
   const syncPublication = useCallback((publication: RemoteTrackPublication, participant: RemoteParticipant) => {
     if (isRemoteScreenPublication(publication)) {
       if (publication.source === Track.Source.ScreenShare) {
         setAvailable(participant.name || participant.identity || "Участник");
       }
-      publication.setSubscribed(false);
+      publication.setSubscribed(watchingRef.current);
     } else {
       publication.setSubscribed(true);
     }
@@ -36,6 +42,7 @@ export function useScreenShareSubscription({
   }, [syncPublication]);
 
   const setScreenSubscribed = useCallback((subscribed: boolean) => {
+    watchingRef.current = subscribed;
     roomRef.current?.remoteParticipants.forEach((participant) => {
       participant.trackPublications.forEach((publication) => {
         const remotePublication = publication as RemoteTrackPublication;
@@ -48,6 +55,7 @@ export function useScreenShareSubscription({
 
   const removePublication = useCallback((publication: RemoteTrackPublication) => {
     if (publication.source !== Track.Source.ScreenShare) return;
+    watchingRef.current = false;
     setAvailable(null);
     setWatching(false);
     clearRemoteScreen();

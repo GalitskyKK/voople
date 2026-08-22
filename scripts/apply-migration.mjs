@@ -63,7 +63,9 @@ async function runStatement(url, client, statement, index, total) {
       const retryable =
         err.message?.includes("ECONNRESET") ||
         err.message?.includes("ECONNREFUSED") ||
-        err.message?.includes("ETIMEDOUT");
+        err.message?.includes("ETIMEDOUT") ||
+        err.message?.includes("CONNECTION_CLOSED") ||
+        err.code === "CONNECTION_CLOSED";
       if (retryable && attempt < maxAttempts) {
         console.log(`  ↻ ${index}/${total} повтор ${attempt + 1}/${maxAttempts}…`);
         await sql.end({ timeout: 1 }).catch(() => {});

@@ -11,6 +11,7 @@ import type {
   GroupEmojiView,
 } from "@/types/chat";
 import { parseComposerContent } from "@/lib/chat/message-content";
+import { reportProductEvent } from "@/lib/telemetry/client";
 
 import { createDesktopTrpcClient } from "../api/trpc";
 import { getSupabase } from "../auth/supabase";
@@ -102,6 +103,10 @@ export function useDesktopChatThread(
     () => createDesktopTrpcClient(config, () => session.access_token),
     [config, session.access_token],
   );
+
+  useEffect(() => {
+    reportProductEvent("chat_opened", { surface: "conversation" });
+  }, [chatId]);
 
   const load = useCallback(
     async ({ silent = false } = {}) => {
@@ -248,6 +253,12 @@ export function useDesktopChatThread(
             : current,
         );
         onInboxChange();
+        reportProductEvent("message_sent", {
+          hasAttachment: Boolean(upload),
+          hasReply: Boolean(replyTo),
+        });
+        if (replyTo) reportProductEvent("message_replied", { source: "composer" });
+        if (upload) reportProductEvent("attachment_sent", { kind: upload.kind });
         return true;
       } catch (sendError) {
         setData((current) =>
@@ -387,6 +398,7 @@ export function useDesktopChatThread(
               }
             : current,
         );
+        reportProductEvent("reaction_used", { surface: "chat" });
       } catch (reactionError) {
         setData(previous);
         setError(

@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getScreenShareCaptureOptions } from "../src/components/chat/voice/voice-room-config.ts";
+import {
+  getBrowserDisplayMediaOptions,
+  getScreenShareCaptureOptions,
+} from "../src/components/chat/voice/voice-room-config.ts";
 
 test("browser screen share asks the picker for audio from the selected surface", () => {
   const options = getScreenShareCaptureOptions("standard");
@@ -17,6 +20,16 @@ test("browser screen share asks the picker for audio from the selected surface",
     restrictOwnAudio: true,
     sampleRate: { ideal: 48_000 },
   });
+});
+
+test("web picker offers application-window and full-screen audio when Chromium supports it", () => {
+  const options = getBrowserDisplayMediaOptions("standard");
+
+  assert.equal(options.video.displaySurface, "window");
+  assert.equal(options.windowAudio, "window");
+  assert.equal(options.systemAudio, "include");
+  assert.equal(options.monitorTypeSurfaces, "include");
+  assert.equal(options.selfBrowserSurface, "exclude");
 });
 
 test("native process audio disables the browser audio track to prevent duplicates", () => {

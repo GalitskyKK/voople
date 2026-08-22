@@ -9,6 +9,10 @@ export type HomeNowItem = {
   avatarUrl: string | null;
   userId: string | null;
   online: boolean;
+  activity?: "online" | "listening" | "playing" | "in_room";
+  score?: number;
+  unreadCount?: number;
+  pinned?: boolean;
   participants?: ChatRoomParticipantView[];
 };
 

@@ -48,6 +48,7 @@ export function GroupSettingsPage({ chatId }: { chatId: string }) {
       topicsEnabled={chat.topicsEnabled}
       topicsLayout={chat.topicsLayout}
       groupVisibility={chat.groupVisibility}
+      joinPolicy={chat.joinPolicy}
       presentation="page"
     />
   );

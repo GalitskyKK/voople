@@ -3,10 +3,11 @@ import { useState, type FormEvent } from "react";
 
 import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
 import type { ChatMessageView, GroupEmojiView } from "@/types/chat";
-import { ChatComposerFrame } from "@/components/chat/ChatComposerVisual";
+import { ChatComposerInputView } from "@/components/chat/ChatComposerInputView";
+import { ChatComposerFrame, CHAT_COMPOSER_SURFACE_CLASS } from "@/components/chat/ChatComposerVisual";
+import { cn } from "@/lib/utils";
 
 import type { DesktopConfig } from "../config";
-import { DesktopChatComposerInput } from "./DesktopChatComposerInput";
 import { DesktopChatComposerPreview } from "./DesktopChatComposerPreview";
 import type { DesktopMessageDraft } from "./useDesktopChatThread";
 import { useDesktopChatUpload } from "./useDesktopChatUpload";
@@ -128,24 +129,27 @@ export function DesktopChatComposer({
             </p>
           ) : null}
 
-          <DesktopChatComposerInput
-            text={text}
-            canSend={canSend}
-            sending={sending}
-            uploading={uploading}
-            hasUpload={Boolean(upload)}
-            editing={Boolean(editing)}
-            onTextChange={setText}
-            onSubmit={() => void submit()}
-            onImageSelected={selectImage}
-            onAudioSelected={selectAudio}
-            onPastedFile={pasteFile}
-            onVoiceRecorded={(file, durationSeconds, purpose) => {
-              void uploadFile(file, { purpose, durationSeconds });
-            }}
-            onError={setError}
-            customEmojis={customEmojis}
-          />
+          <div className={cn("relative flex items-end gap-1.5", CHAT_COMPOSER_SURFACE_CLASS)}>
+            <ChatComposerInputView
+              focusKey={chatId}
+              text={text}
+              canSend={canSend}
+              sending={sending}
+              busy={uploading}
+              hasAttachment={Boolean(upload)}
+              editing={Boolean(editing)}
+              onTextChange={setText}
+              onSubmit={() => void submit()}
+              onImageSelected={selectImage}
+              onAudioSelected={selectAudio}
+              onPastedFile={pasteFile}
+              onVoiceRecorded={(file, durationSeconds, purpose) => {
+                void uploadFile(file, { purpose, durationSeconds });
+              }}
+              onError={setError}
+              customEmojis={customEmojis}
+            />
+          </div>
           {text.length >= 800 ? (
             <span className="mt-1 block text-right text-[10px] tabular-nums text-[var(--app-muted)]">
               {text.length}/1000

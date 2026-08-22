@@ -37,6 +37,7 @@ export type ProfileViewModel = {
   hasVooplePlus?: boolean;
   customization: ProfileCustomizationView;
   status: ProfileStatus;
+  interests?: Array<{ slug: string; name: string }>;
   stats: { posts: number; followers: number; following: number; views: number };
 };
 

@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { Track, type Room } from "livekit-client";
+import { AudioPresets, Track, type Room } from "livekit-client";
 
 import { getDesktopProcessAudioBridge } from "@/lib/livekit/desktop-process-audio";
 import { trpc } from "@/lib/trpc/client";
 import {
   getScreenShareCaptureOptions,
+  getBrowserDisplayMediaOptions,
   getScreenSharePublishOptions,
   type ScreenShareQuality,
 } from "./voice-room-config";
@@ -15,6 +16,7 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
   const token = trpc.chat.roomScreenAudioToken.useMutation();
   const sessionIdRef = useRef<string | null>(null);
   const nativePublisherSupportedRef = useRef(false);
+  const browserCaptureRef = useRef<MediaStream | null>(null);
   const refreshTimerRef = useRef<number | null>(null);
   const startRef = useRef<(processId: number) => Promise<string | null>>(async () => null);
 
@@ -54,6 +56,50 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
     sessionIdRef.current = null;
     const bridge = getDesktopProcessAudioBridge();
     if (bridge && sessionId) await bridge.stop(sessionId).catch(() => undefined);
+    browserCaptureRef.current?.getTracks().forEach((track) => track.stop());
+    browserCaptureRef.current = null;
+  }, []);
+
+  const startBrowserCapture = useCallback(async (room: Room, quality: ScreenShareQuality) => {
+    const stream = await navigator.mediaDevices.getDisplayMedia(
+      getBrowserDisplayMediaOptions(quality),
+    );
+    const videoTrack = stream.getVideoTracks()[0];
+    const audioTrack = stream.getAudioTracks()[0];
+    if (!videoTrack) {
+      stream.getTracks().forEach((track) => track.stop());
+      throw new Error("Выбранная поверхность не предоставила видеодорожку.");
+    }
+    const streamName = `screen-${crypto.randomUUID()}`;
+    browserCaptureRef.current = stream;
+    try {
+      await room.localParticipant.publishTrack(videoTrack, {
+        ...getScreenSharePublishOptions(quality),
+        source: Track.Source.ScreenShare,
+        stream: streamName,
+      });
+      if (audioTrack) {
+        await room.localParticipant.publishTrack(audioTrack, {
+          audioPreset: AudioPresets.musicHighQuality,
+          dtx: false,
+          forceStereo: true,
+          red: true,
+          source: Track.Source.ScreenShareAudio,
+          stream: streamName,
+        });
+      }
+    } catch (cause) {
+      await room.localParticipant.setScreenShareEnabled(false).catch(() => undefined);
+      stream.getTracks().forEach((track) => track.stop());
+      browserCaptureRef.current = null;
+      throw cause;
+    }
+    videoTrack.addEventListener("ended", () => {
+      audioTrack?.stop();
+      browserCaptureRef.current = null;
+      void room.localParticipant.setScreenShareEnabled(false).catch(() => undefined);
+    }, { once: true });
+    return Boolean(audioTrack);
   }, []);
 
   const start = useCallback(async (processId: number | null) => {
@@ -91,7 +137,7 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
         getScreenShareCaptureOptions(quality),
       );
       await stop();
-      return { enabled: false, warning: null };
+      return { enabled: false, hasAudio: false, warning: null };
     }
 
     // Do not await IPC before getDisplayMedia: the browser requires the call to
@@ -99,37 +145,42 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
     void stop();
     const nativeProcessAudio =
       processId !== null && nativePublisherSupportedRef.current;
-    const captureOptions = getScreenShareCaptureOptions(quality, nativeProcessAudio);
-    await room.localParticipant.setScreenShareEnabled(
-      true,
-      captureOptions,
-      getScreenSharePublishOptions(quality),
-    );
+    let browserAudioCaptured = false;
+    if (nativeProcessAudio) {
+      await room.localParticipant.setScreenShareEnabled(
+        true,
+        getScreenShareCaptureOptions(quality, true),
+        getScreenSharePublishOptions(quality),
+      );
+    } else {
+      browserAudioCaptured = await startBrowserCapture(room, quality);
+    }
     const publication = room.localParticipant.getTrackPublication(Track.Source.ScreenShare);
     const enabled = Boolean(publication && !publication.isMuted);
-    if (!enabled) return { enabled: false, warning: null };
+    if (!enabled) return { enabled: false, hasAudio: false, warning: null };
     try {
       if (nativeProcessAudio) {
-        return { enabled: true, warning: await start(processId) };
+        const warning = await start(processId);
+        return { enabled: true, hasAudio: warning === null, warning };
       }
-      const surfaceAudio = room.localParticipant.getTrackPublication(
-        Track.Source.ScreenShareAudio,
-      );
+      const surfaceAudio = room.localParticipant.getTrackPublication(Track.Source.ScreenShareAudio);
       return {
         enabled: true,
-        warning: surfaceAudio && !surfaceAudio.isMuted
+        hasAudio: browserAudioCaptured && Boolean(surfaceAudio && !surfaceAudio.isMuted),
+        warning: browserAudioCaptured && surfaceAudio && !surfaceAudio.isMuted
           ? null
           : "Видео запущено без звука: выбранная поверхность или WebView не предоставили аудиодорожку. Для звука выберите вкладку или окно с поддержкой аудио и разрешите его в системном диалоге.",
       };
     } catch (cause) {
       return {
         enabled: true,
+        hasAudio: false,
         warning: cause instanceof Error
           ? `Видео запущено без звука приложения: ${cause.message}`
           : "Видео запущено без звука приложения.",
       };
     }
-  }, [start, stop]);
+  }, [start, startBrowserCapture, stop]);
 
   useEffect(() => () => { void stop(); }, [stop]);
   return { stop, toggle, pending: token.isPending, error: token.error?.message ?? null };

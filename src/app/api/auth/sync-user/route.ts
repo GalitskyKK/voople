@@ -5,6 +5,10 @@ import { desktopCorsPreflight, withDesktopCors } from "@/lib/http/desktop-cors"
 import { createClient } from "@/lib/supabase/server"
 import { usernameSchema } from "@/lib/validation/username"
 import { ensurePublicUser } from "@/server/services/user-sync.service"
+import {
+  recordServerProductEvent,
+  registerAnalyticsActor,
+} from "@/server/services/client-telemetry.service"
 
 const bodySchema = z.object({
   username: usernameSchema.optional()
@@ -50,6 +54,15 @@ export async function POST(request: Request) {
       email: user.email,
       preferredUsername
     })
+    await registerAnalyticsActor(user.id, result.user.createdAt)
+    if (result.created) {
+      await recordServerProductEvent({
+        name: "signup_completed",
+        actorId: user.id,
+        route: "/api/auth/sync-user",
+        properties: { source: accessToken ? "desktop" : "web" },
+      })
+    }
 
     return respond(
       NextResponse.json({

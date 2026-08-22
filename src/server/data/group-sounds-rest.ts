@@ -54,7 +54,7 @@ export async function listGroupSoundsRest(chatId: string, userId: string) {
   if (error && error.code !== "42P01") throw new Error(error.message);
   return {
     items: ((data ?? []) as Record<string, unknown>[]).map(mapSound),
-    limit: groupSoundLimit(community.groupLevel),
+    limit: groupSoundLimit(community.groupLevel, community.emojiSoundEnabled),
   };
 }
 

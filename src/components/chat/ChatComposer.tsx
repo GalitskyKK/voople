@@ -1,32 +1,26 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
-import { Send, Smile } from "lucide-react";
+import { useState } from "react";
 
 import { TrackMetadataConfirmCard } from "@/components/player/TrackMetadataConfirmCard";
-import { Button } from "@/components/ui/Button";
 import {
   useChatUpload,
   type PendingChatAudioDraft,
   type PendingChatUpload,
 } from "@/hooks/useChatUpload";
 import { readTrackMetadata } from "@/lib/player/metadata";
-import { getChatClipboardFile } from "@/lib/chat/clipboard";
 import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
-import { cn } from "@/lib/utils";
-import { useAutosizeTextarea } from "@/hooks/useAutosizeTextarea";
 import type { ChatMessageView, GroupEmojiView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
 
-import { ChatAttachMenu } from "./ChatAttachMenu";
+import { ChatComposerInputView } from "./ChatComposerInputView";
 import {
   ChatComposerContextPreview,
   ChatComposerFrame,
   CHAT_COMPOSER_SURFACE_CLASS,
 } from "./ChatComposerVisual";
-import { ChatEmojiPicker } from "./ChatEmojiPicker";
 import { ChatMusicAttachSheet } from "./ChatMusicAttachSheet";
-import { ChatVoiceRecorder, type ChatRecordMode } from "./ChatVoiceRecorder";
+import type { ChatRecordMode } from "./ChatVoiceRecorder";
 
 type ChatComposerProps = {
   chatId: string;
@@ -63,12 +57,6 @@ export function ChatComposer({
   disabled,
   customEmojis = [],
 }: ChatComposerProps) {
-  const inputId = useId();
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const audioInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useAutosizeTextarea(text);
-  const [attachOpen, setAttachOpen] = useState(false);
-  const [emojiOpen, setEmojiOpen] = useState(false);
   const [musicSheetOpen, setMusicSheetOpen] = useState(false);
   const [pendingAudioDraft, setPendingAudioDraft] = useState<PendingChatAudioDraft | null>(null);
   const [isParsingAudio, setIsParsingAudio] = useState(false);
@@ -253,27 +241,6 @@ export function ChatComposer({
 
       {error && !pendingAudioDraft && <p className="mb-2 text-xs text-red-400">{error}</p>}
 
-      <input
-        ref={imageInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        className="sr-only"
-        onChange={(e) => {
-          void handleImageFile(e.target.files?.[0]);
-          e.target.value = "";
-        }}
-      />
-      <input
-        ref={audioInputRef}
-        type="file"
-        accept="audio/mpeg,audio/mp4,audio/m4a,audio/ogg,audio/wav,audio/webm"
-        className="sr-only"
-        onChange={(e) => {
-          void handleAudioFileSelected(e.target.files?.[0]);
-          e.target.value = "";
-        }}
-      />
-
       <ChatMusicAttachSheet
         open={musicSheetOpen}
         onClose={() => setMusicSheetOpen(false)}
@@ -285,82 +252,31 @@ export function ChatComposer({
       />
 
       <form
-        className={cn("relative flex items-end gap-1.5", CHAT_COMPOSER_SURFACE_CLASS)}
+        className={`relative flex items-end gap-1.5 ${CHAT_COMPOSER_SURFACE_CLASS}`}
         onSubmit={(e) => {
           e.preventDefault();
           if (canSend) onSend();
         }}
       >
-        <ChatEmojiPicker
-          open={emojiOpen}
-          onClose={() => setEmojiOpen(false)}
-          onPick={(emoji) => onTextChange(text + emoji)}
-          customEmojis={customEmojis}
-          className="absolute bottom-full right-12 z-10 mb-2"
-        />
-
-        {!editing ? (
-          <ChatAttachMenu
-            open={attachOpen}
-            onOpenChange={setAttachOpen}
-            disabled={disabled || isUploading || isParsingAudio || Boolean(pendingAudioDraft)}
-            onPickPhoto={() => imageInputRef.current?.click()}
-            onPickAudioFile={() => audioInputRef.current?.click()}
-            onPickMusic={() => setMusicSheetOpen(true)}
-          />
-        ) : null}
-
-        <label htmlFor={inputId} className="sr-only">
-          Сообщение
-        </label>
-        <textarea
-          ref={textareaRef}
-          id={inputId}
-          value={text}
-          onChange={(e) => onTextChange(e.target.value)}
-          onPaste={(event) => {
-            const file = getChatClipboardFile(event.clipboardData);
-            if (!file) return;
-            event.preventDefault();
-            void handlePastedFile(file);
-          }}
-          placeholder="Сообщение…"
-          rows={1}
-          maxLength={1000}
+        <ChatComposerInputView
+          focusKey={chatId}
+          text={text}
+          canSend={canSend}
+          sending={isSending}
+          busy={isUploading || isParsingAudio || Boolean(pendingAudioDraft)}
+          hasAttachment={Boolean(pendingUpload || pendingTrack)}
+          editing={Boolean(editing)}
           disabled={disabled || Boolean(pendingAudioDraft)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault();
-              if (canSend) onSend();
-            }
-          }}
-          className="min-h-10 min-w-0 flex-1 resize-none overflow-y-auto border-0 bg-transparent px-2 py-2.5 text-sm outline-none placeholder:text-[var(--app-muted)] disabled:opacity-50"
+          onTextChange={onTextChange}
+          onSubmit={onSend}
+          onImageSelected={handleImageFile}
+          onAudioSelected={handleAudioFileSelected}
+          onPastedFile={handlePastedFile}
+          onVoiceRecorded={(file, duration, mode) => void handleVoiceRecorded(file, duration, mode)}
+          onPickMusic={() => setMusicSheetOpen(true)}
+          onError={setError}
+          customEmojis={customEmojis}
         />
-
-        <button
-          type="button"
-          className={cn(
-            "rounded-[var(--app-radius-sm)] p-2 text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]",
-            emojiOpen && "bg-[var(--app-surface-soft)] text-[var(--foreground)]",
-          )}
-          aria-label="Эмодзи"
-          aria-expanded={emojiOpen}
-          onClick={() => setEmojiOpen((v) => !v)}
-        >
-          <Smile className="h-5 w-5" />
-        </button>
-
-        {!editing && !text.trim() && !pendingUpload && !pendingTrack ? (
-          <ChatVoiceRecorder
-            disabled={disabled || isSending || isUploading || isParsingAudio}
-            onRecorded={(file, duration, mode) => void handleVoiceRecorded(file, duration, mode)}
-            onError={setError}
-          />
-        ) : null}
-
-        <Button type="submit" variant="primary" disabled={!canSend} className="shrink-0 px-3">
-          <Send className="h-4 w-4" />
-        </Button>
       </form>
       {text.length >= 800 ? <span className="mt-1 block text-right text-[10px] tabular-nums text-[var(--app-muted)]">{text.length}/1000</span> : null}
     </ChatComposerFrame>

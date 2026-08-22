@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import type { GroupSoundView } from "@/types/chat";
+import { reportProductEvent } from "@/lib/telemetry/client";
 
 type SoundList = { items: GroupSoundView[]; limit: number };
 
@@ -44,6 +45,7 @@ export function GroupSoundManager({ canManage, load, create, remove, upload }: {
     try {
       const uploaded = await upload(file);
       const sound = await create({ name, uploadKey: uploaded.mediaKey, rightsConfirmed: true });
+      reportProductEvent("custom_sound_added", { surface: "group_settings" });
       setData((current) => current ? { ...current, items: [...current.items, sound] } : current);
       setFile(null); setName(""); setRightsConfirmed(false);
     } catch (cause) {

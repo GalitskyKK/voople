@@ -1,6 +1,8 @@
 import "server-only";
 
 import { getAdminClient } from "@/lib/supabase/admin";
+import { normalizeGroupJoinPolicy, normalizeGroupVisibility } from "@/lib/chat/group-access";
+import type { GroupJoinPolicy, GroupVisibility } from "@/types/chat";
 
 export type ChatMembership = {
   chatId: string;
@@ -10,7 +12,8 @@ export type ChatMembership = {
   role: "owner" | "admin" | "member";
   type: "direct" | "group";
   name: string | null;
-  groupVisibility: "private" | "public";
+  groupVisibility: GroupVisibility;
+  joinPolicy: GroupJoinPolicy;
   sectionAccessMode: "inherit" | "restricted";
 };
 
@@ -21,7 +24,7 @@ export async function getChatMembershipRest(
   const admin = getAdminClient();
   const { data: chat, error: chatError } = await admin
     .from("chats")
-    .select("id, type, name, parent_chat_id, group_visibility, section_access_mode")
+    .select("id, type, name, parent_chat_id, group_visibility, join_policy, section_access_mode")
     .eq("id", chatId)
     .maybeSingle();
 
@@ -86,7 +89,8 @@ export async function getChatMembershipRest(
     role,
     type: chat.type,
     name: typeof chat.name === "string" ? chat.name : null,
-    groupVisibility: chat.group_visibility === "public" ? "public" : "private",
+    groupVisibility: normalizeGroupVisibility(chat.group_visibility),
+    joinPolicy: normalizeGroupJoinPolicy(chat.join_policy),
     sectionAccessMode: chat.section_access_mode === "restricted" ? "restricted" : "inherit",
   };
 }

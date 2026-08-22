@@ -1,7 +1,7 @@
 "use client";
 
 import { createPortal } from "react-dom";
-import { ExternalLink, Music2, UserMinus, UserPlus } from "lucide-react";
+import { ExternalLink, MessageCircle, Music2, Pin, UserMinus, UserPlus } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
@@ -13,6 +13,9 @@ import { trpc } from "@/lib/trpc/client";
 import type { PostAuthorView } from "@/types/domain";
 import { getMoodEmoji, getMoodLabel } from "@/lib/constants/mood";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
+import { ProfileBadgesView } from "@/components/profile/ProfileBadgesView";
+import { reportProductEvent } from "@/lib/telemetry/client";
+import { navigateInternally } from "@/lib/platform/internal-navigation";
 
 export function MiniProfilePopover({ author, children, renderDestination }: { author: PostAuthorView; children: ReactNode; renderDestination: NavigationDestinationRenderer }) {
   const mounted = useIsClient();
@@ -35,6 +38,24 @@ export function MiniProfilePopover({ author, children, renderDestination }: { au
   );
   const toggleFollow = trpc.profile.toggleFollow.useMutation({
     onSuccess: () => void utils.profile.getFollowState.invalidate({ username: author.username }),
+  });
+  const pinnedContacts = trpc.social.myPinnedContacts.useQuery(undefined, {
+    enabled: open && canFollow,
+    staleTime: 30_000,
+  });
+  const togglePin = trpc.social.togglePinnedContact.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utils.social.myPinnedContacts.invalidate(),
+        utils.home.overview.invalidate(),
+      ]);
+    },
+  });
+  const openDirect = trpc.chat.openDirect.useMutation({
+    onSuccess: ({ chatId }) => {
+      setOpen(false);
+      if (!navigateInternally(`/messages/${chatId}`)) window.location.assign(`/messages/${chatId}`);
+    },
   });
   const { onlineUserIds } = useOnlineUsers();
 
@@ -97,13 +118,22 @@ export function MiniProfilePopover({ author, children, renderDestination }: { au
 
   useEffect(() => clearTimers, [clearTimers]);
 
+  useEffect(() => {
+    if (open) reportProductEvent("mini_profile_opened", { surface: "author" });
+  }, [open]);
+
   const value = profile.data;
   const customization = value?.customization ?? author.customization;
   const avatarUrl = value?.customization.assets.animatedAvatarUrl ?? author.avatarUrl ?? customization?.assets.animatedAvatarUrl;
   const displayName = value?.displayName ?? author.displayName;
   const hasPlus = value?.hasVooplePlus ?? author.hasVooplePlus;
+  const pinned = Boolean(value?.id && pinnedContacts.data?.pinnedUserIds.includes(value.id));
   const online = Boolean(value?.id && onlineUserIds.has(value.id));
   const status = value?.status;
+  const badges = trpc.engagement.badges.useQuery(
+    { userId: value?.id ?? author.id ?? "00000000-0000-0000-0000-000000000000" },
+    { enabled: open && Boolean(value?.id ?? author.id), staleTime: 60_000 },
+  );
 
   return (
     <>
@@ -124,6 +154,8 @@ export function MiniProfilePopover({ author, children, renderDestination }: { au
             <div className="-mt-8 flex items-end justify-between gap-3">
               <ProfileAvatar displayName={displayName} size="lg" animatedAvatarUrl={avatarUrl} decorationUrl={customization?.assets.avatarDecorationUrl} ringId={customization?.avatarRingId} />
               <div className="mb-1 flex gap-2">
+                {canFollow && value?.id ? <button type="button" disabled={togglePin.isPending} onClick={() => togglePin.mutate({ userId: value.id })} className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] hover:border-[var(--theme-accent)] disabled:opacity-55" aria-label={pinned ? `Открепить ${displayName}` : `Закрепить ${displayName}`} aria-pressed={pinned}><Pin className={`h-3.5 w-3.5 ${pinned ? "fill-current text-[var(--theme-accent)]" : ""}`} /></button> : null}
+                {canFollow ? <button type="button" disabled={openDirect.isPending} onClick={() => openDirect.mutate({ username: author.username })} className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 text-xs font-medium hover:border-[var(--theme-accent)] disabled:opacity-55" aria-label={`Написать ${displayName}`}><MessageCircle className="h-3.5 w-3.5" />Написать</button> : null}
                 {renderDestination({ href: `/${author.username}`, label: `Открыть профиль ${displayName}`, active: false, className: "inline-flex h-8 items-center gap-1.5 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 text-xs font-medium hover:border-[var(--theme-accent)]", children: <><ExternalLink className="h-3.5 w-3.5" />Профиль</> })}
                 {canFollow ? <button type="button" disabled={followState.isLoading || toggleFollow.isPending} onClick={() => toggleFollow.mutate({ username: author.username })} className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-[var(--theme-accent)] px-3 text-xs font-semibold text-white disabled:opacity-55" aria-pressed={followState.data?.following ?? false}>
                   {followState.data?.following ? <UserMinus className="h-3.5 w-3.5" /> : <UserPlus className="h-3.5 w-3.5" />}{followState.data?.following ? "Отписаться" : "Подписаться"}
@@ -132,13 +164,18 @@ export function MiniProfilePopover({ author, children, renderDestination }: { au
             </div>
             <DisplayNameWithPin hasVooplePlus={hasPlus} className="mt-3 text-base font-semibold">{displayName}</DisplayNameWithPin>
             <p className="text-xs text-[var(--app-muted)]">@{author.username}</p>
+            {value?.id || author.id ? <ProfileBadgesView badgeIds={badges.data ?? []} compact /> : null}
             {value ? <p className="mt-2 flex items-center gap-2 text-xs"><span className={online ? "h-2 w-2 rounded-full bg-emerald-400" : "h-2 w-2 rounded-full bg-[var(--app-muted)]"} /><span className="text-[var(--app-muted)]">{online ? "Сейчас в сети" : value.lastSeenAt ? "Недавно был(а) в сети" : "Не в сети"}</span></p> : null}
             {value?.bio ? <p className="mt-3 line-clamp-3 text-sm leading-5 text-[var(--app-muted)]"><RichText text={value.bio} /></p> : null}
+            {value?.interests?.length ? <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Интересы">
+              {value.interests.slice(0, 6).map((interest) => <span key={interest.slug} className="rounded-full border border-[color-mix(in_srgb,var(--theme-accent)_24%,var(--app-border))] bg-[color-mix(in_srgb,var(--theme-accent)_9%,var(--app-surface-soft))] px-2 py-1 text-[11px] text-[var(--app-foreground)]">{interest.name}</span>)}
+            </div> : null}
             {status?.moodValue || status?.thought || status?.trackTitle || status?.trackArtist ? <div className="mt-3 space-y-2 rounded-2xl bg-[var(--app-surface-soft)] p-3 text-xs">
               {status.moodValue ? <p><span className="mr-2" aria-hidden>{getMoodEmoji(status.moodValue)}</span><span className="font-medium">{getMoodLabel(status.moodValue)}</span>{status.thought ? <span className="text-[var(--app-muted)]"> · {status.thought}</span> : null}</p> : status.thought ? <p className="text-[var(--app-muted)]">{status.thought}</p> : null}
               {status.trackTitle || status.trackArtist ? <p className="flex items-center gap-2 text-[var(--app-muted)]"><Music2 className="h-3.5 w-3.5 shrink-0 text-[var(--theme-accent)]" /><span className="truncate">{[status.trackArtist, status.trackTitle].filter(Boolean).join(" — ")}</span></p> : null}
             </div> : null}
             {profile.error ? <p className="mt-3 text-xs text-red-400">Не удалось загрузить детали профиля</p> : value ? <div className="mt-4 flex gap-4 border-t border-[var(--app-border)] pt-3 text-xs"><span><strong>{value.stats.followers}</strong> <span className="text-[var(--app-muted)]">подписчиков</span></span><span><strong>{value.stats.posts}</strong> <span className="text-[var(--app-muted)]">постов</span></span><span><strong>{value.stats.following}</strong> <span className="text-[var(--app-muted)]">подписок</span></span></div> : <div className="mt-4 h-8 animate-pulse rounded-xl bg-[var(--app-surface-soft)]" />}
+            {togglePin.error ? <p className="mt-2 text-xs text-red-400" role="alert">{togglePin.error.message}</p> : null}
           </div>
         </aside>,
         document.body,

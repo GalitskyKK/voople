@@ -2,10 +2,6 @@
 
 import { Camera, ImagePlus, LoaderCircle, Trash2 } from "lucide-react";
 
-import {
-  groupAnimatedBannerEnabled,
-  groupAnimatedIconEnabled,
-} from "@/lib/group-perks";
 import type { GroupCommunityView } from "@/types/chat";
 
 type PendingKind = "save" | "boost" | "avatar" | "banner" | null;
@@ -77,9 +73,9 @@ export function GroupIdentityPerksEditor({
             ) : null}
           </div>
           <p className="mt-1 text-[11px] text-[var(--app-muted)]">
-            {groupAnimatedIconEnabled(community.groupLevel)
+            {community.animatedIconEnabled
               ? "Поддерживаются статичные и анимированные изображения."
-              : "Анимированная иконка открывается на 3-м уровне группы."}
+              : "Статичная иконка доступна всем, а анимация включается Boost-перком."}
           </p>
         </div>
       ) : null}
@@ -91,24 +87,20 @@ export function GroupIdentityPerksEditor({
           aria-label={community.bannerUrl ? "Предпросмотр баннера группы" : "Баннер группы не выбран"}
         />
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          {community.boostUnlocksBanner && uploadBanner ? (
+          {uploadBanner ? (
             <UploadControl label="Выбрать баннер" pending={pending} kind="banner" onFile={onBannerFile} />
-          ) : (
-            <p className="text-[11px] text-[var(--app-muted)]">Баннер открывается на 6-м уровне группы.</p>
-          )}
+          ) : null}
           {community.bannerUrl ? (
             <button type="button" onClick={onRemoveBanner} disabled={Boolean(pending)} className="grid h-9 w-9 place-items-center rounded-xl border border-[var(--app-border)] text-[var(--app-muted)] transition hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50" aria-label="Удалить баннер группы">
               <Trash2 className="h-4 w-4" />
             </button>
           ) : null}
         </div>
-        {community.boostUnlocksBanner ? (
-          <p className="mt-1 text-[11px] text-[var(--app-muted)]">
-            {groupAnimatedBannerEnabled(community.groupLevel)
-              ? "На этом уровне баннер может быть анимированным."
-              : "Статичный баннер доступен сейчас, а анимация — с 12-го уровня."}
-          </p>
-        ) : null}
+        <p className="mt-1 text-[11px] text-[var(--app-muted)]">
+          {community.animatedBannerEnabled
+            ? "Статичные и анимированные баннеры доступны: perk активен."
+            : "Статичный баннер доступен всем группам, а анимация — как Boost-перк."}
+        </p>
       </div>
 
       <label className="block text-xs font-medium">
@@ -123,7 +115,7 @@ export function GroupIdentityPerksEditor({
           disabled={!community.boostUnlocksTag}
         />
         <span className="mt-1 block font-normal text-[11px] text-[var(--app-muted)]">
-          {community.boostUnlocksTag ? "2–5 букв или цифр. Тег виден в списке и шапке чата." : "Тег открывается на 12-м уровне группы."}
+          2–5 букв или цифр. Базовый тег доступен всем группам.
         </span>
       </label>
     </div>

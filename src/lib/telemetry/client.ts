@@ -4,6 +4,8 @@ import type {
   TelemetryPlatform,
   ProductEventName,
 } from "./types";
+import { PRODUCT_EVENT_PROPERTY_KEYS } from "./types";
+import { telemetryRouteTemplate } from "./privacy";
 
 type TelemetryConfig = {
   enabled: boolean;
@@ -24,6 +26,7 @@ let errorCount = 0;
 let metricCount = 0;
 let productEventCount = 0;
 const recentErrors = new Map<string, number>();
+const allowedProductPropertyKeys = new Set<string>(PRODUCT_EVENT_PROPERTY_KEYS);
 
 export function initializeClientTelemetry(nextConfig: TelemetryConfig) {
   config = {
@@ -86,10 +89,13 @@ export function reportProductEvent(
   if (!config.enabled || productEventCount >= 100) return;
   productEventCount += 1;
   const sanitizedProperties = properties
-    ? Object.fromEntries(Object.entries(properties).slice(0, 12).map(([key, value]) => [
-        sanitizeText(key, 40),
-        typeof value === "string" ? sanitizeText(value, 80) : value,
-      ]))
+    ? Object.fromEntries(Object.entries(properties)
+        .filter(([key]) => allowedProductPropertyKeys.has(key))
+        .slice(0, 12)
+        .map(([key, value]) => [
+          key,
+          typeof value === "string" ? sanitizeText(value, 80) : value,
+        ]))
     : undefined;
   sendTelemetry({
     ...baseEvent("product"),
@@ -136,41 +142,7 @@ function normalizeError(reason: unknown) {
 
 function currentRoute() {
   if (typeof window === "undefined") return "/";
-  return routeTemplate(window.location.pathname);
-}
-
-function routeTemplate(pathname: string) {
-  const segments = pathname
-    .split("/")
-    .filter(Boolean)
-    .map((segment) => segment.replace(/[^a-zA-Z0-9_-]/g, ""));
-  if (segments.length === 0) return "/";
-
-  const root = segments[0].toLowerCase();
-  if (["messages", "post"].includes(root) && segments.length > 1) {
-    return `/${root}/_id`;
-  }
-  if (root === "invite" && segments.length > 1) return "/invite/_token";
-  if (root === "hashtag" && segments.length > 1) return "/hashtag/_tag";
-
-  const staticRoots = new Set([
-    "admin",
-    "events",
-    "explore",
-    "feed",
-    "help",
-    "legal",
-    "login",
-    "me",
-    "messages",
-    "notifications",
-    "onboarding",
-    "register",
-    "settings",
-    "shop",
-  ]);
-  if (!staticRoots.has(root)) return "/_profile";
-  return `/${segments.slice(0, 4).join("/")}`.slice(0, 160);
+  return telemetryRouteTemplate(window.location.pathname);
 }
 
 function sanitizeStack(stack: string) {

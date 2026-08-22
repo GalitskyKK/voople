@@ -1,3 +1,4 @@
+import { normalizeGroupJoinPolicy } from "@/lib/chat/group-access";
 import { publicAssetUrl } from "@/lib/object-storage";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { loadGroupCommunitySummariesRest } from "@/server/data/chat-community-rest";
@@ -19,15 +20,15 @@ export async function getPublicGroupBySlugRest(
   if (!customization) return null;
 
   const chatId = customization.chat_id as string;
-  const [{ data: group, error: groupError }, { count, error: countError }, membership] =
+  const [{ data: group, error: groupError }, { count, error: countError }, membership, pendingRequest] =
     await Promise.all([
       admin
         .from("chats")
-        .select("id, name")
+        .select("id, name, join_policy")
         .eq("id", chatId)
         .eq("type", "group")
         .is("parent_chat_id", null)
-        .eq("group_visibility", "public")
+        .in("group_visibility", ["public", "unlisted"])
         .maybeSingle(),
       admin
         .from("chat_members")
@@ -41,10 +42,14 @@ export async function getPublicGroupBySlugRest(
             .eq("user_id", viewerId)
             .maybeSingle()
         : Promise.resolve({ data: null, error: null }),
+      viewerId
+        ? admin.from("group_join_requests").select("id").eq("chat_id", chatId).eq("user_id", viewerId).eq("status", "pending").maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
     ]);
   if (groupError) throw new Error(groupError.message);
   if (countError) throw new Error(countError.message);
   if (membership.error) throw new Error(membership.error.message);
+  if (pendingRequest.error) throw new Error(pendingRequest.error.message);
   if (!group?.name) return null;
 
   const community = (await loadGroupCommunitySummariesRest(
@@ -66,6 +71,8 @@ export async function getPublicGroupBySlugRest(
     accentColor: community?.effectiveAccentColor ?? null,
     memberCount: count ?? 0,
     joined: Boolean(membership.data),
+    joinPolicy: normalizeGroupJoinPolicy(group.join_policy),
+    joinRequestPending: Boolean(pendingRequest.data),
   };
 }
 
@@ -79,7 +86,7 @@ export async function listPublicGroupsRest(
   const admin = getAdminClient();
   const { data: groupsByName, error: groupsError } = await admin
     .from("chats")
-    .select("id, name")
+    .select("id, name, join_policy")
     .eq("type", "group")
     .is("parent_chat_id", null)
     .eq("group_visibility", "public")
@@ -102,7 +109,7 @@ export async function listPublicGroupsRest(
   const { data: groupsBySlug, error: slugGroupsError } = slugChatIds.length
     ? await admin
         .from("chats")
-        .select("id, name")
+        .select("id, name, join_policy")
         .in("id", slugChatIds)
         .eq("type", "group")
         .is("parent_chat_id", null)
@@ -119,7 +126,7 @@ export async function listPublicGroupsRest(
   ).slice(0, 20);
   const groupIds = groups.map((group) => group.id as string);
   if (groupIds.length === 0) return [];
-  const [membershipsResult, customizationResult, communityByChat] = await Promise.all([
+  const [membershipsResult, customizationResult, joinRequestsResult, communityByChat] = await Promise.all([
     admin
       .from("chat_members")
       .select("chat_id, user_id")
@@ -128,11 +135,13 @@ export async function listPublicGroupsRest(
       .from("group_customization")
       .select("chat_id, public_slug, icon, avatar_key")
       .in("chat_id", groupIds),
+    admin.from("group_join_requests").select("chat_id").in("chat_id", groupIds).eq("user_id", userId).eq("status", "pending"),
     loadGroupCommunitySummariesRest(groupIds, userId),
   ]);
   const { data: memberships, error: membershipsError } = membershipsResult;
   if (membershipsError) throw new Error(membershipsError.message);
   if (customizationResult.error) throw new Error(customizationResult.error.message);
+  if (joinRequestsResult.error) throw new Error(joinRequestsResult.error.message);
 
   const customizationByChat = new Map(
     (customizationResult.data ?? []).map((row) => [row.chat_id as string, row] as const),
@@ -140,6 +149,7 @@ export async function listPublicGroupsRest(
 
   const counts = new Map<string, number>();
   const joined = new Set<string>();
+  const requested = new Set((joinRequestsResult.data ?? []).map((row) => row.chat_id as string));
   for (const membership of memberships ?? []) {
     const chatId = membership.chat_id as string;
     counts.set(chatId, (counts.get(chatId) ?? 0) + 1);
@@ -164,6 +174,8 @@ export async function listPublicGroupsRest(
           tag: communityByChat.get(group.id as string)?.effectiveTag ?? null,
           memberCount: counts.get(group.id as string) ?? 0,
           joined: joined.has(group.id as string),
+          joinPolicy: normalizeGroupJoinPolicy(group.join_policy),
+          joinRequestPending: requested.has(group.id as string),
         }]
       : [],
   );
@@ -176,7 +188,7 @@ export async function listTopPublicGroupsRest(
   const admin = getAdminClient();
   const { data: groups, error: groupsError } = await admin
     .from("chats")
-    .select("id, name")
+    .select("id, name, join_policy")
     .eq("type", "group")
     .is("parent_chat_id", null)
     .eq("group_visibility", "public")
@@ -185,13 +197,15 @@ export async function listTopPublicGroupsRest(
   if (groupsError) throw new Error(groupsError.message);
   const groupIds = (groups ?? []).map((group) => group.id as string);
   if (!groupIds.length) return [];
-  const { data: memberships, error: membershipsError } = await admin
-    .from("chat_members")
-    .select("chat_id, user_id")
-    .in("chat_id", groupIds);
+  const [{ data: memberships, error: membershipsError }, { data: joinRequests, error: joinRequestsError }] = await Promise.all([
+    admin.from("chat_members").select("chat_id, user_id").in("chat_id", groupIds),
+    userId ? admin.from("group_join_requests").select("chat_id").in("chat_id", groupIds).eq("user_id", userId).eq("status", "pending") : Promise.resolve({ data: [], error: null }),
+  ]);
   if (membershipsError) throw new Error(membershipsError.message);
+  if (joinRequestsError) throw new Error(joinRequestsError.message);
   const counts = new Map<string, number>();
   const joined = new Set<string>();
+  const requested = new Set((joinRequests ?? []).map((row) => row.chat_id as string));
   for (const membership of memberships ?? []) {
     const chatId = membership.chat_id as string;
     counts.set(chatId, (counts.get(chatId) ?? 0) + 1);
@@ -219,16 +233,25 @@ export async function listTopPublicGroupsRest(
       tag: communities.get(id)?.effectiveTag ?? null,
       memberCount: counts.get(id) ?? 0,
       joined: joined.has(id),
+      joinPolicy: normalizeGroupJoinPolicy(group.join_policy),
+      joinRequestPending: requested.has(id),
     };
   });
 }
 
-export async function joinPublicGroupRest(chatId: string, userId: string) {
-  const { data, error } = await getAdminClient().rpc("join_public_group", {
+export async function joinPublicGroupRest(
+  chatId: string,
+  userId: string,
+): Promise<{ chatId: string; status: "joined" | "requested" }> {
+  const { data, error } = await getAdminClient().rpc("request_group_membership", {
     p_chat_id: chatId,
     p_user_id: userId,
   });
   if (error) throw new Error(error.message);
-  if (typeof data !== "string") throw new Error("Не удалось вступить в группу");
-  return { chatId: data };
+  if (!data || typeof data !== "object") throw new Error("Не удалось отправить запрос в группу");
+  const result = data as { chatId?: unknown; status?: unknown };
+  if (typeof result.chatId !== "string" || (result.status !== "joined" && result.status !== "requested")) {
+    throw new Error("Сервер вернул неизвестный результат вступления");
+  }
+  return { chatId: result.chatId, status: result.status };
 }

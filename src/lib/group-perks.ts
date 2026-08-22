@@ -10,15 +10,51 @@ export type GroupPerkDefinition = {
 };
 
 export const GROUP_PERKS: readonly GroupPerkDefinition[] = [
-  { id: "accent", name: "Цвет сообщества", description: "Фирменный accent в группе", cost: 1, milestone: 1, icon: "palette" },
-  { id: "emoji_sound", name: "Эмодзи и звуки", description: "Расширенный набор реакций и soundboard", cost: 1, milestone: 3, icon: "smile" },
-  { id: "banner", name: "Расширенное оформление", description: "Баннер и animated identity", cost: 2, milestone: 6, icon: "image" },
+  { id: "animated_icon", name: "Живой значок", description: "Анимированная иконка сообщества", cost: 1, milestone: 3, icon: "image" },
+  { id: "emoji_sound", name: "Эмодзи и звуки", description: "Расширенные лимиты реакций и soundboard", cost: 1, milestone: 3, icon: "smile" },
+  { id: "animated_banner", name: "Живой баннер", description: "Анимированный баннер и premium-эффекты", cost: 2, milestone: 6, icon: "image" },
   { id: "uploads", name: "Большие файлы", description: "Лимит загрузки до 50–100 МБ", cost: 3, milestone: 6, icon: "upload" },
-  { id: "tag", name: "Тег сообщества", description: "Короткая метка рядом с названием", cost: 2, milestone: 12, icon: "tag" },
-  { id: "vanity", name: "Постоянная ссылка", description: "Запоминающийся invite без срока", cost: 2, milestone: 24, icon: "link" },
+  { id: "vanity", name: "Красивый адрес", description: "Запоминающийся vanity URL вместо случайного кода", cost: 2, milestone: 24, icon: "link" },
   { id: "roles", name: "Стили ролей", description: "Отдельные цвета владельца и команды", cost: 2, milestone: 24, icon: "roles" },
   { id: "hd", name: "HD-комната", description: "Повышенное качество демонстрации", cost: 3, milestone: 24, icon: "hd" },
 ] as const;
+
+export type GroupPerkState = GroupPerkDefinition & {
+  selected: boolean;
+  status: "active" | "available" | "locked" | "suspended";
+};
+
+export function resolveGroupPerkStates(input: {
+  capacity: number;
+  level: GroupBoostLevel;
+  selectedIds: readonly string[];
+}) {
+  const selected = new Set(input.selectedIds);
+  let used = 0;
+  const perks: GroupPerkState[] = GROUP_PERKS.map((perk) => {
+    const isSelected = selected.has(perk.id);
+    const unlocked = input.level >= perk.milestone;
+    const fits = used + perk.cost <= input.capacity;
+    const active = isSelected && unlocked && fits;
+    if (active) used += perk.cost;
+    return {
+      ...perk,
+      selected: isSelected,
+      status: active
+        ? "active"
+        : isSelected
+          ? "suspended"
+          : unlocked
+            ? "available"
+            : "locked",
+    };
+  });
+  return { perks, used };
+}
+
+export function isGroupPerkActive(perks: readonly GroupPerkState[], perkId: string) {
+  return perks.some((perk) => perk.id === perkId && perk.status === "active");
+}
 
 export function groupBoostLevel(boostCount: number): GroupBoostLevel {
   if (boostCount >= 24) return 24;
@@ -29,7 +65,8 @@ export function groupBoostLevel(boostCount: number): GroupBoostLevel {
   return 0;
 }
 
-export function groupEmojiLimit(level: GroupBoostLevel) {
+export function groupEmojiLimit(level: GroupBoostLevel, expanded = level >= 1) {
+  if (!expanded) return 10;
   if (level >= 24) return 250;
   if (level >= 12) return 150;
   if (level >= 6) return 100;
@@ -38,7 +75,8 @@ export function groupEmojiLimit(level: GroupBoostLevel) {
   return 10;
 }
 
-export function groupSoundLimit(level: GroupBoostLevel) {
+export function groupSoundLimit(level: GroupBoostLevel, expanded = level >= 3) {
+  if (!expanded) return 0;
   if (level >= 24) return 48;
   if (level >= 12) return 32;
   if (level >= 6) return 16;
@@ -46,14 +84,16 @@ export function groupSoundLimit(level: GroupBoostLevel) {
   return 0;
 }
 
-export function groupFileLimitBytes(level: GroupBoostLevel) {
+export function groupFileLimitBytes(level: GroupBoostLevel, expanded = level >= 6) {
+  if (!expanded) return 15 * 1024 * 1024;
   if (level >= 12) return 100 * 1024 * 1024;
   if (level >= 6) return 50 * 1024 * 1024;
   return 15 * 1024 * 1024;
 }
 
-export function groupBannerEnabled(level: GroupBoostLevel) {
-  return level >= 6;
+export function groupBannerEnabled(_level: GroupBoostLevel) {
+  void _level;
+  return true;
 }
 
 export function groupAnimatedIconEnabled(level: GroupBoostLevel) {
@@ -61,11 +101,12 @@ export function groupAnimatedIconEnabled(level: GroupBoostLevel) {
 }
 
 export function groupAnimatedBannerEnabled(level: GroupBoostLevel) {
-  return level >= 12;
+  return level >= 6;
 }
 
-export function groupTagEnabled(level: GroupBoostLevel) {
-  return level >= 12;
+export function groupTagEnabled(_level: GroupBoostLevel) {
+  void _level;
+  return true;
 }
 
 export function groupVanityInviteEnabled(level: GroupBoostLevel) {
@@ -79,6 +120,7 @@ export function groupRoleStylesEnabled(level: GroupBoostLevel) {
 export function screenShareQualityForEntitlements(
   hasVooplePlus: boolean,
   groupLevel: GroupBoostLevel,
+  hdPerkEnabled = groupLevel >= 24,
 ): "standard" | "plus" {
-  return hasVooplePlus || groupLevel >= 24 ? "plus" : "standard";
+  return hasVooplePlus || hdPerkEnabled ? "plus" : "standard";
 }

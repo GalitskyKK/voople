@@ -1,7 +1,7 @@
 "use client";
 
 import { Gift, Search, Send } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { Button } from "@/components/ui/Button";
@@ -11,6 +11,7 @@ import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import type { ShopItemView } from "@/types/shop";
 import type { UserSearchHit } from "@/types/search";
+import { reportProductEvent } from "@/lib/telemetry/client";
 
 import { ShopCatalogPreview } from "./ShopCatalogPreview";
 
@@ -34,6 +35,10 @@ export function ShopGiftDialog({
     { q: debouncedQuery },
     { enabled: Boolean(item) && debouncedQuery.length >= 1, staleTime: 10_000 },
   );
+
+  useEffect(() => {
+    if (item) reportProductEvent("gift_started", { itemKind: item.kind, surface: "store" });
+  }, [item]);
 
   const close = () => {
     if (pending) return;

@@ -209,7 +209,8 @@ export async function setGroupTopicsRest(
 export async function setGroupVisibilityRest(
   chatId: string,
   userId: string,
-  visibility: "private" | "public",
+  visibility: "private" | "unlisted" | "public",
+  joinPolicy: "open" | "request" | "invite_only",
 ) {
   const membership = await assertChatMemberRest(chatId, userId);
   if (membership.type !== "group" || membership.parentChatId) {
@@ -220,16 +221,16 @@ export async function setGroupVisibilityRest(
   }
   const { error } = await getAdminClient()
     .from("chats")
-    .update({ group_visibility: visibility })
+    .update({ group_visibility: visibility, join_policy: joinPolicy })
     .eq("id", chatId);
   if (error) throw new Error(error.message);
   await recordGroupAuditRest({
     chatId: membership.accessChatId,
     actorId: userId,
     action: "visibility_changed",
-    details: { visibility },
+    details: { visibility, joinPolicy },
   });
-  return { visibility };
+  return { visibility, joinPolicy };
 }
 
 async function clearGroupRoomPresence(chatId: string, userId: string) {

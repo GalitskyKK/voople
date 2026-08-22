@@ -3,28 +3,21 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
-import {
-  announcePresenceVisibility,
-  shouldPublishPresence,
-} from "@/lib/presence-privacy";
-import { trpc } from "@/lib/trpc/client";
 import { downloadAccountExport } from "@/lib/account-export-client";
+import { listTrustedDevices, revokeTrustedDevice } from "@/lib/auth/trusted-device-client";
 
 import { AccountSecuritySettings } from "./AccountSecuritySettings";
 import { AccountDataControls } from "./AccountDataControls";
 
 export function WebAccountSecuritySettings() {
   const supabase = useMemo(() => createClient(), []);
-  const setPresenceVisibility = trpc.user.setPresenceVisibility.useMutation();
   const [email, setEmail] = useState<string | null>(null);
-  const [showOnlineStatus, setShowOnlineStatus] = useState(true);
 
   useEffect(() => {
     let active = true;
     void supabase.auth.getUser().then(({ data }) => {
       if (!active) return;
       setEmail(data.user?.email ?? null);
-      setShowOnlineStatus(shouldPublishPresence(data.user?.user_metadata));
     });
     return () => {
       active = false;
@@ -35,7 +28,6 @@ export function WebAccountSecuritySettings() {
     <>
     <AccountSecuritySettings
       currentEmail={email}
-      showOnlineStatus={showOnlineStatus}
       requestReauthentication={async () => {
         const { error } = await supabase.auth.reauthenticate();
         if (error) throw error;
@@ -51,18 +43,15 @@ export function WebAccountSecuritySettings() {
         const { error } = await supabase.auth.updateUser({ password, nonce });
         if (error) throw error;
       }}
-      updateOnlineStatus={async (enabled) => {
-        const { data: current } = await supabase.auth.getUser();
-        const { error } = await supabase.auth.updateUser({
-          data: {
-            ...(current.user?.user_metadata ?? {}),
-            show_online_status: enabled,
-          },
-        });
-        if (error) throw error;
-        await setPresenceVisibility.mutateAsync({ visible: enabled });
-        setShowOnlineStatus(enabled);
-        announcePresenceVisibility(enabled);
+      loadTrustedDevices={async () => {
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) return [];
+        return listTrustedDevices({ accessToken: data.session.access_token });
+      }}
+      revokeTrustedDevice={async (deviceRecordId) => {
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) throw new Error("Сессия завершена");
+        await revokeTrustedDevice({ accessToken: data.session.access_token, deviceRecordId });
       }}
     />
     <AccountDataControls exportAccountData={() => downloadAccountExport("/api/account/export")} />

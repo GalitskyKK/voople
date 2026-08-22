@@ -1,6 +1,6 @@
 "use client";
 
-import { ImageIcon, Music, Paperclip, Upload } from "lucide-react";
+import { ImageIcon, LoaderCircle, Music, Paperclip, Upload } from "lucide-react";
 
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 
@@ -9,8 +9,9 @@ type ChatAttachMenuProps = {
   onOpenChange: (open: boolean) => void;
   onPickPhoto: () => void;
   onPickAudioFile: () => void;
-  onPickMusic: () => void;
+  onPickMusic?: () => void;
   disabled?: boolean;
+  loading?: boolean;
 };
 
 export function ChatAttachMenu({
@@ -20,6 +21,7 @@ export function ChatAttachMenu({
   onPickAudioFile,
   onPickMusic,
   disabled,
+  loading = false,
 }: ChatAttachMenuProps) {
   const pick = (action: () => void) => {
     action();
@@ -40,11 +42,11 @@ export function ChatAttachMenu({
           aria-label="Вложения"
           aria-expanded={open}
         >
-          <Paperclip className="h-5 w-5" />
+          {loading ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <Paperclip className="h-5 w-5" />}
         </button>
       }
     >
-      <button
+      {onPickMusic ? <button
         type="button"
         role="menuitem"
         className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]"
@@ -52,12 +54,14 @@ export function ChatAttachMenu({
       >
         <ImageIcon className="h-4 w-4" />
         Фото
-      </button>
+      </button> : null}
       <button
         type="button"
         role="menuitem"
         className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]"
-        onClick={() => pick(onPickMusic)}
+        onClick={() => {
+          if (onPickMusic) pick(onPickMusic);
+        }}
       >
         <Music className="h-4 w-4" />
         Музыка из плейлиста

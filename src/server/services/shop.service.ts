@@ -32,6 +32,7 @@ import type {
   ShopOverviewView,
   WalletView,
 } from "@/types/shop";
+import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
 
 export async function getShopOverview(userId: string): Promise<ShopOverviewView> {
   const [wallet, rows, ownedIds, equipped] = await Promise.all([
@@ -235,6 +236,20 @@ export async function fulfillSucceededPaymentIntent(intentId: string, externalId
   }
 
   await updatePaymentIntentStatusRest(intentId, "succeeded", externalId);
+  await recordServerProductEvent({
+    name: "purchase_completed",
+    actorId: userId,
+    route: "/api/webhooks/yookassa",
+    properties: { kind: intent.kind },
+  });
+  if (intent.kind === "shop_item" && typeof metadata.giftRecipientId === "string") {
+    await recordServerProductEvent({
+      name: "gift_sent",
+      actorId: userId,
+      route: "/api/webhooks/yookassa",
+      properties: { kind: "shop_item" },
+    });
+  }
 }
 
 export async function claimAllFreeItems(userId: string): Promise<ShopOverviewView> {

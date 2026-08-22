@@ -44,7 +44,7 @@ export async function listGroupEmojisRest(chatId: string, userId: string) {
   if (error && error.code !== "42P01") throw new Error(error.message);
   return {
     items: ((data ?? []) as Record<string, unknown>[]).map(mapEmoji),
-    limit: groupEmojiLimit(community.groupLevel),
+    limit: groupEmojiLimit(community.groupLevel, community.emojiSoundEnabled),
   };
 }
 

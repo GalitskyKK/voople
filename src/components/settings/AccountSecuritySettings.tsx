@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { Eye, EyeOff, KeyRound, Loader2, Mail, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { KeyRound, Loader2, Mail, MonitorSmartphone, ShieldCheck, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
+import type { TrustedDeviceView } from "@/lib/auth/trusted-device-client";
 
 type AccountSecuritySettingsProps = {
   currentEmail: string | null;
   requestReauthentication: () => Promise<void>;
   updateEmail: (email: string, nonce: string) => Promise<void>;
   updatePassword: (password: string, nonce: string) => Promise<void>;
-  showOnlineStatus: boolean;
-  updateOnlineStatus: (enabled: boolean) => Promise<void>;
+  loadTrustedDevices: () => Promise<TrustedDeviceView[]>;
+  revokeTrustedDevice: (deviceRecordId: string) => Promise<void>;
 };
 
 export function AccountSecuritySettings({
@@ -19,21 +20,30 @@ export function AccountSecuritySettings({
   requestReauthentication,
   updateEmail,
   updatePassword,
-  showOnlineStatus,
-  updateOnlineStatus,
+  loadTrustedDevices,
+  revokeTrustedDevice,
 }: AccountSecuritySettingsProps) {
   const [nonce, setNonce] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [codeSent, setCodeSent] = useState(false);
-  const [pending, setPending] = useState<"code" | "email" | "password" | "presence" | null>(null);
+  const [pending, setPending] = useState<"code" | "email" | "password" | "devices" | null>(null);
+  const [devices, setDevices] = useState<TrustedDeviceView[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const validNonce = /^\d{6,8}$/.test(nonce.trim());
 
+  useEffect(() => {
+    let active = true;
+    void loadTrustedDevices().then((next) => {
+      if (active) setDevices(next);
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, [loadTrustedDevices]);
+
   const run = async (
-    action: "code" | "email" | "password" | "presence",
+    action: "code" | "email" | "password" | "devices",
     operation: () => Promise<void>,
   ) => {
     if (pending) return;
@@ -60,37 +70,6 @@ export function AccountSecuritySettings({
 
   return (
     <div className="space-y-4">
-      <label className="settings-security-card cursor-pointer">
-        {showOnlineStatus ? (
-          <Eye className="h-5 w-5 text-(--theme-accent)" />
-        ) : (
-          <EyeOff className="h-5 w-5 text-[var(--app-muted)]" />
-        )}
-        <span className="min-w-0 flex-1">
-          <span className="block font-medium">Показывать мой статус онлайн</span>
-          <span className="mt-1 block text-sm text-[var(--app-muted)]">
-            Если выключить, Вупл. перестанет публиковать ваше присутствие другим пользователям.
-          </span>
-        </span>
-        {pending === "presence" ? (
-          <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
-        ) : (
-          <input
-            type="checkbox"
-            className="settings-switch shrink-0"
-            checked={showOnlineStatus}
-            disabled={pending !== null}
-            onChange={(event) => {
-              const enabled = event.target.checked;
-              void run("presence", async () => {
-                await updateOnlineStatus(enabled);
-                setNotice(enabled ? "Статус онлайн виден" : "Статус онлайн скрыт");
-              });
-            }}
-          />
-        )}
-      </label>
-
       <div className="settings-security-card">
         <ShieldCheck className="h-5 w-5 text-(--theme-accent)" />
         <div className="min-w-0 flex-1">
@@ -115,6 +94,41 @@ export function AccountSecuritySettings({
             {pending === "code" ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
             {codeSent ? "Отправить код ещё раз" : "Получить код"}
           </Button>
+        </div>
+      </div>
+
+      <div className="settings-security-card items-start">
+        <MonitorSmartphone className="mt-1 h-5 w-5 text-(--theme-accent)" />
+        <div className="min-w-0 flex-1">
+          <p className="font-medium">Доверенные устройства</p>
+          <p className="mt-1 text-sm text-[var(--app-muted)]">
+            На новом устройстве Voople попросит подтвердить вход кодом из письма.
+          </p>
+          <div className="mt-3 space-y-2">
+            {devices.length === 0 ? (
+              <p className="text-xs text-[var(--app-muted)]">Список появится после подтверждённого входа.</p>
+            ) : devices.map((device) => (
+              <div key={device.id} className="flex items-center gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{device.label}{device.current ? " · это устройство" : ""}</span>
+                  <span className="block text-xs text-[var(--app-muted)]">Последний вход: {new Date(device.lastUsedAt).toLocaleString("ru-RU")}</span>
+                </span>
+                <button
+                  type="button"
+                  aria-label={`Удалить устройство ${device.label}`}
+                  disabled={pending !== null}
+                  className="rounded-lg p-2 text-[var(--app-muted)] hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+                  onClick={() => void run("devices", async () => {
+                    await revokeTrustedDevice(device.id);
+                    setDevices((current) => current.filter((item) => item.id !== device.id));
+                    setNotice("Устройство удалено. Следующий вход потребует код из письма.");
+                  })}
+                >
+                  {pending === "devices" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

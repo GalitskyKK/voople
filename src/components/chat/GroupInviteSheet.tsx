@@ -7,6 +7,7 @@ import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { trpc } from "@/lib/trpc/client";
 import { uploadPresignedFile } from "@/lib/uploads/presigned-upload";
+import type { GroupJoinPolicy, GroupVisibility } from "@/types/chat";
 
 import { GroupManagementSheetView } from "./GroupManagementSheetView";
 
@@ -24,6 +25,7 @@ export function GroupInviteSheet({
   topicsEnabled,
   topicsLayout,
   groupVisibility,
+  joinPolicy,
   presentation = "sheet",
 }: {
   chatId: string;
@@ -38,7 +40,8 @@ export function GroupInviteSheet({
   canManage: boolean;
   topicsEnabled: boolean;
   topicsLayout: "tabs" | "list";
-  groupVisibility: "private" | "public";
+  groupVisibility: GroupVisibility;
+  joinPolicy: GroupJoinPolicy;
   presentation?: "sheet" | "page";
 }) {
   const router = useRouter();
@@ -48,8 +51,12 @@ export function GroupInviteSheet({
   const addMembers = trpc.chat.addGroupMembers.useMutation();
   const setTopics = trpc.chat.setGroupTopics.useMutation();
   const setVisibility = trpc.chat.setGroupVisibility.useMutation();
+  const resolveJoinRequestMutation = trpc.chat.resolveGroupJoinRequest.useMutation();
+  const setDiscoveryProfile = trpc.social.setGroupDiscoveryProfile.useMutation();
+  const setGroupName = trpc.chat.setGroupName.useMutation();
   const updateCustomization = trpc.chat.updateGroupCustomization.useMutation();
   const setBoost = trpc.chat.setGroupBoost.useMutation();
+  const setPerk = trpc.chat.setGroupPerk.useMutation();
   const createEmoji = trpc.chat.createGroupEmoji.useMutation();
   const deleteEmoji = trpc.chat.deleteGroupEmoji.useMutation();
   const createSound = trpc.chat.createGroupSound.useMutation();
@@ -83,6 +90,18 @@ export function GroupInviteSheet({
     () => utils.client.chat.groupSounds.query({ chatId }),
     [chatId, utils.client],
   );
+  const loadJoinRequests = useCallback(
+    () => utils.client.chat.groupJoinRequests.query({ chatId }),
+    [chatId, utils.client],
+  );
+  const loadInterestCatalog = useCallback(
+    () => utils.client.social.interestCatalog.query(),
+    [utils.client],
+  );
+  const loadDiscoveryProfile = useCallback(
+    () => utils.client.social.groupDiscoveryProfile.query({ chatId }),
+    [chatId, utils.client],
+  );
   const searchContacts = useCallback(
     (q: string) => utils.client.chat.groupContacts.query({ chatId, q }),
     [chatId, utils.client],
@@ -103,6 +122,7 @@ export function GroupInviteSheet({
       topicsEnabled={topicsEnabled}
       topicsLayout={topicsLayout}
       groupVisibility={groupVisibility}
+      joinPolicy={joinPolicy}
       presentation={presentation}
       onBack={() => router.push(`/messages/${chatId}`)}
       loadMembers={loadMembers}
@@ -118,12 +138,33 @@ export function GroupInviteSheet({
           utils.chat.list.invalidate(),
         ]);
       }}
-      updateVisibility={async (visibility) => {
-        await setVisibility.mutateAsync({ chatId, visibility });
+      updateVisibility={async (visibility, nextJoinPolicy) => {
+        await setVisibility.mutateAsync({ chatId, visibility, joinPolicy: nextJoinPolicy });
         await Promise.all([
           utils.chat.getMessages.invalidate({ chatId }),
           utils.chat.list.invalidate(),
         ]);
+      }}
+      loadJoinRequests={loadJoinRequests}
+      resolveJoinRequest={async (requestId, approve) => {
+        const result = await resolveJoinRequestMutation.mutateAsync({ requestId, approve });
+        await Promise.all([
+          utils.chat.groupJoinRequests.invalidate({ chatId }),
+          utils.chat.getMessages.invalidate({ chatId }),
+          utils.chat.list.invalidate(),
+        ]);
+        return result;
+      }}
+      loadInterestCatalog={loadInterestCatalog}
+      loadDiscoveryProfile={loadDiscoveryProfile}
+      updateDiscoveryProfile={(value) => setDiscoveryProfile.mutateAsync({ chatId, ...value })}
+      updateName={async (name) => {
+        const result = await setGroupName.mutateAsync({ chatId, name });
+        await Promise.all([
+          utils.chat.getMessages.invalidate({ chatId }),
+          utils.chat.list.invalidate(),
+        ]);
+        return result;
       }}
       loadCommunity={loadCommunity}
       updateCustomization={(input) =>
@@ -140,6 +181,7 @@ export function GroupInviteSheet({
         return { mediaKey: uploaded.mediaKey, previewUrl: uploaded.previewUrl };
       }}
       setBoost={(enabled, slot, idempotencyKey) => setBoost.mutateAsync({ chatId, enabled, slot, idempotencyKey })}
+      setPerk={(perkId, enabled) => setPerk.mutateAsync({ chatId, perkId: perkId as "animated_icon" | "emoji_sound" | "animated_banner" | "uploads" | "vanity" | "roles" | "hd", enabled })}
       loadEmojis={loadEmojis}
       createEmoji={(input) => createEmoji.mutateAsync({ chatId, ...input })}
       deleteEmoji={(emojiId) => deleteEmoji.mutateAsync({ emojiId })}

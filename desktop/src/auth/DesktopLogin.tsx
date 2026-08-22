@@ -5,6 +5,10 @@ import { getEmailDeliveryErrorMessage } from "@/lib/auth/email-delivery-error";
 import { DesktopTurnstile } from "./DesktopTurnstile";
 import { DesktopRegister } from "./DesktopRegister";
 import { getSupabase } from "./supabase";
+import {
+  startTrustedPasswordLogin,
+  trustCurrentDevice,
+} from "@/lib/auth/trusted-device-client";
 
 type LoginMode = "password" | "code";
 
@@ -37,41 +41,78 @@ export function DesktopLogin({ config }: { config: DesktopConfig }) {
     setBusy(true);
     setError(null);
 
-    const result =
-      mode === "password"
-        ? await supabase.auth.signInWithPassword({
-            email: email.trim(),
-            password,
-            options: { captchaToken: captchaToken ?? undefined },
-          })
-        : codeSent
-          ? await supabase.auth.verifyOtp({
-              email: email.trim(),
-              token: code,
-              type: "email",
-            })
-          : await supabase.auth.signInWithOtp({
-              email: email.trim(),
-              options: {
-                captchaToken: captchaToken ?? undefined,
-                shouldCreateUser: false,
-              },
-            });
+    try {
+      if (mode === "password") {
+        const result = await startTrustedPasswordLogin({
+          apiUrl: config.apiUrl,
+          email: email.trim(),
+          password,
+          captchaToken: captchaToken ?? undefined,
+        });
+        if (result.verificationRequired) {
+          setMode("code");
+          setCodeSent(false);
+          setCode("");
+          setError("Это новое устройство. Получите код из письма, чтобы подтвердить вход.");
+          return;
+        }
+        if (!result.accessToken || !result.refreshToken) {
+          throw new Error("Сервер входа вернул неполную сессию");
+        }
+        const sessionResult = await supabase.auth.setSession({
+          access_token: result.accessToken,
+          refresh_token: result.refreshToken,
+        });
+        if (sessionResult.error) throw sessionResult.error;
+        return;
+      }
 
-    setBusy(false);
-    if (mode === "password" || !codeSent) {
-      setCaptchaToken(null);
-      setCaptchaResetKey((value) => value + 1);
-    }
-    if (result.error) {
+      if (!codeSent) {
+        const result = await supabase.auth.signInWithOtp({
+          email: email.trim(),
+          options: {
+            captchaToken: captchaToken ?? undefined,
+            shouldCreateUser: false,
+          },
+        });
+        if (result.error) {
+          setError(getEmailDeliveryErrorMessage(result.error));
+          return;
+        }
+        setCodeSent(true);
+        return;
+      }
+
+      const result = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: code,
+        type: "email",
+      });
+      if (result.error) {
+        setError(result.error.message);
+        return;
+      }
+      if (result.data.session) {
+        await trustCurrentDevice({
+          apiUrl: config.apiUrl,
+          accessToken: result.data.session.access_token,
+          platform: "desktop",
+        }).catch(() => undefined);
+      }
+    } catch (cause) {
+      const technicalMessage = cause instanceof Error ? cause.message : "";
       setError(
-        mode === "code" && !codeSent
-          ? getEmailDeliveryErrorMessage(result.error)
-          : result.error.message,
+        /json|network|fetch|load failed/i.test(technicalMessage)
+          ? "Ответ сервера оборвался. Проверьте интернет и повторите вход."
+          : technicalMessage || "Не удалось подключиться к серверу входа. Попробуйте ещё раз.",
       );
-      return;
+    } finally {
+      setBusy(false);
+      if (mode === "password" || !codeSent) {
+        setCaptchaToken(null);
+        setCaptchaResetKey((value) => value + 1);
+      }
     }
-    if (mode === "code" && !codeSent) setCodeSent(true);
   };
 
   const switchMode = () => {

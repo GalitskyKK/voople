@@ -123,8 +123,11 @@ export function DesktopReleaseNotesDialog() {
       );
       const merged = [...entries];
       for (const entry of catalogEntries.values()) {
-        if (!merged.some((historyEntry) => historyEntry.installedVersion === entry.version)) {
+        const historyIndex = merged.findIndex((historyEntry) => historyEntry.installedVersion === entry.version);
+        if (historyIndex < 0) {
           merged.push(catalogHistory(entry));
+        } else if (entry.notes.trim().length > (merged[historyIndex]?.notes?.trim().length ?? 0)) {
+          merged[historyIndex] = { ...merged[historyIndex]!, notes: entry.notes };
         }
       }
       if (bundled && !merged.some((entry) => entry.installedVersion === version)) {
@@ -169,8 +172,8 @@ export function DesktopReleaseNotesDialog() {
   };
 
   return (
-    <Sheet open={open} onClose={close} ariaLabel="Что нового в Voople" className="max-w-2xl p-0">
-      <header className="sticky top-0 z-10 border-b border-[var(--app-border)] bg-[var(--background)] px-5 py-4 pr-14">
+    <Sheet open={open} onClose={close} ariaLabel="Что нового в Voople" className="flex max-h-[min(90dvh,760px)] max-w-2xl flex-col overflow-hidden p-0">
+      <header className="relative z-10 shrink-0 border-b border-[var(--app-border)] bg-[var(--background)] px-5 py-4 pr-14">
         <div className="flex items-center gap-3">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--app-accent-soft)] text-[var(--theme-accent)]"><BookOpen className="h-5 w-5" /></span>
           <div><p className="text-lg font-semibold">Что нового</p><p className="text-xs text-[var(--app-muted)]">Изменения после обновления приложения</p></div>
@@ -181,7 +184,7 @@ export function DesktopReleaseNotesDialog() {
           </select>
         ) : null}
       </header>
-      <div className="px-5 py-5">
+      <div className="voople-scroll min-h-0 flex-1 overflow-y-auto px-5 py-5">
         {selected ? (
           <Fragment>
             <p className="mb-4 text-xs text-[var(--app-muted)]">Voople {selected.previousVersion} → {selected.installedVersion} · {new Date(selected.installedAtUnix * 1_000).toLocaleDateString("ru-RU")}</p>

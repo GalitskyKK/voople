@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import type { GroupEmojiView } from "@/types/chat";
+import { reportProductEvent } from "@/lib/telemetry/client";
 
 type EmojiList = { items: GroupEmojiView[]; limit: number };
 
@@ -43,6 +44,7 @@ export function GroupEmojiManager({
     try {
       const uploaded = await upload(file);
       const emoji = await create({ name, uploadKey: uploaded.mediaKey, rightsConfirmed: true });
+      reportProductEvent("custom_emoji_added", { surface: "group_settings" });
       setData((current) => current ? { ...current, items: [...current.items, emoji] } : current);
       setFile(null);
       setName("");

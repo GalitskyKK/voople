@@ -2,13 +2,14 @@ import type { Session } from "@supabase/supabase-js";
 import { useCallback, useMemo } from "react";
 
 import { GroupManagementSheetView } from "@/components/chat/GroupManagementSheetView";
-import type { ChatGroupAuditEntryView, ChatGroupMemberView, GroupCommunityView, GroupEmojiView, GroupSoundView } from "@/types/chat";
+import type { ChatGroupAuditEntryView, ChatGroupMemberView, GroupCommunityView, GroupEmojiView, GroupJoinPolicy, GroupJoinRequestView, GroupSoundView, GroupVisibility } from "@/types/chat";
 import type { UserSearchHit } from "@/types/search";
+import type { GroupDiscoveryProfileView, InterestCatalogView } from "@/types/social";
 import { uploadPresignedFile } from "@/lib/uploads/presigned-upload";
 
 import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
-import { DesktopChatAvatar } from "./DesktopChatAvatar";
+import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { useDesktopChatThread } from "./useDesktopChatThread";
 
 const ignoreInboxChange = () => undefined;
@@ -27,6 +28,7 @@ export function DesktopGroupInviteSheet({
   topicsEnabled,
   topicsLayout,
   groupVisibility,
+  joinPolicy,
   config,
   session,
   onMembersChanged,
@@ -46,7 +48,8 @@ export function DesktopGroupInviteSheet({
   canManage: boolean;
   topicsEnabled: boolean;
   topicsLayout: "tabs" | "list";
-  groupVisibility: "private" | "public";
+  groupVisibility: GroupVisibility;
+  joinPolicy: GroupJoinPolicy;
   config: DesktopConfig;
   session: Session;
   onMembersChanged: () => void;
@@ -157,6 +160,18 @@ export function DesktopGroupInviteSheet({
     () => client.query("chat.groupSounds", { chatId }) as Promise<{ items: GroupSoundView[]; limit: number }>,
     [chatId, client],
   );
+  const loadJoinRequests = useCallback(
+    () => client.query("chat.groupJoinRequests", { chatId }) as Promise<GroupJoinRequestView[]>,
+    [chatId, client],
+  );
+  const loadInterestCatalog = useCallback(
+    () => client.query("social.interestCatalog") as Promise<InterestCatalogView>,
+    [client],
+  );
+  const loadDiscoveryProfile = useCallback(
+    () => client.query("social.groupDiscoveryProfile", { chatId }) as Promise<GroupDiscoveryProfileView>,
+    [chatId, client],
+  );
   const uploadSound = useCallback(async (file: File) => {
     const contentType = file.type.split(";")[0]?.trim().toLowerCase() ?? "";
     if (file.size <= 0 || file.size > 1024 * 1024) throw new Error("Звук должен быть не больше 1 МБ");
@@ -183,6 +198,7 @@ export function DesktopGroupInviteSheet({
       topicsEnabled={topicsEnabled}
       topicsLayout={topicsLayout}
       groupVisibility={groupVisibility}
+      joinPolicy={joinPolicy}
       inviteBaseUrl={config.apiUrl}
       loadMembers={loadMembers}
       loadAudit={loadAudit}
@@ -198,9 +214,23 @@ export function DesktopGroupInviteSheet({
         });
         onMembersChanged();
       }}
-      updateVisibility={async (visibility) => {
-        await client.mutation("chat.setGroupVisibility", { chatId, visibility });
+      updateVisibility={async (visibility, nextJoinPolicy) => {
+        await client.mutation("chat.setGroupVisibility", { chatId, visibility, joinPolicy: nextJoinPolicy });
         onMembersChanged();
+      }}
+      loadJoinRequests={loadJoinRequests}
+      resolveJoinRequest={async (requestId, approve) => {
+        const result = await client.mutation("chat.resolveGroupJoinRequest", { requestId, approve });
+        onMembersChanged();
+        return result;
+      }}
+      loadInterestCatalog={loadInterestCatalog}
+      loadDiscoveryProfile={loadDiscoveryProfile}
+      updateDiscoveryProfile={(value) => client.mutation("social.setGroupDiscoveryProfile", { chatId, ...value }) as Promise<GroupDiscoveryProfileView>}
+      updateName={async (name) => {
+        const result = await client.mutation("chat.setGroupName", { chatId, name }) as { name: string };
+        onMembersChanged();
+        return result;
       }}
       loadCommunity={loadCommunity}
       updateCustomization={(input) =>
@@ -218,6 +248,9 @@ export function DesktopGroupInviteSheet({
           slot,
           idempotencyKey,
         }) as Promise<GroupCommunityView>
+      }
+      setPerk={(perkId, enabled) =>
+        client.mutation("chat.setGroupPerk", { chatId, perkId, enabled }) as Promise<GroupCommunityView>
       }
       loadEmojis={loadEmojis}
       createEmoji={(input) => client.mutation("chat.createGroupEmoji", { chatId, ...input }) as Promise<GroupEmojiView>}
@@ -241,9 +274,10 @@ export function DesktopGroupInviteSheet({
       onGroupClosed={onGroupClosed}
       onMembersChanged={onMembersChanged}
       renderAvatar={(user) => (
-        <DesktopChatAvatar
+        <ProfileAvatar
           displayName={user.displayName}
-          avatarUrl={user.avatarUrl}
+          size="sm"
+          animatedAvatarUrl={user.avatarUrl}
         />
       )}
     />
@@ -289,6 +323,7 @@ export function DesktopGroupSettingsPage({ chatId, config, session, navigate }: 
       topicsEnabled={chat.topicsEnabled}
       topicsLayout={chat.topicsLayout}
       groupVisibility={chat.groupVisibility}
+      joinPolicy={chat.joinPolicy}
       config={config}
       session={session}
       presentation="page"

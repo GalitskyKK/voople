@@ -23,6 +23,8 @@ function describeEntry(entry: ChatGroupAuditEntryView) {
       return `${actor} ${entry.details.enabled ? "включил(а)" : "выключил(а)"} разделы`;
     case "visibility_changed":
       return `${actor} сделал(а) группу ${entry.details.visibility === "public" ? "открытой" : "закрытой"}`;
+    case "group_name_changed":
+      return `${actor} переименовал(а) группу в «${String(entry.details.name ?? "Без названия")}»`;
   }
 }
 

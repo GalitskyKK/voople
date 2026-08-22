@@ -38,7 +38,7 @@ export async function getChatUploadByteLimit(userId: string, chatId?: string) {
   const membership = await assertChatMemberRest(chatId, userId);
   if (membership.type !== "group") return UPLOAD_LIMITS.chat.maxBytes;
   const community = await getGroupCommunityRest(membership.accessChatId, userId);
-  return groupFileLimitBytes(community.groupLevel);
+  return groupFileLimitBytes(community.groupLevel, community.largeUploadsEnabled);
 }
 
 async function uploadByteLimit(purpose: UploadPurpose, userId: string, chatId?: string) {

@@ -5,6 +5,7 @@ export const SETTINGS_SECTIONS = [
   ["messages", "Чаты"],
   ["notifications", "Уведомления"],
   ["interface", "Интерфейс"],
+  ["privacy", "Приватность и активность"],
   ["hotkeys", "Горячие клавиши"],
   ["security", "Безопасность"],
   ["legal", "Документы"],

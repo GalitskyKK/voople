@@ -4,15 +4,13 @@ import { MessageCircle } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 
 import { useChatContactSearch } from "@/hooks/useChatContactSearch";
-import { usePublicGroupSearch } from "@/hooks/usePublicGroupSearch";
-import type { ChatListItem, PublicGroupSearchHit } from "@/types/chat";
+import type { ChatListItem } from "@/types/chat";
 import type { UserSearchHit } from "@/types/search";
 import {
   ChatListRow,
   type ChatListDestinationRenderer,
 } from "./ChatListRow";
 import { ChatContactResults } from "./ChatContactResults";
-import { ChatPublicGroupResults } from "./ChatPublicGroupResults";
 import type { ChatListFilter, ChatSearchScope } from "./ChatListFilters";
 import { ChatListSearchPanel } from "./ChatListSearchPanel";
 
@@ -32,8 +30,7 @@ type ChatListViewProps = {
   openContact?: (user: UserSearchHit) => Promise<void>;
   renderContactAvatar?: (user: UserSearchHit) => ReactNode;
   renderContactTitle?: (user: UserSearchHit) => ReactNode;
-  searchPublicGroups?: (query: string) => Promise<PublicGroupSearchHit[]>;
-  openPublicGroup?: (group: PublicGroupSearchHit) => Promise<void>;
+  renderGlobalSearchAction?: (query: string) => ReactNode;
 };
 
 export function ChatListView({
@@ -50,15 +47,13 @@ export function ChatListView({
   openContact,
   renderContactAvatar,
   renderContactTitle,
-  searchPublicGroups,
-  openPublicGroup,
+  renderGlobalSearchAction,
 }: ChatListViewProps) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<ChatListFilter>("all");
   const [searchActive, setSearchActive] = useState(false);
   const [searchScope, setSearchScope] = useState<ChatSearchScope>("all");
   const [openingContactId, setOpeningContactId] = useState<string | null>(null);
-  const [openingGroupId, setOpeningGroupId] = useState<string | null>(null);
   const visibleChats = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("ru-RU");
     const matchesQuery = (chat: ChatListItem) =>
@@ -97,17 +92,6 @@ export function ChatListView({
     query,
     searchContacts,
   });
-  const {
-    groups: publicGroups,
-    loading: publicGroupsLoading,
-    error: publicGroupsError,
-    setError: setPublicGroupsError,
-  } = usePublicGroupSearch({
-    enabled: searchActive && searchScope !== "people",
-    query,
-    search: searchPublicGroups,
-  });
-
   const handleOpenContact = async (contact: UserSearchHit) => {
     if (!openContact) return;
     setOpeningContactId(contact.id);
@@ -120,23 +104,6 @@ export function ChatListView({
       );
     } finally {
       setOpeningContactId(null);
-    }
-  };
-
-  const handleOpenPublicGroup = async (group: PublicGroupSearchHit) => {
-    if (!openPublicGroup) return;
-    setOpeningGroupId(group.id);
-    setPublicGroupsError(null);
-    try {
-      await openPublicGroup(group);
-    } catch (openError) {
-      setPublicGroupsError(
-        openError instanceof Error
-          ? openError.message
-          : "Не удалось открыть группу",
-      );
-    } finally {
-      setOpeningGroupId(null);
     }
   };
 
@@ -192,33 +159,19 @@ export function ChatListView({
         renderTitle={renderContactTitle}
       />
 
-      <ChatPublicGroupResults
-        groups={publicGroups}
-        loading={publicGroupsLoading}
-        openingId={openingGroupId}
-        onOpen={(group) => void handleOpenPublicGroup(group)}
-      />
-
       {contactsError ? (
         <p className="order-3 px-3 text-xs text-red-400" role="alert">
           {contactsError}
         </p>
       ) : null}
-      {publicGroupsError ? (
-        <p className="order-3 px-3 text-xs text-red-400" role="alert">
-          {publicGroupsError}
-        </p>
-      ) : null}
-
       {!visibleChats.length &&
       !visibleContacts.length &&
-      !publicGroups.length &&
-      !contactsLoading &&
-      !publicGroupsLoading ? (
+      !contactsLoading ? (
         chats.length || query.trim() ? (
-          <p className="order-4 rounded-xl px-3 py-8 text-center text-sm text-[var(--app-muted)]">
-            Ничего не найдено
-          </p>
+          <div className="order-4 rounded-xl px-3 py-8 text-center text-sm text-[var(--app-muted)]">
+            <p>Ничего не найдено</p>
+            {query.trim() ? renderGlobalSearchAction?.(query.trim()) : null}
+          </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-[var(--app-border)] px-4 py-6 text-center">
             <MessageCircle className="mx-auto h-6 w-6 text-[var(--app-muted)]" />

@@ -11,6 +11,7 @@ import {
 import {
   loadGroupCommunitySummariesRest,
 } from "@/server/data/chat-community-rest";
+import { loadInviteActivityCountsRest } from "@/server/data/chat-invite-activity-rest";
 import {
   toProfileCustomizationView,
   type CustomizationRow,
@@ -22,7 +23,6 @@ import type {
 
 const ROOM_STALE_AFTER_MS = 3 * 60_000;
 export const DIRECT_CALL_RING_MS = 45_000;
-const INVITE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1_000;
 
 function roomEndReason(status: string | null | undefined): ChatRoomView["endReason"] {
   return status === "declined" ||
@@ -101,19 +101,18 @@ export async function createChatInviteRest(chatId: string, userId: string) {
 
   const token = randomBytes(32).toString("base64url");
   const tokenHash = hashInviteToken(token);
-  const expiresAt = new Date(Date.now() + INVITE_LIFETIME_MS).toISOString();
   const admin = getAdminClient();
 
   const { error } = await admin.from("chat_invites").insert({
     chat_id: chatId,
     created_by: userId,
     token_hash: tokenHash,
-    expires_at: expiresAt,
-    max_uses: 20,
+    expires_at: null,
+    max_uses: null,
   });
   if (error) throw new Error(error.message);
 
-  return { token, expiresAt };
+  return { token, expiresAt: null };
 }
 
 export async function revokeChatInviteRest(chatId: string, userId: string, token: string) {
@@ -166,27 +165,30 @@ export async function previewChatInviteRest(token: string): Promise<ChatInvitePr
       groupTag: null,
       groupAccentColor: null,
       memberCount: 0,
+      onlineCount: 0,
+      roomParticipantCount: 0,
       expiresAt: null,
     };
   }
 
   const chat = Array.isArray(data.chats) ? data.chats[0] : data.chats;
-  const [{ count, error: countError }, communities] = await Promise.all([
+  const [{ count, error: countError }, communities, activity] = await Promise.all([
     admin
       .from("chat_members")
       .select("user_id", { count: "exact", head: true })
       .eq("chat_id", data.chat_id),
     loadGroupCommunitySummariesRest([data.chat_id], ""),
+    loadInviteActivityCountsRest(data.chat_id),
   ]);
   if (countError) throw new Error(countError.message);
   const community = communities.get(data.chat_id);
 
-  const isExpired = new Date(data.expires_at).getTime() <= Date.now();
+  const isExpired = Boolean(data.expires_at && new Date(data.expires_at).getTime() <= Date.now());
   const reason = data.revoked_at
     ? "revoked"
     : isExpired
       ? "expired"
-      : data.use_count >= data.max_uses
+      : data.max_uses !== null && data.use_count >= data.max_uses
         ? "used"
         : "active";
 
@@ -201,6 +203,8 @@ export async function previewChatInviteRest(token: string): Promise<ChatInvitePr
     groupTag: community?.effectiveTag ?? null,
     groupAccentColor: community?.effectiveAccentColor ?? null,
     memberCount: count ?? 0,
+    onlineCount: activity.onlineCount,
+    roomParticipantCount: activity.roomParticipantCount,
     expiresAt: data.expires_at,
   };
 }

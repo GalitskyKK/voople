@@ -2,6 +2,7 @@ import "server-only";
 
 import { getAdminClient } from "@/lib/supabase/admin";
 import { loadGroupCommunitySummariesRest } from "@/server/data/chat-community-rest";
+import { loadInviteActivityCountsRest } from "@/server/data/chat-invite-activity-rest";
 import type { ChatInvitePreview } from "@/types/chat";
 
 const VANITY_SLUG_PATTERN = /^[a-z0-9_]{5,32}$/;
@@ -27,10 +28,13 @@ export async function previewGroupVanityInviteRest(
 ): Promise<ChatInvitePreview | null> {
   const group = await findActiveVanityGroup(slug);
   if (!group) return null;
-  const { count, error } = await getAdminClient()
-    .from("chat_members")
-    .select("user_id", { count: "exact", head: true })
-    .eq("chat_id", group.chatId);
+  const [{ count, error }, activity] = await Promise.all([
+    getAdminClient()
+      .from("chat_members")
+      .select("user_id", { count: "exact", head: true })
+      .eq("chat_id", group.chatId),
+    loadInviteActivityCountsRest(group.chatId),
+  ]);
   if (error) throw new Error(error.message);
   return {
     available: true,
@@ -43,6 +47,8 @@ export async function previewGroupVanityInviteRest(
     groupTag: group.community?.effectiveTag ?? null,
     groupAccentColor: group.community?.effectiveAccentColor ?? null,
     memberCount: count ?? 0,
+    onlineCount: activity.onlineCount,
+    roomParticipantCount: activity.roomParticipantCount,
     expiresAt: null,
   };
 }

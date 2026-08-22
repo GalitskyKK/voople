@@ -14,6 +14,8 @@ import { usernameSchema } from "@/lib/validation/username";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { TURNSTILE_SITE_KEY, TurnstileChallenge } from "@/components/auth/TurnstileChallenge";
+import { reportProductEvent } from "@/lib/telemetry/client";
+import { trustCurrentDevice } from "@/lib/auth/trusted-device-client";
 import { useState } from "react";
 
 const schema = z.object({
@@ -50,6 +52,7 @@ export default function RegisterPage() {
     }
     const supabase = createClient();
     const acceptedAt = new Date().toISOString();
+    reportProductEvent("signup_started", { source: "web" });
     const { data: signUpData, error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
@@ -71,9 +74,14 @@ export default function RegisterPage() {
       setError("root", { message: getEmailDeliveryErrorMessage(error) });
       return;
     }
+    reportProductEvent("signup_completed", {
+      source: "web",
+      state: signUpData.session ? "authenticated" : "email_confirmation",
+    });
     if (signUpData.session) {
       try {
         const { username } = await syncPublicUser({ username: data.username });
+        await trustCurrentDevice({ accessToken: signUpData.session.access_token, platform: "web" }).catch(() => undefined);
         router.replace(
           username
             ? `/onboarding?username=${encodeURIComponent(username)}${redirectAfter ? `&redirect=${encodeURIComponent(redirectAfter)}` : ""}`

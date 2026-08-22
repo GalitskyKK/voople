@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import type { GroupCommunityView, GroupCustomizationInput } from "@/types/chat";
+import { reportProductEvent } from "@/lib/telemetry/client";
 
 import { GroupAvatar } from "./GroupAvatar";
 import { GroupIdentityPerksEditor } from "./GroupIdentityPerksEditor";
@@ -94,6 +95,7 @@ export function GroupCommunityPanel({
     try {
       const value = await save(draft(media));
       setCommunity(value);
+      reportProductEvent("appearance_changed", { surface: "group_settings" });
       onChanged?.();
       return value;
     } catch (cause) {
@@ -116,6 +118,7 @@ export function GroupCommunityPanel({
       setCommunity(kind === "avatar"
         ? { ...value, avatarUrl: uploaded.previewUrl }
         : { ...value, bannerUrl: uploaded.previewUrl, effectiveBannerUrl: uploaded.previewUrl });
+      reportProductEvent("appearance_changed", { kind, surface: "group_settings" });
       onChanged?.();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось загрузить оформление группы");
@@ -160,14 +163,13 @@ export function GroupCommunityPanel({
             <div className="voople-input mt-1 flex items-center gap-1 focus-within:ring-2 focus-within:ring-[var(--theme-accent)]"><span className="text-[var(--app-muted)]">@</span><input value={publicSlug} onChange={(event) => setPublicSlug(event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 32))} className="min-w-0 flex-1 bg-transparent outline-none" placeholder="my_group" minLength={5} maxLength={32} aria-label="Публичный адрес группы" /></div>
             <span className="mt-1 block font-normal text-[11px] text-[var(--app-muted)]">Используется в глобальном поиске открытых групп.</span>
           </label>
-          <label className="block text-xs font-medium">Постоянная ссылка-приглашение
+          <label className="block text-xs font-medium">Красивый адрес приглашения
             <div className="voople-input mt-1 flex items-center gap-1 focus-within:ring-2 focus-within:ring-[var(--theme-accent)]"><span className="text-[var(--app-muted)]">/invite/</span><input value={vanityInviteSlug} disabled={!community.boostUnlocksVanityInvite} onChange={(event) => setVanityInviteSlug(event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 32))} className="min-w-0 flex-1 bg-transparent outline-none disabled:opacity-50" placeholder="my_group" minLength={5} maxLength={32} aria-label="Постоянная ссылка-приглашение" /></div>
-            <span className="mt-1 block font-normal text-[11px] text-[var(--app-muted)]">{community.boostUnlocksVanityInvite ? "Не истекает и отключится вместе с преимуществами 24-го уровня." : "Открывается на 24-м уровне группы."}</span>
+            <span className="mt-1 block font-normal text-[11px] text-[var(--app-muted)]">{community.boostUnlocksVanityInvite ? "Короткий vanity-адрес активен, пока доступен perk." : "Обычная постоянная ссылка доступна всем. Запоминающийся адрес — Boost-перк."}</span>
           </label>
           <GroupRoleStylesEditor enabled={community.boostUnlocksRoleStyles} value={roleColors} onChange={setRoleColors} />
           <label className="block text-xs font-medium">Описание<textarea value={description} onChange={(event) => setDescription(event.target.value.slice(0, 160))} className="voople-input mt-1 min-h-20 w-full resize-none" placeholder="О чём эта группа" /></label>
           <label className="flex items-center justify-between gap-3 text-xs font-medium">Цвет группы<input type="color" value={accentColor} disabled={!community.boostUnlocksAccent} onChange={(event) => setAccentColor(event.target.value)} className="h-9 w-14 rounded-lg border border-[var(--app-border)] bg-transparent p-1 disabled:opacity-40" aria-label="Цвет группы" /></label>
-          {!community.boostUnlocksAccent ? <p className="text-[11px] text-[var(--app-muted)]">Цвет станет доступен после первого активного буста.</p> : null}
           <Button type="button" variant="secondary" className="w-full" disabled={Boolean(pending)} onClick={() => void persist("save")}>
             {pending === "save" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Сохранить оформление
           </Button>

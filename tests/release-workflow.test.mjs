@@ -33,6 +33,16 @@ test("Windows COM capture compiles in the default desktop gate", () => {
   assert.doesNotMatch(publisher, /RoomOptions\s*\{/);
 });
 
+test("native publisher acknowledges LiveKit publication before UI reports audio", () => {
+  const publisher = read("desktop/src-tauri/src/process_audio_publisher.rs");
+  const command = read("desktop/src-tauri/src/lib.rs");
+
+  assert.match(publisher, /oneshot::channel/);
+  assert.match(publisher, /timeout\(std::time::Duration::from_secs\(12\), ready_rx\)/);
+  assert.match(publisher, /ready\.send\(Ok\(\(\)\)\)/);
+  assert.match(command, /state\.start\(input\)\.await/);
+});
+
 test("a video-only RC makes Windows application audio mandatory next release work", () => {
   const backlog = read("docs/next-feature-release-backlog.md");
 

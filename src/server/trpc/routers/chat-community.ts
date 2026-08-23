@@ -16,6 +16,7 @@ import {
   listPublicGroups,
   setGroupBoost,
   setGroupPerkAllocation,
+  setUserGroupProfileTag,
   resolveGroupJoinRequest,
   updateGroupCustomization,
 } from "@/server/services/chat.service";
@@ -98,6 +99,26 @@ export const chatCommunityProcedures = {
         return result;
       } catch (error) {
         throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось изменить буст" });
+      }
+    }),
+  setGroupProfileTag: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid().nullable() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      try {
+        const result = await setUserGroupProfileTag(ctx.user.id, input.chatId);
+        await recordServerProductEvent({
+          name: "appearance_changed",
+          actorId: ctx.user.id,
+          route: "/trpc/chat.setGroupProfileTag",
+          properties: { surface: "group_tag" },
+        });
+        return result;
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось изменить тег профиля",
+        });
       }
     }),
   groupJoinRequests: protectedProcedure

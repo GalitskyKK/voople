@@ -212,6 +212,7 @@ export type GroupCommunityView = {
   effectiveBannerUrl: string | null;
   tag: string | null;
   effectiveTag: string | null;
+  tagEquippedByMe?: boolean;
   vanityInviteSlug: string | null;
   roleColors: Record<"owner" | "admin" | "member", string | null>;
   effectiveRoleColors: Record<"owner" | "admin" | "member", string | null>;

@@ -11,8 +11,9 @@ import {
 import { AppShellFrame } from "@/components/layout/AppShellFrame";
 import { AppPageContent } from "@/components/layout/AppPageContent";
 import { AccountChipVisual } from "@/components/layout/AccountChipVisual";
+import { FeedHeaderVisual } from "@/components/layout/FeedHeaderVisual";
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
-import { COPY } from "@/lib/constants/copy";
+import { COPY, type FeedTabId } from "@/lib/constants/copy";
 import { resolveRingStyle } from "@/lib/customization/rings";
 import { getAppRouteLayout } from "@/lib/layout/route-layout";
 import { registerInternalNavigationAdapter } from "@/lib/platform/internal-navigation";
@@ -152,6 +153,7 @@ export function DesktopShell({
   const [syncError, setSyncError] = useState<string | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
   const [feedVersion, setFeedVersion] = useState(0);
+  const [feedTab, setFeedTab] = useState<FeedTabId>("overview");
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [viewerSummary, setViewerSummary] = useState<{
     username: string;
@@ -349,6 +351,7 @@ export function DesktopShell({
         navigate={navigate}
         onUnreadCountChange={setUnreadNotifications}
       />
+      {pathname === "/feed" ? <FeedHeaderVisual activeTab={feedTab} onTabChange={setFeedTab} /> : null}
       <div className="desktop-shell-scroll voople-scroll">
         {syncError && (
           <p className="form-error desktop-shell-error" role="alert">
@@ -362,6 +365,7 @@ export function DesktopShell({
               config={config}
               session={session}
               renderDestination={renderDestination}
+              tab={feedTab}
             />
           ) : pathname === "/explore" ? (
             <DesktopExplore

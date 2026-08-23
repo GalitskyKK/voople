@@ -18,23 +18,35 @@ struct PublisherTask {
 pub struct ProcessAudioPublishers(Mutex<HashMap<String, PublisherTask>>);
 
 impl ProcessAudioPublishers {
-    pub fn start(&self, input: StartProcessAudioInput) -> Result<(), String> {
+    pub async fn start(&self, input: StartProcessAudioInput) -> Result<(), String> {
         if input.process_id == 0 || input.token.is_empty() || input.livekit_url.is_empty() {
             return Err("Некорректные параметры звука демонстрации".to_owned());
         }
         let session_id = input.screen_session_id.clone();
         let task_id = session_id.clone();
+        let (ready_tx, ready_rx) = tokio::sync::oneshot::channel();
         let handle = tauri::async_runtime::spawn(async move {
-            if let Err(error) = publish_process_audio(input).await {
+            if let Err(error) = publish_process_audio(input, ready_tx).await {
                 eprintln!("process audio publisher stopped: {error}");
             }
         });
-        let mut tasks = self
-            .0
-            .lock()
-            .map_err(|_| "Состояние аудиозахвата недоступно")?;
-        if let Some(previous) = tasks.insert(task_id, PublisherTask { handle }) {
-            previous.handle.abort();
+        {
+            let mut tasks = self
+                .0
+                .lock()
+                .map_err(|_| "Состояние аудиозахвата недоступно")?;
+            if let Some(previous) = tasks.insert(task_id, PublisherTask { handle }) {
+                previous.handle.abort();
+            }
+        }
+        let ready = match tokio::time::timeout(std::time::Duration::from_secs(12), ready_rx).await {
+            Ok(Ok(result)) => result,
+            Ok(Err(_)) => Err("Аудиомодуль завершился до публикации трека".to_owned()),
+            Err(_) => Err("Аудиомодуль не подтвердил публикацию трека за 12 секунд".to_owned()),
+        };
+        if let Err(error) = ready {
+            let _ = self.stop(&session_id);
+            return Err(error);
         }
         Ok(())
     }
@@ -52,7 +64,10 @@ impl ProcessAudioPublishers {
 }
 
 #[cfg(target_os = "windows")]
-async fn publish_process_audio(input: StartProcessAudioInput) -> Result<(), String> {
+async fn publish_process_audio(
+    input: StartProcessAudioInput,
+    ready: tokio::sync::oneshot::Sender<Result<(), String>>,
+) -> Result<(), String> {
     use livekit::{
         options::TrackPublishOptions,
         prelude::{LocalAudioTrack, LocalTrack, TrackSource},
@@ -63,27 +78,41 @@ async fn publish_process_audio(input: StartProcessAudioInput) -> Result<(), Stri
         Room, RoomOptions,
     };
 
-    let mut room_options = RoomOptions::default();
-    room_options.auto_subscribe = false;
-    let (room, mut events) = Room::connect(&input.livekit_url, &input.token, room_options)
-        .await
-        .map_err(|error| error.to_string())?;
-    let room = std::sync::Arc::new(room);
-    let source = NativeAudioSource::new(AudioSourceOptions::default(), 48_000, 2, 100);
-    let track = LocalAudioTrack::create_audio_track(
-        &format!("screen-audio:{}", input.screen_session_id),
-        RtcAudioSource::Native(source.clone()),
-    );
-    room.local_participant()
-        .publish_track(
-            LocalTrack::Audio(track),
-            TrackPublishOptions {
-                source: TrackSource::ScreenshareAudio,
-                ..Default::default()
-            },
-        )
-        .await
-        .map_err(|error| error.to_string())?;
+    let initialized = async {
+        let mut room_options = RoomOptions::default();
+        room_options.auto_subscribe = false;
+        let (room, events) = Room::connect(&input.livekit_url, &input.token, room_options)
+            .await
+            .map_err(|error| error.to_string())?;
+        let room = std::sync::Arc::new(room);
+        let source = NativeAudioSource::new(AudioSourceOptions::default(), 48_000, 2, 100);
+        let track = LocalAudioTrack::create_audio_track(
+            &format!("screen-audio:{}", input.screen_session_id),
+            RtcAudioSource::Native(source.clone()),
+        );
+        room.local_participant()
+            .publish_track(
+                LocalTrack::Audio(track),
+                TrackPublishOptions {
+                    source: TrackSource::ScreenshareAudio,
+                    ..Default::default()
+                },
+            )
+            .await
+            .map_err(|error| error.to_string())?;
+        Ok::<_, String>((room, events, source))
+    }
+    .await;
+    let (room, mut events, source) = match initialized {
+        Ok(value) => {
+            let _ = ready.send(Ok(()));
+            value
+        }
+        Err(error) => {
+            let _ = ready.send(Err(error.clone()));
+            return Err(error);
+        }
+    };
 
     let (sender, mut receiver) = tokio::sync::mpsc::channel::<Vec<i16>>(24);
     let process_id = input.process_id;
@@ -111,6 +140,12 @@ async fn publish_process_audio(input: StartProcessAudioInput) -> Result<(), Stri
 }
 
 #[cfg(not(target_os = "windows"))]
-async fn publish_process_audio(_input: StartProcessAudioInput) -> Result<(), String> {
+async fn publish_process_audio(
+    _input: StartProcessAudioInput,
+    ready: tokio::sync::oneshot::Sender<Result<(), String>>,
+) -> Result<(), String> {
+    let _ = ready.send(Err(
+        "Захват звука приложений поддерживается только в Windows".to_owned(),
+    ));
     Err("Захват звука приложений поддерживается только в Windows".to_owned())
 }

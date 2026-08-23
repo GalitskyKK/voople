@@ -35,6 +35,15 @@ export function GroupInfoDrawer({
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<GroupInfoDrawerTab>("info");
   const community = trpc.chat.groupCommunity.useQuery({ chatId }, { enabled: open });
+  const utils = trpc.useUtils();
+  const setProfileTag = trpc.chat.setGroupProfileTag.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utils.chat.groupCommunity.invalidate({ chatId }),
+        utils.profile.getByUsername.invalidate(),
+      ]);
+    },
+  });
   const members = trpc.chat.groupMembers.useQuery({ chatId }, { enabled: open });
   const room = trpc.chat.room.useQuery({ chatId }, { enabled: open });
   const chats = trpc.chat.list.useQuery(undefined, { enabled: open, staleTime: 5_000 });
@@ -61,6 +70,8 @@ export function GroupInfoDrawer({
       groupBannerUrl={groupBannerUrl}
       groupAccentColor={groupAccentColor}
       groupTag={groupTag}
+      groupTagEquipped={community.data?.tagEquippedByMe}
+      groupTagPending={setProfileTag.isPending}
       canManage={canManage}
       description={community.data?.description}
       members={members.data}
@@ -78,6 +89,7 @@ export function GroupInfoDrawer({
       onInvite={() => navigate(`/messages/${chatId}/settings`)}
       onOpenSection={(sectionId) => navigate(`/messages/${sectionId}`)}
       onOpenProfile={(username) => navigate(`/${username}`)}
+      onToggleGroupTag={() => setProfileTag.mutate({ chatId: community.data?.tagEquippedByMe ? null : chatId })}
     />
   );
 }

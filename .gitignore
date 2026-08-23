@@ -49,6 +49,7 @@
 !/drizzle/53-interests-topics.sql
 !/drizzle/54-presence-privacy.sql
 !/drizzle/55-contact-pins.sql
+!/drizzle/56-user-group-profile-tag.sql
 # Local toolchain experiment for the feature-gated Windows process-audio build.
 /desktop/src-tauri/.cargo/
 

@@ -20,6 +20,18 @@ export const groupCustomizations = pgTable("group_customization", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const userGroupProfileTags = pgTable(
+  "user_group_profile_tags",
+  {
+    userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+    chatId: uuid("chat_id").notNull().references(() => chats.id, { onDelete: "cascade" }),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    chatIdx: index("user_group_profile_tags_chat_idx").on(table.chatId),
+  }),
+);
+
 export const groupBoosts = pgTable(
   "group_boosts",
   {

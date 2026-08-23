@@ -10,6 +10,7 @@ import { listProfileCanvasStrokesRest } from "@/server/data/profile-canvas-rest"
 import { getPublicUserInterestsRest } from "@/server/data/interests-rest"
 import { canViewPrivateFieldRest, getUserPrivacySettingsRest } from "@/server/data/privacy-rest"
 import { getPostSelect, mapPostRowsWithReposts } from "@/server/data/post-hydration"
+import { getProfileGroupTagRest } from "@/server/data/profile-group-tag-rest"
 import type { PostViewModel, ProfileViewModel } from "@/types/domain"
 
 async function countExact(table: string, column: string, value: string) {
@@ -82,18 +83,20 @@ async function hydrateProfileRest(
   viewerId?: string | null,
 ) {
   const privacy = await getUserPrivacySettingsRest(user.id)
-  const [canSeeOnline, canSeeMusic, interests] = await Promise.all([
+  const [canSeeOnline, canSeeMusic, interests, groupTag] = await Promise.all([
     canViewPrivateFieldRest(user.id, viewerId ?? null, privacy.onlineScope),
     canViewPrivateFieldRest(user.id, viewerId ?? null, privacy.musicScope),
     privacy.showInterests || viewerId === user.id
       ? getPublicUserInterestsRest(user.id)
       : Promise.resolve([]),
+    getProfileGroupTagRest(user.id),
   ])
   const profile = mapUserToProfile(user, stats)
   return {
     ...profile,
     lastSeenAt: canSeeOnline ? profile.lastSeenAt : null,
     interests,
+    groupTag,
     status: canSeeMusic ? profile.status : {
       ...profile.status,
       trackId: null,

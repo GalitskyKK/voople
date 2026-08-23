@@ -148,7 +148,7 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
               </div>
             </div>
 
-            <div className={isPage ? "mt-6 grid min-h-0 gap-6 lg:grid-cols-[220px_minmax(0,720px)]" : ""}>
+            <div className={isPage ? "mt-6 grid min-h-0 gap-6 lg:grid-cols-[220px_minmax(0,1fr)]" : ""}>
               <GroupSettingsNavigation section={section} onChange={setSection} canManage={props.canManage} layout={isPage ? "sidebar" : "tabs"} className={isPage ? "lg:sticky lg:top-0 lg:self-start" : "mt-4"} />
               <div className="min-w-0">
             {section === "main" ? (
@@ -294,7 +294,7 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
   if (isPage) {
     return (
       <div className="voople-scroll min-h-0 flex-1 overflow-y-auto bg-[var(--app-canvas)] px-4 py-5 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl">
+        <div className="mx-auto max-w-7xl">
           <button type="button" onClick={props.onBack} className="mb-5 inline-flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]">
             <ArrowLeft className="h-4 w-4" /> Вернуться в чат
           </button>

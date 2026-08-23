@@ -75,6 +75,7 @@ export {
 
 export {
   getGroupCommunityRest as getGroupCommunity,
+  setUserGroupProfileTagRest as setUserGroupProfileTag,
   setGroupBoostRest as setGroupBoost,
   setGroupPerkAllocationRest as setGroupPerkAllocation,
 } from "@/server/data/chat-community-rest";

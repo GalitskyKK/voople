@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { SectionFrame } from "@/components/layout/SectionFrame";
 import { SectionPageHeader } from "@/components/layout/SectionPageHeader";
+import { SectionStickyHeaderStack } from "@/components/layout/SectionStickyHeaderStack";
 import { COPY } from "@/lib/constants/copy";
 import type {
   ExploreSearchResult,
@@ -68,9 +69,9 @@ export function ExploreView({
   const isEmpty = hasQuery && !searching && Boolean(result) && scopedResultCount === 0;
 
   return (
-    <SectionFrame size="wide" className="gap-5 py-4 lg:py-6">
-      <SectionPageHeader title={COPY.search} density="compact" sticky />
-      <div className="voople-user-search space-y-6 pb-4">
+    <SectionFrame size="wide" className="py-4 lg:py-6">
+      <SectionStickyHeaderStack>
+        <SectionPageHeader title={COPY.search} density="compact" />
         <label className="relative block">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]" />
           <span className="sr-only">Поиск</span>
@@ -88,6 +89,9 @@ export function ExploreView({
             <button key={id} type="button" onClick={() => setScope(id)} aria-pressed={scope === id} className={scope === id ? "min-w-24 flex-1 rounded-xl bg-[var(--app-surface)] px-3 py-2 text-sm font-medium shadow-[var(--app-shadow-sm)]" : "min-w-24 flex-1 rounded-xl px-3 py-2 text-sm text-[var(--app-muted)] hover:text-[var(--foreground)]"}>{label}</button>
           ))}
         </div>
+      </SectionStickyHeaderStack>
+
+      <div className="voople-user-search space-y-6 pb-4 pt-2">
 
         {!hasQuery && (
           <section className="space-y-3" aria-labelledby="explore-highlights-title">

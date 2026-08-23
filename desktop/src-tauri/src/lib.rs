@@ -152,11 +152,11 @@ fn list_process_audio_sources() -> Result<Vec<process_audio::ProcessAudioSource>
 }
 
 #[tauri::command]
-fn start_process_audio_share(
+async fn start_process_audio_share(
     state: tauri::State<'_, process_audio_publisher::ProcessAudioPublishers>,
     input: process_audio_publisher::StartProcessAudioInput,
 ) -> Result<(), String> {
-    state.start(input)
+    state.start(input).await
 }
 
 #[tauri::command]

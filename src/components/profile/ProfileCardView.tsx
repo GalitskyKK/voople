@@ -55,6 +55,7 @@ export function ProfileCardView({
           hasVooplePlus={profile.hasVooplePlus}
           subscriptionExpiresAt={profile.subscriptionExpiresAt}
           badgeUrl={badgeUrl}
+          groupTag={profile.groupTag}
           badges={badges}
           avatar={
             <ProfileAvatarViewerTrigger

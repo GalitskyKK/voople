@@ -13,7 +13,7 @@ pub struct StartProcessAudioInput {
 pub struct ProcessAudioPublishers;
 
 impl ProcessAudioPublishers {
-    pub fn start(&self, input: StartProcessAudioInput) -> Result<(), String> {
+    pub async fn start(&self, input: StartProcessAudioInput) -> Result<(), String> {
         // Read every field so disabled-feature builds still validate the IPC shape.
         let _ = (
             input.process_id,

@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
   getBrowserDisplayMediaOptions,
   getScreenShareCaptureOptions,
 } from "../src/components/chat/voice/voice-room-config.ts";
+
+const read = (path) => readFileSync(path, "utf8");
 
 test("browser screen share asks the picker for audio from the selected surface", () => {
   const options = getScreenShareCaptureOptions("standard");
@@ -39,4 +42,13 @@ test("native process audio disables the browser audio track to prevent duplicate
   assert.equal(options.systemAudio, "include");
   assert.equal(options.resolution?.width, 1920);
   assert.equal(options.resolution?.frameRate, 60);
+});
+
+test("desktop infers one active process and distinguishes native from browser audio", () => {
+  const publisher = read("src/components/chat/voice/useDesktopScreenAudioPublisher.ts");
+
+  assert.match(publisher, /activeSources\.length === 1/);
+  assert.match(publisher, /processId \?\? automaticProcessIdRef\.current/);
+  assert.match(publisher, /start\(resolvedProcessId\)/);
+  assert.match(publisher, /выберите источник в настройках комнаты/);
 });

@@ -14,6 +14,7 @@ import type { PostAuthorView } from "@/types/domain";
 import { getMoodEmoji, getMoodLabel } from "@/lib/constants/mood";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 import { ProfileBadgesView } from "@/components/profile/ProfileBadgesView";
+import { ProfileGroupTagVisual } from "@/components/profile/ProfileGroupTagVisual";
 import { reportProductEvent } from "@/lib/telemetry/client";
 import { navigateInternally } from "@/lib/platform/internal-navigation";
 
@@ -162,7 +163,7 @@ export function MiniProfilePopover({ author, children, renderDestination }: { au
                 </button> : null}
               </div>
             </div>
-            <DisplayNameWithPin hasVooplePlus={hasPlus} className="mt-3 text-base font-semibold">{displayName}</DisplayNameWithPin>
+            <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2"><DisplayNameWithPin hasVooplePlus={hasPlus} className="text-base font-semibold">{displayName}</DisplayNameWithPin>{value?.groupTag ? <ProfileGroupTagVisual value={value.groupTag} compact /> : null}</div>
             <p className="text-xs text-[var(--app-muted)]">@{author.username}</p>
             {value?.id || author.id ? <ProfileBadgesView badgeIds={badges.data ?? []} compact /> : null}
             {value ? <p className="mt-2 flex items-center gap-2 text-xs"><span className={online ? "h-2 w-2 rounded-full bg-emerald-400" : "h-2 w-2 rounded-full bg-[var(--app-muted)]"} /><span className="text-[var(--app-muted)]">{online ? "Сейчас в сети" : value.lastSeenAt ? "Недавно был(а) в сети" : "Не в сети"}</span></p> : null}

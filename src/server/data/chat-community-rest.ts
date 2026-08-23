@@ -118,7 +118,7 @@ export async function getGroupCommunityRest(
     throw new Error("Кастомизация доступна в основной группе");
   }
   const admin = getAdminClient();
-  const [{ data: customization, error }, summaries, { data: subscription }, { data: boostRows, error: boostRowsError }, { data: allocationRows, error: allocationError }] =
+  const [{ data: customization, error }, summaries, { data: subscription }, { data: boostRows, error: boostRowsError }, { data: allocationRows, error: allocationError }, { data: selectedTag, error: selectedTagError }] =
     await Promise.all([
       admin
         .from("group_customization")
@@ -141,10 +141,16 @@ export async function getGroupCommunityRest(
         .select("perk_id, enabled_at")
         .eq("chat_id", chatId)
         .order("enabled_at", { ascending: true }),
+      admin
+        .from("user_group_profile_tags")
+        .select("chat_id")
+        .eq("user_id", userId)
+        .maybeSingle(),
     ]);
   if (error) throw new Error(error.message);
   if (boostRowsError) throw new Error(boostRowsError.message);
   if (allocationError) throw new Error(allocationError.message);
+  if (selectedTagError) throw new Error(selectedTagError.message);
   const summary = summaries.get(chatId);
   const boosts = summary?.boostCount ?? 0;
   const graceUntil = (customization?.boost_grace_until as string | null | undefined) ?? null;
@@ -185,6 +191,7 @@ export async function getGroupCommunityRest(
     effectiveBannerUrl: summary?.effectiveBannerUrl ?? null,
     tag: (customization?.tag as string | null | undefined) ?? null,
     effectiveTag: summary?.effectiveTag ?? null,
+    tagEquippedByMe: selectedTag?.chat_id === chatId,
     vanityInviteSlug: (customization?.vanity_invite_slug as string | null | undefined) ?? null,
     roleColors,
     effectiveRoleColors: roleStylesEnabled
@@ -223,6 +230,33 @@ export async function getGroupCommunityRest(
     hdRoomEnabled,
     graceUntil: graceActive ? graceUntil : null,
   };
+}
+
+export async function setUserGroupProfileTagRest(
+  userId: string,
+  chatId: string | null,
+) {
+  const admin = getAdminClient();
+  if (!chatId) {
+    const { error } = await admin
+      .from("user_group_profile_tags")
+      .delete()
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { chatId: null, equipped: false };
+  }
+
+  const community = await getGroupCommunityRest(chatId, userId);
+  if (!community.effectiveTag) {
+    throw new Error("Сначала задайте тег сообщества");
+  }
+  const { error } = await admin.from("user_group_profile_tags").upsert({
+    user_id: userId,
+    chat_id: chatId,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "user_id" });
+  if (error) throw new Error(error.message);
+  return { chatId, equipped: true };
 }
 
 export async function setGroupPerkAllocationRest(

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import { getFeedPage } from "@/server/services/feed.service"
 import { getHomeOverview } from "@/server/services/home.service"
 import { HomeNowPanel, HomeSecondaryRail } from "@/components/home/HomeOverviewPanels"
+import { HomeFeedLayoutView } from "@/components/home/HomeFeedLayoutView"
 import type { HomeOverviewView } from "@/types/home"
 
 type FeedPageProps = {
@@ -36,8 +37,9 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
   ])
 
   return (
-    <div className="voople-feed-page grid gap-5 py-4 xl:grid-cols-[minmax(0,2fr)_minmax(17rem,0.85fr)]">
-      <div className="min-w-0">
+    <HomeFeedLayoutView
+      className="py-4"
+      primary={<>
         {viewerId ? <HomeNowPanel overview={overview} /> : null}
         <Suspense fallback={<div className="h-40 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]" />}>
           <Feed
@@ -47,8 +49,8 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
             initialTab={tab}
           />
         </Suspense>
-      </div>
-      {viewerId ? <HomeSecondaryRail overview={overview} /> : null}
-    </div>
+      </>}
+      secondary={viewerId ? <HomeSecondaryRail overview={overview} /> : null}
+    />
   )
 }

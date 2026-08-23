@@ -2,8 +2,9 @@ import type { ReactNode } from "react";
 
 import { displayNamePresentation } from "@/lib/customization/display-name-style";
 import { cn } from "@/lib/utils";
-import type { ProfileCustomizationView } from "@/types/domain";
+import type { ProfileCustomizationView, ProfileViewModel } from "@/types/domain";
 import { DisplayNameWithPin } from "./DisplayNameWithPin";
+import { ProfileGroupTagVisual } from "./ProfileGroupTagVisual";
 
 type ProfileCardIdentityVisualProps = {
   customization: ProfileCustomizationView;
@@ -15,6 +16,7 @@ type ProfileCardIdentityVisualProps = {
   avatar: ReactNode;
   badges?: ReactNode;
   compact?: boolean;
+  groupTag?: ProfileViewModel["groupTag"];
 };
 
 export function ProfileCardIdentityVisual({
@@ -27,6 +29,7 @@ export function ProfileCardIdentityVisual({
   avatar,
   badges,
   compact = false,
+  groupTag,
 }: ProfileCardIdentityVisualProps) {
   const nickname = displayNamePresentation(customization.displayName);
 
@@ -36,25 +39,27 @@ export function ProfileCardIdentityVisual({
         {avatar}
         <span className="h-[72px] w-0 shrink-0" aria-hidden />
       </div>
-      <DisplayNameWithPin
-        as="div"
-        hasVooplePlus={hasVooplePlus}
-        subscriptionExpiresAt={subscriptionExpiresAt}
-        badgeUrl={badgeUrl}
-        size="md"
-        className="mt-3"
-        nameClassName={cn(
-          "text-xl font-bold",
-          customization.flags.hasDisplayNameStyle
-            ? nickname.className
-            : "text-[var(--foreground)]",
-        )}
-        style={
-          customization.flags.hasDisplayNameStyle ? nickname.style : undefined
-        }
-      >
-        {displayName}
-      </DisplayNameWithPin>
+      <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2">
+        <DisplayNameWithPin
+          as="div"
+          hasVooplePlus={hasVooplePlus}
+          subscriptionExpiresAt={subscriptionExpiresAt}
+          badgeUrl={badgeUrl}
+          size="md"
+          nameClassName={cn(
+            "text-xl font-bold",
+            customization.flags.hasDisplayNameStyle
+              ? nickname.className
+              : "text-[var(--foreground)]",
+          )}
+          style={
+            customization.flags.hasDisplayNameStyle ? nickname.style : undefined
+          }
+        >
+          {displayName}
+        </DisplayNameWithPin>
+        {groupTag ? <ProfileGroupTagVisual value={groupTag} /> : null}
+      </div>
       <div className="mt-0.5 flex min-w-0 items-center gap-2">
         <p className="shrink-0 text-sm text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">
           @{username}

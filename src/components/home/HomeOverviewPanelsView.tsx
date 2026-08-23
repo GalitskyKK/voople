@@ -83,14 +83,14 @@ export function HomeNowPanelView({ overview, renderDestination }: { overview: Ho
     if (items.length > 0) reportProductEvent("presence_seen", { count: items.length });
   }, [items.length, overview.continue.length]);
 
-  return <section className="voople-panel mb-4 border border-[var(--app-border)] px-3 py-2.5" aria-labelledby="home-now-title">
+  return <section className="voople-panel mb-4 border border-[var(--app-border)] px-3 py-2.5 lg:sticky lg:top-4 lg:z-20" aria-labelledby="home-now-title">
     <header className="flex items-center justify-between gap-3 px-1 pb-1"><h2 id="home-now-title" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--theme-accent)]"><Radio className="h-3.5 w-3.5" /> Сейчас</h2>{renderDestination({ href: "/messages", label: "Все чаты", active: false, className: "text-xs font-medium text-[var(--app-muted)] hover:text-[var(--foreground)]", children: "Все чаты" })}</header>
     {items.length ? <div className="voople-scroll flex gap-1 overflow-x-auto">{items.map((item) => <NowItem key={`${item.kind}-${item.id}`} item={item} renderDestination={renderDestination} />)}</div> : renderDestination({ href: "/messages", label: "Позвать своих", active: false, className: "mt-1 flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-[var(--app-surface-soft)] px-3 text-left text-sm text-[var(--app-muted)] transition hover:text-[var(--foreground)]", children: <><span>Сейчас тихо</span><span className="inline-flex items-center gap-1 font-medium text-[var(--theme-accent)]">Позвать своих <ArrowRight className="h-4 w-4 shrink-0" /></span></> })}
   </section>;
 }
 
 export function HomeSecondaryRailView({ overview, renderDestination }: { overview: HomeOverviewView; renderDestination: NavigationDestinationRenderer }) {
-  return <aside className="hidden min-w-0 xl:block" aria-label="Дополнительно на главной"><div className="voople-panel sticky top-4 border border-[var(--app-border)] p-3">
+  return <aside className="hidden min-w-0 xl:block" aria-label="Дополнительно на главной"><div className="voople-panel voople-scroll sticky top-4 max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain border border-[var(--app-border)] p-3">
     {overview.viewer ? <div className="mb-3 rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_26%,var(--app-border))] bg-[linear-gradient(135deg,var(--app-accent-soft),transparent_72%)] p-1"><DestinationItem item={overview.viewer} renderDestination={renderDestination} compact showPresence /></div> : null}
     <header className="flex items-center justify-between gap-2 px-2 pb-1"><span className="flex items-center gap-2"><MessageCircle className="h-4 w-4 text-[var(--theme-accent)]" /><h2 className="text-sm font-semibold">Продолжить</h2></span>{renderDestination({ href: "/messages", label: "Все чаты", active: false, className: "text-[11px] text-[var(--app-muted)] hover:text-[var(--foreground)]", children: "Все" })}</header>
     {overview.continue.map((item) => <DestinationItem key={`continue-${item.id}`} item={item} renderDestination={renderDestination} compact />)}

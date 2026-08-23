@@ -1,6 +1,6 @@
 "use client";
 
-import { Hash, Info, Radio, Settings2, UserPlus, UsersRound } from "lucide-react";
+import { Check, Hash, Info, Radio, Settings2, Tag, UserPlus, UsersRound } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 
 import { RichText } from "@/components/ui/RichText";
@@ -24,6 +24,8 @@ export function GroupInfoDrawerView({
   groupBannerUrl,
   groupAccentColor,
   groupTag,
+  groupTagEquipped = false,
+  groupTagPending = false,
   canManage,
   description,
   members,
@@ -41,6 +43,7 @@ export function GroupInfoDrawerView({
   onInvite,
   onOpenSection,
   onOpenProfile,
+  onToggleGroupTag,
 }: {
   open: boolean;
   tab: GroupInfoDrawerTab;
@@ -51,6 +54,8 @@ export function GroupInfoDrawerView({
   groupBannerUrl: string | null;
   groupAccentColor: string | null;
   groupTag: string | null;
+  groupTagEquipped?: boolean;
+  groupTagPending?: boolean;
   canManage: boolean;
   description?: string | null;
   members?: ChatGroupMemberView[];
@@ -68,6 +73,7 @@ export function GroupInfoDrawerView({
   onInvite: () => void;
   onOpenSection: (chatId: string) => void;
   onOpenProfile: (username: string) => void;
+  onToggleGroupTag?: () => void;
 }) {
   const [memberFilter, setMemberFilter] = useState<MemberFilter>("now");
   const onlineCount = members?.filter((member) => onlineUserIds.has(member.id)).length ?? 0;
@@ -109,6 +115,7 @@ export function GroupInfoDrawerView({
             </div>
             <h2 className="mt-3 text-xl font-semibold">{chatName}</h2>
             <p className="mt-1 text-sm text-[var(--app-muted)]">{memberCount} участников{groupTag ? ` · ${groupTag}` : ""}</p>
+            {groupTag && onToggleGroupTag ? <button type="button" onClick={onToggleGroupTag} disabled={groupTagPending} aria-pressed={groupTagEquipped} className="mt-3 inline-flex h-9 items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--group-accent,var(--theme-accent))_38%,var(--app-border))] bg-[color-mix(in_srgb,var(--group-accent,var(--theme-accent))_10%,var(--app-surface))] px-3 text-xs font-semibold text-[var(--group-accent,var(--theme-accent))] transition hover:border-[var(--group-accent,var(--theme-accent))] disabled:opacity-55">{groupTagEquipped ? <Check className="h-3.5 w-3.5" /> : <Tag className="h-3.5 w-3.5" />}{groupTagEquipped ? "Тег используется" : "Использовать тег"}</button> : null}
             {onlineCount || roomCount ? (
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
                 {roomCount ? <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--app-accent-soft)] px-2.5 py-1 text-[var(--theme-accent)]"><Radio className="h-3.5 w-3.5" />{roomCount} разговаривают</span> : null}
@@ -132,7 +139,7 @@ export function GroupInfoDrawerView({
             {roomCount ? <section className="rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_32%,var(--app-border))] bg-[var(--app-accent-soft)] p-3" aria-label="Активная комната"><div className="flex items-center gap-2 text-[var(--theme-accent)]"><Radio className="h-4 w-4" /><strong>{roomCount} сейчас в комнате</strong></div>{roomAction ? <div className="mt-3">{roomAction}</div> : null}</section> : null}
             {topics.length ? <section><h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--foreground)]">Темы</h3><div className="mt-2 flex flex-wrap gap-1.5">{topics.map((topic) => <span key={topic} className="rounded-full bg-[var(--app-surface-soft)] px-2.5 py-1 text-xs text-[var(--foreground)]">{topic}</span>)}</div></section> : null}
             {sections.length ? <section><h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--foreground)]">Разделы</h3><div className="mt-2 space-y-1">{sections.map((section) => <button key={section.id} type="button" onClick={() => onOpenSection(section.id)} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[var(--foreground)] hover:bg-[var(--app-surface-soft)]"><Hash className="h-3.5 w-3.5 text-[var(--theme-accent)]" /><span className="truncate">{section.name}</span></button>)}</div></section> : null}
-            <div className="grid gap-2 border-t border-[var(--app-border)] pt-4 sm:grid-cols-2"><button type="button" onClick={onInvite} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[var(--theme-accent)] px-3 text-sm font-semibold text-white"><UserPlus className="h-4 w-4" />Пригласить</button>{canManage ? <button type="button" onClick={onManage} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[var(--app-border)] px-3 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--app-surface-soft)]"><Settings2 className="h-4 w-4" />Настройки группы</button> : null}</div>
+            <div className="border-t border-[var(--app-border)] pt-4"><button type="button" onClick={onInvite} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[var(--theme-accent)] px-3 text-sm font-semibold text-white"><UserPlus className="h-4 w-4" />Пригласить</button></div>
           </div>
         ) : !error ? (
           <div className="mt-4">

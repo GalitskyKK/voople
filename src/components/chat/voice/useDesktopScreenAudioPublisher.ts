@@ -16,6 +16,7 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
   const token = trpc.chat.roomScreenAudioToken.useMutation();
   const sessionIdRef = useRef<string | null>(null);
   const nativePublisherSupportedRef = useRef(false);
+  const automaticProcessIdRef = useRef<number | null>(null);
   const browserCaptureRef = useRef<MediaStream | null>(null);
   const refreshTimerRef = useRef<number | null>(null);
   const startRef = useRef<(processId: number) => Promise<string | null>>(async () => null);
@@ -37,15 +38,34 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
   useEffect(() => {
     let active = true;
     const bridge = getDesktopProcessAudioBridge();
-    if (bridge) {
-      void bridge.capabilities().then((capabilities) => {
-        if (active) nativePublisherSupportedRef.current = capabilities.publisherSupported;
-      }).catch(() => {
-        if (active) nativePublisherSupportedRef.current = false;
-      });
-    }
+    if (!bridge) return;
+    const refreshCapabilities = async () => {
+      try {
+        const capabilities = await bridge.capabilities();
+        if (!active) return;
+        nativePublisherSupportedRef.current = capabilities.publisherSupported;
+        if (!capabilities.publisherSupported) {
+          automaticProcessIdRef.current = null;
+          return;
+        }
+        const sources = await bridge.listSources();
+        if (!active) return;
+        const activeSources = sources.filter((source) => source.active);
+        automaticProcessIdRef.current = activeSources.length === 1
+          ? activeSources[0]!.processId
+          : null;
+      } catch {
+        if (active) {
+          nativePublisherSupportedRef.current = false;
+          automaticProcessIdRef.current = null;
+        }
+      }
+    };
+    void refreshCapabilities();
+    const refreshId = window.setInterval(() => void refreshCapabilities(), 5_000);
     return () => {
       active = false;
+      window.clearInterval(refreshId);
     };
   }, []);
 
@@ -143,8 +163,11 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
     // Do not await IPC before getDisplayMedia: the browser requires the call to
     // retain transient activation from the user's click.
     void stop();
-    const nativeProcessAudio =
-      processId !== null && nativePublisherSupportedRef.current;
+    const bridge = getDesktopProcessAudioBridge();
+    const resolvedProcessId = processId ?? automaticProcessIdRef.current;
+    const nativeProcessAudio = Boolean(
+      bridge && resolvedProcessId !== null && nativePublisherSupportedRef.current,
+    );
     let browserAudioCaptured = false;
     if (nativeProcessAudio) {
       await room.localParticipant.setScreenShareEnabled(
@@ -160,7 +183,7 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
     if (!enabled) return { enabled: false, hasAudio: false, warning: null };
     try {
       if (nativeProcessAudio) {
-        const warning = await start(processId);
+        const warning = await start(resolvedProcessId);
         return { enabled: true, hasAudio: warning === null, warning };
       }
       const surfaceAudio = room.localParticipant.getTrackPublication(Track.Source.ScreenShareAudio);
@@ -169,7 +192,9 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
         hasAudio: browserAudioCaptured && Boolean(surfaceAudio && !surfaceAudio.isMuted),
         warning: browserAudioCaptured && surfaceAudio && !surfaceAudio.isMuted
           ? null
-          : "Видео запущено без звука: выбранная поверхность или WebView не предоставили аудиодорожку. Для звука выберите вкладку или окно с поддержкой аудио и разрешите его в системном диалоге.",
+          : bridge && nativePublisherSupportedRef.current && resolvedProcessId === null
+            ? "Видео запущено без звука приложения: выберите источник в настройках комнаты → «Звук приложения в демонстрации». Если звук воспроизводит только одно приложение, Вупл. подхватит его автоматически в течение нескольких секунд."
+            : "Видео запущено без звука: выбранная поверхность не предоставила аудиодорожку. В браузере разрешите передачу звука в системном окне; доступность звука окна и экрана определяет браузер.",
       };
     } catch (cause) {
       return {

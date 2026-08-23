@@ -245,10 +245,6 @@ button { color: inherit; }
 .auth-confirmation .muted strong { color: var(--foreground); overflow-wrap: anywhere; }
 .auth-confirmation .primary-button { margin-top: 0.5rem; }
 
-.feed-layout {
-  width: min(100%, 46rem);
-  margin: 0 auto;
-}
 .post-list { display: grid; gap: 1rem; }
 .feed-message {
   margin-bottom: 1rem;
@@ -481,11 +477,6 @@ button:focus-visible, input:focus-visible {
 
 .desktop-shell-error {
   margin: 1rem 1.5rem 0;
-}
-
-.feed-layout {
-  width: 100%;
-  max-width: none;
 }
 
 .voople-sidebar button {

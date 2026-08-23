@@ -8,6 +8,7 @@ import type { GroupCommunityView, GroupCustomizationInput } from "@/types/chat";
 import { reportProductEvent } from "@/lib/telemetry/client";
 
 import { GroupAvatar } from "./GroupAvatar";
+import { GroupCommunityPreviewCard } from "./GroupCommunityPreviewCard";
 import { GroupIdentityPerksEditor } from "./GroupIdentityPerksEditor";
 import { GroupRoleStylesEditor } from "./GroupRoleStylesEditor";
 
@@ -131,7 +132,7 @@ export function GroupCommunityPanel({
   if (!community) return error ? <p className="mt-4 text-sm text-red-400">{error}</p> : null;
 
   return (
-    <section className="mt-4 rounded-2xl border border-[var(--app-border)] p-3" aria-labelledby="group-community-title">
+    <section className="mt-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4" aria-labelledby="group-community-title">
       <div className="flex items-start gap-3">
         <GroupAvatar name={groupName} avatarUrl={community.avatarUrl} icon={icon} accentColor={community.effectiveAccentColor} size="md" />
         <div className="min-w-0 flex-1">
@@ -145,7 +146,8 @@ export function GroupCommunityPanel({
       </div>
 
       {canManage ? (
-        <div className="mt-3 space-y-3">
+        <div className="mt-4 grid gap-5 xl:grid-cols-[minmax(0,1fr)_18rem]">
+          <div className="space-y-3">
           <GroupIdentityPerksEditor
             community={community}
             pending={pending}
@@ -173,6 +175,16 @@ export function GroupCommunityPanel({
           <Button type="button" variant="secondary" className="w-full" disabled={Boolean(pending)} onClick={() => void persist("save")}>
             {pending === "save" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Сохранить оформление
           </Button>
+          </div>
+          <GroupCommunityPreviewCard
+            name={groupName}
+            avatarUrl={community.avatarUrl}
+            bannerUrl={community.bannerUrl}
+            icon={icon.trim() || null}
+            accentColor={accentColor}
+            tag={tag.trim() || null}
+            description={description.trim() || null}
+          />
         </div>
       ) : community.description ? <p className="mt-3 text-sm leading-6 text-[var(--app-muted)]">{community.description}</p> : null}
 

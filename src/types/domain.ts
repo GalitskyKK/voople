@@ -38,6 +38,12 @@ export type ProfileViewModel = {
   customization: ProfileCustomizationView;
   status: ProfileStatus;
   interests?: Array<{ slug: string; name: string }>;
+  groupTag?: {
+    chatId: string;
+    tag: string;
+    groupName: string;
+    accentColor: string | null;
+  } | null;
   stats: { posts: number; followers: number; following: number; views: number };
 };
 

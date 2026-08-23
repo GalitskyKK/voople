@@ -70,6 +70,7 @@ export function DesktopChatThread({
   const [roomParticipantIds, setRoomParticipantIds] = useState<ReadonlySet<string>>(() => new Set());
   const [groupTopicNames, setGroupTopicNames] = useState<string[]>([]);
   const [groupPanelLoading, setGroupPanelLoading] = useState(false);
+  const [groupTagPending, setGroupTagPending] = useState(false);
   const [groupPanelError, setGroupPanelError] = useState<string | null>(null);
   const groupRequestIdRef = useRef(0);
   const { containerRef: messagesRef, contentRef: messagesContentRef } =
@@ -115,6 +116,26 @@ export function DesktopChatThread({
       .finally(() => {
         if (requestId === groupRequestIdRef.current) setGroupPanelLoading(false);
       });
+  };
+
+  const toggleGroupProfileTag = async () => {
+    if (!groupCommunity?.effectiveTag || groupTagPending) return;
+    setGroupTagPending(true);
+    setGroupPanelError(null);
+    try {
+      const client = createDesktopTrpcClient(config, () => session.access_token);
+      await client.mutation("chat.setGroupProfileTag", {
+        chatId: groupCommunity.tagEquippedByMe ? null : chatId,
+      });
+      setGroupCommunity((current) => current ? {
+        ...current,
+        tagEquippedByMe: !current.tagEquippedByMe,
+      } : current);
+    } catch (cause) {
+      setGroupPanelError(cause instanceof Error ? cause.message : "Не удалось изменить тег профиля");
+    } finally {
+      setGroupTagPending(false);
+    }
   };
 
   if (loading && !data) {
@@ -180,6 +201,8 @@ export function DesktopChatThread({
             groupBannerUrl={data.chat.groupBannerUrl}
             groupAccentColor={data.chat.groupAccentColor}
             groupTag={data.chat.groupTag}
+            groupTagEquipped={groupCommunity?.tagEquippedByMe}
+            groupTagPending={groupTagPending}
             canManage={data.chat.viewerRole !== "member"}
             description={groupCommunity?.description}
             members={groupMembers}
@@ -215,6 +238,7 @@ export function DesktopChatThread({
               setGroupDrawerOpen(false);
               onNavigateProfile(username);
             }}
+            onToggleGroupTag={() => void toggleGroupProfileTag()}
           />
         ) : isSubchat ? (
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--app-accent-soft)] text-[var(--theme-accent)]">

@@ -150,6 +150,7 @@ jobs:
         continue-on-error: true
         working-directory: desktop/src-tauri
         run: |
+          cargo build --locked --release --features process-audio-publisher --target x86_64-pc-windows-msvc
           cargo test --locked --features process-audio-publisher --target x86_64-pc-windows-msvc
           cargo check --locked --features process-audio-publisher --target x86_64-pc-windows-msvc
 

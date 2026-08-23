@@ -121,8 +121,10 @@ async function main() {
   ];
   for (const check of checks) run(check.command ?? process.execPath, check.args, { cwd: check.cwd });
   if (process.platform === "win32" && process.env.VERIFY_NATIVE_AUDIO === "1") {
-    runOptional("cargo", ["test", "--features", "process-audio-publisher", "--target", "x86_64-pc-windows-msvc"], { cwd: "desktop/src-tauri" });
-    runOptional("cargo", ["check", "--features", "process-audio-publisher", "--target", "x86_64-pc-windows-msvc"], { cwd: "desktop/src-tauri" });
+    const nativeAudioOptions = { cwd: "desktop/src-tauri" };
+    runOptional("cargo", ["build", "--locked", "--release", "--features", "process-audio-publisher", "--target", "x86_64-pc-windows-msvc"], nativeAudioOptions);
+    runOptional("cargo", ["test", "--locked", "--features", "process-audio-publisher", "--target", "x86_64-pc-windows-msvc"], nativeAudioOptions);
+    runOptional("cargo", ["check", "--locked", "--features", "process-audio-publisher", "--target", "x86_64-pc-windows-msvc"], nativeAudioOptions);
   } else {
     process.stdout.write("Native installer checks are delegated to GitHub Actions.\n");
   }

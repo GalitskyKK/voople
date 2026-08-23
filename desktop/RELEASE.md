@@ -94,13 +94,22 @@ approval is the stable promotion boundary and must not be bypassed by a tag.
 
 ## Native audio toolchain
 
-The Windows job first tries to build `process-audio-publisher`. LiveKit 0.8.1
+The Windows job first tries to build `process-audio-publisher`. LiveKit 0.8.3
 expects a current Visual Studio 2022 Windows runner and Windows SDK containing
 the `NTDDI_WIN11_GE` definitions (SDK 10.0.26100 or newer). If the runner cannot
 compile the generated CXX bridge, the workflow records that capability in the
 artifact provenance and rebuilds the same release without the feature. Screen
 video remains available, while isolated process audio is reported as
 unsupported for that build.
+
+The prebuilt Windows `libwebrtc` archive uses the static release CRT (`/MT`).
+The repository's `.cargo/config.toml` therefore enables `crt-static` for the
+Windows MSVC target, matching LiveKit's upstream Cargo configuration. This
+keeps Rust, `cc-rs`, CXX bridges and `libwebrtc` on one CRT and prevents
+`LNK2038` runtime-library mismatches or cross-CRT allocation. The probe includes
+a release build so the final linker contract is verified before Tauri
+packaging. The fallback is still built in a separate step without the LiveKit
+feature, but uses the same canonical Windows runtime.
 Set the web service's server-only `DESKTOP_NATIVE_PROCESS_AUDIO_ENABLED=false`
 to refuse new publisher leases without stopping screen video. Removing the
 server-only `GOOGLE_WEB_RISK_API_KEY` similarly fails link checks closed as

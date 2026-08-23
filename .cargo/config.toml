@@ -1,0 +1,5 @@
+# LiveKit's prebuilt Windows libwebrtc archive uses the static release CRT
+# (/MT). Keep Rust and every cc-rs/cxx bridge on the same runtime so native
+# audio builds cannot fail with LNK2038 or cross CRT allocation boundaries.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

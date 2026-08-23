@@ -6,8 +6,14 @@ const read = (path) => readFileSync(path, "utf8");
 
 test("desktop RC records native audio capability and preserves a visible fallback", () => {
   const workflow = read(".github/workflows/desktop-release.yml");
+  const cargoConfig = read(".cargo/config.toml");
+  const releaseScript = read("scripts/release.mjs");
 
   assert.match(workflow, /--features process-audio-publisher/);
+  assert.match(workflow, /cargo build --locked --release --features process-audio-publisher/);
+  assert.match(cargoConfig, /\[target\.x86_64-pc-windows-msvc\]/);
+  assert.match(cargoConfig, /rustflags = \["-C", "target-feature=\+crt-static"\]/);
+  assert.match(releaseScript, /\["build", "--locked", "--release", "--features", "process-audio-publisher"/);
   assert.match(workflow, /processAudioPublisher = \$env:PROCESS_AUDIO_INCLUDED/);
   assert.match(workflow, /video-only fallback/);
   assert.match(workflow, /next-feature-release-backlog\.md/);

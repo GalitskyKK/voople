@@ -13,7 +13,6 @@ const FORWARDED_REQUEST_HEADERS = [
   "x-client-info",
 ] as const;
 const FORWARDED_RESPONSE_HEADERS = [
-  "content-length",
   "content-range",
   "content-type",
   "location",

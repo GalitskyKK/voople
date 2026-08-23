@@ -36,10 +36,10 @@ export default function LoginPage() {
   const { register, handleSubmit, formState: { errors, isSubmitting }, setError, getValues } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
   const finishLogin = async (trustAccessToken?: string) => {
-    const { username, created } = await syncPublicUser();
     if (trustAccessToken) {
       await trustCurrentDevice({ accessToken: trustAccessToken, platform: "web" }).catch(() => undefined);
     }
+    const { username, created } = await syncPublicUser();
     const requestedRedirect = new URLSearchParams(window.location.search).get("redirect");
     const safeRedirect =
       requestedRedirect?.startsWith("/") && !requestedRedirect.startsWith("//")

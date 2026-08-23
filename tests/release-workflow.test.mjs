@@ -17,10 +17,14 @@ test("Windows COM capture compiles in the default desktop gate", () => {
   const manifest = read("desktop/src-tauri/Cargo.toml");
   const desktopLibrary = read("desktop/src-tauri/src/lib.rs");
   const capture = read("desktop/src-tauri/src/process_audio_capture.rs");
+  const publisher = read("desktop/src-tauri/src/process_audio_publisher.rs");
 
   assert.match(manifest, /windows-core = \{ version = "=0\.61\.2" \}/);
   assert.match(desktopLibrary, /cfg\(target_os = "windows"\)[\s\S]*mod process_audio_capture/);
   assert.match(capture, /use windows_core::\{implement, Interface\}/);
+  assert.match(publisher, /let mut room_options = RoomOptions::default\(\);/);
+  assert.match(publisher, /room_options\.auto_subscribe = false;/);
+  assert.doesNotMatch(publisher, /RoomOptions\s*\{/);
 });
 
 test("a video-only RC makes Windows application audio mandatory next release work", () => {

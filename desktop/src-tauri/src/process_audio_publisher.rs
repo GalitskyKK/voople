@@ -63,16 +63,11 @@ async fn publish_process_audio(input: StartProcessAudioInput) -> Result<(), Stri
         Room, RoomOptions,
     };
 
-    let (room, mut events) = Room::connect(
-        &input.livekit_url,
-        &input.token,
-        RoomOptions {
-            auto_subscribe: false,
-            ..Default::default()
-        },
-    )
-    .await
-    .map_err(|error| error.to_string())?;
+    let mut room_options = RoomOptions::default();
+    room_options.auto_subscribe = false;
+    let (room, mut events) = Room::connect(&input.livekit_url, &input.token, room_options)
+        .await
+        .map_err(|error| error.to_string())?;
     let room = std::sync::Arc::new(room);
     let source = NativeAudioSource::new(AudioSourceOptions::default(), 48_000, 2, 100);
     let track = LocalAudioTrack::create_audio_track(

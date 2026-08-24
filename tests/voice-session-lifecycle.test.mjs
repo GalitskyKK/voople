@@ -20,12 +20,37 @@ test("voice operation generations reject work completed after cancellation", () 
 });
 
 test("join uses microphone intent and compensates a cancelled server enter", () => {
-  const control = read("src/components/chat/ChatRoomControl.tsx");
+  const control = read("src/components/chat/voice/useChatRoomControl.ts");
 
   assert.match(control, /micMuted: desiredMicMutedRef\.current/);
   assert.doesNotMatch(control, /mutateAsync\(\{ chatId, micMuted \}\)/);
-  assert.match(control, /if \(!isCurrent\(\)\) \{\s+await leave\.mutateAsync/);
-  assert.match(control, /sessionOperation\.cancel\(\);\s+disconnectMedia\(\)/);
+  assert.match(control, /if \(!isCurrent\(\)\) \{\s+await server\.leave\.mutateAsync/);
+  assert.match(control, /sessionOperation\.cancel\(\);\s+mediaConnection\.disconnect\(\)/);
+});
+
+test("ChatRoomControl is only a shared controller-to-view boundary", () => {
+  const control = read("src/components/chat/ChatRoomControl.tsx");
+  const view = read("src/components/chat/voice/ChatRoomControlView.tsx");
+  const sheet = read("src/components/chat/voice/VoiceRoomSheet.tsx");
+  const baseline = read(".architecture-baseline.json");
+
+  assert.match(control, /useChatRoomControl\(props, ref\)/);
+  assert.match(control, /<ChatRoomControlView controller=\{controller\}/);
+  assert.doesNotMatch(control, /useState|mutateAsync|new Room/);
+  assert.match(view, /<VoiceRoomSheet/);
+  assert.match(sheet, /identity: \{/);
+  assert.match(sheet, /connection: \{/);
+  assert.match(sheet, /session: \{/);
+  assert.doesNotMatch(baseline, /ChatRoomControl\.tsx/);
+});
+
+test("microphone test cancels pending device access and prevents duplicate starts", () => {
+  const micTest = read("src/components/chat/voice/useVoiceMicTest.ts");
+
+  assert.match(micTest, /if \(pendingRef\.current\) return/);
+  assert.match(micTest, /generationRef\.current !== generation/);
+  assert.match(micTest, /stream\.getTracks\(\)\.forEach\(\(track\) => track\.stop\(\)\)/);
+  assert.match(micTest, /mountedRef\.current = false/);
 });
 
 test("LiveKit connect checks its generation after every long async boundary", () => {

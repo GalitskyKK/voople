@@ -5,10 +5,6 @@
       "maxLines": 566,
       "reason": "Legacy admin form; split asset metadata, media upload and preview panels."
     },
-    "src/components/chat/ChatRoomControl.tsx": {
-      "maxLines": 490,
-      "reason": "Voice server state and event/media lifecycles are extracted; the remaining sheet/dock composition must be split next."
-    },
     "src/components/chat/ChatWindow.tsx": {
       "maxLines": 329,
       "reason": "Send and attention orchestration are extracted; split message-list and secondary action controllers next."

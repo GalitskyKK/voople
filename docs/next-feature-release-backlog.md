@@ -15,8 +15,9 @@
   дефект общего View/контракта, а не добавлением platform fork.
 - Закрыть зафиксированный component debt без повышения baseline: send/attention
   orchestration уже вынесен из `ChatWindow`, его лимит снижен с 404 до 329 строк.
-  В первую очередь разделить `ChatRoomControl`, message-list `ChatWindow`,
-  `ProfileEditSheet`, затем
+  `ChatRoomControl` закрыт: публичная граница, controller/lifecycle, preferences
+  и общий presentation View разделены, а его baseline удалён. Следующие цели —
+  message-list `ChatWindow`, `ProfileEditSheet`, затем
   остальные review-threshold компоненты и монолитные data-модули по доменным
   ответственностям.
 - Windows application audio: если provenance текущего стабильного артефакта
@@ -82,6 +83,10 @@
 - Сделать общую адаптивную 404/not-found страницу в айдентике Voople с понятным
   возвратом на Главную/назад; использовать один presentation View в web и
   desktop routing fallback.
+- Привести «Что нового» к общему release-note View: убрать технические/паразитные
+  маркеры перед заголовком, не обрезать длинные пункты, визуально разделить
+  версию, дату и изменения. Проверить bundled/offline и CDN-каталог, несколько
+  версий, длинный русский текст, 360 px и одинаковый результат в web/desktop.
 
 ## P4 — некритичный polish
 

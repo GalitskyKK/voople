@@ -19,6 +19,7 @@ type VoiceSettingsPanelProps = {
   inputDevices: MediaDeviceInfo[];
   outputDevices: MediaDeviceInfo[];
   micTestActive: boolean;
+  micTestPending: boolean;
   micTestLevel: number;
   endpoints: LiveKitEndpoint[];
   selectedEndpoint: string;
@@ -55,6 +56,7 @@ export function VoiceSettingsPanel({
   inputDevices,
   outputDevices,
   micTestActive,
+  micTestPending,
   micTestLevel,
   endpoints,
   selectedEndpoint,
@@ -172,11 +174,12 @@ export function VoiceSettingsPanel({
           <div className="flex items-center gap-2">
             <button
               type="button"
+              disabled={micTestPending}
               onClick={() => void onMicTestToggle()}
-              className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--app-border)] px-3 text-sm transition hover:bg-[var(--app-surface)]"
+              className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--app-border)] px-3 text-sm transition hover:bg-[var(--app-surface)] disabled:cursor-wait disabled:opacity-55"
             >
               {micTestActive ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-              {micTestActive ? "Остановить проверку" : "Проверить микрофон"}
+              {micTestPending ? "Открываем микрофон…" : micTestActive ? "Остановить проверку" : "Проверить микрофон"}
             </button>
             <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-[var(--app-surface)]">
               <div

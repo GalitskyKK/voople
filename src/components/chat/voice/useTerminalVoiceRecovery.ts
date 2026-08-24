@@ -39,6 +39,10 @@ export function useTerminalVoiceRecovery(options: RecoveryOptions) {
     cancelRecovery();
   }, [cancelRecovery]);
 
+  const setConnectMedia = useCallback((connectMedia: () => Promise<void>) => {
+    connectMediaRef.current = connectMedia;
+  }, []);
+
   const handleDisconnected = useCallback((liveRoom: Room, reason?: DisconnectReason) => {
     const current = optionsRef.current;
     if (current.roomRef.current !== liveRoom) return;
@@ -87,5 +91,5 @@ export function useTerminalVoiceRecovery(options: RecoveryOptions) {
     cancelRecovery();
   }, [cancelRecovery]);
 
-  return { connectMediaRef, handleDisconnected, resetRecovery, cancelRecovery };
+  return { setConnectMedia, handleDisconnected, resetRecovery, cancelRecovery };
 }

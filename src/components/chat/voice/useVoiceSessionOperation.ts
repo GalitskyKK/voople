@@ -35,9 +35,10 @@ export function useVoiceSessionOperation() {
     };
     const task = Promise.resolve().then(() => operation(scope));
     activeRef.current = task;
-    void task.finally(() => {
+    const release = () => {
       if (activeRef.current === task) activeRef.current = null;
-    });
+    };
+    void task.then(release, release);
     return task;
   }, []);
 

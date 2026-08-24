@@ -32,76 +32,107 @@ import { ScreenShareStatusBanner } from "./ScreenShareStatusBanner";
 import { VoiceSoundboardPanel } from "./VoiceSoundboardPanel";
 
 type VoiceRoomSheetProps = {
-  open: boolean;
-  onClose: () => void;
-  screenContainerRef: (element: HTMLDivElement | null) => void;
-  isDirect: boolean;
-  callPhase: "idle" | "dialing" | "ringing" | "connected" | "ended" | null;
-  chatName: string;
-  active: boolean;
-  durationLabel: string | null;
-  connectionLabel: string | null;
-  mediaStatus: MediaStatus;
-  connectionQuality: ConnectionQuality;
-  screenShareOwner: string | null;
-  screenShareAvailable: string | null;
-  watchingScreenShare: boolean;
-  screenShareVolume: number;
-  participants: ChatRoomParticipantView[];
-  groupSounds: GroupSoundView[];
-  participantVolumes: Record<string, number>;
-  micMuted: boolean;
-  outputMuted: boolean;
-  remoteMicMutedById: Record<string, boolean>;
-  activeSpeakerIds: ReadonlySet<string>;
-  mediaActionPending: boolean;
-  screenSharePending: boolean;
-  screenSharing: boolean;
-  screenShareHasAudio: boolean;
-  cameraParticipantIds: ReadonlySet<string>;
-  cameraEnabled: boolean;
-  cameraPending: boolean;
-  audioBlocked: boolean;
-  onMicToggle: () => void | Promise<void>;
-  onOutputToggle: () => void;
-  onScreenShareToggle: () => void | Promise<void>;
-  onCameraToggle: () => void | Promise<void>;
-  onResumeAudio: () => void | Promise<void>;
-  onCameraContainerChange: (participantId: string, element: HTMLDivElement | null) => void;
-  onParticipantVolumeChange: (participantId: string, volume: number) => void;
-  onScreenShareVolumeChange: (volume: number) => void;
-  onGroupSoundPlay: (sound: GroupSoundView) => void;
-  onWatchScreenShare: () => void;
-  onStopWatchingScreenShare: () => void;
+  overlay: { open: boolean; onClose: () => void };
+  identity: {
+    isDirect: boolean;
+    callPhase: "idle" | "dialing" | "ringing" | "connected" | "ended" | null;
+    chatName: string;
+    active: boolean;
+    durationLabel: string | null;
+  };
+  connection: {
+    label: string | null;
+    status: MediaStatus;
+    quality: ConnectionQuality;
+    audioBlocked: boolean;
+    errorMessage: string | null;
+    onResumeAudio: () => void | Promise<void>;
+  };
+  stage: {
+    screenContainerRef: (element: HTMLDivElement | null) => void;
+    screenShareOwner: string | null;
+    screenShareAvailable: string | null;
+    watchingScreenShare: boolean;
+    screenShareVolume: number;
+    participants: ChatRoomParticipantView[];
+    groupSounds: GroupSoundView[];
+    participantVolumes: Record<string, number>;
+    remoteMicMutedById: Record<string, boolean>;
+    activeSpeakerIds: ReadonlySet<string>;
+    cameraParticipantIds: ReadonlySet<string>;
+    onCameraContainerChange: (participantId: string, element: HTMLDivElement | null) => void;
+    onParticipantVolumeChange: (participantId: string, volume: number) => void;
+    onScreenShareVolumeChange: (volume: number) => void;
+    onGroupSoundPlay: (sound: GroupSoundView) => void;
+    onWatchScreenShare: () => void;
+    onStopWatchingScreenShare: () => void;
+  };
+  controls: {
+    micMuted: boolean;
+    outputMuted: boolean;
+    mediaActionPending: boolean;
+    screenSharePending: boolean;
+    screenSharing: boolean;
+    screenShareHasAudio: boolean;
+    cameraEnabled: boolean;
+    cameraPending: boolean;
+    onMicToggle: () => void | Promise<void>;
+    onOutputToggle: () => void;
+    onScreenShareToggle: () => void | Promise<void>;
+    onCameraToggle: () => void | Promise<void>;
+  };
+  access: {
+    canManage: boolean;
+    mode: "open" | "locked";
+    pending: boolean;
+    onToggle: () => void;
+  };
+  session: {
+    inside: boolean;
+    leavePending: boolean;
+    onLeave: () => void | Promise<void>;
+    connectPending: boolean;
+    connectDisabled: boolean;
+    onConnect: () => void | Promise<void>;
+    connectLabel: string;
+  };
   settingsPanel: ReactNode;
-  canManageAccess: boolean;
-  accessMode: "open" | "locked";
-  accessPending: boolean;
-  onAccessToggle: () => void;
-  inside: boolean;
-  errorMessage: string | null;
-  leavePending: boolean;
-  onLeave: () => void | Promise<void>;
-  connectPending: boolean;
-  connectDisabled: boolean;
-  onConnect: () => void | Promise<void>;
-  connectLabel: string;
 };
 
-export function VoiceRoomSheet(props: VoiceRoomSheetProps) {
-  const {
-    open, onClose, screenContainerRef, isDirect, callPhase, chatName, active, durationLabel,
-    connectionLabel, mediaStatus, connectionQuality, screenShareOwner, screenShareAvailable,
-    watchingScreenShare, screenShareVolume, participants, groupSounds,
-    participantVolumes, micMuted, outputMuted, remoteMicMutedById, activeSpeakerIds,
-    mediaActionPending, screenSharePending, screenSharing, screenShareHasAudio, cameraParticipantIds,
-    cameraEnabled, cameraPending, audioBlocked, onMicToggle, onOutputToggle,
-    onScreenShareToggle, onCameraToggle, onResumeAudio, onCameraContainerChange,
-    onParticipantVolumeChange, onScreenShareVolumeChange, onGroupSoundPlay, onWatchScreenShare,
-    onStopWatchingScreenShare, settingsPanel, canManageAccess, accessMode,
-    accessPending, onAccessToggle, inside, errorMessage, leavePending, onLeave,
-    connectPending, connectDisabled, onConnect, connectLabel,
-  } = props;
+export function VoiceRoomSheet({
+  overlay: { open, onClose },
+  identity: { isDirect, callPhase, chatName, active, durationLabel },
+  connection: {
+    label: connectionLabel,
+    status: mediaStatus,
+    quality: connectionQuality,
+    audioBlocked,
+    errorMessage,
+    onResumeAudio,
+  },
+  stage: {
+    screenContainerRef, screenShareOwner, screenShareAvailable, watchingScreenShare,
+    screenShareVolume, participants, groupSounds, participantVolumes, remoteMicMutedById,
+    activeSpeakerIds, cameraParticipantIds, onCameraContainerChange,
+    onParticipantVolumeChange, onScreenShareVolumeChange, onGroupSoundPlay,
+    onWatchScreenShare, onStopWatchingScreenShare,
+  },
+  controls: {
+    micMuted, outputMuted, mediaActionPending, screenSharePending, screenSharing,
+    screenShareHasAudio, cameraEnabled, cameraPending, onMicToggle, onOutputToggle,
+    onScreenShareToggle, onCameraToggle,
+  },
+  access: {
+    canManage: canManageAccess,
+    mode: accessMode,
+    pending: accessPending,
+    onToggle: onAccessToggle,
+  },
+  session: {
+    inside, leavePending, onLeave, connectPending, connectDisabled, onConnect, connectLabel,
+  },
+  settingsPanel,
+}: VoiceRoomSheetProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [soundboardOpen, setSoundboardOpen] = useState(false);
   const { fullscreen, toggleFullscreen, exitFullscreen } = useVoiceRoomFullscreen();

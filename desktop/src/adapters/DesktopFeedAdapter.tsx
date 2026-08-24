@@ -1,4 +1,5 @@
 import type { Session } from "@supabase/supabase-js";
+import { useCallback, useMemo, useState } from "react";
 
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { AppPageContent } from "@/components/layout/AppPageContent";
@@ -9,6 +10,7 @@ import {
 } from "@/components/home/HomeOverviewPanelsView";
 
 import type { DesktopConfig } from "../config";
+import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopFeedTab } from "../feed/types";
 import { useDesktopFeed } from "../feed/useDesktopFeed";
 import { useDesktopHomeOverview } from "../feed/useDesktopHomeOverview";
@@ -18,15 +20,35 @@ export function DesktopFeedAdapter({
   config,
   session,
   renderDestination,
+  navigate,
   tab,
 }: {
   config: DesktopConfig;
   session: Session;
   renderDestination: NavigationDestinationRenderer;
+  navigate: (href: string) => void;
   tab: DesktopFeedTab;
 }) {
   const feed = useDesktopFeed(config, session, tab);
   const home = useDesktopHomeOverview(config, session);
+  const [messagingUsername, setMessagingUsername] = useState<string | null>(null);
+  const [messageError, setMessageError] = useState<string | null>(null);
+  const client = useMemo(
+    () => createDesktopTrpcClient(config, () => session.access_token),
+    [config, session.access_token],
+  );
+  const messageUser = useCallback(async (username: string) => {
+    setMessagingUsername(username);
+    setMessageError(null);
+    try {
+      const result = await client.mutation("chat.openDirect", { username }) as { chatId: string };
+      navigate(`/messages/${result.chatId}`);
+    } catch (error) {
+      setMessageError(error instanceof Error ? error.message : "Не удалось открыть диалог");
+    } finally {
+      setMessagingUsername(null);
+    }
+  }, [client, navigate]);
 
   return (
     <AppPageContent className="py-4">
@@ -39,7 +61,13 @@ export function DesktopFeedAdapter({
                 aria-label="Загрузка актуальной активности"
               />
             ) : (
-              <HomeNowPanelView overview={home.overview} renderDestination={renderDestination} />
+              <HomeNowPanelView
+                overview={home.overview}
+                renderDestination={renderDestination}
+                onMessageUser={(username) => void messageUser(username)}
+                messagingUsername={messagingUsername}
+                messageError={messageError}
+              />
             )}
             {home.error ? (
               <div className="feed-message" role="alert">

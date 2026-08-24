@@ -365,6 +365,7 @@ export function DesktopShell({
               config={config}
               session={session}
               renderDestination={renderDestination}
+              navigate={navigate}
               tab={feedTab}
             />
           ) : pathname === "/explore" ? (

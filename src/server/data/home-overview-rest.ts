@@ -7,6 +7,15 @@ import {
 } from "@/server/mappers/customization";
 import type { ChatRoomParticipantView } from "@/types/chat";
 
+export type HomePersonCandidate = {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  avatarDecorationUrl: string | null;
+  avatarRingId: string | null;
+};
+
 const ACTIVE_PARTICIPANT_WINDOW_MS = 3 * 60_000;
 
 export async function getActiveRoomPresenceRest(chatIds: string[], viewerId: string) {
@@ -43,6 +52,48 @@ export async function getActiveRoomPresenceRest(chatIds: string[], viewerId: str
     result.set(chatId, participants);
   }
   return result;
+}
+
+export async function listSharedGroupPeopleRest(viewerId: string) {
+  const admin = getAdminClient();
+  const memberships = await admin
+    .from("chat_members")
+    .select("chat_id, chats!inner(type)")
+    .eq("user_id", viewerId)
+    .eq("chats.type", "group")
+    .limit(200);
+  if (memberships.error) throw new Error(memberships.error.message);
+  const groupIds = [...new Set((memberships.data ?? []).map((row) => String(row.chat_id)))];
+  if (!groupIds.length) return [] satisfies HomePersonCandidate[];
+
+  const members = await admin
+    .from("chat_members")
+    .select("user_id")
+    .in("chat_id", groupIds)
+    .neq("user_id", viewerId)
+    .limit(500);
+  if (members.error) throw new Error(members.error.message);
+  const userIds = [...new Set((members.data ?? []).map((row) => String(row.user_id)))];
+  if (!userIds.length) return [] satisfies HomePersonCandidate[];
+
+  const users = await admin
+    .from("users")
+    .select("id, username, display_name, profile_customization (avatar_type, avatar_data, animated_avatar_id, avatar_decoration_id, avatar_ring_id)")
+    .in("id", userIds.slice(0, 200));
+  if (users.error) throw new Error(users.error.message);
+
+  return (users.data ?? []).map((user): HomePersonCandidate => {
+    const relation = user.profile_customization as CustomizationRow | CustomizationRow[] | null;
+    const customization = toProfileCustomizationView(Array.isArray(relation) ? relation[0] : relation);
+    return {
+      id: String(user.id),
+      username: String(user.username),
+      displayName: String(user.display_name),
+      avatarUrl: customization.assets.animatedAvatarUrl ?? null,
+      avatarDecorationUrl: customization.assets.avatarDecorationUrl ?? null,
+      avatarRingId: customization.avatarRingId ?? null,
+    };
+  });
 }
 
 export async function getHomeChatAttentionRest(chatIds: string[], userId: string) {
@@ -113,12 +164,12 @@ export async function getVisibleListeningActivityRest(viewerId: string, userIds:
 
 export async function getRelationshipScoresRest(
   userId: string,
-  candidates: Array<{ userId: string; chatId: string }>,
+  candidates: Array<{ userId: string; chatId?: string }>,
 ) {
-  const scores = new Map(candidates.map((candidate) => [candidate.userId, 40]));
+  const scores = new Map(candidates.map((candidate) => [candidate.userId, candidate.chatId ? 40 : 0]));
   if (!candidates.length) return scores;
   const candidateIds = candidates.map((candidate) => candidate.userId);
-  const chatIds = candidates.map((candidate) => candidate.chatId);
+  const chatIds = candidates.flatMap((candidate) => candidate.chatId ? [candidate.chatId] : []);
   const admin = getAdminClient();
   const [outgoing, incoming, viewerInterests, candidateInterests, viewerGroups, directMessages] = await Promise.all([
     admin.from("follows").select("following_id").eq("follower_id", userId).in("following_id", candidateIds),
@@ -126,7 +177,9 @@ export async function getRelationshipScoresRest(
     admin.from("user_interests").select("interest_slug").eq("user_id", userId),
     admin.from("user_interests").select("user_id, interest_slug").in("user_id", candidateIds),
     admin.from("chat_members").select("chat_id, chats!inner(type)").eq("user_id", userId).eq("chats.type", "group"),
-    admin.from("messages").select("chat_id, sender_id, created_at").in("chat_id", chatIds).order("created_at", { ascending: false }).limit(500),
+    chatIds.length
+      ? admin.from("messages").select("chat_id, sender_id, created_at").in("chat_id", chatIds).order("created_at", { ascending: false }).limit(500)
+      : Promise.resolve({ data: [], error: null }),
   ]);
   const failure = [outgoing, incoming, viewerInterests, candidateInterests, viewerGroups, directMessages].find((value) => value.error)?.error;
   if (failure) throw new Error(failure.message);
@@ -146,7 +199,7 @@ export async function getRelationshipScoresRest(
     for (const candidateId of new Set((groupMembers.data ?? []).map((row) => String(row.user_id)))) scores.set(candidateId, (scores.get(candidateId) ?? 0) + 30);
   }
 
-  const candidateByChat = new Map(candidates.map((candidate) => [candidate.chatId, candidate.userId]));
+  const candidateByChat = new Map(candidates.flatMap((candidate) => candidate.chatId ? [[candidate.chatId, candidate.userId] as const] : []));
   const sendersByChat = new Map<string, Set<string>>();
   const newestByChat = new Map<string, string>();
   for (const row of directMessages.data ?? []) {

@@ -6,14 +6,21 @@ const read = (path) => readFileSync(path, "utf8");
 
 test("web and desktop home use one responsive feed layout", () => {
   const web = read("src/app/(main)/feed/page.tsx");
+  const webController = read("src/components/home/HomeOverviewPanels.tsx");
   const desktop = read("desktop/src/adapters/DesktopFeedAdapter.tsx");
   const shell = read("desktop/src/shell/DesktopShell.tsx");
   const layout = read("src/components/home/HomeFeedLayoutView.tsx");
+  const view = read("src/components/home/HomeOverviewPanelsView.tsx");
+  const data = read("src/server/data/home-overview-rest.ts");
 
   assert.match(web, /HomeFeedLayoutView/);
   assert.match(desktop, /HomeFeedLayoutView/);
   assert.match(layout, /xl:grid-cols-\[minmax\(0,2fr\)_minmax\(17rem,0\.85fr\)\]/);
   assert.doesNotMatch(desktop, /xl:grid-cols/);
+  assert.match(webController, /chat\.openDirect/);
+  assert.match(desktop, /chat\.openDirect/);
+  assert.doesNotMatch(view, /trpc|createDesktopTrpcClient/);
+  assert.match(data, /listSharedGroupPeopleRest/);
   const renderedHeader = shell.indexOf('{pathname === "/feed" ? <FeedHeaderVisual');
   assert.ok(renderedHeader > 0);
   assert.ok(renderedHeader < shell.indexOf('<div className="desktop-shell-scroll'));

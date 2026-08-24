@@ -10,6 +10,7 @@ export type HomeNowItem = {
   avatarDecorationUrl?: string | null;
   avatarRingId?: string | null;
   userId: string | null;
+  messageUsername?: string;
   online: boolean;
   activity?: "online" | "listening" | "playing" | "in_room";
   score?: number;

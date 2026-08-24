@@ -50,7 +50,9 @@
 - «Сейчас» 5/3–4/mobile scroll: `частично`; responsive layout есть, средний лимит
   и карточки требуют visual gate.
 - Типы online/game/music/room: `частично`; server-filtered online, listening и
-  active room используют общий web/desktop контракт, game activity отсутствует.
+  active room используют общий web/desktop контракт. Candidate pool включает
+  accepted DM и людей из общих групп без создания чата до клика; game activity
+  отсутствует.
 - Actions Написать/Позвать/Зайти: `частично`; message/join есть, invite/call action
   покрыт не везде.
 - Ranking по live/frequency/recency/room/pin: `частично`; точные rule-based веса,

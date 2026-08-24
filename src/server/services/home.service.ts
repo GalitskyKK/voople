@@ -6,6 +6,7 @@ import {
   getHomeChatAttentionRest,
   getRelationshipScoresRest,
   getVisibleListeningActivityRest,
+  listSharedGroupPeopleRest,
 } from "@/server/data/home-overview-rest";
 import { listVisibleOnlineUserIdsRest } from "@/server/data/privacy-rest";
 import { listContactPinsRest } from "@/server/data/contact-pins-rest";
@@ -55,7 +56,13 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
   const chats = await listChats(userId);
   const rootChats = chats.filter((chat) => !chat.parentChatId);
   const directChats = rootChats.filter((chat) => chat.type === "direct" && chat.otherUser);
-  const relationshipCandidates = directChats.map((chat) => ({ userId: chat.otherUser!.id, chatId: chat.id }));
+  const sharedGroupPeople = await listSharedGroupPeopleRest(userId);
+  const directUserIds = new Set(directChats.map((chat) => chat.otherUser!.id));
+  const sharedOnlyPeople = sharedGroupPeople.filter((person) => !directUserIds.has(person.id));
+  const relationshipCandidates = [
+    ...directChats.map((chat) => ({ userId: chat.otherUser!.id, chatId: chat.id })),
+    ...sharedOnlyPeople.map((person) => ({ userId: person.id })),
+  ];
   const [viewer, roomPresence, attention, visibleOnlineIds, listeningActivity, relationshipScores, pinnedUserIds] = await Promise.all([
     fetchCurrentUserSummary(userId),
     getActiveRoomPresenceRest(rootChats.map((chat) => chat.id), userId),
@@ -83,6 +90,35 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
       score: scoreHomeNow({ pinned, listening: Boolean(listening), online, lastInteractionAt, relationshipScore: relationshipScore + (pinned ? 30 : 0) }),
     };
   });
+  const sharedPeople = sharedOnlyPeople.map((person): HomeNowItem => {
+    const listening = listeningActivity.get(person.id);
+    const online = visibleOnline.has(person.id);
+    const pinned = pinnedUsers.has(person.id);
+    const relationshipScore = relationshipScores.get(person.id) ?? 0;
+    return {
+      id: `person-${person.id}`,
+      kind: "person",
+      title: person.displayName,
+      subtitle: listening
+        ? `Слушает ${[listening.artist, listening.title].filter(Boolean).join(" — ")}`
+        : `@${person.username}`,
+      href: `/${person.username}`,
+      avatarUrl: person.avatarUrl,
+      avatarDecorationUrl: person.avatarDecorationUrl,
+      avatarRingId: person.avatarRingId,
+      userId: person.id,
+      messageUsername: person.username,
+      online,
+      activity: listening ? "listening" : online ? "online" : undefined,
+      pinned,
+      score: scoreHomeNow({
+        pinned,
+        listening: Boolean(listening),
+        online,
+        relationshipScore: relationshipScore + (pinned ? 30 : 0),
+      }),
+    };
+  });
   const groups = chats.map((chat) => groupItem(chat, userId)).filter((item): item is HomeNowItem => Boolean(item));
   const itemById = new Map([...direct, ...groups].map((item) => [item.id, item]));
   const activeRooms = [...groups, ...direct].flatMap((item) => {
@@ -99,7 +135,7 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
       : [];
   });
   const now = selectRankedHomeItems(
-    [...activeRooms, ...direct.filter((item) => item.activity)],
+    [...activeRooms, ...direct.filter((item) => item.activity), ...sharedPeople.filter((item) => item.activity)],
     { limit: 5, minimumScore: 1 },
   );
   const activeRoomIds = new Set(activeRooms.map((room) => room.id));

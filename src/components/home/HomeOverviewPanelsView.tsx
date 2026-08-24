@@ -66,7 +66,12 @@ function RoomParticipantStack({ item }: { item: HomeNowItem }) {
   );
 }
 
-function NowItem({ item, renderDestination }: { item: HomeNowItem; renderDestination: NavigationDestinationRenderer }) {
+function NowItem({ item, renderDestination, onMessageUser, messagePending }: {
+  item: HomeNowItem;
+  renderDestination: NavigationDestinationRenderer;
+  onMessageUser?: (username: string) => void;
+  messagePending?: boolean;
+}) {
   const { onlineUserIds } = useOnlineUsers();
   const online = item.userId ? onlineUserIds.has(item.userId) || item.online : item.online;
   const activityLabel = item.kind === "room"
@@ -77,37 +82,51 @@ function NowItem({ item, renderDestination }: { item: HomeNowItem; renderDestina
         ? item.subtitle
         : "В сети";
   const ActivityIcon = item.activity === "listening" ? Headphones : item.activity === "playing" ? Gamepad2 : null;
+  const children = <>
+    <ProfileAvatarVisual
+      displayName={item.title}
+      size="sm"
+      avatarImage={item.avatarUrl ? <img src={item.avatarUrl} alt="" className="h-full w-full object-cover" /> : undefined}
+      decorationImage={item.avatarDecorationUrl ? <img src={item.avatarDecorationUrl} alt="" className="h-full w-full object-contain" /> : undefined}
+      ringClassName={resolveRingStyle(item.avatarRingId)?.className}
+      isOnline={online || item.kind === "room"}
+    />
+    <span className="min-w-0"><span className="flex items-center gap-1 truncate text-sm font-semibold">{item.pinned ? <Pin className="h-3 w-3 shrink-0 fill-current text-[var(--theme-accent)]" aria-label="Закреплён" /> : null}<span className="truncate">{item.title}</span></span><span className="flex min-w-0 items-center gap-1 truncate text-[11px] text-[var(--app-muted)]">{ActivityIcon ? <ActivityIcon className="h-3 w-3 shrink-0 text-[var(--theme-accent)]" /> : null}<span className="truncate">{activityLabel}</span></span><span className="mt-0.5 block text-[10px] font-semibold text-[var(--theme-accent)] opacity-0 transition group-hover:opacity-100">{item.kind === "room" ? "Зайти" : "Написать"}</span></span>
+    <RoomParticipantStack item={item} />
+  </>;
+  const reportAction = () => {
+    reportProductEvent("presence_clicked", {
+      kind: item.kind,
+      action: item.kind === "room" ? "join" : "message",
+    });
+    reportProductEvent(
+      item.kind === "room" ? "presence_room_joined" : "presence_message_started",
+      { source: "home_now" },
+    );
+  };
+  const className = "group flex min-w-[8.75rem] flex-1 items-center gap-2.5 rounded-xl px-2 py-2 text-left transition hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]";
+
+  if (item.messageUsername && onMessageUser) {
+    return <button type="button" className={className} disabled={messagePending} onClick={() => { reportAction(); onMessageUser(item.messageUsername!); }} aria-label={`${item.title}: написать`}>{children}</button>;
+  }
+
   return renderDestination({
     href: item.href,
     label: `${item.title}: ${item.kind === "room" ? "зайти в комнату" : "написать"}`,
     active: false,
-    onNavigate: () => {
-      reportProductEvent("presence_clicked", {
-        kind: item.kind,
-        action: item.kind === "room" ? "join" : "message",
-      });
-      reportProductEvent(
-        item.kind === "room" ? "presence_room_joined" : "presence_message_started",
-        { source: "home_now" },
-      );
-    },
-    className: "group flex min-w-[8.75rem] flex-1 items-center gap-2.5 rounded-xl px-2 py-2 text-left transition hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]",
-    children: <>
-      <ProfileAvatarVisual
-        displayName={item.title}
-        size="sm"
-        avatarImage={item.avatarUrl ? <img src={item.avatarUrl} alt="" className="h-full w-full object-cover" /> : undefined}
-        decorationImage={item.avatarDecorationUrl ? <img src={item.avatarDecorationUrl} alt="" className="h-full w-full object-contain" /> : undefined}
-        ringClassName={resolveRingStyle(item.avatarRingId)?.className}
-        isOnline={online || item.kind === "room"}
-      />
-      <span className="min-w-0"><span className="flex items-center gap-1 truncate text-sm font-semibold">{item.pinned ? <Pin className="h-3 w-3 shrink-0 fill-current text-[var(--theme-accent)]" aria-label="Закреплён" /> : null}<span className="truncate">{item.title}</span></span><span className="flex min-w-0 items-center gap-1 truncate text-[11px] text-[var(--app-muted)]">{ActivityIcon ? <ActivityIcon className="h-3 w-3 shrink-0 text-[var(--theme-accent)]" /> : null}<span className="truncate">{activityLabel}</span></span><span className="mt-0.5 block text-[10px] font-semibold text-[var(--theme-accent)] opacity-0 transition group-hover:opacity-100">{item.kind === "room" ? "Зайти" : "Написать"}</span></span>
-      <RoomParticipantStack item={item} />
-    </>,
+    onNavigate: reportAction,
+    className,
+    children,
   });
 }
 
-export function HomeNowPanelView({ overview, renderDestination }: { overview: HomeOverviewView; renderDestination: NavigationDestinationRenderer }) {
+export function HomeNowPanelView({ overview, renderDestination, onMessageUser, messagingUsername, messageError }: {
+  overview: HomeOverviewView;
+  renderDestination: NavigationDestinationRenderer;
+  onMessageUser?: (username: string) => void;
+  messagingUsername?: string | null;
+  messageError?: string | null;
+}) {
   const { onlineUserIds } = useOnlineUsers();
   const items = useMemo(() => {
     const liveContacts = overview.continue.filter((item) => item.userId && onlineUserIds.has(item.userId));
@@ -126,7 +145,8 @@ export function HomeNowPanelView({ overview, renderDestination }: { overview: Ho
 
   return <section className="voople-panel mb-4 border border-[var(--app-border)] px-3 py-2.5 lg:sticky lg:top-4 lg:z-20" aria-labelledby="home-now-title">
     <header className="flex items-center justify-between gap-3 px-1 pb-1"><h2 id="home-now-title" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--theme-accent)]"><Radio className="h-3.5 w-3.5" /> Сейчас</h2>{renderDestination({ href: "/messages", label: "Все чаты", active: false, className: "text-xs font-medium text-[var(--app-muted)] hover:text-[var(--foreground)]", children: "Все чаты" })}</header>
-    {items.length ? <div className="voople-scroll flex gap-1 overflow-x-auto">{items.map((item) => <NowItem key={`${item.kind}-${item.id}`} item={item} renderDestination={renderDestination} />)}</div> : renderDestination({ href: "/messages", label: "Позвать своих", active: false, className: "mt-1 flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-[var(--app-surface-soft)] px-3 text-left text-sm text-[var(--app-muted)] transition hover:text-[var(--foreground)]", children: <><span>Сейчас тихо</span><span className="inline-flex items-center gap-1 font-medium text-[var(--theme-accent)]">Позвать своих <ArrowRight className="h-4 w-4 shrink-0" /></span></> })}
+    {items.length ? <div className="voople-scroll flex gap-1 overflow-x-auto">{items.map((item) => <NowItem key={`${item.kind}-${item.id}`} item={item} renderDestination={renderDestination} onMessageUser={onMessageUser} messagePending={Boolean(messagingUsername)} />)}</div> : renderDestination({ href: "/messages", label: "Позвать своих", active: false, className: "mt-1 flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-[var(--app-surface-soft)] px-3 text-left text-sm text-[var(--app-muted)] transition hover:text-[var(--foreground)]", children: <><span>Сейчас тихо</span><span className="inline-flex items-center gap-1 font-medium text-[var(--theme-accent)]">Позвать своих <ArrowRight className="h-4 w-4 shrink-0" /></span></> })}
+    {messageError ? <p className="px-2 pb-1 pt-2 text-xs text-red-400" role="alert">{messageError}</p> : null}
   </section>;
 }
 

@@ -546,28 +546,6 @@ button:focus-visible, input:focus-visible {
   color: #10b981;
 }
 
-.desktop-chat-composer__audio-fields {
-  display: grid;
-  min-width: 0;
-  flex: 1;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
-}
-
-.desktop-chat-composer__audio-fields label {
-  min-width: 0;
-}
-
-.desktop-chat-composer__audio-fields input {
-  width: 100%;
-  border: 0;
-  border-bottom: 1px solid var(--app-border);
-  padding: 0.2rem 0;
-  color: var(--foreground);
-  outline: 0;
-  background: transparent;
-}
-
 .desktop-chat-thread-error {
   margin: 0;
   padding: 0.35rem 1rem 0;

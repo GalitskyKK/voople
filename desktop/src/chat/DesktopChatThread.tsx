@@ -19,7 +19,7 @@ import type { ChatGroupMemberView, ChatListItem, ChatMessageView, GroupCommunity
 import type { GroupDiscoveryProfileView, InterestCatalogView } from "@/types/social";
 
 import type { DesktopConfig } from "../config";
-import { DesktopChatComposer } from "./DesktopChatComposer";
+import { DesktopChatComposerAdapter } from "../adapters/DesktopChatComposerAdapter";
 import { DesktopSectionAccessAdapter } from "../adapters/DesktopSectionAccessAdapter";
 import { DesktopSubchatCreatorAdapter } from "../adapters/DesktopSubchatCreatorAdapter";
 import { useDesktopChatThread } from "./useDesktopChatThread";
@@ -406,7 +406,7 @@ export function DesktopChatThread({
           {error}
         </p>
       ) : null}
-      <DesktopChatComposer
+      <DesktopChatComposerAdapter
         chatId={chatId}
         key={editing?.id ?? "new-message"}
         config={config}

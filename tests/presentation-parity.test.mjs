@@ -13,7 +13,7 @@ test("web and desktop home use one responsive feed layout", () => {
   const view = read("src/components/home/HomeOverviewPanelsView.tsx");
   const data = read("src/server/data/home-overview-rest.ts");
   const webChat = read("src/components/chat/ChatWindow.tsx");
-  const desktopComposer = read("desktop/src/chat/DesktopChatComposer.tsx");
+  const desktopComposer = read("desktop/src/adapters/DesktopChatComposerAdapter.tsx");
 
   assert.match(web, /HomeFeedLayoutView/);
   assert.match(desktop, /HomeFeedLayoutView/);
@@ -25,10 +25,31 @@ test("web and desktop home use one responsive feed layout", () => {
   assert.match(data, /listSharedGroupPeopleRest/);
   assert.match(webChat, /useChatConversationAttention/);
   assert.match(desktopComposer, /useLocalChatDraft/);
+  assert.match(desktopComposer, /ChatComposerFormView/);
+  assert.match(desktopComposer, /ChatComposerPreviewView/);
   assert.match(view, /selectContinueWithLocalAttention/);
   const renderedHeader = shell.indexOf('{pathname === "/feed" ? <FeedHeaderVisual');
   assert.ok(renderedHeader > 0);
   assert.ok(renderedHeader < shell.indexOf('<div className="desktop-shell-scroll'));
+});
+
+test("web and desktop chat composer share one presentation layer", () => {
+  const web = read("src/components/chat/ChatComposer.tsx");
+  const desktop = read("desktop/src/adapters/DesktopChatComposerAdapter.tsx");
+  const form = read("src/components/chat/ChatComposerFormView.tsx");
+  const preview = read("src/components/chat/ChatComposerPreviewView.tsx");
+  const baseline = JSON.parse(read(".architecture-baseline.json"));
+
+  assert.match(web, /ChatComposerFormView/);
+  assert.match(web, /ChatComposerPreviewView/);
+  assert.match(desktop, /ChatComposerFormView/);
+  assert.match(desktop, /ChatComposerPreviewView/);
+  assert.match(form, /ChatComposerInputView/);
+  assert.match(preview, /editableAudioMetadata/);
+  assert.equal(
+    baseline.desktopPortableUi.some((file) => file.includes("ChatComposer")),
+    false,
+  );
 });
 
 test("home live state is sticky and Group Info exposes one settings action", () => {

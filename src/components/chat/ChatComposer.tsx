@@ -13,12 +13,8 @@ import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
 import type { ChatMessageView, GroupEmojiView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
 
-import { ChatComposerInputView } from "./ChatComposerInputView";
-import {
-  ChatComposerContextPreview,
-  ChatComposerFrame,
-  CHAT_COMPOSER_SURFACE_CLASS,
-} from "./ChatComposerVisual";
+import { ChatComposerFormView } from "./ChatComposerFormView";
+import { ChatComposerPreviewView } from "./ChatComposerPreviewView";
 import { ChatMusicAttachSheet } from "./ChatMusicAttachSheet";
 import type { ChatRecordMode } from "./ChatVoiceRecorder";
 
@@ -165,82 +161,7 @@ export function ChatComposer({
   };
 
   return (
-    <ChatComposerFrame>
-      {editing && (
-        <ChatComposerContextPreview
-          label="Редактирование"
-          text={editing.text ?? ""}
-          accent
-          onClose={() => onEditCancel?.()}
-        />
-      )}
-      {replyTo && (
-        <ChatComposerContextPreview
-          label="Ответ"
-          text={replyTo.text?.trim() || "Вложение"}
-          onClose={onReplyCancel}
-        />
-      )}
-
-      {pendingAudioDraft && (
-        <div className="mb-2">
-          <TrackMetadataConfirmCard
-            initialTitle={pendingAudioDraft.title}
-            initialArtist={pendingAudioDraft.artist}
-            heading="Аудио перед отправкой"
-            confirmLabel="Прикрепить"
-            isSubmitting={isUploading}
-            error={error}
-            onCancel={() => setPendingAudioDraft(null)}
-            onConfirm={(draft) => void handleConfirmAudioDraft(draft)}
-          />
-        </div>
-      )}
-
-      {pendingUpload && !pendingAudioDraft && (
-        <div className="voople-chat-composer__pending mb-2 flex items-center gap-2 text-sm">
-          {pendingUpload.previewUrl && pendingUpload.kind === "circle" ? (
-            <video src={pendingUpload.previewUrl} muted playsInline className="h-14 w-14 rounded-full object-cover" />
-          ) : pendingUpload.previewUrl && pendingUpload.kind === "image" ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={pendingUpload.previewUrl}
-              alt=""
-              className="h-12 w-12 rounded object-cover"
-            />
-          ) : (
-            <span className="min-w-0 truncate text-[var(--app-muted)]">
-              ♪ {pendingUpload.title ?? pendingUpload.fileName} · {pendingUpload.artist ?? "…"}
-            </span>
-          )}
-          <button
-            type="button"
-            className="shrink-0 text-xs text-[var(--app-muted)] hover:text-[var(--foreground)]"
-            onClick={clearPendingUpload}
-          >
-            Убрать
-          </button>
-        </div>
-      )}
-
-      {pendingTrack && (
-        <div className="voople-chat-composer__pending mb-2 flex items-center gap-2 text-sm">
-          <span className="text-[var(--theme-accent)]">♪</span>
-          <span className="min-w-0 truncate">
-            {pendingTrack.title} · {pendingTrack.artist}
-          </span>
-          <button
-            type="button"
-            className="text-xs text-[var(--app-muted)] hover:text-[var(--foreground)]"
-            onClick={() => onPendingTrackChange(null)}
-          >
-            Убрать
-          </button>
-        </div>
-      )}
-
-      {error && !pendingAudioDraft && <p className="mb-2 text-xs text-red-400">{error}</p>}
-
+    <>
       <ChatMusicAttachSheet
         open={musicSheetOpen}
         onClose={() => setMusicSheetOpen(false)}
@@ -250,35 +171,59 @@ export function ChatComposer({
           onPendingTrackChange(track);
         }}
       />
-
-      <form
-        className={`relative flex items-end gap-1.5 ${CHAT_COMPOSER_SURFACE_CLASS}`}
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (canSend) onSend();
+      <ChatComposerFormView
+        preview={
+          <ChatComposerPreviewView
+            editing={editing}
+            replyTo={replyTo}
+            upload={pendingAudioDraft ? null : pendingUpload}
+            track={pendingTrack}
+            onCancelEdit={() => onEditCancel?.()}
+            onCancelReply={onReplyCancel}
+            onClearUpload={clearPendingUpload}
+            onClearTrack={() => onPendingTrackChange(null)}
+          />
+        }
+        beforeInput={
+          pendingAudioDraft ? (
+            <div className="mb-2">
+              <TrackMetadataConfirmCard
+                initialTitle={pendingAudioDraft.title}
+                initialArtist={pendingAudioDraft.artist}
+                heading="Аудио перед отправкой"
+                confirmLabel="Прикрепить"
+                isSubmitting={isUploading}
+                error={error}
+                onCancel={() => setPendingAudioDraft(null)}
+                onConfirm={(draft) => void handleConfirmAudioDraft(draft)}
+              />
+            </div>
+          ) : null
+        }
+        error={pendingAudioDraft ? null : error}
+        textLength={text.length}
+        onSubmit={onSend}
+        input={{
+          focusKey: chatId,
+          text,
+          canSend,
+          sending: isSending,
+          busy: isUploading || isParsingAudio || Boolean(pendingAudioDraft),
+          hasAttachment: Boolean(pendingUpload || pendingTrack),
+          editing: Boolean(editing),
+          disabled: disabled || Boolean(pendingAudioDraft),
+          onTextChange,
+          onSubmit: onSend,
+          onImageSelected: handleImageFile,
+          onAudioSelected: handleAudioFileSelected,
+          onPastedFile: handlePastedFile,
+          onVoiceRecorded: (file, duration, mode) =>
+            void handleVoiceRecorded(file, duration, mode),
+          onPickMusic: () => setMusicSheetOpen(true),
+          onError: setError,
+          customEmojis,
         }}
-      >
-        <ChatComposerInputView
-          focusKey={chatId}
-          text={text}
-          canSend={canSend}
-          sending={isSending}
-          busy={isUploading || isParsingAudio || Boolean(pendingAudioDraft)}
-          hasAttachment={Boolean(pendingUpload || pendingTrack)}
-          editing={Boolean(editing)}
-          disabled={disabled || Boolean(pendingAudioDraft)}
-          onTextChange={onTextChange}
-          onSubmit={onSend}
-          onImageSelected={handleImageFile}
-          onAudioSelected={handleAudioFileSelected}
-          onPastedFile={handlePastedFile}
-          onVoiceRecorded={(file, duration, mode) => void handleVoiceRecorded(file, duration, mode)}
-          onPickMusic={() => setMusicSheetOpen(true)}
-          onError={setError}
-          customEmojis={customEmojis}
-        />
-      </form>
-      {text.length >= 800 ? <span className="mt-1 block text-right text-[10px] tabular-nums text-[var(--app-muted)]">{text.length}/1000</span> : null}
-    </ChatComposerFrame>
+      />
+    </>
   );
 }

@@ -1,7 +1,5 @@
 {
   "desktopPortableUi": [
-    "desktop/src/chat/DesktopChatComposer.tsx",
-    "desktop/src/chat/DesktopChatComposerPreview.tsx",
     "desktop/src/chat/DesktopChatThread.tsx",
     "desktop/src/chat/DesktopGroupInviteSheet.tsx",
     "desktop/src/chat/DesktopMessages.tsx",

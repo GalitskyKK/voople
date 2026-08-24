@@ -25,7 +25,7 @@ Reference Map и шесть референсных бордов.
 | Board | Канонический результат | Web | Desktop | Visual/state gate | Статус |
 | --- | --- | --- | --- | --- | --- |
 | 1 — Shell + Home | Компактный «Сейчас», feed в первом meaningful viewport, sticky right rail, expanded/compact/mobile shell | Общая композиция есть | Общая view подключена через adapter | Нужны snapshots 360/390/1024/1440, sticky и empty/live states | Частично |
-| 2 — Messaging | `Nav → Chat List → Conversation`, drawers по запросу, единые header/composer/menus/Room CTA | Основной flow есть | Часть presentation общая, controllers ещё расходятся | Нужны parity snapshots, keyboard/context menu/upload states | Частично |
+| 2 — Messaging | `Nav → Chat List → Conversation`, drawers по запросу, единые header/composer/menus/Room CTA | Основной flow есть | Header/message/composer presentation общий; внешний thread/messages controller ещё расходится | Нужны parity snapshots, keyboard/context menu/upload states | Частично |
 | 3 — Room | Full, Share, Empty, Mini, Compact, Minimal, mobile как одна state machine | Состояния существуют | Native adapters и общий view есть частично | Нужны двухклиентные media tests, reconnect/soak и все visual states | Частично |
 | 4 — Identity | Реальный двухколоночный профиль + все cosmetics на каждой portable surface | Shared profile view есть | Shared profile view подключён | Mini-profile social context и полная surface matrix не закрыты | Частично |
 | 5 — Settings + Boosts | Полноэкранные настройки с локальным nav, identity preview, perks/allocation/capacity | Секции и данные есть | Composition ещё не везде едина | Нужны reference snapshots, grace/expiry E2E и removal старых sheets | Частично |

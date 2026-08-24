@@ -1,19 +1,17 @@
 import type { Session } from "@supabase/supabase-js";
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 
+import { ChatComposerFormView } from "@/components/chat/ChatComposerFormView";
+import { ChatComposerPreviewView } from "@/components/chat/ChatComposerPreviewView";
+import { useLocalChatDraft } from "@/hooks/useLocalChatDraft";
 import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
 import type { ChatMessageView, GroupEmojiView } from "@/types/chat";
-import { ChatComposerInputView } from "@/components/chat/ChatComposerInputView";
-import { ChatComposerFrame, CHAT_COMPOSER_SURFACE_CLASS } from "@/components/chat/ChatComposerVisual";
-import { cn } from "@/lib/utils";
-import { useLocalChatDraft } from "@/hooks/useLocalChatDraft";
 
+import type { DesktopMessageDraft } from "../chat/useDesktopChatThread";
+import { useDesktopChatUpload } from "../chat/useDesktopChatUpload";
 import type { DesktopConfig } from "../config";
-import { DesktopChatComposerPreview } from "./DesktopChatComposerPreview";
-import type { DesktopMessageDraft } from "./useDesktopChatThread";
-import { useDesktopChatUpload } from "./useDesktopChatUpload";
 
-export function DesktopChatComposer({
+export function DesktopChatComposerAdapter({
   chatId,
   config,
   session,
@@ -66,8 +64,7 @@ export function DesktopChatComposer({
     Boolean(text.trim() || upload) &&
     (!editing || text.trim() !== editing.text?.trim());
 
-  const submit = async (event?: FormEvent) => {
-    event?.preventDefault();
+  const submit = async () => {
     if (!canSend) return;
     if (editing) {
       if (await onEdit(editing.id, text)) {
@@ -103,7 +100,10 @@ export function DesktopChatComposer({
       if (kind === "audio") {
         await selectAudio(file);
       } else {
-        await uploadFile(file, kind === "circle" ? { purpose: "circle" } : undefined);
+        await uploadFile(
+          file,
+          kind === "circle" ? { purpose: "circle" } : undefined,
+        );
       }
     } catch (pasteError) {
       setError(
@@ -116,12 +116,13 @@ export function DesktopChatComposer({
 
   return (
     <div className="px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:px-4 lg:pb-3">
-      <ChatComposerFrame>
-        <form onSubmit={(event) => void submit(event)}>
-          <DesktopChatComposerPreview
+      <ChatComposerFormView
+        preview={
+          <ChatComposerPreviewView
             editing={editing}
             replyTo={replyTo}
             upload={upload}
+            editableAudioMetadata
             onCancelReply={onCancelReply}
             onClearUpload={clear}
             onUpdateAudioMetadata={updateAudioMetadata}
@@ -130,41 +131,30 @@ export function DesktopChatComposer({
               onCancelEdit();
             }}
           />
-
-          {error ? (
-            <p className="mb-2 text-xs text-red-400" role="alert">
-              {error}
-            </p>
-          ) : null}
-
-          <div className={cn("relative flex items-end gap-1.5", CHAT_COMPOSER_SURFACE_CLASS)}>
-            <ChatComposerInputView
-              focusKey={chatId}
-              text={text}
-              canSend={canSend}
-              sending={sending}
-              busy={uploading}
-              hasAttachment={Boolean(upload)}
-              editing={Boolean(editing)}
-              onTextChange={setText}
-              onSubmit={() => void submit()}
-              onImageSelected={selectImage}
-              onAudioSelected={selectAudio}
-              onPastedFile={pasteFile}
-              onVoiceRecorded={(file, durationSeconds, purpose) => {
-                void uploadFile(file, { purpose, durationSeconds });
-              }}
-              onError={setError}
-              customEmojis={customEmojis}
-            />
-          </div>
-          {text.length >= 800 ? (
-            <span className="mt-1 block text-right text-[10px] tabular-nums text-[var(--app-muted)]">
-              {text.length}/1000
-            </span>
-          ) : null}
-        </form>
-      </ChatComposerFrame>
+        }
+        error={error}
+        textLength={text.length}
+        onSubmit={() => void submit()}
+        input={{
+          focusKey: chatId,
+          text,
+          canSend,
+          sending,
+          busy: uploading,
+          hasAttachment: Boolean(upload),
+          editing: Boolean(editing),
+          onTextChange: setText,
+          onSubmit: () => void submit(),
+          onImageSelected: selectImage,
+          onAudioSelected: selectAudio,
+          onPastedFile: pasteFile,
+          onVoiceRecorded: (file, durationSeconds, purpose) => {
+            void uploadFile(file, { purpose, durationSeconds });
+          },
+          onError: setError,
+          customEmojis,
+        }}
+      />
     </div>
   );
 }

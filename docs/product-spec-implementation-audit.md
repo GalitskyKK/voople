@@ -85,9 +85,12 @@
   sections, invite/settings и четырьмя member filters; social proof и visual E2E
   ещё не закрыты.
 - Unified composer attachment/input/emoji/voice/send и states reply/edit/upload/
-  disabled/error: `частично`; message bubble, attachment, context menu и composer
-  input теперь общие для web/desktop. Upload/preview controllers пока разные, а
-  playlist attachment недоступен в desktop.
+  disabled/error: `частично`; message bubble, attachment, context menu, composer
+  form/input и preview теперь общие для web/desktop. Различаются только upload/
+  send adapters, а playlist attachment пока недоступен в desktop.
+- Room timeline events: `частично`; события и дневные summary остаются внутри
+  беседы, но больше не подменяют последнее пользовательское сообщение в списке.
+  Нужен authenticated E2E на direct/group и каналы.
 
 ## 6. Комнаты
 

@@ -9,7 +9,7 @@
 | Shell и навигация | `components/layout/AppShellFrame`, `AppNavigationVisual`, `lib/layout/route-layout` | `MainShell`, Next `Link` | `DesktopShell`, state-router renderer | Window chrome, tray, hotkeys |
 | Главная и лента | `components/home`, `components/feed/*Visual` | Server page загружает initial data | `DesktopFeedAdapter` загружает те же view-models | Нет Server Components; Tauri navigation renderer |
 | Профиль | `ProfileCardView`, `ProfileBadgesView`, `ProfilePageView`, `ProfileFlipCard`, `ProfileShareController`, `feed/MiniProfilePopover` | `ProfileCard` и `ProfileShareCardButton` подключают web queries/metadata | `DesktopProfileAdapter` и `DesktopProfileShareAdapter` передают те же view-models и callbacks; `desktop/src/profile` содержит только data hook | Realtime можно отключить; transport публикации и desktop navigation остаются адаптерами |
-| Чаты | `MessagesLayoutView`, `ChatMessageBubble`, `ChatMessageAttachment`, `ChatComposerInputView`, `ChatWindowHeaderVisual`, `GroupInfoDrawerView`, `GroupManagementSheetView`; `useChatSendMutation` и local attention/draft hooks владеют state recovery | `GroupInfoDrawer` и Messages route подключают tRPC/Next navigation | Desktop auth/realtime/upload adapters передают данные в те же Views и общий local draft contract; `/messages/:id/settings` использует тот же full-page View | Native notifications, transport realtime и способ загрузки файла |
+| Чаты | `MessagesLayoutView`, `ChatMessageBubble`, `ChatMessageAttachment`, `ChatComposerFormView`, `ChatComposerPreviewView`, `ChatComposerInputView`, `ChatWindowHeaderVisual`, `GroupInfoDrawerView`, `GroupManagementSheetView`; `useChatSendMutation` и local attention/draft hooks владеют state recovery | `ChatComposer`/`GroupInfoDrawer` и Messages route подключают web upload, tRPC и Next navigation | `DesktopChatComposerAdapter` передаёт desktop upload/send callbacks в те же composer Views; остальные auth/realtime adapters используют общий local draft contract, `/messages/:id/settings` — тот же full-page View | Native notifications, transport realtime и способ загрузки файла; DOM composer не отличается |
 | Голос и комнаты | `components/chat/voice`, `VoiceSessionProvider`, `VoiceSessionDock`, `ScreenShareSourcePicker` | Web media devices и обязательный browser/OS picker | Тот же Room UI; Tauri adapter перечисляет окна/экраны и публикует выбранный native source | Windows libwebrtc desktop capture; WASAPI include-process-tree для окна и exclude-Voople system loopback для экрана; global hotkeys |
 | Магазин, подарки и Plus | `components/shop`, `ShopGiftDialog`, `components/subscription` | Server payment/API composition | tRPC/API adapter | Открытие checkout во внешнем браузере |
 | Discovery | `ExploreView`, `ExploreSearchResults`, `NotificationsView`, `EventsPage` | Optional/protected tRPC adapters | Shared view + desktop navigation renderer | Только способ навигации |
@@ -41,14 +41,15 @@ responsive-правила — переноситься в корневой `src/
 `DesktopProfileAvatar` и `DesktopProfileActions` удалены: положение edit-action,
 баннер, identity, пины, подписка и переход в сообщения теперь меняются только в
 корневом `src`. Desktop уже не содержит отдельных avatar, message bubble,
-attachment и composer input: контекстное меню, сторона action-кнопки, реакции,
-вложения, emoji/voice controls и responsive-поведение меняются только в корневом
-`src`. Отдельные `DesktopEvents` и `DesktopPostMedia` удалены; group/subchat/
+attachment и весь composer presentation: контекстное меню, сторона action-кнопки,
+реакции, preview вложений, reply/edit, emoji/voice controls и responsive-поведение
+меняются только в корневом `src`. Отдельные `DesktopEvents` и `DesktopPostMedia`
+удалены; group/subchat/
 section-access и shop-файлы перенесены из UI-доменов в transport/native adapters,
 которые подключают канонические Views. Карточка публикации теперь собирается
 единым `PostCardView`, а desktop оставляет только action/transport adapter вне
 UI-домена. Feed и hashtag composition также вынесены в adapters и подключают
-общие layout/header/card Views. Следующие кандидаты: внешний `DesktopChatThread`/upload-controller;
+общие layout/header/card Views. Следующие кандидаты: внешний `DesktopChatThread`/messages;
 общий share-controller профиля уже вынесен.
 
 Настройки интересов, групповых тем и матрица приватности также следуют этому

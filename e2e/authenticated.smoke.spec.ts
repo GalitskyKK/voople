@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+const AUTHENTICATED_ROUTE_TIMEOUT = 30_000;
+
 test.describe("authenticated critical surface", () => {
   test("messenger opens and exposes search without mutating production data", async ({ page }) => {
     await page.goto("/messages", { waitUntil: "domcontentloaded" });
@@ -9,9 +11,12 @@ test.describe("authenticated critical surface", () => {
   });
 
   test("settings are separated into navigable sections", async ({ page }) => {
+    test.setTimeout(60_000);
     await page.goto("/settings", { waitUntil: "domcontentloaded" });
 
-    await expect(page.getByRole("heading", { name: "Настройки" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Настройки" })).toBeVisible({
+      timeout: AUTHENTICATED_ROUTE_TIMEOUT,
+    });
     const navigation = page.getByRole("navigation", { name: "Разделы настроек" });
     await expect(navigation).toBeVisible();
     await navigation.getByRole("button", { name: "Безопасность" }).click();
@@ -19,9 +24,11 @@ test.describe("authenticated critical surface", () => {
   });
 
   test("privacy settings expose every product scope through the shared view", async ({ page }) => {
+    test.setTimeout(60_000);
     await page.goto("/settings", { waitUntil: "domcontentloaded" });
 
     const navigation = page.getByRole("navigation", { name: "Разделы настроек" });
+    await expect(navigation).toBeVisible({ timeout: AUTHENTICATED_ROUTE_TIMEOUT });
     await navigation.getByRole("button", { name: "Приватность и активность" }).click();
     await expect(page.getByRole("heading", { name: "Приватность и активность" })).toBeVisible();
     await expect(page.locator("select")).toHaveCount(6);

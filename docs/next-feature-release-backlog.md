@@ -13,8 +13,10 @@
   native adapters и удалить запись после parity-теста. Найденное до этого
   пользовательское расхождение не ждёт feature-релиза и исправляется как
   дефект текущей версии.
-- Закрыть зафиксированный component debt без повышения baseline: в первую
-  очередь разделить `ChatRoomControl`, `ChatWindow`, `ProfileEditSheet`, затем
+- Закрыть зафиксированный component debt без повышения baseline: send/attention
+  orchestration уже вынесен из `ChatWindow`, его лимит снижен с 404 до 329 строк.
+  В первую очередь разделить `ChatRoomControl`, message-list `ChatWindow`,
+  `ProfileEditSheet`, затем
   остальные review-threshold компоненты и монолитные data-модули по доменным
   ответственностям.
 - Windows application audio: если provenance текущего стабильного артефакта
@@ -30,8 +32,8 @@
   privacy scopes, rate limit и одинаковый web/desktop UI.
 - Relationship graph v2: shared-room history, материализованные edges,
   decay/recalculation job и использование одного score во всех surfaces.
-- Home ranking v2: gaming presence, приглашение в Room, drafts,
-  mentions/replies и persisted recently-opened без ложного «Сейчас».
+- Home ranking v2: gaming presence, приглашение в Room, mutual recency вне DM,
+  multi-session UX и end-to-end проверка ranking без ложного «Сейчас».
 - Room discovery/privacy: отдельная visibility-модель комнаты и разрешённые
   поверхности показа вне чата.
 

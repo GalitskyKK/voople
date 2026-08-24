@@ -6,10 +6,10 @@ import { useChatMessageEditor } from "@/hooks/useChatMessageEditor";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import { useChatMessageSelection } from "@/hooks/useChatMessageSelection";
 import { useChatConversationAttention } from "@/hooks/useChatConversationAttention";
+import { useChatSendMutation } from "@/hooks/useChatSendMutation";
 import type { PendingChatUpload } from "@/hooks/useChatUpload";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 import { trpc } from "@/lib/trpc/client";
-import { buildOptimisticMessage } from "@/lib/chat/optimistic-message";
 import type { ChatMessageView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
 import type { ChatReactionEmoji } from "@/lib/chat/reactions";
@@ -60,84 +60,9 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     { enabled: isGroupChat },
   );
   const selection = useChatMessageSelection(chatId, data?.messages ?? []);
-  const send = trpc.chat.send.useMutation({
-    onMutate: async (input) => {
-      await utils.chat.getMessages.cancel({ chatId });
-      const prev = utils.chat.getMessages.getData({ chatId });
-      const replyMessage = input.replyToMessageId
-        ? prev?.messages.find((m) => m.id === input.replyToMessageId) ?? replyTo
-        : null;
-      const optimistic = buildOptimisticMessage({
-        messageId: input.messageId,
-        senderId: me?.id ?? "me",
-        text: input.text,
-        replyTo: replyMessage,
-        pendingUpload,
-        pendingTrack,
-      });
-      utils.chat.getMessages.setData({ chatId }, (current) =>
-        current?.messages.some((message) => message.id === optimistic.id)
-          ? current
-          : current
-            ? { ...current, messages: [...current.messages, optimistic] }
-            : {
-                messages: [optimistic],
-                otherUser: null,
-                chat: {
-                  id: chatId,
-                  type: "direct",
-                  name: null,
-                  parentChatId: null,
-                  topicsEnabled: false,
-                  topicsLayout: "list",
-                  topicIcon: null,
-                  groupVisibility: "private",
-                  joinPolicy: "invite_only",
-                  sectionAccessMode: "inherit",
-                  groupIcon: null,
-                  groupAvatarUrl: null,
-                  groupBannerUrl: null,
-                  groupTag: null,
-                  groupAccentColor: null,
-                  boostCount: 0,
-                  boostedByMe: false,
-                  memberCount: 0,
-                  viewerRole: "member",
-                },
-              },
-      );
-      setText("");
-      setReplyTo(null);
-      setPendingUpload(null);
-      setPendingTrack(null);
-      return { prev, previewUrl: pendingUpload?.previewUrl ?? null };
-    },
-    onError: (_err, _input, ctx) => {
-      if (ctx?.prev) {
-        utils.chat.getMessages.setData({ chatId }, ctx.prev);
-      }
-      if (ctx?.previewUrl) URL.revokeObjectURL(ctx.previewUrl);
-    },
-    onSuccess: (msg, input, ctx) => {
-      utils.chat.getMessages.setData({ chatId }, (current) => {
-        if (!current) return current;
-        const messages = current.messages.map((m) => (m.id === msg.id ? msg : m));
-        if (messages.some((m) => m.id === msg.id)) return { ...current, messages };
-        return { ...current, messages: [...messages, msg] };
-      });
-      void utils.chat.list.invalidate();
-      if (ctx?.previewUrl) URL.revokeObjectURL(ctx.previewUrl);
-      reportProductEvent("message_sent", {
-        hasAttachment: Boolean(input.mediaKey || input.sharedTrackId),
-        hasReply: Boolean(input.replyToMessageId),
-      });
-      if (input.replyToMessageId)
-        reportProductEvent("message_replied", { source: "composer" });
-      if (input.mediaKey || input.sharedTrackId)
-        reportProductEvent("attachment_sent", {
-          kind: input.mediaKey ? "upload" : "track",
-        });
-    },
+  const send = useChatSendMutation({
+    chatId, viewerId: me?.id, text, replyTo, pendingUpload, pendingTrack,
+    setText, setReplyTo, setPendingUpload, setPendingTrack,
   });
 
   const { containerRef: messagesRef, contentRef: messagesContentRef, isAwayFromBottom, scrollToBottom } =

@@ -22,8 +22,8 @@
       "reason": "Voice server state and event/media lifecycles are extracted; the remaining sheet/dock composition must be split next."
     },
     "src/components/chat/ChatWindow.tsx": {
-      "maxLines": 404,
-      "reason": "Legacy chat surface; extract header and message-list orchestration."
+      "maxLines": 329,
+      "reason": "Send and attention orchestration are extracted; split message-list and secondary action controllers next."
     },
     "src/components/profile/ProfileEditSheet.tsx": {
       "maxLines": 1083,

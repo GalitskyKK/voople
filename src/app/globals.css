@@ -705,6 +705,7 @@ html[data-app-theme="light"] .profile-card--video-bg {
 }
 
 .profile-editor-asset__preview {
+  display: block;
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 10;
@@ -712,6 +713,83 @@ html[data-app-theme="light"] .profile-card--video-bg {
   overflow: hidden;
   border-radius: 0.625rem;
   background: rgb(0 0 0 / 0.2);
+}
+
+.profile-editor-asset__preview-action {
+  position: absolute;
+  inset: auto 0.5rem 0.5rem auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 999px;
+  background: rgb(5 5 10 / 0.82);
+  padding: 0.3rem 0.55rem;
+  color: white;
+  font-size: 0.6875rem;
+  font-weight: 650;
+  backdrop-filter: blur(8px);
+}
+
+.profile-editor-asset--locked {
+  background: color-mix(in srgb, var(--app-surface-soft) 82%, transparent);
+}
+
+.profile-editor-asset__action {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  border-radius: 0.625rem;
+  background: color-mix(in srgb, var(--theme-accent) 14%, transparent);
+  padding: 0.35rem 0.65rem;
+  color: var(--theme-accent);
+  font-size: 0.75rem;
+  font-weight: 650;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.profile-editor-asset__action:hover {
+  background: var(--theme-accent);
+  color: var(--theme-accent-contrast, white);
+}
+
+.profile-editor-tag {
+  --profile-tag-accent: var(--theme-accent);
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 7rem;
+  overflow: hidden;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--app-border);
+  border-radius: 1rem;
+  background: var(--app-surface-soft);
+  padding: 0.75rem;
+  color: var(--foreground);
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.profile-editor-tag:not(:disabled):hover {
+  border-color: color-mix(in srgb, var(--profile-tag-accent) 58%, var(--app-border));
+  background: color-mix(in srgb, var(--profile-tag-accent) 8%, var(--app-surface-soft));
+  transform: translateY(-1px);
+}
+
+.profile-editor-tag--selected {
+  border-color: color-mix(in srgb, var(--profile-tag-accent) 76%, var(--app-border));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--profile-tag-accent) 30%, transparent);
+}
+
+.profile-editor-tag__cover {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3.5rem;
+  background-color: color-mix(in srgb, var(--profile-tag-accent) 24%, var(--app-surface));
+  background-position: center;
+  background-size: cover;
+  opacity: 0.82;
 }
 
 .profile-editor-choice,

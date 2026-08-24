@@ -129,8 +129,10 @@
 - Content identity without changing body: `частично`.
 - Community identity avatar/banner/accent/background/roles/emoji/sounds:
   `частично`.
-- Cosmetics preserve layout/controls/contrast/hit targets: `частично`; требуется
-  snapshot/a11y matrix.
+- Cosmetics preserve layout/controls/contrast/hit targets: `частично`; общий
+  web/desktop редактор разделён на controller и stateless panels, явно различает
+  «надето / доступно / примерка / получить», защищает несохранённую identity и
+  stale async responses. Осталась snapshot/a11y matrix на обеих темах и 360 px.
 - Profile status/mood/music/bio/follows/communities/posts-media-replies:
   `частично`; основная структура есть, community aggregation неполна.
 - Mini Profile full identity/presence/activity/shared communities/actions:

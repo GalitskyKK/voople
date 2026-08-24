@@ -45,7 +45,7 @@
 | 29 | Invite и organic onboarding | Частично | Invite/onboarding surfaces есть; сбор интересов и organic discovery onboarding отсутствуют. |
 | 30 | Activation: reply или ≥2 минуты в комнате | Частично | Activation facts и SQL views есть, migration 49 применена; правило комнаты пока не гарантирует порог 2 минуты. |
 | 31 | External share objects | Частично | Профиль/пост/группа частично шарятся; единые previews и attribution/invite conversion не закрыты. |
-| 32 | Полная структура group settings | Частично | Rename/banner/tag/invite/roles/sections/emoji/sounds/boosts, visibility v2, join policy, заявки и topics/language/region используют общий web/desktop UI; migrations 53/54 применены, полный visual gate ещё не закрыт. |
+| 32 | Полная структура group settings | Частично | Rename/banner/tag/invite/roles/sections/emoji/sounds/boosts, visibility v2, join policy, заявки и topics/language/region используют общий web/desktop UI; выбор доступного community tag также перенесён в общий редактор профиля с единым preview и server membership-check. Migrations 53/54 применены, полный visual gate ещё не закрыт. |
 | 33 | Banner отдельно от chat background | Частично | Поля разделены и базовый banner больше не boost-lock; полноценный background editor/store preview на всех surfaces не завершён. |
 | 34 | Boost allocation | Частично | Capacity, allocation, active/suspended/grace и migration 51 реализованы; product copy, expiry rehearsal и полный UI gate не закрыты. |
 | 35 | Расширенная аналитика | Частично | Privacy-safe typed pipeline и storage есть; event catalog не содержит все новые search/recommendation/DM/community события, потому что соответствующие flows отсутствуют. |

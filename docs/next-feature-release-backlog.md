@@ -18,10 +18,11 @@
   `ChatRoomControl` закрыт: публичная граница, controller/lifecycle, preferences
   и общий presentation View разделены, а его baseline удалён. `VoiceRoomSheet`
   также разделён на общие stateless header/content/footer-секции, его architecture
-  notice закрыт. Следующие цели —
-  message-list `ChatWindow`, `ProfileEditSheet`, затем
-  остальные review-threshold компоненты и монолитные data-модули по доменным
-  ответственностям.
+  notice закрыт. `ProfileEditSheet` также закрыт: transport/optimistic lifecycle
+  вынесен в session-bound controller, preview/catalog/tag и панели стали общими
+  stateless-компонентами, а baseline удалён. Следующая цель — message-list
+  `ChatWindow`, затем остальные review-threshold компоненты и монолитные
+  data-модули по доменным ответственностям.
 - Windows application audio: если provenance текущего стабильного артефакта
   содержит `processAudioPublisher: false`, следующий feature-релиз нельзя
   продвигать в stable до восстановления обязательной native-сборки, проверки

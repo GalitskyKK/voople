@@ -9,10 +9,6 @@
       "maxLines": 329,
       "reason": "Send and attention orchestration are extracted; split message-list and secondary action controllers next."
     },
-    "src/components/profile/ProfileEditSheet.tsx": {
-      "maxLines": 1083,
-      "reason": "Legacy profile editor; split each customization category into a dedicated panel."
-    },
     "src/server/data/chat-rest.ts": {
       "maxLines": 800,
       "reason": "Legacy chat persistence module; split lists, messages and membership queries."

@@ -9,14 +9,16 @@ export function ProfileEditorShopLink({
   onBeforeNavigate,
 }: {
   onNavigate?: (href: string) => void;
-  onBeforeNavigate: () => void;
+  onBeforeNavigate: () => boolean | void;
 }) {
   if (!onNavigate) {
     return (
       <AppInternalLink
         href={SHOP_HREF}
         className="profile-editor-shop-link"
-        onClick={onBeforeNavigate}
+        onClick={(event) => {
+          if (onBeforeNavigate() === false) event.preventDefault();
+        }}
       >
         Открыть магазин
       </AppInternalLink>
@@ -28,7 +30,7 @@ export function ProfileEditorShopLink({
       type="button"
       className="profile-editor-shop-link"
       onClick={() => {
-        onBeforeNavigate();
+        if (onBeforeNavigate() === false) return;
         onNavigate(SHOP_HREF);
       }}
     >

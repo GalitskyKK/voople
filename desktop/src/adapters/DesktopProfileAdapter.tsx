@@ -15,11 +15,11 @@ import { AppPageContent } from "@/components/layout/AppPageContent";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
 
 import type { DesktopConfig } from "../config";
-import { DesktopPostCardAdapter } from "../adapters/DesktopPostCardAdapter";
-import { DesktopProfileShareAdapter } from "../adapters/DesktopProfileShareAdapter";
-import { useDesktopProfile } from "./useDesktopProfile";
+import { useDesktopProfile } from "../profile/useDesktopProfile";
+import { DesktopPostCardAdapter } from "./DesktopPostCardAdapter";
+import { DesktopProfileShareAdapter } from "./DesktopProfileShareAdapter";
 
-export function DesktopProfile({
+export function DesktopProfileAdapter({
   config,
   session,
   username,

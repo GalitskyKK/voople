@@ -7,7 +7,8 @@
 
 ## P0 следующего feature-релиза
 
-- Завершить web/desktop presentation migration: разобрать оставшиеся 11 записей
+- Завершить web/desktop presentation migration: профиль уже полностью вынесен
+  из portable desktop baseline; разобрать оставшиеся 10 записей
   `desktopPortableUi` в `.architecture-baseline.json`, перенести переносимую
   разметку в один stateless View, оставить в desktop только data/navigation/
   native adapters и удалить запись после parity-теста. Найденное до этого

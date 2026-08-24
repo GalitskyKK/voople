@@ -6,7 +6,8 @@ const read = (path) => readFileSync(path, "utf8");
 
 test("web and desktop compose the canonical profile card view", () => {
   assert.match(read("src/components/profile/ProfileCard.tsx"), /ProfileCardView/);
-  assert.match(read("desktop/src/profile/DesktopProfile.tsx"), /ProfileCardView/);
+  assert.match(read("desktop/src/adapters/DesktopProfileAdapter.tsx"), /ProfileCardView/);
+  assert.equal(existsSync("desktop/src/profile/DesktopProfile.tsx"), false);
   assert.equal(existsSync("desktop/src/profile/DesktopProfileCard.tsx"), false);
   assert.equal(existsSync("desktop/src/profile/DesktopProfileAvatar.tsx"), false);
   assert.equal(existsSync("desktop/src/profile/DesktopProfileActions.tsx"), false);
@@ -20,7 +21,18 @@ test("profile sharing uses one controller on web and desktop", () => {
 
 test("desktop profile loads and renders profile pins", () => {
   assert.match(read("desktop/src/profile/useDesktopProfile.ts"), /engagement\.badges/);
-  assert.match(read("desktop/src/profile/DesktopProfile.tsx"), /ProfileBadgesView/);
+  assert.match(read("desktop/src/adapters/DesktopProfileAdapter.tsx"), /ProfileBadgesView/);
+});
+
+test("desktop profile owns data only and keeps presentation in canonical views", () => {
+  const baseline = JSON.parse(read(".architecture-baseline.json"));
+  assert.equal(
+    baseline.desktopPortableUi.some((file) => file.includes("/profile/")),
+    false,
+  );
+  assert.equal(existsSync("desktop/src/profile/DesktopProfile.tsx"), false);
+  assert.match(read("desktop/src/adapters/DesktopProfileAdapter.tsx"), /ProfilePageView/);
+  assert.match(read("desktop/src/adapters/DesktopProfileAdapter.tsx"), /ProfileCardView/);
 });
 
 test("desktop entry imports only the client-safe object storage module", () => {

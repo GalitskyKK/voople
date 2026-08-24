@@ -49,8 +49,8 @@ const DesktopNotifications = lazy(() =>
   })),
 );
 const DesktopProfile = lazy(() =>
-  import("../profile/DesktopProfile").then((module) => ({
-    default: module.DesktopProfile,
+  import("../adapters/DesktopProfileAdapter").then((module) => ({
+    default: module.DesktopProfileAdapter,
   })),
 );
 const DesktopPostDetail = lazy(() =>

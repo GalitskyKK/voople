@@ -9,8 +9,7 @@
     "desktop/src/composer/DesktopMediaDropzone.tsx",
     "desktop/src/explore/DesktopExplore.tsx",
     "desktop/src/post/DesktopPostComments.tsx",
-    "desktop/src/post/DesktopPostDetail.tsx",
-    "desktop/src/profile/DesktopProfile.tsx"
+    "desktop/src/post/DesktopPostDetail.tsx"
   ],
   "exceptions": {
     "src/components/admin/AdminAssetEditor.tsx": {

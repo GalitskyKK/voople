@@ -28,3 +28,12 @@ test("privacy migration contains every product scope and server filter", () => {
   assert.match(migration, /list_visible_online_user_ids/);
   assert.match(migration, /show_interests/);
 });
+
+test("home room activity enforces roomsScope before exposing participants", () => {
+  const homeData = read("src/server/data/home-overview-rest.ts");
+  const scopeCheck = homeData.indexOf("privacy.roomsScope");
+  const participantMapping = homeData.indexOf("for (const row of data ?? [])");
+  assert.ok(scopeCheck > 0);
+  assert.ok(participantMapping > scopeCheck);
+  assert.match(homeData, /roomVisibility\.get\(String\(row\.user_id\)\)/);
+});

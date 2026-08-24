@@ -130,7 +130,8 @@
   relationship reasons и invite action не завершены.
 - Privacy scopes для online/music/rooms/invites/requests/recommendations/interests:
   `частично`; общий settings View и server-filtered online/profile music/interests
-  готовы, остальные enforcement-точки и migration 54 ожидаются.
+  готовы, Home active-Room participants теперь фильтруются по `roomsScope` до
+  формирования view-model. Остальные enforcement-точки и полный E2E ожидаются.
 
 ## 8. Сообщества
 

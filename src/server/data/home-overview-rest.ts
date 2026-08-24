@@ -30,7 +30,18 @@ export async function getActiveRoomPresenceRest(chatIds: string[], viewerId: str
     .order("joined_at", { ascending: true });
   if (error) throw new Error(error.message);
 
+  const participantUserIds = [...new Set((data ?? []).map((row) => String(row.user_id)))];
+  const roomVisibility = new Map<string, boolean>();
+  await Promise.all(participantUserIds.map(async (participantUserId) => {
+    const privacy = await getUserPrivacySettingsRest(participantUserId);
+    roomVisibility.set(
+      participantUserId,
+      await canViewPrivateFieldRest(participantUserId, viewerId, privacy.roomsScope),
+    );
+  }));
+
   for (const row of data ?? []) {
+    if (!roomVisibility.get(String(row.user_id))) continue;
     const user = Array.isArray(row.users) ? row.users[0] : row.users;
     if (!user) continue;
     const relation = user.profile_customization as CustomizationRow | CustomizationRow[] | null;

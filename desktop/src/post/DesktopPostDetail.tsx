@@ -5,7 +5,7 @@ import { PostDetailViewVisual } from "@/components/feed/PostDetailViewVisual";
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { AppPageContent } from "@/components/layout/AppPageContent";
 import type { DesktopConfig } from "../config";
-import { DesktopPostCard } from "../feed/DesktopPostCard";
+import { DesktopPostCardAdapter } from "../adapters/DesktopPostCardAdapter";
 import { DesktopPostComments } from "./DesktopPostComments";
 import { useDesktopPostDetail } from "./useDesktopPostDetail";
 
@@ -63,7 +63,7 @@ export function DesktopPostDetail({
           ),
         })}
       >
-        <DesktopPostCard
+        <DesktopPostCardAdapter
           post={detail.post}
           config={config}
           session={session}

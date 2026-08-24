@@ -1,28 +1,26 @@
 import type { Session } from "@supabase/supabase-js";
 import { Eye, Heart, MessageCircle, Repeat2, Share2 } from "lucide-react";
-import { Fragment, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
 
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
+import { PostMediaGallery } from "@/components/media/PostMediaGallery";
 import {
   PostCardAction,
   PostCardActions,
-  PostCardBody,
-  PostCardSurface,
 } from "@/components/feed/PostCardVisual";
+import { PostCardView } from "@/components/feed/PostCardView";
 import { RepostPreviewVisual } from "@/components/feed/RepostPreviewVisual";
 import { StatusPostBodyVisual } from "@/components/feed/StatusPostBodyVisual";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
-import { RichText } from "@/components/ui/RichText";
 
 import type { DesktopConfig } from "../config";
-import { DesktopAppearanceCard } from "./DesktopAppearanceCard";
-import { DesktopPostAuthor } from "./DesktopPostAuthor";
-import { DesktopPostMedia } from "./DesktopPostMedia";
-import type { DesktopPost } from "./types";
-import { useDesktopPostActions } from "./useDesktopPostActions";
-import { DesktopPostMoreMenu } from "./DesktopPostMoreMenu";
+import { DesktopAppearanceCard } from "../feed/DesktopAppearanceCard";
+import { DesktopPostAuthor } from "../feed/DesktopPostAuthor";
+import { DesktopPostMoreMenu } from "../feed/DesktopPostMoreMenu";
+import type { DesktopPost } from "../feed/types";
+import { useDesktopPostActions } from "../feed/useDesktopPostActions";
 
-export function DesktopPostCard({
+export function DesktopPostCardAdapter({
   post,
   config,
   session,
@@ -42,7 +40,10 @@ export function DesktopPostCard({
   const badgeUrl = vooplusBadgeUrl(config.assetsCdnUrl);
 
   return (
-    <PostCardSurface
+    <PostCardView
+      post={post}
+      text={post.text}
+      repostComment={post.repostComment}
       surfaceStyle={
         customization
           ? ({
@@ -50,8 +51,7 @@ export function DesktopPostCard({
             } as CSSProperties)
           : undefined
       }
-    >
-      <DesktopPostAuthor
+      author={<DesktopPostAuthor
         post={post}
         renderDestination={renderDestination}
         badgeUrl={badgeUrl}
@@ -66,22 +66,8 @@ export function DesktopPostCard({
             />
           ) : undefined
         }
-      />
-
-      <PostCardBody>
-        {post.repostComment ? (
-          <p className="voople-post-card__text mb-3 text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">
-            <RichText text={post.repostComment} />
-          </p>
-        ) : null}
-        {post.text ? (
-          <p className="voople-post-card__text text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">
-            <RichText text={post.text} />
-          </p>
-        ) : null}
-        <DesktopPostMedia post={post} />
-
-        {post.kind === "appearance" &&
+      />}
+      appearance={post.kind === "appearance" &&
         post.appearance &&
         appearanceCustomization ? (
           <DesktopAppearanceCard
@@ -89,20 +75,20 @@ export function DesktopPostCard({
             customization={appearanceCustomization}
             className="mt-3"
           />
-        ) : null}
-        {post.kind === "status" && post.status ? (
+        ) : undefined}
+      status={post.kind === "status" && post.status ? (
           <StatusPostBodyVisual
             status={post.status}
             className={post.text ? "mt-3" : undefined}
           />
-        ) : null}
-        {post.repost?.target ? (
+        ) : undefined}
+      repost={post.repost?.target ? (
           <div className="mt-3">
             <RepostPreviewVisual
               post={post.repost.target}
               badgeUrl={badgeUrl}
               renderMedia={(item) => (
-                <DesktopPostMedia post={item} className="mt-3" />
+                <PostMediaGallery post={item} className="mt-3" />
               )}
               renderAppearance={(item, nestedCustomization) => (
                 <DesktopAppearanceCard
@@ -119,26 +105,16 @@ export function DesktopPostCard({
               )}
             />
           </div>
-        ) : null}
-
-        {post.tags?.length ? (
-          <div className="voople-post-card__tags mt-2 flex flex-wrap gap-2">
-            {post.tags.map((tag) => (
-              <Fragment key={tag}>
-                {renderDestination({
-                  href: `/hashtag/${encodeURIComponent(tag)}`,
-                  label: `Хэштег ${tag}`,
-                  active: false,
-                  className:
-                    "rounded-full bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] px-2 py-0.5 text-xs text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]",
-                  children: <>#{tag}</>,
-                })}
-              </Fragment>
-            ))}
-          </div>
-        ) : null}
-
-        <PostCardActions>
+        ) : undefined}
+      renderTag={(tag) => renderDestination({
+        href: `/hashtag/${encodeURIComponent(tag)}`,
+        label: `Хэштег ${tag}`,
+        active: false,
+        className:
+          "rounded-full bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] px-2 py-0.5 text-xs text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]",
+        children: <>#{tag}</>,
+      })}
+      actions={<PostCardActions>
           <PostCardAction
             icon={<Eye />}
             label="Просмотры"
@@ -178,13 +154,12 @@ export function DesktopPostCard({
             label="Скопировать ссылку"
             onClick={() => void actions.share()}
           />
-        </PostCardActions>
-        {actions.error ? (
+        </PostCardActions>}
+      error={actions.error ? (
           <p className="mt-2 text-xs text-red-400" role="alert">
             {actions.error}
           </p>
-        ) : null}
-      </PostCardBody>
-    </PostCardSurface>
+        ) : undefined}
+    />
   );
 }

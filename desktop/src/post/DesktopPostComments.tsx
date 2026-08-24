@@ -7,7 +7,7 @@ import type { CommentViewModel } from "@/types/domain";
 import { DesktopMediaDropzone } from "../composer/DesktopMediaDropzone";
 import { useDesktopMediaUpload } from "../composer/useDesktopMediaUpload";
 import type { DesktopConfig } from "../config";
-import { DesktopPostMedia } from "../feed/DesktopPostMedia";
+import { PostMediaGallery } from "@/components/media/PostMediaGallery";
 
 type DesktopPostCommentsProps = {
   comments: CommentViewModel[];
@@ -82,7 +82,7 @@ export function DesktopPostComments({
         />
       }
       renderMedia={(comment) => (
-        <DesktopPostMedia post={comment} className="mt-2 max-w-xs" />
+        <PostMediaGallery post={comment} className="mt-2 max-w-xs" />
       )}
     />
   );

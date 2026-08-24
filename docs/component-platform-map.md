@@ -10,7 +10,7 @@
 | Главная и лента | `components/home`, `components/feed/*Visual` | Server page загружает initial data | tRPC adapter загружает те же view-models | Нет Server Components; Tauri navigation renderer |
 | Профиль | `ProfileCardView`, `ProfileBadgesView`, `ProfilePageView`, `ProfileFlipCard`, `ProfileShareController`, `feed/MiniProfilePopover` | `ProfileCard` и `ProfileShareCardButton` подключают web queries/metadata | `DesktopProfile` и `DesktopProfileShareAdapter` передают те же view-models и callbacks | Realtime можно отключить; transport публикации и desktop navigation остаются адаптерами |
 | Чаты | `MessagesLayoutView`, `ChatMessageBubble`, `ChatMessageAttachment`, `ChatComposerInputView`, `ChatWindowHeaderVisual`, `GroupInfoDrawerView`, `GroupManagementSheetView` | `GroupInfoDrawer` и Messages route подключают tRPC/Next navigation | Desktop auth/realtime/upload adapters передают данные в те же Views; `/messages/:id/settings` использует тот же full-page View | Native notifications, transport realtime и способ загрузки файла |
-| Голос и комнаты | `components/chat/voice`, `VoiceSessionProvider`, `VoiceSessionDock` | Web media devices и browser picker | Тот же UI + Tauri process-audio bridge | WASAPI process loopback, global hotkeys |
+| Голос и комнаты | `components/chat/voice`, `VoiceSessionProvider`, `VoiceSessionDock`, `ScreenShareSourcePicker` | Web media devices и обязательный browser/OS picker | Тот же Room UI; Tauri adapter перечисляет окна/экраны и публикует выбранный native source | Windows libwebrtc desktop capture; WASAPI include-process-tree для окна и exclude-Voople system loopback для экрана; global hotkeys |
 | Магазин, подарки и Plus | `components/shop`, `ShopGiftDialog`, `components/subscription` | Server payment/API composition | tRPC/API adapter | Открытие checkout во внешнем браузере |
 | Discovery | `ExploreView`, `ExploreSearchResults`, `NotificationsView`, `EventsPage` | Optional/protected tRPC adapters | Shared view + desktop navigation renderer | Только способ навигации |
 | Настройки и приватность | `components/settings`, `components/social/UserPrivacySettingsPanel`, `UserInterestsSettingsPanel` | tRPC/Supabase adapters передают данные и auth-действия | Те же Views получают данные из desktop tRPC/auth adapters | Tray, startup, updater, hotkeys; DOM форм интересов и приватности общий |
@@ -43,8 +43,12 @@ responsive-правила — переноситься в корневой `src/
 корневом `src`. Desktop уже не содержит отдельных avatar, message bubble,
 attachment и composer input: контекстное меню, сторона action-кнопки, реакции,
 вложения, emoji/voice controls и responsive-поведение меняются только в корневом
-`src`. Следующие кандидаты на удаление из baseline: `DesktopPostCard`, внешний
-`DesktopChatThread`/upload-controller; общий share-controller профиля уже вынесен.
+`src`. Отдельные `DesktopEvents` и `DesktopPostMedia` удалены; group/subchat/
+section-access и shop-файлы перенесены из UI-доменов в transport/native adapters,
+которые подключают канонические Views. Карточка публикации теперь собирается
+единым `PostCardView`, а desktop оставляет только action/transport adapter вне
+UI-домена. Следующие кандидаты: внешний `DesktopChatThread`/upload-controller;
+общий share-controller профиля уже вынесен.
 
 Настройки интересов, групповых тем и матрица приватности также следуют этому
 правилу: все поля, состояния, лимиты и responsive-разметка находятся в

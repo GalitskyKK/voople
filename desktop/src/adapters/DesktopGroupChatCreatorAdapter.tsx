@@ -2,13 +2,14 @@ import type { Session } from "@supabase/supabase-js";
 import { useCallback, useMemo } from "react";
 
 import { GroupChatCreatorView } from "@/components/chat/GroupChatCreatorView";
+import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import type { UserSearchHit } from "@/types/search";
 
 import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
-import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 
-export function DesktopGroupChatCreator({
+/** Desktop transport adapter; all portable presentation lives in GroupChatCreatorView. */
+export function DesktopGroupChatCreatorAdapter({
   config,
   session,
   onCreated,
@@ -40,7 +41,11 @@ export function DesktopGroupChatCreator({
       createGroup={createGroup}
       onCreated={onCreated}
       renderAvatar={(user) => (
-        <ProfileAvatar displayName={user.displayName} animatedAvatarUrl={user.avatarUrl} size="sm" />
+        <ProfileAvatar
+          displayName={user.displayName}
+          animatedAvatarUrl={user.avatarUrl}
+          size="sm"
+        />
       )}
     />
   );

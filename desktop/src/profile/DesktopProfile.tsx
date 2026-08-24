@@ -15,7 +15,7 @@ import { AppPageContent } from "@/components/layout/AppPageContent";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
 
 import type { DesktopConfig } from "../config";
-import { DesktopPostCard } from "../feed/DesktopPostCard";
+import { DesktopPostCardAdapter } from "../adapters/DesktopPostCardAdapter";
 import { DesktopProfileShareAdapter } from "../adapters/DesktopProfileShareAdapter";
 import { useDesktopProfile } from "./useDesktopProfile";
 
@@ -154,7 +154,7 @@ export function DesktopProfile({
           />
         }
         renderPost={(post) => (
-          <DesktopPostCard
+          <DesktopPostCardAdapter
             key={post.id}
             post={post}
             config={config}
@@ -171,7 +171,7 @@ export function DesktopProfile({
           />
         )}
         renderPinnedPost={(post) => (
-          <DesktopPostCard
+          <DesktopPostCardAdapter
             key={`pinned:${post.id}`}
             post={post}
             config={config}

@@ -6,7 +6,7 @@ import { HomeFeedLayoutView } from "@/components/home/HomeFeedLayoutView";
 import { HomeNowPanelView, HomeSecondaryRailView } from "@/components/home/HomeOverviewPanelsView";
 
 import type { DesktopConfig } from "../config";
-import { DesktopPostCard } from "./DesktopPostCard";
+import { DesktopPostCardAdapter } from "../adapters/DesktopPostCardAdapter";
 import type { DesktopFeedTab } from "./types";
 import { useDesktopFeed } from "./useDesktopFeed";
 import { useDesktopHomeOverview } from "./useDesktopHomeOverview";
@@ -34,7 +34,7 @@ export function DesktopFeed({
             {feed.loading && <div className="feed-skeleton" aria-label="Загрузка ленты" />}
             {feed.error && <div className="feed-message" role="alert"><p>{feed.error}</p><button type="button" onClick={feed.retry}>Повторить</button></div>}
             {!feed.loading && !feed.error && feed.items.length === 0 && <div className="feed-message">{tab === "following" ? "Подпишитесь на авторов — их публикации появятся здесь." : "Лента пока пуста."}</div>}
-            <div className="post-list">{feed.items.map((post) => <DesktopPostCard post={post} config={config} session={session} renderDestination={renderDestination} key={post.id} />)}</div>
+            <div className="post-list">{feed.items.map((post) => <DesktopPostCardAdapter post={post} config={config} session={session} renderDestination={renderDestination} key={post.id} />)}</div>
             {feed.loadMore && <button type="button" className="load-more" disabled={feed.loadingMore} onClick={feed.loadMore}>{feed.loadingMore ? "Загружаем…" : "Показать ещё"}</button>}
         </>}
         secondary={!home.loading && !home.error ? <HomeSecondaryRailView overview={home.overview} renderDestination={renderDestination} /> : null}

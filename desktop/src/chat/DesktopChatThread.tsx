@@ -20,8 +20,8 @@ import type { GroupDiscoveryProfileView, InterestCatalogView } from "@/types/soc
 
 import type { DesktopConfig } from "../config";
 import { DesktopChatComposer } from "./DesktopChatComposer";
-import { DesktopSubchatCreator } from "./DesktopSubchatCreator";
-import { DesktopSectionAccessSheet } from "./DesktopSectionAccessSheet";
+import { DesktopSectionAccessAdapter } from "../adapters/DesktopSectionAccessAdapter";
+import { DesktopSubchatCreatorAdapter } from "../adapters/DesktopSubchatCreatorAdapter";
 import { useDesktopChatThread } from "./useDesktopChatThread";
 import { createDesktopTrpcClient } from "../api/trpc";
 
@@ -311,7 +311,7 @@ export function DesktopChatThread({
         {isGroup &&
         !isSubchat &&
         data.chat.topicsEnabled ? (
-          <DesktopSubchatCreator
+          <DesktopSubchatCreatorAdapter
             parentChatId={chatId}
             config={config}
             session={session}
@@ -325,7 +325,7 @@ export function DesktopChatThread({
         {isSubchat &&
         data.chat.parentChatId &&
         data.chat.viewerRole !== "member" ? (
-          <DesktopSectionAccessSheet
+          <DesktopSectionAccessAdapter
             chatId={chatId}
             parentChatId={data.chat.parentChatId}
             config={config}

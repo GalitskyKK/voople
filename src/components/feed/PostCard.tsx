@@ -5,12 +5,9 @@ import { MessageCircle, Repeat2 } from "lucide-react";
 import { type CSSProperties, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { RichText } from "@/components/ui/RichText";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import type { PostViewModel } from "@/types/domain";
-import { PostMedia } from "@/components/media/PostMedia";
-import { PostMediaGallery } from "@/components/media/PostMediaGallery";
 import { ProfileAppearanceCard } from "@/components/profile/ProfileAppearanceCard";
 import { ProfileReactions } from "@/components/profile/ProfileReactions";
 import { PostAuthorRow } from "./PostAuthorRow";
@@ -21,9 +18,8 @@ import { PostViewCounter } from "./PostViewCounter";
 import { StatusPostBody } from "./StatusPostBody";
 import {
   PostCardActions,
-  PostCardBody,
-  PostCardSurface,
 } from "./PostCardVisual";
+import { PostCardView } from "./PostCardView";
 import { RepostContent } from "./RepostContent";
 import { useAuthGate } from "@/components/auth/AuthGateProvider";
 
@@ -106,17 +102,19 @@ export function PostCard({
   if (deleted) return null;
 
   return (
-    <PostCardSurface
+    <PostCardView
+      post={post}
+      text={displayText}
+      repostComment={displayRepostComment}
       className={className}
       surfaceStyle={
-          c
-            ? ({
-                "--theme-accent": c.themeAccent,
-              } as CSSProperties)
-            : undefined
+        c
+          ? ({
+              "--theme-accent": c.themeAccent,
+            } as CSSProperties)
+          : undefined
       }
-    >
-        <PostAuthorRow
+      author={<PostAuthorRow
           postId={post.id}
           username={post.author.username}
           displayName={post.author.displayName}
@@ -135,22 +133,8 @@ export function PostCard({
             else setDisplayText(text);
           }}
           onDeleted={() => setDeleted(true)}
-        />
-        <PostCardBody>
-          {displayRepostComment && (
-            <p className="voople-post-card__text mb-3 text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">
-              <RichText text={displayRepostComment} />
-            </p>
-          )}
-          {displayText && (
-            <p className="voople-post-card__text text-sm leading-relaxed text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]"><RichText text={displayText} /></p>
-          )}
-          {post.media?.length ? (
-            <PostMediaGallery post={post} className="mt-3" />
-          ) : post.mediaUrl && (
-            <PostMedia url={post.mediaUrl} mediaType={post.mediaType} className="mt-3" />
-          )}
-          {post.kind === "appearance" && post.appearance && appearanceCustomization ? (
+        />}
+      appearance={post.kind === "appearance" && post.appearance && appearanceCustomization ? (
             <div className="mt-3 w-full space-y-2.5">
               <ProfileAppearanceCard profile={{ id: post.author.id, username: post.author.username, displayName: post.author.displayName, customization: appearanceCustomization, status: post.appearance.status ?? {}, badgeIds: post.appearance.badgeIds }} scene={post.appearance.scene} variant="feed" />
               {post.author.id ? (
@@ -160,29 +144,24 @@ export function PostCard({
                 />
               ) : null}
             </div>
-          ) : null}
-          {isStatus && (
+          ) : undefined}
+      status={isStatus ? (
             <StatusPostBody
               status={post.status!}
               authorUsername={post.author.username}
               className={post.text ? "mt-3" : undefined}
             />
-          )}
-          <RepostContent post={post} />
-          {post.tags && post.tags.length > 0 && (
-            <div className="voople-post-card__tags mt-2 flex flex-wrap gap-2">
-              {post.tags.map((tag) => (
-                <Link
-                  key={tag}
-                  href={`/hashtag/${encodeURIComponent(tag)}`}
-                  className="rounded-full bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] px-2 py-0.5 text-xs text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]"
-                >
-                  #{tag}
-                </Link>
-              ))}
-            </div>
-          )}
-          <PostCardActions>
+          ) : undefined}
+      repost={<RepostContent post={post} />}
+      renderTag={(tag) => (
+        <Link
+          href={`/hashtag/${encodeURIComponent(tag)}`}
+          className="rounded-full bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] px-2 py-0.5 text-xs text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]"
+        >
+          #{tag}
+        </Link>
+      )}
+      actions={<PostCardActions>
             <PostViewCounter
               key={`${post.id}:${post.viewCount}`}
               postId={post.id}
@@ -246,8 +225,9 @@ export function PostCard({
               authorName={post.author.displayName}
               text={displayText || displayRepostComment}
             />
-          </PostCardActions>
-          {repostPanelOpen && (
+          </PostCardActions>}
+      footer={<>
+          {repostPanelOpen ? (
             <div className="voople-panel--inset mt-3 p-3">
               <textarea
                 value={quoteText}
@@ -275,14 +255,14 @@ export function PostCard({
                 </Button>
               </div>
             </div>
-          )}
+          ) : null}
           <PostComments
             postId={post.id}
             open={commentsOpen || commentsAlwaysOpen}
             canComment={Boolean(viewerId)}
             onCountChange={setReplyCount}
           />
-        </PostCardBody>
-    </PostCardSurface>
+        </>}
+    />
   );
 }

@@ -7,7 +7,8 @@ import type { ChatGroupMemberView } from "@/types/chat";
 import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
 
-export function DesktopSectionAccessSheet({
+/** Desktop transport adapter; all portable presentation lives in SectionAccessSheetView. */
+export function DesktopSectionAccessAdapter({
   chatId,
   parentChatId,
   config,

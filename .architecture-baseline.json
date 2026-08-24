@@ -3,26 +3,19 @@
     "desktop/src/chat/DesktopChatComposer.tsx",
     "desktop/src/chat/DesktopChatComposerPreview.tsx",
     "desktop/src/chat/DesktopChatThread.tsx",
-    "desktop/src/chat/DesktopGroupChatCreator.tsx",
     "desktop/src/chat/DesktopGroupInviteSheet.tsx",
     "desktop/src/chat/DesktopMessages.tsx",
-    "desktop/src/chat/DesktopSectionAccessSheet.tsx",
-    "desktop/src/chat/DesktopSubchatCreator.tsx",
     "desktop/src/composer/DesktopCreatePostModal.tsx",
     "desktop/src/composer/DesktopMediaDropzone.tsx",
-    "desktop/src/events/DesktopEvents.tsx",
     "desktop/src/explore/DesktopExplore.tsx",
     "desktop/src/feed/DesktopAppearanceCard.tsx",
     "desktop/src/feed/DesktopFeed.tsx",
     "desktop/src/feed/DesktopHashtagFeed.tsx",
     "desktop/src/feed/DesktopPostAuthor.tsx",
-    "desktop/src/feed/DesktopPostCard.tsx",
-    "desktop/src/feed/DesktopPostMedia.tsx",
     "desktop/src/feed/DesktopPostMoreMenu.tsx",
     "desktop/src/post/DesktopPostComments.tsx",
     "desktop/src/post/DesktopPostDetail.tsx",
-    "desktop/src/profile/DesktopProfile.tsx",
-    "desktop/src/shop/DesktopShop.tsx"
+    "desktop/src/profile/DesktopProfile.tsx"
   ],
   "exceptions": {
     "src/components/admin/AdminAssetEditor.tsx": {

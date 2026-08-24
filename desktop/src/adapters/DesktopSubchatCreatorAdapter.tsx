@@ -7,7 +7,8 @@ import type { ChatGroupMemberView } from "@/types/chat";
 import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
 
-export function DesktopSubchatCreator({
+/** Desktop transport adapter; all portable presentation lives in SubchatCreatorView. */
+export function DesktopSubchatCreatorAdapter({
   parentChatId,
   config,
   session,

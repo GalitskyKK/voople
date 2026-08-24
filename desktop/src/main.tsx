@@ -44,6 +44,7 @@ if ("__TAURI_INTERNALS__" in window) {
   setDesktopProcessAudioBridge({
     capabilities: () => invoke("process_audio_capabilities"),
     listSources: () => invoke("list_process_audio_sources"),
+    listCaptureSources: () => invoke("list_desktop_capture_sources"),
     start: (input) => invoke("start_process_audio_share", { input }),
     stop: (screenSessionId) => invoke("stop_process_audio_share", { screenSessionId }),
   });

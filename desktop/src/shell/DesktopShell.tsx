@@ -68,9 +68,9 @@ const DesktopGroupSettingsPage = lazy(() =>
     default: module.DesktopGroupSettingsPage,
   })),
 );
-const DesktopEvents = lazy(() =>
-  import("../events/DesktopEvents").then((module) => ({
-    default: module.DesktopEvents,
+const EventsPage = lazy(() =>
+  import("@/components/events/EventsPage").then((module) => ({
+    default: module.EventsPage,
   })),
 );
 const DesktopSettings = lazy(() =>
@@ -78,9 +78,9 @@ const DesktopSettings = lazy(() =>
     default: module.DesktopSettings,
   })),
 );
-const DesktopShop = lazy(() =>
-  import("../shop/DesktopShop").then((module) => ({
-    default: module.DesktopShop,
+const DesktopShopAdapter = lazy(() =>
+  import("../adapters/DesktopShopAdapter").then((module) => ({
+    default: module.DesktopShopAdapter,
   })),
 );
 const DesktopHelp = lazy(() =>
@@ -388,11 +388,11 @@ export function DesktopShell({
               renderDestination={renderDestination}
             />
           ) : pathname === "/events" ? (
-            <DesktopEvents />
+            <AppPageContent><EventsPage /></AppPageContent>
           ) : pathname === "/settings" ? (
             <DesktopSettings config={config} session={session} navigate={navigate} />
           ) : pathname === "/shop" ? (
-            <DesktopShop config={config} />
+            <DesktopShopAdapter config={config} />
           ) : pathname === "/help" ? (
             <DesktopHelp navigate={navigate} />
           ) : groupSettingsChatId ? (

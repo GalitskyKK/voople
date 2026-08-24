@@ -10,7 +10,7 @@ import type { UserSearchHit } from "@/types/search";
 import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
-import { DesktopGroupChatCreator } from "./DesktopGroupChatCreator";
+import { DesktopGroupChatCreatorAdapter } from "../adapters/DesktopGroupChatCreatorAdapter";
 import { DesktopChatThread } from "./DesktopChatThread";
 import { useDesktopChats } from "./useDesktopChats";
 import { useDesktopPresence } from "../providers/DesktopPresenceProvider";
@@ -63,7 +63,7 @@ export function DesktopMessages({
           loading={loading}
           error={error}
           headerAction={
-            <DesktopGroupChatCreator
+            <DesktopGroupChatCreatorAdapter
               config={config}
               session={session}
               onCreated={(chatId) => {

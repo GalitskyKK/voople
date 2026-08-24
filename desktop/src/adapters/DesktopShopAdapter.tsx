@@ -1,13 +1,14 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useState } from "react";
 
-import { ShopPageView } from "@/components/shop/ShopPageView";
-import { ShopPageFrame } from "@/components/shop/ShopPageFrame";
 import { AppPageContent } from "@/components/layout/AppPageContent";
+import { ShopPageFrame } from "@/components/shop/ShopPageFrame";
+import { ShopPageView } from "@/components/shop/ShopPageView";
 
 import type { DesktopConfig } from "../config";
 
-export function DesktopShop({ config }: { config: DesktopConfig }) {
+/** Desktop external-navigation adapter around the canonical shop presentation. */
+export function DesktopShopAdapter({ config }: { config: DesktopConfig }) {
   const [openError, setOpenError] = useState<string | null>(null);
   const openExternal = useCallback((url: string) => {
     setOpenError(null);

@@ -4,7 +4,7 @@ import type { NavigationDestinationRenderer } from "@/components/layout/AppNavig
 import { AppPageContent } from "@/components/layout/AppPageContent";
 
 import type { DesktopConfig } from "../config";
-import { DesktopPostCard } from "./DesktopPostCard";
+import { DesktopPostCardAdapter } from "../adapters/DesktopPostCardAdapter";
 import { useDesktopHashtagFeed } from "./useDesktopHashtagFeed";
 
 export function DesktopHashtagFeed({
@@ -35,7 +35,7 @@ export function DesktopHashtagFeed({
       ) : null}
       <div className="post-list">
         {feed.items.map((post) => (
-          <DesktopPostCard
+          <DesktopPostCardAdapter
             key={post.id}
             post={post}
             config={config}

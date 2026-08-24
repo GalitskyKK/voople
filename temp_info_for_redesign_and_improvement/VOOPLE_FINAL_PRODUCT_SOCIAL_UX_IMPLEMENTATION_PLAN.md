@@ -1370,6 +1370,11 @@ invites → activated users
 35. responsive/mobile polish.
 36. accessibility.
 37. analytics dashboards.
+38. Screen Share source preview polish: в desktop собственный picker показывает
+    миниатюры окон/экранов, крупное preview выбранного источника, фактическое
+    состояние audio capability и выбранное качество до старта; в web остаётся
+    системный browser picker, после выбора Voople показывает preview реально
+    выданного track. Пункт некритичный и не подменяет P0 стабильности захвата.
 
 ---
 

@@ -41,7 +41,7 @@ Reference Map и шесть референсных бордов.
 | 4 | «Сейчас» | Online/listening/active Room, accepted DM и люди из общих групп, shared Home view/action, portable identity и rule-based ranking подключены | Game/activity, недавнее взаимное общение без DM, responsive/empty visual gate и реальные live tests | Частично |
 | 5 | «Продолжить» | Unread/reply/mention/recent/reciprocal ranking, локальные account/device drafts, recently-opened, лимит 4 и дедупликация с active Room проверены общими tests | Sticky visual parity, multi-session UX и end-to-end ranking data | Частично |
 | 6 | Relationship score | Серверная оценка участвует в Home ranking | Канонические сигналы/decay, explainability, privacy и recommendation reuse | Частично |
-| 7 | Presence privacy | Поля/settings, online/music и Home active-Room participant filtering выполняются server-side | Enforcement на profile/member/invite/recommendation surfaces и полный E2E | Частично |
+| 7 | Presence privacy | Один shared settings View для web/desktop; server-side enforcement online/music/rooms, profile/interests, invite counts/actions, new-DM requests и recommendations; migration 57 защищает DM атомарно | Код и production migration готовы; authenticated multi-user CI/E2E остаётся финальным release evidence | Готово в коде |
 | 8 | Group Info | Общий drawer, banner, topics, sections, Room CTA, filters/actions частично есть | Social proof, роли/actions, responsive desktop drawer и визуальная сверка Board 2 | Частично |
 | 9 | Тихая Room activity в истории | Group Room events агрегируются, direct calls остаются отдельными | Проверить concurrency/reconnect/multi-room/day grouping и старые клиенты | Частично |
 | 10 | Единый Room CTA | Shared presentation используется на части surfaces | Один contract/state во всех header/info/home/notification/invite surfaces | Частично |
@@ -55,7 +55,7 @@ Reference Map и шесть референсных бордов.
 | 13 | Public community page | Частично | Preview-first flow, privacy/join states и active Room surface |
 | 14 | Community cards | Частично | Banner, topics, social proof, online/talking и единая карточка везде |
 | 15 | Member directory | Частично | Сейчас/В сети/Все/Роли, search/actions/privacy и wide drawer |
-| 16 | People recommendations | Частично | Candidate sources, safety/privacy и actionable recommendation cards |
+| 16 | People recommendations | Частично | Opt-out privacy уже enforced; нужны candidate sources, safety и actionable recommendation cards |
 | 17 | Mutual context | Нет/частично | Общие группы/интересы/люди и объяснимость без утечки privacy |
 | 18 | Topic pages | Частично | Real ranking, filters, empty/error и navigation parity |
 | 19 | Organic interests onboarding | Нет/частично | Полный first-run flow, skip/edit/recommendations и analytics |
@@ -66,9 +66,9 @@ Reference Map и шесть референсных бордов.
 | --- | --- | --- | --- |
 | 20 | «Открыт к общению» | Частично | Visibility controls, discovery surfaces и abuse/safety handling |
 | 21 | DM Requests | Частично | Inbox, accept/decline/block/rate-limit и complete error states |
-| 22 | Request privacy | Частично | Server enforcement для всех entry points и regression tests |
+| 22 | Request privacy | Частично | Текущий new-DM path защищён в service и atomic DB RPC; нужен полный DM Requests inbox с accept/decline/block |
 | 23 | Social context в Mini Profile | Частично | Shared communities, relationship reason, room actions; cosmetics уже общие |
-| 24 | Room/community invite previews | Частично | Live count/privacy/banner/identity и auth/anonymous states |
+| 24 | Room/community invite previews | Частично | Anonymous live counts теперь privacy-filtered; нужны полные auth/anonymous states и visual parity |
 | 25 | Actionable Room notifications | Частично | Join CTA, expiry/reconnect, dedup и desktop notification parity |
 
 ## P3 — retention and virality
@@ -92,6 +92,7 @@ Reference Map и шесть референсных бордов.
 | 35 | Responsive/mobile polish | Частично | 360/390/1024/1440 snapshots и safe-area/touch gates всех verticals |
 | 36 | Accessibility | Частично | Keyboard/focus/screen reader/contrast matrix, reduced motion |
 | 37 | Analytics dashboards | Частично | Event coverage audit, activation ≥2 min, funnels/retention/cost dashboards |
+| 38 | Screen Share source preview polish | Частично | Desktop thumbnails/selected preview/quality/audio state; web post-selection track preview |
 
 ## Cross-platform architecture gate
 

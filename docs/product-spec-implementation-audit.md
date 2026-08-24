@@ -129,9 +129,15 @@
   `частично`; базовый popover, interests и pin action общие, shared communities,
   relationship reasons и invite action не завершены.
 - Privacy scopes для online/music/rooms/invites/requests/recommendations/interests:
-  `частично`; общий settings View и server-filtered online/profile music/interests
-  готовы, Home active-Room participants теперь фильтруются по `roomsScope` до
-  формирования view-model. Остальные enforcement-точки и полный E2E ожидаются.
+  `готово в коде`; общий settings View используется web/desktop и имеет
+  loading/error/retry/save states. Profile, Home, публичные invite-счётчики,
+  прямые group invites, people highlights и новый DM фильтруются server-side.
+  Новый DM дополнительно защищён атомарно в `get_or_create_direct_chat` миграцией
+  57, а release readiness проверяет и checksum, и deployed function body.
+  Gaming scope уже входит в общий policy contract; отдельный producer игровой
+  активности остаётся частью незакрытого Home/activity пункта, поэтому утечки
+  игровой активности сейчас нет. Финальный evidence — authenticated multi-user
+  CI/E2E после push.
 
 ## 8. Сообщества
 

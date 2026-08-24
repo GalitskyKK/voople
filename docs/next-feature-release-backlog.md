@@ -49,6 +49,13 @@
   platform spike; Windows publisher и browser selected-surface audio остаются
   текущими поддерживаемыми путями.
 
+## P4 — некритичный polish
+
+- Улучшить выбор демонстрации: desktop-пикер с миниатюрами окон и экранов,
+  крупным preview выбранного источника, качеством и честным audio state. В web
+  сохранить защищённый системный picker браузера и показывать preview уже
+  выбранного пользователем media track.
+
 ## Definition of Done для каждого пункта
 
 1. Общий контракт/view-model без raw DB rows.

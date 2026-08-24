@@ -16,7 +16,9 @@
 - Закрыть зафиксированный component debt без повышения baseline: send/attention
   orchestration уже вынесен из `ChatWindow`, его лимит снижен с 404 до 329 строк.
   `ChatRoomControl` закрыт: публичная граница, controller/lifecycle, preferences
-  и общий presentation View разделены, а его baseline удалён. Следующие цели —
+  и общий presentation View разделены, а его baseline удалён. `VoiceRoomSheet`
+  также разделён на общие stateless header/content/footer-секции, его architecture
+  notice закрыт. Следующие цели —
   message-list `ChatWindow`, `ProfileEditSheet`, затем
   остальные review-threshold компоненты и монолитные data-модули по доменным
   ответственностям.

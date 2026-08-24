@@ -32,16 +32,33 @@ test("ChatRoomControl is only a shared controller-to-view boundary", () => {
   const control = read("src/components/chat/ChatRoomControl.tsx");
   const view = read("src/components/chat/voice/ChatRoomControlView.tsx");
   const sheet = read("src/components/chat/voice/VoiceRoomSheet.tsx");
+  const sheetModels = read("src/components/chat/voice/voice-room-sheet-models.ts");
   const baseline = read(".architecture-baseline.json");
 
   assert.match(control, /useChatRoomControl\(props, ref\)/);
   assert.match(control, /<ChatRoomControlView controller=\{controller\}/);
   assert.doesNotMatch(control, /useState|mutateAsync|new Room/);
   assert.match(view, /<VoiceRoomSheet/);
-  assert.match(sheet, /identity: \{/);
-  assert.match(sheet, /connection: \{/);
-  assert.match(sheet, /session: \{/);
+  assert.match(sheet, /<VoiceRoomHeader/);
+  assert.match(sheet, /<VoiceRoomContent/);
+  assert.match(sheet, /<VoiceRoomFooter/);
+  assert.match(sheetModels, /identity: VoiceRoomIdentityModel/);
+  assert.match(sheetModels, /connection: VoiceRoomConnectionModel/);
+  assert.match(sheetModels, /session: VoiceRoomSessionModel/);
   assert.doesNotMatch(baseline, /ChatRoomControl\.tsx/);
+});
+
+test("room sheet owns one secondary panel and cancels stale fullscreen requests", () => {
+  const sheet = read("src/components/chat/voice/VoiceRoomSheet.tsx");
+  const fullscreen = read("src/components/chat/voice/useVoiceRoomFullscreen.ts");
+
+  assert.match(sheet, /type SecondaryPanel = "settings" \| "soundboard" \| null/);
+  assert.match(sheet, /setSecondaryPanel\(null\);\s+void exitFullscreen\(\);\s+onClose\(\)/);
+  assert.doesNotMatch(sheet, /settingsOpen|soundboardOpen/);
+  assert.match(fullscreen, /if \(pendingRef\.current\) return/);
+  assert.match(fullscreen, /generationRef\.current !== generation/);
+  assert.match(fullscreen, /document\.fullscreenElement === document\.documentElement/);
+  assert.match(fullscreen, /mountedRef\.current = false/);
 });
 
 test("microphone test cancels pending device access and prevents duplicate starts", () => {

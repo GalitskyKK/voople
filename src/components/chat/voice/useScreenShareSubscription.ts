@@ -26,14 +26,16 @@ export function useScreenShareSubscription({
 
   const syncPublication = useCallback((publication: RemoteTrackPublication, participant: RemoteParticipant) => {
     if (isRemoteScreenPublication(publication)) {
+      const ownNativeShare = participant.attributes["voople.ownerId"] ===
+        roomRef.current?.localParticipant.identity;
       if (publication.source === Track.Source.ScreenShare) {
-        setAvailable(participant.name || participant.identity || "Участник");
+        setAvailable(ownNativeShare ? "Ваш экран" : participant.name || participant.identity || "Участник");
       }
-      publication.setSubscribed(watchingRef.current);
+      publication.setSubscribed(ownNativeShare || watchingRef.current);
     } else {
       publication.setSubscribed(true);
     }
-  }, [setAvailable]);
+  }, [roomRef, setAvailable]);
 
   const syncExisting = useCallback((room: Room) => {
     room.remoteParticipants.forEach((participant) => {

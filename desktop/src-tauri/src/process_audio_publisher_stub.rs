@@ -3,7 +3,16 @@ use serde::Deserialize;
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StartProcessAudioInput {
-    pub process_id: u32,
+    #[serde(default)]
+    pub process_id: Option<u32>,
+    #[serde(default)]
+    pub capture_source: Option<crate::desktop_capture::DesktopCaptureSelection>,
+    #[serde(default)]
+    pub capture_width: Option<u32>,
+    #[serde(default)]
+    pub capture_height: Option<u32>,
+    #[serde(default)]
+    pub capture_frame_rate: Option<u32>,
     pub livekit_url: String,
     pub token: String,
     pub screen_session_id: String,
@@ -17,6 +26,10 @@ impl ProcessAudioPublishers {
         // Read every field so disabled-feature builds still validate the IPC shape.
         let _ = (
             input.process_id,
+            input.capture_source.map(|source| (source.id, source.kind)),
+            input.capture_width,
+            input.capture_height,
+            input.capture_frame_rate,
             input.livekit_url,
             input.token,
             input.screen_session_id,

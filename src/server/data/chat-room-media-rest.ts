@@ -131,7 +131,7 @@ export async function createChatRoomScreenAudioTokenRest(
     canPublish: true,
     canSubscribe: false,
     canPublishData: false,
-    canPublishSources: [TrackSource.SCREEN_SHARE_AUDIO],
+    canPublishSources: [TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO],
   });
   return {
     url: endpoints[0]!.url,

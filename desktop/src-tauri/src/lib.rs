@@ -13,6 +13,11 @@ use tauri::{
     Manager, WindowEvent,
 };
 
+#[cfg(feature = "process-audio-publisher")]
+mod desktop_capture;
+#[cfg(not(feature = "process-audio-publisher"))]
+#[path = "desktop_capture_stub.rs"]
+mod desktop_capture;
 mod process_audio;
 #[cfg(target_os = "windows")]
 mod process_audio_capture;
@@ -149,6 +154,11 @@ fn restart_application(app: tauri::AppHandle) {
 #[tauri::command]
 fn list_process_audio_sources() -> Result<Vec<process_audio::ProcessAudioSource>, String> {
     process_audio::list_process_audio_sources()
+}
+
+#[tauri::command]
+fn list_desktop_capture_sources() -> Result<Vec<desktop_capture::DesktopCaptureSource>, String> {
+    desktop_capture::list_desktop_capture_sources()
 }
 
 #[tauri::command]
@@ -417,6 +427,7 @@ pub fn run() {
             show_main_window,
             restart_application,
             list_process_audio_sources,
+            list_desktop_capture_sources,
             start_process_audio_share,
             stop_process_audio_share,
             open_external_url,

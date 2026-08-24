@@ -101,9 +101,10 @@ export function getBrowserDisplayMediaOptions(
     selfBrowserSurface: "exclude",
     surfaceSwitching: "include",
     systemAudio: "include",
-    // Newer Chromium builds can offer audio belonging only to the selected
-    // application window. Older browsers safely ignore this picker hint.
-    windowAudio: "window",
+    // Request the system mix when a browser cannot isolate audio belonging to
+    // one application window. `restrictOwnAudio` above asks Chromium to remove
+    // Voople's own call output from that mix and prevents an echo loop.
+    windowAudio: "system",
   };
 }
 

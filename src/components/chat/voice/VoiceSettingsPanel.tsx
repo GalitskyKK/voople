@@ -164,7 +164,7 @@ export function VoiceSettingsPanel({
               className="mt-3 w-full accent-[var(--theme-accent)]"
               aria-label="Общая громкость Voople"
             />
-            <span className="mt-1 block font-normal leading-5">Применяется поверх уровней отдельных участников.</span>
+            <span className="mt-1 block font-normal leading-5">100% — исходный уровень, 200% — усиление вдвое (+6 дБ). Применяется поверх уровней участников.</span>
           </label>
         </div>
 

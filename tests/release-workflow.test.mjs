@@ -33,20 +33,23 @@ test("Windows COM capture compiles in the default desktop gate", () => {
   assert.doesNotMatch(publisher, /RoomOptions\s*\{/);
 });
 
-test("native publisher acknowledges LiveKit publication before UI reports audio", () => {
+test("native publisher acknowledges the requested LiveKit media before UI reports sharing", () => {
   const publisher = read("desktop/src-tauri/src/process_audio_publisher.rs");
   const command = read("desktop/src-tauri/src/lib.rs");
 
   assert.match(publisher, /oneshot::channel/);
   assert.match(publisher, /timeout\(std::time::Duration::from_secs\(12\), ready_rx\)/);
-  assert.match(publisher, /ready\.send\(Ok\(\(\)\)\)/);
+  assert.match(publisher, /sender\.send\(Ok\(\(\)\)\)/);
+  assert.match(publisher, /audio_ready && video_ready/);
+  assert.match(publisher, /source\.capture_frame\(&frame\)\.await/);
+  assert.match(publisher, /source\.capture_frame\(&VideoFrame::new/);
   assert.match(command, /state\.start\(input\)\.await/);
 });
 
 test("a video-only RC makes Windows application audio mandatory next release work", () => {
   const backlog = read("docs/next-feature-release-backlog.md");
 
-  assert.match(backlog, /оставшиеся 23 записи/);
+  assert.match(backlog, /оставшиеся 16 записей/);
   assert.match(backlog, /ChatRoomControl/);
   assert.match(backlog, /processAudioPublisher: false/);
   assert.match(backlog, /следующий feature-релиз нельзя\s+продвигать в stable/);

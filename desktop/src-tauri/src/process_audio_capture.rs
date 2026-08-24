@@ -8,6 +8,7 @@ use windows::Win32::{
         AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM, AUDCLNT_STREAMFLAGS_LOOPBACK,
         AUDIOCLIENT_ACTIVATION_PARAMS, AUDIOCLIENT_ACTIVATION_PARAMS_0,
         AUDIOCLIENT_ACTIVATION_TYPE_PROCESS_LOOPBACK, AUDIOCLIENT_PROCESS_LOOPBACK_PARAMS,
+        PROCESS_LOOPBACK_MODE_EXCLUDE_TARGET_PROCESS_TREE,
         PROCESS_LOOPBACK_MODE_INCLUDE_TARGET_PROCESS_TREE, VIRTUAL_AUDIO_DEVICE_PROCESS_LOOPBACK,
         WAVEFORMATEX, WAVE_FORMAT_PCM,
     },
@@ -18,6 +19,12 @@ use windows::Win32::{
     },
 };
 use windows_core::{implement, Interface};
+
+#[cfg_attr(not(feature = "process-audio-publisher"), allow(dead_code))]
+pub(crate) enum ProcessLoopbackTarget {
+    IncludeProcessTree(u32),
+    ExcludeProcessTree(u32),
+}
 
 #[implement(IActivateAudioInterfaceCompletionHandler)]
 struct CompletionHandler {
@@ -49,17 +56,27 @@ impl IActivateAudioInterfaceCompletionHandler_Impl for CompletionHandler_Impl {
 
 #[cfg_attr(not(feature = "process-audio-publisher"), allow(dead_code))]
 pub(crate) fn capture_process_loopback(
-    process_id: u32,
+    target: ProcessLoopbackTarget,
     sender: tokio::sync::mpsc::Sender<Vec<i16>>,
 ) -> Result<(), String> {
     unsafe {
         let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+        let (process_id, loopback_mode) = match target {
+            ProcessLoopbackTarget::IncludeProcessTree(process_id) => (
+                process_id,
+                PROCESS_LOOPBACK_MODE_INCLUDE_TARGET_PROCESS_TREE,
+            ),
+            ProcessLoopbackTarget::ExcludeProcessTree(process_id) => (
+                process_id,
+                PROCESS_LOOPBACK_MODE_EXCLUDE_TARGET_PROCESS_TREE,
+            ),
+        };
         let mut activation = AUDIOCLIENT_ACTIVATION_PARAMS {
             ActivationType: AUDIOCLIENT_ACTIVATION_TYPE_PROCESS_LOOPBACK,
             Anonymous: AUDIOCLIENT_ACTIVATION_PARAMS_0 {
                 ProcessLoopbackParams: AUDIOCLIENT_PROCESS_LOOPBACK_PARAMS {
                     TargetProcessId: process_id,
-                    ProcessLoopbackMode: PROCESS_LOOPBACK_MODE_INCLUDE_TARGET_PROCESS_TREE,
+                    ProcessLoopbackMode: loopback_mode,
                 },
             },
         };
@@ -119,6 +136,13 @@ pub(crate) fn capture_process_loopback(
         let capture: IAudioCaptureClient =
             client.GetService().map_err(|error| error.to_string())?;
         client.Start().map_err(|error| error.to_string())?;
+        // Confirm that WASAPI activation and the LiveKit producer path are
+        // ready even while the selected application is temporarily silent.
+        // Real packets replace this 10 ms silent probe as soon as playback starts.
+        if sender.blocking_send(vec![0i16; 480 * 2]).is_err() {
+            let _ = client.Stop();
+            return Ok(());
+        }
 
         loop {
             let mut packet_frames = capture

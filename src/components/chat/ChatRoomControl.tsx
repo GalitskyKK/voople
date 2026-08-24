@@ -21,6 +21,7 @@ import { useVoiceVideoStage } from "./voice/useVoiceVideoStage";
 import { useScreenShareSubscription } from "./voice/useScreenShareSubscription";
 import { getDirectCallPhase } from "./voice/call-phase";
 import { useDesktopScreenAudioPublisher } from "./voice/useDesktopScreenAudioPublisher";
+import { ScreenShareSourcePicker } from "./voice/ScreenShareSourcePicker";
 import { useGroupSoundboard } from "./voice/useGroupSoundboard";
 import { useTerminalVoiceRecovery } from "./voice/useTerminalVoiceRecovery";
 import { useVoiceDeviceSettings } from "./voice/useVoiceDeviceSettings";
@@ -128,7 +129,7 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
     setAvailable: setScreenShareAvailable,
     setWatching: setWatchingScreenShare,
   });
-  const { toggle: toggleDesktopScreenAudio, stop: stopDesktopScreenAudio, error: desktopScreenAudioError } = useDesktopScreenAudioPublisher(chatId);
+  const { toggle: toggleDesktopScreenAudio, stop: stopDesktopScreenAudio, error: desktopScreenAudioError, capturePicker, selectCaptureSource, cancelCaptureSource } = useDesktopScreenAudioPublisher(chatId);
   const groupSoundboard = useGroupSoundboard(chatId, chatType === "group", liveRoomRef);
   const { access, enter, leave, mediaToken, room, utils } =
     useVoiceRoomServerSession(chatId, open);
@@ -165,7 +166,7 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
   });
   const {
     mediaActionPending,
-    screenSharePending,
+    screenSharePending, screenShareHasAudio,
     cameraPending,
     toggleMicrophone: toggleMic,
     toggleScreenShare,
@@ -197,7 +198,6 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
     }, 0);
     return () => window.clearTimeout(timer);
   }, [open, showParkedMedia]);
-
   const configureRoomEvents = useVoiceRoomEventConfigurator({
     roomRef: liveRoomRef,
     roomSoundsEnabled: () => preferencesRef.current.roomSounds,
@@ -219,7 +219,6 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
     onDataReceived: groupSoundboard.onDataReceived,
     handleDisconnected,
   });
-
   const {
     endpoints,
     currentEndpoint,
@@ -244,7 +243,6 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
     setConnectionQuality,
     setAudioBlocked,
   });
-
   useVoiceRoomTermination(
     inside, room.isFetching, value?.endReason ?? null, disconnectMedia, setMediaError,
   );
@@ -390,6 +388,7 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
         mediaActionPending={mediaActionPending}
         screenSharePending={screenSharePending}
         screenSharing={screenSharing}
+        screenShareHasAudio={screenShareHasAudio}
         cameraParticipantIds={cameraParticipantIds}
         cameraEnabled={cameraEnabled}
         cameraPending={cameraPending}
@@ -482,6 +481,7 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
                 : "Начать комнату"
         }
       />
+      {capturePicker ? <ScreenShareSourcePicker sources={capturePicker} onSelect={selectCaptureSource} onClose={cancelCaptureSource} /> : null}
     </>
   );
 });

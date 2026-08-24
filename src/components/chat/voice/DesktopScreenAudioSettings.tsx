@@ -82,12 +82,13 @@ export function DesktopScreenAudioSettings({ processId, onProcessChange }: Deskt
         <label className="mt-3 block text-xs font-medium text-[var(--app-muted)]">
           Источник звука
           <select value={processId ?? ""} onChange={(event) => onProcessChange(event.target.value ? Number(event.target.value) : null)} className="mt-1.5 h-10 w-full rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 text-sm text-[var(--foreground)]">
-            <option value="">Без звука приложения</option>
+            <option value="">Автоматически — выбранное приложение</option>
             {sources.map((source) => <option key={source.processId} value={source.processId}>{source.name}{source.active ? " · воспроизводит звук" : ""}</option>)}
           </select>
         </label>
       ) : null}
-      {publisherAvailable && !pending && sources.length === 0 ? <p className="mt-2 text-xs text-[var(--app-muted)]">Запустите воспроизведение в нужном приложении и обновите список.</p> : null}
+      {publisherAvailable && !pending && sources.length === 0 ? <p className="mt-2 text-xs text-[var(--app-muted)]">Вупл. подключит звук автоматически, когда выбранное приложение начнёт воспроизведение.</p> : null}
+      {publisherAvailable && sources.length > 0 ? <p className="mt-2 text-xs leading-5 text-[var(--app-muted)]">Оставьте автоматический режим. Выбирать приложение вручную нужно только если звук одновременно воспроизводят несколько программ.</p> : null}
       {error ? <p className="mt-2 text-xs text-red-400">{error}</p> : null}
       {capabilities ? <p className="mt-2 text-[11px] leading-4 text-[var(--app-muted)]">Требуется Windows 10 build {capabilities.minimumWindowsBuild} или новее{capabilities.currentWindowsBuild ? ` · установлен build ${capabilities.currentWindowsBuild}` : ""}.</p> : null}
     </div>

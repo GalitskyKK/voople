@@ -59,6 +59,7 @@ export function useVoiceMediaActions({
   const actionRef = useRef(false);
   const [mediaActionPending, setMediaActionPending] = useState(false);
   const [screenSharePending, setScreenSharePending] = useState(false);
+  const [screenShareHasAudio, setScreenShareHasAudio] = useState(false);
   const [cameraPending, setCameraPending] = useState(false);
 
   const toggleMicrophone = async () => {
@@ -124,6 +125,7 @@ export function useVoiceMediaActions({
         screenShareQualityRef.current,
       );
       setScreenSharing(result.enabled);
+      setScreenShareHasAudio(result.enabled && result.hasAudio);
       if (result.enabled && !screenSharing) {
         reportProductEvent("screen_share_started", { hasAudio: result.hasAudio });
         if (result.hasAudio) reportProductEvent("screen_audio_start", { source: "screen_share" });
@@ -131,6 +133,7 @@ export function useVoiceMediaActions({
       if (!result.enabled && screenSharing) reportProductEvent("screen_audio_stop", { source: "screen_share" });
       if (result.warning) setError(result.warning);
     } catch (cause) {
+      setScreenShareHasAudio(false);
       setError(cause instanceof Error ? cause.message : "Не удалось включить демонстрацию экрана.");
     } finally {
       setScreenSharePending(false);
@@ -167,6 +170,7 @@ export function useVoiceMediaActions({
   return {
     mediaActionPending,
     screenSharePending,
+    screenShareHasAudio,
     cameraPending,
     toggleMicrophone,
     toggleScreenShare,

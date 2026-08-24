@@ -94,8 +94,12 @@
   audio track для вкладки, окна приложения или экрана, включая Chromium hints
   `windowAudio/systemAudio`. Исправлена гонка поздней подписки. Фактическая
   доступность всё равно зависит от browser/OS picker; cross-browser E2E не закрыт.
-- Desktop process audio: `частично`; source/API есть, CI dependency исправляется,
-  production test ещё не прошёл.
+- Desktop capture/audio: `частично`; один общий picker получает реальные окна и
+  экраны через Tauri, а auxiliary LiveKit publisher отправляет native video и
+  audio в одном stream. Для окна используется WASAPI include-process-tree, для
+  всего экрана — системный loopback с исключением дерева Voople. TypeScript,
+  default Rust и production renderer gates проходят; feature-сборку и реальное
+  двухклиентное прослушивание ещё должен подтвердить Windows CI/E2E.
 
 ## 7. Профили и identity
 

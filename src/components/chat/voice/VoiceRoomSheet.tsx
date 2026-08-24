@@ -28,6 +28,7 @@ import { useVoiceRoomFullscreen } from "./useVoiceRoomFullscreen";
 import { VoiceMediaControls } from "./VoiceMediaControls";
 import { VoiceRoomStage } from "./VoiceRoomStage";
 import { VoiceRoomEmptyState } from "./VoiceRoomEmptyState";
+import { ScreenShareStatusBanner } from "./ScreenShareStatusBanner";
 import { VoiceSoundboardPanel } from "./VoiceSoundboardPanel";
 
 type VoiceRoomSheetProps = {
@@ -56,6 +57,7 @@ type VoiceRoomSheetProps = {
   mediaActionPending: boolean;
   screenSharePending: boolean;
   screenSharing: boolean;
+  screenShareHasAudio: boolean;
   cameraParticipantIds: ReadonlySet<string>;
   cameraEnabled: boolean;
   cameraPending: boolean;
@@ -92,7 +94,7 @@ export function VoiceRoomSheet(props: VoiceRoomSheetProps) {
     connectionLabel, mediaStatus, connectionQuality, screenShareOwner, screenShareAvailable,
     watchingScreenShare, screenShareVolume, participants, groupSounds,
     participantVolumes, micMuted, outputMuted, remoteMicMutedById, activeSpeakerIds,
-    mediaActionPending, screenSharePending, screenSharing, cameraParticipantIds,
+    mediaActionPending, screenSharePending, screenSharing, screenShareHasAudio, cameraParticipantIds,
     cameraEnabled, cameraPending, audioBlocked, onMicToggle, onOutputToggle,
     onScreenShareToggle, onCameraToggle, onResumeAudio, onCameraContainerChange,
     onParticipantVolumeChange, onScreenShareVolumeChange, onGroupSoundPlay, onWatchScreenShare,
@@ -198,6 +200,7 @@ export function VoiceRoomSheet(props: VoiceRoomSheetProps) {
           </div>
         ) : active ? (
           <div className="voople-room-surface min-h-0 flex-1 p-3 sm:p-4">
+            {screenSharing ? <ScreenShareStatusBanner hasAudio={screenShareHasAudio} /> : null}
             {screenShareAvailable && !watchingScreenShare && !screenSharing ? (
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_35%,var(--app-border))] bg-[var(--app-accent-soft)] p-3">
                 <div>

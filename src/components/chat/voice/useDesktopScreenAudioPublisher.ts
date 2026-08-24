@@ -1,9 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AudioPresets, Track, type Room } from "livekit-client";
 
-import { getDesktopProcessAudioBridge } from "@/lib/livekit/desktop-process-audio";
+import {
+  getDesktopProcessAudioBridge,
+  resolveDesktopProcessAudioSource,
+  type DesktopCaptureSource,
+  type DesktopProcessAudioSource,
+} from "@/lib/livekit/desktop-process-audio";
 import { trpc } from "@/lib/trpc/client";
 import {
   getScreenShareCaptureOptions,
@@ -12,19 +17,28 @@ import {
   type ScreenShareQuality,
 } from "./voice-room-config";
 
+type NativeCaptureRequest = {
+  processId: number | null;
+  captureSource: DesktopCaptureSource;
+  quality: ScreenShareQuality;
+};
+
 export function useDesktopScreenAudioPublisher(chatId: string) {
   const token = trpc.chat.roomScreenAudioToken.useMutation();
   const sessionIdRef = useRef<string | null>(null);
   const nativePublisherSupportedRef = useRef(false);
   const automaticProcessIdRef = useRef<number | null>(null);
+  const sourcesRef = useRef<DesktopProcessAudioSource[]>([]);
   const browserCaptureRef = useRef<MediaStream | null>(null);
   const refreshTimerRef = useRef<number | null>(null);
-  const startRef = useRef<(processId: number) => Promise<string | null>>(async () => null);
+  const startRef = useRef<(request: NativeCaptureRequest) => Promise<string | null>>(async () => null);
+  const pickerResolverRef = useRef<((source: DesktopCaptureSource | null) => void) | null>(null);
+  const [capturePicker, setCapturePicker] = useState<DesktopCaptureSource[] | null>(null);
 
-  const scheduleRefresh = useCallback((processId: number, delay: number) => {
+  const scheduleRefresh = useCallback((request: NativeCaptureRequest, delay: number) => {
     if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current);
     const run = () => {
-      void startRef.current(processId).catch((error) => {
+      void startRef.current(request).catch((error) => {
         console.warn("Screen audio lease refresh failed", {
           message: error instanceof Error ? error.message : String(error),
           retryAfterMs: 30_000,
@@ -33,6 +47,21 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
       });
     };
     refreshTimerRef.current = window.setTimeout(run, delay);
+  }, []);
+
+  const requestCaptureSource = useCallback((sources: DesktopCaptureSource[]) => {
+    pickerResolverRef.current?.(null);
+    setCapturePicker(sources);
+    return new Promise<DesktopCaptureSource | null>((resolve) => {
+      pickerResolverRef.current = resolve;
+    });
+  }, []);
+
+  const resolveCapturePicker = useCallback((source: DesktopCaptureSource | null) => {
+    const resolve = pickerResolverRef.current;
+    pickerResolverRef.current = null;
+    setCapturePicker(null);
+    resolve?.(source);
   }, []);
 
   useEffect(() => {
@@ -46,18 +75,18 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
         nativePublisherSupportedRef.current = capabilities.publisherSupported;
         if (!capabilities.publisherSupported) {
           automaticProcessIdRef.current = null;
+          sourcesRef.current = [];
           return;
         }
         const sources = await bridge.listSources();
         if (!active) return;
-        const activeSources = sources.filter((source) => source.active);
-        automaticProcessIdRef.current = activeSources.length === 1
-          ? activeSources[0]!.processId
-          : null;
+        sourcesRef.current = sources;
+        automaticProcessIdRef.current = resolveDesktopProcessAudioSource(sources, null);
       } catch {
         if (active) {
           nativePublisherSupportedRef.current = false;
           automaticProcessIdRef.current = null;
+          sourcesRef.current = [];
         }
       }
     };
@@ -122,22 +151,32 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
     return Boolean(audioTrack);
   }, []);
 
-  const start = useCallback(async (processId: number | null) => {
+  const start = useCallback(async (request: NativeCaptureRequest) => {
     const bridge = getDesktopProcessAudioBridge();
-    if (!bridge || processId === null) return null;
+    if (!bridge) return "Нативный модуль демонстрации недоступен.";
     const capabilities = await bridge.capabilities();
-    if (!capabilities.publisherSupported) return "Демонстрация запущена без звука приложения: аудиомодуль недоступен в этой системе.";
+    if (!capabilities.publisherSupported) return "Нативный модуль демонстрации недоступен в этой системе.";
     const screenSessionId = crypto.randomUUID();
     const credentials = await token.mutateAsync({ chatId, screenSessionId });
     await stop();
-    await bridge.start({ processId, livekitUrl: credentials.url, token: credentials.token, screenSessionId });
+    const plus = request.quality === "plus";
+    await bridge.start({
+      processId: request.processId,
+      captureSource: { id: request.captureSource.id, kind: request.captureSource.kind },
+      captureWidth: plus ? 1920 : 1280,
+      captureHeight: plus ? 1080 : 720,
+      captureFrameRate: plus ? 60 : 30,
+      livekitUrl: credentials.url,
+      token: credentials.token,
+      screenSessionId,
+    });
     sessionIdRef.current = screenSessionId;
     const refreshDelay = Math.max(30_000, Date.parse(credentials.refreshAfter) - Date.now());
     console.info("Screen audio lease acquired", {
       expiresAt: credentials.expiresAt,
       refreshAfter: credentials.refreshAfter,
     });
-    scheduleRefresh(processId, refreshDelay);
+    scheduleRefresh(request, refreshDelay);
     return null;
   }, [chatId, scheduleRefresh, stop, token]);
 
@@ -160,41 +199,55 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
       return { enabled: false, hasAudio: false, warning: null };
     }
 
-    // Do not await IPC before getDisplayMedia: the browser requires the call to
-    // retain transient activation from the user's click.
-    void stop();
+    await stop();
     const bridge = getDesktopProcessAudioBridge();
-    const resolvedProcessId = processId ?? automaticProcessIdRef.current;
-    const nativeProcessAudio = Boolean(
-      bridge && resolvedProcessId !== null && nativePublisherSupportedRef.current,
-    );
-    let browserAudioCaptured = false;
-    if (nativeProcessAudio) {
-      await room.localParticipant.setScreenShareEnabled(
-        true,
-        getScreenShareCaptureOptions(quality, true),
-        getScreenSharePublishOptions(quality),
-      );
-    } else {
-      browserAudioCaptured = await startBrowserCapture(room, quality);
+    const sourceRefresh = bridge && nativePublisherSupportedRef.current
+      ? bridge.listSources().catch(() => sourcesRef.current)
+      : Promise.resolve(sourcesRef.current);
+    let resolvedProcessId = processId ?? automaticProcessIdRef.current;
+    const nativeSources = bridge && nativePublisherSupportedRef.current
+      ? await bridge.listCaptureSources().catch(() => [])
+      : [];
+    if (bridge && nativePublisherSupportedRef.current && nativeSources.length) {
+      const selected = await requestCaptureSource(nativeSources);
+      if (!selected) return { enabled: false, hasAudio: false, warning: null };
+      const sources = await sourceRefresh;
+      sourcesRef.current = sources;
+      resolvedProcessId = selected.kind === "screen"
+        ? null
+        : resolveDesktopProcessAudioSource(
+            sources,
+            processId ?? selected.processId,
+            selected.title,
+          );
+      const request = { processId: resolvedProcessId, captureSource: selected, quality };
+      const warning = await start(request);
+      const hasAudio = (selected.kind === "screen" || resolvedProcessId !== null)
+        && warning === null;
+      return {
+        enabled: true,
+        hasAudio,
+        warning: warning ?? (hasAudio
+          ? null
+          : "Окно передаётся без звука: приложение пока не создало доступную аудиосессию."),
+      };
     }
+
+    // Web and desktop fallback must call getDisplayMedia directly from the
+    // click task so Chromium keeps transient user activation.
+    let browserAudioCaptured = false;
+    browserAudioCaptured = await startBrowserCapture(room, quality);
     const publication = room.localParticipant.getTrackPublication(Track.Source.ScreenShare);
     const enabled = Boolean(publication && !publication.isMuted);
     if (!enabled) return { enabled: false, hasAudio: false, warning: null };
     try {
-      if (nativeProcessAudio) {
-        const warning = await start(resolvedProcessId);
-        return { enabled: true, hasAudio: warning === null, warning };
-      }
       const surfaceAudio = room.localParticipant.getTrackPublication(Track.Source.ScreenShareAudio);
       return {
         enabled: true,
         hasAudio: browserAudioCaptured && Boolean(surfaceAudio && !surfaceAudio.isMuted),
         warning: browserAudioCaptured && surfaceAudio && !surfaceAudio.isMuted
           ? null
-          : bridge && nativePublisherSupportedRef.current && resolvedProcessId === null
-            ? "Видео запущено без звука приложения: выберите источник в настройках комнаты → «Звук приложения в демонстрации». Если звук воспроизводит только одно приложение, Вупл. подхватит его автоматически в течение нескольких секунд."
-            : "Видео запущено без звука: выбранная поверхность не предоставила аудиодорожку. В браузере разрешите передачу звука в системном окне; доступность звука окна и экрана определяет браузер.",
+          : "Видео запущено без звука: браузер не передал аудиодорожку выбранной поверхности. В окне выбора включите передачу звука.",
       };
     } catch (cause) {
       return {
@@ -205,8 +258,19 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
           : "Видео запущено без звука приложения.",
       };
     }
-  }, [start, startBrowserCapture, stop]);
+  }, [requestCaptureSource, start, startBrowserCapture, stop]);
 
-  useEffect(() => () => { void stop(); }, [stop]);
-  return { stop, toggle, pending: token.isPending, error: token.error?.message ?? null };
+  useEffect(() => () => {
+    pickerResolverRef.current?.(null);
+    void stop();
+  }, [stop]);
+  return {
+    stop,
+    toggle,
+    capturePicker,
+    selectCaptureSource: (source: DesktopCaptureSource) => resolveCapturePicker(source),
+    cancelCaptureSource: () => resolveCapturePicker(null),
+    pending: token.isPending,
+    error: token.error?.message ?? null,
+  };
 }

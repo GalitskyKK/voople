@@ -1,6 +1,7 @@
 import { assertOwnedUploadKey, chatAttachmentKindFromKey } from "@/lib/object-storage";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { normalizeGroupJoinPolicy, normalizeGroupVisibility } from "@/lib/chat/group-access";
+import { isRoomTimelineMessage } from "@/lib/chat/chat-list-preview";
 import {
   toProfileCustomizationView,
   type CustomizationRow,
@@ -94,7 +95,7 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
   const allChatIds = [...chatIds, ...channelIds];
   const msgsResult = await admin
     .from("messages")
-    .select("chat_id, text, media_url, media_title, shared_track_id, created_at, sender_id")
+    .select("chat_id, text, content, media_url, media_title, shared_track_id, created_at, sender_id")
     .in("chat_id", allChatIds)
     .order("created_at", { ascending: false })
     .limit(Math.min(allChatIds.length * 5, 300));
@@ -215,6 +216,7 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
     { text: string | null; preview: string; createdAt: string; senderId: string }
   >();
   for (const m of msgsResult.data ?? []) {
+    if (isRoomTimelineMessage(m.content)) continue;
     const cid = m.chat_id as string;
     if (!lastByChat.has(cid)) {
       lastByChat.set(cid, {

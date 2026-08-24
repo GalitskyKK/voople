@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   scoreHomeContinue,
   scoreHomeNow,
+  selectContinueWithLocalAttention,
   selectRankedHomeItems,
 } from "../src/lib/social/home-ranking.ts";
 import { messageMentionsUsername } from "../src/lib/social/home-attention.ts";
@@ -50,4 +51,19 @@ test("home attention recognizes an exact username mention only", () => {
   assert.equal(messageMentionsUsername("Привет, @nm_ggkk", "nm_ggk"), false);
   assert.equal(messageMentionsUsername("mail@nm_ggk.example", "nm_ggk"), false);
   assert.equal(messageMentionsUsername(null, "nm_ggk"), false);
+});
+
+test("local chat drafts and recently opened conversations enrich Continue", () => {
+  const selected = selectContinueWithLocalAttention([
+    { id: "draft", score: 0, subtitle: "Старое", title: "Draft", kind: "group", href: "/messages/draft", avatarUrl: null, userId: null, online: false },
+    { id: "recent", score: 0, subtitle: "Диалог", title: "Recent", kind: "group", href: "/messages/recent", avatarUrl: null, userId: null, online: false },
+    { id: "stale", score: 0, subtitle: "Старый", title: "Stale", kind: "group", href: "/messages/stale", avatarUrl: null, userId: null, online: false },
+  ], [
+    { chatId: "draft", openedAt: nowMs - 1_000, draftText: "  насчёт нового экрана  ", draftUpdatedAt: nowMs - 1_000 },
+    { chatId: "recent", openedAt: nowMs - 60_000, draftText: null, draftUpdatedAt: null },
+    { chatId: "stale", openedAt: nowMs - 8 * 24 * 60 * 60_000, draftText: null, draftUpdatedAt: null },
+  ], nowMs);
+
+  assert.deepEqual(selected.map((item) => item.id), ["draft", "recent"]);
+  assert.equal(selected[0]?.subtitle, "Черновик: насчёт нового экрана");
 });

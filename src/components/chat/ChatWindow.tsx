@@ -5,7 +5,7 @@ import { useRealtimeChat } from "@/hooks/useRealtimeChat";
 import { useChatMessageEditor } from "@/hooks/useChatMessageEditor";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import { useChatMessageSelection } from "@/hooks/useChatMessageSelection";
-import { useChatOpenedTelemetry } from "@/hooks/useChatOpenedTelemetry";
+import { useChatConversationAttention } from "@/hooks/useChatConversationAttention";
 import type { PendingChatUpload } from "@/hooks/useChatUpload";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 import { trpc } from "@/lib/trpc/client";
@@ -43,8 +43,8 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   const { onlineUserIds } = useOnlineUsers();
   const utils = trpc.useUtils();
   const editor = useChatMessageEditor(chatId, setText);
-  useChatOpenedTelemetry(chatId);
   const { data: me } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
+  useChatConversationAttention(chatId, me?.id, text, Boolean(editor.editing), setText);
   const { realtimeDegraded } = useRealtimeChat(chatId, me?.id);
   const { data, isLoading, error } = trpc.chat.getMessages.useQuery(
     { chatId },

@@ -23,5 +23,6 @@ export type HomeOverviewView = {
   viewer: HomeNowItem | null;
   now: HomeNowItem[];
   continue: HomeNowItem[];
+  continueCandidates: HomeNowItem[];
   communities: HomeNowItem[];
 };

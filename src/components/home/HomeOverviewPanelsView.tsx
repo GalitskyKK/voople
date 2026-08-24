@@ -8,6 +8,8 @@ import type { NavigationDestinationRenderer } from "@/components/layout/AppNavig
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { reportProductEvent } from "@/lib/telemetry/client";
 import { resolveRingStyle } from "@/lib/customization/rings";
+import { useLocalChatAttention } from "@/hooks/useLocalChatAttention";
+import { selectContinueWithLocalAttention } from "@/lib/social/home-ranking";
 import { cn } from "@/lib/utils";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 import type { HomeNowItem, HomeOverviewView } from "@/types/home";
@@ -151,10 +153,18 @@ export function HomeNowPanelView({ overview, renderDestination, onMessageUser, m
 }
 
 export function HomeSecondaryRailView({ overview, renderDestination }: { overview: HomeOverviewView; renderDestination: NavigationDestinationRenderer }) {
+  const localAttention = useLocalChatAttention(overview.viewer?.userId);
+  const continueItems = useMemo(
+    () => overview.viewer?.userId
+      ? selectContinueWithLocalAttention(overview.continueCandidates, localAttention)
+      : overview.continue,
+    [localAttention, overview.continue, overview.continueCandidates, overview.viewer?.userId],
+  );
+
   return <aside className="hidden min-w-0 xl:block" aria-label="Дополнительно на главной"><div className="voople-panel voople-scroll sticky top-4 max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain border border-[var(--app-border)] p-3">
     {overview.viewer ? <div className="mb-3 rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_26%,var(--app-border))] bg-[linear-gradient(135deg,var(--app-accent-soft),transparent_72%)] p-1"><DestinationItem item={overview.viewer} renderDestination={renderDestination} compact showPresence /></div> : null}
     <header className="flex items-center justify-between gap-2 px-2 pb-1"><span className="flex items-center gap-2"><MessageCircle className="h-4 w-4 text-[var(--theme-accent)]" /><h2 className="text-sm font-semibold">Продолжить</h2></span>{renderDestination({ href: "/messages", label: "Все чаты", active: false, className: "text-[11px] text-[var(--app-muted)] hover:text-[var(--foreground)]", children: "Все" })}</header>
-    {overview.continue.map((item) => <DestinationItem key={`continue-${item.id}`} item={item} renderDestination={renderDestination} compact />)}
+    {continueItems.map((item) => <DestinationItem key={`continue-${item.id}`} item={item} renderDestination={renderDestination} compact />)}
     {overview.communities.length ? <><p className="mb-1 mt-3 flex items-center gap-2 border-t border-[var(--app-border)] px-2 pt-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--app-muted)]"><UsersRound className="h-3.5 w-3.5 text-[var(--theme-accent)]" />Ваши сообщества</p>{overview.communities.map((item) => <DestinationItem key={`community-${item.id}`} item={item} renderDestination={renderDestination} compact />)}</> : null}
   </div></aside>;
 }

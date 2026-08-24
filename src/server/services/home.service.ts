@@ -172,6 +172,11 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
       limit: 4,
       minimumScore: 1,
     }),
+    continueCandidates: selectRankedHomeItems(continueItems, {
+      excludeIds: activeRoomIds,
+      limit: 24,
+      minimumScore: 0,
+    }),
     communities: groups.slice(0, 3).map((item) => ({
       ...item,
       subtitle: `${chats.find((chat) => chat.id === item.id)?.memberCount ?? 0} участников`,

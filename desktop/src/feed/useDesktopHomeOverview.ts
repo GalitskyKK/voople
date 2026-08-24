@@ -10,6 +10,7 @@ const EMPTY_OVERVIEW: HomeOverviewView = {
   viewer: null,
   now: [],
   continue: [],
+  continueCandidates: [],
   communities: [],
 };
 
@@ -19,7 +20,13 @@ function parseHomeOverview(value: unknown): HomeOverviewView {
   if (!Array.isArray(overview.now) || !Array.isArray(overview.continue) || !Array.isArray(overview.communities)) {
     throw new Error("Некорректный ответ главной");
   }
-  return { viewer: overview.viewer ?? null, now: overview.now, continue: overview.continue, communities: overview.communities };
+  return {
+    viewer: overview.viewer ?? null,
+    now: overview.now,
+    continue: overview.continue,
+    continueCandidates: Array.isArray(overview.continueCandidates) ? overview.continueCandidates : overview.continue,
+    communities: overview.communities,
+  };
 }
 
 export function useDesktopHomeOverview(config: DesktopConfig, session: Session) {

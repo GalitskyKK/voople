@@ -33,7 +33,7 @@ export default async function FeedPage({ searchParams }: FeedPageProps) {
     }),
     viewerId
       ? getHomeOverview(viewerId)
-      : Promise.resolve({ viewer: null, now: [], continue: [], communities: [] } satisfies HomeOverviewView),
+      : Promise.resolve({ viewer: null, now: [], continue: [], continueCandidates: [], communities: [] } satisfies HomeOverviewView),
   ])
 
   return (

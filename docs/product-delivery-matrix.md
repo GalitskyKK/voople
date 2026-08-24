@@ -39,7 +39,7 @@ Reference Map и шесть референсных бордов.
 | 2 | Join policy `invite_only/request/free` | Поле и базовая discovery/join логика существуют | Request moderation flow, все error states и web/desktop E2E | Частично |
 | 3 | Interests/topics для user и group | Модель, выбор и discovery-источники существуют | Управляемый каталог вместо поверхностного hardcode, onboarding и ranking validation | Частично |
 | 4 | «Сейчас» | Online/listening/active Room, accepted DM и люди из общих групп, shared Home view/action, portable identity и rule-based ranking подключены | Game/activity, недавнее взаимное общение без DM, responsive/empty visual gate и реальные live tests | Частично |
-| 5 | «Продолжить» | Unread/reply/mention/recent/reciprocal ranking, лимит 4 и дедупликация с active Room проверены общими tests | Chat drafts, реальный recently-opened signal, sticky visual parity и end-to-end ranking data | Частично |
+| 5 | «Продолжить» | Unread/reply/mention/recent/reciprocal ranking, локальные account/device drafts, recently-opened, лимит 4 и дедупликация с active Room проверены общими tests | Sticky visual parity, multi-session UX и end-to-end ranking data | Частично |
 | 6 | Relationship score | Серверная оценка участвует в Home ranking | Канонические сигналы/decay, explainability, privacy и recommendation reuse | Частично |
 | 7 | Presence privacy | Поля/settings и часть server filtering существуют | Enforcement на всех Home/profile/room/member/invite surfaces и E2E | Частично |
 | 8 | Group Info | Общий drawer, banner, topics, sections, Room CTA, filters/actions частично есть | Social proof, роли/actions, responsive desktop drawer и визуальная сверка Board 2 | Частично |

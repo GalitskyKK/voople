@@ -6,6 +6,7 @@ import type { ChatMessageView, GroupEmojiView } from "@/types/chat";
 import { ChatComposerInputView } from "@/components/chat/ChatComposerInputView";
 import { ChatComposerFrame, CHAT_COMPOSER_SURFACE_CLASS } from "@/components/chat/ChatComposerVisual";
 import { cn } from "@/lib/utils";
+import { useLocalChatDraft } from "@/hooks/useLocalChatDraft";
 
 import type { DesktopConfig } from "../config";
 import { DesktopChatComposerPreview } from "./DesktopChatComposerPreview";
@@ -38,6 +39,13 @@ export function DesktopChatComposer({
   customEmojis?: GroupEmojiView[];
 }) {
   const [text, setText] = useState(() => editing?.text ?? "");
+  useLocalChatDraft({
+    accountId: session.user.id,
+    chatId,
+    text,
+    editing: Boolean(editing),
+    onRestore: setText,
+  });
   const {
     clear,
     error,

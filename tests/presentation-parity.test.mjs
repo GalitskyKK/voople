@@ -12,6 +12,8 @@ test("web and desktop home use one responsive feed layout", () => {
   const layout = read("src/components/home/HomeFeedLayoutView.tsx");
   const view = read("src/components/home/HomeOverviewPanelsView.tsx");
   const data = read("src/server/data/home-overview-rest.ts");
+  const webChat = read("src/components/chat/ChatWindow.tsx");
+  const desktopComposer = read("desktop/src/chat/DesktopChatComposer.tsx");
 
   assert.match(web, /HomeFeedLayoutView/);
   assert.match(desktop, /HomeFeedLayoutView/);
@@ -21,6 +23,9 @@ test("web and desktop home use one responsive feed layout", () => {
   assert.match(desktop, /chat\.openDirect/);
   assert.doesNotMatch(view, /trpc|createDesktopTrpcClient/);
   assert.match(data, /listSharedGroupPeopleRest/);
+  assert.match(webChat, /useChatConversationAttention/);
+  assert.match(desktopComposer, /useLocalChatDraft/);
+  assert.match(view, /selectContinueWithLocalAttention/);
   const renderedHeader = shell.indexOf('{pathname === "/feed" ? <FeedHeaderVisual');
   assert.ok(renderedHeader > 0);
   assert.ok(renderedHeader < shell.indexOf('<div className="desktop-shell-scroll'));

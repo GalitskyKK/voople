@@ -28,3 +28,19 @@ test("desktop entry imports only the client-safe object storage module", () => {
   assert.match(source, /@\/lib\/object-storage\/urls/);
   assert.doesNotMatch(source, /from ["']@\/lib\/object-storage["']/);
 });
+
+test("mini profile shares the canonical customization layers on web and desktop", () => {
+  const popover = read("src/components/feed/MiniProfilePopover.tsx");
+  const authorVisual = read("src/components/feed/PostAuthorVisual.tsx");
+  const desktopAuthor = read("desktop/src/adapters/DesktopPostAuthorAdapter.tsx");
+  const miniCard = read("src/components/profile/MiniProfileCardView.tsx");
+  const profileVisual = read("src/components/profile/ProfileCardVisual.tsx");
+
+  assert.match(popover, /MiniProfileCardView/);
+  assert.match(authorVisual, /MiniProfilePopover/);
+  assert.match(desktopAuthor, /PostAuthorVisual/);
+  assert.match(miniCard, /ProfileCardVisual/);
+  assert.match(miniCard, /ProfileAvatar/);
+  assert.match(miniCard, /ProfileStats/);
+  assert.equal(profileVisual.match(/ProfileCardEffectLayer/g)?.length, 3);
+});

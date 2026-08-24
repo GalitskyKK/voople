@@ -7,6 +7,7 @@ import {
   ProfileCardFrameDivider,
   ProfileCardFrameOverlay,
 } from "./ProfileCardFrame";
+import { ProfileCardEffectLayer } from "./ProfileCardHeader";
 import { ProfileCardVideoSections } from "./ProfileCardVideoSections";
 import { profileCardThemeStyle } from "./profile-card-style";
 
@@ -62,6 +63,7 @@ export function ProfileCardVisual({
         >
           {body}
         </ProfileCardVideoSections>
+        <ProfileCardEffectLayer customization={customization} />
         <ProfileCardFrameOverlay frame={assets.frame} />
       </article>
     );
@@ -80,6 +82,7 @@ export function ProfileCardVisual({
           {body}
         </div>
       </div>
+      <ProfileCardEffectLayer customization={customization} />
       <ProfileCardFrameOverlay frame={assets.frame} />
     </article>
   );

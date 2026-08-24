@@ -1,23 +1,47 @@
 import { getAdminClient } from "@/lib/supabase/admin";
 import { canViewPrivateFieldRest, getUserPrivacySettingsRest } from "@/server/data/privacy-rest";
+import {
+  toProfileCustomizationView,
+  type CustomizationRow,
+} from "@/server/mappers/customization";
+import type { ChatRoomParticipantView } from "@/types/chat";
 
 const ACTIVE_PARTICIPANT_WINDOW_MS = 3 * 60_000;
 
-export async function getActiveRoomCountsRest(chatIds: string[]) {
-  if (!chatIds.length) return new Map<string, number>();
+export async function getActiveRoomPresenceRest(chatIds: string[], viewerId: string) {
+  const result = new Map<string, ChatRoomParticipantView[]>();
+  if (!chatIds.length) return result;
   const activeAfter = new Date(Date.now() - ACTIVE_PARTICIPANT_WINDOW_MS).toISOString();
   const { data, error } = await getAdminClient()
     .from("chat_room_participants")
-    .select("chat_id")
+    .select("chat_id, user_id, mic_muted, joined_at, users!inner(id, username, display_name, profile_customization (avatar_type, avatar_data, animated_avatar_id, avatar_decoration_id, avatar_ring_id))")
     .in("chat_id", chatIds)
-    .gte("last_seen_at", activeAfter);
+    .gte("last_seen_at", activeAfter)
+    .order("joined_at", { ascending: true });
   if (error) throw new Error(error.message);
-  const counts = new Map<string, number>();
+
   for (const row of data ?? []) {
-    const chatId = row.chat_id as string;
-    counts.set(chatId, (counts.get(chatId) ?? 0) + 1);
+    const user = Array.isArray(row.users) ? row.users[0] : row.users;
+    if (!user) continue;
+    const relation = user.profile_customization as CustomizationRow | CustomizationRow[] | null;
+    const customization = toProfileCustomizationView(
+      Array.isArray(relation) ? relation[0] : relation,
+    );
+    const chatId = String(row.chat_id);
+    const participants = result.get(chatId) ?? [];
+    participants.push({
+      id: String(user.id),
+      username: String(user.username),
+      displayName: String(user.display_name),
+      avatarUrl: customization.assets.animatedAvatarUrl ?? null,
+      avatarDecorationUrl: customization.assets.avatarDecorationUrl ?? null,
+      avatarRingId: customization.avatarRingId ?? null,
+      micMuted: Boolean(row.mic_muted),
+      isMe: row.user_id === viewerId,
+    });
+    result.set(chatId, participants);
   }
-  return counts;
+  return result;
 }
 
 export async function getHomeChatAttentionRest(chatIds: string[], userId: string) {

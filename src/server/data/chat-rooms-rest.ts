@@ -264,6 +264,7 @@ async function assertNoOtherActiveRoom(chatId: string, userId: string) {
 async function finishRoom(
   chatId: string,
   status: NonNullable<ChatRoomView["endReason"]>,
+  roomKind: "direct" | "group",
 ) {
   const admin = getAdminClient();
   const now = new Date().toISOString();
@@ -294,11 +295,12 @@ async function finishRoom(
     startedBy: room.started_by as string,
     startedAt: room.started_at as string,
     event: status,
+    roomKind,
   });
 }
 
 export async function getChatRoomRest(chatId: string, userId: string): Promise<ChatRoomView> {
-  await getMembership(chatId, userId);
+  const membership = await getMembership(chatId, userId);
   await removeStaleRoomParticipants(chatId);
 
   const admin = getAdminClient();
@@ -329,7 +331,7 @@ export async function getChatRoomRest(chatId: string, userId: string): Promise<C
     Date.now() - utcTimestampMs(roomResult.data?.started_at) >
       DIRECT_CALL_RING_MS;
   if (ringExpired) {
-    await finishRoom(chatId, "missed");
+    await finishRoom(chatId, "missed", membership.type);
     participantRows.length = 0;
   }
 
@@ -338,7 +340,7 @@ export async function getChatRoomRest(chatId: string, userId: string): Promise<C
     storedStatus === "ringing" && !ringExpired && participantRows.length > 0;
 
   if (!active && storedStatus === "active") {
-    await finishRoom(chatId, "ended");
+    await finishRoom(chatId, "ended", membership.type);
   }
 
   const participants = participantRows.flatMap((row) => {
@@ -469,6 +471,7 @@ export async function leaveChatRoomRest(chatId: string, userId: string) {
       room?.status === "ringing" && room.started_by === userId
         ? "cancelled"
         : "ended",
+      membership.type,
     );
     return { ok: true as const };
   }
@@ -488,7 +491,7 @@ export async function leaveChatRoomRest(chatId: string, userId: string) {
   if (countError) throw new Error(countError.message);
 
   if (!count) {
-    await finishRoom(chatId, "ended");
+    await finishRoom(chatId, "ended", membership.type);
   }
 
   return { ok: true as const };

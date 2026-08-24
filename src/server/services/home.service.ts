@@ -2,7 +2,7 @@ import "server-only";
 
 import { listChats } from "@/server/services/chat.service";
 import {
-  getActiveRoomCountsRest,
+  getActiveRoomPresenceRest,
   getHomeChatAttentionRest,
   getRelationshipScoresRest,
   getVisibleListeningActivityRest,
@@ -66,9 +66,9 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
   const rootChats = chats.filter((chat) => !chat.parentChatId);
   const directChats = rootChats.filter((chat) => chat.type === "direct" && chat.otherUser);
   const relationshipCandidates = directChats.map((chat) => ({ userId: chat.otherUser!.id, chatId: chat.id }));
-  const [viewer, roomCounts, attention, visibleOnlineIds, listeningActivity, relationshipScores, pinnedUserIds] = await Promise.all([
+  const [viewer, roomPresence, attention, visibleOnlineIds, listeningActivity, relationshipScores, pinnedUserIds] = await Promise.all([
     fetchCurrentUserSummary(userId),
-    getActiveRoomCountsRest(rootChats.map((chat) => chat.id)),
+    getActiveRoomPresenceRest(rootChats.map((chat) => chat.id), userId),
     getHomeChatAttentionRest(rootChats.map((chat) => chat.id), userId),
     listVisibleOnlineUserIdsRest(userId),
     getVisibleListeningActivityRest(userId, relationshipCandidates.map((candidate) => candidate.userId)),
@@ -95,10 +95,17 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
   });
   const groups = chats.map((chat) => groupItem(chat, userId)).filter((item): item is HomeNowItem => Boolean(item));
   const itemById = new Map([...direct, ...groups].map((item) => [item.id, item]));
-  const activeRooms = groups.flatMap((item) => {
-    const participantCount = roomCounts.get(item.id) ?? 0;
-    return participantCount > 0
-      ? [{ ...item, kind: "room" as const, activity: "in_room" as const, score: scoreHomeNow({ activeRoom: true }), subtitle: `${participantCount} в комнате · Зайти` }]
+  const activeRooms = [...groups, ...direct].flatMap((item) => {
+    const participants = roomPresence.get(item.id) ?? [];
+    return participants.length > 0
+      ? [{
+          ...item,
+          kind: "room" as const,
+          activity: "in_room" as const,
+          score: scoreHomeNow({ activeRoom: true, pinned: item.pinned }),
+          subtitle: `${participants.length} ${item.userId ? "в разговоре" : "в комнате"} · Зайти`,
+          participants,
+        }]
       : [];
   });
   const now = takeUniqueItems(

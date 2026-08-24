@@ -33,6 +33,31 @@ function DestinationItem({ item, renderDestination, compact = false, showPresenc
   });
 }
 
+function RoomParticipantStack({ item }: { item: HomeNowItem }) {
+  if (item.kind !== "room" || !item.participants?.length) return null;
+  return (
+    <span
+      className="ml-auto flex shrink-0 -space-x-2"
+      aria-label={`В комнате: ${item.participants.map((participant) => participant.displayName).join(", ")}`}
+    >
+      {item.participants.slice(0, 3).map((participant) => (
+        <span
+          key={participant.id}
+          className="h-6 w-6 overflow-hidden rounded-full border-2 border-[var(--app-surface)] bg-[var(--app-surface-soft)]"
+        >
+          {participant.avatarUrl ? (
+            <img src={participant.avatarUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <span className="grid h-full w-full place-items-center text-[9px] font-semibold">
+              {participant.displayName.charAt(0).toUpperCase()}
+            </span>
+          )}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function NowItem({ item, renderDestination }: { item: HomeNowItem; renderDestination: NavigationDestinationRenderer }) {
   const { onlineUserIds } = useOnlineUsers();
   const online = item.userId ? onlineUserIds.has(item.userId) || item.online : item.online;
@@ -62,6 +87,7 @@ function NowItem({ item, renderDestination }: { item: HomeNowItem; renderDestina
     children: <>
       <ProfileAvatarVisual displayName={item.title} size="sm" avatarImage={item.avatarUrl ? <img src={item.avatarUrl} alt="" className="h-full w-full object-cover" /> : undefined} isOnline={online || item.kind === "room"} />
       <span className="min-w-0"><span className="flex items-center gap-1 truncate text-sm font-semibold">{item.pinned ? <Pin className="h-3 w-3 shrink-0 fill-current text-[var(--theme-accent)]" aria-label="Закреплён" /> : null}<span className="truncate">{item.title}</span></span><span className="flex min-w-0 items-center gap-1 truncate text-[11px] text-[var(--app-muted)]">{ActivityIcon ? <ActivityIcon className="h-3 w-3 shrink-0 text-[var(--theme-accent)]" /> : null}<span className="truncate">{activityLabel}</span></span><span className="mt-0.5 block text-[10px] font-semibold text-[var(--theme-accent)] opacity-0 transition group-hover:opacity-100">{item.kind === "room" ? "Зайти" : "Написать"}</span></span>
+      <RoomParticipantStack item={item} />
     </>,
   });
 }

@@ -114,10 +114,18 @@ export function useVoiceMediaConnection({
 
     const sequence = ++sequenceRef.current;
     const task = (async () => {
+      const isCurrent = () =>
+        sequence === sequenceRef.current && mountedRef.current;
+      const abandonRoom = (room: Room) => {
+        if (roomRef.current === room) roomRef.current = null;
+        void room.disconnect();
+      };
+
       setMediaStatus("connecting");
       setMediaError(null);
       try {
         const credentials = await getCredentials();
+        if (!isCurrent()) return;
         if (!credentials.enabled) {
           setMediaStatus("unavailable");
           return;
@@ -142,7 +150,7 @@ export function useVoiceMediaConnection({
 
         let lastError: unknown;
         for (const endpoint of orderedEndpoints) {
-          if (sequence !== sequenceRef.current || !mountedRef.current) return;
+          if (!isCurrent()) return;
           const room = new Room({
             adaptiveStream: true,
             dynacast: true,
@@ -156,6 +164,7 @@ export function useVoiceMediaConnection({
           roomRef.current = room;
           try {
             await room.prepareConnection(endpoint.url, credentials.token);
+            if (!isCurrent()) return abandonRoom(room);
             await room.connect(endpoint.url, credentials.token, {
               autoSubscribe: false,
               maxRetries: 3,
@@ -171,20 +180,22 @@ export function useVoiceMediaConnection({
             void room.disconnect();
             continue;
           }
-          if (sequence !== sequenceRef.current || !mountedRef.current) {
-            roomRef.current = null;
-            void room.disconnect();
-            return;
-          }
+          if (!isCurrent()) return abandonRoom(room);
 
           setCurrentEndpoint(endpoint.url);
           setMediaStatus("connected");
           resetRecovery();
           setConnectionQuality(room.localParticipant.connectionQuality);
           syncExistingPublications(room);
-          await room.startAudio().catch(() => setAudioBlocked(true));
+          try {
+            await room.startAudio();
+          } catch {
+            if (isCurrent()) setAudioBlocked(true);
+          }
+          if (!isCurrent()) return abandonRoom(room);
           if (preferencesRef.current.outputDeviceId !== "default") {
             await room.switchActiveDevice("audiooutput", preferencesRef.current.outputDeviceId).catch(() => undefined);
+            if (!isCurrent()) return abandonRoom(room);
           }
           if (!desiredMicMutedRef.current) {
             try {
@@ -197,8 +208,10 @@ export function useVoiceMediaConnection({
                 rnnoiseEnabled: preferencesRef.current.enhancedNoiseSuppression,
                 microphoneGain: preferencesRef.current.microphoneGain,
               });
+              if (!isCurrent()) return abandonRoom(room);
               if (processorError) setMediaError(processorError);
             } catch (cause) {
+              if (!isCurrent()) return abandonRoom(room);
               setMediaError(
                 cause instanceof Error && cause.message.includes("timed out")
                   ? "Сервер не подтвердил микрофон. Комната осталась подключена — повторите включение или используйте совместимый режим."
@@ -206,13 +219,14 @@ export function useVoiceMediaConnection({
               );
             }
           }
+          if (!isCurrent()) return;
           setMicMuted(getMicrophoneMuted(room));
           await refreshDevices();
           return;
         }
         throw lastError ?? new Error("Нет доступного медиасервера");
       } catch (cause) {
-        if (sequence !== sequenceRef.current || !mountedRef.current) return;
+        if (!isCurrent()) return;
         setMicMuted(true);
         setMediaStatus("error");
         setMediaError(

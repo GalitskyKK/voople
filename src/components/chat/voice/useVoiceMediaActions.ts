@@ -98,7 +98,9 @@ export function useVoiceMediaActions({
       void sendHeartbeat();
       await refreshDevices();
     } catch (cause) {
-      setMicMuted(getMicrophoneMuted(room));
+      const actualMuted = getMicrophoneMuted(room);
+      desiredMicMutedRef.current = actualMuted;
+      setMicMuted(actualMuted);
       setError(
         cause instanceof Error && cause.message.includes("timed out")
           ? "Сервер не подтвердил публикацию микрофона. Переподключитесь или включите совместимый режим."

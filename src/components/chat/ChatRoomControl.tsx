@@ -29,6 +29,7 @@ import { useVoiceMediaActions } from "./voice/useVoiceMediaActions";
 import { useVoiceMediaConnection } from "./voice/useVoiceMediaConnection";
 import { useVoiceRoomEventConfigurator } from "./voice/useVoiceRoomEventConfigurator";
 import { useVoiceRoomServerSession } from "./voice/useVoiceRoomServerSession";
+import { useVoiceSessionOperation } from "./voice/useVoiceSessionOperation";
 import { playVoiceRoomSound } from "./voice/voice-room-sounds";
 type ChatRoomControlProps = {
   chatId: string;
@@ -133,6 +134,7 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
   const groupSoundboard = useGroupSoundboard(chatId, chatType === "group", liveRoomRef);
   const { access, enter, leave, mediaToken, room, utils } =
     useVoiceRoomServerSession(chatId, open);
+  const sessionOperation = useVoiceSessionOperation();
   const value = room.data;
   const active = value?.status === "active" || value?.status === "ringing";
   const inside = Boolean(value?.isInside);
@@ -247,22 +249,35 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
     inside, room.isFetching, value?.endReason ?? null, disconnectMedia, setMediaError,
   );
 
-  const enterAndConnect = async () => {
+  const enterAndConnect = () => sessionOperation.run(async ({ isCurrent }) => {
     setMediaError(null);
     try {
       if (!inside) {
-        const nextRoom = await enter.mutateAsync({ chatId, micMuted });
+        const nextRoom = await enter.mutateAsync({
+          chatId,
+          micMuted: desiredMicMutedRef.current,
+        });
+        if (!isCurrent()) {
+          await leave.mutateAsync({ chatId }).catch(() => undefined);
+          return;
+        }
         utils.chat.room.setData({ chatId }, nextRoom);
         if (!active) reportProductEvent("room_created", { kind: chatType });
       }
+      if (!isCurrent()) return;
       await connectMedia();
+      if (!isCurrent()) {
+        disconnectMedia();
+        return;
+      }
       reportProductEvent("room_joined", { kind: chatType });
     } catch {
-      // Ошибка мутации уже отображается ниже.
+      // Mutation and media errors are already reflected in the shared sheet.
     }
-  };
+  });
 
   const leaveRoom = async () => {
+    sessionOperation.cancel();
     disconnectMedia();
     await leave.mutateAsync({ chatId });
     reportProductEvent("room_left", { durationSeconds: value?.startedAt ? Math.max(0, Math.round((Date.now() - new Date(value.startedAt).getTime()) / 1000)) : 0 });
@@ -463,6 +478,7 @@ export const ChatRoomControl = forwardRef<ChatRoomControlHandle, ChatRoomControl
         }
         connectDisabled={
           enter.isPending ||
+          leave.isPending ||
           mediaToken.isPending ||
           mediaStatus === "connecting" ||
           room.isLoading ||

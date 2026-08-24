@@ -7,14 +7,12 @@
 
 ## P0 следующего feature-релиза
 
-- Завершить web/desktop presentation migration: профиль уже полностью вынесен
-  из portable desktop baseline; composer перенесён в общие Views, разобрать
-  оставшиеся 8 записей
-  `desktopPortableUi` в `.architecture-baseline.json`, перенести переносимую
-  разметку в один stateless View, оставить в desktop только data/navigation/
-  native adapters и удалить запись после parity-теста. Найденное до этого
-  пользовательское расхождение не ждёт feature-релиза и исправляется как
-  дефект текущей версии.
+- Web/desktop presentation migration: baseline `desktopPortableUi` обнулён.
+  Переносимая разметка chat, post, composer, profile, Home, Search и group
+  management живёт в корневых stateless Views; desktop содержит только data/
+  navigation/native adapters. Новые desktop UI-копии запрещены architecture
+  gate. Найденное визуальное или функциональное расхождение исправляется как
+  дефект общего View/контракта, а не добавлением platform fork.
 - Закрыть зафиксированный component debt без повышения baseline: send/attention
   orchestration уже вынесен из `ChatWindow`, его лимит снижен с 404 до 329 строк.
   В первую очередь разделить `ChatRoomControl`, message-list `ChatWindow`,

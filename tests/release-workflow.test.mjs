@@ -49,7 +49,7 @@ test("native publisher acknowledges the requested LiveKit media before UI report
 test("a video-only RC makes Windows application audio mandatory next release work", () => {
   const backlog = read("docs/next-feature-release-backlog.md");
 
-  assert.match(backlog, /оставшиеся 8 записей/);
+  assert.match(backlog, /desktopPortableUi.*обнулён/s);
   assert.match(backlog, /ChatRoomControl/);
   assert.match(backlog, /processAudioPublisher: false/);
   assert.match(backlog, /следующий feature-релиз нельзя\s+продвигать в stable/);

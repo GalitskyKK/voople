@@ -88,6 +88,11 @@
   disabled/error: `частично`; message bubble, attachment, context menu, composer
   form/input и preview теперь общие для web/desktop. Различаются только upload/
   send adapters, а playlist attachment пока недоступен в desktop.
+- Chat/post/discovery presentation migration: `готово архитектурно`;
+  `desktopPortableUi` обнулён, web/desktop используют общие thread, composer,
+  create-post, comment/media, detail, Explore и group-management Views. Это не
+  означает visual acceptance всех boards: оставшиеся расхождения исправляются
+  в общем View и требуют snapshots/E2E.
 - Room timeline events: `частично`; события и дневные summary остаются внутри
   беседы, но больше не подменяют последнее пользовательское сообщение в списке.
   Нужен authenticated E2E на direct/group и каналы.

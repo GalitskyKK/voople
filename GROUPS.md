@@ -54,7 +54,7 @@ authorization check on the server through `assertChatMemberRest`.
 - `src/components/chat/GroupMembersList.tsx`: role and removal controls.
 - `src/components/chat/GroupAuditLog.tsx`: readable administrative history.
 - `src/components/chat/GroupInviteSheet.tsx`: Next.js tRPC adapter.
-- `desktop/src/chat/DesktopGroupInviteSheet.tsx`: Tauri tRPC/upload adapter;
+- `desktop/src/adapters/DesktopGroupManagementAdapter.tsx`: Tauri tRPC/upload adapter;
   it must not duplicate the shared view.
 
 ## Mutation flow

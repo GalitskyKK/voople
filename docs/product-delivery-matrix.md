@@ -101,8 +101,8 @@ Reference Map и шесть референсных бордов.
 - Web adapters владеют Next/tRPC/server boundaries. Desktop adapters владеют
   Tauri/auth/navigation/native capabilities.
 - `desktop/src` не должен повторять profile, post, chat, Home, Search, settings
-  или store markup. Остаток известных переносимых desktop-дублей контролирует
-  `.architecture-baseline.json`; значение разрешено только уменьшать.
+  или store markup. `desktopPortableUi` пуст и architecture check запрещает
+  повторное добавление исключений или переносимого TSX в desktop-домены.
 - Native capability может отличаться, но UI contract, состояния и fallback
   обязаны оставаться одинаковыми.
 

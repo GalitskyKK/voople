@@ -4,12 +4,33 @@
 передают данные и навигационные adapters, но не создают вторую DOM/CSS-версию
 доменного компонента.
 
+## Понятная модель слоёв
+
+1. `MainShell` и `DesktopShell` — platform boundary: auth/session,
+   route/window state, safe areas, updater/tray/hotkeys. Общие геометрия и
+   навигация берутся из `AppShellFrame`/`AppNavigationVisual`; feature-state в
+   shell не складывается.
+2. Web/desktop feature adapters подключают tRPC/Supabase/Tauri, преобразуют
+   ответы в общий view-model и передают callbacks. Adapter не владеет второй
+   системой CSS или альтернативной карточкой/формой.
+3. Общие hooks/controllers в `src/hooks` хранят переносимое состояние сценария:
+   draft, selection, optimistic update, reconnect и state machine. Различающийся
+   transport передаётся им как dependency/callback.
+4. Stateless `*View/*Frame` в `src/components/<domain>` получают view-model,
+   явное состояние (`loading/empty/error/offline/...`) и callbacks. Здесь живут
+   единственные DOM, responsive-правила, focus и анимации.
+5. `components/ui` и design tokens — нижний общий слой без знания web/desktop.
+
+Поток однонаправленный:
+`platform shell → feature adapter/controller → shared View → UI primitives`.
+View не импортирует desktop, Next router, Supabase или server modules.
+
 | Домен | Канонический слой | Web boundary | Desktop boundary | Допустимое отличие desktop |
 |---|---|---|---|---|
 | Shell и навигация | `components/layout/AppShellFrame`, `AppNavigationVisual`, `lib/layout/route-layout` | `MainShell`, Next `Link` | `DesktopShell`, state-router renderer | Window chrome, tray, hotkeys |
-| Главная и лента | `components/home`, `components/feed/*Visual` | Server page загружает initial data | `DesktopFeedAdapter` загружает те же view-models | Нет Server Components; Tauri navigation renderer |
+| Главная и лента | `components/home`, `components/feed/*Visual`, `CreatePostDialogView`, `PostDetailViewVisual`, `PostCommentsView`, `components/media/*View` | Server page и web controllers загружают initial/live data | Feed/post/create/comment adapters передают те же view-models и upload callbacks | Нет Server Components; Tauri navigation renderer и upload transport |
 | Профиль | `ProfileCardView`, `ProfileBadgesView`, `ProfilePageView`, `ProfileFlipCard`, `ProfileShareController`, `feed/MiniProfilePopover` | `ProfileCard` и `ProfileShareCardButton` подключают web queries/metadata | `DesktopProfileAdapter` и `DesktopProfileShareAdapter` передают те же view-models и callbacks; `desktop/src/profile` содержит только data hook | Realtime можно отключить; transport публикации и desktop navigation остаются адаптерами |
-| Чаты | `MessagesLayoutView`, `ChatMessageBubble`, `ChatMessageAttachment`, `ChatComposerFormView`, `ChatComposerPreviewView`, `ChatComposerInputView`, `ChatWindowHeaderVisual`, `GroupInfoDrawerView`, `GroupManagementSheetView`; `useChatSendMutation` и local attention/draft hooks владеют state recovery | `ChatComposer`/`GroupInfoDrawer` и Messages route подключают web upload, tRPC и Next navigation | `DesktopChatComposerAdapter` передаёт desktop upload/send callbacks в те же composer Views; остальные auth/realtime adapters используют общий local draft contract, `/messages/:id/settings` — тот же full-page View | Native notifications, transport realtime и способ загрузки файла; DOM composer не отличается |
+| Чаты | `MessagesLayoutView`, `ChatThreadFrameView`, `ChatMessageBubble`, `ChatMessageAttachment`, `ChatComposerFormView`, `ChatComposerPreviewView`, `ChatComposerInputView`, `ChatWindowHeaderVisual`, `GroupInfoDrawerView`, `GroupManagementSheetView`; local attention/draft hooks владеют state recovery | `ChatWindow`/Messages route подключают web upload, tRPC и Next navigation | `DesktopMessagesAdapter`, `DesktopChatThreadAdapter`, `DesktopChatComposerAdapter`, `DesktopGroupManagementAdapter` передают desktop callbacks в те же Views | Native notifications, transport realtime и способ загрузки файла; DOM thread/composer/settings общий |
 | Голос и комнаты | `components/chat/voice`, `VoiceSessionProvider`, `VoiceSessionDock`, `ScreenShareSourcePicker` | Web media devices и обязательный browser/OS picker | Тот же Room UI; Tauri adapter перечисляет окна/экраны и публикует выбранный native source | Windows libwebrtc desktop capture; WASAPI include-process-tree для окна и exclude-Voople system loopback для экрана; global hotkeys |
 | Магазин, подарки и Plus | `components/shop`, `ShopGiftDialog`, `components/subscription` | Server payment/API composition | tRPC/API adapter | Открытие checkout во внешнем браузере |
 | Discovery | `ExploreView`, `ExploreSearchResults`, `NotificationsView`, `EventsPage` | Optional/protected tRPC adapters | Shared view + desktop navigation renderer | Только способ навигации |
@@ -28,13 +49,12 @@
 hotkeys и Windows media integration. Карточки, формы, профиль, сообщения,
 комнаты и дизайн-токены должны импортироваться из корневого `src`.
 
-## Контролируемый переход без второго UI
+## Переход завершён: второй UI запрещён
 
-`.architecture-baseline.json` содержит старые desktop-файлы, существовавшие до
-этого правила. Это не список разрешённых дублей: проверка запрещает добавлять
-новые переносимые `.tsx` в desktop-домены. При работе над экраном старый файл
-должен превращаться в data/native adapter, а DOM, состояние представления и
-responsive-правила — переноситься в корневой `src/components`.
+`desktopPortableUi` в `.architecture-baseline.json` пуст. Architecture gate
+запрещает добавлять переносимые `.tsx` в desktop-домены. Новая возможность
+сначала получает общий контракт/View; adapter добавляется только при реальном
+различии transport, navigation или native capability.
 
 Общие `HomeOverviewView`, Search, Notifications, Shop, полноэкранные настройки
 группы и карточка профиля уже следуют этой схеме. `DesktopProfileCard` и
@@ -49,8 +69,9 @@ section-access и shop-файлы перенесены из UI-доменов в
 которые подключают канонические Views. Карточка публикации теперь собирается
 единым `PostCardView`, а desktop оставляет только action/transport adapter вне
 UI-домена. Feed и hashtag composition также вынесены в adapters и подключают
-общие layout/header/card Views. Следующие кандидаты: внешний `DesktopChatThread`/messages;
-общий share-controller профиля уже вынесен.
+общие layout/header/card Views. Chat thread/messages, group management, create
+post, media upload, comments, post detail и Explore также вынесены в adapters и
+подключают корневые Views; portable desktop baseline полностью обнулён.
 
 Настройки интересов, групповых тем и матрица приватности также следуют этому
 правилу: все поля, состояния, лимиты и responsive-разметка находятся в

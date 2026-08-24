@@ -68,5 +68,7 @@
 Переходить на отдельную копию FSD не требуется. Нужна доменная модульность с
 одним portable presentation-слоем: stateless Views получают view-models и
 callbacks; web и desktop оставляют только data/navigation/native adapters.
-Текущее правило архитектуры уже задаёт это направление, но migration не
-закончена: baseline всё ещё содержит 23 desktop TSX-файла с переносимым UI.
+Presentation migration завершена: `desktopPortableUi` пуст, а architecture gate
+не позволяет вернуть исключения. Оставшиеся platform-файлы являются transport/
+navigation/native adapters; visual acceptance конкретных boards проверяется
+отдельно и не считается выполненным только из-за общей архитектуры.

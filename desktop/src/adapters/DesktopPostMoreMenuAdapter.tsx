@@ -11,7 +11,7 @@ import type { DesktopConfig } from "../config";
 const menuItemClass =
   "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[color-mix(in_srgb,var(--foreground)_90%,transparent)] hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] disabled:opacity-50";
 
-export function DesktopPostMoreMenu({
+export function DesktopPostMoreMenuAdapter({
   postId,
   isPinned,
   config,

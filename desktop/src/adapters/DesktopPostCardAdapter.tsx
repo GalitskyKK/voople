@@ -14,9 +14,9 @@ import { StatusPostBodyVisual } from "@/components/feed/StatusPostBodyVisual";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
 
 import type { DesktopConfig } from "../config";
-import { DesktopAppearanceCard } from "../feed/DesktopAppearanceCard";
-import { DesktopPostAuthor } from "../feed/DesktopPostAuthor";
-import { DesktopPostMoreMenu } from "../feed/DesktopPostMoreMenu";
+import { DesktopAppearanceCardAdapter } from "./DesktopAppearanceCardAdapter";
+import { DesktopPostAuthorAdapter } from "./DesktopPostAuthorAdapter";
+import { DesktopPostMoreMenuAdapter } from "./DesktopPostMoreMenuAdapter";
 import type { DesktopPost } from "../feed/types";
 import { useDesktopPostActions } from "../feed/useDesktopPostActions";
 
@@ -51,13 +51,13 @@ export function DesktopPostCardAdapter({
             } as CSSProperties)
           : undefined
       }
-      author={<DesktopPostAuthor
+      author={<DesktopPostAuthorAdapter
         post={post}
         renderDestination={renderDestination}
         badgeUrl={badgeUrl}
         trailing={
           ownerProfile ? (
-            <DesktopPostMoreMenu
+            <DesktopPostMoreMenuAdapter
               postId={post.id}
               isPinned={ownerProfile.isPinned}
               config={config}
@@ -70,7 +70,7 @@ export function DesktopPostCardAdapter({
       appearance={post.kind === "appearance" &&
         post.appearance &&
         appearanceCustomization ? (
-          <DesktopAppearanceCard
+          <DesktopAppearanceCardAdapter
             post={post}
             customization={appearanceCustomization}
             className="mt-3"
@@ -91,7 +91,7 @@ export function DesktopPostCardAdapter({
                 <PostMediaGallery post={item} className="mt-3" />
               )}
               renderAppearance={(item, nestedCustomization) => (
-                <DesktopAppearanceCard
+                <DesktopAppearanceCardAdapter
                   post={item}
                   customization={nestedCustomization}
                   className="mt-3"

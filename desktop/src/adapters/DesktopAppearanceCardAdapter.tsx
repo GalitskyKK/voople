@@ -3,7 +3,7 @@ import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { ProfileBadgesView } from "@/components/profile/ProfileBadgesView";
 import type { PostViewModel, ProfileCustomizationView } from "@/types/domain";
 
-export function DesktopAppearanceCard({
+export function DesktopAppearanceCardAdapter({
   post,
   customization,
   className,

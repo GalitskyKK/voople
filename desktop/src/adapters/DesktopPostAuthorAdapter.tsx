@@ -6,7 +6,7 @@ import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { DEFAULT_RING, resolveRingStyle } from "@/lib/customization/rings";
 import type { PostViewModel } from "@/types/domain";
 
-export function DesktopPostAuthor({
+export function DesktopPostAuthorAdapter({
   post,
   renderDestination,
   badgeUrl,

@@ -58,8 +58,10 @@
   downstream recommendations ещё неполны.
 - До 3 закреплённых контактов: `частично`; server-only slots, toggle в
   mini-profile и Home ranking реализованы, migration 55 и visual E2E ожидаются.
-- Right rail identity/Продолжить/Ваши сообщества: `готов` по композиции; ranking и
-  дедупликация `частично`.
+- Right rail identity/Продолжить/Ваши сообщества: `готов` по композиции; unread,
+  reply/mention, recent/reciprocal ranking и active-Room dedup подключены. Draft и
+  реальный recently-opened signal, visual parity и end-to-end data gate остаются
+  `частично`.
 - Feed text/image/gallery/link/poll/status: `частично`; text/media/gallery/status
   есть, полноценные poll и link-card не подтверждены.
 

@@ -1,4 +1,5 @@
 import { getAdminClient } from "@/lib/supabase/admin";
+import { messageMentionsUsername } from "@/lib/social/home-attention";
 import { canViewPrivateFieldRest, getUserPrivacySettingsRest } from "@/server/data/privacy-rest";
 import {
   toProfileCustomizationView,
@@ -45,20 +46,43 @@ export async function getActiveRoomPresenceRest(chatIds: string[], viewerId: str
 }
 
 export async function getHomeChatAttentionRest(chatIds: string[], userId: string) {
-  const result = new Map<string, { unreadCount: number }>();
+  const result = new Map<string, { unreadCount: number; mentionOrReply: boolean }>();
   if (!chatIds.length) return result;
-  const { data, error } = await getAdminClient()
-    .from("messages")
-    .select("chat_id")
-    .in("chat_id", chatIds)
-    .neq("sender_id", userId)
-    .is("read_at", null)
-    .limit(1_000);
-  if (error) throw new Error(error.message);
-  for (const row of data ?? []) {
+  const admin = getAdminClient();
+  const [messagesResult, viewerResult] = await Promise.all([
+    admin
+      .from("messages")
+      .select("chat_id, text, reply_to_message_id")
+      .in("chat_id", chatIds)
+      .neq("sender_id", userId)
+      .is("read_at", null)
+      .limit(1_000),
+    admin.from("users").select("username").eq("id", userId).maybeSingle(),
+  ]);
+  if (messagesResult.error) throw new Error(messagesResult.error.message);
+  if (viewerResult.error) throw new Error(viewerResult.error.message);
+
+  const unread = messagesResult.data ?? [];
+  const replyIds = [...new Set(unread.flatMap((row) => row.reply_to_message_id ? [String(row.reply_to_message_id)] : []))];
+  const repliedToViewer = new Set<string>();
+  if (replyIds.length) {
+    const replies = await admin.from("messages").select("id, sender_id").in("id", replyIds);
+    if (replies.error) throw new Error(replies.error.message);
+    for (const row of replies.data ?? []) {
+      if (row.sender_id === userId) repliedToViewer.add(String(row.id));
+    }
+  }
+
+  const username = typeof viewerResult.data?.username === "string" ? viewerResult.data.username : null;
+
+  for (const row of unread) {
     const chatId = String(row.chat_id);
-    const current = result.get(chatId) ?? { unreadCount: 0 };
+    const current = result.get(chatId) ?? { unreadCount: 0, mentionOrReply: false };
     current.unreadCount += 1;
+    current.mentionOrReply ||= Boolean(
+      (row.reply_to_message_id && repliedToViewer.has(String(row.reply_to_message_id)))
+      || messageMentionsUsername(typeof row.text === "string" ? row.text : null, username),
+    );
     result.set(chatId, current);
   }
   return result;

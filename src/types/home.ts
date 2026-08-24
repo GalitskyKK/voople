@@ -7,6 +7,8 @@ export type HomeNowItem = {
   subtitle: string | null;
   href: string;
   avatarUrl: string | null;
+  avatarDecorationUrl?: string | null;
+  avatarRingId?: string | null;
   userId: string | null;
   online: boolean;
   activity?: "online" | "listening" | "playing" | "in_room";

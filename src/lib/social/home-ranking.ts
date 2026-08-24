@@ -39,3 +39,23 @@ export function scoreHomeContinue(input: {
     + (input.reciprocal ? 30 : 0)
     + (input.recentlyOpened ? 5 : 0);
 }
+
+export function selectRankedHomeItems<T extends { id: string; score?: number }>(
+  items: T[],
+  options: { excludeIds?: Iterable<string>; limit: number; minimumScore?: number },
+) {
+  const excluded = new Set(options.excludeIds ?? []);
+  const seen = new Set<string>();
+  const minimumScore = options.minimumScore ?? 0;
+
+  return items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => !excluded.has(item.id) && (item.score ?? 0) >= minimumScore)
+    .sort((left, right) => (right.item.score ?? 0) - (left.item.score ?? 0) || left.index - right.index)
+    .flatMap(({ item }) => {
+      if (seen.has(item.id)) return [];
+      seen.add(item.id);
+      return [item];
+    })
+    .slice(0, options.limit);
+}

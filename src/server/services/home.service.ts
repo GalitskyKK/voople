@@ -10,7 +10,7 @@ import {
 import { listVisibleOnlineUserIdsRest } from "@/server/data/privacy-rest";
 import { listContactPinsRest } from "@/server/data/contact-pins-rest";
 import { fetchCurrentUserSummary } from "@/server/data/users-rest";
-import { scoreHomeContinue, scoreHomeNow } from "@/lib/social/home-ranking";
+import { scoreHomeContinue, scoreHomeNow, selectRankedHomeItems } from "@/lib/social/home-ranking";
 import type { HomeNowItem, HomeOverviewView } from "@/types/home";
 
 function lastConversationPreview(
@@ -30,6 +30,8 @@ function directItem(chat: Awaited<ReturnType<typeof listChats>>[number], userId:
     subtitle: lastConversationPreview(chat, userId) || `@${chat.otherUser.username}`,
     href: `/messages/${chat.id}`,
     avatarUrl: chat.otherUser.avatarUrl,
+    avatarDecorationUrl: chat.otherUser.avatarDecorationUrl,
+    avatarRingId: chat.otherUser.avatarRingId,
     userId: chat.otherUser.id,
     online: false,
   };
@@ -47,18 +49,6 @@ function groupItem(chat: Awaited<ReturnType<typeof listChats>>[number], userId: 
     userId: null,
     online: false,
   };
-}
-
-function takeUniqueItems(items: HomeNowItem[], limit: number) {
-  const seen = new Set<string>();
-  const result: HomeNowItem[] = [];
-  for (const item of items) {
-    if (seen.has(item.id)) continue;
-    seen.add(item.id);
-    result.push(item);
-    if (result.length === limit) break;
-  }
-  return result;
 }
 
 export async function getHomeOverview(userId: string): Promise<HomeOverviewView> {
@@ -108,10 +98,25 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
         }]
       : [];
   });
-  const now = takeUniqueItems(
-    [...activeRooms, ...direct.filter((item) => item.activity)].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)),
-    5,
+  const now = selectRankedHomeItems(
+    [...activeRooms, ...direct.filter((item) => item.activity)],
+    { limit: 5, minimumScore: 1 },
   );
+  const activeRoomIds = new Set(activeRooms.map((room) => room.id));
+  const continueItems = rootChats.flatMap((chat) => {
+    const item = itemById.get(chat.id);
+    if (!item?.subtitle) return [];
+    const chatAttention = attention.get(chat.id);
+    const unreadCount = chatAttention?.unreadCount ?? 0;
+    const relationshipScore = item.userId ? relationshipScores.get(item.userId) ?? 0 : 0;
+    const score = scoreHomeContinue({
+      mentionOrReply: chatAttention?.mentionOrReply,
+      unreadCount,
+      lastInteractionAt: chat.lastMessage?.createdAt,
+      reciprocal: relationshipScore >= 65,
+    });
+    return [{ ...item, unreadCount, score }];
+  });
   return {
     viewer: viewer ? {
       id: viewer.id,
@@ -120,23 +125,17 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
       subtitle: `@${viewer.username}`,
       href: "/me",
       avatarUrl: viewer.avatarUrl ?? null,
+      avatarDecorationUrl: viewer.avatarDecorationUrl ?? null,
+      avatarRingId: viewer.avatarRingId ?? null,
       userId: viewer.id,
       online: true,
     } : null,
     now,
-    continue: rootChats.flatMap((chat) => {
-      const item = itemById.get(chat.id);
-      if (!item?.subtitle || activeRooms.some((room) => room.id === chat.id)) return [];
-      const unreadCount = attention.get(chat.id)?.unreadCount ?? 0;
-      const relationshipScore = item.userId ? relationshipScores.get(item.userId) ?? 0 : 0;
-      const score = scoreHomeContinue({
-        unreadCount,
-        lastInteractionAt: chat.lastMessage?.createdAt,
-        reciprocal: relationshipScore >= 65,
-        recentlyOpened: true,
-      });
-      return [{ ...item, unreadCount, score }];
-    }).sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).slice(0, 4),
+    continue: selectRankedHomeItems(continueItems, {
+      excludeIds: activeRoomIds,
+      limit: 4,
+      minimumScore: 1,
+    }),
     communities: groups.slice(0, 3).map((item) => ({
       ...item,
       subtitle: `${chats.find((chat) => chat.id === item.id)?.memberCount ?? 0} участников`,

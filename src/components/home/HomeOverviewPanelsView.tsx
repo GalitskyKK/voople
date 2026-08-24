@@ -7,6 +7,7 @@ import { useEffect, useMemo } from "react";
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { reportProductEvent } from "@/lib/telemetry/client";
+import { resolveRingStyle } from "@/lib/customization/rings";
 import { cn } from "@/lib/utils";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 import type { HomeNowItem, HomeOverviewView } from "@/types/home";
@@ -25,7 +26,14 @@ function DestinationItem({ item, renderDestination, compact = false, showPresenc
     active: false,
     className: cn("group flex min-w-0 items-center gap-3 rounded-xl border border-transparent text-left transition hover:border-[var(--app-border)] hover:bg-[var(--app-surface-soft)]", compact ? "p-2" : "p-3"),
     children: <>
-      <ProfileAvatarVisual displayName={item.title} size="sm" avatarImage={item.avatarUrl ? <img src={item.avatarUrl} alt="" className="h-full w-full object-cover" /> : undefined} isOnline={online} />
+      <ProfileAvatarVisual
+        displayName={item.title}
+        size="sm"
+        avatarImage={item.avatarUrl ? <img src={item.avatarUrl} alt="" className="h-full w-full object-cover" /> : undefined}
+        decorationImage={item.avatarDecorationUrl ? <img src={item.avatarDecorationUrl} alt="" className="h-full w-full object-contain" /> : undefined}
+        ringClassName={resolveRingStyle(item.avatarRingId)?.className}
+        isOnline={online}
+      />
       <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{item.title}</span><span className="mt-0.5 block truncate text-xs text-[var(--app-muted)]">{showPresence && online ? "Сейчас в сети" : item.subtitle}</span></span>
       {item.unreadCount ? <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--theme-accent)] px-1.5 py-0.5 text-[10px] font-bold text-white" aria-label={`Непрочитанных: ${item.unreadCount}`}>{item.unreadCount > 99 ? "99+" : item.unreadCount}</span> : null}
       <ArrowRight className="h-4 w-4 shrink-0 text-[var(--app-muted)] opacity-0 transition group-hover:opacity-100" />
@@ -85,7 +93,14 @@ function NowItem({ item, renderDestination }: { item: HomeNowItem; renderDestina
     },
     className: "group flex min-w-[8.75rem] flex-1 items-center gap-2.5 rounded-xl px-2 py-2 text-left transition hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]",
     children: <>
-      <ProfileAvatarVisual displayName={item.title} size="sm" avatarImage={item.avatarUrl ? <img src={item.avatarUrl} alt="" className="h-full w-full object-cover" /> : undefined} isOnline={online || item.kind === "room"} />
+      <ProfileAvatarVisual
+        displayName={item.title}
+        size="sm"
+        avatarImage={item.avatarUrl ? <img src={item.avatarUrl} alt="" className="h-full w-full object-cover" /> : undefined}
+        decorationImage={item.avatarDecorationUrl ? <img src={item.avatarDecorationUrl} alt="" className="h-full w-full object-contain" /> : undefined}
+        ringClassName={resolveRingStyle(item.avatarRingId)?.className}
+        isOnline={online || item.kind === "room"}
+      />
       <span className="min-w-0"><span className="flex items-center gap-1 truncate text-sm font-semibold">{item.pinned ? <Pin className="h-3 w-3 shrink-0 fill-current text-[var(--theme-accent)]" aria-label="Закреплён" /> : null}<span className="truncate">{item.title}</span></span><span className="flex min-w-0 items-center gap-1 truncate text-[11px] text-[var(--app-muted)]">{ActivityIcon ? <ActivityIcon className="h-3 w-3 shrink-0 text-[var(--theme-accent)]" /> : null}<span className="truncate">{activityLabel}</span></span><span className="mt-0.5 block text-[10px] font-semibold text-[var(--theme-accent)] opacity-0 transition group-hover:opacity-100">{item.kind === "room" ? "Зайти" : "Написать"}</span></span>
       <RoomParticipantStack item={item} />
     </>,

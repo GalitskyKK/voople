@@ -38,8 +38,8 @@ Reference Map и шесть референсных бордов.
 | 1 | Group visibility `private/unlisted/public` | Поля, mutation, access/discovery filters и settings control существуют | Полная authorization matrix, старые desktop clients, public/unlisted E2E | Частично |
 | 2 | Join policy `invite_only/request/free` | Поле и базовая discovery/join логика существуют | Request moderation flow, все error states и web/desktop E2E | Частично |
 | 3 | Interests/topics для user и group | Модель, выбор и discovery-источники существуют | Управляемый каталог вместо поверхностного hardcode, onboarding и ranking validation | Частично |
-| 4 | «Сейчас» | Online/listening/active Room, shared Home view и ranking подключены | Game/activity, полный candidate pool, responsive/empty visual gate и реальные live tests | Частично |
-| 5 | «Продолжить» | Right rail и attention candidates существуют | Mention/reply/draft/opened причины, строгая дедупликация, sticky parity и ranking tests | Частично |
+| 4 | «Сейчас» | Online/listening/active Room, shared Home view, portable identity и rule-based ranking подключены | Game/activity, люди из общих групп вне DM, responsive/empty visual gate и реальные live tests | Частично |
+| 5 | «Продолжить» | Unread/reply/mention/recent/reciprocal ranking, лимит 4 и дедупликация с active Room проверены общими tests | Chat drafts, реальный recently-opened signal, sticky visual parity и end-to-end ranking data | Частично |
 | 6 | Relationship score | Серверная оценка участвует в Home ranking | Канонические сигналы/decay, explainability, privacy и recommendation reuse | Частично |
 | 7 | Presence privacy | Поля/settings и часть server filtering существуют | Enforcement на всех Home/profile/room/member/invite surfaces и E2E | Частично |
 | 8 | Group Info | Общий drawer, banner, topics, sections, Room CTA, filters/actions частично есть | Social proof, роли/actions, responsive desktop drawer и визуальная сверка Board 2 | Частично |

@@ -352,7 +352,7 @@ export function DesktopShell({
         onUnreadCountChange={setUnreadNotifications}
       />
       {pathname === "/feed" ? <FeedHeaderVisual activeTab={feedTab} onTabChange={setFeedTab} /> : null}
-      <div className="desktop-shell-scroll voople-scroll">
+      <div data-voople-scroll="" className="desktop-shell-scroll voople-scroll">
         {syncError && (
           <p className="form-error desktop-shell-error" role="alert">
             {syncError}

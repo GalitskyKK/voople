@@ -60,6 +60,7 @@
   --voople-scrollbar-track: transparent;
   --voople-z-grain: 0;
   --voople-z-base: 1;
+  --voople-sticky-offset: 3rem;
   --color-canvas: var(--background);
   --color-surface: var(--app-surface);
   --color-surface-soft: var(--app-surface-soft);
@@ -1229,7 +1230,7 @@ button.voople-post-action:active {
 /* Shell */
 .shop-toolbar {
   position: sticky;
-  top: 3.5rem;
+  top: var(--voople-sticky-offset);
   z-index: 20;
   display: grid;
   grid-template-columns: minmax(180px, 1fr) auto minmax(120px, 1fr);
@@ -1245,12 +1246,6 @@ button.voople-post-action:active {
 
 .shop-toolbar > :not([aria-hidden="true"]) {
   position: relative;
-}
-
-@media (min-width: 1024px) {
-  .shop-toolbar {
-    top: 1rem;
-  }
 }
 
 .shop-toolbar__mark {
@@ -1399,6 +1394,10 @@ button.voople-post-action:active {
 }
 
 @media (min-width: 1024px) {
+  :root {
+    --voople-sticky-offset: 0px;
+  }
+
   .voople-shell {
     position: fixed;
     inset: 0;
@@ -1670,34 +1669,21 @@ button.voople-post-action:active {
 }
 
 .voople-feed-header {
-  position: sticky;
-  top: 0;
   z-index: 19;
-  padding-bottom: 0.75rem;
-  background: linear-gradient(
-    to bottom,
-    color-mix(in srgb, var(--background) 98%, transparent) 0 82%,
-    transparent
-  );
-  backdrop-filter: blur(18px);
+  background: var(--background);
+}
+
+.voople-sticky-section-stack {
+  isolation: isolate;
+  background: var(--background);
+  box-shadow: 0 1rem 1.25rem -1.25rem rgb(0 0 0 / 0.68);
 }
 
 .voople-sticky-section-header {
   isolation: isolate;
-  box-shadow:
-    0 -4rem 0 var(--background),
-    var(--app-shadow-sm);
-}
-
-.voople-sticky-section-header::after {
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  border-radius: inherit;
-  background: color-mix(in srgb, var(--app-surface) 96%, transparent);
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-sm);
   backdrop-filter: blur(18px);
-  content: "";
-  pointer-events: none;
 }
 
 .voople-status-publish-banner {

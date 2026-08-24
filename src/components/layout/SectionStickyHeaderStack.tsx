@@ -12,7 +12,7 @@ export function SectionStickyHeaderStack({
   return (
     <div
       className={cn(
-        "voople-sticky-section-stack sticky top-14 z-20 space-y-3 bg-[linear-gradient(to_bottom,var(--background)_0_88%,transparent)] pb-3 backdrop-blur-xl lg:top-4",
+        "voople-sticky-section-stack sticky top-[var(--voople-sticky-offset)] z-30 space-y-3 pb-3",
         className,
       )}
     >

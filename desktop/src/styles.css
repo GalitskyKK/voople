@@ -288,6 +288,10 @@ button:focus-visible, input:focus-visible {
 }
 
 /* Tauri uses the same shell, navigation and section headers as the web app. */
+.voople-shell {
+  --voople-sticky-offset: 0px;
+}
+
 .desktop-shell-scroll {
   min-height: 0;
   flex: 1;

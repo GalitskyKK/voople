@@ -30,7 +30,7 @@ test("web and desktop home use one responsive feed layout", () => {
   assert.match(view, /selectContinueWithLocalAttention/);
   const renderedHeader = shell.indexOf('{pathname === "/feed" ? <FeedHeaderVisual');
   assert.ok(renderedHeader > 0);
-  assert.ok(renderedHeader < shell.indexOf('<div className="desktop-shell-scroll'));
+  assert.ok(renderedHeader < shell.indexOf('<div data-voople-scroll="" className="desktop-shell-scroll'));
 });
 
 test("web and desktop chat composer share one presentation layer", () => {
@@ -81,7 +81,10 @@ test("home live state is sticky and Group Info exposes one settings action", () 
   const home = read("src/components/home/HomeOverviewPanelsView.tsx");
   const groupInfo = read("src/components/chat/GroupInfoDrawerView.tsx");
 
-  assert.match(home, /lg:sticky lg:top-4 lg:z-20/);
+  assert.match(home, /useScrollCompaction/);
+  assert.match(home, /sticky top-\[var\(--voople-sticky-offset\)\]/);
+  assert.match(home, /aria-expanded=\{!compact\}/);
+  assert.match(home, /compact=\{compact\}/);
   assert.match(home, /max-h-\[calc\(100dvh-7rem\)\] overflow-y-auto/);
   assert.equal(groupInfo.match(/onClick=\{onManage\}/g)?.length, 1);
 });
@@ -98,6 +101,21 @@ test("search title, query and scopes share one sticky stack", () => {
   assert.match(contents, /SectionPageHeader/);
   assert.match(contents, /type="search"/);
   assert.match(contents, /aria-label="Раздел поиска"/);
-  assert.match(stickyStack, /sticky top-14/);
-  assert.match(stickyStack, /lg:top-4/);
+  assert.match(stickyStack, /sticky top-\[var\(--voople-sticky-offset\)\]/);
+  assert.doesNotMatch(stickyStack, /linear-gradient/);
+});
+
+test("authenticated sticky chrome uses one offset without masking strips", () => {
+  const globals = read("src/app/globals.css");
+  const sectionHeader = read("src/components/layout/SectionPageHeader.tsx");
+  const feedHeader = read("src/components/layout/FeedHeaderVisual.tsx");
+  const shop = read("src/components/shop/ShopPageView.tsx");
+  const desktopShell = read("desktop/src/shell/DesktopShell.tsx");
+
+  assert.match(sectionHeader, /top-\[var\(--voople-sticky-offset\)\]/);
+  assert.match(shop, /voople-sticky-section-header/);
+  assert.match(desktopShell, /data-voople-scroll=""/);
+  assert.match(globals, /\.voople-sticky-section-stack[\s\S]*background: var\(--background\)/);
+  assert.doesNotMatch(globals, /0 -4rem 0 var\(--background\)/);
+  assert.doesNotMatch(feedHeader, /linear-gradient|sticky top-0/);
 });

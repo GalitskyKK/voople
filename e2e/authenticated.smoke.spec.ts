@@ -29,4 +29,38 @@ test.describe("authenticated critical surface", () => {
     await expect(page.getByText("Показывать мои интересы", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Сохранить приватность" })).toBeVisible();
   });
+
+  test("shared sticky chrome stays opaque and Home compacts by scroll direction", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/feed", { waitUntil: "domcontentloaded" });
+
+    const now = page.locator(".voople-home-now");
+    const scrollRegion = page.locator("[data-voople-scroll]").first();
+    await expect(now).toBeVisible();
+    await expect(now).toHaveAttribute("data-compact", "false");
+    await expect(now).toHaveCSS("position", "sticky");
+    await expect(now).toHaveCSS("top", "0px");
+
+    await scrollRegion.evaluate((element) => {
+      const spacer = document.createElement("div");
+      spacer.dataset.e2eScrollSpacer = "";
+      spacer.style.height = "1600px";
+      element.append(spacer);
+      element.scrollTop = 160;
+      element.dispatchEvent(new Event("scroll"));
+    });
+    await expect(now).toHaveAttribute("data-compact", "true");
+
+    await scrollRegion.evaluate((element) => {
+      element.scrollTop = 80;
+      element.dispatchEvent(new Event("scroll"));
+    });
+    await expect(now).toHaveAttribute("data-compact", "false");
+
+    await page.goto("/explore", { waitUntil: "domcontentloaded" });
+    const searchChrome = page.locator(".voople-sticky-section-stack");
+    await expect(searchChrome).toHaveCSS("position", "sticky");
+    await expect(searchChrome).toHaveCSS("top", "0px");
+    await expect(searchChrome).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  });
 });

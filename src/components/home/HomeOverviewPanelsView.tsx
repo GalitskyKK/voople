@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- shared CDN avatars for Next.js and Tauri. */
 
-import { ArrowRight, Gamepad2, Headphones, MessageCircle, Pin, Radio, UsersRound } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp, Gamepad2, Headphones, MessageCircle, Pin, Radio, UsersRound } from "lucide-react";
 import { useEffect, useMemo } from "react";
 
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
@@ -9,6 +9,7 @@ import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { reportProductEvent } from "@/lib/telemetry/client";
 import { resolveRingStyle } from "@/lib/customization/rings";
 import { useLocalChatAttention } from "@/hooks/useLocalChatAttention";
+import { useScrollCompaction } from "@/hooks/useScrollCompaction";
 import { selectContinueWithLocalAttention } from "@/lib/social/home-ranking";
 import { cn } from "@/lib/utils";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
@@ -68,11 +69,12 @@ function RoomParticipantStack({ item }: { item: HomeNowItem }) {
   );
 }
 
-function NowItem({ item, renderDestination, onMessageUser, messagePending }: {
+function NowItem({ item, renderDestination, onMessageUser, messagePending, compact = false }: {
   item: HomeNowItem;
   renderDestination: NavigationDestinationRenderer;
   onMessageUser?: (username: string) => void;
   messagePending?: boolean;
+  compact?: boolean;
 }) {
   const { onlineUserIds } = useOnlineUsers();
   const online = item.userId ? onlineUserIds.has(item.userId) || item.online : item.online;
@@ -93,8 +95,24 @@ function NowItem({ item, renderDestination, onMessageUser, messagePending }: {
       ringClassName={resolveRingStyle(item.avatarRingId)?.className}
       isOnline={online || item.kind === "room"}
     />
-    <span className="min-w-0"><span className="flex items-center gap-1 truncate text-sm font-semibold">{item.pinned ? <Pin className="h-3 w-3 shrink-0 fill-current text-[var(--theme-accent)]" aria-label="Закреплён" /> : null}<span className="truncate">{item.title}</span></span><span className="flex min-w-0 items-center gap-1 truncate text-[11px] text-[var(--app-muted)]">{ActivityIcon ? <ActivityIcon className="h-3 w-3 shrink-0 text-[var(--theme-accent)]" /> : null}<span className="truncate">{activityLabel}</span></span><span className="mt-0.5 block text-[10px] font-semibold text-[var(--theme-accent)] opacity-0 transition group-hover:opacity-100">{item.kind === "room" ? "Зайти" : "Написать"}</span></span>
-    <RoomParticipantStack item={item} />
+    <span className="min-w-0">
+      <span className="flex items-center gap-1 truncate text-sm font-semibold">
+        {item.pinned ? <Pin className="h-3 w-3 shrink-0 fill-current text-[var(--theme-accent)]" aria-label="Закреплён" /> : null}
+        <span className="truncate">{item.title}</span>
+      </span>
+      {!compact ? (
+        <>
+          <span className="flex min-w-0 items-center gap-1 truncate text-[11px] text-[var(--app-muted)]">
+            {ActivityIcon ? <ActivityIcon className="h-3 w-3 shrink-0 text-[var(--theme-accent)]" /> : null}
+            <span className="truncate">{activityLabel}</span>
+          </span>
+          <span className="mt-0.5 block text-[10px] font-semibold text-[var(--theme-accent)] opacity-0 transition group-hover:opacity-100">
+            {item.kind === "room" ? "Зайти" : "Написать"}
+          </span>
+        </>
+      ) : null}
+    </span>
+    {!compact ? <RoomParticipantStack item={item} /> : null}
   </>;
   const reportAction = () => {
     reportProductEvent("presence_clicked", {
@@ -106,7 +124,10 @@ function NowItem({ item, renderDestination, onMessageUser, messagePending }: {
       { source: "home_now" },
     );
   };
-  const className = "group flex min-w-[8.75rem] flex-1 items-center gap-2.5 rounded-xl px-2 py-2 text-left transition hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]";
+  const className = cn(
+    "group flex flex-1 items-center rounded-xl text-left transition hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]",
+    compact ? "min-w-[7.5rem] gap-2 px-2 py-1" : "min-w-[8.75rem] gap-2.5 px-2 py-2",
+  );
 
   if (item.messageUsername && onMessageUser) {
     return <button type="button" className={className} disabled={messagePending} onClick={() => { reportAction(); onMessageUser(item.messageUsername!); }} aria-label={`${item.title}: написать`}>{children}</button>;
@@ -130,6 +151,7 @@ export function HomeNowPanelView({ overview, renderDestination, onMessageUser, m
   messageError?: string | null;
 }) {
   const { onlineUserIds } = useOnlineUsers();
+  const { surfaceRef, compact, toggleCompact } = useScrollCompaction();
   const items = useMemo(() => {
     const liveContacts = overview.continue.filter((item) => item.userId && onlineUserIds.has(item.userId));
     const unique = new Map<string, HomeNowItem>();
@@ -145,11 +167,65 @@ export function HomeNowPanelView({ overview, renderDestination, onMessageUser, m
     if (items.length > 0) reportProductEvent("presence_seen", { count: items.length });
   }, [items.length, overview.continue.length]);
 
-  return <section className="voople-panel mb-4 border border-[var(--app-border)] px-3 py-2.5 lg:sticky lg:top-4 lg:z-20" aria-labelledby="home-now-title">
-    <header className="flex items-center justify-between gap-3 px-1 pb-1"><h2 id="home-now-title" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--theme-accent)]"><Radio className="h-3.5 w-3.5" /> Сейчас</h2>{renderDestination({ href: "/messages", label: "Все чаты", active: false, className: "text-xs font-medium text-[var(--app-muted)] hover:text-[var(--foreground)]", children: "Все чаты" })}</header>
-    {items.length ? <div className="voople-scroll flex gap-1 overflow-x-auto">{items.map((item) => <NowItem key={`${item.kind}-${item.id}`} item={item} renderDestination={renderDestination} onMessageUser={onMessageUser} messagePending={Boolean(messagingUsername)} />)}</div> : renderDestination({ href: "/messages", label: "Позвать своих", active: false, className: "mt-1 flex min-h-14 w-full items-center justify-between gap-3 rounded-xl bg-[var(--app-surface-soft)] px-3 text-left text-sm text-[var(--app-muted)] transition hover:text-[var(--foreground)]", children: <><span>Сейчас тихо</span><span className="inline-flex items-center gap-1 font-medium text-[var(--theme-accent)]">Позвать своих <ArrowRight className="h-4 w-4 shrink-0" /></span></> })}
-    {messageError ? <p className="px-2 pb-1 pt-2 text-xs text-red-400" role="alert">{messageError}</p> : null}
-  </section>;
+  return (
+    <section
+      ref={surfaceRef}
+      data-compact={compact ? "true" : "false"}
+      className={cn(
+        "voople-home-now voople-panel sticky top-[var(--voople-sticky-offset)] z-20 mb-4 border border-[var(--app-border)] px-3 transition-[padding,box-shadow] duration-200 motion-reduce:transition-none",
+        compact ? "py-1.5 shadow-[var(--app-shadow-md)]" : "py-2.5",
+      )}
+      aria-labelledby="home-now-title"
+    >
+      <header className="flex items-center justify-between gap-3 px-1 pb-1">
+        <h2 id="home-now-title" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--theme-accent)]">
+          <Radio className="h-3.5 w-3.5" /> Сейчас
+        </h2>
+        <span className="flex items-center gap-1">
+          {!compact ? renderDestination({
+            href: "/messages",
+            label: "Все чаты",
+            active: false,
+            className: "text-xs font-medium text-[var(--app-muted)] hover:text-[var(--foreground)]",
+            children: "Все чаты",
+          }) : null}
+          <button
+            type="button"
+            onClick={toggleCompact}
+            aria-expanded={!compact}
+            aria-label={compact ? "Развернуть блок Сейчас" : "Свернуть блок Сейчас"}
+            className="grid h-7 w-7 place-items-center rounded-lg text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
+          >
+            {compact ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+          </button>
+        </span>
+      </header>
+      {items.length ? (
+        <div className="voople-scroll flex gap-1 overflow-x-auto">
+          {items.map((item) => (
+            <NowItem
+              key={`${item.kind}-${item.id}`}
+              item={item}
+              renderDestination={renderDestination}
+              onMessageUser={onMessageUser}
+              messagePending={Boolean(messagingUsername)}
+              compact={compact}
+            />
+          ))}
+        </div>
+      ) : renderDestination({
+        href: "/messages",
+        label: "Позвать своих",
+        active: false,
+        className: cn(
+          "mt-1 flex w-full items-center justify-between gap-3 rounded-xl bg-[var(--app-surface-soft)] px-3 text-left text-sm text-[var(--app-muted)] transition hover:text-[var(--foreground)]",
+          compact ? "min-h-10" : "min-h-14",
+        ),
+        children: <><span>Сейчас тихо</span><span className="inline-flex items-center gap-1 font-medium text-[var(--theme-accent)]">Позвать своих <ArrowRight className="h-4 w-4 shrink-0" /></span></>,
+      })}
+      {messageError ? <p className="px-2 pb-1 pt-2 text-xs text-red-400" role="alert">{messageError}</p> : null}
+    </section>
+  );
 }
 
 export function HomeSecondaryRailView({ overview, renderDestination }: { overview: HomeOverviewView; renderDestination: NavigationDestinationRenderer }) {
@@ -161,7 +237,7 @@ export function HomeSecondaryRailView({ overview, renderDestination }: { overvie
     [localAttention, overview.continue, overview.continueCandidates, overview.viewer?.userId],
   );
 
-  return <aside className="hidden min-w-0 xl:block" aria-label="Дополнительно на главной"><div className="voople-panel voople-scroll sticky top-4 max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain border border-[var(--app-border)] p-3">
+  return <aside className="hidden min-w-0 xl:block" aria-label="Дополнительно на главной"><div className="voople-panel voople-scroll sticky top-[var(--voople-sticky-offset)] max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain border border-[var(--app-border)] p-3">
     {overview.viewer ? <div className="mb-3 rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_26%,var(--app-border))] bg-[linear-gradient(135deg,var(--app-accent-soft),transparent_72%)] p-1"><DestinationItem item={overview.viewer} renderDestination={renderDestination} compact showPresence /></div> : null}
     <header className="flex items-center justify-between gap-2 px-2 pb-1"><span className="flex items-center gap-2"><MessageCircle className="h-4 w-4 text-[var(--theme-accent)]" /><h2 className="text-sm font-semibold">Продолжить</h2></span>{renderDestination({ href: "/messages", label: "Все чаты", active: false, className: "text-[11px] text-[var(--app-muted)] hover:text-[var(--foreground)]", children: "Все" })}</header>
     {continueItems.map((item) => <DestinationItem key={`continue-${item.id}`} item={item} renderDestination={renderDestination} compact />)}

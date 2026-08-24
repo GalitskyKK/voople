@@ -14,6 +14,29 @@ directory.
 4. Prefer the smallest complete change. Do not create a second implementation
    of an existing domain concept.
 
+## Product source gate
+
+Before changing product behaviour, layout or presentation, read the relevant
+parts of all four canonical product sources:
+
+1. `temp_info_for_redesign_and_improvement/VOOPLE_PROJECT_SPEC.md`
+2. `temp_info_for_redesign_and_improvement/VOOPLE_FINAL_PRODUCT_SOCIAL_UX_IMPLEMENTATION_PLAN.md`
+3. `temp_info_for_redesign_and_improvement/VOOPLE_REFERENCE_MAP.md`
+4. `temp_info_for_redesign_and_improvement/VOOPLE_DESIGN_RULES.md`
+
+The final social/UX plan supplements the project spec; it does not replace it.
+Use the precedence defined by the Reference Map: behaviour from the specs,
+working functionality from the real application, layout/IA from `2try_design`,
+and identity/cosmetics from `1try_design`. Preserve the real two-column profile
+skeleton as the documented exception.
+
+For every completed product slice, update `docs/product-delivery-matrix.md` with
+the web, desktop, responsive, state and test evidence. A route, placeholder,
+schema or visual shell alone is never enough to mark an item complete. Do not
+call an item complete until its data contract, authorization, interaction,
+loading/empty/error/offline states, web/desktop parity, responsive behaviour and
+relevant automated or visual checks are all present.
+
 ## Product architecture
 
 The dependency direction is:

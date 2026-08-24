@@ -8,8 +8,6 @@
     "desktop/src/composer/DesktopCreatePostModal.tsx",
     "desktop/src/composer/DesktopMediaDropzone.tsx",
     "desktop/src/explore/DesktopExplore.tsx",
-    "desktop/src/feed/DesktopFeed.tsx",
-    "desktop/src/feed/DesktopHashtagFeed.tsx",
     "desktop/src/post/DesktopPostComments.tsx",
     "desktop/src/post/DesktopPostDetail.tsx",
     "desktop/src/profile/DesktopProfile.tsx"

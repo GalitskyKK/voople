@@ -28,9 +28,9 @@ import type { DesktopConfig } from "../config";
 import { useDesktopHotkeys } from "../hooks/useDesktopHotkeys";
 import { useNativeVoiceHeartbeat } from "../hooks/useNativeVoiceHeartbeat";
 import { DesktopNotificationBridge } from "../notifications/DesktopNotificationBridge";
-const DesktopFeed = lazy(() =>
-  import("../feed/DesktopFeed").then((module) => ({
-    default: module.DesktopFeed,
+const DesktopFeedAdapter = lazy(() =>
+  import("../adapters/DesktopFeedAdapter").then((module) => ({
+    default: module.DesktopFeedAdapter,
   })),
 );
 const DesktopExplore = lazy(() =>
@@ -38,9 +38,9 @@ const DesktopExplore = lazy(() =>
     default: module.DesktopExplore,
   })),
 );
-const DesktopHashtagFeed = lazy(() =>
-  import("../feed/DesktopHashtagFeed").then((module) => ({
-    default: module.DesktopHashtagFeed,
+const DesktopHashtagFeedAdapter = lazy(() =>
+  import("../adapters/DesktopHashtagFeedAdapter").then((module) => ({
+    default: module.DesktopHashtagFeedAdapter,
   })),
 );
 const DesktopNotifications = lazy(() =>
@@ -360,7 +360,7 @@ export function DesktopShell({
         )}
         <Suspense fallback={<DesktopRouteFallback />}>
           {pathname === "/feed" ? (
-            <DesktopFeed
+            <DesktopFeedAdapter
               key={feedVersion}
               config={config}
               session={session}
@@ -374,7 +374,7 @@ export function DesktopShell({
               renderDestination={renderDestination}
             />
           ) : hashtag ? (
-            <DesktopHashtagFeed
+            <DesktopHashtagFeedAdapter
               config={config}
               session={session}
               tag={hashtag}

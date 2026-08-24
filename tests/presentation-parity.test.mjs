@@ -6,7 +6,7 @@ const read = (path) => readFileSync(path, "utf8");
 
 test("web and desktop home use one responsive feed layout", () => {
   const web = read("src/app/(main)/feed/page.tsx");
-  const desktop = read("desktop/src/feed/DesktopFeed.tsx");
+  const desktop = read("desktop/src/adapters/DesktopFeedAdapter.tsx");
   const shell = read("desktop/src/shell/DesktopShell.tsx");
   const layout = read("src/components/home/HomeFeedLayoutView.tsx");
 

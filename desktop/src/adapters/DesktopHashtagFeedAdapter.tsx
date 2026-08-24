@@ -1,13 +1,14 @@
 import type { Session } from "@supabase/supabase-js";
+
 import { HashtagPageHeader } from "@/components/feed/HashtagPageHeader";
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { AppPageContent } from "@/components/layout/AppPageContent";
 
 import type { DesktopConfig } from "../config";
-import { DesktopPostCardAdapter } from "../adapters/DesktopPostCardAdapter";
-import { useDesktopHashtagFeed } from "./useDesktopHashtagFeed";
+import { useDesktopHashtagFeed } from "../feed/useDesktopHashtagFeed";
+import { DesktopPostCardAdapter } from "./DesktopPostCardAdapter";
 
-export function DesktopHashtagFeed({
+export function DesktopHashtagFeedAdapter({
   config,
   session,
   tag,

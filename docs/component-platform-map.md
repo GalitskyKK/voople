@@ -7,7 +7,7 @@
 | Домен | Канонический слой | Web boundary | Desktop boundary | Допустимое отличие desktop |
 |---|---|---|---|---|
 | Shell и навигация | `components/layout/AppShellFrame`, `AppNavigationVisual`, `lib/layout/route-layout` | `MainShell`, Next `Link` | `DesktopShell`, state-router renderer | Window chrome, tray, hotkeys |
-| Главная и лента | `components/home`, `components/feed/*Visual` | Server page загружает initial data | tRPC adapter загружает те же view-models | Нет Server Components; Tauri navigation renderer |
+| Главная и лента | `components/home`, `components/feed/*Visual` | Server page загружает initial data | `DesktopFeedAdapter` загружает те же view-models | Нет Server Components; Tauri navigation renderer |
 | Профиль | `ProfileCardView`, `ProfileBadgesView`, `ProfilePageView`, `ProfileFlipCard`, `ProfileShareController`, `feed/MiniProfilePopover` | `ProfileCard` и `ProfileShareCardButton` подключают web queries/metadata | `DesktopProfile` и `DesktopProfileShareAdapter` передают те же view-models и callbacks | Realtime можно отключить; transport публикации и desktop navigation остаются адаптерами |
 | Чаты | `MessagesLayoutView`, `ChatMessageBubble`, `ChatMessageAttachment`, `ChatComposerInputView`, `ChatWindowHeaderVisual`, `GroupInfoDrawerView`, `GroupManagementSheetView` | `GroupInfoDrawer` и Messages route подключают tRPC/Next navigation | Desktop auth/realtime/upload adapters передают данные в те же Views; `/messages/:id/settings` использует тот же full-page View | Native notifications, transport realtime и способ загрузки файла |
 | Голос и комнаты | `components/chat/voice`, `VoiceSessionProvider`, `VoiceSessionDock`, `ScreenShareSourcePicker` | Web media devices и обязательный browser/OS picker | Тот же Room UI; Tauri adapter перечисляет окна/экраны и публикует выбранный native source | Windows libwebrtc desktop capture; WASAPI include-process-tree для окна и exclude-Voople system loopback для экрана; global hotkeys |
@@ -47,7 +47,8 @@ attachment и composer input: контекстное меню, сторона ac
 section-access и shop-файлы перенесены из UI-доменов в transport/native adapters,
 которые подключают канонические Views. Карточка публикации теперь собирается
 единым `PostCardView`, а desktop оставляет только action/transport adapter вне
-UI-домена. Следующие кандидаты: внешний `DesktopChatThread`/upload-controller;
+UI-домена. Feed и hashtag composition также вынесены в adapters и подключают
+общие layout/header/card Views. Следующие кандидаты: внешний `DesktopChatThread`/upload-controller;
 общий share-controller профиля уже вынесен.
 
 Настройки интересов, групповых тем и матрица приватности также следуют этому

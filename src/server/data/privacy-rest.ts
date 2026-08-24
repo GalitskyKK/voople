@@ -3,6 +3,16 @@ import "server-only";
 import { getAdminClient } from "@/lib/supabase/admin";
 import type { PrivacyScope, UserPrivacySettingsView } from "@/types/privacy";
 
+export type PrivacyScopeField = keyof Pick<
+  UserPrivacySettingsView,
+  | "onlineScope"
+  | "gamingScope"
+  | "musicScope"
+  | "roomsScope"
+  | "inviteScope"
+  | "connectionRequestScope"
+>;
+
 const DEFAULTS: UserPrivacySettingsView = {
   onlineScope: "contacts_and_groups",
   gamingScope: "contacts_and_groups",
@@ -26,7 +36,7 @@ type PrivacyRow = {
 };
 
 function mapPrivacy(row: PrivacyRow | null): UserPrivacySettingsView {
-  if (!row) return DEFAULTS;
+  if (!row) return { ...DEFAULTS };
   return {
     onlineScope: row.online_scope,
     gamingScope: row.gaming_scope,
@@ -37,6 +47,24 @@ function mapPrivacy(row: PrivacyRow | null): UserPrivacySettingsView {
     appearInRecommendations: row.appear_in_recommendations,
     showInterests: row.show_interests,
   };
+}
+
+async function getPrivacySettingsByUserIdsRest(userIds: string[]) {
+  const uniqueIds = [...new Set(userIds)];
+  const settings = new Map<string, UserPrivacySettingsView>();
+  if (!uniqueIds.length) return settings;
+  const { data, error } = await getAdminClient()
+    .from("user_privacy_settings")
+    .select("user_id, online_scope, gaming_scope, music_scope, rooms_scope, invite_scope, connection_request_scope, appear_in_recommendations, show_interests")
+    .in("user_id", uniqueIds);
+  if (error) throw new Error(error.message);
+  for (const row of data ?? []) {
+    settings.set(String(row.user_id), mapPrivacy(row as PrivacyRow));
+  }
+  for (const userId of uniqueIds) {
+    if (!settings.has(userId)) settings.set(userId, { ...DEFAULTS });
+  }
+  return settings;
 }
 
 export async function getUserPrivacySettingsRest(userId: string) {
@@ -74,6 +102,30 @@ export async function canViewPrivateFieldRest(ownerId: string, viewerId: string 
   });
   if (error) throw new Error(error.message);
   return data === true;
+}
+
+export async function filterUserIdsByPrivacyFieldRest(
+  ownerIds: string[],
+  viewerId: string | null,
+  field: PrivacyScopeField,
+) {
+  const uniqueIds = [...new Set(ownerIds)];
+  const settings = await getPrivacySettingsByUserIdsRest(uniqueIds);
+  const decisions = await Promise.all(uniqueIds.map(async (ownerId) => ({
+    ownerId,
+    allowed: await canViewPrivateFieldRest(
+      ownerId,
+      viewerId,
+      settings.get(ownerId)?.[field] ?? DEFAULTS[field],
+    ),
+  })));
+  return decisions.filter((decision) => decision.allowed).map((decision) => decision.ownerId);
+}
+
+export async function filterRecommendationEligibleUserIdsRest(userIds: string[]) {
+  const uniqueIds = [...new Set(userIds)];
+  const settings = await getPrivacySettingsByUserIdsRest(uniqueIds);
+  return uniqueIds.filter((userId) => settings.get(userId)?.appearInRecommendations !== false);
 }
 
 export async function listVisibleOnlineUserIdsRest(viewerId: string) {

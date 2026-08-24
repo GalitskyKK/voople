@@ -4,6 +4,10 @@ import {
   toProfileCustomizationView,
   type CustomizationRow,
 } from "@/server/mappers/customization";
+import {
+  getUserPrivacySettingsRest,
+  setUserPrivacySettingsRest,
+} from "@/server/data/privacy-rest";
 
 export type AuthUserInput = {
   id: string;
@@ -78,10 +82,17 @@ export async function touchUserPresenceRest(userId: string) {
 }
 
 export async function setUserPresenceVisibilityRest(userId: string, visible: boolean) {
+  const privacy = await getUserPrivacySettingsRest(userId);
+  await setUserPrivacySettingsRest(userId, {
+    ...privacy,
+    onlineScope: visible
+      ? privacy.onlineScope === "nobody" ? "contacts_and_groups" : privacy.onlineScope
+      : "nobody",
+  });
   const lastSeenAt = new Date().toISOString();
   const { error } = await getAdminClient()
     .from("users")
-    .update({ show_online_status: visible, last_seen_at: lastSeenAt })
+    .update({ last_seen_at: lastSeenAt })
     .eq("id", userId);
   if (error) throw new Error(error.message);
   return { visible, lastSeenAt };

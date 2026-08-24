@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getAdminClient } from "@/lib/supabase/admin";
+import { filterUserIdsByPrivacyFieldRest } from "@/server/data/privacy-rest";
 
 const ONLINE_AFTER_MS = 5 * 60_000;
 const ROOM_AFTER_MS = 3 * 60_000;
@@ -16,12 +17,17 @@ export async function loadInviteActivityCountsRest(chatId: string) {
 
   const memberIds = (members ?? []).map((row) => String(row.user_id));
   const chatIds = (chats ?? []).map((row) => String(row.id));
+  const [onlineVisibleIds, roomVisibleIds] = await Promise.all([
+    filterUserIdsByPrivacyFieldRest(memberIds, null, "onlineScope"),
+    filterUserIdsByPrivacyFieldRest(memberIds, null, "roomsScope"),
+  ]);
+  const roomVisible = new Set(roomVisibleIds);
   const [{ count: onlineCount, error: onlineError }, { data: roomRows, error: roomError }] = await Promise.all([
-    memberIds.length
+    onlineVisibleIds.length
       ? admin
           .from("users")
           .select("id", { count: "exact", head: true })
-          .in("id", memberIds)
+          .in("id", onlineVisibleIds)
           .eq("show_online_status", true)
           .gte("last_seen_at", new Date(Date.now() - ONLINE_AFTER_MS).toISOString())
       : Promise.resolve({ count: 0, error: null }),
@@ -38,6 +44,10 @@ export async function loadInviteActivityCountsRest(chatId: string) {
 
   return {
     onlineCount: onlineCount ?? 0,
-    roomParticipantCount: new Set((roomRows ?? []).map((row) => String(row.user_id))).size,
+    roomParticipantCount: new Set(
+      (roomRows ?? [])
+        .map((row) => String(row.user_id))
+        .filter((userId) => roomVisible.has(userId)),
+    ).size,
   };
 }

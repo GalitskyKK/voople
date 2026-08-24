@@ -9,6 +9,7 @@ import {
   type UserSearchRow,
 } from "@/server/mappers/user-search";
 import type { UserSearchHit } from "@/types/search";
+import { filterUserIdsByPrivacyFieldRest } from "@/server/data/privacy-rest";
 
 const USER_CARD_SELECT =
   "id, username, display_name, bio, subscriptions (started_at, expires_at), profile_customization (avatar_type, avatar_data, animated_avatar_id)";
@@ -104,7 +105,12 @@ export async function listGroupContactsRest(
   }
 
   const candidateIds = [...mutualIds].filter((id) => !excludedIds.has(id));
-  return loadContactCards(candidateIds, query);
+  const allowedIds = await filterUserIdsByPrivacyFieldRest(
+    candidateIds,
+    userId,
+    "inviteScope",
+  );
+  return loadContactCards(allowedIds, query);
 }
 
 export async function listChatContactsRest(userId: string, query = "") {
@@ -145,6 +151,14 @@ export async function addGroupMembersRest(
   }
 
   await assertMutualContacts(userId, newIds);
+  const allowedIds = await filterUserIdsByPrivacyFieldRest(
+    newIds,
+    userId,
+    "inviteScope",
+  );
+  if (allowedIds.length !== newIds.length) {
+    throw new Error("Один из пользователей запретил приглашения от вас");
+  }
   const { error } = await admin.from("chat_members").insert(
     newIds.map((newUserId) => ({
       chat_id: membership.accessChatId,
@@ -366,6 +380,14 @@ export async function createGroupChatRest(ownerId: string, name: string, memberI
   if (uniqueMemberIds.length > 19) throw new Error("В группе может быть до 20 участников");
 
   await assertMutualContacts(ownerId, uniqueMemberIds);
+  const allowedIds = await filterUserIdsByPrivacyFieldRest(
+    uniqueMemberIds,
+    ownerId,
+    "inviteScope",
+  );
+  if (allowedIds.length !== uniqueMemberIds.length) {
+    throw new Error("Один из пользователей запретил приглашения от вас");
+  }
 
   const admin = getAdminClient();
   if (uniqueMemberIds.length > 0) {

@@ -1,6 +1,7 @@
 import { getAdminClient } from "@/lib/supabase/admin";
 import { mapUserSearchRow, type UserSearchRow } from "@/server/mappers/user-search";
 import type { UserSearchHit } from "@/types/search";
+import { filterRecommendationEligibleUserIdsRest } from "@/server/data/privacy-rest";
 
 const USER_SELECT = "id, username, display_name, bio, subscriptions (started_at, expires_at), profile_customization (avatar_type, avatar_data, animated_avatar_id)";
 
@@ -18,19 +19,27 @@ export async function getTopUsersRest(viewerId?: string | null, limit = 6): Prom
     const id = view.profile_user_id as string;
     counts.set(id, (counts.get(id) ?? 0) + 1);
   }
+  const candidateLimit = Math.max(limit * 8, 48);
   const rankedIds = [...counts]
     .filter(([id]) => id !== viewerId)
     .sort((left, right) => right[1] - left[1])
-    .slice(0, limit)
+    .slice(0, candidateLimit)
     .map(([id]) => id);
   let query = admin.from("users").select(USER_SELECT);
   if (viewerId) query = query.neq("id", viewerId);
   const { data, error } = rankedIds.length
     ? await query.in("id", rankedIds)
-    : await query.order("created_at", { ascending: false }).limit(limit);
+    : await query.order("created_at", { ascending: false }).limit(candidateLimit);
   if (error) throw new Error(error.message);
-  const users = (data ?? []).map((row) => mapUserSearchRow(row as unknown as UserSearchRow));
-  if (!rankedIds.length) return users;
+  const eligibleIds = new Set(await filterRecommendationEligibleUserIdsRest(
+    (data ?? []).map((row) => String(row.id)),
+  ));
+  const users = (data ?? [])
+    .filter((row) => eligibleIds.has(String(row.id)))
+    .map((row) => mapUserSearchRow(row as unknown as UserSearchRow));
+  if (!rankedIds.length) return users.slice(0, limit);
   const rank = new Map(rankedIds.map((id, index) => [id, index]));
-  return users.sort((left, right) => (rank.get(left.id) ?? limit) - (rank.get(right.id) ?? limit));
+  return users
+    .sort((left, right) => (rank.get(left.id) ?? candidateLimit) - (rank.get(right.id) ?? candidateLimit))
+    .slice(0, limit);
 }

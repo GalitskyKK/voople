@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2, ShieldCheck } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import type { PrivacyScope, UserPrivacySettingsView } from "@/types/privacy";
@@ -28,17 +28,56 @@ export function UserPrivacySettingsPanel({ load, save }: {
 }) {
   const [settings, setSettings] = useState<UserPrivacySettingsView | null>(null);
   const [saved, setSaved] = useState<UserPrivacySettingsView | null>(null);
+  const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loadRequestRef = useRef(0);
 
-  useEffect(() => {
-    let active = true;
-    void load().then((value) => { if (active) { setSettings(value); setSaved(value); } })
-      .catch((cause: unknown) => { if (active) setError(cause instanceof Error ? cause.message : "Не удалось загрузить приватность"); });
-    return () => { active = false; };
+  const loadSettings = useCallback(async () => {
+    const requestId = ++loadRequestRef.current;
+    setLoading(true);
+    setError(null);
+    try {
+      const value = await load();
+      if (requestId !== loadRequestRef.current) return;
+      setSettings(value);
+      setSaved(value);
+    } catch (cause) {
+      if (requestId !== loadRequestRef.current) return;
+      setError(cause instanceof Error ? cause.message : "Не удалось загрузить приватность");
+    } finally {
+      if (requestId === loadRequestRef.current) setLoading(false);
+    }
   }, [load]);
 
-  if (!settings) return <div className="h-64 animate-pulse rounded-2xl bg-[var(--app-surface-soft)]" />;
+  useEffect(() => {
+    const requestId = ++loadRequestRef.current;
+    void load()
+      .then((value) => {
+        if (requestId !== loadRequestRef.current) return;
+        setSettings(value);
+        setSaved(value);
+      })
+      .catch((cause: unknown) => {
+        if (requestId !== loadRequestRef.current) return;
+        setError(cause instanceof Error ? cause.message : "Не удалось загрузить приватность");
+      })
+      .finally(() => {
+        if (requestId === loadRequestRef.current) setLoading(false);
+      });
+    return () => { loadRequestRef.current += 1; };
+  }, [load]);
+
+  if (loading && !settings) return <div className="h-64 animate-pulse rounded-2xl bg-[var(--app-surface-soft)]" aria-label="Загрузка настроек приватности" aria-busy="true" />;
+  if (!settings) {
+    return (
+      <section className="settings-section" aria-labelledby="privacy-settings-error-title">
+        <div className="settings-section__header"><ShieldCheck className="h-5 w-5" /><div><h2 id="privacy-settings-error-title">Приватность и активность</h2><p>Настройки пока не загрузились.</p></div></div>
+        <p className="text-sm text-red-400" role="alert">{error ?? "Не удалось загрузить приватность"}</p>
+        <Button type="button" size="sm" className="mt-4" onClick={() => void loadSettings()}>Повторить</Button>
+      </section>
+    );
+  }
   const changed = JSON.stringify(settings) !== JSON.stringify(saved);
   const submit = async () => {
     if (!changed || pending) return;

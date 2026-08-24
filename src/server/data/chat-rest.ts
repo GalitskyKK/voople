@@ -11,6 +11,7 @@ import { assertChatMemberRest } from "@/server/data/chat-access-rest";
 import { loadGroupCommunitySummariesRest } from "@/server/data/chat-community-rest";
 import { getOrCreateDirectChatRest } from "@/server/data/chat-management-rest";
 import { canViewPrivateFieldRest, getUserPrivacySettingsRest } from "@/server/data/privacy-rest";
+import { assertCanOpenDirectChatRest } from "@/server/data/chat-direct-privacy-rest";
 import {
   type ChatMessageContentInputNode,
   type StoredChatMessageContentNode,
@@ -675,6 +676,8 @@ export async function getDirectChatByUsernameRest(myId: string, username: string
   if (error) throw new Error(error.message);
   if (!user) throw new Error("Пользователь не найден");
 
-  const chatId = await getOrCreateDirectChatRest(myId, user.id as string);
+  const otherUserId = user.id as string;
+  await assertCanOpenDirectChatRest(myId, otherUserId);
+  const chatId = await getOrCreateDirectChatRest(myId, otherUserId);
   return { chatId };
 }

@@ -82,6 +82,16 @@ try {
     throw new Error("message_reactions must use REPLICA IDENTITY FULL; apply 47-message-reactions-replica-identity.sql");
   }
 
+  const [{ directChatDefinition }] = await sql`
+    select pg_get_functiondef('public.get_or_create_direct_chat(uuid, uuid)'::regprocedure) as "directChatDefinition"
+  `;
+  if (
+    !String(directChatDefinition).includes("connection_request_scope")
+    || !String(directChatDefinition).includes("privacy_scope_allows")
+  ) {
+    throw new Error("get_or_create_direct_chat is missing the atomic connection privacy gate; apply 57-direct-chat-privacy-enforcement.sql");
+  }
+
   console.log(`Migration readiness passed (${REQUIRED_MIGRATIONS.length} required migrations).`);
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));

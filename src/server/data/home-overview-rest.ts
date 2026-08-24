@@ -1,6 +1,6 @@
 import { getAdminClient } from "@/lib/supabase/admin";
 import { messageMentionsUsername } from "@/lib/social/home-attention";
-import { canViewPrivateFieldRest, getUserPrivacySettingsRest } from "@/server/data/privacy-rest";
+import { filterUserIdsByPrivacyFieldRest } from "@/server/data/privacy-rest";
 import {
   toProfileCustomizationView,
   type CustomizationRow,
@@ -31,17 +31,14 @@ export async function getActiveRoomPresenceRest(chatIds: string[], viewerId: str
   if (error) throw new Error(error.message);
 
   const participantUserIds = [...new Set((data ?? []).map((row) => String(row.user_id)))];
-  const roomVisibility = new Map<string, boolean>();
-  await Promise.all(participantUserIds.map(async (participantUserId) => {
-    const privacy = await getUserPrivacySettingsRest(participantUserId);
-    roomVisibility.set(
-      participantUserId,
-      await canViewPrivateFieldRest(participantUserId, viewerId, privacy.roomsScope),
-    );
-  }));
+  const roomVisibility = new Set(await filterUserIdsByPrivacyFieldRest(
+    participantUserIds,
+    viewerId,
+    "roomsScope",
+  ));
 
   for (const row of data ?? []) {
-    if (!roomVisibility.get(String(row.user_id))) continue;
+    if (!roomVisibility.has(String(row.user_id))) continue;
     const user = Array.isArray(row.users) ? row.users[0] : row.users;
     if (!user) continue;
     const relation = user.profile_customization as CustomizationRow | CustomizationRow[] | null;
@@ -161,15 +158,19 @@ export async function getVisibleListeningActivityRest(viewerId: string, userIds:
     .not("track_title", "is", null)
     .gte("updated_at", activeAfter);
   if (error) throw new Error(error.message);
-  await Promise.all((data ?? []).map(async (row) => {
+  const visibleUserIds = new Set(await filterUserIdsByPrivacyFieldRest(
+    (data ?? []).map((row) => String(row.user_id)),
+    viewerId,
+    "musicScope",
+  ));
+  for (const row of data ?? []) {
     const userId = String(row.user_id);
-    const privacy = await getUserPrivacySettingsRest(userId);
-    if (!(await canViewPrivateFieldRest(userId, viewerId, privacy.musicScope))) return;
+    if (!visibleUserIds.has(userId)) continue;
     result.set(userId, {
       title: String(row.track_title),
       artist: typeof row.track_artist === "string" ? row.track_artist : null,
     });
-  }));
+  }
   return result;
 }
 

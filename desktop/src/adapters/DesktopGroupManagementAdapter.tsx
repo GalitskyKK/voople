@@ -10,11 +10,11 @@ import { uploadPresignedFile } from "@/lib/uploads/presigned-upload";
 import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
-import { useDesktopChatThread } from "./useDesktopChatThread";
+import { useDesktopChatThread } from "../chat/useDesktopChatThread";
 
 const ignoreInboxChange = () => undefined;
 
-export function DesktopGroupInviteSheet({
+export function DesktopGroupManagementAdapter({
   chatId,
   chatName,
   memberCount,
@@ -284,7 +284,7 @@ export function DesktopGroupInviteSheet({
   );
 }
 
-export function DesktopGroupSettingsPage({ chatId, config, session, navigate }: {
+export function DesktopGroupSettingsPageAdapter({ chatId, config, session, navigate }: {
   chatId: string;
   config: DesktopConfig;
   session: Session;
@@ -310,7 +310,7 @@ export function DesktopGroupSettingsPage({ chatId, config, session, navigate }: 
     return <div className="grid min-h-0 flex-1 place-items-center p-6 text-center"><p className="text-sm text-[var(--app-muted)]">Настройки доступны только для основной группы.</p></div>;
   }
   return (
-    <DesktopGroupInviteSheet
+    <DesktopGroupManagementAdapter
       chatId={chatId}
       chatName={chat.name || "Группа"}
       memberCount={chat.memberCount}

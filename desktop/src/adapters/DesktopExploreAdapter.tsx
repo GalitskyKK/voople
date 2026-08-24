@@ -10,9 +10,9 @@ import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
 import type { PostAuthorView } from "@/types/domain";
 
 import type { DesktopConfig } from "../config";
-import { useDesktopExplore } from "./useDesktopExplore";
+import { useDesktopExplore } from "../explore/useDesktopExplore";
 
-export function DesktopExplore({
+export function DesktopExploreAdapter({
   config,
   session,
   renderDestination,

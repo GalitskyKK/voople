@@ -10,12 +10,12 @@ import type { UserSearchHit } from "@/types/search";
 import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
-import { DesktopGroupChatCreatorAdapter } from "../adapters/DesktopGroupChatCreatorAdapter";
-import { DesktopChatThread } from "./DesktopChatThread";
-import { useDesktopChats } from "./useDesktopChats";
+import { DesktopGroupChatCreatorAdapter } from "./DesktopGroupChatCreatorAdapter";
+import { DesktopChatThreadAdapter } from "./DesktopChatThreadAdapter";
+import { useDesktopChats } from "../chat/useDesktopChats";
 import { useDesktopPresence } from "../providers/DesktopPresenceProvider";
 
-export function DesktopMessages({
+export function DesktopMessagesAdapter({
   activeChatId,
   config,
   session,
@@ -152,7 +152,7 @@ export function DesktopMessages({
       }
       thread={
         activeChatId ? (
-          <DesktopChatThread
+          <DesktopChatThreadAdapter
             key={activeChatId}
             chatId={activeChatId}
             rootChat={activeRootChat}

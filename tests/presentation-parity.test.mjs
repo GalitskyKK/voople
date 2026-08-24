@@ -52,6 +52,31 @@ test("web and desktop chat composer share one presentation layer", () => {
   );
 });
 
+test("portable desktop UI baseline is empty and migrated domains use shared views", () => {
+  const baseline = JSON.parse(read(".architecture-baseline.json"));
+  const webThread = read("src/components/chat/ChatWindow.tsx");
+  const desktopThread = read("desktop/src/adapters/DesktopChatThreadAdapter.tsx");
+  const desktopMessages = read("desktop/src/adapters/DesktopMessagesAdapter.tsx");
+  const desktopCreate = read("desktop/src/adapters/DesktopCreatePostAdapter.tsx");
+  const desktopComments = read("desktop/src/adapters/DesktopPostCommentsAdapter.tsx");
+  const desktopDetail = read("desktop/src/adapters/DesktopPostDetailAdapter.tsx");
+  const desktopExplore = read("desktop/src/adapters/DesktopExploreAdapter.tsx");
+  const desktopGroup = read("desktop/src/adapters/DesktopGroupManagementAdapter.tsx");
+  const architectureGate = read("scripts/check-architecture.mjs");
+
+  assert.deepEqual(baseline.desktopPortableUi, []);
+  assert.match(webThread, /ChatThreadFrameView/);
+  assert.match(desktopThread, /ChatThreadFrameView/);
+  assert.match(desktopMessages, /MessagesLayoutView/);
+  assert.match(desktopCreate, /CreatePostDialogView/);
+  assert.match(desktopComments, /PostCommentsView/);
+  assert.match(desktopComments, /MediaUploadDropzoneView/);
+  assert.match(desktopDetail, /PostDetailViewVisual/);
+  assert.match(desktopExplore, /ExploreView/);
+  assert.match(desktopGroup, /GroupManagementSheetView/);
+  assert.match(architectureGate, /desktopPortableUi must remain empty/);
+});
+
 test("home live state is sticky and Group Info exposes one settings action", () => {
   const home = read("src/components/home/HomeOverviewPanelsView.tsx");
   const groupInfo = read("src/components/chat/GroupInfoDrawerView.tsx");

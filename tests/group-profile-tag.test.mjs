@@ -19,7 +19,7 @@ test("profile tag selection checks group membership and stays platform-shared", 
   const data = read("src/server/data/chat-community-rest.ts");
   const view = read("src/components/chat/GroupInfoDrawerView.tsx");
   const web = read("src/components/chat/GroupInfoDrawer.tsx");
-  const desktop = read("desktop/src/chat/DesktopChatThread.tsx");
+  const desktop = read("desktop/src/adapters/DesktopChatThreadAdapter.tsx");
   const profile = read("src/components/profile/ProfileCardIdentityVisual.tsx");
 
   assert.match(data, /getGroupCommunityRest\(chatId, userId\)/);

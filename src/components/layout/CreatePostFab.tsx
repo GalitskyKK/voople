@@ -1,16 +1,14 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
-import { ImagePlus, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import { COPY } from "@/lib/constants/copy";
 import { mobileFabBottomWithPlayer, MOBILE_FAB_BOTTOM_DEFAULT } from "@/lib/layout/mobile-chrome";
 import { trpc } from "@/lib/trpc/client";
 import { usePlayerStore } from "@/stores/player.store";
 import { PostMediaUploadControl } from "@/components/media/PostMediaUploadControl";
-import { PostComposer } from "@/components/feed/PostComposer";
-import { Button } from "@/components/ui/Button";
-import { Sheet } from "@/components/ui/Sheet";
+import { CreatePostDialogView } from "@/components/feed/CreatePostDialogView";
 import { usePostMediaUploads } from "@/hooks/usePostMediaUploads";
 import { useCloudPostDraft } from "@/hooks/useCloudPostDraft";
 
@@ -81,42 +79,17 @@ export function CreatePostFab() {
         <Plus className="h-6 w-6" strokeWidth={2.5} />
         <span className="hidden text-sm font-semibold lg:inline">Написать пост</span>
       </button>
-      <Sheet
+      <CreatePostDialogView
         open={open}
         onClose={() => setOpen(false)}
-        className="max-w-2xl p-4 sm:p-6"
-        ariaLabel={COPY.newPost}
-      >
-        <div className="mb-5 pe-10">
-          <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--app-accent-soft)] text-[var(--theme-accent)]">
-              <ImagePlus className="h-5 w-5" aria-hidden />
-            </span>
-            <h2 className="text-lg font-semibold">{COPY.newPost}</h2>
-          </div>
-          <p className="mt-2 text-sm text-[var(--app-muted)]">
-            Поделитесь мыслью, фотографией или видео.
-          </p>
-        </div>
-        <PostComposer
-          value={text}
-          onChange={setText}
-          disabled={createPost.isPending}
-          autoFocus
-        />
-        <PostMediaUploadControl uploads={galleryUploads} disabled={createPost.isPending} className="mt-3" />
-        {cloudDraft.active ? <p className="mt-2 text-xs text-[var(--app-muted)]">{cloudDraft.saving ? "Сохраняем облачный черновик…" : cloudDraft.error ?? "Черновик синхронизируется с desktop"}</p> : null}
-        {formError && <p className="mt-2 text-sm text-red-400">{formError}</p>}
-        <Button
-          type="button"
-          variant="primary"
-          className="mt-4 w-full"
-          disabled={createPost.isPending || galleryUploads.busy}
-          onClick={handlePublish}
-        >
-          {createPost.isPending ? "…" : COPY.publish}
-        </Button>
-      </Sheet>
+        text={text}
+        busy={createPost.isPending || galleryUploads.busy}
+        error={formError}
+        draftStatus={cloudDraft.active ? cloudDraft.saving ? "Сохраняем облачный черновик…" : cloudDraft.error ?? "Черновик синхронизируется с desktop" : null}
+        uploadControl={<PostMediaUploadControl uploads={galleryUploads} disabled={createPost.isPending} />}
+        onTextChange={setText}
+        onPublish={handlePublish}
+      />
     </>
   );
 }

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { PostCommentsView } from "@/components/feed/PostCommentsView";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
 import type { CommentViewModel } from "@/types/domain";
-import { DesktopMediaDropzone } from "../composer/DesktopMediaDropzone";
+import { MediaUploadDropzoneView } from "@/components/media/MediaUploadDropzoneView";
 import { useDesktopMediaUpload } from "../composer/useDesktopMediaUpload";
 import type { DesktopConfig } from "../config";
 import { PostMediaGallery } from "@/components/media/PostMediaGallery";
@@ -25,7 +25,7 @@ type DesktopPostCommentsProps = {
   onDelete: (commentId: string) => Promise<boolean>;
 };
 
-export function DesktopPostComments({
+export function DesktopPostCommentsAdapter({
   comments,
   loading,
   creating,
@@ -72,8 +72,9 @@ export function DesktopPostComments({
         }
       }}
       uploadControl={
-        <DesktopMediaDropzone
+        <MediaUploadDropzoneView
           compact
+          allowVideo={false}
           error={upload.error}
           media={upload.media}
           onRemove={upload.remove}

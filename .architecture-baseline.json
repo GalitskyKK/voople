@@ -1,14 +1,5 @@
 {
-  "desktopPortableUi": [
-    "desktop/src/chat/DesktopChatThread.tsx",
-    "desktop/src/chat/DesktopGroupInviteSheet.tsx",
-    "desktop/src/chat/DesktopMessages.tsx",
-    "desktop/src/composer/DesktopCreatePostModal.tsx",
-    "desktop/src/composer/DesktopMediaDropzone.tsx",
-    "desktop/src/explore/DesktopExplore.tsx",
-    "desktop/src/post/DesktopPostComments.tsx",
-    "desktop/src/post/DesktopPostDetail.tsx"
-  ],
+  "desktopPortableUi": [],
   "exceptions": {
     "src/components/admin/AdminAssetEditor.tsx": {
       "maxLines": 566,

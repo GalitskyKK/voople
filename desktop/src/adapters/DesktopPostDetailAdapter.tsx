@@ -5,11 +5,11 @@ import { PostDetailViewVisual } from "@/components/feed/PostDetailViewVisual";
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { AppPageContent } from "@/components/layout/AppPageContent";
 import type { DesktopConfig } from "../config";
-import { DesktopPostCardAdapter } from "../adapters/DesktopPostCardAdapter";
-import { DesktopPostComments } from "./DesktopPostComments";
-import { useDesktopPostDetail } from "./useDesktopPostDetail";
+import { DesktopPostCardAdapter } from "./DesktopPostCardAdapter";
+import { DesktopPostCommentsAdapter } from "./DesktopPostCommentsAdapter";
+import { useDesktopPostDetail } from "../post/useDesktopPostDetail";
 
-export function DesktopPostDetail({
+export function DesktopPostDetailAdapter({
   config,
   session,
   postId,
@@ -69,7 +69,7 @@ export function DesktopPostDetail({
           session={session}
           renderDestination={renderDestination}
         />
-        <DesktopPostComments
+        <DesktopPostCommentsAdapter
           comments={detail.comments}
           loading={detail.commentsLoading}
           creating={detail.creating}

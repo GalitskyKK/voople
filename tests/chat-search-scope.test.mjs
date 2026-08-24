@@ -7,7 +7,7 @@ const webAdapter = readFileSync(
   "utf8",
 );
 const desktopAdapter = readFileSync(
-  new URL("../desktop/src/chat/DesktopMessages.tsx", import.meta.url),
+  new URL("../desktop/src/adapters/DesktopMessagesAdapter.tsx", import.meta.url),
   "utf8",
 );
 const sharedView = readFileSync(

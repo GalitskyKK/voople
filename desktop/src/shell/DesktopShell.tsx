@@ -34,8 +34,8 @@ const DesktopFeedAdapter = lazy(() =>
   })),
 );
 const DesktopExplore = lazy(() =>
-  import("../explore/DesktopExplore").then((module) => ({
-    default: module.DesktopExplore,
+  import("../adapters/DesktopExploreAdapter").then((module) => ({
+    default: module.DesktopExploreAdapter,
   })),
 );
 const DesktopHashtagFeedAdapter = lazy(() =>
@@ -54,18 +54,18 @@ const DesktopProfile = lazy(() =>
   })),
 );
 const DesktopPostDetail = lazy(() =>
-  import("../post/DesktopPostDetail").then((module) => ({
-    default: module.DesktopPostDetail,
+  import("../adapters/DesktopPostDetailAdapter").then((module) => ({
+    default: module.DesktopPostDetailAdapter,
   })),
 );
 const DesktopMessages = lazy(() =>
-  import("../chat/DesktopMessages").then((module) => ({
-    default: module.DesktopMessages,
+  import("../adapters/DesktopMessagesAdapter").then((module) => ({
+    default: module.DesktopMessagesAdapter,
   })),
 );
 const DesktopGroupSettingsPage = lazy(() =>
-  import("../chat/DesktopGroupInviteSheet").then((module) => ({
-    default: module.DesktopGroupSettingsPage,
+  import("../adapters/DesktopGroupManagementAdapter").then((module) => ({
+    default: module.DesktopGroupSettingsPageAdapter,
   })),
 );
 const EventsPage = lazy(() =>
@@ -89,8 +89,8 @@ const DesktopHelp = lazy(() =>
   })),
 );
 const DesktopCreatePostModal = lazy(() =>
-  import("../composer/DesktopCreatePostModal").then((module) => ({
-    default: module.DesktopCreatePostModal,
+  import("../adapters/DesktopCreatePostAdapter").then((module) => ({
+    default: module.DesktopCreatePostAdapter,
   })),
 );
 

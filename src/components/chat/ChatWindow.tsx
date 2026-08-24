@@ -1,5 +1,5 @@
 "use client";
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
 import { useChatMessageEditor } from "@/hooks/useChatMessageEditor";
@@ -19,10 +19,9 @@ import { reportProductEvent } from "@/lib/telemetry/client";
 import { Toast } from "@/components/ui/Toast";
 import { ChatComposer } from "./ChatComposer";
 import { ChatTrackMetadataDialog } from "./ChatTrackMetadataDialog";
-import { ChatDateDivider } from "./ChatDateDivider";
-import { ChatRoomActivitySummary } from "./ChatRoomActivitySummary";
 import { ChatMediaLightbox } from "./ChatMediaLightbox";
 import { ChatMessageBubble } from "./ChatMessageBubble";
+import { ChatThreadFrameView } from "./ChatThreadFrameView";
 import { ChatWindowHeader } from "./ChatWindowHeader";
 import { ChatSectionsBar } from "./ChatSectionsBar";
 import { ChatJumpToLatest } from "./ChatJumpToLatest";
@@ -199,18 +198,9 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     : null;
 
   return (
-    <div
-      className="voople-chat-window flex min-h-0 flex-1 flex-col"
-      style={
-        isGroup && data?.chat.groupAccentColor
-          ? ({
-              "--group-accent": data.chat.groupAccentColor,
-              "--theme-accent": data.chat.groupAccentColor,
-            } as CSSProperties)
-          : undefined
-      }
-    >
-      {selection.selecting ? (
+    <ChatThreadFrameView
+      accentColor={isGroup ? data?.chat.groupAccentColor : null}
+      header={selection.selecting ? (
         <ChatSelectionController messages={selection.selectedMessages} onCancel={selection.clear} onDeleteMessage={(messageId) => removeMessage.mutateAsync({ messageId })} />
       ) : <ChatWindowHeader
         chatId={chatId}
@@ -232,58 +222,43 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         other={other}
         otherOnline={otherOnline}
       />}
-      {isGroup ? <ChatSectionsBar chatId={chatId} /> : null}
-
-      <div
-        ref={messagesRef}
-        data-voople-scroll=""
-        className="voople-chat-window__messages voople-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-1 py-3"
-      >
-        {timeline.length === 0 && (
-          <p className="text-center text-sm text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">Напишите первое сообщение</p>
-        )}
-        <div ref={messagesContentRef} className="mx-auto flex w-full flex-col gap-0.5 px-2">
-          {timeline.map((item) =>
-            item.type === "date" ? (
-              <ChatDateDivider key={item.key} label={item.label} />
-            ) : item.type === "roomSummary" ? (
-              <ChatRoomActivitySummary key={item.key} dayLabel={item.dayLabel} durationSeconds={item.durationSeconds} sessions={item.sessions} />
-            ) : (
-              <ChatMessageBubble
-                key={item.message.id}
-                message={item.message}
-                selectionMode={selection.selecting}
-                selected={selection.selectedIds.has(item.message.id)}
-                onSelect={(message) => selection.toggle(message.id)}
-                groupPosition={item.groupPosition}
-                viewerId={viewerId}
-                onReply={setReplyTo}
-                onEdit={(message) => {
-                  setReplyTo(null);
-                  setPendingUpload(null);
-                  setPendingTrack(null);
-                  editor.beginEditing(message);
-                }}
-                onDelete={(msg) => {
-                  if (window.confirm("Удалить сообщение?")) removeMessage.mutate({ messageId: msg.id });
-                }}
-                onAddToPlaylist={(msg) => setPlaylistConfirmMessage(msg)}
-                onOpenImage={setLightboxUrl}
-                showSender={isGroup}
-                onToggleReaction={(message, reaction) => {
-                  if (!toggleReaction.isPending) toggleReaction.mutate({
-                    messageId: message.id,
-                    ...(reaction.emojiId ? { emojiId: reaction.emojiId } : { emoji: reaction.emoji as ChatReactionEmoji }),
-                  });
-                }}
-              />
-            ),
-          )}
-        </div>
-        {isAwayFromBottom ? <ChatJumpToLatest onClick={scrollToBottom} /> : null}
-      </div>
-
-      <div className="px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:px-4 lg:pb-3">
+      sections={isGroup ? <ChatSectionsBar chatId={chatId} /> : null}
+      timeline={timeline}
+      messagesRef={messagesRef}
+      messagesContentRef={messagesContentRef}
+      renderMessage={(item) => (
+        <ChatMessageBubble
+          key={item.message.id}
+          message={item.message}
+          selectionMode={selection.selecting}
+          selected={selection.selectedIds.has(item.message.id)}
+          onSelect={(message) => selection.toggle(message.id)}
+          groupPosition={item.groupPosition}
+          viewerId={viewerId}
+          onReply={setReplyTo}
+          onEdit={(message) => {
+            setReplyTo(null);
+            setPendingUpload(null);
+            setPendingTrack(null);
+            editor.beginEditing(message);
+          }}
+          onDelete={(message) => {
+            if (window.confirm("Удалить сообщение?")) removeMessage.mutate({ messageId: message.id });
+          }}
+          onAddToPlaylist={(message) => setPlaylistConfirmMessage(message)}
+          onOpenImage={setLightboxUrl}
+          showSender={isGroup}
+          onToggleReaction={(message, reaction) => {
+            if (!toggleReaction.isPending) toggleReaction.mutate({
+              messageId: message.id,
+              ...(reaction.emojiId ? { emojiId: reaction.emojiId } : { emoji: reaction.emoji as ChatReactionEmoji }),
+            });
+          }}
+        />
+      )}
+      afterMessages={isAwayFromBottom ? <ChatJumpToLatest onClick={scrollToBottom} /> : null}
+      composer={
+        <div className="px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:px-4 lg:pb-3">
         <ChatComposer
           chatId={chatId}
           text={text}
@@ -302,27 +277,31 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
           isSending={send.isPending || editor.mutation.isPending}
           customEmojis={groupEmojis?.items ?? []}
         />
-      </div>
-
-      <ChatMediaLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
-      {playlistConfirmMessage && playlistDefaults && (
-        <ChatTrackMetadataDialog
-          open
-          initialTitle={playlistDefaults.title}
-          initialArtist={playlistDefaults.artist}
-          isSubmitting={addToPlaylist.isPending}
-          error={addToPlaylist.error?.message ?? null}
-          onClose={() => setPlaylistConfirmMessage(null)}
-          onConfirm={(draft) =>
-            addToPlaylist.mutate({
-              messageId: playlistConfirmMessage.id,
-              title: draft.title,
-              artist: draft.artist,
-            })
-          }
-        />
-      )}
-      {toast && <Toast message={toast} className="z-[130]" />}
-    </div>
+        </div>
+      }
+      overlays={
+        <>
+          <ChatMediaLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+          {playlistConfirmMessage && playlistDefaults ? (
+            <ChatTrackMetadataDialog
+              open
+              initialTitle={playlistDefaults.title}
+              initialArtist={playlistDefaults.artist}
+              isSubmitting={addToPlaylist.isPending}
+              error={addToPlaylist.error?.message ?? null}
+              onClose={() => setPlaylistConfirmMessage(null)}
+              onConfirm={(draft) =>
+                addToPlaylist.mutate({
+                  messageId: playlistConfirmMessage.id,
+                  title: draft.title,
+                  artist: draft.artist,
+                })
+              }
+            />
+          ) : null}
+          {toast ? <Toast message={toast} className="z-[130]" /> : null}
+        </>
+      }
+    />
   );
 }

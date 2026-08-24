@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-import { MediaUploadControl } from "@/components/media/MediaUploadControl";
+import { MediaUploadDropzoneView } from "@/components/media/MediaUploadDropzoneView";
 import { PostMedia } from "@/components/media/PostMedia";
-import type { UploadedMedia } from "@/hooks/useMediaUpload";
+import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { createClient } from "@/lib/supabase/client";
 import { trpc } from "@/lib/trpc/client";
 import { PostCommentsView } from "./PostCommentsView";
@@ -23,8 +23,7 @@ export function PostComments({
   onCountChange,
 }: PostCommentsProps) {
   const [text, setText] = useState("");
-  const [media, setMedia] = useState<UploadedMedia | null>(null);
-  const [uploadResetKey, setUploadResetKey] = useState(0);
+  const upload = useMediaUpload("comment");
   const utils = trpc.useUtils();
 
   const { data: comments = [], isLoading } = trpc.post.listComments.useQuery(
@@ -35,8 +34,7 @@ export function PostComments({
   const create = trpc.post.createComment.useMutation({
     onSuccess: (comment) => {
       setText("");
-      setMedia(null);
-      setUploadResetKey((key) => key + 1);
+      upload.reset();
       utils.post.listComments.setData({ postId }, (current) =>
         current ? [...current, comment] : [comment],
       );
@@ -81,12 +79,12 @@ export function PostComments({
 
   const submit = () => {
     const trimmed = text.trim();
-    if ((!trimmed && !media) || create.isPending) return;
+    if ((!trimmed && !upload.uploaded) || create.isPending) return;
     create.mutate({
       postId,
       text: trimmed || undefined,
-      mediaKey: media?.mediaKey,
-      mediaType: media?.mediaType,
+      mediaKey: upload.uploaded?.mediaKey,
+      mediaType: upload.uploaded?.mediaType,
     });
   };
 
@@ -98,8 +96,8 @@ export function PostComments({
       loading={isLoading}
       submitting={create.isPending}
       deletingCommentId={remove.isPending ? remove.variables?.commentId : null}
-      hasMedia={Boolean(media)}
-      error={create.error?.message ?? remove.error?.message}
+      hasMedia={Boolean(upload.uploaded)}
+      error={create.error?.message ?? remove.error?.message ?? upload.error}
       onTextChange={setText}
       onSubmit={submit}
       onDelete={(comment) => {
@@ -108,11 +106,14 @@ export function PostComments({
         }
       }}
       uploadControl={
-        <MediaUploadControl
-          key={uploadResetKey}
-          purpose="comment"
-          onChange={setMedia}
-          disabled={create.isPending}
+        <MediaUploadDropzoneView
+          compact
+          allowVideo={false}
+          error={upload.error}
+          media={upload.uploaded}
+          onRemove={upload.reset}
+          onUpload={(file) => void upload.uploadFile(file)}
+          uploading={upload.isUploading}
         />
       }
       renderMedia={(comment) => (

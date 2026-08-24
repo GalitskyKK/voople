@@ -91,6 +91,11 @@ for (const file of Object.keys(baseline.exceptions)) {
 
 const portableDesktopDomains = new Set(["chat", "composer", "events", "explore", "feed", "post", "profile", "shop"]);
 const portableDesktopBaseline = new Set(baseline.desktopPortableUi ?? []);
+if (portableDesktopBaseline.size > 0) {
+  errors.push(
+    "desktopPortableUi must remain empty; move presentation to root src/components instead of adding an exception",
+  );
+}
 for (const absolute of desktopFiles) {
   const file = relative(absolute);
   const domain = file.split("/")[2];

@@ -1,10 +1,9 @@
 import type { Session } from "@supabase/supabase-js";
 import { ArrowLeft, Hash } from "lucide-react";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { ChatDateDivider } from "@/components/chat/ChatDateDivider";
-import { ChatRoomActivitySummary } from "@/components/chat/ChatRoomActivitySummary";
 import { ChatSectionsBarView } from "@/components/chat/ChatSectionsBarView";
+import { ChatThreadFrameView } from "@/components/chat/ChatThreadFrameView";
 import { ChatWindowHeaderVisual } from "@/components/chat/ChatWindowHeaderVisual";
 import { ChatPeerPresence } from "@/components/chat/ChatPeerPresence";
 import { GroupInfoDrawerView, type GroupInfoDrawerTab } from "@/components/chat/GroupInfoDrawerView";
@@ -19,13 +18,13 @@ import type { ChatGroupMemberView, ChatListItem, ChatMessageView, GroupCommunity
 import type { GroupDiscoveryProfileView, InterestCatalogView } from "@/types/social";
 
 import type { DesktopConfig } from "../config";
-import { DesktopChatComposerAdapter } from "../adapters/DesktopChatComposerAdapter";
-import { DesktopSectionAccessAdapter } from "../adapters/DesktopSectionAccessAdapter";
-import { DesktopSubchatCreatorAdapter } from "../adapters/DesktopSubchatCreatorAdapter";
-import { useDesktopChatThread } from "./useDesktopChatThread";
+import { DesktopChatComposerAdapter } from "./DesktopChatComposerAdapter";
+import { DesktopSectionAccessAdapter } from "./DesktopSectionAccessAdapter";
+import { DesktopSubchatCreatorAdapter } from "./DesktopSubchatCreatorAdapter";
+import { useDesktopChatThread } from "../chat/useDesktopChatThread";
 import { createDesktopTrpcClient } from "../api/trpc";
 
-export function DesktopChatThread({
+export function DesktopChatThreadAdapter({
   chatId,
   rootChat,
   config,
@@ -166,18 +165,9 @@ export function DesktopChatThread({
   const isSubchat = Boolean(data.chat.parentChatId);
 
   return (
-    <div
-      className="voople-chat-window flex min-h-0 flex-1 flex-col"
-      style={
-        isGroup && data.chat.groupAccentColor
-          ? ({
-              "--group-accent": data.chat.groupAccentColor,
-              "--theme-accent": data.chat.groupAccentColor,
-            } as CSSProperties)
-          : undefined
-      }
-    >
-      <ChatWindowHeaderVisual>
+    <ChatThreadFrameView
+      accentColor={isGroup ? data.chat.groupAccentColor : null}
+      header={<ChatWindowHeaderVisual>
         <button
           type="button"
           onClick={() =>
@@ -341,8 +331,8 @@ export function DesktopChatThread({
           chatName={title}
           chatType={isGroup ? "group" : "direct"}
         />
-      </ChatWindowHeaderVisual>
-      {rootChat ? (
+      </ChatWindowHeaderVisual>}
+      sections={rootChat ? (
         <ChatSectionsBarView
           rootChat={rootChat}
           activeChatId={chatId}
@@ -358,55 +348,33 @@ export function DesktopChatThread({
           )}
         />
       ) : null}
-
-      <div
-        ref={messagesRef}
-        data-voople-scroll=""
-        className="voople-chat-window__messages voople-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-2 py-3"
-      >
-        {!timeline.length ? (
-          <p className="text-center text-sm text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">
-            Напишите первое сообщение
-          </p>
-        ) : null}
-        <div ref={messagesContentRef} className="flex w-full flex-col gap-0.5 px-2">
-          {timeline.map((item) =>
-            item.type === "date" ? (
-              <ChatDateDivider key={item.key} label={item.label} />
-            ) : item.type === "roomSummary" ? (
-              <ChatRoomActivitySummary key={item.key} dayLabel={item.dayLabel} durationSeconds={item.durationSeconds} sessions={item.sessions} />
-            ) : (
-              <ChatMessageBubble
-                key={item.message.id}
-                message={item.message}
-                viewerId={session.user.id}
-                groupPosition={item.groupPosition}
-                showSender={isGroup}
-                onReply={setReplyTo}
-                onEdit={(message) => {
-                  setReplyTo(null);
-                  setEditing(message);
-                }}
-                onDelete={(message) => {
-                  if (replyTo?.id === message.id) setReplyTo(null);
-                  void deleteMessage(message.id);
-                }}
-                onToggleReaction={(message, emoji) =>
-                  void toggleReaction(message.id, emoji)
-                }
-                onOpenImage={setLightboxUrl}
-              />
-            ),
-          )}
-        </div>
-      </div>
-
-      {error ? (
-        <p className="form-error desktop-chat-thread-error" role="alert">
-          {error}
-        </p>
-      ) : null}
-      <DesktopChatComposerAdapter
+      timeline={timeline}
+      messagesRef={messagesRef}
+      messagesContentRef={messagesContentRef}
+      renderMessage={(item) => (
+        <ChatMessageBubble
+          key={item.message.id}
+          message={item.message}
+          viewerId={session.user.id}
+          groupPosition={item.groupPosition}
+          showSender={isGroup}
+          onReply={setReplyTo}
+          onEdit={(message) => {
+            setReplyTo(null);
+            setEditing(message);
+          }}
+          onDelete={(message) => {
+            if (replyTo?.id === message.id) setReplyTo(null);
+            void deleteMessage(message.id);
+          }}
+          onToggleReaction={(message, emoji) =>
+            void toggleReaction(message.id, emoji)
+          }
+          onOpenImage={setLightboxUrl}
+        />
+      )}
+      error={error}
+      composer={<DesktopChatComposerAdapter
         chatId={chatId}
         key={editing?.id ?? "new-message"}
         config={config}
@@ -419,11 +387,11 @@ export function DesktopChatThread({
         onEdit={editMessage}
         onCancelEdit={() => setEditing(null)}
         customEmojis={data.chat.type === "group" ? groupEmojis : []}
-      />
-      <ChatMediaLightbox
+      />}
+      overlays={<ChatMediaLightbox
         url={lightboxUrl}
         onClose={() => setLightboxUrl(null)}
-      />
-    </div>
+      />}
+    />
   );
 }

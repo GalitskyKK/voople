@@ -66,6 +66,7 @@ export const PRODUCT_EVENT_NAMES = [
   "external_link_verdict",
   "group_boost_view",
   "desktop_update_install",
+  "not_found_viewed",
 ] as const;
 
 export type ProductEventName = (typeof PRODUCT_EVENT_NAMES)[number];

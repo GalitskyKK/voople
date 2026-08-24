@@ -17,6 +17,7 @@ import {
 } from "./notifications/incoming-call";
 import { DesktopPresenceProvider } from "./providers/DesktopPresenceProvider";
 import { DesktopShell } from "./shell/DesktopShell";
+import { DesktopReleaseNotesDialog } from "./updates/DesktopReleaseNotesDialog";
 
 export function DesktopAuthenticatedApp({
   config,
@@ -76,6 +77,7 @@ export function DesktopAuthenticatedApp({
           await getSupabase(config).auth.signOut();
         }}
       >
+        <DesktopReleaseNotesDialog />
         <VoiceSessionProvider
           onIncomingCall={handleIncomingCall}
           subscribeToVoiceRooms={subscribeToVoiceRooms}

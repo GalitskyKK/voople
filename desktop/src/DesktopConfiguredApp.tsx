@@ -5,8 +5,8 @@ import { AuthProvider, useDesktopAuth } from "./auth/AuthProvider";
 import { DesktopLogin } from "./auth/DesktopLogin";
 import type { DesktopConfig } from "./config";
 import { DesktopAutoUpdater } from "./updates/DesktopAutoUpdater";
-import { DesktopReleaseNotesDialog } from "./updates/DesktopReleaseNotesDialog";
 import { registerExternalLinkOpener } from "@/lib/platform/external-links";
+import { BrandedLoadingView } from "@/components/brand/BrandedLoadingView";
 
 const DesktopAuthenticatedApp = lazy(() =>
   import("./DesktopAuthenticatedApp").then((module) => ({
@@ -19,7 +19,6 @@ export function DesktopConfiguredApp({ config }: { config: DesktopConfig }) {
   return (
     <>
       <DesktopAutoUpdater />
-      <DesktopReleaseNotesDialog />
       <AuthProvider config={config}>
         <DesktopSessionRouter config={config} />
       </AuthProvider>
@@ -29,10 +28,10 @@ export function DesktopConfiguredApp({ config }: { config: DesktopConfig }) {
 
 function DesktopSessionRouter({ config }: { config: DesktopConfig }) {
   const { loading, session } = useDesktopAuth();
-  if (loading) return <main className="status-page">Восстанавливаем сессию…</main>;
+  if (loading) return <BrandedLoadingView fullscreen />;
   if (!session) return <DesktopLogin config={config} />;
   return (
-    <Suspense fallback={<main className="status-page">Открываем Voople…</main>}>
+    <Suspense fallback={<BrandedLoadingView fullscreen />}>
       <DesktopAuthenticatedApp config={config} session={session} />
     </Suspense>
   );

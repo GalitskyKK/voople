@@ -102,6 +102,21 @@ test.describe("public release surface", () => {
     await expect(page).toHaveURL(/\/login$/);
   });
 
+  test("unknown routes use the responsive Voople not-found surface", async ({ page }) => {
+    const response = await page.goto("/legal/this-route/does-not-exist");
+    expect([200, 404]).toContain(response?.status());
+    await expect(page.getByRole("heading", { name: "Здесь ничего нет" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "На Главную" })).toHaveAttribute("href", "/feed");
+    await expect(page.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(1);
+
+    await page.setViewportSize({ width: 360, height: 800 });
+    const viewport = await page.evaluate(() => ({
+      clientWidth: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth);
+  });
+
   test("desktop download route returns an explicit release response", async ({ request }) => {
     const response = await request.get("/download/desktop", { maxRedirects: 0 });
     expect([307, 503]).toContain(response.status());

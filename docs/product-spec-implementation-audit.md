@@ -195,6 +195,13 @@
   notifications есть, полный category model/live CTA не подтверждён.
 - Events retained and usage tracked: `частично`; route exists, `events_opened`
   contract added in working tree but call/metric review ещё не завершены.
+- System states: `готово в коде` для общего initial/session/consent/route loading
+  и routing 404. Web/desktop используют `BrandedLoadingView` и `NotFoundView`,
+  reduced-motion и 360 px покрыты общими CSS/public E2E; feature-level loading/
+  empty/error/offline остальных вертикалей по-прежнему проверяются отдельно.
+- Release notes: `готово в коде`; общий View безопасно форматирует bundled/CDN/
+  updater notes без паразитных чисел, повторного заголовка и line clamp, а
+  desktop остаётся только controller для history/acknowledgement.
 
 ## 12. Mobile
 
@@ -253,7 +260,8 @@
 - Phase 5 Identity: `частично`.
 - Phase 6 Community Settings + Boosts: `частично`.
 - Phase 7 Money: `частично`.
-- Phase 8 Discovery & states: `частично`.
+- Phase 8 Discovery & states: `частично`; общие branded loading, 404 и release
+  notes закрыты, но Search/Notifications/Events и offline matrix ещё нет.
 - Phase 9 Mobile: `частично`.
 
 ## 17. Acceptance criteria

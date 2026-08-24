@@ -29,7 +29,7 @@ Reference Map и шесть референсных бордов.
 | 3 — Room | Full, Share, Empty, Mini, Compact, Minimal, mobile как одна state machine | Состояния существуют | Native adapters и общий view есть частично | Нужны двухклиентные media tests, reconnect/soak и все visual states | Частично |
 | 4 — Identity | Реальный двухколоночный профиль + все cosmetics на каждой portable surface | Shared profile view есть | Shared profile view подключён | Mini-profile social context и полная surface matrix не закрыты | Частично |
 | 5 — Settings + Boosts | Полноэкранные настройки с локальным nav, identity preview, perks/allocation/capacity | Секции и данные есть | Composition ещё не везде едина | Нужны reference snapshots, grace/expiry E2E и removal старых sheets | Частично |
-| 6 — Discovery + Money + States | Wide Search/Notifications/Events, полноценные Store/detail/gift/Plus и системные состояния | Вертикали существуют | Часть использует общие views | Wide/mobile/reference/state matrix не закрыта | Частично |
+| 6 — Discovery + Money + States | Wide Search/Notifications/Events, полноценные Store/detail/gift/Plus и системные состояния | Вертикали существуют; branded initial loading и 404 общие | Release notes, branded loading и routing 404 используют root Views | Wide Search/Store/mobile matrix и visual RC-check release notes не закрыты | Частично |
 
 ## P0 — core social
 

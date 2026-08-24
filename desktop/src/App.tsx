@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 
 import { getDesktopConfig } from "./config";
 import { DesktopTitleBar } from "./shell/DesktopTitleBar";
+import { BrandedLoadingView } from "@/components/brand/BrandedLoadingView";
 
 const DesktopConfiguredApp = lazy(() =>
   import("./DesktopConfiguredApp").then((module) => ({
@@ -16,7 +17,7 @@ export function App() {
       <DesktopTitleBar />
       <div className="desktop-window-content">
         {config ? (
-          <Suspense fallback={<main className="status-page">Открываем Voople…</main>}>
+          <Suspense fallback={<BrandedLoadingView fullscreen />}>
             <DesktopConfiguredApp config={config} />
           </Suspense>
         ) : (

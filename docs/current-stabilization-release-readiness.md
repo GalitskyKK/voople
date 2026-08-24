@@ -16,7 +16,9 @@
   исходящих сообщений и фокус composer при открытии чата;
 - работа существующих настроек комнаты: выключение output также выключает
   микрофон, звуковые индикаторы mute/deafen, screen-share audio policy;
-- полное отображение встроенных release notes с внутренним скроллом;
+- полное отображение встроенных release notes через общий View с внутренним
+  скроллом, без повторного заголовка, старых числовых маркеров и line clamp;
+- общий branded initial/session/consent/route loading и единая web/desktop 404;
 - применённые и зарегистрированные обязательные migrations 38–55;
 - staging остаётся опциональной репетицией, production migration connection и
   migration readiness остаются обязательными перед stable promotion.

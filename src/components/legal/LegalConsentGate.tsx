@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { FileCheck2, Loader2, LogOut, RefreshCw } from "lucide-react";
 
+import { BrandedLoadingView } from "@/components/brand/BrandedLoadingView";
 import { Button } from "@/components/ui/Button";
 import { trpc } from "@/lib/trpc/client";
 
@@ -31,6 +32,7 @@ export function LegalConsentGate({
   // content; protected routes are still enforced by the server proxy.
   if (status.error?.data?.code === "UNAUTHORIZED") return children;
   if (status.data?.accepted || acceptedLocally) return children;
+  if (status.isPending) return <BrandedLoadingView fullscreen />;
 
   const signOut = async () => {
     setSigningOut(true);
@@ -50,11 +52,7 @@ export function LegalConsentGate({
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-(--theme-accent)">Документы Voople</p>
         <h1 id="legal-consent-title" className="mt-2 text-2xl font-bold sm:text-3xl">Проверьте актуальные условия</h1>
 
-        {status.isPending ? (
-          <div className="mt-8 flex items-center gap-3 text-sm text-[var(--app-muted)]" role="status">
-            <Loader2 className="h-5 w-5 animate-spin" /> Проверяем сохранённое согласие…
-          </div>
-        ) : status.isError ? (
+        {status.isError ? (
           <div className="mt-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4">
             <p className="font-medium">Не удалось проверить документы</p>
             <p className="mt-1 text-sm text-[var(--app-muted)]">Доступ к приложению не открывается без серверной проверки. Данные аккаунта не изменены.</p>

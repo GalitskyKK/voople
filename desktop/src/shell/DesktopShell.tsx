@@ -1,8 +1,9 @@
 import type { Session } from "@supabase/supabase-js";
 import { invoke } from "@tauri-apps/api/core";
 import { Plus } from "lucide-react";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { BrandedLoadingView } from "@/components/brand/BrandedLoadingView";
 import {
   AppBottomNavigationVisual,
   AppSidebarVisual,
@@ -13,6 +14,7 @@ import { AppPageContent } from "@/components/layout/AppPageContent";
 import { AccountChipVisual } from "@/components/layout/AccountChipVisual";
 import { FeedHeaderVisual } from "@/components/layout/FeedHeaderVisual";
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
+import { NotFoundView } from "@/components/system/NotFoundView";
 import { COPY, type FeedTabId } from "@/lib/constants/copy";
 import { resolveRingStyle } from "@/lib/customization/rings";
 import { getAppRouteLayout } from "@/lib/layout/route-layout";
@@ -155,6 +157,7 @@ export function DesktopShell({
   const [feedVersion, setFeedVersion] = useState(0);
   const [feedTab, setFeedTab] = useState<FeedTabId>("overview");
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const previousPathnameRef = useRef("/feed");
   const [viewerSummary, setViewerSummary] = useState<{
     username: string;
     displayName: string;
@@ -222,7 +225,10 @@ export function DesktopShell({
         void getSupabase(config).auth.signOut();
         return;
       }
-      setPathname(href);
+      setPathname((current) => {
+        if (current !== href) previousPathnameRef.current = current;
+        return href;
+      });
     },
     [config],
   );
@@ -426,14 +432,10 @@ export function DesktopShell({
               renderDestination={renderDestination}
             />
           ) : (
-            <section className="desktop-placeholder">
-              <p className="eyebrow">РАЗДЕЛ В РАЗРАБОТКЕ</p>
-              <h1>{routeLabel(pathname)}</h1>
-              <p>
-                Этот экран будет подключён к общей реализации веб-приложения без
-                отдельной копии верстки.
-              </p>
-            </section>
+            <NotFoundView
+              surface="desktop"
+              onBack={() => setPathname(previousPathnameRef.current)}
+            />
           )}
         </Suspense>
       </div>
@@ -475,21 +477,8 @@ export function DesktopShell({
 
 function DesktopRouteFallback() {
   return (
-    <AppPageContent className="py-4 lg:py-6" aria-label="Загрузка раздела">
-      <div className="feed-skeleton h-40 rounded-2xl" />
+    <AppPageContent className="py-4 lg:py-6">
+      <BrandedLoadingView compact />
     </AppPageContent>
   );
-}
-
-function routeLabel(pathname: string) {
-  const labels: Record<string, string> = {
-    "/explore": COPY.search,
-    "/messages": COPY.messages,
-    "/events": "События",
-    "/me": COPY.profile,
-    "/shop": COPY.shop,
-    "/help": "Помощь",
-    "/settings": "Настройки",
-  };
-  return labels[pathname] ?? COPY.appName;
 }

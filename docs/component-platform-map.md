@@ -36,7 +36,8 @@ View не импортирует desktop, Next router, Supabase или server mo
 | Discovery | `ExploreView`, `ExploreSearchResults`, `NotificationsView`, `EventsPage` | Optional/protected tRPC adapters | Shared view + desktop navigation renderer | Только способ навигации |
 | Настройки и приватность | `components/settings`, `components/social/UserPrivacySettingsPanel`, `UserInterestsSettingsPanel` | tRPC/Supabase adapters передают данные и auth-действия | Те же Views получают данные из desktop tRPC/auth adapters | Tray, startup, updater, hotkeys; DOM форм интересов и приватности общий |
 | Безопасные ссылки | `components/ui/RichText`, `SafeExternalLink` | `window.open` после interstitial | Registered Tauri external-link opener | Только системный browser command |
-| Release notes | Общий parser и safe link renderer | Может читать опубликованный catalog | Bundled changelog + updater history | Установка, restart и acknowledgement в Rust |
+| Release notes | `components/release/ReleaseNotesView` + `lib/release/release-notes-format` | Может читать опубликованный catalog | Тонкий dialog-controller объединяет bundled changelog, CDN и updater history | Установка, restart и acknowledgement в Rust; presentation, safe links и long-content layout общие |
+| System surfaces | `components/brand/BrandedLoadingView`, `components/system/NotFoundView` | Next `loading.tsx`/`not-found.tsx` только композируют Views | Session/route fallbacks передают те же Views и desktop back callback | Только platform routing; знак, copy, responsive и reduced-motion общие |
 
 ## Правило изменения
 

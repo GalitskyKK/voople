@@ -37,7 +37,7 @@ impl ProcessAudioPublishers {
         Err("Native process audio publisher is not included in this build".to_owned())
     }
 
-    pub fn stop(&self, _screen_session_id: &str) -> Result<(), String> {
+    pub async fn stop(&self, _screen_session_id: &str) -> Result<(), String> {
         Ok(())
     }
 }

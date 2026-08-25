@@ -170,11 +170,11 @@ async fn start_process_audio_share(
 }
 
 #[tauri::command]
-fn stop_process_audio_share(
+async fn stop_process_audio_share(
     state: tauri::State<'_, process_audio_publisher::ProcessAudioPublishers>,
     screen_session_id: String,
 ) -> Result<(), String> {
-    state.stop(&screen_session_id)
+    state.stop(&screen_session_id).await
 }
 
 #[tauri::command]

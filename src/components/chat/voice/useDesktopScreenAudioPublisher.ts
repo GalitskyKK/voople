@@ -23,6 +23,11 @@ type NativeCaptureRequest = {
   quality: ScreenShareQuality;
 };
 
+type NativeStartResult = {
+  active: boolean;
+  warning: string | null;
+};
+
 export function useDesktopScreenAudioPublisher(chatId: string) {
   const token = trpc.chat.roomScreenAudioToken.useMutation();
   const sessionIdRef = useRef<string | null>(null);
@@ -31,14 +36,19 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
   const sourcesRef = useRef<DesktopProcessAudioSource[]>([]);
   const browserCaptureRef = useRef<MediaStream | null>(null);
   const refreshTimerRef = useRef<number | null>(null);
-  const startRef = useRef<(request: NativeCaptureRequest) => Promise<string | null>>(async () => null);
+  const operationRef = useRef(0);
+  const startRef = useRef<(request: NativeCaptureRequest, operation: number) => Promise<NativeStartResult>>(
+    async () => ({ active: false, warning: null }),
+  );
   const pickerResolverRef = useRef<((source: DesktopCaptureSource | null) => void) | null>(null);
   const [capturePicker, setCapturePicker] = useState<DesktopCaptureSource[] | null>(null);
 
-  const scheduleRefresh = useCallback((request: NativeCaptureRequest, delay: number) => {
+  const scheduleRefresh = useCallback((request: NativeCaptureRequest, operation: number, delay: number) => {
     if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current);
     const run = () => {
-      void startRef.current(request).catch((error) => {
+      if (operationRef.current !== operation) return;
+      void startRef.current(request, operation).catch((error) => {
+        if (operationRef.current !== operation) return;
         console.warn("Screen audio lease refresh failed", {
           message: error instanceof Error ? error.message : String(error),
           retryAfterMs: 30_000,
@@ -98,7 +108,7 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
     };
   }, []);
 
-  const stop = useCallback(async () => {
+  const stopResources = useCallback(async () => {
     if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current);
     refreshTimerRef.current = null;
     const sessionId = sessionIdRef.current;
@@ -108,6 +118,11 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
     browserCaptureRef.current?.getTracks().forEach((track) => track.stop());
     browserCaptureRef.current = null;
   }, []);
+
+  const stop = useCallback(async () => {
+    operationRef.current += 1;
+    await stopResources();
+  }, [stopResources]);
 
   const startBrowserCapture = useCallback(async (room: Room, quality: ScreenShareQuality) => {
     const stream = await navigator.mediaDevices.getDisplayMedia(
@@ -151,34 +166,53 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
     return Boolean(audioTrack);
   }, []);
 
-  const start = useCallback(async (request: NativeCaptureRequest) => {
+  const start = useCallback(async (
+    request: NativeCaptureRequest,
+    operation: number,
+  ): Promise<NativeStartResult> => {
     const bridge = getDesktopProcessAudioBridge();
-    if (!bridge) return "Нативный модуль демонстрации недоступен.";
+    if (!bridge) return { active: false, warning: "Нативный модуль демонстрации недоступен." };
     const capabilities = await bridge.capabilities();
-    if (!capabilities.publisherSupported) return "Нативный модуль демонстрации недоступен в этой системе.";
+    if (operationRef.current !== operation) return { active: false, warning: null };
+    if (!capabilities.publisherSupported) {
+      return { active: false, warning: "Нативный модуль демонстрации недоступен в этой системе." };
+    }
     const screenSessionId = crypto.randomUUID();
     const credentials = await token.mutateAsync({ chatId, screenSessionId });
-    await stop();
+    if (operationRef.current !== operation) return { active: false, warning: null };
+    await stopResources();
+    if (operationRef.current !== operation) return { active: false, warning: null };
     const plus = request.quality === "plus";
-    await bridge.start({
-      processId: request.processId,
-      captureSource: { id: request.captureSource.id, kind: request.captureSource.kind },
-      captureWidth: plus ? 1920 : 1280,
-      captureHeight: plus ? 1080 : 720,
-      captureFrameRate: plus ? 60 : 30,
-      livekitUrl: credentials.url,
-      token: credentials.token,
-      screenSessionId,
-    });
     sessionIdRef.current = screenSessionId;
+    try {
+      await bridge.start({
+        processId: request.processId,
+        captureSource: { id: request.captureSource.id, kind: request.captureSource.kind },
+        captureWidth: plus ? 1920 : 1280,
+        captureHeight: plus ? 1080 : 720,
+        captureFrameRate: plus ? 60 : 30,
+        livekitUrl: credentials.url,
+        token: credentials.token,
+        screenSessionId,
+      });
+    } catch (cause) {
+      if (sessionIdRef.current === screenSessionId) sessionIdRef.current = null;
+      if (operationRef.current !== operation) return { active: false, warning: null };
+      throw cause;
+    }
+    if (operationRef.current !== operation) {
+      if (sessionIdRef.current === screenSessionId) sessionIdRef.current = null;
+      await bridge.stop(screenSessionId).catch(() => undefined);
+      return { active: false, warning: null };
+    }
     const refreshDelay = Math.max(30_000, Date.parse(credentials.refreshAfter) - Date.now());
     console.info("Screen audio lease acquired", {
       expiresAt: credentials.expiresAt,
       refreshAfter: credentials.refreshAfter,
     });
-    scheduleRefresh(request, refreshDelay);
-    return null;
-  }, [chatId, scheduleRefresh, stop, token]);
+    scheduleRefresh(request, operation, refreshDelay);
+    return { active: true, warning: null };
+  }, [chatId, scheduleRefresh, stopResources, token]);
 
   useEffect(() => {
     startRef.current = start;
@@ -191,15 +225,21 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
     quality: ScreenShareQuality,
   ) => {
     if (sharing) {
+      const stopping = stop();
       await room.localParticipant.setScreenShareEnabled(
         false,
         getScreenShareCaptureOptions(quality),
       );
-      await stop();
+      await stopping;
       return { enabled: false, hasAudio: false, warning: null };
     }
 
-    await stop();
+    const operation = operationRef.current + 1;
+    operationRef.current = operation;
+    await stopResources();
+    if (operationRef.current !== operation) {
+      return { enabled: false, hasAudio: false, warning: null };
+    }
     const bridge = getDesktopProcessAudioBridge();
     const sourceRefresh = bridge && nativePublisherSupportedRef.current
       ? bridge.listSources().catch(() => sourcesRef.current)
@@ -211,6 +251,9 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
     if (bridge && nativePublisherSupportedRef.current && nativeSources.length) {
       const selected = await requestCaptureSource(nativeSources);
       if (!selected) return { enabled: false, hasAudio: false, warning: null };
+      if (operationRef.current !== operation) {
+        return { enabled: false, hasAudio: false, warning: null };
+      }
       const sources = await sourceRefresh;
       sourcesRef.current = sources;
       resolvedProcessId = selected.kind === "screen"
@@ -221,15 +264,16 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
             selected.title,
           );
       const request = { processId: resolvedProcessId, captureSource: selected, quality };
-      const warning = await start(request);
+      const result = await start(request, operation);
       const hasAudio = (selected.kind === "screen" || resolvedProcessId !== null)
-        && warning === null;
+        && result.active
+        && result.warning === null;
       return {
-        enabled: true,
+        enabled: result.active,
         hasAudio,
-        warning: warning ?? (hasAudio
-          ? null
-          : "Окно передаётся без звука: приложение пока не создало доступную аудиосессию."),
+        warning: result.warning ?? (result.active && !hasAudio
+          ? "Окно передаётся без звука: приложение пока не создало доступную аудиосессию."
+          : null),
       };
     }
 
@@ -258,7 +302,7 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
           : "Видео запущено без звука приложения.",
       };
     }
-  }, [requestCaptureSource, start, startBrowserCapture, stop]);
+  }, [requestCaptureSource, start, startBrowserCapture, stop, stopResources]);
 
   useEffect(() => () => {
     pickerResolverRef.current?.(null);

@@ -76,6 +76,7 @@ export function useChatRoomControl(
     roomRef: liveRoomRef,
     clearRemoteScreen: video.clearRemoteScreen,
     setAvailable: video.setScreenShareAvailable,
+    setLocalSharing: video.setScreenSharing,
     setWatching: video.setWatchingScreenShare,
   });
   const desktopAudio = useDesktopScreenAudioPublisher(chatId);

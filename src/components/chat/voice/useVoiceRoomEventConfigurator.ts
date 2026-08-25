@@ -21,7 +21,12 @@ export function useVoiceRoomEventConfigurator(input: {
   roomRef: MutableRefObject<Room | null>;
   roomSoundsEnabled: () => boolean;
   attachAudio: (track: RemoteTrack, participant: RemoteParticipant) => void;
-  attachRemoteVideo: (track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => void;
+  attachRemoteVideo: (
+    track: RemoteTrack,
+    publication: RemoteTrackPublication,
+    participant: RemoteParticipant,
+    ownerLabel?: string,
+  ) => void;
   detachRemoteVideo: (track: RemoteTrack, publication: RemoteTrackPublication) => void;
   attachLocalVideo: (publication: LocalTrackPublication, participantId: string) => void;
   detachLocalVideo: (publication: LocalTrackPublication) => void;
@@ -44,7 +49,13 @@ export function useVoiceRoomEventConfigurator(input: {
       isCurrent: () => input.roomRef.current === liveRoom,
       onRemoteTrack: (track, publication, participant) => {
         if (track.kind === Track.Kind.Audio) input.attachAudio(track, participant);
-        else input.attachRemoteVideo(track, publication, participant);
+        else {
+          const ownerId = participant.attributes["voople.ownerId"];
+          const ownerLabel = ownerId && ownerId === liveRoom.localParticipant.identity
+            ? "Ваш экран"
+            : undefined;
+          input.attachRemoteVideo(track, publication, participant, ownerLabel);
+        }
       },
       onRemoteTrackDetached: input.detachRemoteVideo,
       onLocalVideoPublished: input.attachLocalVideo,

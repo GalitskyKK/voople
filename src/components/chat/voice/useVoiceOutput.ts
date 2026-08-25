@@ -52,6 +52,18 @@ export function useVoiceOutput(
 
   const attachAudio = useCallback(
     (track: RemoteTrack, participant: RemoteParticipant) => {
+      const localParticipantId = roomRef.current?.localParticipant.identity;
+      const isOwnNativeScreenAudio =
+        track.source === Track.Source.ScreenShareAudio &&
+        Boolean(localParticipantId) &&
+        participant.attributes["voople.ownerId"] === localParticipantId;
+      if (isOwnNativeScreenAudio) {
+        // Native sharing uses a second LiveKit participant. Subscription policy
+        // normally prevents this track from arriving, but keep the output
+        // boundary fail-closed so a reconnect race cannot create self-monitoring.
+        track.detach().forEach((element) => element.remove());
+        return;
+      }
       const element = track.attach();
       element.autoplay = true;
       element.dataset.livekitAudio = "true";
@@ -64,7 +76,7 @@ export function useVoiceOutput(
       }
       audioContainerRef.current?.appendChild(element);
     },
-    [effectiveVolume],
+    [effectiveVolume, roomRef],
   );
 
   const clearAudio = useCallback(() => {

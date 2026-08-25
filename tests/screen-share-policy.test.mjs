@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { Track } from "livekit-client";
 
 import {
   getBrowserDisplayMediaOptions,
   getScreenShareCaptureOptions,
 } from "../src/components/chat/voice/voice-room-config.ts";
+import { shouldSubscribeToScreenPublication } from "../src/components/chat/voice/useScreenShareSubscription.ts";
 import { resolveDesktopProcessAudioSource } from "../src/lib/livekit/desktop-process-audio.ts";
 
 const read = (path) => readFileSync(path, "utf8");
@@ -45,6 +47,25 @@ test("native process audio disables the browser audio track to prevent duplicate
   assert.equal(options.resolution?.frameRate, 60);
 });
 
+test("the native publisher never loops screen audio back to its owner", () => {
+  const policy = (source, watching) => shouldSubscribeToScreenPublication({
+    source,
+    ownerId: "owner-1",
+    viewerId: "owner-1",
+    watching,
+  });
+
+  assert.equal(policy(Track.Source.ScreenShare, false), true);
+  assert.equal(policy(Track.Source.ScreenShareAudio, false), false);
+  assert.equal(policy(Track.Source.ScreenShareAudio, true), false);
+  assert.equal(shouldSubscribeToScreenPublication({
+    source: Track.Source.ScreenShareAudio,
+    ownerId: "owner-1",
+    viewerId: "viewer-2",
+    watching: true,
+  }), true);
+});
+
 test("desktop uses the native picker before falling back to browser capture", () => {
   const publisher = read("src/components/chat/voice/useDesktopScreenAudioPublisher.ts");
 
@@ -66,6 +87,18 @@ test("native desktop screen share excludes Voople from the whole-system mix", ()
   assert.match(publisher, /ExcludeProcessTree\([\s\S]*std::process::id\(\)/);
   assert.match(publisher, /TrackSource::ScreenshareAudio/);
   assert.match(publisher, /TrackSource::Screenshare/);
+});
+
+test("native screen share stops resources gracefully and preserves source aspect ratio", () => {
+  const publisher = read("desktop/src-tauri/src/process_audio_publisher.rs");
+
+  assert.match(publisher, /tokio::sync::oneshot::Sender/);
+  assert.match(publisher, /stop\.send\(\(\)\)/);
+  assert.match(publisher, /room\.close\(\)\.await/);
+  assert.doesNotMatch(publisher, /handle\.abort\(\)/);
+  assert.match(publisher, /fitted_capture_resolution/);
+  assert.match(publisher, /first_video_frame/);
+  assert.match(publisher, /NativeVideoSource::new\([\s\S]*VideoResolution \{ width, height \}/);
 });
 
 test("desktop audio source resolution is automatic but never guesses between active apps", () => {

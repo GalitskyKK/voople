@@ -154,6 +154,7 @@ export function useVoiceVideoStage() {
       track: RemoteTrack,
       publication: RemoteTrackPublication,
       participant: RemoteParticipant,
+      ownerLabel?: string,
     ) => {
       if (track.kind !== Track.Kind.Video) return;
 
@@ -163,11 +164,12 @@ export function useVoiceVideoStage() {
         const element = track.attach() as HTMLVideoElement;
         element.autoplay = true;
         element.playsInline = true;
-        element.className = "h-full w-full object-contain";
+        element.className = "block h-full max-h-full w-full max-w-full bg-black object-contain";
         target?.appendChild(element);
         resumeVideo(element);
-        setScreenShareOwner(participant.name || "Участник");
-        setScreenShareAvailable(participant.name || "Участник");
+        const label = ownerLabel ?? participant.name ?? participant.identity ?? "Участник";
+        setScreenShareOwner(label);
+        setScreenShareAvailable(label);
         setWatchingScreenShare(true);
       } else if (publication.source === Track.Source.Camera) {
         attachCamera(
@@ -191,7 +193,7 @@ export function useVoiceVideoStage() {
         element.autoplay = true;
         element.muted = true;
         element.playsInline = true;
-        element.className = "h-full w-full object-contain";
+        element.className = "block h-full max-h-full w-full max-w-full bg-black object-contain";
         const tile = document.createElement("div");
         tile.dataset.livekitLocalScreen = "true";
         tile.className = "relative h-full w-full bg-black";

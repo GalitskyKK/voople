@@ -7,15 +7,35 @@ export function isRemoteScreenPublication(publication: RemoteTrackPublication) {
   return publication.source === Track.Source.ScreenShare || publication.source === Track.Source.ScreenShareAudio;
 }
 
+export function shouldSubscribeToScreenPublication({
+  source,
+  ownerId,
+  viewerId,
+  watching,
+}: {
+  source: Track.Source;
+  ownerId: string | undefined;
+  viewerId: string | undefined;
+  watching: boolean;
+}) {
+  const ownNativeShare = Boolean(ownerId && viewerId && ownerId === viewerId);
+  if (!ownNativeShare) return watching;
+  // The native publisher is a separate LiveKit participant. Keep its video
+  // subscribed for the local preview, but never play its audio back to owner.
+  return source === Track.Source.ScreenShare;
+}
+
 export function useScreenShareSubscription({
   roomRef,
   clearRemoteScreen,
   setAvailable,
+  setLocalSharing,
   setWatching,
 }: {
   roomRef: RefObject<Room | null>;
   clearRemoteScreen: () => void;
   setAvailable: (owner: string | null) => void;
+  setLocalSharing: (sharing: boolean) => void;
   setWatching: (watching: boolean) => void;
 }) {
   // Screen video and screen audio are published separately. The audio
@@ -26,16 +46,23 @@ export function useScreenShareSubscription({
 
   const syncPublication = useCallback((publication: RemoteTrackPublication, participant: RemoteParticipant) => {
     if (isRemoteScreenPublication(publication)) {
-      const ownNativeShare = participant.attributes["voople.ownerId"] ===
-        roomRef.current?.localParticipant.identity;
+      const viewerId = roomRef.current?.localParticipant.identity;
+      const ownerId = participant.attributes["voople.ownerId"];
+      const ownNativeShare = Boolean(ownerId && viewerId && ownerId === viewerId);
       if (publication.source === Track.Source.ScreenShare) {
         setAvailable(ownNativeShare ? "Ваш экран" : participant.name || participant.identity || "Участник");
+        if (ownNativeShare) setLocalSharing(true);
       }
-      publication.setSubscribed(ownNativeShare || watchingRef.current);
+      publication.setSubscribed(shouldSubscribeToScreenPublication({
+        source: publication.source,
+        ownerId,
+        viewerId,
+        watching: watchingRef.current,
+      }));
     } else {
       publication.setSubscribed(true);
     }
-  }, [roomRef, setAvailable]);
+  }, [roomRef, setAvailable, setLocalSharing]);
 
   const syncExisting = useCallback((room: Room) => {
     room.remoteParticipants.forEach((participant) => {
@@ -48,20 +75,33 @@ export function useScreenShareSubscription({
     roomRef.current?.remoteParticipants.forEach((participant) => {
       participant.trackPublications.forEach((publication) => {
         const remotePublication = publication as RemoteTrackPublication;
-        if (isRemoteScreenPublication(remotePublication)) remotePublication.setSubscribed(subscribed);
+        if (isRemoteScreenPublication(remotePublication)) {
+          remotePublication.setSubscribed(shouldSubscribeToScreenPublication({
+            source: remotePublication.source,
+            ownerId: participant.attributes["voople.ownerId"],
+            viewerId: roomRef.current?.localParticipant.identity,
+            watching: subscribed,
+          }));
+        }
       });
     });
     setWatching(subscribed);
     if (!subscribed) clearRemoteScreen();
   }, [clearRemoteScreen, roomRef, setWatching]);
 
-  const removePublication = useCallback((publication: RemoteTrackPublication) => {
+  const removePublication = useCallback((
+    publication: RemoteTrackPublication,
+    participant: RemoteParticipant,
+  ) => {
     if (publication.source !== Track.Source.ScreenShare) return;
+    const viewerId = roomRef.current?.localParticipant.identity;
+    const ownerId = participant.attributes["voople.ownerId"];
+    if (ownerId && viewerId && ownerId === viewerId) setLocalSharing(false);
     watchingRef.current = false;
     setAvailable(null);
     setWatching(false);
     clearRemoteScreen();
-  }, [clearRemoteScreen, setAvailable, setWatching]);
+  }, [clearRemoteScreen, roomRef, setAvailable, setLocalSharing, setWatching]);
 
   return {
     removePublication,

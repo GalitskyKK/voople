@@ -2628,6 +2628,7 @@ version = "0.1.0"
 dependencies = [
  "cxx",
  "livekit",
+ "serde",
  "serde_json",
  "tokio",
  "voople-screen-share-protocol",

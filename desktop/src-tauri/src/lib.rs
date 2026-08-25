@@ -13,20 +13,9 @@ use tauri::{
     Manager, WindowEvent,
 };
 
-#[cfg(feature = "process-audio-publisher")]
-mod desktop_capture;
-#[cfg(not(feature = "process-audio-publisher"))]
-#[path = "desktop_capture_stub.rs"]
-mod desktop_capture;
 mod process_audio;
-#[cfg(target_os = "windows")]
-mod process_audio_capture;
-#[cfg(feature = "process-audio-publisher")]
-mod process_audio_publisher;
-#[cfg(not(feature = "process-audio-publisher"))]
-#[path = "process_audio_publisher_stub.rs"]
-mod process_audio_publisher;
 mod release_notes;
+mod screen_share_supervisor;
 
 struct WindowBehavior {
     close_to_tray: AtomicBool,
@@ -157,21 +146,31 @@ fn list_process_audio_sources() -> Result<Vec<process_audio::ProcessAudioSource>
 }
 
 #[tauri::command]
-fn list_desktop_capture_sources() -> Result<Vec<desktop_capture::DesktopCaptureSource>, String> {
-    desktop_capture::list_desktop_capture_sources()
+async fn list_desktop_capture_sources(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, screen_share_supervisor::ScreenShareSupervisor>,
+) -> Result<Vec<voople_screen_share_protocol::DesktopCaptureSource>, String> {
+    if !cfg!(feature = "process-audio-publisher") {
+        return Ok(Vec::new());
+    }
+    state.list_sources(&app).await
 }
 
 #[tauri::command]
 async fn start_process_audio_share(
-    state: tauri::State<'_, process_audio_publisher::ProcessAudioPublishers>,
-    input: process_audio_publisher::StartProcessAudioInput,
+    app: tauri::AppHandle,
+    state: tauri::State<'_, screen_share_supervisor::ScreenShareSupervisor>,
+    input: voople_screen_share_protocol::StartProcessAudioInput,
 ) -> Result<(), String> {
-    state.start(input).await
+    if !cfg!(feature = "process-audio-publisher") {
+        return Err("Native screen-share publisher is disabled in this build".to_owned());
+    }
+    state.start(&app, input).await
 }
 
 #[tauri::command]
 async fn stop_process_audio_share(
-    state: tauri::State<'_, process_audio_publisher::ProcessAudioPublishers>,
+    state: tauri::State<'_, screen_share_supervisor::ScreenShareSupervisor>,
     screen_session_id: String,
 ) -> Result<(), String> {
     state.stop(&screen_session_id).await
@@ -347,7 +346,8 @@ pub fn run() {
     let builder = tauri::Builder::default()
         .manage(WindowBehavior::default())
         .manage(VoiceHeartbeat::default())
-        .manage(process_audio_publisher::ProcessAudioPublishers::default())
+        .manage(screen_share_supervisor::ScreenShareSupervisor::default())
+        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_window_state::Builder::default().build());

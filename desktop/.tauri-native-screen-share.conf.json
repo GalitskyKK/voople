@@ -1,0 +1,7 @@
+{
+  "bundle": {
+    "externalBin": [
+      "binaries/voople-screen-share-worker"
+    ]
+  }
+}

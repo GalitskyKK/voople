@@ -28,7 +28,7 @@ jobs:
   windows:
     name: Build and verify Windows RC
     runs-on: windows-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     outputs:
       version: ${{ steps.release_config.outputs.version }}
     env:
@@ -74,7 +74,9 @@ jobs:
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: desktop/src-tauri
+          workspaces: |
+            desktop/src-tauri -> target
+            desktop/screen-share-worker -> target
 
       - name: Install dependencies
         run: |
@@ -145,14 +147,73 @@ jobs:
         working-directory: desktop
         run: npm run build
 
-      - name: Verify native process audio feature
+      - name: Verify isolated native screen-share worker
         id: native_audio_probe
         continue-on-error: true
-        working-directory: desktop/src-tauri
+        shell: pwsh
         run: |
-          cargo build --locked --release --features process-audio-publisher --target x86_64-pc-windows-msvc
-          cargo test --locked --features process-audio-publisher --target x86_64-pc-windows-msvc
-          cargo check --locked --features process-audio-publisher --target x86_64-pc-windows-msvc
+          $ErrorActionPreference = "Stop"
+          $Target = "x86_64-pc-windows-msvc"
+          $WorkerManifest = "desktop/screen-share-worker/Cargo.toml"
+          $WorkerExe = "desktop/screen-share-worker/target/$Target/release/voople-screen-share-worker.exe"
+          $BundleDir = "desktop/src-tauri/binaries"
+          $BundledWorker = "$BundleDir/voople-screen-share-worker-$Target.exe"
+
+          Write-Host "=== Build isolated screen-share worker ==="
+          cargo build `
+            --manifest-path $WorkerManifest `
+            --locked `
+            --release `
+            --target $Target
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          Write-Host "=== Run worker unit tests ==="
+          cargo test `
+            --manifest-path $WorkerManifest `
+            --locked `
+            --release `
+            --target $Target
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          if (-not (Test-Path -LiteralPath $WorkerExe)) {
+            throw "Screen-share worker binary was not produced: $WorkerExe"
+          }
+
+          Write-Host "=== Prepare target-suffixed Tauri sidecar ==="
+          New-Item -ItemType Directory -Path $BundleDir -Force | Out-Null
+          Copy-Item -LiteralPath $WorkerExe -Destination $BundledWorker -Force
+          if (-not (Test-Path -LiteralPath $BundledWorker)) {
+            throw "Failed to prepare Tauri sidecar: $BundledWorker"
+          }
+
+          Write-Host "=== Build main Tauri crate with native capability enabled ==="
+          cargo build `
+            --manifest-path desktop/src-tauri/Cargo.toml `
+            --locked `
+            --release `
+            --features process-audio-publisher `
+            --target $Target
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          Write-Host "=== Test main Tauri crate ==="
+          cargo test `
+            --manifest-path desktop/src-tauri/Cargo.toml `
+            --locked `
+            --release `
+            --features process-audio-publisher `
+            --target $Target
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          Write-Host "=== Cargo check main Tauri crate ==="
+          cargo check `
+            --manifest-path desktop/src-tauri/Cargo.toml `
+            --locked `
+            --release `
+            --features process-audio-publisher `
+            --target $Target
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          Write-Host "Native screen-share worker verification passed."
 
       - name: Prepare updater and optional Authenticode signing
         shell: pwsh
@@ -191,7 +252,7 @@ jobs:
           }
           $releaseConfig | ConvertTo-Json -Depth 8 | Set-Content "desktop/.tauri-release.conf.json" -Encoding utf8
 
-      - name: Build NSIS installer with process audio
+      - name: Build NSIS installer with isolated native screen share
         id: native_audio_build
         if: steps.native_audio_probe.outcome == 'success'
         continue-on-error: true
@@ -201,11 +262,11 @@ jobs:
         with:
           projectPath: desktop
           tauriScript: npm run tauri
-          args: --config .tauri-release.conf.json --target x86_64-pc-windows-msvc --features process-audio-publisher
+          args: --config .tauri-release.conf.json --config .tauri-native-screen-share.conf.json --target x86_64-pc-windows-msvc --features process-audio-publisher
           uploadUpdaterJson: false
           releaseAssetNamePattern: Voople-[version]-Windows-[arch][setup].[ext]
 
-      - name: Build NSIS installer without process audio fallback
+      - name: Build NSIS installer without native screen share fallback
         if: steps.native_audio_probe.outcome != 'success' || steps.native_audio_build.outcome != 'success'
         uses: tauri-apps/tauri-action@v1
         env:
@@ -222,12 +283,12 @@ jobs:
         run: |
           $included = '${{ steps.native_audio_build.outcome }}' -eq 'success'
           "PROCESS_AUDIO_INCLUDED=$($included.ToString().ToLowerInvariant())" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-          '## Windows application audio' | Out-File $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          '## Windows native screen share' | Out-File $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
           if (-not $included) {
-            Write-Warning "Native process audio is unavailable in this RC; publishing the video-only fallback build."
-            '⚠️ RC uses the explicitly allowed video-only fallback (`processAudioPublisher: false`). Windows application audio is now a blocking P0 of the next feature release; see `docs/next-feature-release-backlog.md`.' | Out-File $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+            Write-Warning "Isolated native screen-share worker is unavailable in this RC; publishing the fallback build."
+            '⚠️ RC uses the fallback build (`processAudioPublisher: false`); the isolated native screen-share worker was not included.' | Out-File $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
           } else {
-            '✅ Native process audio publisher is included (`processAudioPublisher: true`).' | Out-File $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+            '✅ Isolated native screen-share worker is bundled (`processAudioPublisher: true`).' | Out-File $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
           }
 
       - name: Normalize and attest RC artifact

@@ -11,7 +11,9 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]
 default = []
-process-audio-publisher = ["dep:livekit", "dep:cxx"]
+# Keep the old feature name so existing build commands do not break.
+# Native LiveKit is now isolated in the sidecar, so the feature has no Rust dependency payload.
+process-audio-publisher = []
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -26,9 +28,9 @@ tauri-plugin-window-state = "2"
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-updater = "2"
+tauri-plugin-shell = "2"
 tokio = { version = "1", features = ["time", "sync", "rt-multi-thread"] }
-livekit = { version = "=0.8.3", features = ["rustls-tls-native-roots"], optional = true }
-cxx = { version = "=1.0.186", optional = true }
+voople-screen-share-protocol = { path = "../screen-share-protocol" }
 
 [target.'cfg(windows)'.dependencies]
 windows-core = { version = "=0.61.2" }

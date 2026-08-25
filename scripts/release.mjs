@@ -120,11 +120,43 @@ async function main() {
     { args: ["node_modules/@playwright/test/cli.js", "test"] },
   ];
   for (const check of checks) run(check.command ?? process.execPath, check.args, { cwd: check.cwd });
+
   if (process.platform === "win32" && process.env.VERIFY_NATIVE_AUDIO === "1") {
-    const nativeAudioOptions = { cwd: "desktop/src-tauri" };
-    runOptional("cargo", ["build", "--locked", "--release", "--features", "process-audio-publisher", "--target", "x86_64-pc-windows-msvc"], nativeAudioOptions);
-    runOptional("cargo", ["test", "--locked", "--features", "process-audio-publisher", "--target", "x86_64-pc-windows-msvc"], nativeAudioOptions);
-    runOptional("cargo", ["check", "--locked", "--features", "process-audio-publisher", "--target", "x86_64-pc-windows-msvc"], nativeAudioOptions);
+    process.stdout.write("\nRunning optional native screen-share worker checks locally.\n");
+
+    const target = "x86_64-pc-windows-msvc";
+    const workerManifest = "desktop/screen-share-worker/Cargo.toml";
+
+    const workerBuilt = runOptional("cargo", [
+      "build",
+      "--manifest-path", workerManifest,
+      "--locked",
+      "--release",
+      "--target", target,
+    ]);
+
+    const workerTested = workerBuilt && runOptional("cargo", [
+      "test",
+      "--manifest-path", workerManifest,
+      "--locked",
+      "--release",
+      "--target", target,
+    ]);
+
+    const tauriChecked = workerBuilt && runOptional("cargo", [
+      "check",
+      "--manifest-path", "desktop/src-tauri/Cargo.toml",
+      "--locked",
+      "--release",
+      "--features", "process-audio-publisher",
+      "--target", target,
+    ]);
+
+    if (!workerBuilt || !workerTested || !tauriChecked) {
+      process.stdout.write(
+        "\nNative screen-share checks did not pass locally. This does not block release creation; GitHub Actions performs the authoritative Windows native build and can fall back to the non-native installer.\n",
+      );
+    }
   } else {
     process.stdout.write("Native installer checks are delegated to GitHub Actions.\n");
   }

@@ -14,7 +14,7 @@ test("desktop RC records native audio capability and preserves a visible fallbac
   assert.match(workflow, /voople-screen-share-worker-\$Target\.exe/);
   assert.match(cargoConfig, /\[target\.x86_64-pc-windows-msvc\]/);
   assert.match(cargoConfig, /rustflags = \["-C", "target-feature=\+crt-static"\]/);
-  assert.match(releaseScript, /"--features", "process-audio-publisher"/);
+  assert.match(releaseScript, /"--features",\s*"process-audio-publisher"/);
   assert.match(workflow, /processAudioPublisher = \$env:PROCESS_AUDIO_INCLUDED/);
   assert.match(workflow, /fallback build/);
 });
@@ -23,10 +23,19 @@ test("local release E2E exercises the production build deterministically", () =>
   const releaseScript = read("scripts/release.mjs");
   const playwrightConfig = read("playwright.config.ts");
 
-  assert.match(releaseScript, /VOOPLE_RELEASE_E2E: "1"/);
+  assert.match(releaseScript, /VOOPLE_RELEASE_E2E:\s*"1"/);
   assert.match(playwrightConfig, /isReleaseE2E/);
   assert.match(playwrightConfig, /isReleaseE2E[\s\S]*localProductionCommand/);
   assert.match(playwrightConfig, /isReleaseE2E \? 1 : 2/);
+});
+
+test("release unit tests do not depend on shell glob expansion", () => {
+  const releaseScript = read("scripts/release.mjs");
+
+  assert.match(releaseScript, /await readdir\(\s*"tests"/);
+  assert.match(releaseScript, /entry\.name\.endsWith\("\.test\.mjs"\)/);
+  assert.match(releaseScript, /\.\.\.unitTestFiles/);
+  assert.doesNotMatch(releaseScript, /"tests\/\*\.test\.mjs"/);
 });
 
 test("Windows COM capture compiles in the isolated worker gate", () => {

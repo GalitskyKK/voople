@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { readFile, writeFile } from "node:fs/promises";
+import { readdir, readFile, writeFile } from "node:fs/promises";
 import { createInterface } from "node:readline/promises";
 import process from "node:process";
 
@@ -621,6 +621,29 @@ async function main() {
   // Проверки приложения
   // -----------------------------
 
+  const unitTestFiles = (
+    await readdir(
+      "tests",
+      { withFileTypes: true },
+    )
+  )
+    .filter(
+      (entry) =>
+        entry.isFile() &&
+        entry.name.endsWith(".test.mjs"),
+    )
+    .map(
+      (entry) =>
+        `tests/${entry.name}`,
+    )
+    .sort();
+
+  if (!unitTestFiles.length) {
+    throw new Error(
+      "No unit test files found in tests/",
+    );
+  }
+
   const checks = [
     {
       args: [
@@ -633,7 +656,7 @@ async function main() {
         "--disable-warning=MODULE_TYPELESS_PACKAGE_JSON",
         "--experimental-strip-types",
         "--test",
-        "tests/*.test.mjs",
+        ...unitTestFiles,
       ],
     },
 

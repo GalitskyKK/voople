@@ -29,7 +29,7 @@ Reference Map и шесть референсных бордов.
 | 3 — Room | Full, Share, Empty, Mini, Compact, Minimal, mobile как одна state machine | Состояния существуют; web-share использует общий stage и явные 720p30/1080p60 presets | Native LiveKit/libwebrtc изолирован в worker process; stop single-flight, UI гаснет сразу, self-audio исключён; общий stage использует contain и оставшуюся высоту | Нужны двухклиентные stop/restart/quality media tests, reconnect/soak и все visual states | Частично |
 | 4 — Identity | Реальный двухколоночный профиль + все cosmetics на каждой portable surface | Shared profile view есть | Shared profile view подключён | Mini-profile social context и полная surface matrix не закрыты | Частично |
 | 5 — Settings + Boosts | Полноэкранные настройки с локальным nav, identity preview, perks/allocation/capacity | Секции и данные есть | Composition ещё не везде едина | Нужны reference snapshots, grace/expiry E2E и removal старых sheets | Частично |
-| 6 — Discovery + Money + States | Wide Search/Notifications/Events, полноценные Store/detail/gift/Plus и системные состояния | Вертикали существуют; branded initial loading и 404 общие | Release notes, branded loading и routing 404 используют root Views | Wide Search/Store/mobile matrix и visual RC-check release notes не закрыты | Частично |
+| 6 — Discovery + Money + States | Wide Search/Notifications/Events, полноценные Store/detail/gift/Plus и системные состояния | Вертикали существуют; branded initial loading и 404 общие | Release notes, branded loading и routing 404 используют root Views | Wide Search/Store/mobile matrix; desktop Search 1024/1280/1440; short/long/very-long release notes без обрезки и visual RC-check | Частично |
 
 ## P0 — core social
 
@@ -67,7 +67,7 @@ Reference Map и шесть референсных бордов.
 | 20 | «Открыт к общению» | Частично | Visibility controls, discovery surfaces и abuse/safety handling |
 | 21 | DM Requests | Частично | Inbox, accept/decline/block/rate-limit и complete error states |
 | 22 | Request privacy | Частично | Текущий new-DM path защищён в service и atomic DB RPC; нужен полный DM Requests inbox с accept/decline/block |
-| 23 | Social context в Mini Profile | Частично | Shared communities, relationship reason, room actions; cosmetics уже общие |
+| 23 | Social context в Mini Profile | Частично | Shared communities, relationship reason, room actions; viewport collision/zoom/edge positioning и внутренний scroll; cosmetics уже общие |
 | 24 | Room/community invite previews | Частично | Anonymous live counts теперь privacy-filtered; нужны полные auth/anonymous states и visual parity |
 | 25 | Actionable Room notifications | Частично | Join CTA, expiry/reconnect, dedup и desktop notification parity |
 
@@ -93,6 +93,11 @@ Reference Map и шесть референсных бордов.
 | 36 | Accessibility | Частично | Keyboard/focus/screen reader/contrast matrix, reduced motion |
 | 37 | Analytics dashboards | Частично | Event coverage audit, activation ≥2 min, funnels/retention/cost dashboards |
 | 38 | Screen Share source preview polish | Частично | Worker isolation, bounded stop, self-audio suppression, contain/aspect и explicit 720p30/1080p60 publish contract готовы; остаются desktop thumbnails/selected preview, measured end-to-end FPS/bitrate, dynamic-resize E2E и web post-selection track preview |
+| 39 | Release notes long-content polish | Частично | Shared View есть; нужны short/long/very-long fixtures, очистка Markdown-артефактов, viewport-relative max-height, внутренний scroll и web/desktop visual E2E |
+| 40 | Search desktop/responsive parity | Частично | Пересобрать default/results/empty/loading по Board 6 и проверить сетку/scroll на 1024/1280/1440 и mobile hierarchy |
+| 41 | Mini Profile adaptive positioning | Частично | Collision detection, flip/shift, viewport padding, zoom 125–200%, internal scroll и гарантия, что cosmetics не меняют geometry/actions |
+| 42 | Creator Cosmetics Program | Планирование | Creator Studio, безопасные animated formats/static fallback, preview matrix, moderation/IP/takedown, performance budgets, payouts/KYC/anti-fraud и versioned creator contract |
+| 43 | Recognition Program | Планирование | Server-authoritative Founder 25 snapshot и event; subscription loyalty policy; role-based Developer/Team badges; audit log и отделение badges от permissions/cosmetics |
 
 ## Cross-platform architecture gate
 

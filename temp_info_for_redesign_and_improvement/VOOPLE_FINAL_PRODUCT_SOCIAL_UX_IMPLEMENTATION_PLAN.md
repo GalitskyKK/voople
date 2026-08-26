@@ -1375,10 +1375,38 @@ invites → activated users
     состояние audio capability и выбранное качество до старта; в web остаётся
     системный browser picker, после выбора Voople показывает preview реально
     выданного track. Пункт некритичный и не подменяет P0 стабильности захвата.
+39. Release notes long-content polish: «Что нового» показывает заметки целиком,
+    не выводит технические счётчики/артефакты Markdown, ограничивает высоту
+    относительно viewport и прокручивает только содержимое заметок. Проверить
+    короткий, длинный и очень длинный changelog в web и desktop.
+40. Search desktop/responsive parity: привести default/results/empty/loading к
+    Board 6, исключить обрезанные карточки и пустые провалы, определить
+    адаптивную сетку для 1024/1280/1440 и отдельную mobile hierarchy.
+41. Mini Profile adaptive positioning: использовать collision detection и
+    viewport padding, уметь открываться сверху/снизу/сбоку от trigger, ограничить
+    высоту доступным viewport с внутренним scroll. Cosmetics не могут менять
+    anchor geometry или обрезать actions; проверить края окна и zoom 125–200%.
+42. Creator Cosmetics Program: спроектировать Creator Studio с шаблонами,
+    preview на всех portable/full surfaces, draft/versioning, moderation,
+    публикацией и analytics. Animated cosmetics принимаются только в
+    allowlisted форматах без исполняемого кода, имеют static fallback,
+    reduced-motion режим и бюджеты CPU/GPU/памяти/батареи. До монетизации нужны
+    права на контент, жалобы/takedown, возрастные ограничения, KYC/налоги,
+    антифрод, прозрачный revenue share и payout ledger. Вознаграждение автору
+    (Voople+, Voops или процент выручки) задаётся версионируемым договором;
+    редакторский/кураторский пин не должен скрыто влиять на ranking.
+43. Recognition Program: первые 25 eligible production-пользователей получают
+    Founder status по неизменяемому серверному snapshot с исключением staff,
+    тестовых, удалённых и fraud-аккаунтов. Founder event — закрытый Founding
+    Circle со структурированным feedback/changelog follow-up и памятной
+    косметикой, без обязательного публичного отзыва. Loyalty badge выдаётся за
+    документированную серию оплаченных месяцев с grace/refund правилами;
+    Developer/Team badges — только из серверных ролей и с журналом выдачи.
+    Recognition badges отделены от permissions и продаваемых cosmetics.
 
 ---
 
-# 38. Acceptance criteria
+# 39. Acceptance criteria
 
 После реализации:
 

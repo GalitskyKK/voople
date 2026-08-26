@@ -51,6 +51,17 @@ test("release migration readiness has process and database deadlines", () => {
   assert.match(readiness, /lock_timeout:\s*5_000/);
 });
 
+test("verified migration readiness can only be reused without migration changes", () => {
+  const releaseScript = read("scripts/release.mjs");
+
+  assert.match(releaseScript, /VOOPLE_RELEASE_MIGRATIONS_VERIFIED/);
+  assert.match(releaseScript, /changedMigrationInputs/);
+  assert.match(releaseScript, /"drizzle"/);
+  assert.match(releaseScript, /"scripts\/migration-manifest\.mjs"/);
+  assert.match(releaseScript, /"scripts\/migration-checksum\.mjs"/);
+  assert.match(releaseScript, /Cannot reuse migration readiness when migration inputs changed/);
+});
+
 test("Windows COM capture compiles in the isolated worker gate", () => {
   const manifest = read("desktop/screen-share-worker/Cargo.toml");
   const worker = read("desktop/screen-share-worker/src/main.rs");

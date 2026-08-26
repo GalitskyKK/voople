@@ -404,6 +404,38 @@ async function main() {
     .split(/\r?\n/)
     .filter(Boolean);
 
+  const reuseVerifiedMigrations =
+    process.env.VOOPLE_RELEASE_MIGRATIONS_VERIFIED === "1";
+  const changedMigrationInputs = previousTag
+    ? git(
+        "diff",
+        "--name-only",
+        commitRange,
+        "--",
+        "drizzle",
+        "scripts/migration-manifest.mjs",
+        "scripts/migration-checksum.mjs",
+      )
+        .split(/\r?\n/)
+        .filter(Boolean)
+    : ["initial-release"];
+
+  if (
+    reuseVerifiedMigrations &&
+    changedMigrationInputs.length
+  ) {
+    throw new Error(
+      "Cannot reuse migration readiness when migration inputs changed:\n" +
+        changedMigrationInputs.map((file) => `  ${file}`).join("\n"),
+    );
+  }
+
+  if (reuseVerifiedMigrations) {
+    process.stdout.write(
+      `Reusing explicitly verified migration readiness; no migration inputs changed since ${previousTag}.\n`,
+    );
+  }
+
   const defaultTitle =
     `Voople Desktop ${nextVersion}`;
 
@@ -683,12 +715,18 @@ async function main() {
       ],
     },
 
-    {
-      args: [
-        "scripts/check-migration-readiness.mjs",
-      ],
-      timeout: 90_000,
-    },
+    ...(
+      reuseVerifiedMigrations
+        ? []
+        : [
+            {
+              args: [
+                "scripts/check-migration-readiness.mjs",
+              ],
+              timeout: 90_000,
+            },
+          ]
+    ),
 
     {
       args: [

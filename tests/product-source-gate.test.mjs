@@ -30,7 +30,7 @@ test("canonical product sources and every P0 result remain release-tracked", asy
   ]);
 
   assert.match(finalPlan, /# 37\. Порядок реализации/);
-  assert.match(finalPlan, /# 38\. Acceptance criteria/);
+  assert.match(finalPlan, /^# \d+\. Acceptance criteria$/m);
   assert.match(matrix, /## Reference boards/);
   assert.match(matrix, /## P0 — core social/);
   assert.match(matrix, /## Cross-platform architecture gate/);

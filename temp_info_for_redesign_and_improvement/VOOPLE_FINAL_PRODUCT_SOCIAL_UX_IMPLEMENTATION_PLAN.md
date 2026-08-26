@@ -1374,7 +1374,13 @@ invites → activated users
     миниатюры окон/экранов, крупное preview выбранного источника, фактическое
     состояние audio capability и выбранное качество до старта; в web остаётся
     системный browser picker, после выбора Voople показывает preview реально
-    выданного track. Пункт некритичный и не подменяет P0 стабильности захвата.
+    выданного track. P0 lifecycle обязан оставаться session-owned: UI выключается
+    сразу, worker делает graceful unpublish до blocking join/forced kill, поздние
+    события старой session/track не меняют новый share. Собственный preview не
+    получает audio, не захватывает focus автоматически, включается по запросу и
+    приостанавливает локальный video element вне focused window; desktop
+    fullscreen занимает app content, не перекрывая custom titlebar. Пункт с
+    миниатюрами некритичный и не подменяет P0 стабильности захвата.
 39. Release notes long-content polish: «Что нового» показывает заметки целиком,
     не выводит технические счётчики/артефакты Markdown, ограничивает высоту
     относительно viewport и прокручивает только содержимое заметок. Проверить
@@ -1386,9 +1392,13 @@ invites → activated users
     viewport padding, уметь открываться сверху/снизу/сбоку от trigger, ограничить
     высоту доступным viewport с внутренним scroll. Cosmetics не могут менять
     anchor geometry или обрезать actions; проверить края окна и zoom 125–200%.
-42. Creator Cosmetics Program: спроектировать Creator Studio с шаблонами,
-    preview на всех portable/full surfaces, draft/versioning, moderation,
-    публикацией и analytics. Animated cosmetics принимаются только в
+42. Creator Cosmetics Program: спроектировать не ограниченный одними шаблонами
+    constrained multi-layer canvas: шаблоны служат стартовыми пресетами, а
+    автор может собирать оригинальную композицию из allowlisted layers,
+    anchors, masks, blend-параметров и ограниченных keyframes. Расширяемый typed
+    manifest должен позволять добавлять новые cosmetic slots без второго
+    renderer. Нужны preview на всех portable/full surfaces, draft/versioning,
+    moderation, публикация и analytics. Animated cosmetics принимаются только в
     allowlisted форматах без исполняемого кода, имеют static fallback,
     reduced-motion режим и бюджеты CPU/GPU/памяти/батареи. До монетизации нужны
     права на контент, жалобы/takedown, возрастные ограничения, KYC/налоги,

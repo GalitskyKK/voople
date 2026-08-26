@@ -32,7 +32,10 @@ type ActiveCapture =
   | { kind: "native"; sessionId: string }
   | { kind: "browser"; stream: MediaStream };
 
-export function useDesktopScreenAudioPublisher(chatId: string) {
+export function useDesktopScreenAudioPublisher(
+  chatId: string,
+  onNativeSessionChange: (screenSessionId: string | null) => void,
+) {
   const token = trpc.chat.roomScreenAudioToken.useMutation();
   const nativePublisherSupportedRef = useRef(false);
   const automaticProcessIdRef = useRef<number | null>(null);
@@ -106,6 +109,7 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
 
     const promise = (async () => {
       if (current.kind === "native") {
+        onNativeSessionChange(null);
         const bridge = getDesktopProcessAudioBridge();
         if (!bridge) {
           throw new Error("Нативный модуль демонстрации недоступен.");
@@ -136,7 +140,7 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
     void promise.then(clearStopPromise, clearStopPromise);
 
     return promise;
-  }, []);
+  }, [onNativeSessionChange]);
 
   const stop = useCallback(async () => {
     operationRef.current += 1;
@@ -261,6 +265,7 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
     // If STOP arrives while Rust is still spawning/connecting the worker,
     // stopCurrent() can already address this UUID.
     activeCaptureRef.current = ownership;
+    onNativeSessionChange(screenSessionId);
 
     try {
       await bridge.start({
@@ -279,6 +284,7 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
     } catch (cause) {
       if (activeCaptureRef.current === ownership) {
         activeCaptureRef.current = null;
+        onNativeSessionChange(null);
       }
 
       if (operationRef.current !== operation) {
@@ -292,6 +298,7 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
       if (activeCaptureRef.current === ownership) {
         await bridge.stop(screenSessionId).catch(() => undefined);
         activeCaptureRef.current = null;
+        onNativeSessionChange(null);
       }
       return { active: false, warning: null };
     }
@@ -308,7 +315,7 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
     // backend mutation that does not stop/restart this worker.
 
     return { active: true, warning: null };
-  }, [chatId, stopCurrent, token]);
+  }, [chatId, onNativeSessionChange, stopCurrent, token]);
 
   const toggle = useCallback(async (
     room: Room,

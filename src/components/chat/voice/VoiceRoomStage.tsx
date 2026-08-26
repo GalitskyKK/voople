@@ -12,6 +12,8 @@ import { VoiceParticipantCard } from "./VoiceParticipantCard";
 type VoiceRoomStageProps = {
   screenContainerRef: (element: HTMLDivElement | null) => void;
   screenShareOwner: string | null;
+  screenShareTrackId: string | null;
+  screenShareIsLocal: boolean;
   participants: ChatRoomParticipantView[];
   participantVolumes: Record<string, number>;
   micMuted: boolean;
@@ -28,6 +30,8 @@ type VoiceRoomStageProps = {
 export function VoiceRoomStage({
   screenContainerRef,
   screenShareOwner,
+  screenShareTrackId,
+  screenShareIsLocal,
   participants,
   participantVolumes,
   micMuted,
@@ -37,8 +41,18 @@ export function VoiceRoomStage({
   onCameraContainerChange,
   onParticipantVolumeChange,
 }: VoiceRoomStageProps) {
-  const [focusedMediaId, setFocusedMediaId] = useState<string | null>(null);
-  const [layout, setLayout] = useState<"focus" | "grid">("focus");
+  const [selection, setSelection] = useState<{
+    screenTrackId: string | null;
+    focusedMediaId: string | null;
+    layout: "focus" | "grid";
+  } | null>(null);
+  const selectionApplies = selection?.screenTrackId === screenShareTrackId;
+  const focusedMediaId = selectionApplies
+    ? selection.focusedMediaId
+    : screenShareOwner && !screenShareIsLocal ? "screen" : null;
+  const layout = selectionApplies
+    ? selection.layout
+    : screenShareOwner && screenShareIsLocal ? "grid" : "focus";
   const hasVisualMedia = Boolean(screenShareOwner) || cameraParticipantIds.size > 0;
   const activeFocusId =
     (focusedMediaId === "screen" && screenShareOwner) ||
@@ -50,9 +64,13 @@ export function VoiceRoomStage({
         ? "screen"
         : [...cameraParticipantIds][0] ?? null;
   const focusMedia = (mediaId: string) => {
-    setFocusedMediaId(mediaId);
-    setLayout("focus");
+    setSelection({ screenTrackId: screenShareTrackId, focusedMediaId: mediaId, layout: "focus" });
   };
+  const selectLayout = (nextLayout: "focus" | "grid") => setSelection({
+    screenTrackId: screenShareTrackId,
+    focusedMediaId,
+    layout: nextLayout,
+  });
 
   const renderParticipant = (
     participant: ChatRoomParticipantView,
@@ -96,7 +114,7 @@ export function VoiceRoomStage({
           <div className="flex rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-1">
             <button
               type="button"
-              onClick={() => setLayout("focus")}
+              onClick={() => selectLayout("focus")}
               className={cn(
                 "grid h-8 w-9 place-items-center rounded-lg transition",
                 layout === "focus" && "bg-[var(--app-surface)] text-(--theme-accent) shadow-sm",
@@ -108,7 +126,7 @@ export function VoiceRoomStage({
             </button>
             <button
               type="button"
-              onClick={() => setLayout("grid")}
+              onClick={() => selectLayout("grid")}
               className={cn(
                 "grid h-8 w-9 place-items-center rounded-lg transition",
                 layout === "grid" && "bg-[var(--app-surface)] text-(--theme-accent) shadow-sm",

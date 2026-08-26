@@ -46,7 +46,13 @@ export function VoiceRoomContent({
   return (
     <div className="voople-room-surface flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
       {controls.screenSharing ? (
-        <ScreenShareStatusBanner hasAudio={controls.screenShareHasAudio} />
+        <ScreenShareStatusBanner
+          hasAudio={controls.screenShareHasAudio}
+          previewVisible={stage.watchingScreenShare}
+          onPreviewToggle={stage.watchingScreenShare
+            ? stage.onStopWatchingScreenShare
+            : stage.onWatchScreenShare}
+        />
       ) : null}
       {stage.screenShareAvailable && !stage.watchingScreenShare && !controls.screenSharing ? (
         <div className="mb-3 flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_35%,var(--app-border))] bg-[var(--app-accent-soft)] p-3">
@@ -71,6 +77,8 @@ export function VoiceRoomContent({
         <VoiceRoomStage
           screenContainerRef={stage.screenContainerRef}
           screenShareOwner={stage.screenShareOwner}
+          screenShareTrackId={stage.screenShareTrackId}
+          screenShareIsLocal={stage.screenShareIsLocal}
           participants={stage.participants}
           participantVolumes={stage.participantVolumes}
           micMuted={controls.micMuted}

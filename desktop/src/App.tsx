@@ -23,6 +23,7 @@ export function App() {
         ) : (
           <DesktopSetup />
         )}
+        <div id="voople-desktop-overlay-root" className="desktop-overlay-root" />
       </div>
     </div>
   );

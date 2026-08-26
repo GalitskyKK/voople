@@ -17,7 +17,10 @@ use voople_screen_share_protocol::{
 const SIDECAR_NAME: &str = "voople-screen-share-worker";
 const SOURCE_TIMEOUT: Duration = Duration::from_secs(15);
 const START_TIMEOUT: Duration = Duration::from_secs(15);
-const STOP_TIMEOUT: Duration = Duration::from_millis(1_500);
+// UI state clears immediately in the renderer. Give LiveKit enough time to
+// unpublish and close cleanly before killing the isolated worker, otherwise the
+// server can retain a ghost screen participant until its disconnect timeout.
+const STOP_TIMEOUT: Duration = Duration::from_secs(5);
 const KILL_CONFIRM_TIMEOUT: Duration = Duration::from_secs(2);
 const CANCELLED_SESSION_CACHE: usize = 64;
 

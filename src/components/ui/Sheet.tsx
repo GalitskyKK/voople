@@ -51,10 +51,15 @@ export function Sheet({
 
   if (!open || !mounted) return null;
 
+  const desktopOverlayRoot = document.getElementById("voople-desktop-overlay-root");
+  const portalTarget = desktopOverlayRoot ?? document.body;
+
   return createPortal(
     <div
       className={cn(
-        "fixed inset-0 z-[100] flex justify-center",
+        desktopOverlayRoot
+          ? "absolute inset-0 z-[100] flex justify-center"
+          : "fixed inset-0 z-[100] flex justify-center",
         isBottom
           ? "items-end"
           : isRight
@@ -95,6 +100,6 @@ export function Sheet({
         {children}
       </div>
     </div>,
-    document.body,
+    portalTarget,
   );
 }

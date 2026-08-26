@@ -10,6 +10,7 @@ export function useVoiceRoomFullscreen() {
   const mountedRef = useRef(true);
   const generationRef = useRef(0);
   const ownsNativeFullscreenRef = useRef(false);
+  const nativeFullscreenTargetRef = useRef<HTMLElement | null>(null);
 
   const exitFullscreen = useCallback(async () => {
     generationRef.current += 1;
@@ -17,10 +18,14 @@ export function useVoiceRoomFullscreen() {
     pendingRef.current = false;
     setFullscreen(false);
     setPending(false);
-    if (ownsNativeFullscreenRef.current && document.fullscreenElement) {
+    if (
+      ownsNativeFullscreenRef.current &&
+      document.fullscreenElement === nativeFullscreenTargetRef.current
+    ) {
       await document.exitFullscreen().catch(() => undefined);
     }
     ownsNativeFullscreenRef.current = false;
+    nativeFullscreenTargetRef.current = null;
   }, []);
 
   const toggleFullscreen = useCallback(async () => {
@@ -36,16 +41,19 @@ export function useVoiceRoomFullscreen() {
     pendingRef.current = true;
     setFullscreen(true);
     setPending(true);
-    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+    const target = document.querySelector<HTMLElement>(".desktop-window-content")
+      ?? document.documentElement;
+    if (!document.fullscreenElement && target.requestFullscreen) {
       try {
-        await document.documentElement.requestFullscreen();
+        await target.requestFullscreen();
         if (!mountedRef.current || generationRef.current !== generation) {
-          if (document.fullscreenElement === document.documentElement) {
+          if (document.fullscreenElement === target) {
             await document.exitFullscreen().catch(() => undefined);
           }
           return;
         }
         ownsNativeFullscreenRef.current = true;
+        nativeFullscreenTargetRef.current = target;
       } catch {
         // CSS full-viewport mode remains available in restricted WebViews.
       }
@@ -60,6 +68,7 @@ export function useVoiceRoomFullscreen() {
       if (ownsNativeFullscreenRef.current && !document.fullscreenElement) {
         generationRef.current += 1;
         ownsNativeFullscreenRef.current = false;
+        nativeFullscreenTargetRef.current = null;
         fullscreenRef.current = false;
         pendingRef.current = false;
         setFullscreen(false);
@@ -71,7 +80,10 @@ export function useVoiceRoomFullscreen() {
       mountedRef.current = false;
       generationRef.current += 1;
       document.removeEventListener("fullscreenchange", handleChange);
-      if (ownsNativeFullscreenRef.current && document.fullscreenElement) {
+      if (
+        ownsNativeFullscreenRef.current &&
+        document.fullscreenElement === nativeFullscreenTargetRef.current
+      ) {
         void document.exitFullscreen().catch(() => undefined);
       }
     };

@@ -77,9 +77,13 @@ export function useChatRoomControl(
     clearRemoteScreen: video.clearRemoteScreen,
     setAvailable: video.setScreenShareAvailable,
     setLocalSharing: video.setScreenSharing,
+    setLocalAvailable: video.setLocalScreenAvailable,
     setWatching: video.setWatchingScreenShare,
   });
-  const desktopAudio = useDesktopScreenAudioPublisher(chatId);
+  const desktopAudio = useDesktopScreenAudioPublisher(
+    chatId,
+    screenSubscription.setExpectedLocalSessionId,
+  );
   const soundboard = useGroupSoundboard(chatId, chatType === "group", liveRoomRef);
   const server = useVoiceRoomServerSession(chatId, open);
   const sessionOperation = useVoiceSessionOperation();
@@ -125,6 +129,10 @@ export function useChatRoomControl(
     setScreenSharing: video.setScreenSharing,
     setCameraEnabled: video.setCameraEnabled,
     clearLocalCamera: video.clearLocalCamera,
+    clearLocalScreenShare: () => {
+      screenSubscription.clearLocalShare();
+      video.clearLocalScreen();
+    },
     refreshDevices: devices.refreshDevices,
     sendHeartbeat: heartbeat.sendHeartbeat,
     toggleDesktopScreenAudio: desktopAudio.toggle,
@@ -362,6 +370,8 @@ export function useChatRoomControl(
         screenContainerRef: video.bindScreenContainer,
         screenShareOwner: video.screenShareOwner,
         screenShareAvailable: video.screenShareAvailable,
+        screenShareTrackId: video.screenShareTrackId,
+        screenShareIsLocal: video.screenShareIsLocal,
         watchingScreenShare: video.watchingScreenShare,
         screenShareVolume: output.screenShareVolume,
         participants,
@@ -374,7 +384,10 @@ export function useChatRoomControl(
         onParticipantVolumeChange: output.setParticipantVolume,
         onScreenShareVolumeChange: output.setScreenShareVolume,
         onGroupSoundPlay: (sound: (typeof soundboard.sounds)[number]) => void soundboard.play(sound),
-        onWatchScreenShare: screenSubscription.watch,
+        onWatchScreenShare: () => {
+          video.restoreLocalScreenPreview();
+          screenSubscription.watch();
+        },
         onStopWatchingScreenShare: screenSubscription.stopWatching,
       },
       controls: {

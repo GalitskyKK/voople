@@ -35,6 +35,7 @@ export function useVoiceMediaActions({
   setScreenSharing,
   setCameraEnabled,
   clearLocalCamera,
+  clearLocalScreenShare,
   refreshDevices,
   sendHeartbeat,
   toggleDesktopScreenAudio,
@@ -51,12 +52,14 @@ export function useVoiceMediaActions({
   setScreenSharing: (enabled: boolean) => void;
   setCameraEnabled: (enabled: boolean) => void;
   clearLocalCamera: () => void;
+  clearLocalScreenShare: () => void;
   refreshDevices: () => Promise<void>;
   sendHeartbeat: () => Promise<unknown>;
   toggleDesktopScreenAudio: DesktopScreenShareToggle;
   setError: (message: string | null) => void;
 }) {
   const actionRef = useRef(false);
+  const screenShareActionRef = useRef(false);
   const [mediaActionPending, setMediaActionPending] = useState(false);
   const [screenSharePending, setScreenSharePending] = useState(false);
   const [screenShareHasAudio, setScreenShareHasAudio] = useState(false);
@@ -116,7 +119,8 @@ export function useVoiceMediaActions({
 
   const toggleScreenShare = async () => {
     const room = roomRef.current;
-    if (!room || mediaStatus !== "connected" || screenSharePending) return;
+    if (!room || mediaStatus !== "connected" || screenShareActionRef.current) return;
+    screenShareActionRef.current = true;
     setScreenSharePending(true);
     setError(null);
     try {
@@ -128,6 +132,7 @@ export function useVoiceMediaActions({
       );
       setScreenSharing(result.enabled);
       setScreenShareHasAudio(result.enabled && result.hasAudio);
+      if (!result.enabled) clearLocalScreenShare();
       if (result.enabled && !screenSharing) {
         reportProductEvent("screen_share_started", { hasAudio: result.hasAudio });
         if (result.hasAudio) reportProductEvent("screen_audio_start", { source: "screen_share" });
@@ -138,6 +143,7 @@ export function useVoiceMediaActions({
       setScreenShareHasAudio(false);
       setError(cause instanceof Error ? cause.message : "Не удалось включить демонстрацию экрана.");
     } finally {
+      screenShareActionRef.current = false;
       setScreenSharePending(false);
     }
   };

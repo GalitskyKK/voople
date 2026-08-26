@@ -57,7 +57,8 @@ test("room sheet owns one secondary panel and cancels stale fullscreen requests"
   assert.doesNotMatch(sheet, /settingsOpen|soundboardOpen/);
   assert.match(fullscreen, /if \(pendingRef\.current\) return/);
   assert.match(fullscreen, /generationRef\.current !== generation/);
-  assert.match(fullscreen, /document\.fullscreenElement === document\.documentElement/);
+  assert.match(fullscreen, /document\.fullscreenElement === target/);
+  assert.match(fullscreen, /\.desktop-window-content/);
   assert.match(fullscreen, /mountedRef\.current = false/);
 });
 

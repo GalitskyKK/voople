@@ -44,6 +44,15 @@ button { color: inherit; }
   overflow: hidden;
   background: var(--background);
 }
+.desktop-overlay-root {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+}
+.desktop-overlay-root > * {
+  pointer-events: auto;
+}
 .desktop-window-content > .status-page,
 .desktop-window-content > .auth-page { min-height: 100%; }
 .desktop-window-content .voople-shell {

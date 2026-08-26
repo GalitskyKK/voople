@@ -1,6 +1,5 @@
 "use client";
-
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Track,
   type LocalTrackPublication,
@@ -8,71 +7,90 @@ import {
   type RemoteTrack,
   type RemoteTrackPublication,
 } from "livekit-client";
-
+import {
+  configureScreenVideo,
+  createLocalScreenTile,
+  findBrowserScreenPreview,
+  useLocalScreenPreviewVisibility,
+} from "./screen-preview-dom";
 export function useVoiceVideoStage() {
   const [screenSharing, setScreenSharing] = useState(false);
   const [screenShareOwner, setScreenShareOwner] = useState<string | null>(null);
   const [screenShareAvailable, setScreenShareAvailable] = useState<string | null>(null);
+  const [screenShareTrackId, setScreenShareTrackId] = useState<string | null>(null);
   const [watchingScreenShare, setWatchingScreenShare] = useState(false);
+  const [screenShareIsLocal, setScreenShareIsLocal] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(false);
-  const [cameraParticipantIds, setCameraParticipantIds] = useState<ReadonlySet<string>>(
-    () => new Set(),
-  );
+  const [cameraParticipantIds, setCameraParticipantIds] =
+    useState<ReadonlySet<string>>(() => new Set());
   const screenContainerRef = useRef<HTMLDivElement | null>(null);
   const screenParkingRef = useRef<HTMLDivElement | null>(null);
+  const activeScreenTrackRef = useRef<string | null>(null);
+  const screenShareIsLocalRef = useRef(false);
   const cameraParkingRef = useRef<HTMLDivElement | null>(null);
   const cameraHostsRef = useRef(new Map<string, HTMLDivElement>());
-
-  const syncLocalScreenPreview = useCallback(() => {
-    const paused = document.hidden || !document.hasFocus();
-    document.querySelectorAll<HTMLElement>("[data-livekit-local-screen]").forEach((tile) => {
-      tile.querySelector("video")?.classList.toggle("invisible", paused);
-      tile.querySelector<HTMLElement>("[data-local-screen-placeholder]")?.classList.toggle("hidden", !paused);
-    });
-  }, []);
-
-  useEffect(() => {
-    document.addEventListener("visibilitychange", syncLocalScreenPreview);
-    window.addEventListener("focus", syncLocalScreenPreview);
-    window.addEventListener("blur", syncLocalScreenPreview);
-    return () => {
-      document.removeEventListener("visibilitychange", syncLocalScreenPreview);
-      window.removeEventListener("focus", syncLocalScreenPreview);
-      window.removeEventListener("blur", syncLocalScreenPreview);
-    };
-  }, [syncLocalScreenPreview]);
-
+  const syncLocalScreenPreview = useLocalScreenPreviewVisibility();
   const getCameraContainers = useCallback(() => {
-    return [cameraParkingRef.current, ...cameraHostsRef.current.values()].filter(
-      (container): container is HTMLDivElement => Boolean(container),
-    );
+    return [cameraParkingRef.current, ...cameraHostsRef.current.values()]
+      .filter((container): container is HTMLDivElement => Boolean(container));
   }, []);
-
   const syncCameraParticipantIds = useCallback(() => {
     const participantIds = new Set<string>();
     for (const container of getCameraContainers()) {
       for (const element of container.children) {
-        if (
-          element instanceof HTMLElement &&
-          element.dataset.livekitParticipant
-        ) {
+        if (element instanceof HTMLElement && element.dataset.livekitParticipant) {
           participantIds.add(element.dataset.livekitParticipant);
         }
       }
     }
     setCameraParticipantIds(participantIds);
   }, [getCameraContainers]);
-
   const clearScreen = useCallback(() => {
+    activeScreenTrackRef.current = null;
+    setScreenShareTrackId(null);
     screenContainerRef.current?.replaceChildren();
     screenParkingRef.current?.replaceChildren();
   }, []);
 
   const clearRemoteScreen = useCallback(() => {
-    clearScreen();
+    const localBrowserPreview = findBrowserScreenPreview(screenContainerRef.current);
+    if (localBrowserPreview && screenParkingRef.current) {
+      screenParkingRef.current.replaceChildren(localBrowserPreview);
+      screenContainerRef.current?.replaceChildren();
+    } else {
+      clearScreen();
+    }
     setScreenShareOwner(null);
     setWatchingScreenShare(false);
   }, [clearScreen]);
+
+  const setLocalScreenAvailable = useCallback((available: boolean) => {
+    screenShareIsLocalRef.current = available;
+    setScreenShareIsLocal(available);
+  }, []);
+
+  const clearLocalScreen = useCallback(() => {
+    if (!screenShareIsLocalRef.current) return;
+    clearScreen();
+    screenShareIsLocalRef.current = false;
+    setScreenShareIsLocal(false);
+    setScreenSharing(false);
+    setScreenShareOwner(null);
+    setScreenShareAvailable(null);
+    setWatchingScreenShare(false);
+  }, [clearScreen]);
+
+  const restoreLocalScreenPreview = useCallback(() => {
+    const preview = findBrowserScreenPreview(screenParkingRef.current);
+    if (!preview) return false;
+    if (screenContainerRef.current) {
+      screenContainerRef.current.replaceChildren(preview);
+    }
+    setScreenShareOwner("Ваш экран");
+    setWatchingScreenShare(true);
+    syncLocalScreenPreview();
+    return true;
+  }, [syncLocalScreenPreview]);
 
   const resumeVideo = useCallback((element: HTMLVideoElement) => {
     void element.play().catch(() => undefined);
@@ -160,12 +178,21 @@ export function useVoiceVideoStage() {
 
       if (publication.source === Track.Source.ScreenShare) {
         clearScreen();
+        activeScreenTrackRef.current = publication.trackSid;
+        setScreenShareTrackId(publication.trackSid);
         const target = screenContainerRef.current ?? screenParkingRef.current;
         const element = track.attach() as HTMLVideoElement;
-        element.autoplay = true;
-        element.playsInline = true;
-        element.className = "block h-full max-h-full w-full max-w-full bg-black object-contain";
-        target?.appendChild(element);
+        configureScreenVideo(element);
+        const isLocalPreview = ownerLabel === "Ваш экран";
+        if (isLocalPreview) {
+          const tile = createLocalScreenTile(element, "native");
+          target?.appendChild(tile);
+          setLocalScreenAvailable(true);
+          syncLocalScreenPreview();
+        } else {
+          target?.appendChild(element);
+          setLocalScreenAvailable(false);
+        }
         resumeVideo(element);
         const label = ownerLabel ?? participant.name ?? participant.identity ?? "Участник";
         setScreenShareOwner(label);
@@ -180,7 +207,7 @@ export function useVoiceVideoStage() {
         );
       }
     },
-    [attachCamera, clearScreen, resumeVideo],
+    [attachCamera, clearScreen, resumeVideo, setLocalScreenAvailable, syncLocalScreenPreview],
   );
 
   const attachLocalVideo = useCallback(
@@ -188,21 +215,15 @@ export function useVoiceVideoStage() {
       if (!publication.track) return;
       if (publication.source === Track.Source.ScreenShare) {
         clearScreen();
+        activeScreenTrackRef.current = publication.trackSid;
+        setScreenShareTrackId(publication.trackSid);
         const target = screenContainerRef.current ?? screenParkingRef.current;
         const element = publication.track.attach() as HTMLVideoElement;
-        element.autoplay = true;
         element.muted = true;
-        element.playsInline = true;
-        element.className = "block h-full max-h-full w-full max-w-full bg-black object-contain";
-        const tile = document.createElement("div");
-        tile.dataset.livekitLocalScreen = "true";
-        tile.className = "relative h-full w-full bg-black";
-        const placeholder = document.createElement("div");
-        placeholder.dataset.localScreenPlaceholder = "true";
-        placeholder.className = "hidden absolute inset-0 grid place-items-center bg-black px-6 text-center text-sm text-white/70";
-        placeholder.textContent = "Предпросмотр скрыт. Демонстрация для участников продолжается.";
-        tile.append(element, placeholder);
+        configureScreenVideo(element);
+        const tile = createLocalScreenTile(element, "browser");
         target?.appendChild(tile);
+        setLocalScreenAvailable(true);
         syncLocalScreenPreview();
         resumeVideo(element);
         setScreenSharing(true);
@@ -216,21 +237,23 @@ export function useVoiceVideoStage() {
         setCameraEnabled(true);
       }
     },
-    [attachCamera, clearScreen, resumeVideo, syncLocalScreenPreview],
+    [attachCamera, clearScreen, resumeVideo, setLocalScreenAvailable, syncLocalScreenPreview],
   );
 
   const detachRemoteVideo = useCallback(
     (track: RemoteTrack, publication: RemoteTrackPublication) => {
       track.detach().forEach((element) => element.remove());
       if (track.source === Track.Source.ScreenShare) {
+        if (publication.trackSid !== activeScreenTrackRef.current) return;
         clearScreen();
+        setLocalScreenAvailable(false);
         setScreenShareOwner(null);
         setWatchingScreenShare(false);
       } else if (track.source === Track.Source.Camera) {
         removeCamera(publication.trackSid);
       }
     },
-    [clearScreen, removeCamera],
+    [clearScreen, removeCamera, setLocalScreenAvailable],
   );
 
   const detachLocalVideo = useCallback(
@@ -243,7 +266,9 @@ export function useVoiceVideoStage() {
       }
       publication.track?.detach().forEach((element) => element.remove());
       if (publication.source === Track.Source.ScreenShare) {
+        if (publication.trackSid !== activeScreenTrackRef.current) return;
         clearScreen();
+        setLocalScreenAvailable(false);
         setScreenSharing(false);
         setScreenShareOwner(null);
         setScreenShareAvailable(null);
@@ -253,7 +278,7 @@ export function useVoiceVideoStage() {
         setCameraEnabled(false);
       }
     },
-    [clearScreen, removeCamera],
+    [clearScreen, removeCamera, setLocalScreenAvailable],
   );
 
   const showParkedMedia = useCallback(() => {
@@ -326,6 +351,8 @@ export function useVoiceVideoStage() {
     setScreenShareOwner(null);
     setScreenShareAvailable(null);
     setWatchingScreenShare(false);
+    screenShareIsLocalRef.current = false;
+    setScreenShareIsLocal(false);
     setCameraEnabled(false);
     setCameraParticipantIds(new Set());
   }, [clearScreen]);
@@ -349,6 +376,9 @@ export function useVoiceVideoStage() {
     setScreenSharing,
     screenShareOwner,
     screenShareAvailable,
+    screenShareTrackId,
+    screenShareIsLocal,
+    setLocalScreenAvailable,
     setScreenShareAvailable,
     watchingScreenShare,
     setWatchingScreenShare,
@@ -361,6 +391,8 @@ export function useVoiceVideoStage() {
     detachLocalVideo,
     clearLocalCamera,
     clearRemoteScreen,
+    clearLocalScreen,
+    restoreLocalScreenPreview,
     showParkedMedia,
     parkVisibleMedia,
     clearVideoMedia,

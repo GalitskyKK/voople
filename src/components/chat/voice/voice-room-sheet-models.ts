@@ -26,6 +26,8 @@ export type VoiceRoomStageModel = {
   screenContainerRef: (element: HTMLDivElement | null) => void;
   screenShareOwner: string | null;
   screenShareAvailable: string | null;
+  screenShareTrackId: string | null;
+  screenShareIsLocal: boolean;
   watchingScreenShare: boolean;
   screenShareVolume: number;
   participants: ChatRoomParticipantView[];

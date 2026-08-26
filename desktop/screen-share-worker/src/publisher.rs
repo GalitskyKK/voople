@@ -377,20 +377,24 @@ pub async fn run_publish_session(
         let _ = sender.send(Err("Нативный захват завершился до первого кадра".to_owned()));
     }
 
-    if let Some(capture) = audio_capture {
+    // Stop producing frames first, but do not block on native thread joins
+    // until LiveKit has announced the participant departure to the server.
+    if let Some(capture) = audio_capture.as_ref() {
         capture.cancel();
+    }
+    video_capture.cancel();
+
+    eprintln!("[screen-share-worker] closing LiveKit room");
+    room.close().await.map_err(|error| error.to_string())?;
+    eprintln!("[screen-share-worker] LiveKit room closed");
+
+    if let Some(capture) = audio_capture {
         capture.join()?;
     }
 
-    video_capture.cancel();
     video_capture.join()?;
 
     eprintln!("[screen-share-worker] capture threads stopped");
-    eprintln!("[screen-share-worker] closing LiveKit room");
-
-    room.close().await.map_err(|error| error.to_string())?;
-
-    eprintln!("[screen-share-worker] LiveKit room closed");
     Ok(())
 }
 

@@ -55,7 +55,8 @@ test("the native publisher never loops screen audio back to its owner", () => {
     watching,
   });
 
-  assert.equal(policy(Track.Source.ScreenShare, false), true);
+  assert.equal(policy(Track.Source.ScreenShare, false), false);
+  assert.equal(policy(Track.Source.ScreenShare, true), true);
   assert.equal(policy(Track.Source.ScreenShareAudio, false), false);
   assert.equal(policy(Track.Source.ScreenShareAudio, true), false);
   assert.equal(shouldSubscribeToScreenPublication({
@@ -102,9 +103,38 @@ test("native screen share worker stops gracefully and preserves source aspect ra
   assert.match(publisher, /max_bitrate: 8_000_000/);
   assert.match(publisher, /max_framerate: 60\.0/);
   assert.doesNotMatch(supervisor, /handle\.abort\(\)/);
-  assert.match(supervisor, /STOP_TIMEOUT: Duration = Duration::from_millis\(1_500\)/);
+  assert.match(supervisor, /STOP_TIMEOUT: Duration = Duration::from_secs\(5\)/);
   assert.match(frontend, /if \(kind === "native"\)[\s\S]*void stopping\.catch/);
   assert.match(frontend, /promise\.then\(clearStopPromise, clearStopPromise\)/);
+  assert.ok(
+    publisher.lastIndexOf("room.close().await") < publisher.lastIndexOf("capture.join()?"),
+    "LiveKit must close before native capture joins can consume the graceful deadline",
+  );
+});
+
+test("local preview is opt-in, race-safe and pauses outside the focused window", () => {
+  const subscription = read("src/components/chat/voice/useScreenShareSubscription.ts");
+  const videoStage = read("src/components/chat/voice/useVoiceVideoStage.ts");
+  const previewDom = read("src/components/chat/voice/screen-preview-dom.ts");
+  const actions = read("src/components/chat/voice/useVoiceMediaActions.ts");
+  const roomStage = read("src/components/chat/voice/VoiceRoomStage.tsx");
+
+  assert.match(subscription, /expectedLocalSessionRef/);
+  assert.match(subscription, /voople\.screenSessionId/);
+  assert.match(subscription, /screenSessionId !== expectedLocalSessionRef\.current/);
+  assert.match(subscription, /publication\.trackSid !== activeScreenPublicationRef\.current/);
+  assert.match(videoStage, /publication\.trackSid !== activeScreenTrackRef\.current/);
+  assert.match(subscription, /setExpectedLocalSessionId/);
+  assert.match(subscription, /clearLocalShare/);
+  assert.match(actions, /screenShareActionRef\.current/);
+  const publisher = read("src/components/chat/voice/useDesktopScreenAudioPublisher.ts");
+  assert.match(publisher, /onNativeSessionChange\(screenSessionId\)/);
+  assert.match(publisher, /onNativeSessionChange\(null\)/);
+  assert.match(previewDom, /video\?\.pause\(\)/);
+  assert.match(previewDom, /dataset\.livekitLocalScreenKind = kind/);
+  assert.match(videoStage, /useLocalScreenPreviewVisibility/);
+  assert.match(roomStage, /screenShareOwner && screenShareIsLocal \? "grid" : "focus"/);
+  assert.match(roomStage, /selection\?\.screenTrackId === screenShareTrackId/);
 });
 
 test("room screen stage owns remaining height and contains remote video", () => {
@@ -114,6 +144,22 @@ test("room screen stage owns remaining height and contains remote video", () => 
   assert.match(content, /flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden/);
   assert.match(stage, /place-items-center overflow-hidden/);
   assert.match(stage, /\[&>video\]:object-contain/);
+});
+
+test("desktop sheets stay below the titlebar and fullscreen targets app content", () => {
+  const desktopApp = read("desktop/src/App.tsx");
+  const desktopStyles = read("desktop/src/styles.css");
+  const sheet = read("src/components/ui/Sheet.tsx");
+  const roomSheet = read("src/components/chat/voice/VoiceRoomSheet.tsx");
+  const fullscreen = read("src/components/chat/voice/useVoiceRoomFullscreen.ts");
+
+  assert.match(desktopApp, /id="voople-desktop-overlay-root"/);
+  assert.match(desktopStyles, /\.desktop-overlay-root\s*\{[\s\S]*position: absolute;[\s\S]*inset: 0;/);
+  assert.match(sheet, /desktopOverlayRoot[\s\S]*"absolute inset-0/);
+  assert.match(fullscreen, /querySelector<HTMLElement>\("\.desktop-window-content"\)/);
+  assert.match(roomSheet, /fullscreen && "h-full max-h-none/);
+  assert.doesNotMatch(roomSheet, /fullscreen && "h-dvh/);
+  assert.doesNotMatch(sheet, /z-\[300\]|z-\[301\]/);
 });
 
 test("desktop audio source resolution is automatic but never guesses between active apps", () => {

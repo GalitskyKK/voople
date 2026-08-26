@@ -57,7 +57,7 @@ export function VoiceRoomSheet({
           : identity.isDirect
             ? "max-w-xl"
             : "max-w-2xl",
-        fullscreen && "h-dvh max-h-none max-w-none rounded-none border-0 p-0 sm:rounded-none",
+        fullscreen && "h-full max-h-none max-w-none rounded-none border-0 p-0 sm:rounded-none",
       )}
     >
       <div className={cn("flex min-h-0 flex-col", identity.active && "h-full")}>

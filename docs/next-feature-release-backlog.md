@@ -85,6 +85,13 @@
 
 - Кнопку сворачивания основного navbar показывать при hover/focus-within;
   клавиатурный focus и доступное имя должны оставаться видимыми всегда.
+- Закрыть A0 Shell useful-space slice: compact global rail становится default
+  без сохранённого preference, pinned expanded сохраняется, временное раскрытие
+  не делает relayout. Ограничить Chat List диапазоном 280–320 px, отдавать
+  оставшуюся ширину Conversation/feed, подключать right rail только при
+  достаточном main content. Один shared state machine/View для web/desktop;
+  visual/interaction gate 1024×720, 1280×800, 1440×900, fullscreen и Windows
+  scale 125/150%.
 - Системные Room-события остаются тихими элементами timeline беседы и дневными
   summary, но не подменяют последнее пользовательское сообщение в списке
   диалогов.

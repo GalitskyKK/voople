@@ -170,6 +170,11 @@ Right rail
 2. sidebar переходит в compact;
 3. основной feed сохраняет нормальную ширину.
 
+При отсутствии сохранённой настройки global sidebar изначально compact и на
+web, и на desktop. Expanded — осознанный закрепляемый режим, а не автоматическая
+награда за широкий viewport. Подписи compact rail доступны через tooltip,
+keyboard focus и временное overlay-раскрытие без постоянного сдвига main content.
+
 ---
 
 # 5. Блок «Сейчас»
@@ -1413,6 +1418,24 @@ invites → activated users
     документированную серию оплаченных месяцев с grace/refund правилами;
     Developer/Team badges — только из серверных ролей и с журналом выдачи.
     Recognition badges отделены от permissions и продаваемых cosmetics.
+
+## A0 — cross-platform shell architecture
+
+44. Shell useful-space and density: общий web/desktop shell использует compact
+    global rail (~68–76 px) по умолчанию, сохраняет ручной pinned-expanded режим
+    и может временно раскрывать подписи поверх content. Settings/Help/Logout
+    уходят в account menu согласно IA; кнопка collapse видна при hover/focus.
+    Для Messaging закрепить бюджет `rail 68–76 | Chat List 280–320 | fluid
+    Conversation`; Members/Info остаются overlay drawers. Right rail появляется
+    только при сохранении рабочей ширины main content, а не потому, что формально
+    достигнут breakpoint. Нельзя покупать плотность уменьшением читаемого текста,
+    touch targets или скрытием доступных имён. Один responsive state machine и
+    stateless shell View обслуживают web/desktop; различаются только platform
+    adapters и safe-area/titlebar. Visual gate: 1024×720, 1280×800, 1440×900,
+    fullscreen, Windows scale 125/150%, expanded/compact/temporary-overlay,
+    keyboard/tooltips и отсутствие horizontal overflow. Отдельно измерять долю
+    viewport, доступную feed/conversation, и не допускать регрессии после drawers,
+    call dock или right rail.
 
 ---
 

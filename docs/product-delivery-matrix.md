@@ -24,7 +24,7 @@ Reference Map и шесть референсных бордов.
 
 | Board | Канонический результат | Web | Desktop | Visual/state gate | Статус |
 | --- | --- | --- | --- | --- | --- |
-| 1 — Shell + Home | Компактный «Сейчас», feed в первом meaningful viewport, sticky right rail, expanded/compact/mobile shell | Общая композиция есть | Общая view подключена через adapter | Нужны snapshots 360/390/1024/1440, sticky и empty/live states | Частично |
+| 1 — Shell + Home | Compact global rail по умолчанию, сохраняемый pinned-expanded/temporary-overlay, компактный «Сейчас», feed в первом meaningful viewport и right rail только при достаточной ширине main | Общая композиция есть | Общая view подключена через adapter | Нужны snapshots 360/390/1024×720/1280×800/1440×900, Windows scale 125/150%, keyboard/tooltips, useful-space budget, sticky и empty/live states | Частично |
 | 2 — Messaging | `Nav → Chat List → Conversation`, drawers по запросу, единые header/composer/menus/Room CTA | Основной flow есть | Header/message/composer presentation общий; внешний thread/messages controller ещё расходится | Нужны parity snapshots, keyboard/context menu/upload states | Частично |
 | 3 — Room | Full, Share, Empty, Mini, Compact, Minimal, mobile как одна state machine | Состояния существуют; web-share использует общий stage и явные 720p30/1080p60 presets | Native LiveKit/libwebrtc изолирован в worker process; UI stop мгновенный, graceful unpublish предшествует blocking join/forced kill, late session/track events изолированы; self-preview opt-in, unfocused preview приостанавливается; общий stage использует contain, оставшуюся высоту и content-bound fullscreen под desktop chrome | Нужны двухклиентные stop/restart/quality media tests, reconnect/soak, фактические FPS/bitrate и все visual states | Частично |
 | 4 — Identity | Реальный двухколоночный профиль + все cosmetics на каждой portable surface | Shared profile view есть | Shared profile view подключён | Mini-profile social context и полная surface matrix не закрыты | Частично |
@@ -98,6 +98,7 @@ Reference Map и шесть референсных бордов.
 | 41 | Mini Profile adaptive positioning | Частично | Collision detection, flip/shift, viewport padding, zoom 125–200%, internal scroll и гарантия, что cosmetics не меняют geometry/actions |
 | 42 | Creator Cosmetics Program | Планирование | Не только шаблоны: constrained multi-layer canvas с anchors/masks/keyframes и расширяемым typed manifest, безопасные animated formats/static fallback, preview matrix, moderation/IP/takedown, performance budgets, payouts/KYC/anti-fraud и versioned creator contract |
 | 43 | Recognition Program | Планирование | Server-authoritative Founder 25 snapshot и event; subscription loyalty policy; role-based Developer/Team badges; audit log и отделение badges от permissions/cosmetics |
+| 44 | Shell useful-space and density | Планирование | Один shared responsive shell state machine/View; compact rail default, persisted pinned-expanded и temporary overlay; Chat List 280–320 px, fluid main ≥640 px, conditional right rail/drawers; 1024/1280/1440, fullscreen, Windows scale, keyboard и no-overflow visual gates |
 
 ## Cross-platform architecture gate
 

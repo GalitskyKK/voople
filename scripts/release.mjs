@@ -23,6 +23,7 @@ function run(command, args, options = {}) {
     encoding: "utf8",
     stdio: options.capture ? "pipe" : "inherit",
     shell: false,
+    env: options.env ?? process.env,
   });
   if (result.status !== 0) throw new Error(`${command} ${args.join(" ")} failed`);
   return (result.stdout ?? "").trim();
@@ -117,9 +118,17 @@ async function main() {
     { args: ["scripts/check-migration-readiness.mjs"] },
     { args: ["node_modules/typescript/bin/tsc", "--noEmit"], cwd: "desktop" },
     { args: ["node_modules/vite/bin/vite.js", "build"], cwd: "desktop" },
-    { args: ["node_modules/@playwright/test/cli.js", "test"] },
+    {
+      args: ["node_modules/@playwright/test/cli.js", "test"],
+      env: { ...process.env, VOOPLE_RELEASE_E2E: "1" },
+    },
   ];
-  for (const check of checks) run(check.command ?? process.execPath, check.args, { cwd: check.cwd });
+  for (const check of checks) {
+    run(check.command ?? process.execPath, check.args, {
+      cwd: check.cwd,
+      env: check.env,
+    });
+  }
 
   if (process.platform === "win32" && process.env.VERIFY_NATIVE_AUDIO === "1") {
     process.stdout.write("\nRunning optional native screen-share worker checks locally.\n");

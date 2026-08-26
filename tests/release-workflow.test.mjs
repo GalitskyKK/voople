@@ -19,6 +19,16 @@ test("desktop RC records native audio capability and preserves a visible fallbac
   assert.match(workflow, /fallback build/);
 });
 
+test("local release E2E exercises the production build deterministically", () => {
+  const releaseScript = read("scripts/release.mjs");
+  const playwrightConfig = read("playwright.config.ts");
+
+  assert.match(releaseScript, /VOOPLE_RELEASE_E2E: "1"/);
+  assert.match(playwrightConfig, /isReleaseE2E/);
+  assert.match(playwrightConfig, /isReleaseE2E[\s\S]*localProductionCommand/);
+  assert.match(playwrightConfig, /isReleaseE2E \? 1 : 2/);
+});
+
 test("Windows COM capture compiles in the isolated worker gate", () => {
   const manifest = read("desktop/screen-share-worker/Cargo.toml");
   const worker = read("desktop/screen-share-worker/src/main.rs");

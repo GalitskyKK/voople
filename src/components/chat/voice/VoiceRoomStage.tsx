@@ -88,7 +88,7 @@ export function VoiceRoomStage({
     );
 
     return (
-      <div className="flex h-full min-h-0 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <div className="mb-2 flex items-center justify-between gap-3">
           <p className="text-xs font-medium text-[var(--app-muted)]">
             {layout === "focus" ? "Фокус" : "Сетка"}
@@ -165,7 +165,7 @@ export function VoiceRoomStage({
   return (
     <div
       className={cn(
-        "grid h-full min-h-0 content-center gap-2 overflow-y-auto [grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))]",
+        "grid min-h-0 min-w-0 flex-1 content-center gap-2 overflow-y-auto [grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))]",
         participants.length === 1 && "mx-auto max-w-xl grid-cols-1",
         participants.length >= 5 && "lg:[grid-template-columns:repeat(3,minmax(0,1fr))]",
       )}

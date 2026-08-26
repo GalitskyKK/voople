@@ -17,7 +17,7 @@ use voople_screen_share_protocol::{
 const SIDECAR_NAME: &str = "voople-screen-share-worker";
 const SOURCE_TIMEOUT: Duration = Duration::from_secs(15);
 const START_TIMEOUT: Duration = Duration::from_secs(15);
-const STOP_TIMEOUT: Duration = Duration::from_secs(5);
+const STOP_TIMEOUT: Duration = Duration::from_millis(1_500);
 const KILL_CONFIRM_TIMEOUT: Duration = Duration::from_secs(2);
 const CANCELLED_SESSION_CACHE: usize = 64;
 

@@ -1,5 +1,41 @@
 use voople_screen_share_protocol::{DesktopCaptureKind, StartProcessAudioInput};
 
+#[derive(Debug, PartialEq)]
+struct NativeVideoPublishProfile {
+    max_bitrate: u64,
+    max_framerate: f64,
+    low_bitrate: u64,
+    low_framerate: f64,
+    mid_bitrate: u64,
+    mid_framerate: f64,
+}
+
+fn native_video_publish_profile(frame_rate: u32) -> NativeVideoPublishProfile {
+    if frame_rate >= 60 {
+        NativeVideoPublishProfile {
+            max_bitrate: 8_000_000,
+            max_framerate: 60.0,
+            low_bitrate: 900_000,
+            low_framerate: 15.0,
+            mid_bitrate: 2_500_000,
+            mid_framerate: 30.0,
+        }
+    } else {
+        NativeVideoPublishProfile {
+            max_bitrate: 4_000_000,
+            max_framerate: 30.0,
+            low_bitrate: 500_000,
+            low_framerate: 15.0,
+            mid_bitrate: 1_500_000,
+            mid_framerate: 30.0,
+        }
+    }
+}
+
+fn scaled_even(value: u32, divisor: u32) -> u32 {
+    ((value / divisor).max(2)) & !1
+}
+
 fn fitted_capture_resolution(
     source_width: i32,
     source_height: i32,
@@ -57,10 +93,7 @@ fn capture_desktop_frame(
         buffer
     };
 
-    source.capture_frame(&VideoFrame::new(
-        VideoRotation::VideoRotation0,
-        output,
-    ));
+    source.capture_frame(&VideoFrame::new(VideoRotation::VideoRotation0, output));
 }
 
 pub async fn run_publish_session(
@@ -70,7 +103,7 @@ pub async fn run_publish_session(
     mut stop: tokio::sync::oneshot::Receiver<()>,
 ) -> Result<(), String> {
     use livekit::{
-        options::TrackPublishOptions,
+        options::{DegradationPreference, TrackPublishOptions, VideoEncoding, VideoPreset},
         prelude::{LocalAudioTrack, LocalTrack, LocalVideoTrack, TrackSource},
         webrtc::{
             audio_source::native::NativeAudioSource,
@@ -91,17 +124,15 @@ pub async fn run_publish_session(
         return Err(message);
     }
 
-    let captures_system_audio = input.capture_source.as_ref().is_some_and(|source| {
-        matches!(source.kind, DesktopCaptureKind::Screen)
-    });
+    let captures_system_audio = input
+        .capture_source
+        .as_ref()
+        .is_some_and(|source| matches!(source.kind, DesktopCaptureKind::Screen));
 
     let selection = input.capture_source.clone().unwrap();
     let (sender, mut receiver) = tokio::sync::mpsc::channel(2);
-    let video_capture = crate::desktop_capture::spawn_desktop_capture(
-        selection,
-        input.capture_frame_rate,
-        sender,
-    );
+    let video_capture =
+        crate::desktop_capture::spawn_desktop_capture(selection, input.capture_frame_rate, sender);
 
     let first_frame_result = tokio::select! {
         _ = &mut stop => {
@@ -195,10 +226,38 @@ pub async fn run_publish_session(
                 RtcVideoSource::Native(video_source.clone()),
             );
 
+            let publish_profile = native_video_publish_profile(input.capture_frame_rate);
+            let low_width = scaled_even(capture_resolution.0, 4);
+            let low_height = scaled_even(capture_resolution.1, 4);
+            let mid_width = scaled_even(capture_resolution.0, 2);
+            let mid_height = scaled_even(capture_resolution.1, 2);
+
             room.local_participant()
                 .publish_track(
                     LocalTrack::Video(track),
                     TrackPublishOptions {
+                        video_encoding: Some(VideoEncoding {
+                            max_bitrate: publish_profile.max_bitrate,
+                            max_framerate: publish_profile.max_framerate,
+                        }),
+                        simulcast: true,
+                        simulcast_layers: Some(vec![
+                            VideoPreset::new(
+                                low_width,
+                                low_height,
+                                publish_profile.low_bitrate,
+                                publish_profile.low_framerate,
+                            ),
+                            VideoPreset::new(
+                                mid_width,
+                                mid_height,
+                                publish_profile.mid_bitrate,
+                                publish_profile.mid_framerate,
+                            ),
+                        ]),
+                        degradation_preference: Some(
+                            DegradationPreference::MaintainResolution,
+                        ),
                         source: TrackSource::Screenshare,
                         stream,
                         ..Default::default()
@@ -315,9 +374,7 @@ pub async fn run_publish_session(
     }
 
     if let Some(sender) = ready.take() {
-        let _ = sender.send(Err(
-            "Нативный захват завершился до первого кадра".to_owned(),
-        ));
+        let _ = sender.send(Err("Нативный захват завершился до первого кадра".to_owned()));
     }
 
     if let Some(capture) = audio_capture {
@@ -331,17 +388,13 @@ pub async fn run_publish_session(
     eprintln!("[screen-share-worker] capture threads stopped");
     eprintln!("[screen-share-worker] closing LiveKit room");
 
-    room.close()
-        .await
-        .map_err(|error| error.to_string())?;
+    room.close().await.map_err(|error| error.to_string())?;
 
     eprintln!("[screen-share-worker] LiveKit room closed");
     Ok(())
 }
 
-async fn receive_optional<T>(
-    receiver: &mut Option<tokio::sync::mpsc::Receiver<T>>,
-) -> Option<T> {
+async fn receive_optional<T>(receiver: &mut Option<tokio::sync::mpsc::Receiver<T>>) -> Option<T> {
     match receiver {
         Some(receiver) => receiver.recv().await,
         None => std::future::pending().await,
@@ -350,7 +403,7 @@ async fn receive_optional<T>(
 
 #[cfg(test)]
 mod tests {
-    use super::fitted_capture_resolution;
+    use super::{fitted_capture_resolution, native_video_publish_profile, scaled_even};
 
     #[test]
     fn keeps_landscape_ratio() {
@@ -382,5 +435,25 @@ mod tests {
             fitted_capture_resolution(1_920, 1_200, 1_280, 720),
             (1_152, 720)
         );
+    }
+
+    #[test]
+    fn standard_publish_profile_is_full_rate_720p() {
+        let profile = native_video_publish_profile(30);
+        assert_eq!(profile.max_bitrate, 4_000_000);
+        assert_eq!(profile.max_framerate, 30.0);
+    }
+
+    #[test]
+    fn plus_publish_profile_is_full_rate_1080p() {
+        let profile = native_video_publish_profile(60);
+        assert_eq!(profile.max_bitrate, 8_000_000);
+        assert_eq!(profile.max_framerate, 60.0);
+    }
+
+    #[test]
+    fn simulcast_dimensions_remain_even() {
+        assert_eq!(scaled_even(1_728, 2), 864);
+        assert_eq!(scaled_even(1_080, 4), 270);
     }
 }

@@ -10,6 +10,7 @@ import {
   deleteGroupEmoji,
   deleteGroupSound,
   joinPublicGroup,
+  getPublicGroupBySlug,
   listGroupJoinRequests,
   listGroupEmojis,
   listGroupSounds,
@@ -25,6 +26,25 @@ import { protectedProcedure } from "../init";
 import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
 
 export const chatCommunityProcedures = {
+  publicGroupBySlug: protectedProcedure
+    .input(z.object({
+      slug: z.string().trim().toLowerCase().min(5).max(32).regex(/^[a-z0-9_]+$/),
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const group = await getPublicGroupBySlug(input.slug, ctx.user.id);
+        if (!group) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Группа не найдена" });
+        }
+        return group;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: error instanceof Error ? error.message : "Не удалось загрузить группу",
+        });
+      }
+    }),
   publicGroups: protectedProcedure
     .input(z.object({ q: z.string().trim().min(2).max(50) }))
     .query(async ({ ctx, input }) => {

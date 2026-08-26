@@ -119,3 +119,17 @@ test("authenticated sticky chrome uses one offset without masking strips", () =>
   assert.doesNotMatch(globals, /0 -4rem 0 var\(--background\)/);
   assert.doesNotMatch(feedHeader, /linear-gradient|sticky top-0/);
 });
+
+test("public group presentation is shared by Next and desktop routes", () => {
+  const sharedView = read("src/components/chat/PublicGroupPageView.tsx");
+  const webController = read("src/components/chat/PublicGroupPage.tsx");
+  const desktopAdapter = read("desktop/src/adapters/DesktopPublicGroupAdapter.tsx");
+  const desktopShell = read("desktop/src/shell/DesktopShell.tsx");
+
+  assert.match(sharedView, /export function PublicGroupPageView/);
+  assert.match(webController, /<PublicGroupView/);
+  assert.match(desktopAdapter, /<PublicGroupPageView/);
+  assert.match(desktopAdapter, /chat\.publicGroupBySlug/);
+  assert.match(desktopShell, /groupSlugFromPath/);
+  assert.match(desktopShell, /<DesktopPublicGroup/);
+});

@@ -44,12 +44,12 @@ export function VoiceRoomContent({
   }
 
   return (
-    <div className="voople-room-surface min-h-0 flex-1 p-3 sm:p-4">
+    <div className="voople-room-surface flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
       {controls.screenSharing ? (
         <ScreenShareStatusBanner hasAudio={controls.screenShareHasAudio} />
       ) : null}
       {stage.screenShareAvailable && !stage.watchingScreenShare && !controls.screenSharing ? (
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_35%,var(--app-border))] bg-[var(--app-accent-soft)] p-3">
+        <div className="mb-3 flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_35%,var(--app-border))] bg-[var(--app-accent-soft)] p-3">
           <div>
             <p className="text-sm font-semibold">Идёт демонстрация</p>
             <p className="text-xs text-[var(--app-muted)]">
@@ -128,7 +128,7 @@ function DirectCallPreview({ chatName }: { chatName: string }) {
 function ScreenShareVolume({ stage }: { stage: VoiceRoomStageModel }) {
   const percent = Math.round(stage.screenShareVolume * 100);
   return (
-    <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2">
+    <div className="mb-3 flex shrink-0 flex-wrap items-center gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2">
       <label className="flex min-w-48 flex-1 items-center gap-3 text-xs font-medium">
         Звук демонстрации
         <input

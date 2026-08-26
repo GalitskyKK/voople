@@ -125,11 +125,15 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
 
     stopPromiseRef.current = promise;
 
-    void promise.finally(() => {
+    const clearStopPromise = () => {
       if (stopPromiseRef.current === promise) {
         stopPromiseRef.current = null;
       }
-    });
+    };
+    // Using finally() here would create a second rejecting promise with no
+    // consumer when native teardown fails. Keep cleanup single-flight without
+    // introducing an unhandled rejection.
+    void promise.then(clearStopPromise, clearStopPromise);
 
     return promise;
   }, []);
@@ -315,7 +319,19 @@ export function useDesktopScreenAudioPublisher(chatId: string) {
     if (sharing) {
       const kind = activeCaptureRef.current?.kind ?? null;
 
-      await stop();
+      const stopping = stop();
+
+      if (kind === "native") {
+        // The supervisor remains the teardown owner, while the presentation
+        // state can turn off immediately. A subsequent START still waits for
+        // stopCurrent() through its single-flight promise.
+        void stopping.catch((error: unknown) => {
+          console.error("Не удалось завершить нативную демонстрацию", error);
+        });
+        return { enabled: false, hasAudio: false, warning: null };
+      }
+
+      await stopping;
 
       if (kind === "browser") {
         await room.localParticipant.setScreenShareEnabled(

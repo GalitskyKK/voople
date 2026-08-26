@@ -70,6 +70,11 @@ const DesktopGroupSettingsPage = lazy(() =>
     default: module.DesktopGroupSettingsPageAdapter,
   })),
 );
+const DesktopPublicGroup = lazy(() =>
+  import("../adapters/DesktopPublicGroupAdapter").then((module) => ({
+    default: module.DesktopPublicGroupAdapter,
+  })),
+);
 const EventsPage = lazy(() =>
   import("@/components/events/EventsPage").then((module) => ({
     default: module.EventsPage,
@@ -142,6 +147,10 @@ function hashtagFromPath(pathname: string) {
   } catch {
     return null;
   }
+}
+
+function groupSlugFromPath(pathname: string) {
+  return pathname.match(/^\/group\/([a-z0-9_]{5,32})$/i)?.[1].toLowerCase() ?? null;
 }
 
 export function DesktopShell({
@@ -305,6 +314,7 @@ export function DesktopShell({
   const chatId = chatIdFromPath(pathname);
   const groupSettingsChatId = groupSettingsChatIdFromPath(pathname);
   const hashtag = hashtagFromPath(pathname);
+  const groupSlug = groupSlugFromPath(pathname);
   const isProfileRoute = pathname === "/me" || profileUsername !== null;
   const isMessagesRoute = pathname === "/messages" || chatId !== null || groupSettingsChatId !== null;
   const routeLayout = getAppRouteLayout(pathname);
@@ -402,6 +412,14 @@ export function DesktopShell({
             <DesktopShopAdapter config={config} />
           ) : pathname === "/help" ? (
             <DesktopHelp navigate={navigate} />
+          ) : groupSlug ? (
+            <DesktopPublicGroup
+              key={groupSlug}
+              config={config}
+              session={session}
+              slug={groupSlug}
+              navigate={navigate}
+            />
           ) : groupSettingsChatId ? (
             <DesktopGroupSettingsPage
               chatId={groupSettingsChatId}

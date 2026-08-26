@@ -1,6 +1,6 @@
 # Voople product delivery matrix
 
-Обновлено: 2026-08-25. Матрица — обязательный рабочий gate, а не декларация о
+Обновлено: 2026-08-26. Матрица — обязательный рабочий gate, а не декларация о
 завершении. Она объединяет исходную спецификацию, дополняющий social/UX-план,
 Reference Map и шесть референсных бордов.
 
@@ -26,7 +26,7 @@ Reference Map и шесть референсных бордов.
 | --- | --- | --- | --- | --- | --- |
 | 1 — Shell + Home | Компактный «Сейчас», feed в первом meaningful viewport, sticky right rail, expanded/compact/mobile shell | Общая композиция есть | Общая view подключена через adapter | Нужны snapshots 360/390/1024/1440, sticky и empty/live states | Частично |
 | 2 — Messaging | `Nav → Chat List → Conversation`, drawers по запросу, единые header/composer/menus/Room CTA | Основной flow есть | Header/message/composer presentation общий; внешний thread/messages controller ещё расходится | Нужны parity snapshots, keyboard/context menu/upload states | Частично |
-| 3 — Room | Full, Share, Empty, Mini, Compact, Minimal, mobile как одна state machine | Состояния существуют; web-share использует общий stage | Native publisher теперь останавливает capture/LiveKit последовательно, исключает self-audio и сохраняет исходное соотношение сторон | Нужны двухклиентные stop/restart media tests, reconnect/soak, CI native-feature gate и все visual states | Частично |
+| 3 — Room | Full, Share, Empty, Mini, Compact, Minimal, mobile как одна state machine | Состояния существуют; web-share использует общий stage и явные 720p30/1080p60 presets | Native LiveKit/libwebrtc изолирован в worker process; stop single-flight, UI гаснет сразу, self-audio исключён; общий stage использует contain и оставшуюся высоту | Нужны двухклиентные stop/restart/quality media tests, reconnect/soak и все visual states | Частично |
 | 4 — Identity | Реальный двухколоночный профиль + все cosmetics на каждой portable surface | Shared profile view есть | Shared profile view подключён | Mini-profile social context и полная surface matrix не закрыты | Частично |
 | 5 — Settings + Boosts | Полноэкранные настройки с локальным nav, identity preview, perks/allocation/capacity | Секции и данные есть | Composition ещё не везде едина | Нужны reference snapshots, grace/expiry E2E и removal старых sheets | Частично |
 | 6 — Discovery + Money + States | Wide Search/Notifications/Events, полноценные Store/detail/gift/Plus и системные состояния | Вертикали существуют; branded initial loading и 404 общие | Release notes, branded loading и routing 404 используют root Views | Wide Search/Store/mobile matrix и visual RC-check release notes не закрыты | Частично |
@@ -52,7 +52,7 @@ Reference Map и шесть референсных бордов.
 | --- | --- | --- | --- |
 | 11 | Global Search redesign | Частично | Wide layout, sticky stack, recent/filters/ranking и Board 6 parity |
 | 12 | Communities section | Частично | Полноценный каталог, states и responsive composition |
-| 13 | Public community page | Частично | Preview-first flow, privacy/join states и active Room surface |
+| 13 | Public community page | Частично | Web и desktop `/group/:slug` используют общий View и авторизованный join contract; остаются active Room surface, offline state и responsive visual E2E |
 | 14 | Community cards | Частично | Banner, topics, social proof, online/talking и единая карточка везде |
 | 15 | Member directory | Частично | Сейчас/В сети/Все/Роли, search/actions/privacy и wide drawer |
 | 16 | People recommendations | Частично | Opt-out privacy уже enforced; нужны candidate sources, safety и actionable recommendation cards |
@@ -92,7 +92,7 @@ Reference Map и шесть референсных бордов.
 | 35 | Responsive/mobile polish | Частично | 360/390/1024/1440 snapshots и safe-area/touch gates всех verticals |
 | 36 | Accessibility | Частично | Keyboard/focus/screen reader/contrast matrix, reduced motion |
 | 37 | Analytics dashboards | Частично | Event coverage audit, activation ≥2 min, funnels/retention/cost dashboards |
-| 38 | Screen Share source preview polish | Частично | Graceful stop, self-audio suppression и contain/aspect contract готовы; остаются desktop thumbnails/selected preview/quality/audio state, dynamic-resize E2E и web post-selection track preview |
+| 38 | Screen Share source preview polish | Частично | Worker isolation, bounded stop, self-audio suppression, contain/aspect и explicit 720p30/1080p60 publish contract готовы; остаются desktop thumbnails/selected preview, measured end-to-end FPS/bitrate, dynamic-resize E2E и web post-selection track preview |
 
 ## Cross-platform architecture gate
 

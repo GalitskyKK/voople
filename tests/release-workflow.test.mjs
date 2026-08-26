@@ -10,23 +10,23 @@ test("desktop RC records native audio capability and preserves a visible fallbac
   const releaseScript = read("scripts/release.mjs");
 
   assert.match(workflow, /--features process-audio-publisher/);
-  assert.match(workflow, /cargo build --locked --release --features process-audio-publisher/);
+  assert.match(workflow, /desktop\/screen-share-worker\/Cargo\.toml/);
+  assert.match(workflow, /voople-screen-share-worker-\$Target\.exe/);
   assert.match(cargoConfig, /\[target\.x86_64-pc-windows-msvc\]/);
   assert.match(cargoConfig, /rustflags = \["-C", "target-feature=\+crt-static"\]/);
-  assert.match(releaseScript, /\["build", "--locked", "--release", "--features", "process-audio-publisher"/);
+  assert.match(releaseScript, /"--features", "process-audio-publisher"/);
   assert.match(workflow, /processAudioPublisher = \$env:PROCESS_AUDIO_INCLUDED/);
-  assert.match(workflow, /video-only fallback/);
-  assert.match(workflow, /next-feature-release-backlog\.md/);
+  assert.match(workflow, /fallback build/);
 });
 
-test("Windows COM capture compiles in the default desktop gate", () => {
-  const manifest = read("desktop/src-tauri/Cargo.toml");
-  const desktopLibrary = read("desktop/src-tauri/src/lib.rs");
-  const capture = read("desktop/src-tauri/src/process_audio_capture.rs");
-  const publisher = read("desktop/src-tauri/src/process_audio_publisher.rs");
+test("Windows COM capture compiles in the isolated worker gate", () => {
+  const manifest = read("desktop/screen-share-worker/Cargo.toml");
+  const worker = read("desktop/screen-share-worker/src/main.rs");
+  const capture = read("desktop/screen-share-worker/src/process_audio_capture.rs");
+  const publisher = read("desktop/screen-share-worker/src/publisher.rs");
 
   assert.match(manifest, /windows-core = \{ version = "=0\.61\.2" \}/);
-  assert.match(desktopLibrary, /cfg\(target_os = "windows"\)[\s\S]*mod process_audio_capture/);
+  assert.match(worker, /mod process_audio_capture/);
   assert.match(capture, /use windows_core::\{implement, Interface\}/);
   assert.match(publisher, /let mut room_options = RoomOptions::default\(\);/);
   assert.match(publisher, /room_options\.auto_subscribe = false;/);
@@ -34,16 +34,17 @@ test("Windows COM capture compiles in the default desktop gate", () => {
 });
 
 test("native publisher acknowledges the requested LiveKit media before UI reports sharing", () => {
-  const publisher = read("desktop/src-tauri/src/process_audio_publisher.rs");
+  const worker = read("desktop/screen-share-worker/src/main.rs");
+  const publisher = read("desktop/screen-share-worker/src/publisher.rs");
   const command = read("desktop/src-tauri/src/lib.rs");
 
-  assert.match(publisher, /oneshot::channel/);
-  assert.match(publisher, /timeout\(std::time::Duration::from_secs\(12\), ready_rx\)/);
+  assert.match(worker, /oneshot::channel/);
+  assert.match(worker, /WorkerEvent::Ready/);
   assert.match(publisher, /sender\.send\(Ok\(\(\)\)\)/);
   assert.match(publisher, /audio_ready && video_ready/);
-  assert.match(publisher, /source\.capture_frame\(&frame\)\.await/);
+  assert.match(publisher, /source\s*\.capture_frame\(&frame\)\s*\.await/);
   assert.match(publisher, /source\.capture_frame\(&VideoFrame::new/);
-  assert.match(command, /state\.start\(input\)\.await/);
+  assert.match(command, /state\.start\(&app, input\)\.await/);
 });
 
 test("a video-only RC makes Windows application audio mandatory next release work", () => {

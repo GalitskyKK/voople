@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, type RefObject } from "react";
-import { Track, type RemoteParticipant, type RemoteTrackPublication, type Room } from "livekit-client";
+import { Track, VideoQuality, type RemoteParticipant, type RemoteTrackPublication, type Room } from "livekit-client";
 
 export function isRemoteScreenPublication(publication: RemoteTrackPublication) {
   return publication.source === Track.Source.ScreenShare || publication.source === Track.Source.ScreenShareAudio;
@@ -23,6 +23,15 @@ export function shouldSubscribeToScreenPublication({
   // The native publisher is a separate LiveKit participant. Keep its video
   // subscribed for the local preview, but never play its audio back to owner.
   return source === Track.Source.ScreenShare;
+}
+
+function requestBestAvailableScreenVideo(publication: RemoteTrackPublication) {
+  if (publication.source !== Track.Source.ScreenShare) return;
+  // Standard senders cap at 30 FPS and Plus senders at 60 FPS. Requesting the
+  // upper bound here lets LiveKit deliver the best layer the publisher actually
+  // exposes while adaptive streaming can still unsubscribe hidden stages.
+  publication.setVideoQuality(VideoQuality.HIGH);
+  publication.setVideoFPS(60);
 }
 
 export function useScreenShareSubscription({
@@ -50,6 +59,7 @@ export function useScreenShareSubscription({
       const ownerId = participant.attributes["voople.ownerId"];
       const ownNativeShare = Boolean(ownerId && viewerId && ownerId === viewerId);
       if (publication.source === Track.Source.ScreenShare) {
+        requestBestAvailableScreenVideo(publication);
         setAvailable(ownNativeShare ? "Ваш экран" : participant.name || participant.identity || "Участник");
         if (ownNativeShare) setLocalSharing(true);
       }
@@ -76,6 +86,7 @@ export function useScreenShareSubscription({
       participant.trackPublications.forEach((publication) => {
         const remotePublication = publication as RemoteTrackPublication;
         if (isRemoteScreenPublication(remotePublication)) {
+          requestBestAvailableScreenVideo(remotePublication);
           remotePublication.setSubscribed(shouldSubscribeToScreenPublication({
             source: remotePublication.source,
             ownerId: participant.attributes["voople.ownerId"],

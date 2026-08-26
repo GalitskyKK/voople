@@ -73,32 +73,47 @@ test("desktop uses the native picker before falling back to browser capture", ()
   assert.match(publisher, /requestCaptureSource\(nativeSources\)/);
   assert.match(publisher, /captureSource: selected/);
   assert.match(publisher, /selected\.kind === "screen"/);
-  assert.match(publisher, /startBrowserCapture\(room, quality\)/);
+  assert.match(publisher, /startBrowserCapture\(room, quality, operation\)/);
   assert.match(publisher, /resolveDesktopProcessAudioSource/);
 });
 
 test("native desktop screen share excludes Voople from the whole-system mix", () => {
-  const capture = read("desktop/src-tauri/src/process_audio_capture.rs");
-  const publisher = read("desktop/src-tauri/src/process_audio_publisher.rs");
+  const capture = read("desktop/screen-share-worker/src/process_audio_capture.rs");
+  const publisher = read("desktop/screen-share-worker/src/publisher.rs");
 
   assert.match(capture, /PROCESS_LOOPBACK_MODE_EXCLUDE_TARGET_PROCESS_TREE/);
   assert.match(capture, /ProcessLoopbackTarget::ExcludeProcessTree/);
   assert.match(publisher, /DesktopCaptureKind::Screen/);
-  assert.match(publisher, /ExcludeProcessTree\([\s\S]*std::process::id\(\)/);
+  assert.match(publisher, /ExcludeProcessTree\([\s\S]*host_process_id/);
   assert.match(publisher, /TrackSource::ScreenshareAudio/);
   assert.match(publisher, /TrackSource::Screenshare/);
 });
 
-test("native screen share stops resources gracefully and preserves source aspect ratio", () => {
-  const publisher = read("desktop/src-tauri/src/process_audio_publisher.rs");
+test("native screen share worker stops gracefully and preserves source aspect ratio", () => {
+  const publisher = read("desktop/screen-share-worker/src/publisher.rs");
+  const supervisor = read("desktop/src-tauri/src/screen_share_supervisor.rs");
+  const frontend = read("src/components/chat/voice/useDesktopScreenAudioPublisher.ts");
 
   assert.match(publisher, /tokio::sync::oneshot::Sender/);
-  assert.match(publisher, /stop\.send\(\(\)\)/);
-  assert.match(publisher, /room\.close\(\)\.await/);
-  assert.doesNotMatch(publisher, /handle\.abort\(\)/);
+  assert.match(publisher, /room\.close\(\)\s*\.await/);
   assert.match(publisher, /fitted_capture_resolution/);
   assert.match(publisher, /first_video_frame/);
-  assert.match(publisher, /NativeVideoSource::new\([\s\S]*VideoResolution \{ width, height \}/);
+  assert.match(publisher, /NativeVideoSource::new\([\s\S]*VideoResolution/);
+  assert.match(publisher, /max_bitrate: 8_000_000/);
+  assert.match(publisher, /max_framerate: 60\.0/);
+  assert.doesNotMatch(supervisor, /handle\.abort\(\)/);
+  assert.match(supervisor, /STOP_TIMEOUT: Duration = Duration::from_millis\(1_500\)/);
+  assert.match(frontend, /if \(kind === "native"\)[\s\S]*void stopping\.catch/);
+  assert.match(frontend, /promise\.then\(clearStopPromise, clearStopPromise\)/);
+});
+
+test("room screen stage owns remaining height and contains remote video", () => {
+  const content = read("src/components/chat/voice/VoiceRoomContent.tsx");
+  const stage = read("src/components/chat/voice/VoiceMediaStage.tsx");
+
+  assert.match(content, /flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden/);
+  assert.match(stage, /place-items-center overflow-hidden/);
+  assert.match(stage, /\[&>video\]:object-contain/);
 });
 
 test("desktop audio source resolution is automatic but never guesses between active apps", () => {

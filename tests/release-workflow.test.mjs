@@ -38,6 +38,19 @@ test("release unit tests do not depend on shell glob expansion", () => {
   assert.doesNotMatch(releaseScript, /"tests\/\*\.test\.mjs"/);
 });
 
+test("release migration readiness has process and database deadlines", () => {
+  const releaseScript = read("scripts/release.mjs");
+  const readiness = read("scripts/check-migration-readiness.mjs");
+
+  assert.match(releaseScript, /timeout:\s*options\.timeout/);
+  assert.match(
+    releaseScript,
+    /"scripts\/check-migration-readiness\.mjs",[\s\S]*?timeout:\s*90_000/,
+  );
+  assert.match(readiness, /statement_timeout:\s*30_000/);
+  assert.match(readiness, /lock_timeout:\s*5_000/);
+});
+
 test("Windows COM capture compiles in the isolated worker gate", () => {
   const manifest = read("desktop/screen-share-worker/Cargo.toml");
   const worker = read("desktop/screen-share-worker/src/main.rs");

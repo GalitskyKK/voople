@@ -37,6 +37,11 @@ const sql = postgres(url, {
   connect_timeout: 30,
   idle_timeout: 5,
   ssl: "require",
+  connection: {
+    application_name: "voople_release_readiness",
+    statement_timeout: 30_000,
+    lock_timeout: 5_000,
+  },
 });
 
 try {

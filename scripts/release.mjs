@@ -37,11 +37,13 @@ function run(command, args, options = {}) {
     stdio: options.capture ? "pipe" : "inherit",
     shell: false,
     env: options.env ?? process.env,
+    timeout: options.timeout,
   });
 
   if (result.status !== 0) {
     const stderr = (result.stderr ?? "").trim();
-    const suffix = stderr ? `\n${stderr}` : "";
+    const failure = stderr || result.error?.message || "";
+    const suffix = failure ? `\n${failure}` : "";
 
     throw new Error(
       `${command} ${args.join(" ")} failed${suffix}`,
@@ -685,6 +687,7 @@ async function main() {
       args: [
         "scripts/check-migration-readiness.mjs",
       ],
+      timeout: 90_000,
     },
 
     {

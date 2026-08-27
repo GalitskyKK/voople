@@ -34,6 +34,8 @@
 !/docs/README.md
 !/docs/next-feature-release-backlog.md
 !/docs/current-stabilization-release-readiness.md
+!/docs/open-source-strategy.md
+!/docs/platform-roadmap.md
 /drizzle/*
 !/drizzle/38-group-emojis.sql
 !/drizzle/39-structured-chat-content.sql

@@ -3,6 +3,63 @@ import { expect, test } from "@playwright/test";
 const AUTHENTICATED_ROUTE_TIMEOUT = 30_000;
 
 test.describe("authenticated critical surface", () => {
+  test("global rail defaults compact and pins expansion without hiding utility actions", async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 720 });
+    await page.goto("/messages", { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => {
+      window.localStorage.removeItem("voople:sidebar-collapsed:v1");
+    });
+    await page.reload({ waitUntil: "domcontentloaded" });
+
+    const sidebar = page.locator(".voople-sidebar");
+    const collapseControl = page.getByRole("button", {
+      name: "Развернуть боковую панель",
+    });
+    await expect(sidebar).toHaveAttribute("data-collapsed", "true");
+    await expect(sidebar).toHaveCSS("width", "72px");
+    await expect(collapseControl).toHaveCSS("opacity", "0");
+    await expect(page.getByRole("link", { name: "Помощь" })).toHaveCount(0);
+    const accountMenuTrigger = page.getByRole("button", { name: "Открыть меню аккаунта" });
+    await expect(accountMenuTrigger).toBeVisible();
+    await accountMenuTrigger.click();
+    await expect(page.getByRole("menuitem", { name: "Помощь" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Настройки" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Выйти" })).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    const chatList = page.locator(".voople-messages-layout aside");
+    const conversation = page.locator(".voople-messages-layout section");
+    const compactGeometry = await page.evaluate(() => ({
+      clientWidth: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    const chatListWidth = (await chatList.boundingBox())?.width ?? 0;
+    expect(chatListWidth).toBeGreaterThanOrEqual(280);
+    expect(chatListWidth).toBeLessThanOrEqual(320);
+    expect((await conversation.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(620);
+    expect(compactGeometry.scrollWidth).toBeLessThanOrEqual(compactGeometry.clientWidth);
+
+    await sidebar.hover();
+    await expect(collapseControl).toHaveCSS("opacity", "1");
+    await page.getByRole("link", { name: "Чаты" }).hover();
+    await expect(page.getByRole("tooltip")).toHaveText("Чаты");
+
+    await collapseControl.click();
+    await expect(sidebar).toHaveAttribute("data-collapsed", "false");
+    await expect(sidebar).toHaveCSS("width", "216px");
+    await page.locator(".voople-shell__main").hover();
+    await expect(page.getByRole("button", { name: "Свернуть боковую панель" })).toHaveCSS(
+      "opacity",
+      "0",
+    );
+    await expect.poll(() => page.evaluate(() => (
+      window.localStorage.getItem("voople:sidebar-collapsed:v1")
+    ))).toBe("false");
+
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.locator(".voople-sidebar")).toHaveAttribute("data-collapsed", "false");
+  });
+
   test("messenger opens and exposes search without mutating production data", async ({ page }) => {
     await page.goto("/messages", { waitUntil: "domcontentloaded" });
 

@@ -102,6 +102,68 @@ test.describe("public release surface", () => {
     await expect(page).toHaveURL(/\/login$/);
   });
 
+  test("public app shell keeps its responsive geometry at every release width", async ({ page }) => {
+    const viewports = [
+      { width: 360, height: 800 },
+      { width: 390, height: 844 },
+      { width: 1024, height: 720 },
+      { width: 1280, height: 800 },
+      { width: 1440, height: 900 },
+    ];
+
+    await page.setViewportSize(viewports[0]);
+    await page.goto("/feed", { waitUntil: "domcontentloaded" });
+
+    for (const viewport of viewports) {
+      await page.setViewportSize(viewport);
+      await expect.poll(() => page.evaluate((desktop) => {
+        const sidebar = document.querySelector<HTMLElement>(".voople-sidebar");
+        const main = document.querySelector<HTMLElement>(".voople-shell__main");
+        if (!sidebar || !main) return false;
+        const sidebarHidden = getComputedStyle(sidebar).display === "none";
+        const mainWidth = main.getBoundingClientRect().width;
+        return desktop
+          ? !sidebarHidden && mainWidth >= 760
+          : sidebarHidden && mainWidth >= document.documentElement.clientWidth - 40;
+      }, viewport.width >= 1024)).toBe(true);
+
+      const geometry = await page.evaluate(() => {
+        const sidebar = document.querySelector<HTMLElement>(".voople-sidebar");
+        const bottomNavigation = document.querySelector<HTMLElement>(".voople-bottom-nav");
+        const main = document.querySelector<HTMLElement>(".voople-shell__main");
+        return {
+          clientWidth: document.documentElement.clientWidth,
+          scrollWidth: document.documentElement.scrollWidth,
+          sidebarDisplay: sidebar ? getComputedStyle(sidebar).display : null,
+          sidebarWidth: sidebar?.getBoundingClientRect().width ?? 0,
+          bottomNavigationDisplay: bottomNavigation
+            ? getComputedStyle(bottomNavigation).display
+            : null,
+          mainWidth: main?.getBoundingClientRect().width ?? 0,
+        };
+      });
+
+      expect(
+        geometry.scrollWidth,
+        `horizontal overflow at ${viewport.width}x${viewport.height}`,
+      ).toBeLessThanOrEqual(geometry.clientWidth);
+
+      if (viewport.width < 1024) {
+        expect(geometry.sidebarDisplay).toBe("none");
+        expect(geometry.bottomNavigationDisplay).toBe("flex");
+        expect(geometry.mainWidth).toBeGreaterThanOrEqual(geometry.clientWidth - 40);
+        await expect(page.locator(".voople-topbar").getByRole("link", { name: "Поиск" })).toHaveCount(0);
+        await expect(page.locator(".voople-bottom-nav").getByRole("link", { name: "Поиск" })).toBeVisible();
+      } else {
+        expect(geometry.sidebarDisplay).toBe("flex");
+        expect(geometry.sidebarWidth).toBeGreaterThanOrEqual(210);
+        expect(geometry.sidebarWidth).toBeLessThanOrEqual(220);
+        expect(geometry.bottomNavigationDisplay).toBe("none");
+        expect(geometry.mainWidth).toBeGreaterThanOrEqual(760);
+      }
+    }
+  });
+
   test("unknown routes use the responsive Voople not-found surface", async ({ page }) => {
     const response = await page.goto("/legal/this-route/does-not-exist");
     expect([200, 404]).toContain(response?.status());

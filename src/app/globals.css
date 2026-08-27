@@ -381,7 +381,7 @@ body {
     pointer-events: none;
   }
 
-  .voople-sidebar:is(:hover, :focus-within) .voople-sidebar__collapse,
+  .voople-sidebar:hover .voople-sidebar__collapse,
   .voople-sidebar__collapse:focus-visible {
     opacity: 1;
     pointer-events: auto;

@@ -44,7 +44,9 @@ test("web and desktop share pinned compact state, account menu and item tooltips
   assert.match(tooltip, /components\/ui\/Tooltip/);
   assert.match(tooltipPrimitive, /createPortal/);
   assert.match(tooltipPrimitive, /role="tooltip"/);
-  assert.match(globals, /\.voople-sidebar:is\(:hover, :focus-within\) \.voople-sidebar__collapse/);
+  assert.match(globals, /\.voople-sidebar:hover \.voople-sidebar__collapse/);
+  assert.match(globals, /\.voople-sidebar__collapse:focus-visible/);
+  assert.doesNotMatch(globals, /\.voople-sidebar:focus-within \.voople-sidebar__collapse/);
   assert.doesNotMatch(globals, /data-collapsed="true"\]:is\(:hover, :focus-within\)[\s\S]{0,120}width: 216px/);
   assert.match(navigation, /href: "\/help"/);
   assert.doesNotMatch(navigation, /href: "\/settings"/);

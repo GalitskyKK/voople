@@ -11,7 +11,7 @@ import {
 } from "@/components/layout/AppNavigationVisual";
 import { AppShellFrame } from "@/components/layout/AppShellFrame";
 import { AppPageContent } from "@/components/layout/AppPageContent";
-import { AccountChipVisual } from "@/components/layout/AccountChipVisual";
+import { AccountMenuVisual } from "@/components/layout/AccountMenuVisual";
 import { FeedHeaderVisual } from "@/components/layout/FeedHeaderVisual";
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { NotFoundView } from "@/components/system/NotFoundView";
@@ -332,27 +332,24 @@ export function DesktopShell({
           renderDestination={renderDestination}
           accountNavigation={
             viewerSummary ? (
-              <button
-                type="button"
-                className="block w-full"
-                aria-label="Открыть свой профиль"
-                onClick={() => navigate("/me")}
-              >
-                <AccountChipVisual
-                  displayName={viewerSummary.displayName}
-                  username={viewerSummary.username}
-                  compact={sidebarCollapsed}
-                  avatar={
-                    <ProfileAvatarVisual
-                      displayName={viewerSummary.displayName}
-                      size="sm"
-                      ringClassName={resolveRingStyle(viewerSummary.avatarRingId)?.className}
-                      avatarImage={viewerSummary.avatarUrl ? <img src={viewerSummary.avatarUrl} alt="" className="h-full w-full object-cover" /> : undefined}
-                      decorationImage={viewerSummary.avatarDecorationUrl ? <img src={viewerSummary.avatarDecorationUrl} alt="" className="h-full w-full object-contain" /> : undefined}
-                    />
-                  }
-                />
-              </button>
+              <AccountMenuVisual
+                displayName={viewerSummary.displayName}
+                username={viewerSummary.username}
+                compact={sidebarCollapsed}
+                avatar={
+                  <ProfileAvatarVisual
+                    displayName={viewerSummary.displayName}
+                    size="sm"
+                    ringClassName={resolveRingStyle(viewerSummary.avatarRingId)?.className}
+                    avatarImage={viewerSummary.avatarUrl ? <img src={viewerSummary.avatarUrl} alt="" className="h-full w-full object-cover" /> : undefined}
+                    decorationImage={viewerSummary.avatarDecorationUrl ? <img src={viewerSummary.avatarDecorationUrl} alt="" className="h-full w-full object-contain" /> : undefined}
+                  />
+                }
+                onOpenProfile={() => navigate("/me")}
+                onOpenHelp={() => navigate("/help")}
+                onOpenSettings={() => navigate("/settings")}
+                onLogout={() => navigate("/login")}
+              />
             ) : undefined
           }
         />

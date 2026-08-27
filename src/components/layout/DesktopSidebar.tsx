@@ -1,20 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Download, LogIn, UserPlus } from "lucide-react";
 
 import { NotificationNavBadge } from "@/components/notifications/NotificationNavBadge";
 import { GlobalPlayer } from "@/components/player/GlobalPlayer";
 import { SidebarHighlights } from "./SidebarHighlights";
 import { AppSidebarVisual } from "./AppNavigationVisual";
-import { AppAccountChip } from "./AppAccountChip";
+import { AppAccountMenu } from "./AppAccountMenu";
 import { useSidebarPreference } from "@/hooks/useSidebarPreference";
-import { createClient } from "@/lib/supabase/client";
 
 export function DesktopSidebar({ authenticated }: { authenticated: boolean }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { collapsed, setCollapsed } = useSidebarPreference({
     forceExpanded: !authenticated,
   });
@@ -26,7 +24,7 @@ export function DesktopSidebar({ authenticated }: { authenticated: boolean }) {
       onCollapsedChange={authenticated ? setCollapsed : undefined}
       mode={authenticated ? "authenticated" : "public"}
       notificationBadge={authenticated ? <NotificationNavBadge /> : undefined}
-      accountNavigation={authenticated ? <AppAccountChip compact={collapsed} /> : undefined}
+      accountNavigation={authenticated ? <AppAccountMenu compact={collapsed} /> : undefined}
       navAfter={
         authenticated ? <>
           <SidebarHighlights />
@@ -62,15 +60,8 @@ export function DesktopSidebar({ authenticated }: { authenticated: boolean }) {
           aria-label={label}
           aria-current={active ? "page" : undefined}
           className={className}
-          onClick={(event) => {
+          onClick={() => {
             onNavigate?.();
-            if (href !== "/login") return;
-            event.preventDefault();
-            void createClient().auth.signOut().then(({ error }) => {
-              if (error) return;
-              router.replace("/login");
-              router.refresh();
-            }).catch(() => undefined);
           }}
         >
           {children}

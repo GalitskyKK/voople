@@ -1,4 +1,4 @@
-import { Bell, CircleHelp, Home, LogOut, MessageCircle, Search, Settings, ShoppingBag, Sparkles, UserRound } from "lucide-react";
+import { Bell, CircleHelp, Home, MessageCircle, Search, ShoppingBag, Sparkles, UserRound } from "lucide-react";
 
 import { COPY } from "./copy";
 
@@ -62,12 +62,6 @@ export const PUBLIC_NAV_ITEMS = MAIN_NAV_ITEMS.filter(
 
 export const PUBLIC_MOBILE_NAV_ITEMS = PUBLIC_NAV_ITEMS;
 
-export const SIDEBAR_FOOTER_ITEMS = [
+export const PUBLIC_SIDEBAR_FOOTER_ITEMS = [
   { href: "/help", label: "Помощь", icon: CircleHelp },
-  { href: "/settings", label: "Настройки", icon: Settings },
-  { href: "/login", label: COPY.logout, icon: LogOut },
 ] as const;
-
-export const PUBLIC_SIDEBAR_FOOTER_ITEMS = SIDEBAR_FOOTER_ITEMS.filter(
-  (item) => item.href === "/help",
-);

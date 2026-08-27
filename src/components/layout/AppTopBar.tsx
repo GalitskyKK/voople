@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Download, LogIn, Search, Settings, ShoppingBag, Sparkles } from "lucide-react";
+import { Download, LogIn, ShoppingBag, Sparkles } from "lucide-react";
 
 import { COPY } from "@/lib/constants/copy";
 import { VoopleMark } from "@/components/brand/VoopleMark";
-import { AppAccountChip } from "./AppAccountChip";
+import { AppAccountMenu } from "./AppAccountMenu";
 
-/** Mobile-only top bar; logo + shop. Desktop uses sidebar. */
+/** Mobile-only top bar; primary destinations live in bottom navigation. */
 export function AppTopBar({ authenticated }: { authenticated: boolean }) {
   const pathname = usePathname();
   const hideShop = pathname.startsWith("/shop");
@@ -20,15 +20,6 @@ export function AppTopBar({ authenticated }: { authenticated: boolean }) {
         {COPY.appName}
       </Link>
       <div className="flex items-center gap-1">
-        {!pathname.startsWith("/explore") && (
-          <Link
-            href="/explore"
-            className="flex items-center rounded-[var(--app-radius-sm)] px-2 py-1.5 text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
-            aria-label="Поиск"
-          >
-            <Search className="h-5 w-5" strokeWidth={1.75} />
-          </Link>
-        )}
         {authenticated && !pathname.startsWith("/events") && (
           <Link
             href="/events"
@@ -48,15 +39,6 @@ export function AppTopBar({ authenticated }: { authenticated: boolean }) {
             <ShoppingBag className="h-5 w-5" strokeWidth={1.75} />
           </Link>
         )}
-        {authenticated && !pathname.startsWith("/settings") && (
-          <Link
-            href="/settings"
-            className="flex items-center gap-1.5 rounded-[var(--app-radius-sm)] px-2 py-1.5 text-sm text-[var(--app-muted)] transition-all duration-200 hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
-            aria-label="Настройки"
-          >
-            <Settings className="h-5 w-5" strokeWidth={1.75} />
-          </Link>
-        )}
         <Link
           href="/download/desktop"
           prefetch={false}
@@ -66,7 +48,7 @@ export function AppTopBar({ authenticated }: { authenticated: boolean }) {
           <Download className="h-5 w-5" strokeWidth={1.75} />
         </Link>
         {authenticated ? (
-          <AppAccountChip compact />
+          <AppAccountMenu compact fill={false} />
         ) : (
           <Link
             href={`/login?redirect=${encodeURIComponent(pathname)}`}

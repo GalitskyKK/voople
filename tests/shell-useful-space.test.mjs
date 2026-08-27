@@ -19,10 +19,12 @@ test("compact navigation is the safe default and only an explicit preference pin
   assert.equal(resolveSidebarCollapsed("invalid"), true);
 });
 
-test("web and desktop share pinned compact state, footer actions and item tooltips", () => {
+test("web and desktop share pinned compact state, account menu and item tooltips", () => {
   const web = read("src/components/layout/DesktopSidebar.tsx");
   const desktop = read("desktop/src/shell/DesktopShell.tsx");
   const sidebar = read("src/components/layout/AppNavigationVisual.tsx");
+  const accountMenu = read("src/components/layout/AccountMenuVisual.tsx");
+  const mobileTopBar = read("src/components/layout/AppTopBar.tsx");
   const tooltip = read("src/components/layout/SidebarItemTooltip.tsx");
   const navigation = read("src/lib/constants/nav.ts");
   const globals = read("src/app/globals.css");
@@ -30,8 +32,12 @@ test("web and desktop share pinned compact state, footer actions and item toolti
 
   assert.match(web, /useSidebarPreference/);
   assert.match(desktop, /useSidebarPreference/);
-  assert.match(web, /AppAccountChip/);
-  assert.match(desktop, /AccountChipVisual/);
+  assert.match(web, /AppAccountMenu/);
+  assert.match(desktop, /AccountMenuVisual/);
+  assert.match(accountMenu, /role="menuitem"/);
+  assert.match(accountMenu, /onOpenSettings/);
+  assert.match(accountMenu, /onOpenHelp/);
+  assert.match(accountMenu, /onLogout/);
   assert.match(sidebar, /collapsed = true/);
   assert.match(sidebar, /SidebarItemTooltip/);
   assert.match(tooltip, /createPortal/);
@@ -39,8 +45,9 @@ test("web and desktop share pinned compact state, footer actions and item toolti
   assert.match(globals, /\.voople-sidebar:is\(:hover, :focus-within\) \.voople-sidebar__collapse/);
   assert.doesNotMatch(globals, /data-collapsed="true"\]:is\(:hover, :focus-within\)[\s\S]{0,120}width: 216px/);
   assert.match(navigation, /href: "\/help"/);
-  assert.match(navigation, /href: "\/settings"/);
-  assert.match(navigation, /href: "\/login"/);
+  assert.doesNotMatch(navigation, /href: "\/settings"/);
+  assert.doesNotMatch(navigation, /href: "\/login"/);
+  assert.doesNotMatch(mobileTopBar, /href="\/explore"/);
   assert.doesNotMatch(desktopStyles, /\.voople-sidebar button \{[\s\S]{0,80}background: transparent/);
 });
 

@@ -8,7 +8,6 @@ import {
   PUBLIC_MOBILE_NAV_ITEMS,
   PUBLIC_NAV_ITEMS,
   PUBLIC_SIDEBAR_FOOTER_ITEMS,
-  SIDEBAR_FOOTER_ITEMS,
 } from "@/lib/constants/nav";
 import { cn } from "@/lib/utils";
 import { VoopleMark } from "@/components/brand/VoopleMark";
@@ -54,8 +53,7 @@ export function AppSidebarVisual({
   mode = "authenticated",
 }: AppSidebarVisualProps) {
   const navigationItems = mode === "public" ? PUBLIC_NAV_ITEMS : MAIN_NAV_ITEMS;
-  const footerItems =
-    mode === "public" ? PUBLIC_SIDEBAR_FOOTER_ITEMS : SIDEBAR_FOOTER_ITEMS;
+  const footerItems = mode === "public" ? PUBLIC_SIDEBAR_FOOTER_ITEMS : [];
 
   return (
     <aside
@@ -130,22 +128,13 @@ export function AppSidebarVisual({
             </SidebarItemTooltip>
           );
         })}
-        {accountNavigation ? (
-          <SidebarItemTooltip
-            label="Профиль"
-            enabled={collapsed}
-            className="voople-sidebar__item mt-0.5"
-          >
-            {accountNavigation}
-          </SidebarItemTooltip>
-        ) : null}
       </nav>
 
       {!collapsed ? navAfter : null}
 
       <div className="voople-sidebar__footer shrink-0 border-t border-[var(--app-border)] px-3 pb-7 pt-5">
         {footerItems.map(({ href, label, icon: Icon }) => {
-          const active = pathname.startsWith(href) && href !== "/login";
+          const active = pathname.startsWith(href);
           return (
             <SidebarItemTooltip
               key={href}
@@ -174,6 +163,15 @@ export function AppSidebarVisual({
           );
         })}
         {!collapsed ? footerAfter : null}
+        {accountNavigation ? (
+          <SidebarItemTooltip
+            label="Аккаунт"
+            enabled={collapsed}
+            className="voople-sidebar__item mt-1"
+          >
+            {accountNavigation}
+          </SidebarItemTooltip>
+        ) : null}
       </div>
     </aside>
   );

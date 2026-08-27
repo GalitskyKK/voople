@@ -1,0 +1,10 @@
+# Security-sensitive release and automation boundaries require maintainer review.
+/.github/ @GalitskyKK
+/.gitleaksignore @GalitskyKK
+/.env.example @GalitskyKK
+/desktop/.env.example @GalitskyKK
+/desktop/src-tauri/ @GalitskyKK
+/desktop/screen-share-worker/ @GalitskyKK
+/src/app/api/ @GalitskyKK
+/src/server/ @GalitskyKK
+/drizzle/ @GalitskyKK

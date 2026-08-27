@@ -99,3 +99,42 @@ test("a video-only RC makes Windows application audio mandatory next release wor
   assert.match(backlog, /следующий feature-релиз нельзя\s+продвигать в stable/);
   assert.match(backlog, /Автоматический или молчаливый перенос P0/);
 });
+
+test("public repository workflows pin actions and scope privileged credentials", () => {
+  const releaseWorkflow = read(".github/workflows/desktop-release.yml");
+  const smokeWorkflow = read(".github/workflows/e2e-smoke.yml");
+  const secretScanWorkflow = read(".github/workflows/secret-scan.yml");
+  const workflows = `${releaseWorkflow}\n${smokeWorkflow}\n${secretScanWorkflow}`;
+
+  assert.doesNotMatch(
+    workflows,
+    /uses:\s+[^\s#]+@(v\d+|stable|main|master)(?:\s|$)/,
+  );
+  assert.match(secretScanWorkflow, /fetch-depth:\s*0/);
+  assert.match(secretScanWorkflow, /gitleaks\/gitleaks-action@[0-9a-f]{40}/);
+
+  const windowsJobPreamble = releaseWorkflow.slice(
+    releaseWorkflow.indexOf("  windows:"),
+    releaseWorkflow.indexOf("    steps:"),
+  );
+  for (const privilegedName of [
+    "TAURI_SIGNING_PRIVATE_KEY",
+    "WINDOWS_CERTIFICATE_BASE64",
+    "DIRECT_URL",
+    "E2E_SUPABASE_SERVICE_ROLE_KEY",
+    "DESKTOP_RELEASE_S3_SECRET_ACCESS_KEY",
+  ]) {
+    assert.doesNotMatch(windowsJobPreamble, new RegExp(privilegedName));
+  }
+
+  assert.match(releaseWorkflow, /permissions:\s*\n\s+contents: read/);
+  assert.match(releaseWorkflow, /permissions:\s*\n\s+contents: write/);
+  assert.match(releaseWorkflow, /TAURI_SIGNING_PRIVATE_KEY:[^\n]*secrets\./);
+  assert.match(releaseWorkflow, /DIRECT_URL:[^\n]*secrets\./);
+
+  const smokeJobPreamble = smokeWorkflow.slice(
+    smokeWorkflow.indexOf("  production-smoke:"),
+    smokeWorkflow.indexOf("    steps:"),
+  );
+  assert.doesNotMatch(smokeJobPreamble, /secrets\./);
+});

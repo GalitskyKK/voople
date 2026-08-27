@@ -172,8 +172,10 @@ Right rail
 
 При отсутствии сохранённой настройки global sidebar изначально compact и на
 web, и на desktop. Expanded — осознанный закрепляемый режим, а не автоматическая
-награда за широкий viewport. Подписи compact rail доступны через tooltip,
-keyboard focus и временное overlay-раскрытие без постоянного сдвига main content.
+награда за широкий viewport. Hover по rail показывает только control
+expand/collapse, а подпись конкретного compact-раздела доступна через tooltip по
+hover/focus. Полное раскрытие происходит только по клику, сохраняется и не
+сбрасывается после ухода курсора.
 
 ---
 
@@ -1425,8 +1427,9 @@ invites → activated users
     global rail (~68–76 px) по умолчанию и сохраняет ручной pinned-expanded
     режим. Hover по rail показывает только кнопку expand/collapse; hover/focus
     конкретного раздела показывает tooltip. Клик закрепляет expanded, а уход
-    курсора не меняет состояние. Settings/Help/Logout остаются отдельными
-    нижними действиями; кнопка collapse видна при hover/focus.
+    курсора не меняет состояние. Settings/Help/Logout находятся в общем account
+    menu у закреплённого внизу rail account trigger и не дублируются отдельными
+    пунктами; кнопка collapse видна при hover/focus.
     Для Messaging закрепить бюджет `rail 68–76 | Chat List 280–320 | fluid
     Conversation`; Members/Info остаются overlay drawers. Right rail появляется
     только при сохранении рабочей ширины main content, а не потому, что формально
@@ -1437,7 +1440,18 @@ invites → activated users
     fullscreen, Windows scale 125/150%, expanded/compact/temporary-overlay,
     keyboard/tooltips и отсутствие horizontal overflow. Отдельно измерять долю
     viewport, доступную feed/conversation, и не допускать регрессии после drawers,
-    call dock или right rail.
+    call dock или right rail. Mobile topbar не дублирует primary destinations из
+    bottom navigation: в частности, Search имеет одну навигационную точку.
+
+45. Shared icon controls and tooltips: провести инвентаризацию повторяющихся
+    действий в чатах, Room, headers, composers и media controls. Убирать видимую
+    подпись только у общеупотребимых действий, когда иконка остаётся однозначной
+    в контексте; destructive/редкие/неоднозначные действия сохраняют текст или
+    явное подтверждение. Все icon-only controls используют общий tooltip по
+    hover и keyboard focus, стабильный `aria-label`, видимый focus ring и не
+    меняют geometry при появлении подсказки. Web и desktop используют один
+    primitive и один словарь названий; проверить keyboard, touch alternative,
+    reduced motion и screen reader output.
 
 ---
 

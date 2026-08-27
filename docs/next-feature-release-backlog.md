@@ -86,14 +86,21 @@
 - [x] A0 Shell useful-space implementation: compact global rail стал default
   без сохранённого preference, pinned expanded сохраняется, а hover/focus по
   rail показывает только collapse control. Подписи compact-разделов доступны
-  через tooltip; Settings/Help/Logout сохранены отдельными нижними действиями.
+  через tooltip; Profile/Settings/Help/Logout собраны в единое account menu у
+  нижнего account trigger и не дублируются в основном rail; Search не
+  дублируется одновременно в mobile topbar и bottom navigation.
   Web/Tauri используют один state hook и presentation View; Chat List ограничен
   диапазоном 280–320 px, а Home right rail управляется доступной шириной
   контейнера. Unit/contract 109/109, architecture, lint, web/desktop TypeScript и
   обе production-сборки проходят.
-- Остаётся ручной visual/interaction RC gate A0: 1024×720, 1280×800, 1440×900,
-  fullscreen, Windows scale 125/150%, dark/light, keyboard/tooltip и отсутствие
-  horizontal overflow. Не считать весь Board 1 закрытым до этих evidence.
+- Public responsive smoke gate закрывает 360×800, 390×844, 1024×720, 1280×800
+  и 1440×900 без horizontal overflow. Остаётся authenticated visual/interaction
+  RC gate: fullscreen, Windows scale 125/150%, dark/light, keyboard/account menu
+  и screen-reader evidence. Не считать весь Board 1 закрытым до этих evidence.
+- [ ] Shared icon controls/tooltips: отдельным срезом инвентаризировать Room,
+  chat headers/composers и media controls; убрать подписи только у однозначных
+  действий, сохранив `aria-label`, keyboard focus, touch alternative и общий
+  web/desktop tooltip primitive.
 - Системные Room-события остаются тихими элементами timeline беседы и дневными
   summary, но не подменяют последнее пользовательское сообщение в списке
   диалогов.

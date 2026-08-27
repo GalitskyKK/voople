@@ -83,15 +83,17 @@
 
 ## Открытые UX-итерации после presentation migration
 
-- Кнопку сворачивания основного navbar показывать при hover/focus-within;
-  клавиатурный focus и доступное имя должны оставаться видимыми всегда.
-- Закрыть A0 Shell useful-space slice: compact global rail становится default
-  без сохранённого preference, pinned expanded сохраняется, временное раскрытие
-  не делает relayout. Ограничить Chat List диапазоном 280–320 px, отдавать
-  оставшуюся ширину Conversation/feed, подключать right rail только при
-  достаточном main content. Один shared state machine/View для web/desktop;
-  visual/interaction gate 1024×720, 1280×800, 1440×900, fullscreen и Windows
-  scale 125/150%.
+- [x] A0 Shell useful-space implementation: compact global rail стал default
+  без сохранённого preference, pinned expanded сохраняется, а hover/focus по
+  rail показывает только collapse control. Подписи compact-разделов доступны
+  через tooltip; Settings/Help/Logout сохранены отдельными нижними действиями.
+  Web/Tauri используют один state hook и presentation View; Chat List ограничен
+  диапазоном 280–320 px, а Home right rail управляется доступной шириной
+  контейнера. Unit/contract 109/109, architecture, lint, web/desktop TypeScript и
+  обе production-сборки проходят.
+- Остаётся ручной visual/interaction RC gate A0: 1024×720, 1280×800, 1440×900,
+  fullscreen, Windows scale 125/150%, dark/light, keyboard/tooltip и отсутствие
+  horizontal overflow. Не считать весь Board 1 закрытым до этих evidence.
 - Системные Room-события остаются тихими элементами timeline беседы и дневными
   summary, но не подменяют последнее пользовательское сообщение в списке
   диалогов.

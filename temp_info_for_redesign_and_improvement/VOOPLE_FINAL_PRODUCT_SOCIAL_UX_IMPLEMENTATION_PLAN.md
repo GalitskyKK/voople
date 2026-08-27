@@ -1422,9 +1422,11 @@ invites → activated users
 ## A0 — cross-platform shell architecture
 
 44. Shell useful-space and density: общий web/desktop shell использует compact
-    global rail (~68–76 px) по умолчанию, сохраняет ручной pinned-expanded режим
-    и может временно раскрывать подписи поверх content. Settings/Help/Logout
-    уходят в account menu согласно IA; кнопка collapse видна при hover/focus.
+    global rail (~68–76 px) по умолчанию и сохраняет ручной pinned-expanded
+    режим. Hover по rail показывает только кнопку expand/collapse; hover/focus
+    конкретного раздела показывает tooltip. Клик закрепляет expanded, а уход
+    курсора не меняет состояние. Settings/Help/Logout остаются отдельными
+    нижними действиями; кнопка collapse видна при hover/focus.
     Для Messaging закрепить бюджет `rail 68–76 | Chat List 280–320 | fluid
     Conversation`; Members/Info остаются overlay drawers. Right rail появляется
     только при сохранении рабочей ширины main content, а не потому, что формально

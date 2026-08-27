@@ -355,7 +355,6 @@ button:focus-visible, input:focus-visible {
 
 .voople-sidebar button {
   border: 0;
-  background: transparent;
 }
 
 .voople-sidebar__nav button[aria-current="page"],

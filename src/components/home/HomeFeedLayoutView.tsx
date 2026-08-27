@@ -12,14 +12,16 @@ export function HomeFeedLayoutView({
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "voople-feed-page grid min-w-0 gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(17rem,0.85fr)]",
-        className,
-      )}
-    >
-      <div className="min-w-0">{primary}</div>
-      {secondary}
+    <div className="voople-feed-page-container min-w-0">
+      <div
+        className={cn(
+          "voople-feed-page grid min-w-0 gap-5",
+          className,
+        )}
+      >
+        <div className="min-w-0">{primary}</div>
+        {secondary}
+      </div>
     </div>
   );
 }

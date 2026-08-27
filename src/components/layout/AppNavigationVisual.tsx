@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 import { COPY } from "@/lib/constants/copy";
@@ -12,6 +12,7 @@ import {
 } from "@/lib/constants/nav";
 import { cn } from "@/lib/utils";
 import { VoopleMark } from "@/components/brand/VoopleMark";
+import { SidebarItemTooltip } from "./SidebarItemTooltip";
 
 export type NavigationDestinationRenderProps = {
   href: string;
@@ -48,7 +49,7 @@ export function AppSidebarVisual({
   accountNavigation,
   navAfter,
   footerAfter,
-  collapsed = false,
+  collapsed = true,
   onCollapsedChange,
   mode = "authenticated",
 }: AppSidebarVisualProps) {
@@ -60,7 +61,7 @@ export function AppSidebarVisual({
     <aside
       data-nosnippet
       data-collapsed={collapsed ? "true" : "false"}
-      className="voople-sidebar fixed left-0 top-0 hidden h-full w-[var(--voople-sidebar-width)] shrink-0 flex-col lg:flex"
+      className="voople-sidebar fixed left-0 top-0 hidden h-full shrink-0 flex-col lg:flex"
     >
       <div className="voople-sidebar__brand flex shrink-0 items-center justify-between gap-2 px-4 pb-7 pt-7">
         {renderDestination({
@@ -75,7 +76,7 @@ export function AppSidebarVisual({
           <button
             type="button"
             onClick={() => onCollapsedChange(!collapsed)}
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
+            className="voople-sidebar__collapse grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
             aria-label={collapsed ? "Развернуть боковую панель" : "Свернуть боковую панель"}
             title={collapsed ? "Развернуть" : "Свернуть"}
           >
@@ -85,19 +86,24 @@ export function AppSidebarVisual({
       </div>
 
       <nav
-        className="voople-sidebar__nav voople-scroll flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3"
+        className="voople-sidebar__nav voople-scroll flex min-h-0 flex-1 flex-col gap-0.5 overflow-x-hidden overflow-y-auto px-3"
         aria-label="Основная навигация"
       >
         {navigationItems.map(({ href, label, icon: Icon, match }) => {
           const active = match(pathname);
           return (
-            <Fragment key={href}>
+            <SidebarItemTooltip
+              key={href}
+              label={label}
+              enabled={collapsed}
+              className="voople-sidebar__item"
+            >
               {renderDestination({
                 href,
                 label,
                 active,
                 className: cn(
-                  "voople-sidebar__link relative flex items-center gap-3 rounded-[var(--app-radius-lg)] px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                  "voople-sidebar__link relative flex w-full items-center gap-3 rounded-[var(--app-radius-lg)] px-3 py-2.5 text-left text-sm font-medium transition-all duration-200",
                   active
                     ? "bg-[var(--app-accent-soft)] text-[var(--foreground)]"
                     : "text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[color-mix(in_srgb,var(--foreground)_88%,transparent)]",
@@ -121,10 +127,18 @@ export function AppSidebarVisual({
                   </>
                 ),
               })}
-            </Fragment>
+            </SidebarItemTooltip>
           );
         })}
-        {accountNavigation ? <div className="mt-0.5">{accountNavigation}</div> : null}
+        {accountNavigation ? (
+          <SidebarItemTooltip
+            label="Профиль"
+            enabled={collapsed}
+            className="voople-sidebar__item mt-0.5"
+          >
+            {accountNavigation}
+          </SidebarItemTooltip>
+        ) : null}
       </nav>
 
       {!collapsed ? navAfter : null}
@@ -133,7 +147,12 @@ export function AppSidebarVisual({
         {footerItems.map(({ href, label, icon: Icon }) => {
           const active = pathname.startsWith(href) && href !== "/login";
           return (
-            <Fragment key={href}>
+            <SidebarItemTooltip
+              key={href}
+              label={label}
+              enabled={collapsed}
+              className="voople-sidebar__item"
+            >
               {renderDestination({
                 href,
                 label,
@@ -151,7 +170,7 @@ export function AppSidebarVisual({
                   </>
                 ),
               })}
-            </Fragment>
+            </SidebarItemTooltip>
           );
         })}
         {!collapsed ? footerAfter : null}

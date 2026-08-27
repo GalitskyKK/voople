@@ -2,40 +2,71 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 
-const STORAGE_KEY = "voople:sidebar-collapsed:v1";
-const PREFERENCE_EVENT = "voople:sidebar-preference";
+import {
+  COMPACT_SIDEBAR_WIDTH,
+  EXPANDED_SIDEBAR_WIDTH,
+  resolveSidebarCollapsed,
+  SIDEBAR_PREFERENCE_EVENT,
+  SIDEBAR_PREFERENCE_STORAGE_KEY,
+} from "@/lib/layout/sidebar-preference";
+
+let inMemoryCollapsed = true;
 
 function getCollapsedSnapshot() {
-  return window.localStorage.getItem(STORAGE_KEY) === "true";
+  try {
+    const storedValue = window.localStorage.getItem(
+      SIDEBAR_PREFERENCE_STORAGE_KEY,
+    );
+    return storedValue === null
+      ? inMemoryCollapsed
+      : resolveSidebarCollapsed(storedValue);
+  } catch {
+    return inMemoryCollapsed;
+  }
 }
 
 function getServerSnapshot() {
-  return false;
+  return true;
 }
 
 function subscribe(onChange: () => void) {
   const onStorage = (event: StorageEvent) => {
-    if (event.key === STORAGE_KEY) onChange();
+    if (event.key === SIDEBAR_PREFERENCE_STORAGE_KEY) onChange();
   };
   window.addEventListener("storage", onStorage);
-  window.addEventListener(PREFERENCE_EVENT, onChange);
+  window.addEventListener(SIDEBAR_PREFERENCE_EVENT, onChange);
   return () => {
     window.removeEventListener("storage", onStorage);
-    window.removeEventListener(PREFERENCE_EVENT, onChange);
+    window.removeEventListener(SIDEBAR_PREFERENCE_EVENT, onChange);
   };
 }
 
-export function useSidebarPreference() {
-  const collapsed = useSyncExternalStore(subscribe, getCollapsedSnapshot, getServerSnapshot);
+export function useSidebarPreference({
+  forceExpanded = false,
+}: { forceExpanded?: boolean } = {}) {
+  const preferredCollapsed = useSyncExternalStore(
+    subscribe,
+    getCollapsedSnapshot,
+    getServerSnapshot,
+  );
+  const collapsed = forceExpanded ? false : preferredCollapsed;
   const setCollapsed = useCallback((value: boolean) => {
-    window.localStorage.setItem(STORAGE_KEY, String(value));
-    window.dispatchEvent(new Event(PREFERENCE_EVENT));
+    inMemoryCollapsed = value;
+    try {
+      window.localStorage.setItem(
+        SIDEBAR_PREFERENCE_STORAGE_KEY,
+        String(value),
+      );
+    } catch {
+      // The in-memory preference still keeps both mounted shells in sync.
+    }
+    window.dispatchEvent(new Event(SIDEBAR_PREFERENCE_EVENT));
   }, []);
 
   useEffect(() => {
     document.documentElement.style.setProperty(
       "--voople-sidebar-width",
-      collapsed ? "72px" : "216px",
+      collapsed ? COMPACT_SIDEBAR_WIDTH : EXPANDED_SIDEBAR_WIDTH,
     );
     document.documentElement.dataset.sidebarCollapsed = collapsed ? "true" : "false";
   }, [collapsed]);

@@ -17,7 +17,9 @@ test("web and desktop home use one responsive feed layout", () => {
 
   assert.match(web, /HomeFeedLayoutView/);
   assert.match(desktop, /HomeFeedLayoutView/);
-  assert.match(layout, /xl:grid-cols-\[minmax\(0,2fr\)_minmax\(17rem,0\.85fr\)\]/);
+  assert.match(layout, /voople-feed-page-container/);
+  assert.match(layout, /voople-feed-page grid/);
+  assert.match(view, /voople-home-secondary-rail/);
   assert.doesNotMatch(desktop, /xl:grid-cols/);
   assert.match(webController, /chat\.openDirect/);
   assert.match(desktop, /chat\.openDirect/);

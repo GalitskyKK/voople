@@ -2,6 +2,8 @@
 
 - [Обязательный backlog следующего feature-релиза](./next-feature-release-backlog.md)
 - [Readiness текущего стабилизационного релиза](./current-stabilization-release-readiness.md)
+- [Стратегия open source, лицензирования и governance](./open-source-strategy.md)
+- [План Linux, macOS, Android и iOS](./platform-roadmap.md)
 
 | Файл | Описание |
 |------|----------|

@@ -1,7 +1,5 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
-
 const BG = "#0C0C11";
 const ACCENT = "#8B7EC8";
 const MAX_TITLE = 60;

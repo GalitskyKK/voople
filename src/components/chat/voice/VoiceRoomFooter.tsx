@@ -3,6 +3,7 @@
 import { Headphones, Loader2, PhoneOff, Volume2 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
 
 import type {
   VoiceRoomAccessModel,
@@ -68,16 +69,14 @@ export function VoiceRoomFooter({
           onCameraToggle={controls.onCameraToggle}
         />
         {session.inside && connected ? (
-          <button
-            type="button"
+          <IconButton
+            label="Выйти из комнаты"
             disabled={session.leavePending}
             onClick={() => void session.onLeave()}
             className="grid h-11 w-11 place-items-center rounded-xl bg-red-500 text-white transition hover:bg-red-400 disabled:opacity-45"
-            aria-label="Выйти из комнаты"
-            title="Выйти"
           >
             <PhoneOff className="h-5 w-5" />
-          </button>
+          </IconButton>
         ) : (
           <Button type="button" disabled={session.connectDisabled} onClick={() => void session.onConnect()}>
             {session.connectPending ? (

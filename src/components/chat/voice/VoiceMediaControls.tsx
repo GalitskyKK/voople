@@ -2,6 +2,7 @@
 
 import { Camera, CameraOff, Loader2, Mic, MicOff, MonitorUp, Volume2, VolumeX } from "lucide-react";
 
+import { IconButton } from "@/components/ui/IconButton";
 import { cn } from "@/lib/utils";
 import type { MediaStatus } from "./voice-room-config";
 
@@ -22,7 +23,7 @@ type VoiceMediaControlsProps = {
 };
 
 const controlClass =
-  "flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-3 text-center text-xs font-medium transition disabled:opacity-45";
+  "flex min-h-16 w-full flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-3 text-center text-xs font-medium transition disabled:opacity-45";
 
 export function VoiceMediaControls({
   mediaStatus,
@@ -46,8 +47,9 @@ export function VoiceMediaControls({
 
   return (
     <div className={compact ? "flex flex-wrap items-center justify-center gap-2" : "mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4"}>
-      <button
-        type="button"
+      <IconButton
+        label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
+        tooltipClassName={compact ? "shrink-0" : "h-full w-full"}
         disabled={mediaActionPending}
         onClick={() => void onMicToggle()}
         className={cn(
@@ -56,7 +58,6 @@ export function VoiceMediaControls({
             ? "border-red-500/25 bg-red-500/10"
             : "border-[var(--theme-accent)] bg-[var(--theme-accent)] text-white shadow-[0_0_0_4px_color-mix(in_srgb,var(--theme-accent)_14%,transparent)] hover:brightness-110",
         )}
-        aria-label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
       >
         {mediaActionPending ? (
           <Loader2 className="h-5 w-5 animate-spin" />
@@ -66,10 +67,11 @@ export function VoiceMediaControls({
           <Mic className="h-5 w-5" />
         )}
         <span className={compact ? "sr-only" : undefined}>Микрофон</span>
-      </button>
+      </IconButton>
 
-      <button
-        type="button"
+      <IconButton
+        label={outputMuted ? "Включить звук собеседников" : "Выключить звук собеседников"}
+        tooltipClassName={compact ? "shrink-0" : "h-full w-full"}
         disabled={!connected}
         onClick={onOutputToggle}
         className={cn(
@@ -78,14 +80,14 @@ export function VoiceMediaControls({
             ? "border-red-500/25 bg-red-500/10"
             : "border-[var(--app-border)] bg-[var(--app-surface-soft)]",
         )}
-        aria-label={outputMuted ? "Включить звук собеседников" : "Выключить звук собеседников"}
       >
         {outputMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
         <span className={compact ? "sr-only" : undefined}>{outputMuted ? "Без звука" : "Звук"}</span>
-      </button>
+      </IconButton>
 
-      <button
-        type="button"
+      <IconButton
+        label={cameraEnabled ? "Выключить камеру" : "Включить камеру"}
+        tooltipClassName={compact ? "shrink-0" : "h-full w-full"}
         disabled={!connected || cameraPending}
         onClick={() => void onCameraToggle()}
         className={cn(
@@ -94,7 +96,6 @@ export function VoiceMediaControls({
             ? "border-[var(--theme-accent)] bg-[var(--theme-accent)] text-white"
             : "border-[var(--app-border)] bg-[var(--app-surface-soft)]",
         )}
-        aria-label={cameraEnabled ? "Выключить камеру" : "Включить камеру"}
       >
         {cameraPending ? (
           <Loader2 className="h-5 w-5 animate-spin" />
@@ -104,10 +105,11 @@ export function VoiceMediaControls({
           <Camera className="h-5 w-5" />
         )}
         <span className={compact ? "sr-only" : undefined}>{cameraEnabled ? "Выключить" : "Камера"}</span>
-      </button>
+      </IconButton>
 
-      <button
-        type="button"
+      <IconButton
+        label={screenSharing ? "Остановить демонстрацию" : "Показать экран"}
+        tooltipClassName={compact ? "shrink-0" : "h-full w-full"}
         disabled={!connected || screenSharePending}
         onClick={() => void onScreenShareToggle()}
         className={cn(
@@ -116,7 +118,6 @@ export function VoiceMediaControls({
             ? "border-[var(--theme-accent)] bg-[var(--theme-accent)] text-white"
             : "border-[var(--app-border)] bg-[var(--app-surface-soft)]",
         )}
-        aria-label={screenSharing ? "Остановить демонстрацию" : "Показать экран"}
       >
         {screenSharePending ? (
           <Loader2 className="h-5 w-5 animate-spin" />
@@ -124,7 +125,7 @@ export function VoiceMediaControls({
           <MonitorUp className="h-5 w-5" />
         )}
         <span className={compact ? "sr-only" : undefined}>{screenSharing ? "Остановить" : "Экран"}</span>
-      </button>
+      </IconButton>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useMemo, useState, type ReactNode } from "react";
 
 import { RichText } from "@/components/ui/RichText";
 import { Sheet } from "@/components/ui/Sheet";
+import { IconButton } from "@/components/ui/IconButton";
 import { cn } from "@/lib/utils";
 import type { ChatGroupMemberView } from "@/types/chat";
 
@@ -94,12 +95,12 @@ export function GroupInfoDrawerView({
       <button type="button" onClick={() => show("info")} className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left transition hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]" aria-label={`Информация о группе ${chatName}`}>
         <GroupIdentity chatName={chatName} memberCount={memberCount} groupIcon={groupIcon} groupAvatarUrl={groupAvatarUrl} groupAccentColor={groupAccentColor} groupTag={groupTag} />
       </button>
-      <button type="button" onClick={() => show("members")} className="hidden h-9 w-9 items-center justify-center rounded-xl text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)] sm:inline-flex" aria-label="Участники группы" title="Участники">
+      <IconButton label="Участники группы" onClick={() => show("members")} tooltipClassName="hidden sm:inline-flex" className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]">
         <UsersRound className="h-4 w-4" />
-      </button>
-      <button type="button" onClick={() => show("info")} className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]" aria-label="Информация о группе" title="Информация">
+      </IconButton>
+      <IconButton label="Информация о группе" onClick={() => show("info")} className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]">
         <Info className="h-4 w-4" />
-      </button>
+      </IconButton>
 
       <Sheet open={open} onClose={() => onOpenChange(false)} placement="right" ariaLabel={`Информация о группе ${chatName}`}>
         <div className="-mx-5 -mt-5">

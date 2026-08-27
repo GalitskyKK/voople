@@ -4,6 +4,8 @@ import { LoaderCircle, Send, Smile } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { useAutosizeTextarea } from "@/hooks/useAutosizeTextarea";
 import { getChatClipboardFile } from "@/lib/chat/clipboard";
 import { cn } from "@/lib/utils";
@@ -108,9 +110,9 @@ export function ChatComposerInputView({
       />
 
       <div className="relative">
-        <button type="button" className={cn(CHAT_COMPOSER_ICON_BUTTON_CLASS, emojiOpen && "bg-[var(--app-surface-soft)] text-[var(--foreground)]")} onClick={() => setEmojiOpen((current) => !current)} aria-label="Эмодзи" aria-expanded={emojiOpen}>
+        <IconButton label="Эмодзи" className={cn(CHAT_COMPOSER_ICON_BUTTON_CLASS, emojiOpen && "bg-[var(--app-surface-soft)] text-[var(--foreground)]")} onClick={() => setEmojiOpen((current) => !current)} aria-expanded={emojiOpen}>
           <Smile className="h-5 w-5" />
-        </button>
+        </IconButton>
         <ChatEmojiPicker open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={(emoji) => onTextChange(`${text}${emoji}`.slice(0, 1000))} customEmojis={customEmojis} className="absolute bottom-12 right-0 z-30 w-72" />
       </div>
 
@@ -118,9 +120,11 @@ export function ChatComposerInputView({
         <ChatVoiceRecorder disabled={disabled || sending || busy} onRecorded={onVoiceRecorded} onError={onError} />
       ) : null}
 
-      <Button type="submit" variant="primary" className="shrink-0 px-3" disabled={!canSend} aria-label="Отправить сообщение">
-        {sending ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-      </Button>
+      <Tooltip label={sending ? "Отправляем сообщение" : "Отправить сообщение"}>
+        <Button type="submit" variant="primary" className="shrink-0 px-3" disabled={!canSend} aria-label="Отправить сообщение">
+          {sending ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+        </Button>
+      </Tooltip>
     </>
   );
 }

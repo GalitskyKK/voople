@@ -11,6 +11,7 @@ import {
 } from "@/lib/constants/nav";
 import { cn } from "@/lib/utils";
 import { VoopleMark } from "@/components/brand/VoopleMark";
+import { IconButton } from "@/components/ui/IconButton";
 import { SidebarItemTooltip } from "./SidebarItemTooltip";
 
 export type NavigationDestinationRenderProps = {
@@ -71,15 +72,14 @@ export function AppSidebarVisual({
           children: <><VoopleMark className="h-8 w-8" /><span className="voople-sidebar__label">{COPY.appName}</span></>,
         })}
         {onCollapsedChange ? (
-          <button
-            type="button"
+          <IconButton
+            label={collapsed ? "Развернуть боковую панель" : "Свернуть боковую панель"}
+            tooltipSide="right"
             onClick={() => onCollapsedChange(!collapsed)}
             className="voople-sidebar__collapse grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
-            aria-label={collapsed ? "Развернуть боковую панель" : "Свернуть боковую панель"}
-            title={collapsed ? "Развернуть" : "Свернуть"}
           >
             {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </button>
+          </IconButton>
         ) : null}
       </div>
 

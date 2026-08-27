@@ -26,6 +26,7 @@ test("web and desktop share pinned compact state, account menu and item tooltips
   const accountMenu = read("src/components/layout/AccountMenuVisual.tsx");
   const mobileTopBar = read("src/components/layout/AppTopBar.tsx");
   const tooltip = read("src/components/layout/SidebarItemTooltip.tsx");
+  const tooltipPrimitive = read("src/components/ui/Tooltip.tsx");
   const navigation = read("src/lib/constants/nav.ts");
   const globals = read("src/app/globals.css");
   const desktopStyles = read("desktop/src/styles.css");
@@ -40,8 +41,9 @@ test("web and desktop share pinned compact state, account menu and item tooltips
   assert.match(accountMenu, /onLogout/);
   assert.match(sidebar, /collapsed = true/);
   assert.match(sidebar, /SidebarItemTooltip/);
-  assert.match(tooltip, /createPortal/);
-  assert.match(tooltip, /role="tooltip"/);
+  assert.match(tooltip, /components\/ui\/Tooltip/);
+  assert.match(tooltipPrimitive, /createPortal/);
+  assert.match(tooltipPrimitive, /role="tooltip"/);
   assert.match(globals, /\.voople-sidebar:is\(:hover, :focus-within\) \.voople-sidebar__collapse/);
   assert.doesNotMatch(globals, /data-collapsed="true"\]:is\(:hover, :focus-within\)[\s\S]{0,120}width: 216px/);
   assert.match(navigation, /href: "\/help"/);

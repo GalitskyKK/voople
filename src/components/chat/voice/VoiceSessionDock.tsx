@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { ConnectionQuality } from "livekit-client";
 
+import { IconButton } from "@/components/ui/IconButton";
 import { cn } from "@/lib/utils";
 import { reportProductEvent } from "@/lib/telemetry/client";
 import type { MediaStatus } from "./voice-room-config";
@@ -84,19 +85,17 @@ export function VoiceSessionDock({
 
   if (mode === "minimal") {
     return (
-      <button
-        type="button"
+      <IconButton
+        label={`Развернуть разговор ${chatName}${durationLabel ? ` · ${durationLabel}` : ""}`}
         onClick={() => changeMode("compact")}
         className={cn(
           "fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] right-3 z-[70] grid h-12 w-12 place-items-center rounded-full border bg-[var(--app-surface)] shadow-[var(--app-shadow-nav)] transition hover:scale-105 lg:bottom-4",
           mediaStatus === "connected" ? "border-emerald-500/40 text-emerald-500" : "border-amber-500/40 text-amber-500",
         )}
-        aria-label={`Развернуть разговор ${chatName}`}
-        title={`${chatName}${durationLabel ? ` · ${durationLabel}` : ""}`}
       >
         {weakConnection ? <WifiOff className="h-5 w-5" /> : micMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
         <span className="absolute right-0 top-0 h-3 w-3 rounded-full border-2 border-[var(--app-surface)] bg-emerald-500" />
-      </button>
+      </IconButton>
     );
   }
 
@@ -107,10 +106,10 @@ export function VoiceSessionDock({
           <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", mediaStatus === "connected" ? "bg-emerald-500" : "bg-amber-500")} />
           <span className="min-w-0"><span className="block truncate text-xs font-semibold">{chatName}</span><span className="block text-[10px] text-[var(--app-muted)]">{participantCount} · {durationLabel ?? connectionLabel ?? "Подключаем…"}</span></span>
         </button>
-        <button type="button" onClick={onToggleMic} disabled={mediaActionPending || mediaStatus !== "connected"} className={cn("grid h-9 w-9 place-items-center rounded-full", micMuted ? "bg-red-500/10 text-red-500" : "bg-[var(--theme-accent)] text-white")} aria-label={micMuted ? "Включить микрофон" : "Выключить микрофон"}>{micMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}</button>
-        <button type="button" onClick={() => changeMode("mini")} className="grid h-9 w-9 place-items-center rounded-xl text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)]" aria-label="Развернуть мини-комнату"><ChevronUp className="h-4 w-4" /></button>
-        <button type="button" onClick={() => changeMode("minimal")} className="grid h-9 w-9 place-items-center rounded-xl text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)]" aria-label="Свернуть до индикатора"><ChevronDown className="h-4 w-4" /></button>
-        <button type="button" disabled={leavePending} onClick={onLeave} className="grid h-9 w-9 place-items-center rounded-xl bg-red-500 text-white disabled:opacity-50" aria-label="Выйти из разговора"><PhoneOff className="h-4 w-4" /></button>
+        <IconButton label={micMuted ? "Включить микрофон" : "Выключить микрофон"} onClick={onToggleMic} disabled={mediaActionPending || mediaStatus !== "connected"} className={cn("grid h-9 w-9 place-items-center rounded-full", micMuted ? "bg-red-500/10 text-red-500" : "bg-[var(--theme-accent)] text-white")}>{micMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}</IconButton>
+        <IconButton label="Развернуть мини-комнату" onClick={() => changeMode("mini")} className="grid h-9 w-9 place-items-center rounded-xl text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)]"><ChevronUp className="h-4 w-4" /></IconButton>
+        <IconButton label="Свернуть до индикатора" onClick={() => changeMode("minimal")} className="grid h-9 w-9 place-items-center rounded-xl text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)]"><ChevronDown className="h-4 w-4" /></IconButton>
+        <IconButton label="Выйти из разговора" disabled={leavePending} onClick={onLeave} className="grid h-9 w-9 place-items-center rounded-xl bg-red-500 text-white disabled:opacity-50"><PhoneOff className="h-4 w-4" /></IconButton>
       </div>
     );
   }
@@ -127,11 +126,9 @@ export function VoiceSessionDock({
     >
       {mediaPreview}
       <div className="flex w-full items-center gap-2">
-        <button
-          type="button"
+        <IconButton
+          label="Переместить окно разговора"
           className="grid h-10 w-5 shrink-0 touch-none cursor-grab place-items-center rounded-lg text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] active:cursor-grabbing"
-          aria-label="Переместить окно разговора"
-          title="Перетащите окно разговора"
           onDoubleClick={geometry.resetPosition}
           onPointerDown={geometry.startMove}
           onPointerMove={geometry.updateGesture}
@@ -139,16 +136,14 @@ export function VoiceSessionDock({
           onPointerCancel={geometry.cancelGesture}
         >
           <GripVertical className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
+        </IconButton>
+        <IconButton
+          label="Компактный режим"
           onClick={() => changeMode("compact")}
           className="grid h-10 w-8 shrink-0 place-items-center rounded-lg text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)]"
-          aria-label="Свернуть разговор"
-          title="Компактный режим"
         >
           <ChevronDown className="h-4 w-4" />
-        </button>
+        </IconButton>
         <button
         type="button"
         onClick={onOpen}
@@ -174,8 +169,8 @@ export function VoiceSessionDock({
         </span>
       </button>
 
-      <button
-        type="button"
+      <IconButton
+        label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
         disabled={mediaActionPending || mediaStatus !== "connected"}
         onClick={onToggleMic}
         className={cn(
@@ -184,12 +179,11 @@ export function VoiceSessionDock({
             ? "border-red-500/25 bg-red-500/10 text-red-500"
             : "border-[var(--theme-accent)] bg-[var(--theme-accent)] text-white",
         )}
-        aria-label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
       >
         {micMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-      </button>
-      <button
-        type="button"
+      </IconButton>
+      <IconButton
+        label={outputMuted ? "Включить звук собеседников" : "Выключить звук собеседников"}
         onClick={onToggleOutput}
         className={cn(
           "grid h-10 w-10 shrink-0 place-items-center rounded-xl border transition",
@@ -197,40 +191,35 @@ export function VoiceSessionDock({
             ? "border-red-500/25 bg-red-500/10 text-red-500"
             : "border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-muted)]",
         )}
-        aria-label={outputMuted ? "Включить звук собеседников" : "Выключить звук собеседников"}
       >
         {outputMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-      </button>
-      <button
-        type="button"
+      </IconButton>
+      <IconButton
+        label="Участники и настройки"
         onClick={onOpen}
         className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-muted)] transition hover:text-[var(--foreground)]"
-        aria-label="Участники и настройки"
       >
         <Settings2 className="h-4 w-4" />
-      </button>
-      <button
-        type="button"
+      </IconButton>
+      <IconButton
+        label="Выйти из разговора"
         disabled={leavePending}
         onClick={onLeave}
         className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-red-500 text-white transition hover:bg-red-400 disabled:opacity-50"
-        aria-label="Выйти из разговора"
       >
         <PhoneOff className="h-4 w-4" />
-      </button>
+      </IconButton>
       </div>
-      <button
-        type="button"
+      <IconButton
+        label="Изменить размер окна разговора"
         className="absolute bottom-1 right-1 z-10 grid h-6 w-6 touch-none cursor-nwse-resize place-items-center rounded-md text-[var(--app-muted)] opacity-45 transition hover:bg-[var(--app-surface-soft)] hover:opacity-100"
-        aria-label="Изменить размер окна разговора"
-        title="Потяните, чтобы изменить размер"
         onPointerDown={geometry.startResize}
         onPointerMove={geometry.updateGesture}
         onPointerUp={geometry.endGesture}
         onPointerCancel={geometry.cancelGesture}
       >
         <Scaling className="h-3.5 w-3.5" />
-      </button>
+      </IconButton>
     </div>
   );
 }

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { ConnectionQuality } from "livekit-client";
 
+import { IconButton } from "@/components/ui/IconButton";
 import { getQualityLabel } from "./voice-room-config";
 import type {
   VoiceRoomAccessModel,
@@ -131,15 +132,13 @@ function HeaderButton({
   children: ReactNode;
 }) {
   return (
-    <button
-      type="button"
+    <IconButton
+      label={label}
       disabled={disabled}
       onClick={onClick}
       className="grid h-9 w-9 place-items-center rounded-xl text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] disabled:cursor-wait disabled:opacity-45"
-      aria-label={label}
-      title={label}
     >
       {children}
-    </button>
+    </IconButton>
   );
 }

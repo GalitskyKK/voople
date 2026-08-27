@@ -1654,14 +1654,21 @@ button.voople-post-action:active {
 }
 
 .voople-sidebar__item {
+  display: flex;
+  width: 100%;
   min-width: 0;
 }
 
-.voople-sidebar-tooltip {
+.voople-tooltip-anchor {
+  display: inline-flex;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.voople-tooltip {
   position: fixed;
   z-index: 120;
-  max-width: 10rem;
-  transform: translateY(-50%);
+  max-width: min(18rem, calc(100vw - 1rem));
   pointer-events: none;
   border: 1px solid var(--app-border);
   border-radius: 0.5rem;
@@ -1672,19 +1679,41 @@ button.voople-post-action:active {
   font-size: 0.75rem;
   font-weight: 600;
   line-height: 1rem;
-  white-space: nowrap;
-  animation: voople-sidebar-tooltip-in 120ms var(--voople-ease-out) both;
-  animation-delay: 180ms;
+  text-align: center;
+  text-wrap: balance;
+  animation: voople-tooltip-in 120ms var(--voople-ease-out) both;
 }
 
-@keyframes voople-sidebar-tooltip-in {
+@keyframes voople-tooltip-in {
   from {
     opacity: 0;
-    transform: translate(-0.2rem, -50%);
+    transform: translateY(0.2rem) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translate(0, -50%);
+    transform: translateY(0) scale(1);
+  }
+}
+
+.voople-tooltip[data-side="bottom"] {
+  transform-origin: top center;
+}
+
+.voople-tooltip[data-side="top"] {
+  transform-origin: bottom center;
+}
+
+.voople-tooltip[data-side="left"] {
+  transform-origin: right center;
+}
+
+.voople-tooltip[data-side="right"] {
+  transform-origin: left center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voople-tooltip {
+    animation: none;
   }
 }
 

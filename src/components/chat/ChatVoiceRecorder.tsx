@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, Mic, Square, X } from "lucide-react";
 
+import { IconButton } from "@/components/ui/IconButton";
+
 export type ChatRecordMode = "voice" | "circle";
 
 function bestMime(mode: ChatRecordMode) {
@@ -151,16 +153,16 @@ export function ChatVoiceRecorder({ disabled, onRecorded, onError }: {
           </span>
         ) : null}
         <span className="min-w-10 text-xs tabular-nums">{Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, "0")}</span>
-        <button type="button" onClick={cancel} className="rounded-lg p-1.5 hover:bg-red-500/10" aria-label="Отменить запись"><X className="h-4 w-4" /></button>
-        <button type="button" onClick={stop} className="rounded-lg bg-red-500 p-1.5 text-white" aria-label="Завершить запись"><Square className="h-4 w-4 fill-current" /></button>
+        <IconButton label="Отменить запись" onClick={cancel} className="rounded-lg p-1.5 hover:bg-red-500/10"><X className="h-4 w-4" /></IconButton>
+        <IconButton label="Завершить запись" onClick={stop} className="rounded-lg bg-red-500 p-1.5 text-white"><Square className="h-4 w-4 fill-current" /></IconButton>
       </div>
     );
   }
 
   const Icon = mode === "voice" ? Mic : Camera;
   return (
-    <button
-      type="button"
+    <IconButton
+      label={mode === "voice" ? "Удерживайте: голосовое · нажмите: кружок" : "Удерживайте: кружок · нажмите: голосовое"}
       disabled={disabled}
       onPointerDown={(event) => {
         if (disabled || event.button !== 0) return;
@@ -184,11 +186,9 @@ export function ChatVoiceRecorder({ disabled, onRecorded, onError }: {
       onPointerCancel={cancel}
       onContextMenu={(event) => event.preventDefault()}
       className="relative rounded-[var(--app-radius-sm)] p-2 text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] disabled:opacity-40"
-      aria-label={mode === "voice" ? "Удерживайте, чтобы записать голосовое. Нажмите, чтобы выбрать кружок" : "Удерживайте, чтобы записать кружок. Нажмите, чтобы выбрать голосовое"}
-      title={mode === "voice" ? "Удерживайте: голосовое · нажмите: кружок" : "Удерживайте: кружок · нажмите: голосовое"}
     >
       <Icon className="h-5 w-5" />
       <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-[var(--theme-accent)]" />
-    </button>
+    </IconButton>
   );
 }

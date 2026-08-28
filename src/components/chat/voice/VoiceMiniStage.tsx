@@ -40,7 +40,7 @@ export function VoiceMiniStage({
         <div
           ref={screenContainerRef}
           data-voople-screen-stage=""
-          className="absolute inset-0 min-h-0 min-w-0 overflow-hidden [&>video]:h-full [&>video]:w-full [&>video]:object-contain [&>[data-livekit-local-screen]]:h-full [&>[data-livekit-local-screen]]:w-full"
+          className="absolute inset-0 flex min-h-0 min-w-0 items-center justify-center overflow-hidden [&>video]:block [&>video]:min-h-0 [&>video]:min-w-0 [&>video]:max-h-full [&>video]:max-w-full [&>video]:object-contain [&>[data-livekit-local-screen]]:h-full [&>[data-livekit-local-screen]]:w-full"
         />
       ) : cameraParticipant ? (
         <div

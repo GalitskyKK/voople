@@ -46,8 +46,8 @@ export function VoiceMediaStage({
         ref={screenContainerRef}
         data-voople-screen-stage=""
         className={cn(
-          "grid min-h-0 min-w-0 max-h-full max-w-full place-items-center overflow-hidden [&>video]:h-full [&>video]:max-h-full [&>video]:w-full [&>video]:max-w-full [&>video]:object-contain [&>[data-livekit-local-screen]]:h-full [&>[data-livekit-local-screen]]:w-full",
-          focused ? "h-full min-h-0" : "aspect-video h-full",
+          "flex min-h-0 min-w-0 max-h-full max-w-full items-center justify-center overflow-hidden [&>video]:block [&>video]:min-h-0 [&>video]:min-w-0 [&>video]:max-h-full [&>video]:max-w-full [&>video]:object-contain [&>[data-livekit-local-screen]]:h-full [&>[data-livekit-local-screen]]:w-full",
+          focused ? "self-stretch" : "aspect-video",
         )}
       />
     </section>

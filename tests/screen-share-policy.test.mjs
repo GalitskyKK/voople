@@ -140,10 +140,26 @@ test("local preview is opt-in, race-safe and pauses outside the focused window",
 test("room screen stage owns remaining height and contains remote video", () => {
   const content = read("src/components/chat/voice/VoiceRoomContent.tsx");
   const stage = read("src/components/chat/voice/VoiceMediaStage.tsx");
+  const miniStage = read("src/components/chat/voice/VoiceMiniStage.tsx");
+  const previewDom = read("src/components/chat/voice/screen-preview-dom.ts");
 
   assert.match(content, /flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden/);
-  assert.match(stage, /place-items-center overflow-hidden/);
+  assert.match(stage, /items-center justify-center overflow-hidden/);
   assert.match(stage, /\[&>video\]:object-contain/);
+  assert.doesNotMatch(stage, /\[&>video\]:h-full/);
+  assert.doesNotMatch(stage, /\[&>video\]:w-full/);
+  assert.match(miniStage, /items-center justify-center overflow-hidden/);
+  assert.match(miniStage, /\[&>video\]:max-h-full/);
+  assert.match(miniStage, /\[&>video\]:max-w-full/);
+  assert.doesNotMatch(miniStage, /\[&>video\]:h-full/);
+  assert.doesNotMatch(miniStage, /\[&>video\]:w-full/);
+  assert.match(previewDom, /dataset\.voopleScreenVideo = "true"/);
+  assert.match(previewDom, /setProperty\("width", "auto", "important"\)/);
+  assert.match(previewDom, /setProperty\("height", "auto", "important"\)/);
+  assert.match(previewDom, /setProperty\("max-width", "100%", "important"\)/);
+  assert.match(previewDom, /setProperty\("max-height", "100%", "important"\)/);
+  assert.match(previewDom, /setProperty\("object-fit", "contain", "important"\)/);
+  assert.match(previewDom, /flex h-full min-h-0 w-full min-w-0 items-center justify-center/);
 });
 
 test("desktop sheets stay below the titlebar and fullscreen targets app content", () => {

@@ -5,9 +5,18 @@ import { useCallback, useEffect } from "react";
 export function configureScreenVideo(element: HTMLVideoElement) {
   element.autoplay = true;
   element.playsInline = true;
-  element.className = "block h-full max-h-full w-full max-w-full bg-black object-contain";
-  element.style.objectFit = "contain";
-  element.style.objectPosition = "center";
+  element.dataset.voopleScreenVideo = "true";
+  element.className = "block min-h-0 min-w-0 max-h-full max-w-full bg-black object-contain";
+
+  // Keep the captured surface's intrinsic aspect ratio. Setting both dimensions
+  // to 100% stretches the replaced element to the stage before object-fit is
+  // evaluated and can crop it in WebView2/full-screen source combinations.
+  element.style.setProperty("width", "auto", "important");
+  element.style.setProperty("height", "auto", "important");
+  element.style.setProperty("max-width", "100%", "important");
+  element.style.setProperty("max-height", "100%", "important");
+  element.style.setProperty("object-fit", "contain", "important");
+  element.style.setProperty("object-position", "center", "important");
 }
 
 export function createLocalScreenTile(
@@ -17,7 +26,7 @@ export function createLocalScreenTile(
   const tile = document.createElement("div");
   tile.dataset.livekitLocalScreen = "true";
   tile.dataset.livekitLocalScreenKind = kind;
-  tile.className = "relative grid h-full min-h-0 w-full min-w-0 place-items-center overflow-hidden bg-black";
+  tile.className = "relative flex h-full min-h-0 w-full min-w-0 items-center justify-center overflow-hidden bg-black";
 
   const placeholder = document.createElement("div");
   placeholder.dataset.localScreenPlaceholder = "true";

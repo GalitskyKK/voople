@@ -1,6 +1,6 @@
 [package]
 name = "voople-desktop"
-version = "0.1.38"
+version = "0.1.39"
 description = "Voople desktop application"
 authors = ["Voople"]
 license = "AGPL-3.0-only"

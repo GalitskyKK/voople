@@ -1333,6 +1333,14 @@ invites → activated users
 
 # 37. Порядок реализации
 
+Критические дефекты имеют приоритет над порядком, в котором перечислены или
+обнаружены задачи. До `1.0.0` release gate считается закрытым только после
+стабилизации auth/session/legal bootstrap, Messaging/Room/Screen Share,
+responsive shared shell, обязательной продуктовой аналитики, web/desktop parity,
+reconnect/offline и security/release checks. Новые независимые возможности после
+этого выпускаются отдельными проверяемыми slices и повышают minor-версию; polish
+не может вытеснять P0 core/stability.
+
 ## P0 — core social
 
 1. Group `visibility`.
@@ -1395,6 +1403,11 @@ invites → activated users
     приостанавливает локальный video element вне focused window; desktop
     fullscreen занимает app content, не перекрывая custom titlebar. Пункт с
     миниатюрами некритичный и не подменяет P0 стабильности захвата.
+    Receiving stage всегда владеет размером video box (`width/height: 100%`), а
+    captured frame сохраняется через `object-fit: contain`; нельзя возвращать
+    intrinsic/default-size video, из-за которого кадр становится миниатюрой на
+    большом чёрном canvas. Это P0 regression gate для focus/grid/mini/fullscreen,
+    16:10, 16:9, ultrawide и portrait.
 39. Release notes long-content polish: «Что нового» показывает заметки целиком,
     не выводит технические счётчики/артефакты Markdown, ограничивает высоту
     относительно viewport и прокручивает только содержимое заметок. Проверить
@@ -1449,6 +1462,12 @@ invites → activated users
     viewport, доступную feed/conversation, и не допускать регрессии после drawers,
     call dock или right rail. Mobile topbar не дублирует primary destinations из
     bottom navigation: в частности, Search имеет одну навигационную точку.
+    Активный media player остаётся доступным и в compact rail как отдельная
+    компактная surface с artwork/play-pause/open, а expanded-вариант использует
+    ту же модель и не выглядит как случайный sidebar-блок. Mobile navigation
+    получает отдельную IA: 4–5 основных destinations, компактные badges вместо
+    расширяющих layout подписей/счётчиков, account/settings внутри Profile и
+    safe-area; паттерн может брать плотность Telegram, но сохраняет Voople IA.
 
 45. Shared icon controls and tooltips: провести инвентаризацию повторяющихся
     действий в чатах, Room, headers, composers и media controls. Убирать видимую
@@ -1458,7 +1477,9 @@ invites → activated users
     hover и keyboard focus, стабильный `aria-label`, видимый focus ring и не
     меняют geometry при появлении подсказки. Web и desktop используют один
     primitive и один словарь названий; проверить keyboard, touch alternative,
-    reduced motion и screen reader output.
+    reduced motion и screen reader output. Tooltip account trigger принадлежит
+    только самому trigger и закрывается/отключается при открытом account menu:
+    hover по пунктам portalled menu не может показывать подпись «Аккаунт».
 46. Board-by-board convergence: последовательно закрыть Boards 1–6 как
     полноценные product slices, а не как серию несвязанных CSS-правок. Для
     каждого Board сначала составить gap map `reference → реальный contract →

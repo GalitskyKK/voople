@@ -19,6 +19,13 @@ import { cn } from "@/lib/utils";
 
 type TooltipPosition = { left: number; top: number; side: TooltipSide };
 
+function readViewportInset(name: string) {
+  const value = Number.parseFloat(
+    window.getComputedStyle(document.documentElement).getPropertyValue(name),
+  );
+  return Number.isFinite(value) ? value : 0;
+}
+
 export function Tooltip({
   label,
   children,
@@ -69,6 +76,9 @@ export function Tooltip({
       tooltip,
       viewport: { width: window.innerWidth, height: window.innerHeight },
       preferredSide: side,
+      insets: {
+        top: readViewportInset("--voople-tooltip-viewport-top"),
+      },
     }));
   }, [side]);
 

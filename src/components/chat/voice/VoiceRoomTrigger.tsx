@@ -2,6 +2,7 @@
 
 import { Headphones, UsersRound } from "lucide-react";
 
+import { IconButton } from "@/components/ui/IconButton";
 import { cn } from "@/lib/utils";
 
 import type { MediaStatus } from "./voice-room-config";
@@ -19,12 +20,21 @@ export function VoiceRoomTrigger({
   participantCount: number;
   onOpen: () => void;
 }) {
+  const label = mediaStatus === "reconnecting"
+    ? "Восстанавливаем связь"
+    : active
+      ? `${participantCount} в комнате`
+      : isDirect
+        ? "Голосовой разговор"
+        : "Комната";
+
   return (
-    <button
-      type="button"
+    <IconButton
+      label={label}
+      tooltipSide="bottom"
       onClick={onOpen}
       className={cn(
-        "inline-flex h-9 shrink-0 items-center gap-2 rounded-xl border px-3 text-xs font-medium transition",
+        "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-xs font-medium transition",
         mediaStatus === "connected"
           ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/15"
           : mediaStatus === "reconnecting"
@@ -33,18 +43,8 @@ export function VoiceRoomTrigger({
               ? "border-[var(--theme-accent)]/35 bg-[var(--app-accent-soft)] text-(--theme-accent)"
               : "border-[var(--app-border)] text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]",
       )}
-      aria-label={isDirect ? "Открыть голосовую комнату" : "Комната группы"}
     >
       {active ? <UsersRound className="h-4 w-4" /> : <Headphones className="h-4 w-4" />}
-      <span className="hidden sm:inline">
-        {mediaStatus === "reconnecting"
-          ? "Связь…"
-          : active
-            ? `${participantCount} в комнате`
-            : isDirect
-              ? "Голос"
-              : "Комната"}
-      </span>
-    </button>
+    </IconButton>
   );
 }

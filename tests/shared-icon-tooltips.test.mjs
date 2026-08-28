@@ -28,6 +28,25 @@ test("tooltip placement flips at the preferred edge and remains inside the viewp
   assert.ok(rightEdge.top >= 8);
 });
 
+test("desktop tooltip placement reserves the native titlebar instead of covering it", () => {
+  const belowTitlebar = resolveTooltipPosition({
+    anchor: { top: 36, right: 104, bottom: 68, left: 72, width: 32, height: 32 },
+    tooltip: { width: 120, height: 30 },
+    viewport: { width: 1280, height: 720 },
+    preferredSide: "top",
+    insets: { top: 32 },
+  });
+
+  assert.equal(belowTitlebar.side, "bottom");
+  assert.equal(belowTitlebar.top, 76);
+  assert.ok(belowTitlebar.top >= 40);
+
+  const tooltip = read("src/components/ui/Tooltip.tsx");
+  const desktopStyles = read("desktop/src/styles.css");
+  assert.match(tooltip, /--voople-tooltip-viewport-top/);
+  assert.match(desktopStyles, /--voople-tooltip-viewport-top:\s*32px/);
+});
+
 test("shared tooltip supports mouse, keyboard, viewport changes and reduced motion", () => {
   const tooltip = read("src/components/ui/Tooltip.tsx");
   const iconButton = read("src/components/ui/IconButton.tsx");
@@ -50,13 +69,18 @@ test("room and primary messaging icon controls share one tooltip vocabulary", ()
   const composer = read("src/components/chat/ChatComposerInputView.tsx");
   const recorder = read("src/components/chat/ChatVoiceRecorder.tsx");
   const groupHeader = read("src/components/chat/GroupInfoDrawerView.tsx");
+  const roomButton = read("src/components/chat/voice/VoiceRoomButton.tsx");
+  const roomTrigger = read("src/components/chat/voice/VoiceRoomTrigger.tsx");
+  const sectionCreator = read("src/components/chat/SubchatCreatorView.tsx");
 
-  for (const source of [roomHeader, roomMedia, roomFooter, roomDock, composer, recorder, groupHeader]) {
+  for (const source of [roomHeader, roomMedia, roomFooter, roomDock, composer, recorder, groupHeader, roomButton, roomTrigger, sectionCreator]) {
     assert.match(source, /components\/ui\/(?:IconButton|Tooltip)/);
   }
-  for (const source of [roomHeader, roomFooter, roomDock, recorder, groupHeader]) {
+  for (const source of [roomHeader, roomFooter, roomDock, recorder, groupHeader, roomButton, roomTrigger, sectionCreator]) {
     assert.doesNotMatch(source, /title=/);
   }
+  assert.match(roomButton, /display\s*=\s*"icon"/);
+  assert.match(sectionCreator, /label="Новый раздел"/);
 });
 
 test("attachment menu always offers photos and only offers music with a picker", () => {

@@ -4,6 +4,7 @@ import { LoaderCircle, Plus } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
 import { Sheet } from "@/components/ui/Sheet";
 import type { ChatGroupMemberView } from "@/types/chat";
 import { SubchatAccessPicker } from "./SubchatAccessPicker";
@@ -86,16 +87,14 @@ export function SubchatCreatorView({
 
   return (
     <>
-      <button
-        type="button"
+      <IconButton
+        label="Новый раздел"
+        tooltipSide="bottom"
         onClick={() => setOpen(true)}
-        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-[var(--app-border)] px-2.5 text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
-        aria-label="Создать раздел"
-        title="Создать раздел"
+        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--app-border)] text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]"
       >
         <Plus className="h-4 w-4" />
-        <span className="hidden text-xs font-medium sm:inline">Новый раздел</span>
-      </button>
+      </IconButton>
       <Sheet
         open={open}
         onClose={() => setOpen(false)}

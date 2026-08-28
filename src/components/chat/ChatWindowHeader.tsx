@@ -122,17 +122,17 @@ export function ChatWindowHeader({
           </p>
         ) : null}
       </div>}
-      <VoiceRoomButton
-        chatId={chatId}
-        chatName={chatTitle}
-        chatType={isGroup ? "group" : "direct"}
-      />
       {isGroup && !isSubchat && topicsEnabled ? (
         <SubchatCreator parentChatId={chatId} viewerRole={viewerRole} />
       ) : null}
       {isSubchat && parentChatId && viewerRole !== "member" ? (
         <SectionAccessSheet chatId={chatId} parentChatId={parentChatId} />
       ) : null}
+      <VoiceRoomButton
+        chatId={chatId}
+        chatName={chatTitle}
+        chatType={isGroup ? "group" : "direct"}
+      />
       <ChatMobileNavigation />
     </ChatWindowHeaderVisual>
   );

@@ -82,7 +82,7 @@ export function GroupInfoDrawer({
       error={tab === "members" ? members.error?.message : community.error?.message}
       topics={topicNames}
       sections={rootChat?.channels.map((section) => ({ id: section.id, name: section.name || "Раздел" })) ?? []}
-      roomAction={room.data?.participants.length ? <VoiceRoomButton chatId={chatId} chatName={chatName} chatType="group" /> : undefined}
+      roomAction={room.data?.participants.length ? <VoiceRoomButton chatId={chatId} chatName={chatName} chatType="group" display="label" /> : undefined}
       onOpenChange={setOpen}
       onTabChange={setTab}
       onManage={() => navigate(`/messages/${chatId}/settings`)}

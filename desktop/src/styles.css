@@ -17,6 +17,7 @@
 :root {
   --font-geist-sans: "Geist Voople";
   --font-geist-mono: "Geist Mono Voople";
+  --voople-tooltip-viewport-top: 32px;
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-geist-sans), system-ui, sans-serif;

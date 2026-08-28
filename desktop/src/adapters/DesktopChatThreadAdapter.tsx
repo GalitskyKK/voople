@@ -203,7 +203,7 @@ export function DesktopChatThreadAdapter({
             error={groupPanelError}
             topics={groupTopicNames}
             sections={rootChat?.channels.map((section) => ({ id: section.id, name: section.name || "Раздел" })) ?? []}
-            roomAction={roomParticipantIds.size ? <VoiceRoomButton chatId={chatId} chatName={title} chatType="group" /> : undefined}
+            roomAction={roomParticipantIds.size ? <VoiceRoomButton chatId={chatId} chatName={title} chatType="group" display="label" /> : undefined}
             onOpenChange={(open) => {
               setGroupDrawerOpen(open);
               if (open) loadGroupPanel();

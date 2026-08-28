@@ -1,5 +1,7 @@
 export type TooltipSide = "top" | "right" | "bottom" | "left";
 
+type TooltipViewportInsets = Partial<Record<TooltipSide, number>>;
+
 type RectLike = {
   top: number;
   right: number;
@@ -16,6 +18,7 @@ export function resolveTooltipPosition({
   preferredSide,
   gap = 8,
   padding = 8,
+  insets = {},
 }: {
   anchor: RectLike;
   tooltip: { width: number; height: number };
@@ -23,12 +26,19 @@ export function resolveTooltipPosition({
   preferredSide: TooltipSide;
   gap?: number;
   padding?: number;
+  insets?: TooltipViewportInsets;
 }) {
+  const bounds = {
+    top: padding + (insets.top ?? 0),
+    right: padding + (insets.right ?? 0),
+    bottom: padding + (insets.bottom ?? 0),
+    left: padding + (insets.left ?? 0),
+  };
   const fits = {
-    top: anchor.top >= tooltip.height + gap + padding,
-    right: viewport.width - anchor.right >= tooltip.width + gap + padding,
-    bottom: viewport.height - anchor.bottom >= tooltip.height + gap + padding,
-    left: anchor.left >= tooltip.width + gap + padding,
+    top: anchor.top - bounds.top >= tooltip.height + gap,
+    right: viewport.width - bounds.right - anchor.right >= tooltip.width + gap,
+    bottom: viewport.height - bounds.bottom - anchor.bottom >= tooltip.height + gap,
+    left: anchor.left - bounds.left >= tooltip.width + gap,
   } satisfies Record<TooltipSide, boolean>;
   const opposite: Record<TooltipSide, TooltipSide> = {
     top: "bottom",
@@ -50,8 +60,8 @@ export function resolveTooltipPosition({
   if (side === "left") left = anchor.left - tooltip.width - gap;
 
   return {
-    left: Math.max(padding, Math.min(left, viewport.width - tooltip.width - padding)),
-    top: Math.max(padding, Math.min(top, viewport.height - tooltip.height - padding)),
+    left: Math.max(bounds.left, Math.min(left, viewport.width - tooltip.width - bounds.right)),
+    top: Math.max(bounds.top, Math.min(top, viewport.height - tooltip.height - bounds.bottom)),
     side,
   };
 }

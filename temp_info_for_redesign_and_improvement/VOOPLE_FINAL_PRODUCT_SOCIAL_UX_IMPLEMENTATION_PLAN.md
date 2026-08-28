@@ -1483,6 +1483,17 @@ invites → activated users
     или выкидывать пользователя из-за одного transient failure. Проверить cold
     start, stale/expired session, offline→online, VPN/DNS failure и recovery без
     повторной отправки пользовательских mutations.
+49. Room surface continuity (P1 UX): prejoin, connecting, active, reconnecting,
+    leaving и post-leave являются состояниями одной Room surface, а не разными
+    экранами с несвязанной геометрией. Общие header, stage bounds и control dock
+    остаются на месте; внутри меняются status/copy/actions с коротким reduced-
+    motion-safe transition. `Начать комнату` не вызывает скачок modal → full
+    sheet, а optimistic connecting state сразу занимает итоговую оболочку;
+    ошибка возвращает prejoin inline с retry. Выход мгновенно переводит UI в
+    leaving/post-leave, не показывает устаревших участников и не закрывает
+    поверхность до подтверждения lifecycle либо безопасного timeout. Один
+    state model и shared View обслуживают web/desktop, включая small window,
+    fullscreen, keyboard/focus restore и reconnect/offline visual gates.
 
 ---
 

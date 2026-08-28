@@ -36,7 +36,10 @@ export function Sheet({
     if (!open) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && closeOnEscape) onClose();
+      if (event.key !== "Escape" || !closeOnEscape) return;
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
     };
 
     const previousOverflow = document.body.style.overflow;

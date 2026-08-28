@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Download, LogIn, UserPlus } from "lucide-react";
 
 import { NotificationNavBadge } from "@/components/notifications/NotificationNavBadge";
@@ -10,9 +10,11 @@ import { SidebarHighlights } from "./SidebarHighlights";
 import { AppSidebarVisual } from "./AppNavigationVisual";
 import { AppAccountMenu } from "./AppAccountMenu";
 import { useSidebarPreference } from "@/hooks/useSidebarPreference";
+import { isMessagesThreadPath } from "@/lib/layout/messages-path";
 
 export function DesktopSidebar({ authenticated }: { authenticated: boolean }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { collapsed, setCollapsed } = useSidebarPreference({
     forceExpanded: !authenticated,
   });
@@ -60,7 +62,11 @@ export function DesktopSidebar({ authenticated }: { authenticated: boolean }) {
           aria-label={label}
           aria-current={active ? "page" : undefined}
           className={className}
-          onClick={() => {
+          onClick={(event) => {
+            if (href === "/messages" && isMessagesThreadPath(pathname)) {
+              event.preventDefault();
+              router.replace("/messages");
+            }
             onNavigate?.();
           }}
         >

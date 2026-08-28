@@ -37,8 +37,8 @@ export function useChatSendMutation({
 
   return trpc.chat.send.useMutation({
     onMutate: async (input) => {
-      await utils.chat.getMessages.cancel({ chatId });
-      const previous = utils.chat.getMessages.getData({ chatId });
+      await utils.chat.observeMessages.cancel({ chatId });
+      const previous = utils.chat.observeMessages.getData({ chatId });
       const replyMessage = input.replyToMessageId
         ? previous?.messages.find((message) => message.id === input.replyToMessageId) ?? replyTo
         : null;
@@ -50,7 +50,7 @@ export function useChatSendMutation({
         pendingUpload,
         pendingTrack,
       });
-      utils.chat.getMessages.setData({ chatId }, (current) =>
+      utils.chat.observeMessages.setData({ chatId }, (current) =>
         current?.messages.some((message) => message.id === optimistic.id)
           ? current
           : current
@@ -89,7 +89,7 @@ export function useChatSendMutation({
       return { previous, draft };
     },
     onError: (_error, _input, context) => {
-      if (context?.previous) utils.chat.getMessages.setData({ chatId }, context.previous);
+      if (context?.previous) utils.chat.observeMessages.setData({ chatId }, context.previous);
       if (!context?.draft) return;
       setText((current) => recoverFailedSendText(current, context.draft.text));
       setReplyTo((current) => recoverFailedSendValue(current, context.draft.replyTo));
@@ -97,7 +97,7 @@ export function useChatSendMutation({
       setPendingTrack((current) => recoverFailedSendValue(current, context.draft.pendingTrack));
     },
     onSuccess: (message, input, context) => {
-      utils.chat.getMessages.setData({ chatId }, (current) => {
+      utils.chat.observeMessages.setData({ chatId }, (current) => {
         if (!current) return current;
         const messages = current.messages.map((item) => item.id === message.id ? message : item);
         return messages.some((item) => item.id === message.id)

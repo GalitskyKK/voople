@@ -14,6 +14,7 @@ import { DesktopGroupChatCreatorAdapter } from "./DesktopGroupChatCreatorAdapter
 import { DesktopChatThreadAdapter } from "./DesktopChatThreadAdapter";
 import { useDesktopChats } from "../chat/useDesktopChats";
 import { useDesktopPresence } from "../providers/DesktopPresenceProvider";
+import { useConversationExit } from "@/hooks/useConversationExit";
 
 export function DesktopMessagesAdapter({
   activeChatId,
@@ -52,6 +53,11 @@ export function DesktopMessagesAdapter({
           chat.channels.some((section) => section.id === activeChatId),
       ) ?? null
     : null;
+
+  useConversationExit({
+    active: Boolean(activeChatId),
+    onExit: () => navigate("/messages"),
+  });
 
   return (
     <MessagesLayoutView

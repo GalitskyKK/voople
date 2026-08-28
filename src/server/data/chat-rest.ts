@@ -446,7 +446,6 @@ export async function listMessagesRest(
     sender: membersById.get(message.senderId) ?? null,
   }));
 
-  void markMessagesReadRest(chatId, userId);
   const community = (
     await loadGroupCommunitySummariesRest(
       membership.type === "group" ? [membership.accessChatId] : [],
@@ -482,7 +481,11 @@ export async function listMessagesRest(
   };
 }
 
-export async function markMessagesReadRest(chatId: string, userId: string) {
+export async function markMessagesReadRest(
+  chatId: string,
+  userId: string,
+  throughAt: string,
+) {
   await assertChatMemberRest(chatId, userId);
   const admin = getAdminClient();
   const now = new Date().toISOString();
@@ -492,7 +495,8 @@ export async function markMessagesReadRest(chatId: string, userId: string) {
     .update({ read_at: now })
     .eq("chat_id", chatId)
     .neq("sender_id", userId)
-    .is("read_at", null);
+    .is("read_at", null)
+    .lte("created_at", throughAt);
 
   if (error) throw new Error(error.message);
   return { readAt: now };

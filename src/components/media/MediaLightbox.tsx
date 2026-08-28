@@ -15,7 +15,10 @@ export function MediaLightbox({ url, alt = "Изображение", onClose }: 
   useEffect(() => {
     if (!url) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
     };
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);

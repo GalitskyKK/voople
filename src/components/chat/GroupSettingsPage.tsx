@@ -7,7 +7,7 @@ import { trpc } from "@/lib/trpc/client";
 import { GroupInviteSheet } from "./GroupInviteSheet";
 
 export function GroupSettingsPage({ chatId }: { chatId: string }) {
-  const query = trpc.chat.getMessages.useQuery({ chatId });
+  const query = trpc.chat.observeMessages.useQuery({ chatId });
 
   if (query.isLoading) {
     return <div className="m-5 min-h-80 flex-1 animate-pulse rounded-3xl bg-[var(--app-surface-soft)]" />;

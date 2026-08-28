@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import type { ChatMessageView } from "@/types/chat";
 
 import { ChatSelectionToolbar } from "./ChatSelectionToolbar";
@@ -21,6 +22,17 @@ export function ChatSelectionController({
   onDeleteMessage: (messageId: string) => Promise<unknown>;
 }) {
   const canDelete = messages.length > 0 && messages.every((message) => message.isMine);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      onCancel();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onCancel]);
 
   const copy = async () => {
     const text = selectedText(messages);

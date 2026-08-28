@@ -12,6 +12,10 @@ import type {
 } from "@/types/chat";
 import { parseComposerContent } from "@/lib/chat/message-content";
 import { reportProductEvent } from "@/lib/telemetry/client";
+import {
+  canAcknowledgeConversation,
+  latestUnreadIncomingAt,
+} from "@/lib/chat/read-receipts";
 
 import { createDesktopTrpcClient } from "../api/trpc";
 import { getSupabase } from "../auth/supabase";
@@ -99,6 +103,7 @@ export function useDesktopChatThread(
   const [live, setLive] = useState(false);
   const requestId = useRef(0);
   const onInboxChangeRef = useRef(onInboxChange);
+  const readThroughRef = useRef<string | null>(null);
   const client = useMemo(
     () => createDesktopTrpcClient(config, () => session.access_token),
     [config, session.access_token],
@@ -115,7 +120,7 @@ export function useDesktopChatThread(
       if (!silent) setError(null);
       try {
         const thread = parseThread(
-          await client.query("chat.getMessages", { chatId }),
+          await client.query("chat.observeMessages", { chatId }),
         );
         if (currentRequest === requestId.current) setData(thread);
       } catch (loadError) {
@@ -176,6 +181,42 @@ export function useDesktopChatThread(
       void supabase.removeChannel(channel);
     };
   }, [chatId, config, load]);
+
+  const unreadThroughAt = latestUnreadIncomingAt(data?.messages);
+  useEffect(() => {
+    if (!unreadThroughAt) return;
+    let active = true;
+
+    const acknowledge = () => {
+      if (
+        !active ||
+        !canAcknowledgeConversation() ||
+        readThroughRef.current === unreadThroughAt
+      ) {
+        return;
+      }
+      readThroughRef.current = unreadThroughAt;
+      void client
+        .mutation("chat.markRead", { chatId, throughAt: unreadThroughAt })
+        .then(() => {
+          if (active) onInboxChangeRef.current();
+        })
+        .catch(() => {
+          if (active && readThroughRef.current === unreadThroughAt) {
+            readThroughRef.current = null;
+          }
+        });
+    };
+
+    acknowledge();
+    document.addEventListener("visibilitychange", acknowledge);
+    window.addEventListener("focus", acknowledge);
+    return () => {
+      active = false;
+      document.removeEventListener("visibilitychange", acknowledge);
+      window.removeEventListener("focus", acknowledge);
+    };
+  }, [chatId, client, unreadThroughAt]);
 
   const sendMessage = useCallback(
     async (draft: DesktopMessageDraft) => {

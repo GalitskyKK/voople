@@ -43,9 +43,8 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   const utils = trpc.useUtils();
   const editor = useChatMessageEditor(chatId, setText);
   const { data: me } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
-  useChatConversationAttention(chatId, me?.id, text, Boolean(editor.editing), setText);
   const { realtimeDegraded } = useRealtimeChat(chatId, me?.id);
-  const { data, isLoading, error } = trpc.chat.getMessages.useQuery(
+  const { data, isLoading, error } = trpc.chat.observeMessages.useQuery(
     { chatId },
     {
       staleTime: 5_000,
@@ -58,6 +57,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     { chatId },
     { enabled: isGroupChat },
   );
+  useChatConversationAttention(chatId, me?.id, text, Boolean(editor.editing), setText, data?.messages);
   const selection = useChatMessageSelection(chatId, data?.messages ?? []);
   const send = useChatSendMutation({
     chatId, viewerId: me?.id, text, replyTo, pendingUpload, pendingTrack,
@@ -69,7 +69,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
 
   const removeMessage = trpc.chat.deleteMessage.useMutation({
     onSuccess: (_data, variables) => {
-      utils.chat.getMessages.setData({ chatId }, (current) => {
+      utils.chat.observeMessages.setData({ chatId }, (current) => {
         if (!current) return current;
         return {
           ...current,
@@ -99,9 +99,9 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
 
   const toggleReaction = trpc.chat.toggleReaction.useMutation({
     onMutate: async ({ messageId, emoji, emojiId }) => {
-      await utils.chat.getMessages.cancel({ chatId });
-      const previous = utils.chat.getMessages.getData({ chatId });
-      utils.chat.getMessages.setData({ chatId }, (current) => {
+      await utils.chat.observeMessages.cancel({ chatId });
+      const previous = utils.chat.observeMessages.getData({ chatId });
+      utils.chat.observeMessages.setData({ chatId }, (current) => {
         if (!current) return current;
         return {
           ...current,
@@ -129,12 +129,12 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
       return { previous };
     },
     onError: (error, _input, context) => {
-      if (context?.previous) utils.chat.getMessages.setData({ chatId }, context.previous);
+      if (context?.previous) utils.chat.observeMessages.setData({ chatId }, context.previous);
       setToast(error.message);
       window.setTimeout(() => setToast(null), 3000);
     },
     onSuccess: (result) => {
-      utils.chat.getMessages.setData({ chatId }, (current) => current ? {
+      utils.chat.observeMessages.setData({ chatId }, (current) => current ? {
         ...current,
         messages: current.messages.map((message) => message.id === result.messageId
           ? { ...message, reactions: result.reactions }

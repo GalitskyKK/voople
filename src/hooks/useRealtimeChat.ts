@@ -62,7 +62,7 @@ export function useRealtimeChat(chatId: string, viewerId: string | null | undefi
             status: "subscribed",
             lastEventAt: new Date().toISOString(),
           });
-          void utils.chat.getMessages.invalidate({ chatId });
+          void utils.chat.observeMessages.invalidate({ chatId });
           void utils.chat.list.invalidate();
         },
       )
@@ -81,7 +81,7 @@ export function useRealtimeChat(chatId: string, viewerId: string | null | undefi
             status: "subscribed",
             lastEventAt: new Date().toISOString(),
           });
-          utils.chat.getMessages.setData({ chatId }, (current) => {
+          utils.chat.observeMessages.setData({ chatId }, (current) => {
             if (!current) return current;
             return {
               ...current,
@@ -109,7 +109,7 @@ export function useRealtimeChat(chatId: string, viewerId: string | null | undefi
             status: "subscribed",
             lastEventAt: new Date().toISOString(),
           });
-          void utils.chat.getMessages.invalidate({ chatId });
+          void utils.chat.observeMessages.invalidate({ chatId });
         },
       )
       .subscribe((status) => {
@@ -120,7 +120,7 @@ export function useRealtimeChat(chatId: string, viewerId: string | null | undefi
             status: "subscribed",
             lastEventAt: current.key === subscriptionKey ? current.lastEventAt : null,
           }));
-          void utils.chat.getMessages.invalidate({ chatId });
+          void utils.chat.observeMessages.invalidate({ chatId });
           return;
         }
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {

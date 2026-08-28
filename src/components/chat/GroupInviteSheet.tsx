@@ -134,14 +134,14 @@ export function GroupInviteSheet({
       updateTopics={async (enabled, layout) => {
         await setTopics.mutateAsync({ chatId, enabled, layout });
         await Promise.all([
-          utils.chat.getMessages.invalidate({ chatId }),
+          utils.chat.observeMessages.invalidate({ chatId }),
           utils.chat.list.invalidate(),
         ]);
       }}
       updateVisibility={async (visibility, nextJoinPolicy) => {
         await setVisibility.mutateAsync({ chatId, visibility, joinPolicy: nextJoinPolicy });
         await Promise.all([
-          utils.chat.getMessages.invalidate({ chatId }),
+          utils.chat.observeMessages.invalidate({ chatId }),
           utils.chat.list.invalidate(),
         ]);
       }}
@@ -150,7 +150,7 @@ export function GroupInviteSheet({
         const result = await resolveJoinRequestMutation.mutateAsync({ requestId, approve });
         await Promise.all([
           utils.chat.groupJoinRequests.invalidate({ chatId }),
-          utils.chat.getMessages.invalidate({ chatId }),
+          utils.chat.observeMessages.invalidate({ chatId }),
           utils.chat.list.invalidate(),
         ]);
         return result;
@@ -161,7 +161,7 @@ export function GroupInviteSheet({
       updateName={async (name) => {
         const result = await setGroupName.mutateAsync({ chatId, name });
         await Promise.all([
-          utils.chat.getMessages.invalidate({ chatId }),
+          utils.chat.observeMessages.invalidate({ chatId }),
           utils.chat.list.invalidate(),
         ]);
         return result;
@@ -210,7 +210,7 @@ export function GroupInviteSheet({
         router.replace("/messages");
       }}
       onMembersChanged={() => {
-        void utils.chat.getMessages.invalidate({ chatId });
+        void utils.chat.observeMessages.invalidate({ chatId });
         void utils.chat.list.invalidate();
       }}
       renderAvatar={(user) => (

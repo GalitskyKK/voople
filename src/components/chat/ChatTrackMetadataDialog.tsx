@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { X } from "lucide-react";
 import { createPortal } from "react-dom";
 
@@ -29,6 +30,18 @@ export function ChatTrackMetadataDialog({
   onClose,
   onConfirm,
 }: ChatTrackMetadataDialogProps) {
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose, open]);
+
   if (!open || typeof document === "undefined") return null;
 
   return createPortal(
@@ -40,6 +53,7 @@ export function ChatTrackMetadataDialog({
       <div
         className="w-full max-w-md rounded-[var(--app-radius-xl)] border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-md)]"
         role="dialog"
+        aria-modal="true"
         aria-label={heading}
         onClick={(e) => e.stopPropagation()}
       >

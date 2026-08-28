@@ -13,7 +13,7 @@ export function useChatMessageEditor(
   const utils = trpc.useUtils();
   const mutation = trpc.chat.editMessage.useMutation({
     onSuccess: (updated) => {
-      utils.chat.getMessages.setData({ chatId }, (current) => current ? {
+      utils.chat.observeMessages.setData({ chatId }, (current) => current ? {
         ...current,
         messages: current.messages.map((message) =>
           message.id === updated.id ? { ...updated, sender: message.sender } : message,

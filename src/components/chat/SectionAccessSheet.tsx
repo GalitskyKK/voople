@@ -33,7 +33,7 @@ export function SectionAccessSheet({
       }
       onChanged={() => {
         void utils.chat.list.invalidate();
-        void utils.chat.getMessages.invalidate({ chatId });
+        void utils.chat.observeMessages.invalidate({ chatId });
       }}
     />
   );

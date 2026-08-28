@@ -26,11 +26,26 @@ export const chatMessageProcedures = {
     catch (error) { throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось открыть чат" }); }
   }),
   getMessages: protectedProcedure.input(z.object({ chatId: z.string().uuid() })).query(async ({ ctx, input }) => {
+    try {
+      const result = await listMessages(input.chatId, ctx.user.id);
+      const throughAt = result.messages.reduce<string | null>(
+        (latest, message) => !latest || message.createdAt > latest ? message.createdAt : latest,
+        null,
+      );
+      if (throughAt) await markMessagesRead(input.chatId, ctx.user.id, throughAt);
+      return result;
+    }
+    catch (error) { throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось загрузить сообщения" }); }
+  }),
+  observeMessages: protectedProcedure.input(z.object({ chatId: z.string().uuid() })).query(async ({ ctx, input }) => {
     try { return await listMessages(input.chatId, ctx.user.id); }
     catch (error) { throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось загрузить сообщения" }); }
   }),
-  markRead: protectedProcedure.input(z.object({ chatId: z.string().uuid() })).mutation(async ({ ctx, input }) => {
-    try { return await markMessagesRead(input.chatId, ctx.user.id); }
+  markRead: protectedProcedure.input(z.object({
+    chatId: z.string().uuid(),
+    throughAt: z.string().datetime(),
+  })).mutation(async ({ ctx, input }) => {
+    try { return await markMessagesRead(input.chatId, ctx.user.id, input.throughAt); }
     catch (error) { throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось обновить статус прочтения" }); }
   }),
   deleteMessage: protectedProcedure.input(z.object({ messageId: z.string().uuid() })).mutation(async ({ ctx, input }) => {

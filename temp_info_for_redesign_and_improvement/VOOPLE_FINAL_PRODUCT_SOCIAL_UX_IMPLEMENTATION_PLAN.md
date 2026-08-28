@@ -824,6 +824,13 @@ Members и Group Info открывать как right drawer.
 
 Создание раздела через компактный `+` рядом со списком разделов.
 
+Клик по уже активной кнопке `Чаты` в global nav закрывает выбранную беседу и
+возвращает к безопасному состоянию списка. `Escape` сначала закрывает верхний
+modal/popover/drawer, затем — выбранную беседу. После закрытия conversation
+больше не наблюдает новые сообщения и не помечает их прочитанными, но локальный
+draft сохраняется. Поведение одинаково в web и desktop; на mobile возврат
+следует одноколоночной navigation hierarchy.
+
 ---
 
 # 23. Group Info
@@ -1452,6 +1459,30 @@ invites → activated users
     меняют geometry при появлении подсказки. Web и desktop используют один
     primitive и один словарь названий; проверить keyboard, touch alternative,
     reduced motion и screen reader output.
+46. Board-by-board convergence: последовательно закрыть Boards 1–6 как
+    полноценные product slices, а не как серию несвязанных CSS-правок. Для
+    каждого Board сначала составить gap map `reference → реальный contract →
+    shared View → web/desktop adapters`, затем реализовать data/authorization,
+    interaction, loading/empty/error/offline, responsive и accessibility states.
+    Visual gate включает обе темы, 360/390/1024/1280/1440, fullscreen и Windows
+    scale 125/150%. Board 2 отдельно проверяет компактный `+` внутри strip
+    разделов, Members как правый overlay drawer, `Сейчас в комнате`, presence и
+    роли, безопасное закрытие conversation через active `Чаты`/Escape и
+    сохранение полезной ширины беседы.
+47. Auth entry parity and branding: landing/login/register используют актуальный
+    логотип и общий визуальный язык Voople в web/desktop; password inputs имеют
+    доступный show/hide control без потери focus/validation; OTP использует один
+    six-slot interaction contract с paste, arrows, Backspace и autofill. Нужны
+    timeout/offline/retry states без технического текста, trusted-device flow,
+    keyboard/screen-reader и mobile/desktop visual matrix. Смена языка должна
+    расширять copy-модель, а не дублировать страницы.
+48. Runtime/auth resilience: client-safe shared modules не обращаются к Node
+    globals в Vite/WebView; временные Supabase network/clock-skew ошибки получают
+    bounded retry и понятный recovery state, но invalid/expired signatures не
+    маскируются. Legal consent и session bootstrap не могут зависать бесконечно
+    или выкидывать пользователя из-за одного transient failure. Проверить cold
+    start, stale/expired session, offline→online, VPN/DNS failure и recovery без
+    повторной отправки пользовательских mutations.
 
 ---
 

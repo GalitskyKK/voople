@@ -3,6 +3,7 @@ name = "voople-desktop"
 version = "0.1.37"
 description = "Voople desktop application"
 authors = ["Voople"]
+license = "AGPL-3.0-only"
 edition = "2021"
 
 [lib]

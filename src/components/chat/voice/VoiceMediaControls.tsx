@@ -15,6 +15,7 @@ type VoiceMediaControlsProps = {
   screenSharePending: boolean;
   cameraEnabled: boolean;
   cameraPending: boolean;
+  sessionPending?: boolean;
   onMicToggle: () => void | Promise<void>;
   onOutputToggle: () => void;
   onScreenShareToggle: () => void | Promise<void>;
@@ -33,6 +34,7 @@ export function VoiceMediaControls({
   screenSharePending,
   cameraEnabled,
   cameraPending,
+  sessionPending = false,
   onMicToggle,
   onOutputToggle,
   onScreenShareToggle,
@@ -45,7 +47,7 @@ export function VoiceMediaControls({
       <IconButton
         label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
         tooltipClassName="shrink-0"
-        disabled={mediaActionPending}
+        disabled={sessionPending || mediaActionPending}
         onClick={() => void onMicToggle()}
         className={cn(
           controlClass,
@@ -66,7 +68,7 @@ export function VoiceMediaControls({
       <IconButton
         label={outputMuted ? "Включить звук собеседников" : "Выключить звук собеседников"}
         tooltipClassName="shrink-0"
-        disabled={!connected}
+        disabled={sessionPending || !connected}
         onClick={onOutputToggle}
         className={cn(
           controlClass,
@@ -81,7 +83,7 @@ export function VoiceMediaControls({
       <IconButton
         label={cameraEnabled ? "Выключить камеру" : "Включить камеру"}
         tooltipClassName="shrink-0"
-        disabled={!connected || cameraPending}
+        disabled={sessionPending || !connected || cameraPending}
         onClick={() => void onCameraToggle()}
         className={cn(
           controlClass,
@@ -102,7 +104,7 @@ export function VoiceMediaControls({
       <IconButton
         label={screenSharing ? "Остановить демонстрацию" : "Показать экран"}
         tooltipClassName="shrink-0"
-        disabled={!connected || screenSharePending}
+        disabled={sessionPending || !connected || screenSharePending}
         onClick={() => void onScreenShareToggle()}
         className={cn(
           controlClass,

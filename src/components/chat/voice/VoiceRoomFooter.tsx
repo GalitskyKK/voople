@@ -25,6 +25,7 @@ export function VoiceRoomFooter({
   session: VoiceRoomSessionModel;
 }) {
   const connected = connection.status === "connected" || connection.status === "reconnecting";
+  const sessionPending = session.phase === "loading" || session.phase === "connecting" || session.phase === "leaving";
 
   return (
     <footer className="shrink-0 border-t border-[var(--app-border)] bg-[color-mix(in_srgb,var(--background)_94%,transparent)] p-3 backdrop-blur-xl">
@@ -59,12 +60,18 @@ export function VoiceRoomFooter({
           screenSharePending={controls.screenSharePending}
           cameraEnabled={controls.cameraEnabled}
           cameraPending={controls.cameraPending}
+          sessionPending={sessionPending}
           onMicToggle={controls.onMicToggle}
           onOutputToggle={controls.onOutputToggle}
           onScreenShareToggle={controls.onScreenShareToggle}
           onCameraToggle={controls.onCameraToggle}
         />
-        {session.inside && connected ? (
+        {session.phase === "leaving" ? (
+          <Button type="button" disabled>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Выходим…
+          </Button>
+        ) : session.inside && connected ? (
           <IconButton
             label="Выйти из комнаты"
             disabled={session.leavePending}
@@ -75,12 +82,16 @@ export function VoiceRoomFooter({
           </IconButton>
         ) : (
           <Button type="button" disabled={session.connectDisabled} onClick={() => void session.onConnect()}>
-            {session.connectPending ? (
+            {session.phase === "connecting" || session.phase === "loading" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Headphones className="h-4 w-4" />
             )}
-            {session.connectLabel}
+            {session.phase === "loading"
+              ? "Открываем…"
+              : session.phase === "connecting"
+                ? "Подключаем…"
+                : session.connectLabel}
           </Button>
         )}
       </div>

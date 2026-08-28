@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { ConnectionQuality } from "livekit-client";
 
 import type { ChatRoomParticipantView, GroupSoundView } from "@/types/chat";
+import type { VoiceRoomSurfacePhase } from "./voice-room-surface";
 
 import type { MediaStatus } from "./voice-room-config";
 
@@ -67,6 +68,7 @@ export type VoiceRoomAccessModel = {
 };
 
 export type VoiceRoomSessionModel = {
+  phase: VoiceRoomSurfacePhase;
   inside: boolean;
   leavePending: boolean;
   onLeave: () => void | Promise<void>;

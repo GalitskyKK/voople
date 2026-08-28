@@ -51,16 +51,11 @@ export function VoiceRoomSheet({
       containerClassName={fullscreen ? "p-0 sm:p-0" : undefined}
       closeOnEscape={!fullscreen}
       className={cn(
-        "overflow-hidden",
-        identity.active
-          ? "h-[min(94dvh,860px)] max-h-[94dvh] max-w-6xl p-0"
-          : identity.isDirect
-            ? "max-w-xl"
-            : "max-w-2xl",
+        "h-[min(94dvh,860px)] max-h-[94dvh] max-w-6xl overflow-hidden p-0",
         fullscreen && "h-full max-h-none max-w-none rounded-none border-0 p-0 sm:rounded-none",
       )}
     >
-      <div className={cn("flex min-h-0 flex-col", identity.active && "h-full")}>
+      <div className="flex h-full min-h-0 flex-col">
         <VoiceRoomHeader
           identity={identity}
           connection={connection}
@@ -77,6 +72,7 @@ export function VoiceRoomSheet({
           identity={identity}
           stage={stage}
           controls={controls}
+          sessionPhase={session.phase}
           onInvite={close}
         />
         <VoiceRoomFooter

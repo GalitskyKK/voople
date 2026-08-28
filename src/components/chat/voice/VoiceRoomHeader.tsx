@@ -106,15 +106,13 @@ export function VoiceRoomHeader({
         <HeaderButton label="Настройки звука и соединения" onClick={onOpenSettings}>
           <Settings2 className="h-4 w-4" />
         </HeaderButton>
-        {identity.active ? (
-          <HeaderButton
-            label={fullscreen ? "Выйти из полноэкранного режима" : "Открыть разговор на весь экран"}
-            disabled={fullscreenPending}
-            onClick={() => void onToggleFullscreen()}
-          >
-            {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-          </HeaderButton>
-        ) : null}
+        <HeaderButton
+          label={fullscreen ? "Выйти из полноэкранного режима" : "Открыть разговор на весь экран"}
+          disabled={fullscreenPending}
+          onClick={() => void onToggleFullscreen()}
+        >
+          {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </HeaderButton>
       </div>
     </header>
   );

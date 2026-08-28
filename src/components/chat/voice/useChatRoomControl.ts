@@ -13,6 +13,7 @@ import { ConnectionQuality, Room } from "livekit-client";
 import { reportProductEvent } from "@/lib/telemetry/client";
 
 import { getDirectCallPhase } from "./call-phase";
+import { resolveVoiceRoomSurfacePhase } from "./voice-room-surface";
 import type {
   ChatRoomControlHandle,
   ChatRoomControlProps,
@@ -53,6 +54,7 @@ export function useChatRoomControl(
   const [mediaStatus, setMediaStatus] = useState<MediaStatus>("idle");
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [audioBlocked, setAudioBlocked] = useState(false);
+  const [sessionTransition, setSessionTransition] = useState<"connecting" | "leaving" | null>(null);
   const [connectionQuality, setConnectionQuality] = useState(ConnectionQuality.Unknown);
   const [activeSpeakerIds, setActiveSpeakerIds] = useState<ReadonlySet<string>>(() => new Set());
   const [remoteMicMutedById, setRemoteMicMutedById] = useState<Record<string, boolean>>({});
@@ -206,6 +208,7 @@ export function useChatRoomControl(
   }, [mediaConnection.connect, setRecoveryConnectMedia]);
 
   const enterAndConnect = () => sessionOperation.run(async ({ isCurrent }) => {
+    setSessionTransition("connecting");
     setMediaError(null);
     try {
       if (!inside) {
@@ -229,17 +232,25 @@ export function useChatRoomControl(
       reportProductEvent("room_joined", { kind: chatType });
     } catch {
       // Mutation and media errors are already reflected in the shared sheet.
+    } finally {
+      if (isCurrent()) setSessionTransition(null);
     }
   });
   const leaveRoom = async () => {
+    setSessionTransition("leaving");
     sessionOperation.cancel();
     mediaConnection.disconnect();
-    await server.leave.mutateAsync({ chatId });
-    reportProductEvent("room_left", {
-      durationSeconds: value?.startedAt
-        ? Math.max(0, Math.round((Date.now() - new Date(value.startedAt).getTime()) / 1_000))
-        : 0,
-    });
+    try {
+      await server.leave.mutateAsync({ chatId });
+      await server.room.refetch();
+      reportProductEvent("room_left", {
+        durationSeconds: value?.startedAt
+          ? Math.max(0, Math.round((Date.now() - new Date(value.startedAt).getTime()) / 1_000))
+          : 0,
+      });
+    } finally {
+      setSessionTransition(null);
+    }
   };
   const toggleOutputWithMicrophone = async () => {
     if (!output.outputMuted && !micMuted) await mediaActions.toggleMicrophone();
@@ -284,6 +295,7 @@ export function useChatRoomControl(
       : "auto";
   const errorMessage =
     mediaError ??
+    server.room.error?.message ??
     server.enter.error?.message ??
     server.leave.error?.message ??
     server.access.error?.message ??
@@ -294,7 +306,15 @@ export function useChatRoomControl(
       ? "Связь с комнатой нестабильна. Voople продолжает попытки восстановить heartbeat."
       : null);
   const connectPending =
-    server.enter.isPending || server.mediaToken.isPending || mediaStatus === "connecting";
+    sessionTransition === "connecting" || server.enter.isPending ||
+    server.mediaToken.isPending || mediaStatus === "connecting";
+  const surfacePhase = resolveVoiceRoomSurfacePhase({
+    transition: sessionTransition,
+    loading: server.room.isLoading,
+    inside,
+    mediaStatus,
+    hasError: Boolean(errorMessage),
+  });
 
   return {
     roots: {
@@ -414,12 +434,13 @@ export function useChatRoomControl(
         }),
       },
       session: {
+        phase: surfacePhase,
         inside,
-        leavePending: server.leave.isPending,
+        leavePending: sessionTransition === "leaving" || server.leave.isPending,
         onLeave: leaveRoom,
         connectPending,
         connectDisabled:
-          connectPending || server.leave.isPending || server.room.isLoading ||
+          connectPending || sessionTransition === "leaving" || server.leave.isPending || server.room.isLoading ||
           (value?.status === "active" && value.accessMode === "locked" && !inside),
         onConnect: enterAndConnect,
         connectLabel: inside

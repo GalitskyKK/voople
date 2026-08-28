@@ -19,7 +19,9 @@ export function LegalConsentGate({
   onSignOut: () => Promise<void>;
 }) {
   const status = trpc.user.legalConsentStatus.useQuery(undefined, {
-    retry: false,
+    retry: (failureCount, error) =>
+      error.data?.code === "SERVICE_UNAVAILABLE" && failureCount < 2,
+    retryDelay: (attempt) => Math.min(750 * 2 ** attempt, 2_000),
     refetchOnWindowFocus: false,
   });
   const accept = trpc.user.acceptLegalDocuments.useMutation();

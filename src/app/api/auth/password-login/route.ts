@@ -8,6 +8,7 @@ import { desktopCorsPreflight, withDesktopCors } from "@/lib/http/desktop-cors";
 import { rateLimits } from "@/lib/ratelimit";
 import { checkRateLimit } from "@/lib/ratelimit-guard";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { createFetchWithRetry } from "@/lib/supabase/fetch-retry";
 
 const bodySchema = z.object({
   email: z.string().email().max(320),
@@ -36,6 +37,7 @@ export async function POST(request: Request) {
     if (!supabaseUrl || !anonKey) throw new Error("Auth is not configured");
     const auth = createClient(supabaseUrl, anonKey, {
       auth: { autoRefreshToken: false, persistSession: false },
+      global: { fetch: createFetchWithRetry(2, 10_000) },
     });
     const { data, error } = await auth.auth.signInWithPassword({
       email: parsed.data.email.trim(),

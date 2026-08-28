@@ -18,7 +18,8 @@ export function isTemporaryAuthError(error: unknown) {
     message.includes("timeout") ||
     message.includes("socket") ||
     message.includes("econnreset") ||
-    message.includes("etimedout")
+    message.includes("etimedout") ||
+    message.includes("jwt issued at future")
   );
 }
 

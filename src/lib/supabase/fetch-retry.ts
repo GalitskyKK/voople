@@ -19,6 +19,15 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+export async function isFutureJwtResponse(response: Response) {
+  if (response.status !== 401) return false
+  try {
+    return (await response.clone().text()).toLowerCase().includes("jwt issued at future")
+  } catch {
+    return false
+  }
+}
+
 async function fetchWithTimeout(
   input: RequestInfo | URL,
   init: RequestInit | undefined,
@@ -69,7 +78,13 @@ export function createFetchWithRetry(maxAttempts = 2, timeoutMs = 4_500): typeof
     let lastError: unknown
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
-        return await fetchWithTimeout(input, init, timeoutMs)
+        const response = await fetchWithTimeout(input, init, timeoutMs)
+        if (attempt < maxAttempts - 1 && await isFutureJwtResponse(response)) {
+          lastError = new Error("Supabase rejected a token before its issued-at time")
+          await sleep(1_000)
+          continue
+        }
+        return response
       } catch (error) {
         lastError = error
         if (!isRetryableNetworkError(error) || attempt === maxAttempts - 1) {

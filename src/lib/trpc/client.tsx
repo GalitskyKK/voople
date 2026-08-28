@@ -31,8 +31,14 @@ function shouldRetryQuery(failureCount: number, error: unknown) {
 
 function getBaseUrl() {
   if (typeof window !== "undefined") return "";
-  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
-  return `http://localhost:${process.env.PORT ?? 3000}`;
+  const runtimeProcess = (
+    globalThis as typeof globalThis & {
+      process?: { env?: Record<string, string | undefined> };
+    }
+  ).process;
+  const runtimeEnv = runtimeProcess?.env;
+  if (runtimeEnv?.NEXT_PUBLIC_APP_URL) return runtimeEnv.NEXT_PUBLIC_APP_URL;
+  return `http://localhost:${runtimeEnv?.PORT ?? 3000}`;
 }
 
 export function TRPCReactProvider({ children }: { children: React.ReactNode }) {

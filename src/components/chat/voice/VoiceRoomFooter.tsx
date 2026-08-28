@@ -9,19 +9,16 @@ import type {
   VoiceRoomAccessModel,
   VoiceRoomConnectionModel,
   VoiceRoomControlsModel,
-  VoiceRoomIdentityModel,
   VoiceRoomSessionModel,
 } from "./voice-room-sheet-models";
 import { VoiceMediaControls } from "./VoiceMediaControls";
 
 export function VoiceRoomFooter({
-  identity,
   connection,
   controls,
   access,
   session,
 }: {
-  identity: VoiceRoomIdentityModel;
   connection: VoiceRoomConnectionModel;
   controls: VoiceRoomControlsModel;
   access: VoiceRoomAccessModel;
@@ -54,7 +51,6 @@ export function VoiceRoomFooter({
 
       <div className="flex flex-wrap items-center justify-center gap-2">
         <VoiceMediaControls
-          compact={identity.active}
           mediaStatus={connection.status}
           micMuted={controls.micMuted}
           outputMuted={controls.outputMuted}

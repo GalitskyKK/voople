@@ -80,7 +80,6 @@ export function VoiceRoomSheet({
           onInvite={close}
         />
         <VoiceRoomFooter
-          identity={identity}
           connection={connection}
           controls={controls}
           access={access}

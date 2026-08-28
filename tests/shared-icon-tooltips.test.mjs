@@ -92,6 +92,9 @@ test("room and primary messaging icon controls share one tooltip vocabulary", ()
   }
   assert.match(roomButton, /display\s*=\s*"icon"/);
   assert.match(sectionCreator, /label="Новый раздел"/);
+  assert.match(roomMedia, /grid h-11 w-11 place-items-center rounded-full/);
+  assert.doesNotMatch(roomMedia, /compact\??:/);
+  assert.doesNotMatch(roomMedia, /<span/);
 });
 
 test("attachment menu always offers photos and only offers music with a picker", () => {

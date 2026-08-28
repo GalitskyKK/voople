@@ -4,6 +4,7 @@
 - [Readiness текущего стабилизационного релиза](./current-stabilization-release-readiness.md)
 - [Стратегия open source, лицензирования и governance](./open-source-strategy.md)
 - [План Linux, macOS, Android и iOS](./platform-roadmap.md)
+- [План скриншотов для публичного README](./readme-shot-list.md)
 
 | Файл | Описание |
 |------|----------|

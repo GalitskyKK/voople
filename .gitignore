@@ -36,6 +36,10 @@
 !/docs/current-stabilization-release-readiness.md
 !/docs/open-source-strategy.md
 !/docs/platform-roadmap.md
+!/docs/readme-shot-list.md
+!/docs/readme-assets/
+!/docs/readme-assets/.gitkeep
+!/docs/readme-assets/*.webp
 /drizzle/*
 !/drizzle/38-group-emojis.sql
 !/drizzle/39-structured-chat-content.sql

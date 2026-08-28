@@ -112,12 +112,24 @@
   сохранить защищённый системный picker браузера и показывать preview уже
   выбранного пользователем media track.
 
+## P2 — локализация после стабилизации общих Views
+
+- Ввести единый typed message catalog для web/desktop/mobile без строковых
+  platform-копий, оставить русский полной исходной локалью и добавить полный
+  английский перевод одним вертикальным срезом.
+- Хранить выбранную локаль в профиле с device fallback, локализовать server-
+  generated notifications/release notes и проверять plural/date/time formats в
+  часовом поясе пользователя.
+- Не выпускать «частичный English»: маршруты, loading/empty/error/offline,
+  accessibility labels, emails и критические legal surfaces входят в один DoD.
+
 ## Стратегические потоки после стабилизации P0/P1
 
 - Open source и защита продукта выполняются по
-  [отдельному decision plan](./open-source-strategy.md). Публичность репозитория
-  сама по себе не означает выдачу лицензии. До проверки прав на код, бренд и
-  ассеты файл `LICENSE` не добавляется.
+  [отдельному decision plan](./open-source-strategy.md). Собственный код уже
+  опубликован под `AGPL-3.0-only`, бренд и ассеты отделены. До ownership/asset/
+  dependency audit, legal review и CLA нельзя считать governance завершённым,
+  принимать значимые внешние PR или обещать коммерческое перелицензирование.
 - Linux, macOS, Android и iOS развиваются по
   [capability-driven platform roadmap](./platform-roadmap.md). Сначала общий
   контракт возможностей и platform spikes, затем перенос функций по вертикальным

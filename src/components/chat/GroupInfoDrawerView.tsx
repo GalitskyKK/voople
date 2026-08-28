@@ -15,6 +15,16 @@ import { GroupIdentity } from "./GroupManagementTrigger";
 export type GroupInfoDrawerTab = "info" | "members";
 type MemberFilter = "now" | "online" | "all" | "roles";
 
+function getMemberRoom(
+  member: ChatGroupMemberView,
+  legacyRoomParticipantIds: ReadonlySet<string>,
+) {
+  if (member.activeRoom) return member.activeRoom;
+  return legacyRoomParticipantIds.has(member.id)
+    ? { chatId: "root", name: "Основная комната" }
+    : null;
+}
+
 export function GroupInfoDrawerView({
   open,
   tab,
@@ -78,10 +88,10 @@ export function GroupInfoDrawerView({
 }) {
   const [memberFilter, setMemberFilter] = useState<MemberFilter>("now");
   const onlineCount = members?.filter((member) => onlineUserIds.has(member.id)).length ?? 0;
-  const roomCount = members?.filter((member) => roomParticipantIds.has(member.id)).length ?? 0;
+  const roomCount = members?.filter((member) => getMemberRoom(member, roomParticipantIds)).length ?? 0;
   const visibleMembers = useMemo(() => {
     const source = members ?? [];
-    if (memberFilter === "now") return source.filter((member) => roomParticipantIds.has(member.id));
+    if (memberFilter === "now") return source.filter((member) => getMemberRoom(member, roomParticipantIds));
     if (memberFilter === "online") return source.filter((member) => onlineUserIds.has(member.id));
     return source;
   }, [memberFilter, members, onlineUserIds, roomParticipantIds]);
@@ -155,12 +165,19 @@ export function GroupInfoDrawerView({
               </div>
             ) : null}
             <div className="mt-3 space-y-2">
-            {membersLoading ? <div className="h-32 animate-pulse rounded-2xl bg-[var(--app-surface-soft)]" /> : visibleMembers.map((member) => (
-              <button key={member.id} type="button" onClick={() => onOpenProfile(member.username)} className="flex w-full items-center gap-3 rounded-xl p-2 text-left hover:bg-[var(--app-surface-soft)]">
-                <GroupAvatar name={member.displayName} avatarUrl={member.avatarUrl ?? null} icon={null} accentColor={member.roleColor} size="sm" />
-                <span className="min-w-0 flex-1"><span className="flex items-center gap-1.5 truncate text-sm font-medium">{member.displayName}{roomParticipantIds.has(member.id) ? <Radio className="h-3.5 w-3.5 shrink-0 text-[var(--theme-accent)]" /> : onlineUserIds.has(member.id) ? <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" /> : null}</span><span className="block truncate text-xs text-[var(--app-muted)]">@{member.username} · {member.role === "owner" ? "владелец" : member.role === "admin" ? "администратор" : "участник"}</span></span>
-              </button>
-            ))}
+            {membersLoading ? <div className="h-32 animate-pulse rounded-2xl bg-[var(--app-surface-soft)]" /> : visibleMembers.map((member) => {
+              const activeRoom = getMemberRoom(member, roomParticipantIds);
+              return (
+                <button key={member.id} type="button" onClick={() => onOpenProfile(member.username)} className="flex w-full items-center gap-3 rounded-xl p-2 text-left hover:bg-[var(--app-surface-soft)]">
+                  <GroupAvatar name={member.displayName} avatarUrl={member.avatarUrl ?? null} icon={null} accentColor={member.roleColor} size="sm" />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1.5 truncate text-sm font-medium">{member.displayName}{activeRoom ? <Radio className="h-3.5 w-3.5 shrink-0 text-[var(--theme-accent)]" /> : onlineUserIds.has(member.id) ? <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" /> : null}</span>
+                    <span className="block truncate text-xs text-[var(--app-muted)]">@{member.username} · {member.role === "owner" ? "владелец" : member.role === "admin" ? "администратор" : "участник"}</span>
+                    {activeRoom ? <span className="mt-0.5 block truncate text-xs text-[var(--theme-accent)]">Сейчас в комнате · {activeRoom.name}</span> : null}
+                  </span>
+                </button>
+              );
+            })}
             {!membersLoading && !visibleMembers.length ? <p className="rounded-xl bg-[var(--app-surface-soft)] px-3 py-5 text-center text-sm text-[var(--app-muted)]">{memberFilter === "now" ? "Сейчас в комнате никого нет" : memberFilter === "online" ? "Сейчас никто не в сети" : "Участников пока нет"}</p> : null}
             </div>
           </div>

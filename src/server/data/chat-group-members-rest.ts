@@ -1,6 +1,7 @@
 import { getAdminClient } from "@/lib/supabase/admin";
 import { assertChatMemberRest } from "@/server/data/chat-access-rest";
 import { getGroupCommunityRest } from "@/server/data/chat-community-rest";
+import { getVisibleGroupRoomPresenceRest } from "@/server/data/chat-group-room-presence-rest";
 import { mapUserSearchRow, type UserSearchRow } from "@/server/mappers/user-search";
 import type { ChatGroupMemberView } from "@/types/chat";
 
@@ -15,13 +16,14 @@ export async function listGroupMembersRest(
   if (membership.type !== "group") throw new Error("Это не групповая беседа");
 
   const admin = getAdminClient();
-  const [{ data, error }, community] = await Promise.all([
+  const [{ data, error }, community, activeRooms] = await Promise.all([
     admin
       .from("chat_members")
       .select(`user_id, role, joined_at, users (${USER_CARD_SELECT})`)
       .eq("chat_id", membership.accessChatId)
       .order("joined_at", { ascending: true }),
     getGroupCommunityRest(membership.accessChatId, userId),
+    getVisibleGroupRoomPresenceRest(membership, userId),
   ]);
   if (error) throw new Error(error.message);
 
@@ -36,6 +38,7 @@ export async function listGroupMembersRest(
         ...mapUserSearchRow(user),
         role,
         roleColor: community.effectiveRoleColors[role],
+        activeRoom: activeRooms.get(user.id) ?? null,
       } satisfies ChatGroupMemberView];
     })
     .sort((a, b) => {

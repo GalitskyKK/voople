@@ -10,6 +10,7 @@ export function ChatSectionsBarView({
   rootChat,
   activeChatId,
   renderDestination,
+  createAction,
 }: {
   rootChat: ChatListItem;
   activeChatId: string;
@@ -18,6 +19,7 @@ export function ChatSectionsBarView({
     className: string,
     children: ReactNode,
   ) => ReactNode;
+  createAction?: ReactNode;
 }) {
   if (!rootChat.topicsEnabled) return null;
   const sections = [rootChat, ...rootChat.channels];
@@ -49,6 +51,7 @@ export function ChatSectionsBarView({
           </>,
         ),
       )}
+      {createAction}
     </nav>
   );
 }

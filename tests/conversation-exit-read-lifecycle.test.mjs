@@ -29,7 +29,7 @@ test("message queries are read-only and acknowledgement is time-bounded", () => 
 
 test("the released getMessages contract remains compatible with older desktop clients", () => {
   const router = read("src/server/trpc/routers/chat-messages.ts");
-  const legacy = router.match(/getMessages:[\s\S]*?\n  }\),\n  observeMessages:/)?.[0] ?? "";
+  const legacy = router.match(/getMessages:[\s\S]*?\r?\n  }\),\r?\n  observeMessages:/)?.[0] ?? "";
   const desktop = read("desktop/src/chat/useDesktopChatThread.ts");
 
   assert.match(legacy, /markMessagesRead\(input\.chatId, ctx\.user\.id, throughAt\)/);

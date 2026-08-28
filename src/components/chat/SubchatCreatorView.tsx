@@ -91,7 +91,7 @@ export function SubchatCreatorView({
         label="Новый раздел"
         tooltipSide="bottom"
         onClick={() => setOpen(true)}
-        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--app-border)] text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]"
+        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]"
       >
         <Plus className="h-4 w-4" />
       </IconButton>

@@ -210,8 +210,6 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         parentChatId={data?.chat.parentChatId}
         parentName={data?.chat.parentName}
         memberCount={data?.chat.memberCount ?? 0}
-        topicsEnabled={data?.chat.topicsEnabled ?? false}
-        topicsLayout={data?.chat.topicsLayout ?? "list"}
         topicIcon={data?.chat.topicIcon ?? null}
         groupIcon={data?.chat.groupIcon ?? null}
         groupAvatarUrl={data?.chat.groupAvatarUrl ?? null}
@@ -222,7 +220,9 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         other={other}
         otherOnline={otherOnline}
       />}
-      sections={isGroup ? <ChatSectionsBar chatId={chatId} /> : null}
+      sections={isGroup ? (
+        <ChatSectionsBar chatId={chatId} viewerRole={data?.chat.viewerRole ?? "member"} />
+      ) : null}
       timeline={timeline}
       messagesRef={messagesRef}
       messagesContentRef={messagesContentRef}

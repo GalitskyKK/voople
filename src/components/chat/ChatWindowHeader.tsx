@@ -12,7 +12,6 @@ import { ChatPeerPresence } from "./ChatPeerPresence";
 import { ChatWindowHeaderVisual } from "./ChatWindowHeaderVisual";
 import { GroupInfoDrawer } from "./GroupInfoDrawer";
 import { SectionAccessSheet } from "./SectionAccessSheet";
-import { SubchatCreator } from "./SubchatCreator";
 import { VoiceRoomButton } from "./voice/VoiceRoomButton";
 
 type ChatWindowHeaderProps = {
@@ -23,8 +22,6 @@ type ChatWindowHeaderProps = {
   parentChatId?: string | null;
   parentName?: string | null;
   memberCount: number;
-  topicsEnabled: boolean;
-  topicsLayout: "tabs" | "list";
   topicIcon: string | null;
   groupIcon: string | null;
   groupAvatarUrl: string | null;
@@ -44,7 +41,6 @@ export function ChatWindowHeader({
   parentChatId,
   parentName,
   memberCount,
-  topicsEnabled,
   topicIcon,
   groupIcon,
   groupAvatarUrl,
@@ -122,9 +118,6 @@ export function ChatWindowHeader({
           </p>
         ) : null}
       </div>}
-      {isGroup && !isSubchat && topicsEnabled ? (
-        <SubchatCreator parentChatId={chatId} viewerRole={viewerRole} />
-      ) : null}
       {isSubchat && parentChatId && viewerRole !== "member" ? (
         <SectionAccessSheet chatId={chatId} parentChatId={parentChatId} />
       ) : null}

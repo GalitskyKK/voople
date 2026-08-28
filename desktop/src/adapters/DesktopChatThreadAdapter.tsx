@@ -298,20 +298,6 @@ export function DesktopChatThreadAdapter({
             </button>
           ) : null}
         </div>}
-        {isGroup &&
-        !isSubchat &&
-        data.chat.topicsEnabled ? (
-          <DesktopSubchatCreatorAdapter
-            parentChatId={chatId}
-            config={config}
-            session={session}
-            viewerRole={data.chat.viewerRole}
-            onCreated={(createdChatId) => {
-              onInboxChange();
-              onNavigateChat(createdChatId);
-            }}
-          />
-        ) : null}
         {isSubchat &&
         data.chat.parentChatId &&
         data.chat.viewerRole !== "member" ? (
@@ -336,6 +322,18 @@ export function DesktopChatThreadAdapter({
         <ChatSectionsBarView
           rootChat={rootChat}
           activeChatId={chatId}
+          createAction={
+            <DesktopSubchatCreatorAdapter
+              parentChatId={rootChat.id}
+              config={config}
+              session={session}
+              viewerRole={data.chat.viewerRole}
+              onCreated={(createdChatId) => {
+                onInboxChange();
+                onNavigateChat(createdChatId);
+              }}
+            />
+          }
           renderDestination={(chat, className, children) => (
             <button
               key={chat.id}

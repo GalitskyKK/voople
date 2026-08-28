@@ -146,6 +146,10 @@ export type ChatGroupMemberView = {
   avatarUrl?: string | null;
   role: "owner" | "admin" | "member";
   roleColor: string | null;
+  activeRoom?: {
+    chatId: string;
+    name: string;
+  } | null;
 };
 
 export type ChatGroupAuditAction =

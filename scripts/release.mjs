@@ -712,6 +712,11 @@ async function main() {
       args: [
         "node_modules/next/dist/bin/next",
         "build",
+        // The Windows release host can deny Turbopack's pooled PostCSS child
+        // process. CI still performs the authoritative default-bundler build.
+        ...(process.platform === "win32"
+          ? ["--webpack"]
+          : []),
       ],
     },
 

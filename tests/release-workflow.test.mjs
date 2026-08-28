@@ -24,6 +24,10 @@ test("local release E2E exercises the production build deterministically", () =>
   const playwrightConfig = read("playwright.config.ts");
 
   assert.match(releaseScript, /VOOPLE_RELEASE_E2E:\s*"1"/);
+  assert.match(
+    releaseScript,
+    /process\.platform === "win32"[\s\S]*?\["--webpack"\]/,
+  );
   assert.match(playwrightConfig, /isReleaseE2E/);
   assert.match(playwrightConfig, /isReleaseE2E[\s\S]*localProductionCommand/);
   assert.match(playwrightConfig, /isReleaseE2E \? 1 : 2/);

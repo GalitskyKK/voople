@@ -54,11 +54,22 @@ test("shared tooltip supports mouse, keyboard, viewport changes and reduced moti
 
   assert.match(tooltip, /event\.pointerType !== "touch"/);
   assert.match(tooltip, /onFocusCapture/);
+  assert.match(tooltip, /currentTarget\.contains\(target\)/);
   assert.match(tooltip, /event\.key === "Escape"/);
   assert.match(tooltip, /addEventListener\("scroll", handleViewportChange, true\)/);
   assert.match(iconButton, /aria-label=\{label\}/);
   assert.doesNotMatch(iconButton, /title=/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.voople-tooltip/);
+});
+
+test("sidebar account tooltip only responds to its physical trigger", () => {
+  const tooltip = read("src/components/ui/Tooltip.tsx");
+  const account = read("src/components/layout/AccountMenuVisual.tsx");
+  const dropdown = read("src/components/ui/DropdownMenu.tsx");
+
+  assert.match(account, /aria-expanded=\{open\}/);
+  assert.match(dropdown, /createPortal/);
+  assert.match(tooltip, /ownsEventTarget\(event\.currentTarget, event\.target\)/);
 });
 
 test("room and primary messaging icon controls share one tooltip vocabulary", () => {

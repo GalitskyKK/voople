@@ -19,6 +19,10 @@ import { cn } from "@/lib/utils";
 
 type TooltipPosition = { left: number; top: number; side: TooltipSide };
 
+function ownsEventTarget(currentTarget: HTMLElement, target: EventTarget | null) {
+  return target instanceof Node && currentTarget.contains(target);
+}
+
 function readViewportInset(name: string) {
   const value = Number.parseFloat(
     window.getComputedStyle(document.documentElement).getPropertyValue(name),
@@ -109,11 +113,16 @@ export function Tooltip({
       ref={anchorRef}
       className={cn("voople-tooltip-anchor", className)}
       onPointerEnter={(event) => {
-        if (event.pointerType !== "touch") openAfterDelay();
+        if (
+          event.pointerType !== "touch" &&
+          ownsEventTarget(event.currentTarget, event.target)
+        ) {
+          openAfterDelay();
+        }
       }}
       onPointerLeave={close}
-      onFocusCapture={() => {
-        if (!disabled) {
+      onFocusCapture={(event) => {
+        if (!disabled && ownsEventTarget(event.currentTarget, event.target)) {
           clearTimer();
           setOpen(true);
         }

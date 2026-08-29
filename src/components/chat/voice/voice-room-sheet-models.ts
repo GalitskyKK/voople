@@ -76,6 +76,9 @@ export type VoiceRoomSessionModel = {
   connectDisabled: boolean;
   onConnect: () => void | Promise<void>;
   connectLabel: string;
+  retryLabel: string;
+  retryPending: boolean;
+  onRetry: () => void | Promise<void>;
 };
 
 export type VoiceRoomSheetProps = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
@@ -31,6 +31,27 @@ export function Sheet({
   const mounted = useIsClient();
   const isBottom = placement === "bottom";
   const isRight = placement === "right";
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const activeElement = document.activeElement;
+    returnFocusRef.current =
+      activeElement instanceof HTMLElement && activeElement !== document.body
+        ? activeElement
+        : null;
+
+    return () => {
+      const returnTarget = returnFocusRef.current;
+      returnFocusRef.current = null;
+      if (!returnTarget?.isConnected) return;
+
+      window.requestAnimationFrame(() => {
+        if (returnTarget.isConnected) returnTarget.focus({ preventScroll: true });
+      });
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -94,6 +115,7 @@ export function Sheet({
       >
         <button
           type="button"
+          autoFocus
           onClick={onClose}
           className="absolute right-3 top-3 z-10 rounded-lg p-2 text-[color-mix(in_srgb,var(--foreground)_50%,transparent)] transition-colors hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] hover:text-[var(--foreground)]"
           aria-label="Закрыть"

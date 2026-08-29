@@ -72,8 +72,10 @@ export function VoiceRoomSheet({
           identity={identity}
           stage={stage}
           controls={controls}
-          sessionPhase={session.phase}
+          session={session}
+          errorMessage={connection.errorMessage}
           onInvite={close}
+          onClose={close}
         />
         <VoiceRoomFooter
           connection={connection}

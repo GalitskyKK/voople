@@ -551,6 +551,17 @@ body {
     radial-gradient(circle at 82% 80%, color-mix(in srgb, #38bdf8 8%, transparent), transparent 28rem);
 }
 
+@keyframes voople-room-state-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .voople-room-surface__state {
+    animation: voople-room-state-enter 160ms var(--voople-ease-out) both;
+  }
+}
+
 @keyframes voople-page-enter {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }

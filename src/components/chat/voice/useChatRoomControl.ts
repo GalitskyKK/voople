@@ -33,6 +33,7 @@ import { useVoiceOutput } from "./useVoiceOutput";
 import { useVoicePreferences } from "./useVoicePreferences";
 import { useVoiceRoomEventConfigurator } from "./useVoiceRoomEventConfigurator";
 import { useVoiceRoomServerSession } from "./useVoiceRoomServerSession";
+import { useVoiceRoomSurfaceSession } from "./useVoiceRoomSurfaceSession";
 import { useVoiceRoomTermination } from "./useVoiceRoomTermination";
 import { useVoiceSessionOperation } from "./useVoiceSessionOperation";
 import { useVoiceVideoStage } from "./useVoiceVideoStage";
@@ -54,7 +55,6 @@ export function useChatRoomControl(
   const [mediaStatus, setMediaStatus] = useState<MediaStatus>("idle");
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [audioBlocked, setAudioBlocked] = useState(false);
-  const [sessionTransition, setSessionTransition] = useState<"connecting" | "leaving" | null>(null);
   const [connectionQuality, setConnectionQuality] = useState(ConnectionQuality.Unknown);
   const [activeSpeakerIds, setActiveSpeakerIds] = useState<ReadonlySet<string>>(() => new Set());
   const [remoteMicMutedById, setRemoteMicMutedById] = useState<Record<string, boolean>>({});
@@ -206,65 +206,40 @@ export function useChatRoomControl(
   useEffect(() => {
     setRecoveryConnectMedia(mediaConnection.connect);
   }, [mediaConnection.connect, setRecoveryConnectMedia]);
-
-  const enterAndConnect = () => sessionOperation.run(async ({ isCurrent }) => {
-    setSessionTransition("connecting");
-    setMediaError(null);
-    try {
-      if (!inside) {
-        const nextRoom = await server.enter.mutateAsync({
-          chatId,
-          micMuted: desiredMicMutedRef.current,
-        });
-        if (!isCurrent()) {
-          await server.leave.mutateAsync({ chatId }).catch(() => undefined);
-          return;
-        }
-        server.utils.chat.room.setData({ chatId }, nextRoom);
-        if (!active) reportProductEvent("room_created", { kind: chatType });
-      }
-      if (!isCurrent()) return;
-      await mediaConnection.connect();
-      if (!isCurrent()) {
-        mediaConnection.disconnect();
-        return;
-      }
-      reportProductEvent("room_joined", { kind: chatType });
-    } catch {
-      // Mutation and media errors are already reflected in the shared sheet.
-    } finally {
-      if (isCurrent()) setSessionTransition(null);
-    }
+  const surfaceSession = useVoiceRoomSurfaceSession({
+    chatId,
+    chatType,
+    inside,
+    active,
+    startedAt: value?.startedAt ?? null,
+    desiredMicMutedRef,
+    server,
+    mediaConnection,
+    sessionOperation,
+    setMediaError,
   });
-  const leaveRoom = async () => {
-    setSessionTransition("leaving");
-    sessionOperation.cancel();
-    mediaConnection.disconnect();
-    try {
-      await server.leave.mutateAsync({ chatId });
-      await server.room.refetch();
-      reportProductEvent("room_left", {
-        durationSeconds: value?.startedAt
-          ? Math.max(0, Math.round((Date.now() - new Date(value.startedAt).getTime()) / 1_000))
-          : 0,
-      });
-    } finally {
-      setSessionTransition(null);
-    }
-  };
+  const {
+    transition: sessionTransition,
+    failedOperation: failedSessionOperation,
+    resetSurface: resetSessionSurface,
+    enterAndConnect,
+    leaveRoom,
+  } = surfaceSession;
   const toggleOutputWithMicrophone = async () => {
     if (!output.outputMuted && !micMuted) await mediaActions.toggleMicrophone();
     const muted = output.toggleOutput();
     void playVoiceRoomSound(muted ? "deafen" : "undeafen");
   };
   const openRoom = useCallback(() => {
+    resetSessionSurface();
     setMediaError(null);
     setOpen(true);
     reportProductEvent("room_opened", { kind: chatType });
-  }, [chatType]);
+  }, [chatType, resetSessionSurface]);
   const closeRoom = () => {
     devices.micTest.stop();
     video.parkVisibleMedia();
+    resetSessionSurface();
     setOpen(false);
   };
   const resumeAudio = async () => {
@@ -305,6 +280,14 @@ export function useChatRoomControl(
     (heartbeat.health === "degraded"
       ? "Связь с комнатой нестабильна. Voople продолжает попытки восстановить heartbeat."
       : null);
+  const surfaceErrorMessage =
+    mediaError ??
+    server.room.error?.message ??
+    server.enter.error?.message ??
+    server.leave.error?.message ??
+    server.mediaToken.error?.message ??
+    null;
+  const roomLoadFailed = Boolean(server.room.error);
   const connectPending =
     sessionTransition === "connecting" || server.enter.isPending ||
     server.mediaToken.isPending || mediaStatus === "connecting";
@@ -313,7 +296,7 @@ export function useChatRoomControl(
     loading: server.room.isLoading,
     inside,
     mediaStatus,
-    hasError: Boolean(errorMessage),
+    hasError: Boolean(surfaceErrorMessage),
   });
 
   return {
@@ -329,7 +312,7 @@ export function useChatRoomControl(
       chatName, participantCount, durationLabel, mediaStatus, connectionLabel,
       connectionQuality, micMuted, outputMuted: output.outputMuted,
       mediaActionPending: mediaActions.mediaActionPending,
-      leavePending: server.leave.isPending,
+      leavePending: sessionTransition === "leaving" || server.leave.isPending,
       onOpen: openRoom,
       onToggleMic: () => void mediaActions.toggleMicrophone(),
       onToggleOutput: () => void toggleOutputWithMicrophone(),
@@ -448,6 +431,26 @@ export function useChatRoomControl(
           : active
             ? value?.status === "ringing" ? "Ответить" : "Войти в комнату"
             : isDirect ? "Открыть комнату" : "Начать комнату",
+        retryLabel:
+          failedSessionOperation === "leave"
+            ? "Повторить выход"
+            : roomLoadFailed
+              ? "Повторить загрузку"
+            : "Повторить подключение",
+        retryPending:
+          sessionTransition === "connecting" ||
+          sessionTransition === "leaving" ||
+          (roomLoadFailed
+            ? server.room.isFetching
+            : failedSessionOperation === "leave"
+              ? false
+              : server.enter.isPending || server.mediaToken.isPending),
+        onRetry:
+          failedSessionOperation === "leave"
+            ? leaveRoom
+            : roomLoadFailed
+              ? () => void server.room.refetch()
+              : enterAndConnect,
       },
     },
     picker: desktopAudio.capturePicker ? {

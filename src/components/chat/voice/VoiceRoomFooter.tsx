@@ -44,7 +44,7 @@ export function VoiceRoomFooter({
           Комната закрыта для свободного входа.
         </p>
       ) : null}
-      {connection.errorMessage ? (
+      {connection.errorMessage && session.phase !== "error" ? (
         <p className="mb-2 text-center text-sm text-red-400" role="alert">
           {connection.errorMessage}
         </p>
@@ -71,6 +71,8 @@ export function VoiceRoomFooter({
             <Loader2 className="h-4 w-4 animate-spin" />
             Выходим…
           </Button>
+        ) : session.phase === "error" || session.phase === "post-leave" ? (
+          null
         ) : session.inside && connected ? (
           <IconButton
             label="Выйти из комнаты"

@@ -20,12 +20,12 @@ test("voice operation generations reject work completed after cancellation", () 
 });
 
 test("join uses microphone intent and compensates a cancelled server enter", () => {
-  const control = read("src/components/chat/voice/useChatRoomControl.ts");
+  const lifecycle = read("src/components/chat/voice/useVoiceRoomSurfaceSession.ts");
 
-  assert.match(control, /micMuted: desiredMicMutedRef\.current/);
-  assert.doesNotMatch(control, /mutateAsync\(\{ chatId, micMuted \}\)/);
-  assert.match(control, /if \(!isCurrent\(\)\) \{\s+await server\.leave\.mutateAsync/);
-  assert.match(control, /sessionOperation\.cancel\(\);\s+mediaConnection\.disconnect\(\)/);
+  assert.match(lifecycle, /micMuted: desiredMicMutedRef\.current/);
+  assert.doesNotMatch(lifecycle, /mutateAsync\(\{ chatId, micMuted \}\)/);
+  assert.match(lifecycle, /if \(!isCurrent\(\)\) \{\s+await server\.leave\.mutateAsync/);
+  assert.match(lifecycle, /sessionOperation\.cancel\(\);\s+mediaConnection\.disconnect\(\)/);
 });
 
 test("ChatRoomControl is only a shared controller-to-view boundary", () => {

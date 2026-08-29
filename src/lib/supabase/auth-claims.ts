@@ -1,27 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+export { isTemporaryAuthError } from "./session-bootstrap";
+
 export type VerifiedAuthIdentity = {
   id: string;
   email?: string;
 };
-
-export function isTemporaryAuthError(error: unknown) {
-  if (!error || typeof error !== "object") return false;
-
-  const value = error as { message?: string; status?: number; code?: string };
-  const message = value.message?.toLowerCase() ?? "";
-  return (
-    value.status === 0 ||
-    (typeof value.status === "number" && value.status >= 500) ||
-    message.includes("fetch") ||
-    message.includes("network") ||
-    message.includes("timeout") ||
-    message.includes("socket") ||
-    message.includes("econnreset") ||
-    message.includes("etimedout") ||
-    message.includes("jwt issued at future")
-  );
-}
 
 /**
  * Verifies the access token signature and expiry without requesting /auth/v1/user

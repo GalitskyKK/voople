@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import type { DesktopConfig } from "../config";
+import { createFetchWithRetry } from "@/lib/supabase/fetch-retry";
 
 let client: SupabaseClient | null = null;
 
@@ -12,6 +13,7 @@ export function getSupabase(config: DesktopConfig) {
       persistSession: true,
       storageKey: "voople.desktop.session",
     },
+    global: { fetch: createFetchWithRetry(2, 8_000) },
   });
   return client;
 }

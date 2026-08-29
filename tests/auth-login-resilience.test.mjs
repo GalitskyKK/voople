@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { isTemporaryAuthError } from "../src/lib/supabase/auth-claims.ts";
 import { isFutureJwtResponse } from "../src/lib/supabase/fetch-retry.ts";
+import {
+  isTemporaryAuthError,
+  resolveAuthSessionBootstrap,
+} from "../src/lib/supabase/session-bootstrap.ts";
 
 const read = (path) => readFileSync(path, "utf8");
 
@@ -52,4 +55,59 @@ test("only the exact transient Supabase clock-skew response is retried", async (
 test("password login retries bounded Supabase transport failures", () => {
   const route = read("src/app/api/auth/password-login/route.ts");
   assert.match(route, /createFetchWithRetry\(2, 10_000\)/);
+});
+
+test("session bootstrap preserves transient failures without masking expired credentials", async () => {
+  const ready = await resolveAuthSessionBootstrap(async () => ({
+    value: { id: "viewer" },
+    error: null,
+  }));
+  assert.deepEqual(ready, { status: "ready", value: { id: "viewer" } });
+
+  const temporary = await resolveAuthSessionBootstrap(async () => ({
+    value: null,
+    error: { message: "JWT issued at future", status: 401 },
+  }));
+  assert.equal(temporary.status, "error");
+  assert.equal(temporary.reason, "temporary");
+
+  const expired = await resolveAuthSessionBootstrap(async () => ({
+    value: null,
+    error: { message: "invalid JWT signature", status: 401 },
+  }));
+  assert.deepEqual(expired, { status: "ready", value: null });
+
+  const unexpected = await resolveAuthSessionBootstrap(async () => {
+    throw new Error("storage adapter failed");
+  });
+  assert.equal(unexpected.status, "error");
+  assert.equal(unexpected.reason, "unexpected");
+});
+
+test("session bootstrap has a bounded timeout state", async () => {
+  const result = await resolveAuthSessionBootstrap(
+    () => new Promise(() => undefined),
+    5,
+  );
+  assert.equal(result.status, "error");
+  assert.equal(result.reason, "timeout");
+});
+
+test("web and desktop expose one recoverable bootstrap contract", () => {
+  const webLayout = read("src/app/(main)/layout.tsx");
+  const webRecovery = read("src/components/auth/WebSessionBootstrapRecovery.tsx");
+  const desktopProvider = read("desktop/src/auth/AuthProvider.tsx");
+  const desktopSupabase = read("desktop/src/auth/supabase.ts");
+
+  assert.match(webLayout, /resolveAuthSessionBootstrap/);
+  assert.match(webLayout, /WebSessionBootstrapRecovery/);
+  assert.ok(
+    webLayout.indexOf('bootstrap.status === "error"') <
+      webLayout.indexOf("const authenticated = Boolean(user)"),
+  );
+  assert.match(webRecovery, /window\.addEventListener\("online", retry\)/);
+  assert.match(desktopProvider, /event === "INITIAL_SESSION"/);
+  assert.match(desktopProvider, /getUser\(data\.session\.access_token\)/);
+  assert.match(desktopProvider, /window\.addEventListener\("online", retry/);
+  assert.match(desktopSupabase, /createFetchWithRetry\(2, 8_000\)/);
 });

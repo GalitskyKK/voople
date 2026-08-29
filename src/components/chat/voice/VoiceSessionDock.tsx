@@ -4,12 +4,10 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ChevronDown,
   ChevronUp,
-  GripVertical,
   Mic,
   MicOff,
   PhoneOff,
   Settings2,
-  Scaling,
   Volume2,
   VolumeX,
   Wifi,
@@ -21,6 +19,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { cn } from "@/lib/utils";
 import { reportProductEvent } from "@/lib/telemetry/client";
 import type { MediaStatus } from "./voice-room-config";
+import { VoiceDockResizeHandles } from "./VoiceDockResizeHandles";
 import { useVoiceDockGeometry } from "./useVoiceDockGeometry";
 
 type VoiceSessionDockProps = {
@@ -118,25 +117,40 @@ export function VoiceSessionDock({
     <div
       ref={dockRef}
       className={cn(
-        "voople-voice-dock fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] left-1/2 z-[70] flex -translate-x-1/2 flex-col gap-2 rounded-2xl border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_94%,transparent)] p-2 shadow-[var(--app-shadow-nav)] backdrop-blur-xl lg:bottom-4",
+        "voople-voice-dock fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] left-1/2 z-[70] flex -translate-x-1/2 touch-none select-none flex-col gap-2 overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_94%,transparent)] p-2 shadow-[var(--app-shadow-nav)] backdrop-blur-xl lg:bottom-4",
+        geometry.gestureActive ? "cursor-grabbing" : "cursor-grab",
       )}
       style={geometry.style}
       role="region"
       aria-label="Текущий голосовой разговор"
+      onPointerDown={(event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        if (target.closest("[data-voice-dock-control]")) return;
+        const dragSurface = target.closest("[data-voice-dock-drag-surface]");
+        if (!dragSurface && target.closest("button, a, input, textarea, select, label, [role='button'], [role='menuitem']")) return;
+        geometry.startMove(event);
+      }}
+      onPointerMove={geometry.updateGesture}
+      onPointerUp={geometry.endGesture}
+      onPointerCancel={geometry.cancelGesture}
+      onClickCapture={geometry.captureClick}
+      onDoubleClick={(event) => {
+        const target = event.target;
+        if (target instanceof Element && !target.closest("[data-voice-dock-control]")) {
+          geometry.resetPosition();
+        }
+      }}
     >
-      {mediaPreview}
-      <div className="flex w-full items-center gap-2">
-        <IconButton
-          label="Переместить окно разговора"
-          className="grid h-10 w-5 shrink-0 touch-none cursor-grab place-items-center rounded-lg text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] active:cursor-grabbing"
-          onDoubleClick={geometry.resetPosition}
-          onPointerDown={geometry.startMove}
-          onPointerMove={geometry.updateGesture}
-          onPointerUp={geometry.endGesture}
-          onPointerCancel={geometry.cancelGesture}
+      {mediaPreview ? (
+        <div
+          data-voice-dock-drag-surface=""
+          className="min-h-0 flex-1 cursor-grab overflow-hidden active:cursor-grabbing [&>*]:h-full"
         >
-          <GripVertical className="h-4 w-4" />
-        </IconButton>
+          {mediaPreview}
+        </div>
+      ) : null}
+      <div data-voice-dock-control="" className="flex w-full shrink-0 items-center gap-2">
         <IconButton
           label="Компактный режим"
           onClick={() => changeMode("compact")}
@@ -145,81 +159,78 @@ export function VoiceSessionDock({
           <ChevronDown className="h-4 w-4" />
         </IconButton>
         <button
-        type="button"
-        onClick={onOpen}
-        className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-2 py-1.5 text-left transition hover:bg-[var(--app-surface-soft)]"
-      >
-        <span
+          type="button"
+          onClick={onOpen}
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-2 py-1.5 text-left transition hover:bg-[var(--app-surface-soft)]"
+        >
+          <span
+            className={cn(
+              "grid h-9 w-9 shrink-0 place-items-center rounded-full",
+              mediaStatus === "connected"
+                ? "bg-emerald-500/12 text-emerald-500"
+                : "bg-amber-500/12 text-amber-500",
+            )}
+          >
+            {weakConnection ? <WifiOff className="h-4 w-4" /> : <Wifi className="h-4 w-4" />}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-semibold">{chatName}</span>
+            <span className="block truncate text-xs text-[var(--app-muted)]">
+              {mediaStatus === "connected"
+                ? `${participantCount} в разговоре${durationLabel ? ` · ${durationLabel}` : ""}`
+                : connectionLabel ?? "Подключаем…"}
+            </span>
+          </span>
+        </button>
+
+        <IconButton
+          label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
+          disabled={mediaActionPending || mediaStatus !== "connected"}
+          onClick={onToggleMic}
           className={cn(
-            "grid h-9 w-9 shrink-0 place-items-center rounded-full",
-            mediaStatus === "connected"
-              ? "bg-emerald-500/12 text-emerald-500"
-              : "bg-amber-500/12 text-amber-500",
+            "grid h-10 w-10 shrink-0 place-items-center rounded-xl border transition disabled:opacity-50",
+            micMuted
+              ? "border-red-500/25 bg-red-500/10 text-red-500"
+              : "border-[var(--theme-accent)] bg-[var(--theme-accent)] text-white",
           )}
         >
-          {weakConnection ? <WifiOff className="h-4 w-4" /> : <Wifi className="h-4 w-4" />}
-        </span>
-        <span className="min-w-0">
-          <span className="block truncate text-sm font-semibold">{chatName}</span>
-          <span className="block truncate text-xs text-[var(--app-muted)]">
-            {mediaStatus === "connected"
-              ? `${participantCount} в разговоре${durationLabel ? ` · ${durationLabel}` : ""}`
-              : connectionLabel ?? "Подключаем…"}
-          </span>
-        </span>
-      </button>
-
-      <IconButton
-        label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
-        disabled={mediaActionPending || mediaStatus !== "connected"}
-        onClick={onToggleMic}
-        className={cn(
-          "grid h-10 w-10 shrink-0 place-items-center rounded-xl border transition disabled:opacity-50",
-          micMuted
-            ? "border-red-500/25 bg-red-500/10 text-red-500"
-            : "border-[var(--theme-accent)] bg-[var(--theme-accent)] text-white",
-        )}
-      >
-        {micMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-      </IconButton>
-      <IconButton
-        label={outputMuted ? "Включить звук собеседников" : "Выключить звук собеседников"}
-        onClick={onToggleOutput}
-        className={cn(
-          "grid h-10 w-10 shrink-0 place-items-center rounded-xl border transition",
-          outputMuted
-            ? "border-red-500/25 bg-red-500/10 text-red-500"
-            : "border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-muted)]",
-        )}
-      >
-        {outputMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-      </IconButton>
-      <IconButton
-        label="Участники и настройки"
-        onClick={onOpen}
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-muted)] transition hover:text-[var(--foreground)]"
-      >
-        <Settings2 className="h-4 w-4" />
-      </IconButton>
-      <IconButton
-        label="Выйти из разговора"
-        disabled={leavePending}
-        onClick={onLeave}
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-red-500 text-white transition hover:bg-red-400 disabled:opacity-50"
-      >
-        <PhoneOff className="h-4 w-4" />
-      </IconButton>
+          {micMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+        </IconButton>
+        <IconButton
+          label={outputMuted ? "Включить звук собеседников" : "Выключить звук собеседников"}
+          onClick={onToggleOutput}
+          className={cn(
+            "grid h-10 w-10 shrink-0 place-items-center rounded-xl border transition",
+            outputMuted
+              ? "border-red-500/25 bg-red-500/10 text-red-500"
+              : "border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-muted)]",
+          )}
+        >
+          {outputMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+        </IconButton>
+        <IconButton
+          label="Участники и настройки"
+          onClick={onOpen}
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-muted)] transition hover:text-[var(--foreground)]"
+        >
+          <Settings2 className="h-4 w-4" />
+        </IconButton>
+        <IconButton
+          label="Выйти из разговора"
+          disabled={leavePending}
+          onClick={onLeave}
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-red-500 text-white transition hover:bg-red-400 disabled:opacity-50"
+        >
+          <PhoneOff className="h-4 w-4" />
+        </IconButton>
       </div>
-      <IconButton
-        label="Изменить размер окна разговора"
-        className="absolute bottom-1 right-1 z-10 grid h-6 w-6 touch-none cursor-nwse-resize place-items-center rounded-md text-[var(--app-muted)] opacity-45 transition hover:bg-[var(--app-surface-soft)] hover:opacity-100"
-        onPointerDown={geometry.startResize}
-        onPointerMove={geometry.updateGesture}
-        onPointerUp={geometry.endGesture}
-        onPointerCancel={geometry.cancelGesture}
-      >
-        <Scaling className="h-3.5 w-3.5" />
-      </IconButton>
+      <VoiceDockResizeHandles
+        onStart={geometry.startResize}
+        onMove={geometry.updateGesture}
+        onEnd={geometry.endGesture}
+        onCancel={geometry.cancelGesture}
+        onKeyDown={geometry.resizeWithKeyboard}
+      />
     </div>
   );
 }

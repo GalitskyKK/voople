@@ -35,7 +35,10 @@ export function VoiceMiniStage({
     participants[0];
 
   return (
-    <div className="group relative aspect-video w-full overflow-hidden rounded-xl bg-black">
+    <div
+      data-voice-dock-drag-surface=""
+      className="group relative aspect-video h-full min-h-0 w-full cursor-grab overflow-hidden rounded-xl bg-black active:cursor-grabbing"
+    >
       {screenShareOwner ? (
         <div
           ref={screenContainerRef}

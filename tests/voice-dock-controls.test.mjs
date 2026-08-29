@@ -3,6 +3,11 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { resizeVoiceDockRect } from "../src/lib/livekit/voice-dock-geometry.ts";
+import {
+  describeVoiceDockMediaState,
+  formatVoiceDockParticipantCount,
+  resolveVoiceDockActiveSpeaker,
+} from "../src/lib/livekit/voice-dock-state.ts";
 
 const read = (path) => readFileSync(path, "utf8");
 const base = {
@@ -78,4 +83,30 @@ test("remote participant context menu controls the existing persisted LiveKit vo
   assert.match(menu, /Сбросить до 100%/);
   assert.match(output, /persistPreferences\(\{[\s\S]*participantVolumes:/);
   assert.match(output, /participant\.trackPublications\.values\(\)/);
+});
+
+test("compact room summary keeps participant, speaker and active capture state visible", () => {
+  const participants = [
+    { id: "me", displayName: "Вы" },
+    { id: "biba", displayName: "Biba" },
+  ];
+
+  assert.equal(resolveVoiceDockActiveSpeaker(participants, new Set(["biba"])), "Biba");
+  assert.equal(resolveVoiceDockActiveSpeaker(participants, new Set()), null);
+  assert.equal(formatVoiceDockParticipantCount(1), "1 участник");
+  assert.equal(formatVoiceDockParticipantCount(3), "3 участника");
+  assert.equal(formatVoiceDockParticipantCount(12), "12 участников");
+  assert.deepEqual(
+    describeVoiceDockMediaState({ micMuted: false, cameraEnabled: true, screenSharing: true }),
+    ["микрофон включён", "камера включена", "экран передаётся"],
+  );
+
+  const compact = read("src/components/chat/voice/VoiceCompactSessionDock.tsx");
+  const minimal = read("src/components/chat/voice/VoiceMinimalSessionDock.tsx");
+  const dock = read("src/components/chat/voice/VoiceSessionDock.tsx");
+  assert.match(compact, /activeSpeakerName/);
+  assert.match(compact, /VoiceDockMediaIndicators/);
+  assert.match(minimal, /participantLabel/);
+  assert.match(minimal, /VoiceDockMediaIndicators/);
+  assert.match(dock, /reportProductEvent\("room_expanded", \{ state: "full" \}\)/);
 });

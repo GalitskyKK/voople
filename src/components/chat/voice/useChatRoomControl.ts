@@ -1,23 +1,14 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-  type ForwardedRef,
-} from "react";
+import { useCallback, useEffect, useImperativeHandle, useRef, useState, type ForwardedRef } from "react";
 import { ConnectionQuality, Room } from "livekit-client";
 
 import { reportProductEvent } from "@/lib/telemetry/client";
+import { resolveVoiceDockActiveSpeaker } from "@/lib/livekit/voice-dock-state";
 
 import { getDirectCallPhase } from "./call-phase";
 import { resolveVoiceRoomSurfacePhase } from "./voice-room-surface";
-import type {
-  ChatRoomControlHandle,
-  ChatRoomControlProps,
-} from "./chat-room-control-types";
+import type { ChatRoomControlHandle, ChatRoomControlProps } from "./chat-room-control-types";
 import { getConnectionLabel, type MediaStatus } from "./voice-room-config";
 import { playVoiceRoomSound } from "./voice-room-sounds";
 import { useCallDuration } from "./useCallDuration";
@@ -310,7 +301,10 @@ export function useChatRoomControl(
     } : null,
     dock: inside ? {
       chatName, participantCount, durationLabel, mediaStatus, connectionLabel,
+      activeSpeakerName: resolveVoiceDockActiveSpeaker(participants, activeSpeakerIds),
       connectionQuality, micMuted, outputMuted: output.outputMuted,
+      cameraEnabled: video.cameraEnabled,
+      screenSharing: video.screenSharing,
       mediaActionPending: mediaActions.mediaActionPending,
       leavePending: sessionTransition === "leaving" || server.leave.isPending,
       onOpen: openRoom,

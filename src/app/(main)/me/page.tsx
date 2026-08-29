@@ -1,13 +1,15 @@
 import { redirect } from "next/navigation"
 
-import { createClient } from "@/lib/supabase/server"
+import { WebSessionBootstrapRecovery } from "@/components/auth/WebSessionBootstrapRecovery"
 import { api } from "@/lib/trpc/server"
+import { getServerAuthBootstrap } from "@/server/services/auth-session.service"
 
 export default async function MePage() {
-  const supabase = await createClient()
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
+  const bootstrap = await getServerAuthBootstrap()
+  if (bootstrap.status === "error") {
+    return <WebSessionBootstrapRecovery reason={bootstrap.reason} />
+  }
+  const user = bootstrap.value
 
   if (!user) {
     redirect("/login")

@@ -1,6 +1,7 @@
 import { HashtagFeed } from "@/components/feed/HashtagFeed"
 import { HashtagPageHeader } from "@/components/feed/HashtagPageHeader"
-import { createClient } from "@/lib/supabase/server"
+import { WebSessionBootstrapRecovery } from "@/components/auth/WebSessionBootstrapRecovery"
+import { getServerAuthBootstrap } from "@/server/services/auth-session.service"
 import { getHashtagFeedPage } from "@/server/services/feed.service"
 
 type HashtagPageProps = {
@@ -14,10 +15,11 @@ function normalizeTag(tag: string) {
 export default async function HashtagPage({ params }: HashtagPageProps) {
   const { tag: rawTag } = await params
   const tag = normalizeTag(rawTag)
-  const supabase = await createClient()
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
+  const bootstrap = await getServerAuthBootstrap()
+  if (bootstrap.status === "error") {
+    return <WebSessionBootstrapRecovery reason={bootstrap.reason} />
+  }
+  const user = bootstrap.value
   const viewerId = user?.id ?? null
   const initialPage = await getHashtagFeedPage({ tag, viewerId, limit: 20 })
 

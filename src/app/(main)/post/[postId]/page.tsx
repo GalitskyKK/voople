@@ -2,8 +2,9 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { PostDetailView } from "@/components/feed/PostDetailView"
+import { WebSessionBootstrapRecovery } from "@/components/auth/WebSessionBootstrapRecovery"
 import { ogImageUrl } from "@/lib/seo/metadata"
-import { createClient } from "@/lib/supabase/server"
+import { getServerAuthBootstrap } from "@/server/services/auth-session.service"
 import { getPostById } from "@/server/services/post.service"
 
 type PostDetailPageProps = {
@@ -60,10 +61,11 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
 
 export default async function PostDetailPage({ params }: PostDetailPageProps) {
   const { postId } = await params
-  const supabase = await createClient()
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
+  const bootstrap = await getServerAuthBootstrap()
+  if (bootstrap.status === "error") {
+    return <WebSessionBootstrapRecovery reason={bootstrap.reason} />
+  }
+  const user = bootstrap.value
   const viewerId = user?.id ?? null
   const post = await getPostById(postId, viewerId)
 

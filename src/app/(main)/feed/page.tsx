@@ -1,10 +1,11 @@
 import { Suspense } from "react"
 
 import { Feed } from "@/components/feed/Feed"
+import { WebSessionBootstrapRecovery } from "@/components/auth/WebSessionBootstrapRecovery"
 import type { FeedTabId } from "@/lib/constants/copy"
-import { createClient } from "@/lib/supabase/server"
 import { getFeedPage } from "@/server/services/feed.service"
 import { getHomeOverview } from "@/server/services/home.service"
+import { getServerAuthBootstrap } from "@/server/services/auth-session.service"
 import { HomeNowPanel, HomeSecondaryRail } from "@/components/home/HomeOverviewPanels"
 import { HomeFeedLayoutView } from "@/components/home/HomeFeedLayoutView"
 import type { HomeOverviewView } from "@/types/home"
@@ -20,10 +21,11 @@ function resolveFeedTab(tab: string | undefined): FeedTabId {
 export default async function FeedPage({ searchParams }: FeedPageProps) {
   const params = await searchParams
   const tab = resolveFeedTab(params?.tab)
-  const supabase = await createClient()
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
+  const bootstrap = await getServerAuthBootstrap()
+  if (bootstrap.status === "error") {
+    return <WebSessionBootstrapRecovery reason={bootstrap.reason} />
+  }
+  const user = bootstrap.value
   const viewerId = user?.id ?? null
   const [initialPage, overview] = await Promise.all([
     getFeedPage({

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { WebSessionBootstrapRecovery } from "@/components/auth/WebSessionBootstrapRecovery";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
-import { createClient } from "@/lib/supabase/server";
+import { getServerAuthBootstrap } from "@/server/services/auth-session.service";
 
 export const metadata: Metadata = {
   title: "Настройка профиля",
@@ -14,8 +15,14 @@ export default async function OnboardingPage({
 }: {
   searchParams: Promise<{ username?: string; redirect?: string }>;
 }) {
-  const [{ username, redirect: requestedRedirect }, supabase] = await Promise.all([searchParams, createClient()]);
-  const { data: { user } } = await supabase.auth.getUser();
+  const [{ username, redirect: requestedRedirect }, bootstrap] = await Promise.all([
+    searchParams,
+    getServerAuthBootstrap(),
+  ]);
+  if (bootstrap.status === "error") {
+    return <WebSessionBootstrapRecovery reason={bootstrap.reason} />;
+  }
+  const user = bootstrap.value;
   if (!user) redirect("/login");
   if (!username) redirect("/feed");
   const redirectAfter =

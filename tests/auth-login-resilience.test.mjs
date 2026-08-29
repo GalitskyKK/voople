@@ -99,7 +99,7 @@ test("web and desktop expose one recoverable bootstrap contract", () => {
   const desktopProvider = read("desktop/src/auth/AuthProvider.tsx");
   const desktopSupabase = read("desktop/src/auth/supabase.ts");
 
-  assert.match(webLayout, /resolveAuthSessionBootstrap/);
+  assert.match(webLayout, /getServerAuthBootstrap/);
   assert.match(webLayout, /WebSessionBootstrapRecovery/);
   assert.ok(
     webLayout.indexOf('bootstrap.status === "error"') <
@@ -110,4 +110,27 @@ test("web and desktop expose one recoverable bootstrap contract", () => {
   assert.match(desktopProvider, /getUser\(data\.session\.access_token\)/);
   assert.match(desktopProvider, /window\.addEventListener\("online", retry/);
   assert.match(desktopSupabase, /createFetchWithRetry\(2, 8_000\)/);
+});
+
+test("Server Components share one request-scoped optional viewer result", () => {
+  const service = read("src/server/services/auth-session.service.ts");
+  const surfaces = [
+    "src/app/(main)/layout.tsx",
+    "src/app/(main)/[username]/page.tsx",
+    "src/app/(main)/feed/page.tsx",
+    "src/app/(main)/group/[slug]/page.tsx",
+    "src/app/(main)/hashtag/[tag]/page.tsx",
+    "src/app/(main)/me/page.tsx",
+    "src/app/(main)/post/[postId]/page.tsx",
+    "src/app/onboarding/page.tsx",
+  ];
+
+  assert.match(service, /cache\(async \(\) =>/);
+  assert.match(service, /resolveAuthSessionBootstrap<User>/);
+  for (const path of surfaces) {
+    const source = read(path);
+    assert.match(source, /getServerAuthBootstrap\(\)/, path);
+    assert.doesNotMatch(source, /auth\.getUser\(/, path);
+    assert.doesNotMatch(source, /createClient\(/, path);
+  }
 });

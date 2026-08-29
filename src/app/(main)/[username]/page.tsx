@@ -3,8 +3,9 @@ import { notFound } from "next/navigation"
 
 import { ProfilePage } from "@/components/profile/ProfilePage"
 import { ProfileJsonLd } from "@/components/seo/ProfileJsonLd"
+import { WebSessionBootstrapRecovery } from "@/components/auth/WebSessionBootstrapRecovery"
 import { createProfileMetadata } from "@/lib/seo/metadata"
-import { createClient } from "@/lib/supabase/server"
+import { getServerAuthBootstrap } from "@/server/services/auth-session.service"
 import { getProfileByUsername, getProfilePageData } from "@/server/services/profile.service"
 
 export const revalidate = 60
@@ -30,10 +31,11 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
 export default async function UserProfilePage({ params, searchParams }: PageProps) {
   const { username } = await params
   const { ask } = await searchParams
-  const supabase = await createClient()
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
+  const bootstrap = await getServerAuthBootstrap()
+  if (bootstrap.status === "error") {
+    return <WebSessionBootstrapRecovery reason={bootstrap.reason} />
+  }
+  const user = bootstrap.value
   const viewerId = user?.id ?? null
 
   const pageData = await getProfilePageData(username, viewerId)

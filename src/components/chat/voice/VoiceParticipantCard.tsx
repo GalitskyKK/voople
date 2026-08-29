@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback } from "react";
-import { Mic, MicOff, Volume2 } from "lucide-react";
+import { useCallback, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
+import { Mic, MicOff } from "lucide-react";
 
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { resolveRingStyle } from "@/lib/customization/rings";
 import { cn } from "@/lib/utils";
 import type { ChatRoomParticipantView } from "@/types/chat";
+import { VoiceParticipantContextMenu } from "./VoiceParticipantContextMenu";
 
 export function VoiceParticipantCard({
   participant,
@@ -36,24 +37,44 @@ export function VoiceParticipantCard({
   onFocus?: () => void;
   className?: string;
 }) {
-  const volumePercent = Math.round(volume * 100);
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const [menuPoint, setMenuPoint] = useState<{ x: number; y: number } | null>(null);
   const bindCameraContainer = useCallback(
     (element: HTMLDivElement | null) => {
       onCameraContainerChange(participant.id, element);
     },
     [onCameraContainerChange, participant.id],
   );
+  const openContextMenu = (event: MouseEvent<HTMLDivElement>) => {
+    if (participant.isMe) return;
+    event.preventDefault();
+    setMenuPoint({ x: event.clientX, y: event.clientY });
+  };
+  const openContextMenuFromKeyboard = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (participant.isMe || (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10"))) return;
+    event.preventDefault();
+    const rect = cardRef.current?.getBoundingClientRect();
+    if (rect) setMenuPoint({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+  };
 
   return (
-    <div
-      className={cn(
-        "relative flex flex-col items-center justify-end overflow-hidden rounded-2xl border bg-[var(--app-surface-soft)] text-center transition",
-        compact ? "min-h-32 gap-2 px-3 py-3" : "min-h-44 gap-3 px-4 py-4",
-        focused && "col-span-2 h-full min-h-64 border-(--theme-accent) lg:col-span-4",
-        speaking ? "border-[var(--theme-accent)] shadow-[0_0_0_2px_color-mix(in_srgb,var(--theme-accent)_20%,transparent)]" : "border-[var(--app-border)]",
-        className,
-      )}
-    >
+    <>
+      <div
+        ref={cardRef}
+        role={participant.isMe ? undefined : "group"}
+        tabIndex={participant.isMe ? undefined : 0}
+        aria-haspopup={participant.isMe ? undefined : "menu"}
+        aria-label={participant.isMe ? undefined : `${participant.displayName}. Контекстное меню — Shift+F10`}
+        onContextMenu={openContextMenu}
+        onKeyDown={openContextMenuFromKeyboard}
+        className={cn(
+          "relative flex flex-col items-center justify-end overflow-hidden rounded-2xl border bg-[var(--app-surface-soft)] text-center outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--theme-accent)]",
+          compact ? "min-h-32 gap-2 px-3 py-3" : "min-h-44 gap-3 px-4 py-4",
+          focused && "col-span-2 h-full min-h-64 border-(--theme-accent) lg:col-span-4",
+          speaking ? "border-[var(--theme-accent)] shadow-[0_0_0_2px_color-mix(in_srgb,var(--theme-accent)_20%,transparent)]" : "border-[var(--app-border)]",
+          className,
+        )}
+      >
       <div
         ref={bindCameraContainer}
         className="absolute inset-0"
@@ -121,28 +142,22 @@ export function VoiceParticipantCard({
         </span>
       )}
 
+      </div>
       {!participant.isMe ? (
-        <label
-          className={cn(
-            "relative z-10 flex w-full items-center gap-2 text-xs",
-            hasCamera ? "text-white/80" : "text-[var(--app-muted)]",
-          )}
-        >
-          <Volume2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span className="sr-only">Громкость {participant.displayName}</span>
-          <input
-            type="range"
-            min={0}
-            max={200}
-            step={5}
-            value={volumePercent}
-            onChange={(event) => onVolumeChange(Number(event.target.value) / 100)}
-            className="min-w-0 flex-1 accent-[var(--theme-accent)]"
-            aria-label={`Громкость ${participant.displayName}: ${volumePercent}%`}
-          />
-          <span className="w-9 text-right tabular-nums">{volumePercent}%</span>
-        </label>
+        <VoiceParticipantContextMenu
+          participant={participant}
+          open={Boolean(menuPoint)}
+          anchorPoint={menuPoint}
+          volume={volume}
+          onOpenChange={(open) => {
+            if (!open) {
+              setMenuPoint(null);
+              cardRef.current?.focus({ preventScroll: true });
+            }
+          }}
+          onVolumeChange={onVolumeChange}
+        />
       ) : null}
-    </div>
+    </>
   );
 }

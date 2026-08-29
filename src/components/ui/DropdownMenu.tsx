@@ -20,8 +20,9 @@ import { cn } from "@/lib/utils";
 type DropdownMenuProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
   children: React.ReactNode;
+  anchorPoint?: { x: number; y: number } | null;
   align?: "start" | "end";
   side?: "bottom" | "left" | "right" | "inward";
   menuClassName?: string;
@@ -35,6 +36,7 @@ export function DropdownMenu({
   onOpenChange,
   trigger,
   children,
+  anchorPoint = null,
   align = "end",
   side = "bottom",
   menuClassName,
@@ -48,35 +50,40 @@ export function DropdownMenu({
 
   const updatePosition = useCallback(() => {
     const triggerEl = triggerRef.current;
-    if (!triggerEl) return;
+    if (!triggerEl && !anchorPoint) return;
 
-    const rect = triggerEl.getBoundingClientRect();
-    const menuWidth = menuRef.current?.offsetWidth ?? Math.max(200, rect.width);
+    const rect = triggerEl?.getBoundingClientRect();
+    const anchorWidth = rect?.width ?? 0;
+    const anchorLeft = anchorPoint?.x ?? rect?.left ?? 0;
+    const anchorRight = anchorPoint?.x ?? rect?.right ?? 0;
+    const anchorTop = anchorPoint?.y ?? rect?.top ?? 0;
+    const anchorBottom = anchorPoint?.y ?? rect?.bottom ?? 0;
+    const menuWidth = menuRef.current?.offsetWidth ?? Math.max(200, anchorWidth);
     const menuHeight = menuRef.current?.offsetHeight ?? 160;
     const gap = 4;
 
     const resolvedSide = side === "inward"
-      ? rect.left + rect.width / 2 > window.innerWidth / 2 ? "left" : "right"
+      ? anchorLeft + anchorWidth / 2 > window.innerWidth / 2 ? "left" : "right"
       : side;
-    let top = resolvedSide === "bottom" ? rect.bottom + gap : rect.top;
-    let left = align === "end" ? rect.right - menuWidth : rect.left;
+    let top = resolvedSide === "bottom" ? anchorBottom + gap : anchorTop;
+    let left = align === "end" ? anchorRight - menuWidth : anchorLeft;
 
     if (resolvedSide === "left") {
-      left = rect.left - gap - menuWidth;
-      if (left < 8) left = rect.right + gap;
+      left = anchorLeft - gap - menuWidth;
+      if (left < 8) left = anchorRight + gap;
     } else if (resolvedSide === "right") {
-      left = rect.right + gap;
+      left = anchorRight + gap;
       if (left + menuWidth > window.innerWidth - 8) {
-        left = rect.left - gap - menuWidth;
+        left = anchorLeft - gap - menuWidth;
       }
     } else if (top + menuHeight > window.innerHeight - 8) {
-      top = rect.top - gap - menuHeight;
+      top = anchorTop - gap - menuHeight;
     }
     top = Math.max(8, Math.min(top, window.innerHeight - menuHeight - 8));
     left = Math.max(8, Math.min(left, window.innerWidth - menuWidth - 8));
 
     setPosition({ top, left, minWidth: menuWidth });
-  }, [align, side]);
+  }, [align, anchorPoint, side]);
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -173,9 +180,11 @@ export function DropdownMenu({
 
   return (
     <>
-      <div ref={triggerRef} className={cn("inline-flex", className)}>
-        {triggerNode}
-      </div>
+      {triggerNode ? (
+        <div ref={triggerRef} className={cn("inline-flex", className)}>
+          {triggerNode}
+        </div>
+      ) : null}
       {menu}
     </>
   );

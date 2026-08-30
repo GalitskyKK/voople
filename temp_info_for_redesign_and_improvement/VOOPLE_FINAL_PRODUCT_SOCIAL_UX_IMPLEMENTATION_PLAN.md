@@ -1516,6 +1516,56 @@ reconnect/offline и security/release checks. Новые независимые 
     state model и shared View обслуживают web/desktop, включая small window,
     fullscreen, keyboard/focus restore и reconnect/offline visual gates.
 
+50. Saved Messages (P1 messaging): отдельная приватная поверхность «Избранное»
+    для отправки сообщений и вложений самому себе. Это не фиктивный второй
+    аккаунт и не локальный draft: нужен server-owned owner-only contract,
+    поиск, reply/edit/delete, offline/retry, media limits, retention/export и
+    web/desktop/mobile parity. Содержимое не участвует в рекомендациях и
+    социальной аналитике.
+51. Room messages (P1 core): текстовый поток активной Room живёт рядом со stage,
+    но имеет явную связь с исходным conversation. До реализации зафиксировать
+    политику lifecycle: какие сообщения остаются после завершения, что
+    агрегируется в обычный чат, кто видит историю и как работает moderation.
+    Нельзя снова засорить основной timeline повторяющимися room events.
+52. Full Room invitations (P0 Room): приглашение выбирает разрешённых людей,
+    показывает pending/accepted/declined/expired, доставляется как actionable
+    notification и deep-link preview и уважает invite/presence/room privacy,
+    membership, block и rate limits. Повторная отправка идемпотентна; invite не
+    раскрывает закрытую Room постороннему.
+53. Conversation expansion (P1 Room): direct Room можно явно расширить после
+    приглашения третьего участника. До приглашения UI объясняет, будет ли создана
+    новая group conversation или сохранён исходный DM; история и приватные
+    сообщения двух участников никогда не переносятся неявно. Требуются consent,
+    роли, leave/rejoin и понятный audit event.
+54. Share to messages (P1 messaging): публикации, профили, события, Room и
+    сообщения пересылаются через общий typed preview, а не копированием HTML.
+    Сервер повторно проверяет доступ получателя при чтении; удалённый или ставший
+    закрытым источник получает safe unavailable state. Нужны multi-recipient,
+    optional comment, dedup/idempotency и telemetry без private identifiers.
+55. Conversation attachments library (P1 messaging): drawer/screen с вкладками
+    Media, Files, Links и при необходимости Audio. Источник — paginated server
+    query с теми же membership/section permissions, что у timeline; нужны
+    preview/download, deleted/unavailable, empty/error/offline, MIME/size safety
+    и responsive web/desktop/mobile states.
+56. Message confidentiality programme (P0 trust): до маркетинговых заявлений
+    создать threat model и аудит transport, database/storage encryption,
+    authorization/RLS, backups, logs, notifications, exports и key/secrets
+    handling. E2EE проектировать отдельным protocol slice с audited primitives,
+    per-device keys, verification, rotation, multi-device sync/recovery,
+    attachment encryption, group membership changes, abuse reporting и
+    backward compatibility; не писать собственную криптографию и не называть
+    текущую схему end-to-end encrypted до прохождения независимого review.
+57. Public repository protection (P0 engineering): protected `master`/ruleset,
+    required review и status checks, blocked force-push/deletion, least-privilege
+    Actions permissions, dependency/security scanning, secret scanning/push
+    protection и documented release/tag authority. Настройка не должна блокировать
+    bot/release flow без отдельного проверенного bypass.
+58. Market validation before scale (P0 product): выбрать один начальный сегмент
+    и одно обещание перехода, провести problem/interview and concierge pilots,
+    измерять invite activation, connected-group W1/W4, Room joins/WAU и cost per
+    connected group. Фичи конкурентов используются только как evidence паттернов;
+    roadmap меняется по retention/usage, а не по длине feature checklist.
+
 ---
 
 # 39. Acceptance criteria

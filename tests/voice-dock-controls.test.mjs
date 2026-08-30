@@ -60,6 +60,8 @@ test("mini room exposes full-surface drag, eight resize handles and keyboard res
   assert.match(dock, /onPointerDown=\{\(event\) =>/);
   assert.match(dock, /data-voice-dock-drag-surface/);
   assert.match(preview, /data-voice-dock-drag-surface/);
+  assert.match(preview, /label="Открыть полное окно комнаты"/);
+  assert.match(preview, /data-voice-dock-control=""/);
   for (const direction of ["n", "ne", "e", "se", "s", "sw", "w", "nw"]) {
     assert.match(handles, new RegExp(`direction: "${direction}"`));
   }

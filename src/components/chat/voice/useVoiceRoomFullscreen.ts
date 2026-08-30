@@ -64,6 +64,10 @@ export function useVoiceRoomFullscreen() {
   }, [exitFullscreen]);
 
   useEffect(() => {
+    // React can intentionally replay an effect setup after its cleanup. Reset
+    // the lifecycle guard so a later user-initiated fullscreen request is not
+    // mistaken for work completed after an actual unmount.
+    mountedRef.current = true;
     const handleChange = () => {
       if (ownsNativeFullscreenRef.current && !document.fullscreenElement) {
         generationRef.current += 1;
@@ -86,6 +90,8 @@ export function useVoiceRoomFullscreen() {
       ) {
         void document.exitFullscreen().catch(() => undefined);
       }
+      ownsNativeFullscreenRef.current = false;
+      nativeFullscreenTargetRef.current = null;
     };
   }, []);
 

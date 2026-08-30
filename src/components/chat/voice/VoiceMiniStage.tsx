@@ -2,6 +2,7 @@
 
 import { Maximize2, Mic, MonitorUp } from "lucide-react";
 
+import { IconButton } from "@/components/ui/IconButton";
 import type { ChatRoomParticipantView } from "@/types/chat";
 
 type VoiceMiniStageProps = {
@@ -77,7 +78,7 @@ export function VoiceMiniStage({
         </div>
       ) : null}
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between bg-gradient-to-b from-black/70 to-transparent p-2 text-[11px] text-white">
+      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between bg-gradient-to-b from-black/70 to-transparent p-2 pr-12 text-[11px] text-white">
         <span className="flex min-w-0 items-center gap-1.5 truncate">
           {screenShareOwner ? <MonitorUp className="h-3.5 w-3.5 shrink-0" /> : null}
           {screenShareOwner ?? cameraParticipant?.displayName ?? activeParticipant?.displayName ?? "Разговор"}
@@ -86,16 +87,17 @@ export function VoiceMiniStage({
           {activeParticipant && activeSpeakerIds.has(activeParticipant.id) ? (
             <Mic className="h-3.5 w-3.5 text-emerald-400" aria-label="Говорит сейчас" />
           ) : null}
-          <Maximize2 className="h-3.5 w-3.5 shrink-0" />
         </span>
       </div>
 
-      <button
-        type="button"
+      <IconButton
+        label="Открыть полное окно комнаты"
         onClick={onOpen}
-        className="absolute inset-0 rounded-xl ring-inset transition focus-visible:ring-2 focus-visible:ring-(--theme-accent)"
-        aria-label="Вернуться в окно комнаты"
-      />
+        data-voice-dock-control=""
+        className="absolute right-1.5 top-1.5 z-10 grid h-8 w-8 place-items-center rounded-lg bg-black/45 text-white transition hover:bg-black/70 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white"
+      >
+        <Maximize2 className="h-4 w-4" />
+      </IconButton>
     </div>
   );
 }

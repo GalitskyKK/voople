@@ -59,6 +59,7 @@ test("room sheet owns one secondary panel and cancels stale fullscreen requests"
   assert.match(fullscreen, /generationRef\.current !== generation/);
   assert.match(fullscreen, /document\.fullscreenElement === target/);
   assert.match(fullscreen, /\.desktop-window-content/);
+  assert.match(fullscreen, /useEffect\(\(\) => \{\s+\/\/[^\n]+\n[^\n]+\n[^\n]+\n\s+mountedRef\.current = true/);
   assert.match(fullscreen, /mountedRef\.current = false/);
 });
 

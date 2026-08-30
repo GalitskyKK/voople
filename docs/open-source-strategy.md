@@ -156,7 +156,9 @@ least-privilege workflow permissions, CODEOWNERS и `SECURITY.md`. Дополн�
 3. Ownership/contracts audit, asset provenance manifest и dependency licence inventory.
 4. Legal review текстов, Creator Terms и contributor model.
 5. CLA/DCO automation, SBOM и release notice bundle.
-6. Проверить обязательные GitHub settings отдельным audit.
+6. [Частично выполнено] PR quality gate добавлен в репозиторий; server-side
+   ruleset, secret scanning/push protection, private vulnerability reporting и
+   release environment проверяются отдельным GitHub settings audit.
 7. Только затем активно принимать внешние feature contributions и предлагать
    коммерческую лицензию партнёрам.
    feature contributions.

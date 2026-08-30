@@ -156,9 +156,11 @@ least-privilege workflow permissions, CODEOWNERS и `SECURITY.md`. Дополн�
 3. Ownership/contracts audit, asset provenance manifest и dependency licence inventory.
 4. Legal review текстов, Creator Terms и contributor model.
 5. CLA/DCO automation, SBOM и release notice bundle.
-6. [Частично выполнено] PR quality gate добавлен в репозиторий; server-side
-   ruleset, secret scanning/push protection, private vulnerability reporting и
-   release environment проверяются отдельным GitHub settings audit.
+6. [Выполнено для solo-maintainer] PR quality gate и active `master` ruleset
+   требуют зелёные repository/Gitleaks checks, запрещают direct push, deletion и
+   force-push. Server-side secret scanning/push protection, Dependabot security
+   updates и private vulnerability reporting включены. CODEOWNERS approval
+   станет обязательным после назначения второго доверенного reviewer.
 7. Только затем активно принимать внешние feature contributions и предлагать
    коммерческую лицензию партнёрам.
    feature contributions.

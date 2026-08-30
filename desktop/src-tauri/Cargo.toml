@@ -35,7 +35,7 @@ voople-screen-share-protocol = { path = "../screen-share-protocol" }
 
 [target.'cfg(windows)'.dependencies]
 windows-core = { version = "=0.61.2" }
-windows = { version = "0.61", features = [
+windows = { version = "0.62", features = [
   "Win32_Foundation",
   "Win32_Media_Audio",
   "Win32_Media_Multimedia",

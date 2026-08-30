@@ -108,7 +108,8 @@ test("public repository workflows pin actions and scope privileged credentials",
   const releaseWorkflow = read(".github/workflows/desktop-release.yml");
   const smokeWorkflow = read(".github/workflows/e2e-smoke.yml");
   const secretScanWorkflow = read(".github/workflows/secret-scan.yml");
-  const workflows = `${releaseWorkflow}\n${smokeWorkflow}\n${secretScanWorkflow}`;
+  const qualityWorkflow = read(".github/workflows/quality-gate.yml");
+  const workflows = `${releaseWorkflow}\n${smokeWorkflow}\n${secretScanWorkflow}\n${qualityWorkflow}`;
 
   assert.doesNotMatch(
     workflows,
@@ -116,6 +117,9 @@ test("public repository workflows pin actions and scope privileged credentials",
   );
   assert.match(secretScanWorkflow, /fetch-depth:\s*0/);
   assert.match(secretScanWorkflow, /gitleaks\/gitleaks-action@[0-9a-f]{40}/);
+  assert.match(qualityWorkflow, /pull_request:\s*\n\s+branches:\s*\n\s+- master/);
+  assert.match(qualityWorkflow, /name: Verify repository/);
+  assert.doesNotMatch(qualityWorkflow, /secrets\./);
 
   const windowsJobPreamble = releaseWorkflow.slice(
     releaseWorkflow.indexOf("  windows:"),

@@ -26,6 +26,7 @@ export default defineConfig({
     "./src/server/db/schema.ts",
     "./src/server/db/community-schema.ts",
     "./src/server/db/post-schema.ts",
+    "./src/server/db/chat-room-schema.ts",
   ],
   out: "./drizzle",
   dialect: "postgresql",

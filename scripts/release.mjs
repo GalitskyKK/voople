@@ -26,9 +26,9 @@ const prompt = createInterface({
   output: process.stdout,
 });
 
-let createdTag = null;
-let originalHead = null;
 let releaseCommit = null;
+let createdReleaseBranch = null;
+let releaseBranchPushed = false;
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -311,11 +311,6 @@ async function main() {
     );
   }
 
-  originalHead = git(
-    "rev-parse",
-    "HEAD",
-  );
-
   const desktopPackage =
     JSON.parse(
       originals.get(
@@ -369,6 +364,8 @@ async function main() {
 
   const tag =
     `desktop-v${nextVersion}`;
+  const releaseBranch =
+    `release/${tag}`;
 
   if (
     git(
@@ -380,6 +377,14 @@ async function main() {
     throw new Error(
       `${tag} already exists`,
     );
+  }
+
+  if (git("branch", "--list", releaseBranch)) {
+    throw new Error(`${releaseBranch} already exists locally`);
+  }
+
+  if (git("ls-remote", "--heads", "origin", releaseBranch)) {
+    throw new Error(`${releaseBranch} already exists on origin`);
   }
 
   const previousTag = git(
@@ -890,7 +895,7 @@ async function main() {
   const confirm =
     (
       await prompt.question(
-        "Create release commit, tag and atomically push? [y/N]: ",
+        `Create and push protected release branch ${releaseBranch}? [y/N]: `,
       )
     )
       .trim()
@@ -920,10 +925,10 @@ async function main() {
 
   verifyCargoLock();
 
-  run("git", [
-    "add",
-    ...FILES,
-  ]);
+  run("git", ["switch", "-c", releaseBranch]);
+  createdReleaseBranch = releaseBranch;
+
+  run("git", ["add", ...FILES]);
 
   run("git", [
     "diff",
@@ -942,83 +947,38 @@ async function main() {
     "HEAD",
   );
 
-  run("git", [
-    "tag",
-    "-a",
-    tag,
-    "-m",
-    title,
-  ]);
-
-  createdTag = tag;
-
-  run("git", [
-    "push",
-    "--atomic",
-    "origin",
-    "master",
-    tag,
-  ]);
+  run("git", ["push", "-u", "origin", releaseBranch]);
+  releaseBranchPushed = true;
 
   process.stdout.write(
-    `Released ${tag}. GitHub Actions will build and publish artifacts.\n`,
+    `Prepared ${releaseBranch} at ${releaseCommit}.\n` +
+      "Open a PR to master, merge it after required checks, then run " +
+      `npm run release:publish from synchronized master to publish ${tag}.\n`,
   );
 }
 
 try {
   await main();
 } catch (error) {
-  if (createdTag) {
-    spawnSync(
-      "git",
-      [
-        "tag",
-        "-d",
-        createdTag,
-      ],
-      {
-        stdio: "ignore",
-      },
-    );
+  if (!releaseBranchPushed) {
+    if (createdReleaseBranch) {
+      spawnSync("git", ["switch", "master"], { stdio: "ignore" });
+      spawnSync("git", ["branch", "-D", createdReleaseBranch], { stdio: "ignore" });
+    }
+
+    await restoreFiles();
   }
-
-  if (
-    releaseCommit &&
-    originalHead
-  ) {
-    spawnSync(
-      "git",
-      [
-        "update-ref",
-        "refs/heads/master",
-        originalHead,
-        releaseCommit,
-      ],
-      {
-        stdio: "ignore",
-      },
-    );
-
-    spawnSync(
-      "git",
-      [
-        "read-tree",
-        originalHead,
-      ],
-      {
-        stdio: "ignore",
-      },
-    );
-  }
-
-  await restoreFiles();
 
   process.stderr.write(
     `${
       error instanceof Error
         ? error.message
         : String(error)
-    }\nNo release tag was published.\n`,
+    }\n${
+      releaseBranchPushed
+        ? "The release branch was published, but no tag was published."
+        : "No release branch or tag was published."
+    }\n`,
   );
 
   process.exitCode = 1;

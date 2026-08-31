@@ -42,6 +42,27 @@ test("release unit tests do not depend on shell glob expansion", () => {
   assert.doesNotMatch(releaseScript, /"tests\/\*\.test\.mjs"/);
 });
 
+test("protected master uses a release PR before publishing the tag", () => {
+  const prepare = read("scripts/release.mjs");
+  const publish = read("scripts/publish-release.mjs");
+  const packageJson = JSON.parse(read("package.json"));
+  const workflow = read(".github/workflows/desktop-release.yml");
+
+  assert.match(prepare, /`release\/\$\{tag\}`/);
+  assert.match(prepare, /"ls-remote", "--heads", "origin", releaseBranch/);
+  assert.match(prepare, /"switch", "-c", releaseBranch/);
+  assert.match(prepare, /"push", "-u", "origin", releaseBranch/);
+  assert.doesNotMatch(prepare, /"push",\s*"--atomic",\s*"origin",\s*"master"/);
+  assert.doesNotMatch(prepare, /"tag",\s*"-a",\s*tag/);
+
+  assert.equal(packageJson.scripts["release:publish"], "node scripts/publish-release.mjs");
+  assert.match(publish, /Release publication must run from master/);
+  assert.match(publish, /HEAD is not the freshly merged release PR/);
+  assert.match(publish, /"tag", "-a", tag/);
+  assert.match(publish, /"push", "origin", tag/);
+  assert.match(workflow, /tags:\s*\n\s+- "desktop-v\*"/);
+});
+
 test("release migration readiness has process and database deadlines", () => {
   const releaseScript = read("scripts/release.mjs");
   const readiness = read("scripts/check-migration-readiness.mjs");

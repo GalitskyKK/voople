@@ -1,18 +1,19 @@
 # Voople product delivery matrix
 
-Обновлено: 2026-08-28. Матрица — обязательный рабочий gate, а не декларация о
+Обновлено: 2026-08-31. Матрица — обязательный рабочий gate, а не декларация о
 завершении. Она объединяет исходную спецификацию, дополняющий social/UX-план,
 Reference Map и шесть референсных бордов.
 
 ## Источники истины
 
-1. Поведение и продуктовые контракты: `VOOPLE_PROJECT_SPEC.md` вместе с
+1. Текущий core, IA и порядок переработки:
+   `rework_plan/VOOPLE_CORE_REWORK_PLAN.md`.
+2. Secondary social-функции, которые новый план явно не переопределяет:
    `VOOPLE_FINAL_PRODUCT_SOCIAL_UX_IMPLEMENTATION_PLAN.md`.
-2. Сохраняемая рабочая функциональность: текущее приложение.
-3. Layout, IA, responsive и плотность: `2try_design`.
-4. Identity, cosmetics и отдельные выразительные элементы: `1try_design`.
-5. Исключение: профиль сохраняет реальный двухколоночный skeleton; Board 4 не
-   заменяет его одной широкой карточкой.
+3. Сохраняемая рабочая функциональность: текущее приложение.
+4. Generated rework image задаёт mood и плотность, но переносится с поправками
+   из Visual baseline нового плана, а не буквально.
+5. Исключение: профиль сохраняет реальный двухколоночный skeleton.
 
 `Готово` означает одновременно: реальный контракт данных, серверную
 авторизацию, полноценное взаимодействие, loading/empty/error/offline состояния,
@@ -107,7 +108,7 @@ Reference Map и шесть референсных бордов.
 | 50 | Mini-room geometry and participant controls | Готово в коде · P1 UX | Shared web/desktop mini-room двигается за любую неуправляющую поверхность, включая preview, сохраняет позицию/ширину/высоту, удерживается внутри viewport и меняется с восьми границ/углов pointer-жестом либо стрелками с клавиатуры. Preview имеет отдельную keyboard/tooltip-accessible кнопку открытия полного Room, которая больше не конкурирует с drag gesture. ПКМ, Context Menu и Shift+F10 на удалённом участнике открывают portalled collision-aware меню локальной громкости 0–200%, mute и reset; настройки продолжают применяться и сохраняться существующим LiveKit output controller. До полного `Готово` остаются authenticated web/desktop visual checks при 360/390/1024/1440, Windows scale 125/150%, touch/trackpad и двухклиентный audio gate |
 | 51 | Room compact and minimal states | Готово в коде · P1 UX | Shared web/desktop controller передаёт в dock текущего спикера и локальные capture states. Compact 52 px сохраняет название Room, число участников, speaking/connection state и persistent mic/camera/share indicators с доступными именами; minimal остаётся одной безопасной pill-поверхностью, но больше не теряет Room, participant count и active-media state. Source/unit, architecture, lint и TypeScript gates зелёные. До полного `Готово` остаются authenticated 360/390/1024/1440, обе темы, Windows scale 125/150%, keyboard/screen-reader и реальный multi-participant speaking/capture visual gate |
 | 52 | Saved Messages | Планирование · P1 | Owner-only data contract, полнотекстовый поиск, вложения, edit/delete, offline/retry, retention/export и parity; не моделировать через фиктивного собеседника |
-| 53 | Room messages | Планирование · P1 core | Нужны lifecycle/history/moderation contract и Room side panel без возврата шума system events в основной chat timeline |
+| 53 | Room-context messages | Планирование · P1 core | Сообщения остаются в Group Chat; Room side panel является access-aware фильтром по immutable Room/LiveSession context snapshot, а не вторым history lifecycle |
 | 54 | Full Room invitations | Планирование · P0 Room | Permission/privacy/block/rate-limit contract, pending/accepted/declined/expired, actionable notification/deep link и idempotent delivery |
 | 55 | Direct Room expansion | Планирование · P1 Room | Явный consent и создание group conversation без переноса private DM history; роли, leave/rejoin и audit event |
 | 56 | Share to messages | Планирование · P1 | Typed access-aware preview для posts/profiles/events/Rooms/messages, unavailable state, optional comment, multi-recipient и idempotency |
@@ -115,6 +116,7 @@ Reference Map и шесть референсных бордов.
 | 58 | Message confidentiality programme | Частично · P0 trust | Зафиксированы current-state audit, trusted boundary, threat model, запрет преждевременного E2EE claim, требования к device identity/verification/rotation/recovery, encrypted attachments, groups/Room, moderation и no-downgrade rollout. Кандидаты ограничены audited Signal-style/MLS primitives и LiveKit frame encryption с app-owned key distribution. До реализации нужны protocol/dependency ADR, secure storage на каждой платформе, encrypted envelope pilot, независимый cryptography review и interoperability/compromise gates |
 | 59 | Public repository protection | Готово для solo-maintainer · P0 engineering | GitHub ruleset `Protect master` активен: изменения только через PR, обязательны `Verify repository` и full-history `Scan complete Git history`, required conversation resolution, force-push и deletion запрещены. Server-side secret scanning, push protection, Dependabot alerts/security updates и private vulnerability reporting включены; Actions используют pinned commits и least privilege. Обязательное CODEOWNERS approval включать только после появления второго доверенного reviewer, иначе владелец не сможет легитимно одобрить собственный PR |
 | 60 | Market validation before scale | Планирование · P0 product | Один beachhead-сегмент и обещание перехода, interviews/concierge pilots, invite activation, connected-group W1/W4, Room joins/WAU и cost per connected group вместо feature-count roadmap |
+| 61 | Core rework foundation | Частично · P0 architecture | Новый tracked source gate, ADR, typed feature availability registry и additive schema для Lobby/Room/LiveSession/message context подготовлены без публичного UI switch. До следующего статуса нужны data/service adapters, server authorization/privacy, atomic switch concurrency tests, old-client compatibility и release migration evidence |
 
 ## Cross-platform architecture gate
 

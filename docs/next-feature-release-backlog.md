@@ -5,6 +5,21 @@
 наличием UI-каркаса. Переносить сюда дефекты уже существующего функционала
 нельзя: такие дефекты блокируют текущий релиз.
 
+## Core rework transition
+
+`rework_plan/VOOPLE_CORE_REWORK_PLAN.md` переопределяет текущий core и порядок
+новой разработки. До нового visual shell обязательны:
+
+1. additive Lobby / Room / LiveSession schema без удаления legacy-контрактов;
+2. server-owned read model с membership и presence privacy;
+3. атомарные join/switch/leave и правило одной active session на пользователя;
+4. feature availability registry и rollout `internal -> beta -> stable`;
+5. совместимость с предыдущим поддерживаемым desktop-клиентом.
+
+Старые Home/Feed/discovery пункты ниже сохраняют историческую ценность, но не
+могут вытеснять P0 core rework. Posts, Events, Store, Voople+ и discovery
+остаются secondary/web-beta surfaces согласно новому реестру доступности.
+
 ## P0 следующего feature-релиза
 
 - Web/desktop presentation migration: baseline `desktopPortableUi` обнулён.

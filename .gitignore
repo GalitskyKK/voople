@@ -38,6 +38,7 @@
 !/docs/message-confidentiality.md
 !/docs/platform-roadmap.md
 !/docs/readme-shot-list.md
+!/docs/core-rework-architecture.md
 !/docs/readme-assets/
 !/docs/readme-assets/.gitkeep
 !/docs/readme-assets/*.webp
@@ -58,6 +59,7 @@
 !/drizzle/55-contact-pins.sql
 !/drizzle/56-user-group-profile-tag.sql
 !/drizzle/58-room-invitations.sql
+!/drizzle/59-core-room-foundation.sql
 # Local toolchain experiment for the feature-gated Windows process-audio build.
 /desktop/src-tauri/.cargo/
 

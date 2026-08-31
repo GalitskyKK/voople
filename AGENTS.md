@@ -7,7 +7,7 @@ directory.
 ## Before changing code
 
 1. Inspect the current implementation and nearby tests before editing.
-2. This is Next.js 16.2.6. Read the relevant guide in
+2. This is Next.js 16.3.3. Read the relevant guide in
    `node_modules/next/dist/docs/` before using or changing a Next.js API.
 3. Preserve unrelated and uncommitted user changes. Never restore or rewrite
    files merely to make the working tree clean.
@@ -17,18 +17,20 @@ directory.
 ## Product source gate
 
 Before changing product behaviour, layout or presentation, read the relevant
-parts of all four canonical product sources:
+parts of the tracked canonical product sources:
 
-1. `temp_info_for_redesign_and_improvement/VOOPLE_PROJECT_SPEC.md`
+1. `rework_plan/VOOPLE_CORE_REWORK_PLAN.md`
 2. `temp_info_for_redesign_and_improvement/VOOPLE_FINAL_PRODUCT_SOCIAL_UX_IMPLEMENTATION_PLAN.md`
-3. `temp_info_for_redesign_and_improvement/VOOPLE_REFERENCE_MAP.md`
-4. `temp_info_for_redesign_and_improvement/VOOPLE_DESIGN_RULES.md`
+3. `docs/product-delivery-matrix.md`
+4. `docs/core-rework-architecture.md` for Group, Room, LiveSession or rollout work
 
-The final social/UX plan supplements the project spec; it does not replace it.
-Use the precedence defined by the Reference Map: behaviour from the specs,
-working functionality from the real application, layout/IA from `2try_design`,
-and identity/cosmetics from `1try_design`. Preserve the real two-column profile
-skeleton as the documented exception.
+The core rework plan owns current core behaviour, navigation and visual
+direction. The final social/UX plan supplements secondary surfaces only where
+it does not conflict with the core rework plan. The real application remains
+the source for working behaviour that the plans do not explicitly replace.
+The generated image in `rework_plan` is a moodboard, not a literal layout spec;
+apply the corrections listed in the plan's Visual baseline section. Preserve
+the real two-column profile skeleton as the documented exception.
 
 For every completed product slice, update `docs/product-delivery-matrix.md` with
 the web, desktop, responsive, state and test evidence. A route, placeholder,

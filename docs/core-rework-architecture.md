@@ -79,6 +79,22 @@ code.
 
 ## Compatibility and rollout
 
+The server-owned Group Now read model is the compatibility boundary during the
+dual-read window:
+
+- only a member of the root Group can request it;
+- Room placement is filtered by each participant's `roomsScope` before a view
+  model is built, while the separate online list uses `onlineScope`;
+- an active LiveSession is authoritative when the same user is also reported
+  by the legacy heartbeat tables;
+- legacy root presence maps to Lobby and legacy section presence receives a
+  stable compatibility Room identity;
+- only current Group members are admitted from either presence source.
+
+The read model remains an internal server contract until the capability-gated
+shell has complete loading, empty, error, offline and responsive states. It is
+not exposed by a public procedure merely because the tables and mapper exist.
+
 The rollout order is:
 
 1. additive schema and typed contracts, with no public UI change;

@@ -56,6 +56,7 @@ export {
 } from "@/server/data/chat-management-rest";
 export { setGroupNameRest as setGroupName } from "@/server/data/chat-group-identity-rest";
 export { listGroupMembersRest as listGroupMembers } from "@/server/data/chat-group-members-rest";
+export { getGroupNow } from "@/server/services/group-now.service";
 export {
   listGroupJoinRequestsRest as listGroupJoinRequests,
   resolveGroupJoinRequestRest as resolveGroupJoinRequest,

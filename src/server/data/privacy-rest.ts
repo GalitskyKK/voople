@@ -128,7 +128,7 @@ export async function filterRecommendationEligibleUserIdsRest(userIds: string[])
   return uniqueIds.filter((userId) => settings.get(userId)?.appearInRecommendations !== false);
 }
 
-export async function listVisibleOnlineUserIdsRest(viewerId: string) {
+export async function listVisibleOnlineUserIdsRest(viewerId: string): Promise<string[]> {
   const { data, error } = await getAdminClient().rpc("list_visible_online_user_ids", {
     p_viewer_id: viewerId,
   });

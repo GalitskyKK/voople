@@ -85,9 +85,14 @@ mobile shell отвечают только за bootstrap, navigation, native li
   portal permissions и updater/distribution model.
 - Native application-audio нельзя обещать до spike: portal/desktop support
   различается. Video-only fallback должен быть честным и стабильным.
+- Linux bundle нельзя выпускать, пока Tauri v2 GTK3 dependency chain удерживает
+  `glib < 0.20` с `RUSTSEC-2024-0429`. Текущий Windows-only release не собирает
+  этот platform path; alert допустимо пометить как временно tolerable только с
+  этим release boundary и повторно открыть перед первым Linux artifact.
 
 Gate beta: install/update/uninstall, auth/deep links, chat/profile/feed,
-notifications, voice, camera, screen start/stop/reconnect и crash-free soak.
+notifications, voice, camera, screen start/stop/reconnect, отсутствие открытых
+platform dependency advisories и crash-free soak.
 
 ### Этап 2 — macOS desktop spike, затем beta
 

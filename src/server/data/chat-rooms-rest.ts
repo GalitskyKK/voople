@@ -259,6 +259,19 @@ async function assertNoOtherActiveRoom(chatId: string, userId: string) {
   if (data?.length) {
     throw new Error("Сначала завершите текущий разговор");
   }
+
+  const { data: liveParticipant, error: liveParticipantError } = await admin
+    .from("live_session_participants")
+    .select("session_id")
+    .eq("user_id", userId)
+    .is("left_at", null)
+    .limit(1);
+  if (liveParticipantError && liveParticipantError.code !== "42P01") {
+    throw new Error(liveParticipantError.message);
+  }
+  if (liveParticipant?.length) {
+    throw new Error("Сначала завершите текущий разговор");
+  }
 }
 
 async function finishRoom(

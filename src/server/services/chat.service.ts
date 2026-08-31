@@ -58,6 +58,15 @@ export { setGroupNameRest as setGroupName } from "@/server/data/chat-group-ident
 export { listGroupMembersRest as listGroupMembers } from "@/server/data/chat-group-members-rest";
 export { getGroupNow } from "@/server/services/group-now.service";
 export {
+  archiveGroupRoom,
+  createGroupRoom,
+  expireGroupRoomGrace,
+  heartbeatGroupRoom,
+  joinGroupRoom,
+  leaveGroupRoom,
+  setGroupRoomKind,
+} from "@/server/services/group-room-mutations.service";
+export {
   listGroupJoinRequestsRest as listGroupJoinRequests,
   resolveGroupJoinRequestRest as resolveGroupJoinRequest,
 } from "@/server/data/chat-join-requests-rest";

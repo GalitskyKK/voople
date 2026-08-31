@@ -60,6 +60,7 @@
 !/drizzle/56-user-group-profile-tag.sql
 !/drizzle/58-room-invitations.sql
 !/drizzle/59-core-room-foundation.sql
+!/drizzle/60-core-room-mutations.sql
 # Local toolchain experiment for the feature-gated Windows process-audio build.
 /desktop/src-tauri/.cargo/
 

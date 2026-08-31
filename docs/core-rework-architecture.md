@@ -95,6 +95,23 @@ The read model remains an internal server contract until the capability-gated
 shell has complete loading, empty, error, offline and responsive states. It is
 not exposed by a public procedure merely because the tables and mapper exist.
 
+The mutation boundary is also server-owned. Release migration 60 provides
+service-role-only RPCs for create, pin, archive, join, switch, leave and media
+heartbeats. Join/switch serializes both the actor and target Room in one
+transaction. A switch inside the same root Group is immediate; a DM or another
+Group raises `ROOM_CONTEXT_CONFIRMATION_REQUIRED` unless the caller supplies an
+explicit confirmation. Leave and heartbeat carry the concrete LiveSession ID,
+so a delayed request from the previous Room cannot remove or overwrite a newer
+session.
+
+Temporary Rooms enter `grace` when their last participant leaves and are
+archived only by the bounded grace-expiry operation. Lobby and pinned Rooms
+remain durable while their empty LiveSession ends. During the compatibility
+window, the legacy entry path rejects users who already have a new active
+LiveSession, and the new switch transaction accounts for legacy presence. The
+contract stays internal until real database concurrency, old-client and
+two-client media gates pass.
+
 The rollout order is:
 
 1. additive schema and typed contracts, with no public UI change;

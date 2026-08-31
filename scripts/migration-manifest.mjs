@@ -15,6 +15,7 @@ export const REQUIRED_MIGRATIONS = Object.freeze([
   "55-contact-pins.sql",
   "56-user-group-profile-tag.sql",
   "57-direct-chat-privacy-enforcement.sql",
+  "58-room-invitations.sql",
 ]);
 
 // The ledger must exist before the feature migrations are replayed so every
@@ -36,4 +37,5 @@ export const RELEASE_APPLY_ORDER = Object.freeze([
   "55-contact-pins.sql",
   "56-user-group-profile-tag.sql",
   "57-direct-chat-privacy-enforcement.sql",
+  "58-room-invitations.sql",
 ]);

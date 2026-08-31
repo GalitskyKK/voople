@@ -42,9 +42,11 @@ import {
   recordServerProductEvent,
 } from "@/server/services/client-telemetry.service";
 import { chatMessageProcedures } from "./chat-messages";
+import { chatCoreReworkProcedures } from "./chat-core-rework";
 
 export const chatRouter = createTRPCRouter({
   ...chatMessageProcedures,
+  ...chatCoreReworkProcedures,
   ...chatModerationProcedures,
   ...chatCommunityProcedures,
   ...chatGroupRoleProcedures,

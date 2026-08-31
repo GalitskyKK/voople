@@ -112,6 +112,16 @@ LiveSession, and the new switch transaction accounts for legacy presence. The
 contract stays internal until real database concurrency, old-client and
 two-client media gates pass.
 
+Internal transport is fail-closed. `chat.core*` procedures require an
+authenticated user plus all of: `VOOPLE_RELEASE_CHANNEL=internal`, the
+`multi_room_groups` server capability and the user's UUID in the internal
+allowlist. Missing or invalid configuration resolves to stable/disabled and is
+reported as a hidden surface, not as an open experimental endpoint. Inputs are
+validated at the tRPC boundary, create/manage/join operations retain the shared
+rate limits, and telemetry records only action state rather than Room or user
+identifiers. The UI feature registry remains a second presentation gate; it
+does not replace this server authorization.
+
 The rollout order is:
 
 1. additive schema and typed contracts, with no public UI change;

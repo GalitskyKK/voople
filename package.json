@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:unit": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/*.test.mjs",
+    "test:db:core-room": "node --test tests/integration/core-room-concurrency.integration.mjs",
     "test:e2e": "playwright test",
     "test:e2e:public": "playwright test --project=public",
     "test:e2e:headed": "playwright test --project=authenticated --headed",

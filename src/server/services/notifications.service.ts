@@ -1,5 +1,7 @@
 import { getAdminClient } from "@/lib/supabase/admin";
+import { listCoreRoomInvitePreviewsRest } from "@/server/data/core-room-invitations-rest";
 import { mapSubscriptionFields } from "@/server/mappers/profile";
+import type { CoreRoomInvitePreview } from "@/types/room-invitations";
 
 export type NotifType =
   | "like"
@@ -8,7 +10,8 @@ export type NotifType =
   | "repost"
   | "profile_reaction"
   | "profile_canvas_draw"
-  | "question";
+  | "question"
+  | "room_invite";
 
 /** Типы уведомлений, в которых автор скрыт от получателя (анонимность). */
 const ANONYMOUS_NOTIF_TYPES = new Set<string>(["profile_canvas_draw", "question"]);
@@ -107,6 +110,7 @@ export type NotificationView = {
   referenceId: string | null;
   /** Ссылка на профиль получателя (для анонимных уведомлений о холсте) */
   profileUsername: string | null;
+  roomInvite: CoreRoomInvitePreview | null;
 };
 
 export async function listNotifications(userId: string, limit = 40) {
@@ -129,6 +133,10 @@ export async function listNotifications(userId: string, limit = 40) {
 
   if (recipientErr) throw new Error(recipientErr.message);
   const profileUsername = (recipient?.username as string | undefined) ?? null;
+  const roomInviteIds = (rows ?? []).flatMap((row) =>
+    row.type === "room_invite" && row.reference_id ? [String(row.reference_id)] : [],
+  );
+  const roomInvites = await listCoreRoomInvitePreviewsRest(roomInviteIds, userId);
 
   const actorIds = [
     ...new Set(
@@ -182,6 +190,9 @@ export async function listNotifications(userId: string, limit = 40) {
       referenceId: (row.reference_id as string | null) ?? null,
       actor,
       profileUsername: hideActor ? profileUsername : null,
+      roomInvite: type === "room_invite" && row.reference_id
+        ? roomInvites.get(String(row.reference_id)) ?? null
+        : null,
     } satisfies NotificationView;
   });
 }

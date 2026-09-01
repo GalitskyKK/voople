@@ -33,7 +33,7 @@ export function VoiceRoomContent({
   controls: VoiceRoomControlsModel;
   session: VoiceRoomSessionModel;
   errorMessage: string | null;
-  onInvite: () => void;
+  onInvite?: () => void;
   onClose: () => void;
 }) {
   const sessionPhase = session.phase;

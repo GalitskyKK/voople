@@ -89,5 +89,6 @@ export type VoiceRoomSheetProps = {
   controls: VoiceRoomControlsModel;
   access: VoiceRoomAccessModel;
   session: VoiceRoomSessionModel;
+  invite: { sessionId: string } | null;
   settingsPanel: ReactNode;
 };

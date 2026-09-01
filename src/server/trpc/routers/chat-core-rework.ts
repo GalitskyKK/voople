@@ -12,7 +12,10 @@ import {
   getGroupNow,
   heartbeatGroupRoom,
   joinGroupRoom,
+  listCoreRoomInviteCandidates,
   leaveGroupRoom,
+  respondToCoreRoomInvite,
+  sendCoreRoomInvite,
   setGroupRoomKind,
 } from "@/server/services/chat.service";
 import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
@@ -177,6 +180,57 @@ export const chatCoreReworkProcedures = {
         return result;
       } catch (error) {
         throw toRoomError(error, "Не удалось войти в комнату");
+      }
+    }),
+
+  coreRoomInviteCandidates: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      try {
+        return await listCoreRoomInviteCandidates(input.sessionId, ctx.user.id);
+      } catch (error) {
+        throw toRoomError(error, "Не удалось загрузить участников для приглашения");
+      }
+    }),
+
+  coreSendRoomInvite: protectedProcedure
+    .input(z.object({
+      sessionId: z.string().uuid(),
+      inviteeId: z.string().uuid(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
+      try {
+        const invite = await sendCoreRoomInvite({
+          ...input,
+          inviterId: ctx.user.id,
+        });
+        await recordServerProductEvent({
+          name: "room_invite_sent",
+          actorId: ctx.user.id,
+          route: "/trpc/chat.coreSendRoomInvite",
+          properties: { transport: "notification" },
+        });
+        return invite;
+      } catch (error) {
+        throw toRoomError(error, "Не удалось отправить приглашение");
+      }
+    }),
+
+  coreRespondRoomInvite: protectedProcedure
+    .input(z.object({
+      inviteId: z.string().uuid(),
+      response: z.enum(["accepted", "declined"]),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
+      try {
+        return await respondToCoreRoomInvite({ ...input, userId: ctx.user.id });
+      } catch (error) {
+        throw toRoomError(error, "Не удалось ответить на приглашение");
       }
     }),
 

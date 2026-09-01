@@ -77,6 +77,13 @@ test("group member pickers and mutations enforce invite privacy", () => {
   assert.match(management, /createGroupChatRest[\s\S]+Один из пользователей запретил приглашения/);
 });
 
+test("Room invite candidates and mutations enforce invite privacy", () => {
+  const invitations = read("src/server/services/core-room-invitations.service.ts");
+  assert.match(invitations, /listCoreRoomInviteCandidates[\s\S]+"inviteScope"/);
+  assert.match(invitations, /sendCoreRoomInvite[\s\S]+"inviteScope"/);
+  assert.match(invitations, /Пользователь запретил приглашения от вас/);
+});
+
 test("recommendations and anonymous invite activity cannot bypass privacy", () => {
   const recommendations = read("src/server/data/search-highlights-rest.ts");
   const inviteActivity = read("src/server/data/chat-invite-activity-rest.ts");

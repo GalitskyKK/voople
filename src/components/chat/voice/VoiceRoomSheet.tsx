@@ -7,12 +7,13 @@ import { cn } from "@/lib/utils";
 
 import { useVoiceRoomFullscreen } from "./useVoiceRoomFullscreen";
 import type { VoiceRoomSheetProps } from "./voice-room-sheet-models";
+import { CoreRoomInvitePanel } from "./CoreRoomInvitePanel";
 import { VoiceRoomContent } from "./VoiceRoomContent";
 import { VoiceRoomFooter } from "./VoiceRoomFooter";
 import { VoiceRoomHeader } from "./VoiceRoomHeader";
 import { VoiceSoundboardPanel } from "./VoiceSoundboardPanel";
 
-type SecondaryPanel = "settings" | "soundboard" | null;
+type SecondaryPanel = "settings" | "soundboard" | "invite" | null;
 
 /** Stateful sheet boundary; visual room sections remain stateless and platform-shared. */
 export function VoiceRoomSheet({
@@ -23,6 +24,7 @@ export function VoiceRoomSheet({
   controls,
   access,
   session,
+  invite,
   settingsPanel,
 }: VoiceRoomSheetProps) {
   const [secondaryPanel, setSecondaryPanel] = useState<SecondaryPanel>(null);
@@ -74,7 +76,7 @@ export function VoiceRoomSheet({
           controls={controls}
           session={session}
           errorMessage={connection.errorMessage}
-          onInvite={close}
+          onInvite={invite ? () => setSecondaryPanel("invite") : undefined}
           onClose={close}
         />
         <VoiceRoomFooter
@@ -118,6 +120,19 @@ export function VoiceRoomSheet({
             setSecondaryPanel(null);
           }}
         />
+      </Sheet>
+      <Sheet
+        open={open && secondaryPanel === "invite" && Boolean(invite)}
+        onClose={() => setSecondaryPanel(null)}
+        className="max-w-lg"
+        ariaLabel="Пригласить участников в комнату"
+      >
+        {invite ? (
+          <CoreRoomInvitePanel
+            sessionId={invite.sessionId}
+            enabled={open && secondaryPanel === "invite"}
+          />
+        ) : null}
       </Sheet>
     </Sheet>
   );

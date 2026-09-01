@@ -87,6 +87,12 @@ export {
 } from "@/server/data/chat-discovery-rest";
 
 export {
+  listCoreRoomInviteCandidates,
+  respondToCoreRoomInvite,
+  sendCoreRoomInvite,
+} from "@/server/services/core-room-invitations.service";
+
+export {
   getGroupCommunityRest as getGroupCommunity,
   setUserGroupProfileTagRest as setUserGroupProfileTag,
   setGroupBoostRest as setGroupBoost,

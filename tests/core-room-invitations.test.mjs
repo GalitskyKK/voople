@@ -1,0 +1,48 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+test("core Room invitations are session-bound, private and idempotent", async () => {
+  const [migration, data, service, router] = await Promise.all([
+    readFile(new URL("../drizzle/58-room-invitations.sql", import.meta.url), "utf8"),
+    readFile(new URL("../src/server/data/core-room-invitations-rest.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/server/services/core-room-invitations.service.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/server/trpc/routers/chat-core-rework.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(migration, /UNIQUE \(chat_id, room_session_id, invitee_id\)/);
+  assert.match(migration, /REVOKE ALL ON TABLE public\.chat_room_invites FROM anon, authenticated/);
+  assert.match(data, /eq\("session_id", sessionId\)[\s\S]+eq\("user_id", actorId\)[\s\S]+is\("left_at", null\)/);
+  assert.match(data, /onConflict: "chat_id,room_session_id,invitee_id"/);
+  assert.match(data, /INVITE_TTL_MS = 15 \* 60_000/);
+  assert.match(data, /Сначала войдите в приглашённую комнату/);
+  assert.match(data, /eq\("status", "pending"\)\s+\.select\("status"\)\s+\.maybeSingle\(\)/);
+  assert.match(data, /latestStatus === input\.response/);
+  assert.match(service, /requireRootGroupMember\(context\.groupId, input\.inviteeId\)/);
+  assert.match(service, /filterUserIdsByPrivacyFieldRest[\s\S]+"inviteScope"/);
+  assert.match(router, /rateLimits\.inviteToChatRoom/);
+  assert.match(router, /name: "room_invite_sent"/);
+  assert.doesNotMatch(router, /properties: \{[^}]*inviteeId/);
+});
+
+test("Room invite sender and notification action share the core join lifecycle", async () => {
+  const [sheet, panel, notifications, action, notificationService] = await Promise.all([
+    readFile(new URL("../src/components/chat/voice/VoiceRoomSheet.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/CoreRoomInvitePanel.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/notifications/NotificationsView.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/notifications/RoomInviteNotificationActions.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/server/services/notifications.service.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(sheet, /secondaryPanel === "invite"/);
+  assert.match(sheet, /CoreRoomInvitePanel/);
+  assert.match(panel, /coreRoomInviteCandidates\.useQuery/);
+  assert.match(panel, /coreSendRoomInvite\.useMutation/);
+  assert.match(panel, /Приглашение действует 15 минут/);
+  assert.match(notifications, /RoomInviteNotificationActions/);
+  assert.match(action, /useGroupNowRoomJoin/);
+  assert.match(action, /voice\.openCoreRoom/);
+  assert.match(action, /response: "accepted"/);
+  assert.match(action, /response: "declined"/);
+  assert.match(notificationService, /listCoreRoomInvitePreviewsRest/);
+});

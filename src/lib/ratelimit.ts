@@ -33,6 +33,7 @@ export const rateLimits = {
   joinPublicGroup: () => createLimit(20, "10 m"),
   createChatInvite: () => createLimit(20, "1 h"),
   acceptChatInvite: () => createLimit(20, "10 m"),
+  inviteToChatRoom: () => createLimit(30, "10 m"),
   enterChatRoom: () => createLimit(30, "10 m"),
   comment: () => createLimit(40, "10 m"),
   repost: () => createLimit(40, "10 m"),

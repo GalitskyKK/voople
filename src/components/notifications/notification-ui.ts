@@ -1,7 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { Heart, HelpCircle, MessageCircle, Palette, Repeat2, UserPlus } from "lucide-react";
+import { Heart, HelpCircle, MessageCircle, Palette, Radio, Repeat2, UserPlus } from "lucide-react";
 
 import type { NotificationView } from "@/types/notifications";
 
@@ -22,6 +22,8 @@ export function notificationActionText(type: string): string {
       return "Кто-то оставил рисунок на вашей карточке";
     case "question":
       return "Вам задали анонимный вопрос";
+    case "room_invite":
+      return "приглашает вас в комнату";
     default:
       return "— новое уведомление";
   }
@@ -39,6 +41,7 @@ export function notificationText(type: string, actorName: string) {
 }
 
 export function notificationHref(notification: NotificationView) {
+  if (notification.type === "room_invite") return "/notifications";
   if (
     (notification.type === "profile_canvas_draw" || notification.type === "question") &&
     notification.profileUsername
@@ -78,6 +81,8 @@ export function notificationIcon(type: string): LucideIcon {
       return Palette;
     case "question":
       return HelpCircle;
+    case "room_invite":
+      return Radio;
     case "like":
     case "profile_reaction":
     default:

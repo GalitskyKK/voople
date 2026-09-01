@@ -12,6 +12,7 @@ import { COPY } from "@/lib/constants/copy";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
 import { cn } from "@/lib/utils";
 import type { NotificationView } from "@/types/notifications";
+import { RoomInviteNotificationActions } from "./RoomInviteNotificationActions";
 import {
   notificationActionText,
   notificationHref,
@@ -133,10 +134,37 @@ export function NotificationsView({
                     ? "border-[color-mix(in_srgb,var(--foreground)_5%,transparent)] bg-[color-mix(in_srgb,var(--foreground)_2%,transparent)]"
                     : "border-[color-mix(in_srgb,var(--theme-accent)_30%,transparent)] bg-[var(--app-accent-soft)]",
                 );
+                const content = (
+                  <>
+                    <span className="mt-0.5 text-[var(--theme-accent)]">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">
+                        {notification.type === "profile_canvas_draw" || !actor ? (
+                          notificationText(notification.type, actor?.displayName ?? "")
+                        ) : (
+                          <span className="inline-flex flex-wrap items-center gap-x-1 gap-y-0.5">
+                            <DisplayNameWithPin hasVooplePlus={actor.hasVooplePlus} badgeUrl={badgeUrl} size="xs">
+                              {actor.displayName}
+                            </DisplayNameWithPin>
+                            <span>{notificationActionText(notification.type)}</span>
+                          </span>
+                        )}
+                      </p>
+                      <RelativeTime iso={notification.createdAt} className="mt-1 block text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]" />
+                      {notification.type === "room_invite" ? (
+                        <RoomInviteNotificationActions invite={notification.roomInvite} />
+                      ) : null}
+                    </div>
+                  </>
+                );
 
                 return (
                   <li key={notification.id}>
-                    {renderDestination({
+                    {notification.type === "room_invite" ? (
+                      <div className={className}>{content}</div>
+                    ) : renderDestination({
                       href,
                       label: notificationText(
                         notification.type,
@@ -144,41 +172,7 @@ export function NotificationsView({
                       ),
                       className,
                       active: false,
-                      children: (
-                        <>
-                          <span className="mt-0.5 text-[var(--theme-accent)]">
-                            <Icon className="h-5 w-5" aria-hidden="true" />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">
-                              {notification.type === "profile_canvas_draw" ||
-                              !actor ? (
-                                notificationText(
-                                  notification.type,
-                                  actor?.displayName ?? "",
-                                )
-                              ) : (
-                                <span className="inline-flex flex-wrap items-center gap-x-1 gap-y-0.5">
-                                  <DisplayNameWithPin
-                                    hasVooplePlus={actor.hasVooplePlus}
-                                    badgeUrl={badgeUrl}
-                                    size="xs"
-                                  >
-                                    {actor.displayName}
-                                  </DisplayNameWithPin>
-                                  <span>
-                                    {notificationActionText(notification.type)}
-                                  </span>
-                                </span>
-                              )}
-                            </p>
-                            <RelativeTime
-                              iso={notification.createdAt}
-                              className="mt-1 block text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]"
-                            />
-                          </div>
-                        </>
-                      ),
+                      children: content,
                     })}
                   </li>
                 );

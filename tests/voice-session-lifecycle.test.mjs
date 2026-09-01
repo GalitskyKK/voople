@@ -22,9 +22,9 @@ test("voice operation generations reject work completed after cancellation", () 
 test("join uses microphone intent and compensates a cancelled server enter", () => {
   const lifecycle = read("src/components/chat/voice/useVoiceRoomSurfaceSession.ts");
 
-  assert.match(lifecycle, /micMuted: desiredMicMutedRef\.current/);
+  assert.match(lifecycle, /server\.enter\.run\(desiredMicMutedRef\.current\)/);
   assert.doesNotMatch(lifecycle, /mutateAsync\(\{ chatId, micMuted \}\)/);
-  assert.match(lifecycle, /if \(!isCurrent\(\)\) \{\s+await server\.leave\.mutateAsync/);
+  assert.match(lifecycle, /if \(!isCurrent\(\)\) \{\s+await server\.leave\.run/);
   assert.match(lifecycle, /sessionOperation\.cancel\(\);\s+mediaConnection\.disconnect\(\)/);
 });
 
@@ -52,7 +52,7 @@ test("room sheet owns one secondary panel and cancels stale fullscreen requests"
   const sheet = read("src/components/chat/voice/VoiceRoomSheet.tsx");
   const fullscreen = read("src/components/chat/voice/useVoiceRoomFullscreen.ts");
 
-  assert.match(sheet, /type SecondaryPanel = "settings" \| "soundboard" \| null/);
+  assert.match(sheet, /type SecondaryPanel = "settings" \| "soundboard" \| "invite" \| null/);
   assert.match(sheet, /setSecondaryPanel\(null\);\s+void exitFullscreen\(\);\s+onClose\(\)/);
   assert.doesNotMatch(sheet, /settingsOpen|soundboardOpen/);
   assert.match(fullscreen, /if \(pendingRef\.current\) return/);

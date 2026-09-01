@@ -2,6 +2,7 @@ import type { Session } from "@supabase/supabase-js";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { BrandedLoadingView } from "@/components/brand/BrandedLoadingView";
+import { GroupRoomAction } from "@/components/chat/GroupRoomAction";
 import { PublicGroupPageView } from "@/components/chat/PublicGroupPageView";
 import { AppPageContent } from "@/components/layout/AppPageContent";
 import type { PublicGroupPageView as PublicGroupPageModel } from "@/types/chat";
@@ -102,6 +103,9 @@ export function DesktopPublicGroupAdapter({
           requestPending={requestPending}
           error={error}
           onAction={() => void openGroup()}
+          roomAction={group.joined ? (
+            <GroupRoomAction groupId={group.id} groupName={group.name} display="label" />
+          ) : null}
         />
       ) : null}
     </AppPageContent>

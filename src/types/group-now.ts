@@ -31,6 +31,11 @@ export type GroupNowRoom = {
   participants: GroupNowParticipant[];
 };
 
+export type GroupNowRoomTarget = {
+  groupId: string;
+  room: GroupNowRoom;
+};
+
 export type GroupNowView = {
   groupId: string;
   groupName: string;

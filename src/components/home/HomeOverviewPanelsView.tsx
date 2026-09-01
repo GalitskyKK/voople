@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- shared CDN avatars for Next.js and Tauri. */
 
-import { ArrowRight, ChevronDown, ChevronUp, Gamepad2, Headphones, MessageCircle, Pin, Radio, UsersRound } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp, MessageCircle, Radio, UsersRound } from "lucide-react";
 import { useEffect, useMemo } from "react";
 
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
@@ -13,7 +13,9 @@ import { useScrollCompaction } from "@/hooks/useScrollCompaction";
 import { selectContinueWithLocalAttention } from "@/lib/social/home-ranking";
 import { cn } from "@/lib/utils";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
-import type { HomeNowItem, HomeOverviewView } from "@/types/home";
+import type { HomeNowItem, HomeOverviewView, HomeRoomTarget } from "@/types/home";
+
+import { HomeNowItemView } from "./HomeNowItem";
 
 function DestinationItem({ item, renderDestination, compact = false, showPresence = false }: {
   item: HomeNowItem;
@@ -44,111 +46,15 @@ function DestinationItem({ item, renderDestination, compact = false, showPresenc
   });
 }
 
-function RoomParticipantStack({ item }: { item: HomeNowItem }) {
-  if (item.kind !== "room" || !item.participants?.length) return null;
-  return (
-    <span
-      className="ml-auto flex shrink-0 -space-x-2"
-      aria-label={`В комнате: ${item.participants.map((participant) => participant.displayName).join(", ")}`}
-    >
-      {item.participants.slice(0, 3).map((participant) => (
-        <span
-          key={participant.id}
-          className="h-6 w-6 overflow-hidden rounded-full border-2 border-[var(--app-surface)] bg-[var(--app-surface-soft)]"
-        >
-          {participant.avatarUrl ? (
-            <img src={participant.avatarUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <span className="grid h-full w-full place-items-center text-[9px] font-semibold">
-              {participant.displayName.charAt(0).toUpperCase()}
-            </span>
-          )}
-        </span>
-      ))}
-    </span>
-  );
-}
-
-function NowItem({ item, renderDestination, onMessageUser, messagePending, compact = false }: {
-  item: HomeNowItem;
-  renderDestination: NavigationDestinationRenderer;
-  onMessageUser?: (username: string) => void;
-  messagePending?: boolean;
-  compact?: boolean;
-}) {
-  const { onlineUserIds } = useOnlineUsers();
-  const online = item.userId ? onlineUserIds.has(item.userId) || item.online : item.online;
-  const activityLabel = item.kind === "room"
-    ? item.subtitle
-    : item.activity === "listening"
-      ? item.subtitle
-      : item.activity === "playing"
-        ? item.subtitle
-        : "В сети";
-  const ActivityIcon = item.activity === "listening" ? Headphones : item.activity === "playing" ? Gamepad2 : null;
-  const children = <>
-    <ProfileAvatarVisual
-      displayName={item.title}
-      size="sm"
-      avatarImage={item.avatarUrl ? <img src={item.avatarUrl} alt="" className="h-full w-full object-cover" /> : undefined}
-      decorationImage={item.avatarDecorationUrl ? <img src={item.avatarDecorationUrl} alt="" className="h-full w-full object-contain" /> : undefined}
-      ringClassName={resolveRingStyle(item.avatarRingId)?.className}
-      isOnline={online || item.kind === "room"}
-    />
-    <span className="min-w-0">
-      <span className="flex items-center gap-1 truncate text-sm font-semibold">
-        {item.pinned ? <Pin className="h-3 w-3 shrink-0 fill-current text-[var(--theme-accent)]" aria-label="Закреплён" /> : null}
-        <span className="truncate">{item.title}</span>
-      </span>
-      {!compact ? (
-        <>
-          <span className="flex min-w-0 items-center gap-1 truncate text-[11px] text-[var(--app-muted)]">
-            {ActivityIcon ? <ActivityIcon className="h-3 w-3 shrink-0 text-[var(--theme-accent)]" /> : null}
-            <span className="truncate">{activityLabel}</span>
-          </span>
-          <span className="mt-0.5 block text-[10px] font-semibold text-[var(--theme-accent)] opacity-0 transition group-hover:opacity-100">
-            {item.kind === "room" ? "Зайти" : "Написать"}
-          </span>
-        </>
-      ) : null}
-    </span>
-    {!compact ? <RoomParticipantStack item={item} /> : null}
-  </>;
-  const reportAction = () => {
-    reportProductEvent("presence_clicked", {
-      kind: item.kind,
-      action: item.kind === "room" ? "join" : "message",
-    });
-    reportProductEvent(
-      item.kind === "room" ? "presence_room_joined" : "presence_message_started",
-      { source: "home_now" },
-    );
-  };
-  const className = cn(
-    "group flex flex-1 items-center rounded-xl text-left transition hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]",
-    compact ? "min-w-[7.5rem] gap-2 px-2 py-1" : "min-w-[8.75rem] gap-2.5 px-2 py-2",
-  );
-
-  if (item.messageUsername && onMessageUser) {
-    return <button type="button" className={className} disabled={messagePending} onClick={() => { reportAction(); onMessageUser(item.messageUsername!); }} aria-label={`${item.title}: написать`}>{children}</button>;
-  }
-
-  return renderDestination({
-    href: item.href,
-    label: `${item.title}: ${item.kind === "room" ? "зайти в комнату" : "написать"}`,
-    active: false,
-    onNavigate: reportAction,
-    className,
-    children,
-  });
-}
-
-export function HomeNowPanelView({ overview, renderDestination, onMessageUser, messagingUsername, messageError }: {
+export function HomeNowPanelView({ overview, renderDestination, onMessageUser, onJoinRoom, messagingUsername, joiningRoomId, messageError, roomError }: {
   overview: HomeOverviewView;
   renderDestination: NavigationDestinationRenderer;
   onMessageUser?: (username: string) => void;
+  onJoinRoom?: (target: HomeRoomTarget) => void;
   messagingUsername?: string | null;
+  joiningRoomId?: string | null;
   messageError?: string | null;
+  roomError?: string | null;
 }) {
   const { onlineUserIds } = useOnlineUsers();
   const { surfaceRef, compact, toggleCompact } = useScrollCompaction();
@@ -203,12 +109,14 @@ export function HomeNowPanelView({ overview, renderDestination, onMessageUser, m
       {items.length ? (
         <div className="voople-scroll flex gap-1 overflow-x-auto">
           {items.map((item) => (
-            <NowItem
+            <HomeNowItemView
               key={`${item.kind}-${item.id}`}
               item={item}
               renderDestination={renderDestination}
               onMessageUser={onMessageUser}
+              onJoinRoom={onJoinRoom}
               messagePending={Boolean(messagingUsername)}
+              roomPending={Boolean(joiningRoomId && item.roomTarget?.room.id === joiningRoomId)}
               compact={compact}
             />
           ))}
@@ -224,6 +132,7 @@ export function HomeNowPanelView({ overview, renderDestination, onMessageUser, m
         children: <><span>Сейчас тихо</span><span className="inline-flex items-center gap-1 font-medium text-[var(--theme-accent)]">Позвать своих <ArrowRight className="h-4 w-4 shrink-0" /></span></>,
       })}
       {messageError ? <p className="px-2 pb-1 pt-2 text-xs text-red-400" role="alert">{messageError}</p> : null}
+      {roomError ? <p className="px-2 pb-1 pt-2 text-xs text-red-400" role="alert">{roomError}</p> : null}
     </section>
   );
 }

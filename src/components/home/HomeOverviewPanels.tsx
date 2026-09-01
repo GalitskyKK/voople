@@ -8,7 +8,8 @@ import type { NavigationDestinationRenderer } from "@/components/layout/AppNavig
 import type { HomeOverviewView } from "@/types/home";
 import { trpc } from "@/lib/trpc/client";
 
-import { HomeNowPanelView, HomeSecondaryRailView } from "./HomeOverviewPanelsView";
+import { HomeNowConnectedPanel } from "./HomeNowConnectedPanel";
+import { HomeSecondaryRailView } from "./HomeOverviewPanelsView";
 
 const renderDestination: NavigationDestinationRenderer = ({ href, label, className, active, children, onNavigate }) => (
   <Link href={href} aria-label={label} aria-current={active ? "page" : undefined} className={className} onClick={onNavigate}>{children}</Link>
@@ -29,7 +30,7 @@ export function HomeNowPanel({ overview }: { overview: HomeOverviewView }) {
   });
 
   return (
-    <HomeNowPanelView
+    <HomeNowConnectedPanel
       overview={overview}
       renderDestination={renderDestination}
       onMessageUser={(username) => openDirect.mutate({ username })}

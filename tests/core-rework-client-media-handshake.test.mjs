@@ -12,9 +12,9 @@ test("core Room join performs token exchange before provider handoff", async () 
 
   const joinIndex = joinHook.indexOf("joinMutation.mutateAsync");
   const tokenIndex = mediaHandoff.indexOf("mediaTokenMutation.mutateAsync");
-  const handoffIndex = mediaHandoff.indexOf("onJoined(room, result, credentials)");
+  const handoffIndex = mediaHandoff.indexOf("onJoined(target, result, credentials)");
   assert.ok(joinIndex >= 0 && tokenIndex >= 0 && handoffIndex > tokenIndex);
-  assert.match(joinHook, /mediaHandoff\.connect\(room, result\)/);
+  assert.match(joinHook, /mediaHandoff\.connect\(target, result\)/);
   assert.match(mediaHandoff, /mediaTokenMutation\.isPending/);
   assert.match(mediaHandoff, /if \(!credentials\.enabled\)/);
   assert.match(mediaHandoff, /Медиасервер для комнаты временно недоступен/);

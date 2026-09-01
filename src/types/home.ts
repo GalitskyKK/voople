@@ -1,4 +1,14 @@
-import type { ChatRoomParticipantView } from "./chat";
+import type { GroupNowRoom } from "./group-now";
+
+export type HomeRoomTarget =
+  | { context: "group"; groupId: string; room: GroupNowRoom }
+  | { context: "direct"; chatId: string; room: GroupNowRoom };
+
+export type HomeRoomParticipant = {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+};
 
 export type HomeNowItem = {
   id: string;
@@ -16,7 +26,9 @@ export type HomeNowItem = {
   score?: number;
   unreadCount?: number;
   pinned?: boolean;
-  participants?: ChatRoomParticipantView[];
+  conversationId?: string;
+  roomTarget?: HomeRoomTarget;
+  participants?: HomeRoomParticipant[];
 };
 
 export type HomeOverviewView = {

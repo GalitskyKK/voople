@@ -4,8 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { AppPageContent } from "@/components/layout/AppPageContent";
 import { HomeFeedLayoutView } from "@/components/home/HomeFeedLayoutView";
+import { HomeNowConnectedPanel } from "@/components/home/HomeNowConnectedPanel";
 import {
-  HomeNowPanelView,
   HomeSecondaryRailView,
 } from "@/components/home/HomeOverviewPanelsView";
 
@@ -61,7 +61,7 @@ export function DesktopFeedAdapter({
                 aria-label="Загрузка актуальной активности"
               />
             ) : (
-              <HomeNowPanelView
+              <HomeNowConnectedPanel
                 overview={home.overview}
                 renderDestination={renderDestination}
                 onMessageUser={(username) => void messageUser(username)}

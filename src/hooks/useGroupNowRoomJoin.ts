@@ -7,34 +7,33 @@ import {
   roomJoinErrorMessage,
 } from "@/lib/chat/group-room-join";
 import { trpc } from "@/lib/trpc/client";
-import type { GroupNowRoom } from "@/types/group-now";
+import type { GroupNowRoomTarget } from "@/types/group-now";
 import type { GroupRoomJoinResult } from "@/types/group-room-mutations";
 import type { EnabledVoiceMediaCredentials } from "@/types/voice";
 
 import { useGroupNowMediaHandoff } from "./useGroupNowMediaHandoff";
 
 export function useGroupNowRoomJoin({
-  groupId,
   onJoined,
   onOpenLegacy,
 }: {
-  groupId: string;
   onJoined: (
-    room: GroupNowRoom,
+    target: GroupNowRoomTarget,
     result: GroupRoomJoinResult,
     credentials: EnabledVoiceMediaCredentials,
   ) => void | Promise<void>;
-  onOpenLegacy?: (room: GroupNowRoom) => void | Promise<void>;
+  onOpenLegacy?: (target: GroupNowRoomTarget) => void | Promise<void>;
 }) {
   const joinMutation = trpc.chat.coreJoinRoom.useMutation();
-  const mediaHandoff = useGroupNowMediaHandoff({ groupId, onJoined });
-  const [confirmationRoom, setConfirmationRoom] = useState<GroupNowRoom | null>(null);
+  const mediaHandoff = useGroupNowMediaHandoff({ onJoined });
+  const [confirmationTarget, setConfirmationTarget] = useState<GroupNowRoomTarget | null>(null);
   const [confirmationError, setConfirmationError] = useState<string | null>(null);
 
-  const finishJoin = useCallback(async (room: GroupNowRoom, confirmedCrossContext: boolean) => {
+  const finishJoin = useCallback(async (target: GroupNowRoomTarget, confirmedCrossContext: boolean) => {
+    const { room } = target;
     if (room.joinTarget.kind === "legacy") {
       if (!onOpenLegacy) throw new Error("Эта комната откроется в предыдущей версии интерфейса");
-      await onOpenLegacy(room);
+      await onOpenLegacy(target);
       return;
     }
 
@@ -43,16 +42,16 @@ export function useGroupNowRoomJoin({
       micMuted: true,
       confirmedCrossContext,
     });
-    await mediaHandoff.connect(room, result);
+    await mediaHandoff.connect(target, result);
   }, [joinMutation, mediaHandoff, onOpenLegacy]);
 
-  const requestJoin = useCallback(async (room: GroupNowRoom) => {
+  const requestJoin = useCallback(async (target: GroupNowRoomTarget) => {
     setConfirmationError(null);
     try {
-      await finishJoin(room, false);
+      await finishJoin(target, false);
     } catch (error) {
-      if (room.joinTarget.kind === "room" && isCrossContextRoomJoinError(error)) {
-        setConfirmationRoom(room);
+      if (target.room.joinTarget.kind === "room" && isCrossContextRoomJoinError(error)) {
+        setConfirmationTarget(target);
         return;
       }
       throw error;
@@ -60,31 +59,31 @@ export function useGroupNowRoomJoin({
   }, [finishJoin]);
 
   const confirmSwitch = useCallback(async () => {
-    const room = confirmationRoom;
+    const target = confirmationTarget;
     if (
-      !room
+      !target
       || joinMutation.isPending
       || mediaHandoff.pending
     ) return;
     setConfirmationError(null);
     try {
-      await finishJoin(room, true);
-      setConfirmationRoom(null);
+      await finishJoin(target, true);
+      setConfirmationTarget(null);
     } catch (error) {
       setConfirmationError(roomJoinErrorMessage(error));
     }
-  }, [confirmationRoom, finishJoin, joinMutation.isPending, mediaHandoff.pending]);
+  }, [confirmationTarget, finishJoin, joinMutation.isPending, mediaHandoff.pending]);
 
   const cancelSwitch = useCallback(() => {
     if (joinMutation.isPending || mediaHandoff.pending) return;
     setConfirmationError(null);
-    setConfirmationRoom(null);
+    setConfirmationTarget(null);
   }, [joinMutation.isPending, mediaHandoff.pending]);
 
   return {
     cancelSwitch,
     confirmationError,
-    confirmationRoom,
+    confirmationTarget,
     confirmSwitch,
     pending: joinMutation.isPending || mediaHandoff.pending,
     requestJoin,

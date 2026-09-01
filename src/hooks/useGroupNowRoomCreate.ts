@@ -7,7 +7,7 @@ import {
   roomJoinErrorMessage,
 } from "@/lib/chat/group-room-join";
 import { trpc } from "@/lib/trpc/client";
-import type { GroupNowRoom } from "@/types/group-now";
+import type { GroupNowRoom, GroupNowRoomTarget } from "@/types/group-now";
 import type { GroupRoomCreateAndJoinResult } from "@/types/group-room-mutations";
 import type { EnabledVoiceMediaCredentials } from "@/types/voice";
 
@@ -48,7 +48,10 @@ export function useGroupNowRoomCreate({
   ) => void | Promise<void>;
 }) {
   const createMutation = trpc.chat.coreCreateAndJoinRoom.useMutation();
-  const mediaHandoff = useGroupNowMediaHandoff({ groupId, onJoined });
+  const mediaHandoff = useGroupNowMediaHandoff({
+    onJoined: (target: GroupNowRoomTarget, result, credentials) =>
+      onJoined(target.room, result, credentials),
+  });
   const [open, setOpen] = useState(false);
   const [confirmation, setConfirmation] = useState<PendingCreation | null>(null);
   const [retryCreation, setRetryCreation] = useState<PendingCreation | null>(null);
@@ -67,7 +70,10 @@ export function useGroupNowRoomCreate({
       micMuted: true,
       confirmedCrossContext,
     });
-    await mediaHandoff.connect(toCreatedRoom(result), result.join);
+    await mediaHandoff.connect({
+      groupId,
+      room: toCreatedRoom(result),
+    }, result.join);
   }, [createMutation, groupId, mediaHandoff]);
 
   const show = useCallback(() => {

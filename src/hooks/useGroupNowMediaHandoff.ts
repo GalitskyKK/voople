@@ -4,17 +4,15 @@ import { useCallback } from "react";
 
 import { roomJoinErrorMessage } from "@/lib/chat/group-room-join";
 import { trpc } from "@/lib/trpc/client";
-import type { GroupNowRoom } from "@/types/group-now";
+import type { GroupNowRoomTarget } from "@/types/group-now";
 import type { GroupRoomJoinResult } from "@/types/group-room-mutations";
 import type { EnabledVoiceMediaCredentials } from "@/types/voice";
 
 export function useGroupNowMediaHandoff({
-  groupId,
   onJoined,
 }: {
-  groupId: string;
   onJoined: (
-    room: GroupNowRoom,
+    target: GroupNowRoomTarget,
     result: GroupRoomJoinResult,
     credentials: EnabledVoiceMediaCredentials,
   ) => void | Promise<void>;
@@ -24,7 +22,7 @@ export function useGroupNowMediaHandoff({
   const leaveMutation = trpc.chat.coreLeaveRoom.useMutation();
 
   const connect = useCallback(async (
-    room: GroupNowRoom,
+    target: GroupNowRoomTarget,
     result: GroupRoomJoinResult,
   ) => {
     try {
@@ -34,7 +32,7 @@ export function useGroupNowMediaHandoff({
       if (!credentials.enabled) {
         throw new Error("Медиасервер для комнаты временно недоступен");
       }
-      await onJoined(room, result, credentials);
+      await onJoined(target, result, credentials);
     } catch (error) {
       let cleanupFailed = false;
       try {
@@ -42,15 +40,15 @@ export function useGroupNowMediaHandoff({
       } catch {
         cleanupFailed = true;
       } finally {
-        await utils.chat.coreGroupNow.invalidate({ groupId });
+        await utils.chat.coreGroupNow.invalidate({ groupId: target.groupId });
       }
       if (cleanupFailed) {
         throw new Error(`${roomJoinErrorMessage(error)}. Сессия завершится автоматически.`);
       }
       throw error;
     }
-    await utils.chat.coreGroupNow.invalidate({ groupId });
-  }, [groupId, leaveMutation, mediaTokenMutation, onJoined, utils.chat.coreGroupNow]);
+    await utils.chat.coreGroupNow.invalidate({ groupId: target.groupId });
+  }, [leaveMutation, mediaTokenMutation, onJoined, utils.chat.coreGroupNow]);
 
   return {
     connect,

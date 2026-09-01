@@ -31,7 +31,12 @@ export function GroupNowConnectedPanel({
   canCreatePinned?: boolean;
   onOpenProfile?: (user: GroupNowUser) => void;
 }) {
-  const join = useGroupNowRoomJoin({ groupId, onJoined, onOpenLegacy });
+  const join = useGroupNowRoomJoin({
+    onJoined: (target, result, credentials) => onJoined(target.room, result, credentials),
+    onOpenLegacy: onOpenLegacy
+      ? (target) => onOpenLegacy(target.room)
+      : undefined,
+  });
   const create = useGroupNowRoomCreate({ groupId, onJoined });
 
   return (
@@ -40,12 +45,12 @@ export function GroupNowConnectedPanel({
         enabled={enabled}
         groupId={groupId}
         groupName={groupName}
-        onJoinRoom={join.requestJoin}
+        onJoinRoom={(room) => join.requestJoin({ groupId, room })}
         onCreateRoom={create.show}
         onOpenProfile={onOpenProfile}
       />
       <GroupNowRoomSwitchDialog
-        room={join.confirmationRoom}
+        room={join.confirmationTarget?.room ?? null}
         pending={join.pending}
         error={join.confirmationError}
         onCancel={join.cancelSwitch}

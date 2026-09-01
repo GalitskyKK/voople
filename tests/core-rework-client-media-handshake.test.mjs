@@ -19,6 +19,7 @@ test("core Room join performs token exchange before provider handoff", async () 
   assert.match(mediaHandoff, /if \(!credentials\.enabled\)/);
   assert.match(mediaHandoff, /Медиасервер для комнаты временно недоступен/);
   assert.match(mediaHandoff, /leaveMutation\.mutateAsync\(\{ sessionId: result\.sessionId \}\)/);
+  assert.match(mediaHandoff, /utils\.home\.activeRooms\.invalidate\(\)/);
   assert.match(connectedPanel, /credentials: EnabledVoiceMediaCredentials/);
   assert.match(voiceTypes, /export type EnabledVoiceMediaCredentials/);
   assert.match(voiceTypes, /export type VoiceMediaCredentials/);

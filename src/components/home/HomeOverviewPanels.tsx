@@ -7,6 +7,7 @@ import { useState } from "react";
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import type { HomeOverviewView } from "@/types/home";
 import { trpc } from "@/lib/trpc/client";
+import { useHomeActiveRooms } from "@/hooks/useHomeActiveRooms";
 
 import { HomeNowConnectedPanel } from "./HomeNowConnectedPanel";
 import { HomeSecondaryRailView } from "./HomeOverviewPanelsView";
@@ -17,6 +18,7 @@ const renderDestination: NavigationDestinationRenderer = ({ href, label, classNa
 
 export function HomeNowPanel({ overview }: { overview: HomeOverviewView }) {
   const router = useRouter();
+  const live = useHomeActiveRooms(overview);
   const [messageError, setMessageError] = useState<string | null>(null);
   const [messagingUsername, setMessagingUsername] = useState<string | null>(null);
   const openDirect = trpc.chat.openDirect.useMutation({
@@ -31,15 +33,20 @@ export function HomeNowPanel({ overview }: { overview: HomeOverviewView }) {
 
   return (
     <HomeNowConnectedPanel
-      overview={overview}
+      overview={live.overview}
       renderDestination={renderDestination}
       onMessageUser={(username) => openDirect.mutate({ username })}
       messagingUsername={messagingUsername}
       messageError={messageError}
+      refreshing={live.refreshing}
+      refreshPaused={live.paused}
+      refreshError={live.error}
+      onRetryRefresh={() => void live.retry()}
     />
   );
 }
 
 export function HomeSecondaryRail({ overview }: { overview: HomeOverviewView }) {
-  return <HomeSecondaryRailView overview={overview} renderDestination={renderDestination} />;
+  const live = useHomeActiveRooms(overview);
+  return <HomeSecondaryRailView overview={live.overview} renderDestination={renderDestination} />;
 }

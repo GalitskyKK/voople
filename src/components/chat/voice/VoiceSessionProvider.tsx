@@ -45,6 +45,7 @@ export type VoiceSessionContextValue = {
   activeSession: VoiceSessionDescriptor | null;
   state: VoiceControlState;
   openRoom: (session: VoiceSessionDescriptor) => void;
+  joinRoom: (session: VoiceSessionDescriptor) => boolean;
   openCoreRoom: (launch: CoreVoiceSessionLaunch) => void;
   openPanel: () => void;
   toggleMicrophone: () => void;
@@ -87,6 +88,7 @@ export function VoiceSessionProvider({
   const openRoom = useCallback(
     (session: VoiceSessionDescriptor) => {
       autoConnectPendingRef.current = false;
+      initialCoreCredentialsRef.current = null;
       if (state.inside && activeSession?.coreSession) {
         controlRef.current?.open();
         return;
@@ -122,6 +124,22 @@ export function VoiceSessionProvider({
     });
   }, []);
 
+  const joinRoom = useCallback((session: VoiceSessionDescriptor) => {
+    if (state.inside) {
+      controlRef.current?.open();
+      return activeSession?.chatId === session.chatId;
+    }
+    const existingControl = activeSession?.chatId === session.chatId
+      ? controlRef.current
+      : null;
+    initialCoreCredentialsRef.current = null;
+    autoConnectPendingRef.current = !existingControl;
+    if (!existingControl) setState(IDLE_STATE);
+    setActiveSession(session);
+    existingControl?.join();
+    return true;
+  }, [activeSession?.chatId, state.inside]);
+
   const handleStateChange = useCallback((next: VoiceControlState) => {
     setState((current) =>
       current.inside === next.inside &&
@@ -139,6 +157,7 @@ export function VoiceSessionProvider({
       activeSession,
       state,
       openRoom,
+      joinRoom,
       openCoreRoom,
       openPanel: () => controlRef.current?.open(),
       toggleMicrophone: () => {
@@ -151,7 +170,7 @@ export function VoiceSessionProvider({
         if (state.inside) controlRef.current?.leave();
       },
     }),
-    [activeSession, openCoreRoom, openRoom, state],
+    [activeSession, joinRoom, openCoreRoom, openRoom, state],
   );
   const incoming = useIncomingVoiceCalls({
     busy: state.inside,

@@ -40,15 +40,21 @@ export function useGroupNowMediaHandoff({
       } catch {
         cleanupFailed = true;
       } finally {
-        await utils.chat.coreGroupNow.invalidate({ groupId: target.groupId });
+        await Promise.all([
+          utils.chat.coreGroupNow.invalidate({ groupId: target.groupId }),
+          utils.home.activeRooms.invalidate(),
+        ]);
       }
       if (cleanupFailed) {
         throw new Error(`${roomJoinErrorMessage(error)}. Сессия завершится автоматически.`);
       }
       throw error;
     }
-    await utils.chat.coreGroupNow.invalidate({ groupId: target.groupId });
-  }, [leaveMutation, mediaTokenMutation, onJoined, utils.chat.coreGroupNow]);
+    await Promise.all([
+      utils.chat.coreGroupNow.invalidate({ groupId: target.groupId }),
+      utils.home.activeRooms.invalidate(),
+    ]);
+  }, [leaveMutation, mediaTokenMutation, onJoined, utils.chat.coreGroupNow, utils.home.activeRooms]);
 
   return {
     connect,

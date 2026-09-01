@@ -38,3 +38,7 @@ export type HomeOverviewView = {
   continueCandidates: HomeNowItem[];
   communities: HomeNowItem[];
 };
+
+export type HomeActiveRoomsView = {
+  rooms: HomeNowItem[];
+};

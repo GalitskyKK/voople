@@ -17,12 +17,20 @@ export function HomeNowConnectedPanel({
   onMessageUser,
   messagingUsername,
   messageError,
+  refreshing,
+  refreshPaused,
+  refreshError,
+  onRetryRefresh,
 }: {
   overview: HomeOverviewView;
   renderDestination: NavigationDestinationRenderer;
   onMessageUser?: (username: string) => void;
   messagingUsername?: string | null;
   messageError?: string | null;
+  refreshing?: boolean;
+  refreshPaused?: boolean;
+  refreshError?: string | null;
+  onRetryRefresh?: () => void;
 }) {
   const voice = useVoiceSession();
   const [joiningRoomId, setJoiningRoomId] = useState<string | null>(null);
@@ -30,12 +38,12 @@ export function HomeNowConnectedPanel({
   const join = useGroupNowRoomJoin({
     onOpenLegacy: async ({ room }) => {
       if (room.joinTarget.kind !== "legacy") return;
-      voice.openRoom({
+      const started = voice.joinRoom({
         chatId: room.joinTarget.chatId,
         chatName: room.name,
         chatType: "group",
       });
-      reportProductEvent("presence_room_joined", { source: "home_now", transport: "legacy" });
+      if (!started) throw new Error("Сначала завершите текущий разговор");
     },
     onJoined: async ({ groupId, room }, result, credentials) => {
       voice.openCoreRoom({ groupId, room, join: result, credentials });
@@ -52,12 +60,12 @@ export function HomeNowConnectedPanel({
         if (target.room.joinTarget.kind !== "legacy") {
           throw new Error("Личный разговор использует неподдерживаемый тип комнаты");
         }
-        voice.openRoom({
+        const started = voice.joinRoom({
           chatId: target.chatId,
           chatName: target.room.name,
           chatType: "direct",
         });
-        reportProductEvent("presence_room_joined", { source: "home_now", transport: "legacy" });
+        if (!started) throw new Error("Сначала завершите текущий разговор");
       } else {
         await join.requestJoin({ groupId: target.groupId, room: target.room });
       }
@@ -79,6 +87,10 @@ export function HomeNowConnectedPanel({
         onJoinRoom={(target) => void joinRoom(target)}
         joiningRoomId={joiningRoomId}
         roomError={roomError}
+        refreshing={refreshing}
+        refreshPaused={refreshPaused}
+        refreshError={refreshError}
+        onRetryRefresh={onRetryRefresh}
       />
       <GroupNowRoomSwitchDialog
         room={join.confirmationTarget?.room ?? null}

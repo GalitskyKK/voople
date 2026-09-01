@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- shared CDN avatars for Next.js and Tauri. */
 
-import { ArrowRight, ChevronDown, ChevronUp, MessageCircle, Radio, UsersRound } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp, LoaderCircle, MessageCircle, Radio, UsersRound } from "lucide-react";
 import { useEffect, useMemo } from "react";
 
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
@@ -46,7 +46,7 @@ function DestinationItem({ item, renderDestination, compact = false, showPresenc
   });
 }
 
-export function HomeNowPanelView({ overview, renderDestination, onMessageUser, onJoinRoom, messagingUsername, joiningRoomId, messageError, roomError }: {
+export function HomeNowPanelView({ overview, renderDestination, onMessageUser, onJoinRoom, messagingUsername, joiningRoomId, messageError, roomError, refreshing, refreshPaused, refreshError, onRetryRefresh }: {
   overview: HomeOverviewView;
   renderDestination: NavigationDestinationRenderer;
   onMessageUser?: (username: string) => void;
@@ -55,6 +55,10 @@ export function HomeNowPanelView({ overview, renderDestination, onMessageUser, o
   joiningRoomId?: string | null;
   messageError?: string | null;
   roomError?: string | null;
+  refreshing?: boolean;
+  refreshPaused?: boolean;
+  refreshError?: string | null;
+  onRetryRefresh?: () => void;
 }) {
   const { onlineUserIds } = useOnlineUsers();
   const { surfaceRef, compact, toggleCompact } = useScrollCompaction();
@@ -88,6 +92,8 @@ export function HomeNowPanelView({ overview, renderDestination, onMessageUser, o
           <Radio className="h-3.5 w-3.5" /> Сейчас
         </h2>
         <span className="flex items-center gap-1">
+          {refreshPaused ? <span className="px-1 text-[10px] text-[var(--app-muted)]">Нет сети</span> : null}
+          {refreshing ? <LoaderCircle className="h-3.5 w-3.5 animate-spin text-[var(--app-muted)] motion-reduce:animate-none" aria-label="Обновляем комнаты" /> : null}
           {!compact ? renderDestination({
             href: "/messages",
             label: "Все чаты",
@@ -133,6 +139,12 @@ export function HomeNowPanelView({ overview, renderDestination, onMessageUser, o
       })}
       {messageError ? <p className="px-2 pb-1 pt-2 text-xs text-red-400" role="alert">{messageError}</p> : null}
       {roomError ? <p className="px-2 pb-1 pt-2 text-xs text-red-400" role="alert">{roomError}</p> : null}
+      {refreshError ? (
+        <p className="flex items-center gap-2 px-2 pb-1 pt-2 text-xs text-[var(--app-muted)]" role="alert">
+          Не удалось обновить комнаты.
+          {onRetryRefresh ? <button type="button" className="font-semibold text-[var(--theme-accent)] hover:underline" onClick={onRetryRefresh}>Повторить</button> : null}
+        </p>
+      ) : null}
     </section>
   );
 }

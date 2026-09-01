@@ -2,58 +2,18 @@ import "server-only";
 
 import { listChats } from "@/server/services/chat.service";
 import {
-  getActiveRoomPresenceRest,
   getHomeChatAttentionRest,
   getRelationshipScoresRest,
   getVisibleListeningActivityRest,
   listSharedGroupPeopleRest,
 } from "@/server/data/home-overview-rest";
-import { listActiveCoreRoomsRest } from "@/server/data/home-core-rooms-rest";
 import { listVisibleOnlineUserIdsRest } from "@/server/data/privacy-rest";
 import { listContactPinsRest } from "@/server/data/contact-pins-rest";
 import { fetchCurrentUserSummary } from "@/server/data/users-rest";
-import { getServerFeatureAccess } from "@/server/services/product-feature-access.service";
+import { toHomeDirectItem, toHomeGroupItem } from "@/server/mappers/home-chat-item";
+import { listActiveHomeRoomItems } from "@/server/services/home-active-rooms.service";
 import { scoreHomeContinue, scoreHomeNow, selectRankedHomeItems } from "@/lib/social/home-ranking";
-import type { GroupNowRoom } from "@/types/group-now";
-import type { HomeNowItem, HomeOverviewView, HomeRoomTarget } from "@/types/home";
-
-function lastConversationPreview(
-  chat: Awaited<ReturnType<typeof listChats>>[number],
-  userId: string,
-) {
-  if (!chat.lastMessage) return null;
-  return `${chat.lastMessage.senderId === userId ? "Вы: " : ""}${chat.lastMessage.preview}`;
-}
-
-function directItem(chat: Awaited<ReturnType<typeof listChats>>[number], userId: string): HomeNowItem | null {
-  if (chat.type !== "direct" || !chat.otherUser) return null;
-  return {
-    id: chat.id,
-    kind: "person",
-    title: chat.otherUser.displayName,
-    subtitle: lastConversationPreview(chat, userId) || `@${chat.otherUser.username}`,
-    href: `/messages/${chat.id}`,
-    avatarUrl: chat.otherUser.avatarUrl,
-    avatarDecorationUrl: chat.otherUser.avatarDecorationUrl,
-    avatarRingId: chat.otherUser.avatarRingId,
-    userId: chat.otherUser.id,
-    online: false,
-  };
-}
-
-function groupItem(chat: Awaited<ReturnType<typeof listChats>>[number], userId: string): HomeNowItem | null {
-  if (chat.type !== "group" || chat.parentChatId) return null;
-  return {
-    id: chat.id,
-    kind: "group",
-    title: chat.name?.trim() || "Группа",
-    subtitle: lastConversationPreview(chat, userId) || `${chat.memberCount} участников`,
-    href: `/messages/${chat.id}`,
-    avatarUrl: chat.groupAvatarUrl,
-    userId: null,
-    online: false,
-  };
-}
+import type { HomeNowItem, HomeOverviewView } from "@/types/home";
 
 export async function getHomeOverview(userId: string): Promise<HomeOverviewView> {
   const chats = await listChats(userId);
@@ -66,14 +26,9 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
     ...directChats.map((chat) => ({ userId: chat.otherUser!.id, chatId: chat.id })),
     ...sharedOnlyPeople.map((person) => ({ userId: person.id })),
   ];
-  const rootGroupIds = rootChats.filter((chat) => chat.type === "group").map((chat) => chat.id);
-  const coreRoomsEnabled = getServerFeatureAccess("multi_room_groups", userId).enabled;
-  const [viewer, roomPresence, coreRooms, attention, visibleOnlineIds, listeningActivity, relationshipScores, pinnedUserIds] = await Promise.all([
+  const [viewer, activeRooms, attention, visibleOnlineIds, listeningActivity, relationshipScores, pinnedUserIds] = await Promise.all([
     fetchCurrentUserSummary(userId),
-    getActiveRoomPresenceRest(rootChats.map((chat) => chat.id), userId),
-    coreRoomsEnabled
-      ? listActiveCoreRoomsRest(rootGroupIds, userId)
-      : Promise.resolve([]),
+    listActiveHomeRoomItems(chats, userId),
     getHomeChatAttentionRest(rootChats.map((chat) => chat.id), userId),
     listVisibleOnlineUserIdsRest(userId),
     getVisibleListeningActivityRest(userId, relationshipCandidates.map((candidate) => candidate.userId)),
@@ -82,7 +37,7 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
   ]);
   const visibleOnline = new Set(visibleOnlineIds);
   const pinnedUsers = new Set(pinnedUserIds);
-  const direct = chats.map((chat) => directItem(chat, userId)).filter((item): item is HomeNowItem => Boolean(item)).map((item) => {
+  const direct = chats.map((chat) => toHomeDirectItem(chat, userId)).filter((item): item is HomeNowItem => Boolean(item)).map((item) => {
     const chat = rootChats.find((candidate) => candidate.id === item.id);
     const lastInteractionAt = chat?.lastMessage?.createdAt;
     const listening = item.userId ? listeningActivity.get(item.userId) : null;
@@ -127,74 +82,8 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
       }),
     };
   });
-  const groups = chats.map((chat) => groupItem(chat, userId)).filter((item): item is HomeNowItem => Boolean(item));
+  const groups = chats.map((chat) => toHomeGroupItem(chat, userId)).filter((item): item is HomeNowItem => Boolean(item));
   const itemById = new Map([...direct, ...groups].map((item) => [item.id, item]));
-  const groupById = new Map(groups.map((item) => [item.id, item]));
-  const activeCoreRooms = coreRooms.flatMap(({ groupId, room }): HomeNowItem[] => {
-    const group = groupById.get(groupId);
-    if (!group) return [];
-    return [{
-      ...group,
-      id: `core-room:${room.id}`,
-      conversationId: groupId,
-      roomTarget: { context: "group", groupId, room },
-      kind: "room",
-      activity: "in_room",
-      score: scoreHomeNow({ activeRoom: true, pinned: group.pinned }),
-      subtitle: `${room.name} · ${room.participantCount} в комнате · Зайти`,
-      participants: room.participants,
-    }];
-  });
-  const coreParticipantIdsByGroup = new Map<string, Set<string>>();
-  for (const target of coreRooms) {
-    const participantIds = coreParticipantIdsByGroup.get(target.groupId) ?? new Set<string>();
-    for (const participant of target.room.participants) participantIds.add(participant.id);
-    coreParticipantIdsByGroup.set(target.groupId, participantIds);
-  }
-  const activeLegacyRooms = [...groups, ...direct].flatMap((item): HomeNowItem[] => {
-    const coreParticipantIds = coreParticipantIdsByGroup.get(item.id);
-    const participants = (roomPresence.get(item.id) ?? []).filter(
-      (participant) => !coreParticipantIds?.has(participant.id),
-    );
-    if (!participants.length) return [];
-    const room: GroupNowRoom = {
-      id: `legacy:${item.id}`,
-      kind: item.userId ? "temporary" : "lobby",
-      name: item.title,
-      joinTarget: { kind: "legacy", chatId: item.id },
-      state: "active",
-      liveSessionId: null,
-      startedAt: null,
-      startedBy: null,
-      participantCount: participants.length,
-      hasScreenShare: false,
-      participants: participants.map((participant) => ({
-        id: participant.id,
-        username: participant.username,
-        displayName: participant.displayName,
-        avatarUrl: participant.avatarUrl,
-        isMe: participant.isMe,
-        micMuted: participant.micMuted,
-        cameraEnabled: null,
-        screenSharing: null,
-      })),
-    };
-    const roomTarget: HomeRoomTarget = item.userId
-      ? { context: "direct", chatId: item.id, room }
-      : { context: "group", groupId: item.id, room };
-    return [{
-          ...item,
-          id: `legacy-room:${item.id}`,
-          conversationId: item.id,
-          kind: "room" as const,
-          activity: "in_room" as const,
-          score: scoreHomeNow({ activeRoom: true, pinned: item.pinned }),
-          subtitle: `${participants.length} ${item.userId ? "в разговоре" : "в комнате"} · Зайти`,
-          participants,
-          roomTarget,
-        }];
-  });
-  const activeRooms = [...activeCoreRooms, ...activeLegacyRooms];
   const now = selectRankedHomeItems(
     [...activeRooms, ...direct.filter((item) => item.activity), ...sharedPeople.filter((item) => item.activity)],
     { limit: 5, minimumScore: 1 },
@@ -237,7 +126,7 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
       limit: 4,
       minimumScore: 1,
     }),
-    continueCandidates: selectRankedHomeItems(continueWithoutActiveRooms, {
+    continueCandidates: selectRankedHomeItems(continueItems, {
       limit: 24,
       minimumScore: 0,
     }),

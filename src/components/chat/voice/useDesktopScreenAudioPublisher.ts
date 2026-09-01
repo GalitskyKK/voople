@@ -35,6 +35,7 @@ type ActiveCapture =
 export function useDesktopScreenAudioPublisher(
   chatId: string,
   onNativeSessionChange: (screenSessionId: string | null) => void,
+  nativeTokenEnabled = true,
 ) {
   const token = trpc.chat.roomScreenAudioToken.useMutation();
   const nativePublisherSupportedRef = useRef(false);
@@ -380,7 +381,12 @@ export function useDesktopScreenAudioPublisher(
       return { enabled: false, hasAudio: false, warning: null };
     }
 
-    if (bridge && nativePublisherSupportedRef.current && nativeSources.length) {
+    if (
+      nativeTokenEnabled
+      && bridge
+      && nativePublisherSupportedRef.current
+      && nativeSources.length
+    ) {
       const selected = await requestCaptureSource(nativeSources);
 
       if (!selected) {
@@ -463,6 +469,7 @@ export function useDesktopScreenAudioPublisher(
       };
     }
   }, [
+    nativeTokenEnabled,
     requestCaptureSource,
     start,
     startBrowserCapture,

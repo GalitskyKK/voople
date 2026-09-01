@@ -1,3 +1,8 @@
+import type {
+  CoreVoiceSessionDescriptor,
+  EnabledVoiceMediaCredentials,
+} from "@/types/voice";
+
 import type { VoiceControlState } from "./voice-room-config";
 
 export type ChatRoomControlProps = {
@@ -7,6 +12,8 @@ export type ChatRoomControlProps = {
   renderTrigger?: boolean;
   initialOpen?: boolean;
   onStateChange?: (state: VoiceControlState) => void;
+  coreSession?: CoreVoiceSessionDescriptor;
+  initialCoreCredentials?: EnabledVoiceMediaCredentials;
 };
 
 export type ChatRoomControlHandle = {

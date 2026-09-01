@@ -9,17 +9,16 @@ import {
   type VoiceRoomSessionTransition,
 } from "./voice-room-surface";
 import type { useVoiceMediaConnection } from "./useVoiceMediaConnection";
-import type { useVoiceRoomServerSession } from "./useVoiceRoomServerSession";
+import type { VoiceRoomServerAdapter } from "./useVoiceRoomServerAdapter";
 import type { useVoiceSessionOperation } from "./useVoiceSessionOperation";
 
 type SurfaceSessionOptions = {
-  chatId: string;
   chatType: "direct" | "group";
   inside: boolean;
   active: boolean;
   startedAt: string | null;
   desiredMicMutedRef: MutableRefObject<boolean>;
-  server: ReturnType<typeof useVoiceRoomServerSession>;
+  server: VoiceRoomServerAdapter;
   mediaConnection: Pick<ReturnType<typeof useVoiceMediaConnection>, "connect" | "disconnect">;
   sessionOperation: ReturnType<typeof useVoiceSessionOperation>;
   setMediaError: Dispatch<SetStateAction<string | null>>;
@@ -27,7 +26,6 @@ type SurfaceSessionOptions = {
 
 /** Owns the optimistic Room surface phases and their server-confirmed recovery actions. */
 export function useVoiceRoomSurfaceSession({
-  chatId,
   chatType,
   inside,
   active,
@@ -52,15 +50,12 @@ export function useVoiceRoomSurfaceSession({
     setMediaError(null);
     try {
       if (!inside) {
-        const nextRoom = await server.enter.mutateAsync({
-          chatId,
-          micMuted: desiredMicMutedRef.current,
-        });
+        const nextRoom = await server.enter.run(desiredMicMutedRef.current);
         if (!isCurrent()) {
-          await server.leave.mutateAsync({ chatId }).catch(() => undefined);
+          await server.leave.run().catch(() => undefined);
           return;
         }
-        server.utils.chat.room.setData({ chatId }, nextRoom);
+        server.room.setData(nextRoom);
         if (!active) reportProductEvent("room_created", { kind: chatType });
       }
       if (!isCurrent()) return;
@@ -85,7 +80,7 @@ export function useVoiceRoomSurfaceSession({
     mediaConnection.disconnect();
     try {
       await waitForVoiceRoomLifecycle((async () => {
-        await server.leave.mutateAsync({ chatId });
+        await server.leave.run();
         await server.room.refetch();
       })());
       setTransition("post-leave");

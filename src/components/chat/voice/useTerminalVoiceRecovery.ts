@@ -7,7 +7,7 @@ import { reportProductEvent } from "@/lib/telemetry/client";
 import type { MediaStatus } from "./voice-room-config";
 
 type RecoveryOptions = {
-  chatId: string;
+  sessionKind: "legacy" | "core";
   inside: boolean;
   roomRef: RefObject<Room | null>;
   clearAttachedMedia: () => void;
@@ -50,7 +50,7 @@ export function useTerminalVoiceRecovery(options: RecoveryOptions) {
     current.clearAttachedMedia();
     current.setMicMuted(true);
     console.warn("Voice media connection ended", {
-      chatId: current.chatId,
+      sessionKind: current.sessionKind,
       reason: String(reason ?? "unknown"),
       attempt: attemptsRef.current,
     });

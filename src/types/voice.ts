@@ -21,6 +21,16 @@ export type VoiceMediaCredentials =
 
 export type VoiceSessionLease = VoiceMediaCredentials;
 
+export type CoreVoiceSessionDescriptor = {
+  groupId: string;
+  room: GroupNowRoom;
+  join: GroupRoomJoinResult;
+};
+
+export type CoreVoiceSessionLaunch = CoreVoiceSessionDescriptor & {
+  credentials: EnabledVoiceMediaCredentials;
+};
+
 export type ScreenAudioSessionLease = {
   url: string;
   token: string;
@@ -46,3 +56,5 @@ export type VoicePreferencesV2 = {
   screenShareVolume: number;
   participantVolumes: Record<string, number>;
 };
+import type { GroupNowRoom } from "./group-now";
+import type { GroupRoomJoinResult } from "./group-room-mutations";

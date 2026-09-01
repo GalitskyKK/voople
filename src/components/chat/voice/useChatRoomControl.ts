@@ -17,13 +17,12 @@ import { useGroupSoundboard } from "./useGroupSoundboard";
 import { useScreenShareSubscription } from "./useScreenShareSubscription";
 import { useTerminalVoiceRecovery } from "./useTerminalVoiceRecovery";
 import { useVoiceDeviceSettings } from "./useVoiceDeviceSettings";
-import { useVoiceHeartbeat } from "./useVoiceHeartbeat";
 import { useVoiceMediaActions } from "./useVoiceMediaActions";
 import { useVoiceMediaConnection } from "./useVoiceMediaConnection";
 import { useVoiceOutput } from "./useVoiceOutput";
 import { useVoicePreferences } from "./useVoicePreferences";
 import { useVoiceRoomEventConfigurator } from "./useVoiceRoomEventConfigurator";
-import { useVoiceRoomServerSession } from "./useVoiceRoomServerSession";
+import { useVoiceRoomRuntime } from "./useVoiceRoomRuntime";
 import { useVoiceRoomSurfaceSession } from "./useVoiceRoomSurfaceSession";
 import { useVoiceRoomTermination } from "./useVoiceRoomTermination";
 import { useVoiceSessionOperation } from "./useVoiceSessionOperation";
@@ -38,6 +37,8 @@ export function useChatRoomControl(
     renderTrigger = true,
     initialOpen = false,
     onStateChange,
+    coreSession,
+    initialCoreCredentials,
   }: ChatRoomControlProps,
   ref: ForwardedRef<ChatRoomControlHandle>,
 ) {
@@ -76,23 +77,23 @@ export function useChatRoomControl(
   const desktopAudio = useDesktopScreenAudioPublisher(
     chatId,
     screenSubscription.setExpectedLocalSessionId,
+    !coreSession,
   );
   const soundboard = useGroupSoundboard(chatId, chatType === "group", liveRoomRef);
-  const server = useVoiceRoomServerSession(chatId, open);
+  const runtime = useVoiceRoomRuntime({
+    chatId,
+    open,
+    coreSession,
+    initialCoreCredentials,
+    roomRef: liveRoomRef,
+    cameraEnabled: video.cameraEnabled,
+    screenSharing: video.screenSharing,
+  });
+  const { server, value, active, inside, participants, participantCount, heartbeat } = runtime;
   const sessionOperation = useVoiceSessionOperation();
-  const value = server.room.data;
-  const active = value?.status === "active" || value?.status === "ringing";
-  const inside = Boolean(value?.isInside);
-  const participants = value?.participants ?? [];
-  const participantCount = participants.length;
   const durationLabel = useCallDuration(
     value?.startedAt ?? null,
     inside && value?.status === "active",
-  );
-  const heartbeat = useVoiceHeartbeat(
-    { kind: "legacy", chatId },
-    inside,
-    liveRoomRef,
   );
   const meIsStarter = Boolean(
     value?.startedBy &&
@@ -105,7 +106,7 @@ export function useChatRoomControl(
     clearVideoMedia();
   }, [clearAudio, clearVideoMedia]);
   const recovery = useTerminalVoiceRecovery({
-    chatId,
+    sessionKind: server.kind,
     inside,
     roomRef: liveRoomRef,
     clearAttachedMedia,
@@ -177,7 +178,7 @@ export function useChatRoomControl(
     preferencesRef,
     desiredMicMutedRef,
     screenShareQualityRef,
-    getCredentials: () => server.mediaToken.mutateAsync({ chatId }),
+    getCredentials: server.mediaToken.get,
     configureRoom: configureRoomEvents,
     syncExistingPublications: screenSubscription.syncExisting,
     clearAttachedMedia,
@@ -202,7 +203,6 @@ export function useChatRoomControl(
     setRecoveryConnectMedia(mediaConnection.connect);
   }, [mediaConnection.connect, setRecoveryConnectMedia]);
   const surfaceSession = useVoiceRoomSurfaceSession({
-    chatId,
     chatType,
     inside,
     active,
@@ -406,13 +406,12 @@ export function useChatRoomControl(
         onCameraToggle: mediaActions.toggleCamera,
       },
       access: {
-        canManage: meIsStarter && active && !isDirect,
+        canManage: server.access.supported && meIsStarter && active && !isDirect,
         mode: (value?.accessMode ?? "open") as "open" | "locked",
         pending: server.access.isPending,
-        onToggle: () => server.access.mutate({
-          chatId,
-          accessMode: value?.accessMode === "locked" ? "open" : "locked",
-        }),
+        onToggle: () => server.access.set(
+          value?.accessMode === "locked" ? "open" : "locked",
+        ),
       },
       session: {
         phase: surfacePhase,

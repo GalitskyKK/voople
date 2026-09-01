@@ -3,9 +3,9 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("one heartbeat hook serves legacy chats and session-bound core Rooms", async () => {
-  const [heartbeat, controller] = await Promise.all([
+  const [heartbeat, runtime] = await Promise.all([
     readFile(new URL("../src/components/chat/voice/useVoiceHeartbeat.ts", import.meta.url), "utf8"),
-    readFile(new URL("../src/components/chat/voice/useChatRoomControl.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/useVoiceRoomRuntime.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(heartbeat, /kind: "legacy"; chatId: string/);
@@ -16,5 +16,6 @@ test("one heartbeat hook serves legacy chats and session-bound core Rooms", asyn
   assert.match(heartbeat, /screenSharing,/);
   assert.match(heartbeat, /sendLegacyHeartbeat\(\{ chatId, micMuted \}\)/);
   assert.doesNotMatch(heartbeat, /console\.error\([^)]*chatId/s);
-  assert.match(controller, /\{ kind: "legacy", chatId \}/);
+  assert.match(runtime, /\{ kind: "legacy", chatId \}/);
+  assert.match(runtime, /kind: "core"/);
 });

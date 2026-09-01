@@ -1,12 +1,25 @@
-export type VoiceSessionLease = {
-  enabled: boolean;
-  url?: string;
-  endpoints?: Array<{ url: string; label: string }>;
-  token?: string;
-  expiresAt: string | null;
-  refreshAfter: string | null;
-  screenShareQuality?: "standard" | "plus";
+export type DisabledVoiceMediaCredentials = {
+  enabled: false;
+  screenShareQuality: "standard" | "plus";
+  expiresAt: null;
+  refreshAfter: null;
 };
+
+export type EnabledVoiceMediaCredentials = {
+  enabled: true;
+  url: string;
+  endpoints: Array<{ url: string; label: string }>;
+  token: string;
+  expiresAt: string;
+  refreshAfter: string;
+  screenShareQuality: "standard" | "plus";
+};
+
+export type VoiceMediaCredentials =
+  | DisabledVoiceMediaCredentials
+  | EnabledVoiceMediaCredentials;
+
+export type VoiceSessionLease = VoiceMediaCredentials;
 
 export type ScreenAudioSessionLease = {
   url: string;

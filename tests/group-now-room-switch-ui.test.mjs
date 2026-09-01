@@ -31,6 +31,9 @@ test("Group Now join controller never confirms a cross-context switch silently",
   assert.match(hook, /setConfirmationRoom\(room\)/);
   assert.match(hook, /finishJoin\(room, true\)/);
   assert.match(hook, /micMuted: true/);
+  assert.match(hook, /coreRoomMediaToken\.useMutation/);
+  assert.match(hook, /sessionId: result\.sessionId/);
+  assert.match(hook, /onJoined\(room, result, credentials\)/);
   assert.match(hook, /coreLeaveRoom\.useMutation/);
   assert.match(hook, /sessionId: result\.sessionId/);
   assert.match(hook, /coreGroupNow\.invalidate/);

@@ -5,6 +5,7 @@ import { ConnectionQuality, ConnectionState, Room } from "livekit-client";
 
 import { syncVoiceTrackProcessor } from "@/lib/livekit/rnnoise-track-processor";
 import type { VoicePreferences } from "@/lib/livekit/voice-preferences";
+import type { VoiceMediaCredentials } from "@/types/voice";
 
 import {
   getAudioCaptureOptions,
@@ -15,23 +16,6 @@ import {
   type MediaStatus,
   type ScreenShareQuality,
 } from "./voice-room-config";
-
-type VoiceMediaCredentials =
-  | {
-      enabled: false;
-      screenShareQuality: ScreenShareQuality;
-      expiresAt: null;
-      refreshAfter: null;
-    }
-  | {
-      enabled: true;
-      url: string;
-      endpoints: LiveKitEndpoint[];
-      token: string;
-      screenShareQuality: ScreenShareQuality;
-      expiresAt: string;
-      refreshAfter: string;
-    };
 
 export function useVoiceMediaConnection({
   roomRef,

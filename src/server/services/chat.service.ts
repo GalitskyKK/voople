@@ -59,6 +59,7 @@ export { listGroupMembersRest as listGroupMembers } from "@/server/data/chat-gro
 export { getGroupNow } from "@/server/services/group-now.service";
 export {
   archiveGroupRoom,
+  createGroupRoomMediaToken,
   createGroupRoom,
   expireGroupRoomGrace,
   heartbeatGroupRoom,

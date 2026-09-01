@@ -11,6 +11,7 @@ import {
   leaveGroupRoomRest,
   setGroupRoomKindRest,
 } from "@/server/data/group-room-mutations-rest";
+import { createGroupRoomMediaTokenRest } from "@/server/data/chat-room-media-rest";
 
 async function requireRootGroup(groupId: string, userId: string) {
   const membership = await getChatMembershipRest(groupId, userId);
@@ -77,3 +78,10 @@ export async function joinGroupRoom(input: {
 export const leaveGroupRoom = leaveGroupRoomRest;
 export const heartbeatGroupRoom = heartbeatGroupRoomRest;
 export const expireGroupRoomGrace = expireGroupRoomGraceRest;
+
+export async function createGroupRoomMediaToken(
+  sessionId: string,
+  userId: string,
+) {
+  return createGroupRoomMediaTokenRest(sessionId, userId);
+}

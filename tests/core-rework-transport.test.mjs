@@ -61,6 +61,7 @@ test("every internal Room procedure enforces capability access", async () => {
     "coreSetRoomKind",
     "coreArchiveRoom",
     "coreJoinRoom",
+    "coreRoomMediaToken",
     "coreLeaveRoom",
     "coreHeartbeatRoom",
   ]) {
@@ -81,6 +82,7 @@ test("internal mutations keep validation, limits and privacy-safe telemetry", as
   assert.match(router, /name: z\.string\(\)\.trim\(\)\.min\(1\)\.max\(80\)/);
   assert.match(router, /rateLimits\.manageGroupChat/);
   assert.match(router, /rateLimits\.enterChatRoom/);
+  assert.match(router, /coreRoomMediaToken:[\s\S]*?sessionId: z\.string\(\)\.uuid\(\)/);
   assert.match(router, /name: "room_created"/);
   assert.match(router, /name: "room_joined"/);
   assert.match(router, /name: "room_left"/);

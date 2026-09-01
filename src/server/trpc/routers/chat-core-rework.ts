@@ -5,6 +5,7 @@ import { assertRateLimit } from "@/lib/ratelimit-guard";
 import { rateLimits } from "@/lib/ratelimit";
 import {
   archiveGroupRoom,
+  createGroupRoomMediaToken,
   createGroupRoom,
   getGroupNow,
   heartbeatGroupRoom,
@@ -134,6 +135,18 @@ export const chatCoreReworkProcedures = {
         return result;
       } catch (error) {
         throw toRoomError(error, "Не удалось войти в комнату");
+      }
+    }),
+
+  coreRoomMediaToken: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
+      try {
+        return await createGroupRoomMediaToken(input.sessionId, ctx.user.id);
+      } catch (error) {
+        throw toRoomError(error, "Не удалось подключить голос");
       }
     }),
 

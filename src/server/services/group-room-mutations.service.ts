@@ -12,7 +12,10 @@ import {
   leaveGroupRoomRest,
   setGroupRoomKindRest,
 } from "@/server/data/group-room-mutations-rest";
-import { createGroupRoomMediaTokenRest } from "@/server/data/chat-room-media-rest";
+import {
+  createGroupRoomMediaTokenRest,
+  createGroupRoomScreenAudioTokenRest,
+} from "@/server/data/chat-room-media-rest";
 
 async function requireRootGroup(groupId: string, userId: string) {
   const membership = await getChatMembershipRest(groupId, userId);
@@ -108,4 +111,12 @@ export async function createGroupRoomMediaToken(
   userId: string,
 ) {
   return createGroupRoomMediaTokenRest(sessionId, userId);
+}
+
+export async function createGroupRoomScreenAudioToken(
+  sessionId: string,
+  userId: string,
+  screenSessionId: string,
+) {
+  return createGroupRoomScreenAudioTokenRest(sessionId, userId, screenSessionId);
 }

@@ -145,6 +145,22 @@ export async function createGroupRoomMediaTokenRest(
   sessionId: string,
   userId: string,
 ) {
+  const context = await resolveGroupRoomMediaContext(sessionId, userId);
+  return issueParticipantMediaToken({
+    roomName: context.roomName,
+    userId,
+    displayName: context.displayName,
+    screenShareQuality: context.screenShareQuality,
+    tokenTtl: "10m",
+    leaseMs: CORE_MEDIA_LEASE_MS,
+    refreshAfterMs: CORE_MEDIA_REFRESH_AFTER_MS,
+  });
+}
+
+async function resolveGroupRoomMediaContext(
+  sessionId: string,
+  userId: string,
+) {
   const admin = getAdminClient();
   const [participantResult, sessionResult, userResult] = await Promise.all([
     admin
@@ -185,15 +201,65 @@ export async function createGroupRoomMediaTokenRest(
     userId,
     membership.accessChatId,
   );
-  return issueParticipantMediaToken({
+  return {
     roomName: `live-${session.provider_session_id}`,
-    userId,
     displayName: userResult.data?.display_name ?? "Участник",
     screenShareQuality,
-    tokenTtl: "10m",
-    leaseMs: CORE_MEDIA_LEASE_MS,
-    refreshAfterMs: CORE_MEDIA_REFRESH_AFTER_MS,
+  };
+}
+
+async function issueScreenAudioToken(input: {
+  roomName: string;
+  userId: string;
+  displayName: string;
+  screenSessionId: string;
+  tokenTtl?: string;
+  leaseMs?: number;
+  refreshAfterMs?: number;
+}) {
+  if (process.env.DESKTOP_NATIVE_PROCESS_AUDIO_ENABLED === "false") {
+    throw new Error("Звук выбранного приложения временно отключён; демонстрация продолжит работать без аудио");
+  }
+  if (!/^[a-f0-9-]{36}$/i.test(input.screenSessionId)) {
+    throw new Error("Некорректная сессия демонстрации");
+  }
+  const endpoints = getLiveKitEndpoints();
+  const apiKey = process.env.LIVEKIT_API_KEY?.trim();
+  const apiSecret = process.env.LIVEKIT_API_SECRET?.trim();
+  if (!endpoints.length || !apiKey || !apiSecret) throw new Error("Медиасервер недоступен");
+
+  const token = new AccessToken(apiKey, apiSecret, {
+    identity: `screen-audio:${input.userId}:${input.screenSessionId}`,
+    name: input.displayName,
+    ttl: input.tokenTtl ?? "6h",
+    metadata: JSON.stringify({
+      kind: "screen-audio",
+      ownerId: input.userId,
+      screenSessionId: input.screenSessionId,
+    }),
+    attributes: {
+      "voople.kind": "screen-audio",
+      "voople.ownerId": input.userId,
+      "voople.screenSessionId": input.screenSessionId,
+    },
   });
+  token.addGrant({
+    roomJoin: true,
+    room: input.roomName,
+    canPublish: true,
+    canSubscribe: false,
+    canPublishData: false,
+    canPublishSources: [TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO],
+  });
+  return {
+    url: endpoints[0]!.url,
+    token: await token.toJwt(),
+    screenSessionId: input.screenSessionId,
+    ...createMediaLease(
+      input.refreshAfterMs ?? SCREEN_AUDIO_REFRESH_AFTER_MS,
+      input.leaseMs ?? MEDIA_LEASE_MS,
+    ),
+  };
 }
 
 export async function createChatRoomScreenAudioTokenRest(
@@ -201,14 +267,6 @@ export async function createChatRoomScreenAudioTokenRest(
   userId: string,
   screenSessionId: string,
 ) {
-  if (process.env.DESKTOP_NATIVE_PROCESS_AUDIO_ENABLED === "false") {
-    throw new Error("Звук выбранного приложения временно отключён; демонстрация продолжит работать без аудио");
-  }
-  if (!/^[a-f0-9-]{36}$/i.test(screenSessionId)) throw new Error("Некорректная сессия демонстрации");
-  const endpoints = getLiveKitEndpoints();
-  const apiKey = process.env.LIVEKIT_API_KEY?.trim();
-  const apiSecret = process.env.LIVEKIT_API_SECRET?.trim();
-  if (!endpoints.length || !apiKey || !apiSecret) throw new Error("Медиасервер недоступен");
   await getChatMembershipRest(chatId, userId);
 
   const admin = getAdminClient();
@@ -220,25 +278,27 @@ export async function createChatRoomScreenAudioTokenRest(
   if (!participant) throw new Error("Сначала войдите в комнату");
   if (userError) throw new Error(userError.message);
 
-  const token = new AccessToken(apiKey, apiSecret, {
-    identity: `screen-audio:${userId}:${screenSessionId}`,
-    name: user?.display_name ?? "Звук демонстрации",
-    ttl: "6h",
-    metadata: JSON.stringify({ kind: "screen-audio", ownerId: userId, screenSessionId }),
-    attributes: { "voople.kind": "screen-audio", "voople.ownerId": userId, "voople.screenSessionId": screenSessionId },
-  });
-  token.addGrant({
-    roomJoin: true,
-    room: `chat-${chatId}`,
-    canPublish: true,
-    canSubscribe: false,
-    canPublishData: false,
-    canPublishSources: [TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO],
-  });
-  return {
-    url: endpoints[0]!.url,
-    token: await token.toJwt(),
+  return issueScreenAudioToken({
+    roomName: `chat-${chatId}`,
+    userId,
+    displayName: user?.display_name ?? "Звук демонстрации",
     screenSessionId,
-    ...createMediaLease(SCREEN_AUDIO_REFRESH_AFTER_MS),
-  };
+  });
+}
+
+export async function createGroupRoomScreenAudioTokenRest(
+  sessionId: string,
+  userId: string,
+  screenSessionId: string,
+) {
+  const context = await resolveGroupRoomMediaContext(sessionId, userId);
+  return issueScreenAudioToken({
+    roomName: context.roomName,
+    userId,
+    displayName: context.displayName,
+    screenSessionId,
+    tokenTtl: "10m",
+    leaseMs: CORE_MEDIA_LEASE_MS,
+    refreshAfterMs: CORE_MEDIA_REFRESH_AFTER_MS,
+  });
 }

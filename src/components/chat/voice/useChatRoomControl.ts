@@ -75,9 +75,10 @@ export function useChatRoomControl(
     setWatching: video.setWatchingScreenShare,
   });
   const desktopAudio = useDesktopScreenAudioPublisher(
-    chatId,
+    coreSession
+      ? { kind: "core", sessionId: coreSession.join.sessionId }
+      : { kind: "legacy", chatId },
     screenSubscription.setExpectedLocalSessionId,
-    !coreSession,
   );
   const soundboard = useGroupSoundboard(chatId, chatType === "group", liveRoomRef);
   const runtime = useVoiceRoomRuntime({

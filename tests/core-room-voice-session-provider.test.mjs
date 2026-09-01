@@ -3,13 +3,14 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("core Room launch enters the existing VoiceSessionProvider without persisting its token", async () => {
-  const [provider, adapter, runtime, controller, panel, desktopAudio] = await Promise.all([
+  const [provider, adapter, runtime, controller, panel, desktopAudio, screenAudioToken] = await Promise.all([
     readFile(new URL("../src/components/chat/voice/VoiceSessionProvider.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/components/chat/voice/useVoiceRoomServerAdapter.ts", import.meta.url), "utf8"),
     readFile(new URL("../src/components/chat/voice/useVoiceRoomRuntime.ts", import.meta.url), "utf8"),
     readFile(new URL("../src/components/chat/voice/useChatRoomControl.ts", import.meta.url), "utf8"),
     readFile(new URL("../src/components/chat/GroupNowVoicePanel.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/components/chat/voice/useDesktopScreenAudioPublisher.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/useScreenAudioToken.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(provider, /openCoreRoom: \(launch: CoreVoiceSessionLaunch\)/);
@@ -29,6 +30,8 @@ test("core Room launch enters the existing VoiceSessionProvider without persisti
   assert.match(controller, /server\.mediaToken\.get/);
   assert.match(runtime, /server\.heartbeatSessionId/);
   assert.match(panel, /voice\.openCoreRoom/);
-  assert.match(desktopAudio, /nativeTokenEnabled/);
-  assert.match(controller, /!coreSession/);
+  assert.match(desktopAudio, /useScreenAudioToken\(target\)/);
+  assert.match(screenAudioToken, /coreRoomScreenAudioToken\.useMutation/);
+  assert.match(screenAudioToken, /targetKind === "core"/);
+  assert.match(controller, /kind: "core", sessionId: coreSession\.join\.sessionId/);
 });

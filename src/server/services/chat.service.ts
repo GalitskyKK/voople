@@ -61,6 +61,7 @@ export {
   archiveGroupRoom,
   createAndJoinGroupRoom,
   createGroupRoomMediaToken,
+  createGroupRoomScreenAudioToken,
   createGroupRoom,
   expireGroupRoomGrace,
   heartbeatGroupRoom,

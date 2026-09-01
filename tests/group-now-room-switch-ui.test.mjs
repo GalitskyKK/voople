@@ -19,8 +19,9 @@ test("room switch recognizes structured and fallback precondition errors", () =>
 });
 
 test("Group Now join controller never confirms a cross-context switch silently", async () => {
-  const [hook, dialog, connectedPanel] = await Promise.all([
+  const [hook, mediaHandoff, dialog, connectedPanel] = await Promise.all([
     readFile(new URL("../src/hooks/useGroupNowRoomJoin.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/hooks/useGroupNowMediaHandoff.ts", import.meta.url), "utf8"),
     readFile(new URL("../src/components/chat/GroupNowRoomSwitchDialog.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/components/chat/GroupNowConnectedPanel.tsx", import.meta.url), "utf8"),
   ]);
@@ -31,12 +32,12 @@ test("Group Now join controller never confirms a cross-context switch silently",
   assert.match(hook, /setConfirmationRoom\(room\)/);
   assert.match(hook, /finishJoin\(room, true\)/);
   assert.match(hook, /micMuted: true/);
-  assert.match(hook, /coreRoomMediaToken\.useMutation/);
-  assert.match(hook, /sessionId: result\.sessionId/);
-  assert.match(hook, /onJoined\(room, result, credentials\)/);
-  assert.match(hook, /coreLeaveRoom\.useMutation/);
-  assert.match(hook, /sessionId: result\.sessionId/);
-  assert.match(hook, /coreGroupNow\.invalidate/);
+  assert.match(hook, /mediaHandoff\.connect\(room, result\)/);
+  assert.match(mediaHandoff, /coreRoomMediaToken\.useMutation/);
+  assert.match(mediaHandoff, /sessionId: result\.sessionId/);
+  assert.match(mediaHandoff, /onJoined\(room, result, credentials\)/);
+  assert.match(mediaHandoff, /coreLeaveRoom\.useMutation/);
+  assert.match(mediaHandoff, /coreGroupNow\.invalidate/);
   assert.match(dialog, /closeOnEscape=!\{pending\}|closeOnEscape=\{!pending\}/);
   assert.match(dialog, /Завершить и перейти/);
   assert.match(dialog, /role="alert"/);

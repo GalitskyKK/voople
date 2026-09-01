@@ -3,20 +3,22 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("core Room join performs token exchange before provider handoff", async () => {
-  const [joinHook, connectedPanel, voiceTypes] = await Promise.all([
+  const [joinHook, mediaHandoff, connectedPanel, voiceTypes] = await Promise.all([
     readFile(new URL("../src/hooks/useGroupNowRoomJoin.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/hooks/useGroupNowMediaHandoff.ts", import.meta.url), "utf8"),
     readFile(new URL("../src/components/chat/GroupNowConnectedPanel.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/types/voice.ts", import.meta.url), "utf8"),
   ]);
 
   const joinIndex = joinHook.indexOf("joinMutation.mutateAsync");
-  const tokenIndex = joinHook.indexOf("mediaTokenMutation.mutateAsync");
-  const handoffIndex = joinHook.indexOf("onJoined(room, result, credentials)");
-  assert.ok(joinIndex >= 0 && tokenIndex > joinIndex && handoffIndex > tokenIndex);
-  assert.match(joinHook, /mediaTokenMutation\.isPending/);
-  assert.match(joinHook, /if \(!credentials\.enabled\)/);
-  assert.match(joinHook, /Медиасервер для комнаты временно недоступен/);
-  assert.match(joinHook, /leaveMutation\.mutateAsync\(\{ sessionId: result\.sessionId \}\)/);
+  const tokenIndex = mediaHandoff.indexOf("mediaTokenMutation.mutateAsync");
+  const handoffIndex = mediaHandoff.indexOf("onJoined(room, result, credentials)");
+  assert.ok(joinIndex >= 0 && tokenIndex >= 0 && handoffIndex > tokenIndex);
+  assert.match(joinHook, /mediaHandoff\.connect\(room, result\)/);
+  assert.match(mediaHandoff, /mediaTokenMutation\.isPending/);
+  assert.match(mediaHandoff, /if \(!credentials\.enabled\)/);
+  assert.match(mediaHandoff, /Медиасервер для комнаты временно недоступен/);
+  assert.match(mediaHandoff, /leaveMutation\.mutateAsync\(\{ sessionId: result\.sessionId \}\)/);
   assert.match(connectedPanel, /credentials: EnabledVoiceMediaCredentials/);
   assert.match(voiceTypes, /export type EnabledVoiceMediaCredentials/);
   assert.match(voiceTypes, /export type VoiceMediaCredentials/);

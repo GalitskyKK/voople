@@ -11,6 +11,8 @@ import type { GroupNowRoom } from "@/types/group-now";
 import type { GroupRoomJoinResult } from "@/types/group-room-mutations";
 import type { EnabledVoiceMediaCredentials } from "@/types/voice";
 
+import { useGroupNowMediaHandoff } from "./useGroupNowMediaHandoff";
+
 export function useGroupNowRoomJoin({
   groupId,
   onJoined,
@@ -24,10 +26,8 @@ export function useGroupNowRoomJoin({
   ) => void | Promise<void>;
   onOpenLegacy?: (room: GroupNowRoom) => void | Promise<void>;
 }) {
-  const utils = trpc.useUtils();
   const joinMutation = trpc.chat.coreJoinRoom.useMutation();
-  const mediaTokenMutation = trpc.chat.coreRoomMediaToken.useMutation();
-  const leaveMutation = trpc.chat.coreLeaveRoom.useMutation();
+  const mediaHandoff = useGroupNowMediaHandoff({ groupId, onJoined });
   const [confirmationRoom, setConfirmationRoom] = useState<GroupNowRoom | null>(null);
   const [confirmationError, setConfirmationError] = useState<string | null>(null);
 
@@ -43,30 +43,8 @@ export function useGroupNowRoomJoin({
       micMuted: true,
       confirmedCrossContext,
     });
-    try {
-      const credentials = await mediaTokenMutation.mutateAsync({
-        sessionId: result.sessionId,
-      });
-      if (!credentials.enabled) {
-        throw new Error("Медиасервер для комнаты временно недоступен");
-      }
-      await onJoined(room, result, credentials);
-    } catch (error) {
-      let cleanupFailed = false;
-      try {
-        await leaveMutation.mutateAsync({ sessionId: result.sessionId });
-      } catch {
-        cleanupFailed = true;
-      } finally {
-        await utils.chat.coreGroupNow.invalidate({ groupId });
-      }
-      if (cleanupFailed) {
-        throw new Error(`${roomJoinErrorMessage(error)}. Сессия завершится автоматически.`);
-      }
-      throw error;
-    }
-    await utils.chat.coreGroupNow.invalidate({ groupId });
-  }, [groupId, joinMutation, leaveMutation, mediaTokenMutation, onJoined, onOpenLegacy, utils.chat.coreGroupNow]);
+    await mediaHandoff.connect(room, result);
+  }, [joinMutation, mediaHandoff, onOpenLegacy]);
 
   const requestJoin = useCallback(async (room: GroupNowRoom) => {
     setConfirmationError(null);
@@ -86,8 +64,7 @@ export function useGroupNowRoomJoin({
     if (
       !room
       || joinMutation.isPending
-      || mediaTokenMutation.isPending
-      || leaveMutation.isPending
+      || mediaHandoff.pending
     ) return;
     setConfirmationError(null);
     try {
@@ -96,20 +73,20 @@ export function useGroupNowRoomJoin({
     } catch (error) {
       setConfirmationError(roomJoinErrorMessage(error));
     }
-  }, [confirmationRoom, finishJoin, joinMutation.isPending, leaveMutation.isPending, mediaTokenMutation.isPending]);
+  }, [confirmationRoom, finishJoin, joinMutation.isPending, mediaHandoff.pending]);
 
   const cancelSwitch = useCallback(() => {
-    if (joinMutation.isPending || mediaTokenMutation.isPending || leaveMutation.isPending) return;
+    if (joinMutation.isPending || mediaHandoff.pending) return;
     setConfirmationError(null);
     setConfirmationRoom(null);
-  }, [joinMutation.isPending, leaveMutation.isPending, mediaTokenMutation.isPending]);
+  }, [joinMutation.isPending, mediaHandoff.pending]);
 
   return {
     cancelSwitch,
     confirmationError,
     confirmationRoom,
     confirmSwitch,
-    pending: joinMutation.isPending || mediaTokenMutation.isPending || leaveMutation.isPending,
+    pending: joinMutation.isPending || mediaHandoff.pending,
     requestJoin,
   };
 }

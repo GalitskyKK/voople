@@ -112,6 +112,14 @@ LiveSession, and the new switch transaction accounts for legacy presence. The
 contract stays internal until real database concurrency, old-client and
 two-client media gates pass.
 
+Release migration 61 adds the UI-facing create-and-join transaction. A client
+request UUID is persisted as a unique creation key, so a lost response can be
+retried without creating a second Room. The Room insert and join happen in one
+database statement: a cross-context confirmation error rolls the insert back,
+and the same request UUID is reused only after explicit confirmation. The RPC
+remains service-role-only and preserves the authorization checks in migrations
+59–60.
+
 Internal transport is fail-closed. `chat.core*` procedures require an
 authenticated user plus all of: `VOOPLE_RELEASE_CHANNEL=internal`, the
 `multi_room_groups` server capability and the user's UUID in the internal

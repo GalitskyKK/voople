@@ -5,6 +5,7 @@ import { assertRateLimit } from "@/lib/ratelimit-guard";
 import { rateLimits } from "@/lib/ratelimit";
 import {
   archiveGroupRoom,
+  createAndJoinGroupRoom,
   createGroupRoomMediaToken,
   createGroupRoom,
   getGroupNow,
@@ -81,6 +82,41 @@ export const chatCoreReworkProcedures = {
           properties: { kind: room.kind },
         });
         return room;
+      } catch (error) {
+        throw toRoomError(error, "Не удалось создать комнату");
+      }
+    }),
+
+  coreCreateAndJoinRoom: protectedProcedure
+    .input(z.object({
+      groupId: z.string().uuid(),
+      kind: roomKindSchema,
+      name: z.string().trim().min(1).max(80),
+      requestId: z.string().uuid(),
+      micMuted: z.boolean().default(true),
+      confirmedCrossContext: z.boolean().default(false),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
+      try {
+        const result = await createAndJoinGroupRoom({
+          groupId: input.groupId,
+          userId: ctx.user.id,
+          kind: input.kind,
+          name: input.name,
+          requestId: input.requestId,
+          micMuted: input.micMuted,
+          allowCrossContext: input.confirmedCrossContext,
+        });
+        await recordServerProductEvent({
+          name: "room_created",
+          actorId: ctx.user.id,
+          route: "/trpc/chat.coreCreateAndJoinRoom",
+          properties: { kind: result.room.kind, joined: true },
+        });
+        return result;
       } catch (error) {
         throw toRoomError(error, "Не удалось создать комнату");
       }

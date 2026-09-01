@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { getAdminClient } from "@/lib/supabase/admin";
 import type {
+  GroupRoomCreateAndJoinResult,
   GroupRoomJoinResult,
   GroupRoomLeaveResult,
   GroupRoomRecord,
@@ -25,6 +26,11 @@ const joinSchema = z.object({
   switched: z.boolean(),
 });
 
+const createAndJoinSchema = z.object({
+  room: roomSchema,
+  join: joinSchema,
+});
+
 const leaveSchema = z.object({
   left: z.boolean(),
   sessionId: z.string().uuid().nullable(),
@@ -44,6 +50,9 @@ function throwRoomMutationError(message: string) {
   }
   if (message.includes("ROOM_NOT_FOUND")) {
     throw new Error("Комната больше недоступна");
+  }
+  if (message.includes("ROOM_IDEMPOTENCY_CONFLICT")) {
+    throw new Error("Запрос создания комнаты уже использован");
   }
   throw new Error(message);
 }
@@ -88,6 +97,26 @@ export function createGroupRoomRest(input: {
     p_kind: input.kind,
     p_name: input.name,
   }, roomSchema);
+}
+
+export function createAndJoinGroupRoomRest(input: {
+  groupId: string;
+  userId: string;
+  kind: "temporary" | "pinned";
+  name: string;
+  requestId: string;
+  micMuted: boolean;
+  allowCrossContext: boolean;
+}): Promise<GroupRoomCreateAndJoinResult> {
+  return roomRpc("create_and_join_group_room", {
+    p_group_chat_id: input.groupId,
+    p_user_id: input.userId,
+    p_kind: input.kind,
+    p_name: input.name,
+    p_request_id: input.requestId,
+    p_mic_muted: input.micMuted,
+    p_allow_cross_context: input.allowCrossContext,
+  }, createAndJoinSchema);
 }
 
 export function setGroupRoomKindRest(input: {

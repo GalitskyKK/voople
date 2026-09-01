@@ -18,6 +18,7 @@ export const REQUIRED_MIGRATIONS = Object.freeze([
   "58-room-invitations.sql",
   "59-core-room-foundation.sql",
   "60-core-room-mutations.sql",
+  "61-core-room-create-and-join.sql",
 ]);
 
 // The ledger must exist before the feature migrations are replayed so every
@@ -42,4 +43,5 @@ export const RELEASE_APPLY_ORDER = Object.freeze([
   "58-room-invitations.sql",
   "59-core-room-foundation.sql",
   "60-core-room-mutations.sql",
+  "61-core-room-create-and-join.sql",
 ]);

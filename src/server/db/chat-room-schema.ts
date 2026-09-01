@@ -99,6 +99,7 @@ export const groupRooms = pgTable(
     kind: varchar("kind", { length: 20 }).$type<GroupRoomKind>().notNull(),
     name: varchar("name", { length: 80 }).notNull(),
     createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+    creationRequestId: uuid("creation_request_id"),
     archivedAt: timestamp("archived_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -108,6 +109,9 @@ export const groupRooms = pgTable(
     activeLobbyUnique: uniqueIndex("group_rooms_active_lobby_unique")
       .on(t.groupChatId)
       .where(sql`${t.kind} = 'lobby' AND ${t.archivedAt} IS NULL`),
+    creationRequestUnique: uniqueIndex("group_rooms_creation_request_unique")
+      .on(t.creationRequestId)
+      .where(sql`${t.creationRequestId} IS NOT NULL`),
   }),
 );
 

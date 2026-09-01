@@ -3,6 +3,7 @@ import "server-only";
 import { getChatMembershipRest } from "@/server/data/chat-access-rest";
 import {
   archiveGroupRoomRest,
+  createAndJoinGroupRoomRest,
   createGroupRoomRest,
   expireGroupRoomGraceRest,
   getGroupRoomRecordRest,
@@ -38,6 +39,29 @@ export async function createGroupRoom(input: {
   const name = input.name.trim();
   if (!name || name.length > 80) throw new Error("Название комнаты должно содержать от 1 до 80 символов");
   return createGroupRoomRest({ ...input, name });
+}
+
+export async function createAndJoinGroupRoom(input: {
+  groupId: string;
+  userId: string;
+  kind: "temporary" | "pinned";
+  name: string;
+  requestId: string;
+  micMuted?: boolean;
+  allowCrossContext?: boolean;
+}) {
+  const membership = await requireRootGroup(input.groupId, input.userId);
+  if (input.kind === "pinned") requireRoomAdmin(membership.role);
+  const name = input.name.trim();
+  if (!name || name.length > 80) {
+    throw new Error("Название комнаты должно содержать от 1 до 80 символов");
+  }
+  return createAndJoinGroupRoomRest({
+    ...input,
+    name,
+    micMuted: input.micMuted ?? true,
+    allowCrossContext: input.allowCrossContext ?? false,
+  });
 }
 
 export async function setGroupRoomKind(input: {

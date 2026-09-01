@@ -16,6 +16,11 @@ export type GroupRoomJoinResult = {
   switched: boolean;
 };
 
+export type GroupRoomCreateAndJoinResult = {
+  room: GroupRoomRecord;
+  join: GroupRoomJoinResult;
+};
+
 export type GroupRoomLeaveResult = {
   left: boolean;
   sessionId: string | null;

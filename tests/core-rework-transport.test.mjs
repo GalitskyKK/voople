@@ -58,6 +58,7 @@ test("every internal Room procedure enforces capability access", async () => {
   for (const procedure of [
     "coreGroupNow",
     "coreCreateRoom",
+    "coreCreateAndJoinRoom",
     "coreSetRoomKind",
     "coreArchiveRoom",
     "coreJoinRoom",

@@ -9,6 +9,7 @@ export type GroupNowUser = {
 };
 
 export type GroupNowParticipant = GroupNowUser & {
+  isMe: boolean;
   micMuted: boolean | null;
   cameraEnabled: boolean | null;
   screenSharing: boolean | null;
@@ -23,6 +24,8 @@ export type GroupNowRoom = {
     | { kind: "legacy"; chatId: string };
   state: GroupNowRoomState;
   liveSessionId: string | null;
+  startedAt: string | null;
+  startedBy: string | null;
   participantCount: number;
   hasScreenShare: boolean;
   participants: GroupNowParticipant[];

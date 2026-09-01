@@ -28,6 +28,8 @@ function toCreatedRoom(result: GroupRoomCreateAndJoinResult): GroupNowRoom {
     joinTarget: { kind: "room", roomId: result.room.id },
     state: "active",
     liveSessionId: result.join.sessionId,
+    startedAt: new Date().toISOString(),
+    startedBy: null,
     participantCount: 1,
     hasScreenShare: false,
     participants: [],

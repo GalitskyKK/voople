@@ -19,6 +19,7 @@ export type GroupNowSessionInput = {
   roomId: string;
   status: Exclude<GroupNowRoomState, "idle">;
   startedAt: string;
+  startedBy: string;
 };
 
 export type GroupNowParticipantInput = {
@@ -59,9 +60,11 @@ function roomKindPriority(kind: GroupNowRoomKind) {
 
 function toParticipant(
   input: GroupNowParticipantInput,
+  viewerId: string,
 ): GroupNowParticipant {
   return {
     ...input.user,
+    isMe: input.user.id === viewerId,
     micMuted: input.micMuted,
     cameraEnabled: input.cameraEnabled,
     screenSharing: input.screenSharing,
@@ -91,7 +94,7 @@ export function buildGroupNowView(input: BuildGroupNowViewInput): GroupNowView {
     if (!selectedSessionIds.has(participant.sessionId)) continue;
     if (placedUserIds.has(participant.user.id)) continue;
     const participants = participantsBySession.get(participant.sessionId) ?? [];
-    participants.push(toParticipant(participant));
+    participants.push(toParticipant(participant, input.viewerId));
     participantsBySession.set(participant.sessionId, participants);
     placedUserIds.add(participant.user.id);
   }
@@ -108,6 +111,8 @@ export function buildGroupNowView(input: BuildGroupNowViewInput): GroupNowView {
       joinTarget: { kind: "room", roomId: room.id },
       state: session?.status ?? "idle",
       liveSessionId: session?.id ?? null,
+      startedAt: session?.startedAt ?? null,
+      startedBy: session?.startedBy ?? null,
       participantCount: participants.length,
       hasScreenShare: participants.some((participant) => participant.screenSharing),
       participants,
@@ -129,6 +134,8 @@ export function buildGroupNowView(input: BuildGroupNowViewInput): GroupNowView {
         joinTarget: { kind: "legacy", chatId: legacy.chatId },
         state: "active",
         liveSessionId: null,
+        startedAt: null,
+        startedBy: null,
         participantCount: 0,
         hasScreenShare: false,
         participants: [],
@@ -138,6 +145,7 @@ export function buildGroupNowView(input: BuildGroupNowViewInput): GroupNowView {
     }
     room.participants.push({
       ...legacy.user,
+      isMe: legacy.user.id === input.viewerId,
       micMuted: null,
       cameraEnabled: null,
       screenSharing: null,

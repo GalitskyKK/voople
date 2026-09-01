@@ -19,6 +19,7 @@ export type GroupNowSnapshotRest = {
     roomId: string;
     status: "connecting" | "active" | "grace";
     startedAt: string;
+    startedBy: string;
   }>;
   participants: Array<{
     sessionId: string;
@@ -57,7 +58,7 @@ export async function loadGroupNowSnapshotRest(
       .order("created_at", { ascending: true }),
     admin
       .from("live_sessions")
-      .select("id, room_id, status, started_at")
+      .select("id, room_id, status, started_at, started_by")
       .eq("conversation_id", groupId)
       .eq("kind", "group_room")
       .is("ended_at", null)
@@ -79,6 +80,7 @@ export async function loadGroupNowSnapshotRest(
       roomId: String(row.room_id),
       status: normalizeSessionStatus(row.status),
       startedAt: String(row.started_at),
+      startedBy: String(row.started_by),
     }];
   });
   const sessionIds = sessions.map((session) => session.id);

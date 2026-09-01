@@ -28,7 +28,7 @@ test("Group Now keeps Lobby first and derives active media state", () => {
       lobby,
     ],
     sessions: [
-      { id: "session", roomId: "drg", status: "active", startedAt: "2026-08-31T12:00:00.000Z" },
+      { id: "session", roomId: "drg", status: "active", startedAt: "2026-08-31T12:00:00.000Z", startedBy: "alice" },
     ],
     participants: [
       { sessionId: "session", user: user("alice"), micMuted: false, cameraEnabled: false, screenSharing: true },
@@ -41,6 +41,9 @@ test("Group Now keeps Lobby first and derives active media state", () => {
   assert.equal(result.rooms[1]?.hasScreenShare, true);
   assert.deepEqual(result.rooms[1]?.joinTarget, { kind: "room", roomId: "drg" });
   assert.equal(result.rooms[1]?.participantCount, 1);
+  assert.equal(result.rooms[1]?.startedAt, "2026-08-31T12:00:00.000Z");
+  assert.equal(result.rooms[1]?.startedBy, "alice");
+  assert.equal(result.rooms[1]?.participants[0]?.isMe, true);
   assert.equal(result.currentUserRoomId, "drg");
   assert.deepEqual(result.onlineOutsideRooms.map((entry) => entry.id), ["bob"]);
   assert.equal(result.visibleOnlineCount, 2);
@@ -53,7 +56,7 @@ test("new LiveSession wins over duplicate legacy presence", () => {
     viewerId: "viewer",
     rooms: [lobby, { id: "new-room", kind: "pinned", name: "Review", createdAt: "2026-08-31T11:00:00.000Z" }],
     sessions: [
-      { id: "new-session", roomId: "new-room", status: "active", startedAt: "2026-08-31T12:00:00.000Z" },
+      { id: "new-session", roomId: "new-room", status: "active", startedAt: "2026-08-31T12:00:00.000Z", startedBy: "alice" },
     ],
     participants: [
       { sessionId: "new-session", user: user("alice"), micMuted: true, cameraEnabled: true, screenSharing: false },
@@ -114,5 +117,6 @@ test("server read model owns membership and presence privacy", () => {
   assert.match(data, /\.from\("group_rooms"\)/);
   assert.match(data, /\.from\("live_sessions"\)/);
   assert.match(data, /\.from\("live_session_participants"\)/);
+  assert.match(data, /started_at, started_by/);
   assert.match(data, /\.is\("left_at", null\)/);
 });

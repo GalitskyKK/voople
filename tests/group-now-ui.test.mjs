@@ -15,6 +15,7 @@ const user = {
   micMuted: false,
   cameraEnabled: false,
   screenSharing: false,
+  isMe: false,
 };
 
 const lobby = {
@@ -24,6 +25,8 @@ const lobby = {
   joinTarget: { kind: "room", roomId: "00000000-0000-4000-8000-000000000003" },
   state: "active",
   liveSessionId: "00000000-0000-4000-8000-000000000004",
+  startedAt: "2026-08-31T12:00:00.000Z",
+  startedBy: user.id,
   participantCount: 1,
   hasScreenShare: false,
   participants: [user],

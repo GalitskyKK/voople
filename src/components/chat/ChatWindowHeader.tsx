@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Hash } from "lucide-react";
 
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
@@ -11,6 +12,7 @@ import { ChatMobileNavigation } from "./ChatMobileNavigation";
 import { ChatPeerPresence } from "./ChatPeerPresence";
 import { ChatWindowHeaderVisual } from "./ChatWindowHeaderVisual";
 import { GroupInfoDrawer } from "./GroupInfoDrawer";
+import { GroupRoomAction } from "./GroupRoomAction";
 import { SectionAccessSheet } from "./SectionAccessSheet";
 import { VoiceRoomButton } from "./voice/VoiceRoomButton";
 
@@ -51,6 +53,7 @@ export function ChatWindowHeader({
   other,
   otherOnline,
 }: ChatWindowHeaderProps) {
+  const router = useRouter();
   const canManageGroup =
     isGroup && !isSubchat && (viewerRole === "owner" || viewerRole === "admin");
 
@@ -121,11 +124,20 @@ export function ChatWindowHeader({
       {isSubchat && parentChatId && viewerRole !== "member" ? (
         <SectionAccessSheet chatId={chatId} parentChatId={parentChatId} />
       ) : null}
-      <VoiceRoomButton
-        chatId={chatId}
-        chatName={chatTitle}
-        chatType={isGroup ? "group" : "direct"}
-      />
+      {isGroup && !isSubchat ? (
+        <GroupRoomAction
+          groupId={chatId}
+          groupName={chatTitle}
+          canCreatePinned={canManageGroup}
+          onOpenProfile={(username) => router.push(`/${username}`)}
+        />
+      ) : (
+        <VoiceRoomButton
+          chatId={chatId}
+          chatName={chatTitle}
+          chatType={isGroup ? "group" : "direct"}
+        />
+      )}
       <ChatMobileNavigation />
     </ChatWindowHeaderVisual>
   );

@@ -10,12 +10,14 @@ export function GroupNowVoicePanel({
   groupId,
   groupName,
   canCreatePinned = false,
+  onRoomOpened,
   onOpenProfile,
 }: {
   enabled?: boolean;
   groupId: string;
   groupName: string;
   canCreatePinned?: boolean;
+  onRoomOpened?: () => void;
   onOpenProfile?: (user: GroupNowUser) => void;
 }) {
   const voice = useVoiceSession();
@@ -27,6 +29,7 @@ export function GroupNowVoicePanel({
       chatName: room.name,
       chatType: "group",
     });
+    onRoomOpened?.();
   };
 
   return (
@@ -37,12 +40,10 @@ export function GroupNowVoicePanel({
       canCreatePinned={canCreatePinned}
       onOpenLegacy={openLegacy}
       onOpenProfile={onOpenProfile}
-      onJoined={(room, join, credentials) => voice.openCoreRoom({
-        groupId,
-        room,
-        join,
-        credentials,
-      })}
+      onJoined={(room, join, credentials) => {
+        voice.openCoreRoom({ groupId, room, join, credentials });
+        onRoomOpened?.();
+      }}
     />
   );
 }

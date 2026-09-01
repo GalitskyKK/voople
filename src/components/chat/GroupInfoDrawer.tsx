@@ -7,7 +7,7 @@ import { trpc } from "@/lib/trpc/client";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 
 import { GroupInfoDrawerView, type GroupInfoDrawerTab } from "./GroupInfoDrawerView";
-import { VoiceRoomButton } from "./voice/VoiceRoomButton";
+import { GroupRoomAction } from "./GroupRoomAction";
 
 export function GroupInfoDrawer({
   chatId,
@@ -82,7 +82,16 @@ export function GroupInfoDrawer({
       error={tab === "members" ? members.error?.message : community.error?.message}
       topics={topicNames}
       sections={rootChat?.channels.map((section) => ({ id: section.id, name: section.name || "Раздел" })) ?? []}
-      roomAction={room.data?.participants.length ? <VoiceRoomButton chatId={chatId} chatName={chatName} chatType="group" display="label" /> : undefined}
+      roomAction={(
+        <GroupRoomAction
+          groupId={chatId}
+          groupName={chatName}
+          canCreatePinned={canManage}
+          display="label"
+          onBeforeOpen={() => setOpen(false)}
+          onOpenProfile={(username) => navigate(`/${username}`)}
+        />
+      )}
       onOpenChange={setOpen}
       onTabChange={setTab}
       onManage={() => navigate(`/messages/${chatId}/settings`)}

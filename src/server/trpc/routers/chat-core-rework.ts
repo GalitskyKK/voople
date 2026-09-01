@@ -18,6 +18,7 @@ import {
 import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
 import {
   assertServerFeatureAvailable,
+  getServerFeatureAccess,
   ProductFeatureUnavailableError,
 } from "@/server/services/product-feature-access.service";
 
@@ -54,6 +55,10 @@ function toRoomError(error: unknown, fallback: string): TRPCError {
 }
 
 export const chatCoreReworkProcedures = {
+  coreRoomAvailability: protectedProcedure.query(({ ctx }) => ({
+    enabled: getServerFeatureAccess("multi_room_groups", ctx.user.id).enabled,
+  })),
+
   coreGroupNow: protectedProcedure
     .input(z.object({ groupId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {

@@ -89,7 +89,11 @@ export function useChatRoomControl(
     value?.startedAt ?? null,
     inside && value?.status === "active",
   );
-  const heartbeat = useVoiceHeartbeat(chatId, inside, liveRoomRef);
+  const heartbeat = useVoiceHeartbeat(
+    { kind: "legacy", chatId },
+    inside,
+    liveRoomRef,
+  );
   const meIsStarter = Boolean(
     value?.startedBy &&
       participants.find((participant) => participant.isMe)?.id === value.startedBy,

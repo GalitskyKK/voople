@@ -18,7 +18,11 @@ test("core Room invitations are session-bound, private and idempotent", async ()
   assert.match(data, /Сначала войдите в приглашённую комнату/);
   assert.match(data, /eq\("status", "pending"\)\s+\.select\("status"\)\s+\.maybeSingle\(\)/);
   assert.match(data, /latestStatus === input\.response/);
+  assert.match(data, /listCoreRoomInvitesForSenderRest/);
+  assert.match(data, /cancelCoreRoomInviteRest[\s\S]+eq\("inviter_id", input\.inviterId\)[\s\S]+eq\("status", "pending"\)/);
+  assert.match(data, /Preserve the notification while emitting its realtime UPDATE/);
   assert.match(service, /requireRootGroupMember\(context\.groupId, input\.inviteeId\)/);
+  assert.match(service, /cancelCoreRoomInvite[\s\S]+requireRootGroupMember\(groupId, input\.inviterId\)/);
   assert.match(service, /filterUserIdsByPrivacyFieldRest[\s\S]+"inviteScope"/);
   assert.match(router, /rateLimits\.inviteToChatRoom/);
   assert.match(router, /name: "room_invite_sent"/);
@@ -38,6 +42,8 @@ test("Room invite sender and notification action share the core join lifecycle",
   assert.match(sheet, /CoreRoomInvitePanel/);
   assert.match(panel, /coreRoomInviteCandidates\.useQuery/);
   assert.match(panel, /coreSendRoomInvite\.useMutation/);
+  assert.match(panel, /coreCancelRoomInvite\.useMutation/);
+  assert.match(panel, /STATUS_LABELS\[inviteRecord\.status\]/);
   assert.match(panel, /Приглашение действует 15 минут/);
   assert.match(notifications, /RoomInviteNotificationActions/);
   assert.match(action, /useGroupNowRoomJoin/);

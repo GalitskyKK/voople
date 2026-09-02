@@ -3,7 +3,10 @@ import "server-only";
 import { getChatMembershipRest } from "@/server/data/chat-access-rest";
 import { listGroupMembersRest } from "@/server/data/chat-group-members-rest";
 import {
+  cancelCoreRoomInviteRest,
   getCoreRoomInviteSessionRest,
+  getCoreRoomInviteGroupForSenderRest,
+  listCoreRoomInvitesForSenderRest,
   respondToCoreRoomInviteRest,
   upsertCoreRoomInviteRest,
 } from "@/server/data/core-room-invitations-rest";
@@ -24,7 +27,10 @@ export async function listCoreRoomInviteCandidates(
 ): Promise<CoreRoomInviteCandidate[]> {
   const context = await getCoreRoomInviteSessionRest(sessionId, userId);
   await requireRootGroupMember(context.groupId, userId);
-  const members = await listGroupMembersRest(context.groupId, userId);
+  const [members, sentInvites] = await Promise.all([
+    listGroupMembersRest(context.groupId, userId),
+    listCoreRoomInvitesForSenderRest(context, userId),
+  ]);
   const excludedIds = new Set([userId, ...context.participantIds]);
   const candidates = members.filter((member) => !excludedIds.has(member.id));
   const allowedIds = new Set(await filterUserIdsByPrivacyFieldRest(
@@ -37,6 +43,7 @@ export async function listCoreRoomInviteCandidates(
     username: candidate.username,
     displayName: candidate.displayName,
     avatarUrl: candidate.avatarUrl ?? null,
+    invite: sentInvites.get(candidate.id) ?? null,
   }] : []);
 }
 
@@ -75,4 +82,13 @@ export function respondToCoreRoomInvite(input: {
   response: "accepted" | "declined";
 }) {
   return respondToCoreRoomInviteRest(input);
+}
+
+export async function cancelCoreRoomInvite(input: {
+  inviteId: string;
+  inviterId: string;
+}) {
+  const groupId = await getCoreRoomInviteGroupForSenderRest(input.inviteId, input.inviterId);
+  await requireRootGroupMember(groupId, input.inviterId);
+  return cancelCoreRoomInviteRest(input);
 }

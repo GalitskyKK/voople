@@ -5,6 +5,7 @@ import { assertRateLimit } from "@/lib/ratelimit-guard";
 import { rateLimits } from "@/lib/ratelimit";
 import {
   archiveGroupRoom,
+  cancelCoreRoomInvite,
   createAndJoinGroupRoom,
   createGroupRoomMediaToken,
   createGroupRoomScreenAudioToken,
@@ -231,6 +232,18 @@ export const chatCoreReworkProcedures = {
         return await respondToCoreRoomInvite({ ...input, userId: ctx.user.id });
       } catch (error) {
         throw toRoomError(error, "Не удалось ответить на приглашение");
+      }
+    }),
+
+  coreCancelRoomInvite: protectedProcedure
+    .input(z.object({ inviteId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
+      try {
+        return await cancelCoreRoomInvite({ ...input, inviterId: ctx.user.id });
+      } catch (error) {
+        throw toRoomError(error, "Не удалось отменить приглашение");
       }
     }),
 

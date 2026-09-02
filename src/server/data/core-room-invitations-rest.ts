@@ -136,6 +136,130 @@ export async function upsertCoreRoomInviteRest(input: {
   return { id: String(data.id), expiresAt: String(data.expires_at) };
 }
 
+export async function listCoreRoomInvitesForSenderRest(
+  context: InviteSessionContext,
+  inviterId: string,
+) {
+  const admin = getAdminClient();
+  const result = await admin
+    .from("chat_room_invites")
+    .select("id, invitee_id, status, expires_at")
+    .eq("chat_id", context.groupId)
+    .eq("room_session_id", context.sessionId)
+    .eq("inviter_id", inviterId);
+  if (result.error) throw new Error(result.error.message);
+  const now = Date.now();
+  const expiredIds = (result.data ?? []).flatMap((row) =>
+    inviteStatus(row.status) === "pending" && new Date(row.expires_at).getTime() <= now
+      ? [String(row.id)]
+      : [],
+  );
+  if (expiredIds.length) {
+    const expiredResult = await admin.from("chat_room_invites").update({
+      status: "expired",
+      updated_at: new Date(now).toISOString(),
+    }).in("id", expiredIds).eq("status", "pending");
+    if (expiredResult.error) throw new Error(expiredResult.error.message);
+  }
+  return new Map((result.data ?? []).map((row) => {
+    const storedStatus = inviteStatus(row.status);
+    const status = storedStatus === "pending" && expiredIds.includes(String(row.id))
+      ? "expired"
+      : storedStatus;
+    return [String(row.invitee_id), {
+      id: String(row.id),
+      status,
+      expiresAt: String(row.expires_at),
+    }] as const;
+  }));
+}
+
+export async function getCoreRoomInviteGroupForSenderRest(
+  inviteId: string,
+  inviterId: string,
+) {
+  const result = await getAdminClient()
+    .from("chat_room_invites")
+    .select("chat_id")
+    .eq("id", inviteId)
+    .eq("inviter_id", inviterId)
+    .maybeSingle();
+  if (result.error) throw new Error(result.error.message);
+  if (!result.data) throw new Error("Приглашение недоступно");
+  return String(result.data.chat_id);
+}
+
+export async function cancelCoreRoomInviteRest(input: {
+  inviteId: string;
+  inviterId: string;
+}) {
+  const admin = getAdminClient();
+  const signalNotificationUpdate = async () => {
+    // Preserve the notification while emitting its realtime UPDATE for the invitee.
+    const result = await admin.from("notifications").update({
+      actor_id: input.inviterId,
+    })
+      .eq("type", "room_invite")
+      .eq("reference_id", input.inviteId);
+    if (result.error) throw new Error(result.error.message);
+  };
+  const inviteResult = await admin
+    .from("chat_room_invites")
+    .select("id, chat_id, room_session_id, status, expires_at")
+    .eq("id", input.inviteId)
+    .eq("inviter_id", input.inviterId)
+    .maybeSingle();
+  if (inviteResult.error) throw new Error(inviteResult.error.message);
+  if (!inviteResult.data) throw new Error("Приглашение недоступно");
+  const currentStatus = inviteStatus(inviteResult.data.status);
+  if (currentStatus === "cancelled") {
+    await signalNotificationUpdate();
+    return { status: currentStatus };
+  }
+  if (currentStatus !== "pending") throw new Error("Это приглашение уже нельзя отменить");
+  if (new Date(inviteResult.data.expires_at).getTime() <= Date.now()) {
+    const expiredResult = await admin.from("chat_room_invites").update({
+      status: "expired",
+      updated_at: new Date().toISOString(),
+    }).eq("id", input.inviteId).eq("status", "pending");
+    if (expiredResult.error) throw new Error(expiredResult.error.message);
+    await signalNotificationUpdate();
+    return { status: "expired" as const };
+  }
+  const context = await getCoreRoomInviteSessionRest(
+    String(inviteResult.data.room_session_id),
+    input.inviterId,
+  );
+  if (context.groupId !== String(inviteResult.data.chat_id)) {
+    throw new Error("Приглашение не относится к текущей комнате");
+  }
+  const updatedAt = new Date().toISOString();
+  const updateResult = await admin.from("chat_room_invites").update({
+    status: "cancelled",
+    updated_at: updatedAt,
+  })
+    .eq("id", input.inviteId)
+    .eq("inviter_id", input.inviterId)
+    .eq("status", "pending")
+    .select("status")
+    .maybeSingle();
+  if (updateResult.error) throw new Error(updateResult.error.message);
+  if (!updateResult.data) {
+    const latestResult = await admin
+      .from("chat_room_invites")
+      .select("status")
+      .eq("id", input.inviteId)
+      .eq("inviter_id", input.inviterId)
+      .maybeSingle();
+    if (latestResult.error) throw new Error(latestResult.error.message);
+    if (!latestResult.data || inviteStatus(latestResult.data.status) !== "cancelled") {
+      throw new Error("Это приглашение уже нельзя отменить");
+    }
+  }
+  await signalNotificationUpdate();
+  return { status: "cancelled" as const };
+}
+
 export async function respondToCoreRoomInviteRest(input: {
   inviteId: string;
   userId: string;

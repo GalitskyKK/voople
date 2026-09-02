@@ -12,6 +12,11 @@ export type CoreRoomInviteCandidate = {
   username: string;
   displayName: string;
   avatarUrl: string | null;
+  invite: {
+    id: string;
+    status: CoreRoomInviteStatus;
+    expiresAt: string;
+  } | null;
 };
 
 export type CoreRoomInvitePreview = {

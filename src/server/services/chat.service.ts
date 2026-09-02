@@ -87,6 +87,7 @@ export {
 } from "@/server/data/chat-discovery-rest";
 
 export {
+  cancelCoreRoomInvite,
   listCoreRoomInviteCandidates,
   respondToCoreRoomInvite,
   sendCoreRoomInvite,

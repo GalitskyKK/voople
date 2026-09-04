@@ -20,13 +20,16 @@ Before changing product behaviour, layout or presentation, read the relevant
 parts of the tracked canonical product sources:
 
 1. `rework_plan/VOOPLE_CORE_REWORK_PLAN.md`
-2. `temp_info_for_redesign_and_improvement/VOOPLE_FINAL_PRODUCT_SOCIAL_UX_IMPLEMENTATION_PLAN.md`
-3. `docs/product-delivery-matrix.md`
-4. `docs/core-rework-architecture.md` for Group, Room, LiveSession or rollout work
+2. `docs/rework-integration-plan.md`
+3. `temp_info_for_redesign_and_improvement/VOOPLE_FINAL_PRODUCT_SOCIAL_UX_IMPLEMENTATION_PLAN.md`
+4. `docs/product-delivery-matrix.md`
+5. `docs/core-rework-architecture.md` for Group, Room, LiveSession or rollout work
 
 The core rework plan owns current core behaviour, navigation and visual
-direction. The final social/UX plan supplements secondary surfaces only where
-it does not conflict with the core rework plan. The real application remains
+direction. The integration plan records the mandatory addendum corrections and
+overrides the core plan where they conflict. The final social/UX plan
+supplements secondary surfaces only where it does not conflict with either
+core source. The real application remains
 the source for working behaviour that the plans do not explicitly replace.
 The generated image in `rework_plan` is a moodboard, not a literal layout spec;
 apply the corrections listed in the plan's Visual baseline section. Preserve

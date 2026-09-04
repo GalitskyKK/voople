@@ -76,11 +76,11 @@ export function VoiceSessionProvider({
   const [state, setState] = useState<VoiceControlState>(IDLE_STATE);
   const controlRef = useRef<ChatRoomControlHandle>(null);
   const autoConnectPendingRef = useRef(false);
-  const initialCoreCredentialsRef = useRef<EnabledVoiceMediaCredentials | null>(null);
+  const [initialCoreCredentials, setInitialCoreCredentials] = useState<EnabledVoiceMediaCredentials | null>(null);
   const handleControlRef = useCallback((control: ChatRoomControlHandle | null) => {
     controlRef.current = control;
     if (!control || !autoConnectPendingRef.current) return;
-    initialCoreCredentialsRef.current = null;
+    setInitialCoreCredentials(null);
     autoConnectPendingRef.current = false;
     control.join();
   }, []);
@@ -88,7 +88,7 @@ export function VoiceSessionProvider({
   const openRoom = useCallback(
     (session: VoiceSessionDescriptor) => {
       autoConnectPendingRef.current = false;
-      initialCoreCredentialsRef.current = null;
+      setInitialCoreCredentials(null);
       if (state.inside && activeSession?.coreSession) {
         controlRef.current?.open();
         return;
@@ -109,7 +109,7 @@ export function VoiceSessionProvider({
   );
 
   const openCoreRoom = useCallback((launch: CoreVoiceSessionLaunch) => {
-    initialCoreCredentialsRef.current = launch.credentials;
+    setInitialCoreCredentials(launch.credentials);
     autoConnectPendingRef.current = true;
     setState(IDLE_STATE);
     setActiveSession({
@@ -132,7 +132,7 @@ export function VoiceSessionProvider({
     const existingControl = activeSession?.chatId === session.chatId
       ? controlRef.current
       : null;
-    initialCoreCredentialsRef.current = null;
+    setInitialCoreCredentials(null);
     autoConnectPendingRef.current = !existingControl;
     if (!existingControl) setState(IDLE_STATE);
     setActiveSession(session);
@@ -180,6 +180,7 @@ export function VoiceSessionProvider({
       const existingControl =
         activeSession?.chatId === call.chatId ? controlRef.current : null;
       autoConnectPendingRef.current = !existingControl;
+      setInitialCoreCredentials(null);
       setState(IDLE_STATE);
       setActiveSession({
         chatId: call.chatId,
@@ -205,7 +206,7 @@ export function VoiceSessionProvider({
               key={`${activeSession.chatId}:${activeSession.coreSession?.join.sessionId ?? "legacy"}`}
               ref={handleControlRef}
               {...activeSession}
-              initialCoreCredentials={initialCoreCredentialsRef.current ?? undefined}
+              initialCoreCredentials={initialCoreCredentials ?? undefined}
               renderTrigger={false}
               initialOpen
               onStateChange={handleStateChange}

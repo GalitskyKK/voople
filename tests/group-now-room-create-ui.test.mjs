@@ -22,6 +22,8 @@ test("create Room dialog uses one atomic request and preserves explicit switch c
   assert.match(dialog, /Только для администраторов/);
   assert.match(dialog, /Создать и зайти/);
   assert.match(dialog, /Завершить и создать/);
+  assert.match(dialog, /return props\.open \? <RoomCreateSession \{\.\.\.props\} \/> : null/);
+  assert.doesNotMatch(dialog, /useEffect/);
   assert.match(connected, /GroupNowRoomCreateDialog/);
   assert.match(connected, /canCreatePinned/);
 });

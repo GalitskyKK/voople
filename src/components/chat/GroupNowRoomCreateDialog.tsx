@@ -1,23 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { ArrowRightLeft, LoaderCircle, Radio, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import type { GroupNowRoomCreateDraft } from "@/hooks/useGroupNowRoomCreate";
 
-export function GroupNowRoomCreateDialog({
-  open,
-  canCreatePinned,
-  confirmation,
-  pending,
-  error,
-  onClose,
-  onBack,
-  onConfirm,
-  onSubmit,
-}: {
+type GroupNowRoomCreateDialogProps = {
   open: boolean;
   canCreatePinned: boolean;
   confirmation: GroupNowRoomCreateDraft | null;
@@ -27,15 +17,25 @@ export function GroupNowRoomCreateDialog({
   onBack: () => void;
   onConfirm: () => void;
   onSubmit: (draft: GroupNowRoomCreateDraft) => void;
-}) {
+};
+
+export function GroupNowRoomCreateDialog(props: GroupNowRoomCreateDialogProps) {
+  return props.open ? <RoomCreateSession {...props} /> : null;
+}
+
+function RoomCreateSession({
+  open,
+  canCreatePinned,
+  confirmation,
+  pending,
+  error,
+  onClose,
+  onBack,
+  onConfirm,
+  onSubmit,
+}: GroupNowRoomCreateDialogProps) {
   const [name, setName] = useState("");
   const [kind, setKind] = useState<GroupNowRoomCreateDraft["kind"]>("temporary");
-
-  useEffect(() => {
-    if (!open) return;
-    setName("");
-    setKind("temporary");
-  }, [open]);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

@@ -1,7 +1,7 @@
 "use client";
 
 import { LoaderCircle, Radio, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { GroupNowRoomSwitchDialog } from "@/components/chat/GroupNowRoomSwitchDialog";
 import { useVoiceSession } from "@/components/chat/voice/VoiceSessionProvider";
@@ -18,16 +18,15 @@ const STATUS_LABELS = {
 } as const;
 
 export function RoomInviteNotificationActions({ invite }: { invite: CoreRoomInvitePreview | null }) {
+  return <InviteActions key={invite ? `${invite.id}:${invite.expiresAt}` : "unavailable"} invite={invite} />;
+}
+
+function InviteActions({ invite }: { invite: CoreRoomInvitePreview | null }) {
   const voice = useVoiceSession();
   const utils = trpc.useUtils();
   const [error, setError] = useState<string | null>(null);
-  const [localStatus, setLocalStatus] = useState(invite?.status ?? "expired");
-  useEffect(() => {
-    setLocalStatus(invite?.status ?? "expired");
-  }, [invite?.id, invite?.status]);
   const respond = trpc.chat.coreRespondRoomInvite.useMutation({
-    onSuccess: async (result) => {
-      setLocalStatus(result.status);
+    onSuccess: async () => {
       await Promise.all([
         utils.notifications.list.invalidate(),
         utils.notifications.unreadCount.invalidate(),
@@ -40,7 +39,9 @@ export function RoomInviteNotificationActions({ invite }: { invite: CoreRoomInvi
       if (invite) respond.mutate({ inviteId: invite.id, response: "accepted" });
     },
   });
-  const status = localStatus;
+  const status = invite?.status === "pending"
+    ? respond.data?.status ?? invite.status
+    : invite?.status ?? "expired";
   const available = status === "pending" && Boolean(invite?.groupId && invite.room);
 
   const accept = async () => {

@@ -3,7 +3,7 @@ import {
   resolveFeatureAvailability,
   type ProductFeature,
   type ProductReleaseChannel,
-} from "./feature-availability";
+} from "./feature-availability.ts";
 
 type ServerFeatureAccessReason =
   | "available"

@@ -20,12 +20,16 @@ test("profile tag selection checks group membership and stays platform-shared", 
   const view = read("src/components/chat/GroupInfoDrawerView.tsx");
   const web = read("src/components/chat/GroupInfoDrawer.tsx");
   const desktop = read("desktop/src/adapters/DesktopChatThreadAdapter.tsx");
+  const desktopPanel = read("desktop/src/adapters/useDesktopGroupPanel.ts");
   const profile = read("src/components/profile/ProfileCardIdentityVisual.tsx");
 
   assert.match(data, /getGroupCommunityRest\(chatId, userId\)/);
   assert.match(data, /user_group_profile_tags/);
   assert.match(view, /Использовать тег/);
   assert.match(web, /chat\.setGroupProfileTag/);
-  assert.match(desktop, /chat\.setGroupProfileTag/);
+  assert.match(desktop, /const groupPanel = useDesktopGroupPanel\(/);
+  assert.match(desktop, /onToggleGroupTag=\{\(\) => void groupPanel\.toggleProfileTag\(\)\}/);
+  assert.match(desktop, /groupTagPending=\{groupPanel\.tagPending\}/);
+  assert.match(desktopPanel, /client\.mutation\("chat\.setGroupProfileTag",\s*\{\s*chatId: community\.tagEquippedByMe \? null : chatId/);
   assert.match(profile, /ProfileGroupTagVisual/);
 });

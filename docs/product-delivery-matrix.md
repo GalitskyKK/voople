@@ -143,9 +143,12 @@ Transport/media были заглушены: real DB, authorization, native desk
 Истечение срока убирает Room и кнопку входа без перезагрузки страницы.
 
 Локально прошли 195 native Node tests, architecture, lint без ошибок,
-web/desktop TypeScript и desktop renderer build. Web build остановился на
-разрешении путей Geist в checkout с junction на другом диске; нужен результат
-чистой CI-сборки, локального подтверждения web build нет.
+web/desktop TypeScript и desktop renderer build. Локальный web build остановился
+на разрешении путей Geist в checkout с junction на другом диске. Для кода
+`f85cc55` обе production-сборки и остальные проверки прошли в чистом
+[Quality gate](https://github.com/GalitskyKK/voople/actions/runs/33874732562);
+[secret scan полной истории](https://github.com/GalitskyKK/voople/actions/runs/33874732571)
+также прошёл.
 
 `node scripts/verify-room-invite-preview.mjs` после desktop build проверяет
 реальные View, hook и notification actions в Chromium: 360/1280 px, Void/Light,

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { coreRoomInviteUrl } from "@/lib/chat/core-room-invite-url";
+import { getSiteUrl } from "@/lib/seo/site";
 import { ChatAccessDeniedError, getChatMembershipRest } from "@/server/data/chat-access-rest";
 import { listGroupMembersRest } from "@/server/data/chat-group-members-rest";
 import {
@@ -42,13 +44,16 @@ export async function listCoreRoomInviteCandidates(
     userId,
     "inviteScope",
   ));
-  return candidates.flatMap((candidate) => allowedIds.has(candidate.id) ? [{
-    id: candidate.id,
-    username: candidate.username,
-    displayName: candidate.displayName,
-    avatarUrl: candidate.avatarUrl ?? null,
-    invite: sentInvites.get(candidate.id) ?? null,
-  }] : []);
+  return candidates.flatMap((candidate) => {
+    const sent = sentInvites.get(candidate.id);
+    return allowedIds.has(candidate.id) ? [{
+      id: candidate.id,
+      username: candidate.username,
+      displayName: candidate.displayName,
+      avatarUrl: candidate.avatarUrl ?? null,
+      invite: sent ? { ...sent, shareUrl: sent.status === "pending" ? coreRoomInviteUrl(sent.id, getSiteUrl()) : null } : null,
+    }] : [];
+  });
 }
 
 export async function sendCoreRoomInvite(input: {

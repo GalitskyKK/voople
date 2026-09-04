@@ -48,7 +48,8 @@ test("Room invite sender and notification action share the core join lifecycle",
   assert.match(panel, /coreRoomInviteCandidates\.useQuery/);
   assert.match(panel, /coreSendRoomInvite\.useMutation/);
   assert.match(panel, /coreCancelRoomInvite\.useMutation/);
-  assert.match(panel, /STATUS_LABELS\[inviteRecord\.status\]/);
+  const candidateRow = await readFile(new URL("../src/components/chat/voice/CoreRoomInviteCandidateRow.tsx", import.meta.url), "utf8");
+  assert.match(candidateRow, /STATUS_LABELS\[status\]/);
   assert.match(panel, /Приглашение действует 15 минут/);
   assert.match(notifications, /RoomInviteNotificationActions/);
   assert.match(notificationUi, /`\/room-invites\/\$\{notification\.roomInvite\.id\}`/);

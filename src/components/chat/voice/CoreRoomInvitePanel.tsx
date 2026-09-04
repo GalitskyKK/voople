@@ -1,20 +1,13 @@
 "use client";
 
-import { Check, LoaderCircle, Search, UserPlus, X } from "lucide-react";
+import { LoaderCircle, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
+import { CoreRoomInviteCandidateRow } from "./CoreRoomInviteCandidateRow";
+import { useBrowserOnline } from "@/hooks/useBrowserOnline";
+import { useVisibleClock } from "@/hooks/useVisibleClock";
 import { Button } from "@/components/ui/Button";
 import { trpc } from "@/lib/trpc/client";
-import type { CoreRoomInviteStatus } from "@/types/room-invitations";
-
-const STATUS_LABELS: Record<CoreRoomInviteStatus, string> = {
-  pending: "Ожидает ответа",
-  accepted: "Принято",
-  declined: "Отклонено",
-  expired: "Истекло",
-  cancelled: "Отменено",
-};
 
 export function CoreRoomInvitePanel({
   sessionId,
@@ -27,9 +20,11 @@ export function CoreRoomInvitePanel({
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const utils = trpc.useUtils();
+  const online = useBrowserOnline();
+  const now = useVisibleClock(enabled && online);
   const candidates = trpc.chat.coreRoomInviteCandidates.useQuery(
     { sessionId },
-    { enabled, retry: false, staleTime: 10_000 },
+    { enabled, retry: false, staleTime: 0, refetchInterval: enabled ? 10_000 : false, refetchIntervalInBackground: false, refetchOnWindowFocus: true, refetchOnReconnect: true },
   );
   const refreshCandidates = () => utils.chat.coreRoomInviteCandidates.invalidate({ sessionId });
   const send = trpc.chat.coreSendRoomInvite.useMutation({ onSuccess: refreshCandidates });
@@ -44,7 +39,7 @@ export function CoreRoomInvitePanel({
   }, [candidates.data, query]);
 
   const invite = async (inviteeId: string) => {
-    if (send.isPending || cancel.isPending) return;
+    if (!enabled || !online || send.isPending || cancel.isPending) return;
     setSendingId(inviteeId);
     try {
       await send.mutateAsync({ sessionId, inviteeId });
@@ -55,7 +50,7 @@ export function CoreRoomInvitePanel({
     }
   };
   const cancelInvite = async (inviteId: string) => {
-    if (send.isPending || cancel.isPending) return;
+    if (!enabled || !online || send.isPending || cancel.isPending) return;
     setCancellingId(inviteId);
     try {
       await cancel.mutateAsync({ inviteId });
@@ -85,7 +80,8 @@ export function CoreRoomInvitePanel({
         />
       </label>
 
-      {candidates.isLoading ? (
+      {!online ? <p role="status" className="mt-4 text-sm text-[var(--app-muted)]">Нет подключения. Приглашения обновятся после восстановления сети.</p> : null}
+      {online && candidates.isLoading ? (
         <div className="mt-4 flex items-center gap-2 text-sm text-[var(--app-muted)]" aria-label="Загружаем участников">
           <LoaderCircle className="h-4 w-4 animate-spin motion-reduce:animate-none" />
           Загружаем участников
@@ -105,64 +101,19 @@ export function CoreRoomInvitePanel({
         </p>
       ) : null}
 
-      {!candidates.isLoading && !candidates.error ? (
+      {enabled && online && candidates.fetchStatus !== "paused" && !candidates.isLoading && !candidates.error ? (
         visible.length ? (
           <ul className="voople-scroll mt-4 max-h-[min(24rem,55dvh)] space-y-2 overflow-y-auto pr-1">
-            {visible.map((candidate) => {
-              const inviteRecord = candidate.invite;
-              const invitePending = inviteRecord?.status === "pending";
-              const sending = sendingId === candidate.id;
-              const cancelling = cancellingId === inviteRecord?.id;
-              return (
-                <li key={candidate.id} className="flex flex-col gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-2.5 sm:flex-row sm:items-center">
-                  <div className="flex min-w-0 items-center gap-3 sm:flex-1">
-                    <ProfileAvatarVisual
-                      displayName={candidate.displayName}
-                      size="sm"
-                      avatarImage={candidate.avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={candidate.avatarUrl} alt="" className="h-full w-full object-cover" />
-                      ) : undefined}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{candidate.displayName}</p>
-                      <p className="truncate text-xs text-[var(--app-muted)]">@{candidate.username}</p>
-                      {inviteRecord ? (
-                        <p className="mt-0.5 text-xs text-[var(--app-muted)]">
-                          {STATUS_LABELS[inviteRecord.status]}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className="flex w-full gap-2 sm:w-auto">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={invitePending ? "ghost" : "secondary"}
-                      className="flex-1 sm:flex-none"
-                      disabled={invitePending || send.isPending || cancel.isPending}
-                      onClick={() => void invite(candidate.id)}
-                    >
-                      {sending ? <LoaderCircle className="h-4 w-4 animate-spin motion-reduce:animate-none" /> : invitePending ? <Check className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-                      {sending ? "Отправляем" : invitePending ? "Отправлено" : inviteRecord ? "Позвать снова" : "Позвать"}
-                    </Button>
-                    {invitePending && inviteRecord ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="flex-1 sm:flex-none"
-                        disabled={send.isPending || cancel.isPending}
-                        onClick={() => void cancelInvite(inviteRecord.id)}
-                      >
-                        {cancelling ? <LoaderCircle className="h-4 w-4 animate-spin motion-reduce:animate-none" /> : <X className="h-4 w-4" />}
-                        {cancelling ? "Отменяем" : "Отменить"}
-                      </Button>
-                    ) : null}
-                  </div>
-                </li>
-              );
-            })}
+            {visible.map((candidate) => (
+              <CoreRoomInviteCandidateRow
+                key={candidate.id}
+                candidate={candidate}
+                now={now}
+                activity={sendingId === candidate.id ? "sending" : cancellingId === candidate.invite?.id ? "cancelling" : send.isPending || cancel.isPending ? "busy" : "idle"}
+                onInvite={() => void invite(candidate.id)}
+                onCancel={(inviteId) => void cancelInvite(inviteId)}
+              />
+            ))}
           </ul>
         ) : (
           <p className="mt-5 rounded-xl border border-dashed border-[var(--app-border)] px-4 py-8 text-center text-sm text-[var(--app-muted)]">

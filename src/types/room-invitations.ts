@@ -16,6 +16,7 @@ export type CoreRoomInviteCandidate = {
     id: string;
     status: CoreRoomInviteStatus;
     expiresAt: string;
+    shareUrl: string | null;
   } | null;
 };
 

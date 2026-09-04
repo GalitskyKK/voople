@@ -162,6 +162,33 @@ block-модель, copy/share и OS deep links. Гостевой вход бе�
 контракт; эта ссылка не добавляет гостя в группу. Миграции и release flags
 в рамках этого среза не менялись.
 
+### Отправка адресной ссылки — 2026-09-04
+
+В списке отправленных приглашений добавлены `Скопировать ссылку` и
+`Поделиться`. URL формирует сервер из адреса сайта; origin desktop WebView
+не используется. Получатель остаётся прежним: пересылка ссылки не создаёт
+приглашение для другого аккаунта. Share payload не содержит имён Room,
+группы или участников.
+
+Общий `ShareButton` теперь показывает pending/error/success, допускает retry,
+не копирует ссылку после отмены системного меню и очищает таймер при unmount.
+Просроченные и отменённые приглашения теряют share-действия; offline/error
+скрывает список до проверки. View, clock/network hooks и кнопки общие для
+web/desktop.
+
+Локально: 202 native Node tests, architecture, lint без ошибок,
+web/desktop TypeScript и desktop build. `node scripts/verify-room-invite-sharing.mjs`
+после desktop build проверяет реальные компоненты на 360/1280 px в Void/Light:
+copy/pending, share/cancel, clipboard error/retry, offline, expiry, revoked status,
+keyboard и overflow. Регрессия `verify-room-invite-preview.mjs` также проходит.
+Платформенные API и query заменены заглушками; реальную доставку и WebView
+это не подтверждает. Локальный web build упирается в известный cross-drive
+font path; чистый CI требуется отдельно.
+
+Пункт 54 остаётся частичным: впереди OS deep links, сохранение приглашения
+через вход в аккаунт, block-модель и двухклиентная приёмка. Guest entry не
+включён. Миграции, native registration и release flags не менялись.
+
 ## Cross-platform architecture gate
 
 - Канонические view-models и stateless views живут в `src/types`, `src/lib`,

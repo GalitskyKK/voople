@@ -331,7 +331,7 @@ export async function listCoreRoomInvitePreviewsRest(
   const admin = getAdminClient();
   const inviteResult = await admin
     .from("chat_room_invites")
-    .select("id, chat_id, room_session_id, status, expires_at")
+    .select("id, chat_id, room_session_id, inviter_id, status, expires_at")
     .in("id", uniqueIds)
     .eq("invitee_id", userId);
   if (inviteResult.error) throw new Error(inviteResult.error.message);
@@ -358,7 +358,8 @@ export async function listCoreRoomInvitePreviewsRest(
   const rooms = new Map((roomResult.data ?? []).map((row) => [String(row.id), row]));
   const participantIds = (participantResult.data ?? []).map((row) => String(row.user_id));
   const visibleIds = new Set(await filterUserIdsByPrivacyFieldRest(participantIds, userId, "roomsScope"));
-  const users = await loadGroupNowUsersRest([...visibleIds]);
+  const inviterIds = invites.map((invite) => String(invite.inviter_id));
+  const users = await loadGroupNowUsersRest([...new Set([...visibleIds, ...inviterIds])]);
   const now = Date.now();
 
   return new Map(invites.map((invite) => {
@@ -375,8 +376,9 @@ export async function listCoreRoomInvitePreviewsRest(
       && (new Date(invite.expires_at).getTime() <= now || !active)
       ? "expired"
       : storedStatus;
+    const available = active && status === "pending";
     let room: GroupNowRoom | null = null;
-    if (active && roomRecord && session) {
+    if (available && roomRecord && session) {
       const participants = (participantResult.data ?? []).flatMap((participant) => {
         if (String(participant.session_id) !== String(session.id)) return [];
         const participantId = String(participant.user_id);
@@ -408,7 +410,9 @@ export async function listCoreRoomInvitePreviewsRest(
       id: String(invite.id),
       status,
       expiresAt: String(invite.expires_at),
-      groupId: active ? String(invite.chat_id) : null,
+      groupId: available ? String(invite.chat_id) : null,
+      groupName: null,
+      inviter: users.get(String(invite.inviter_id)) ?? null,
       room,
     } satisfies CoreRoomInvitePreview] as const;
   }));

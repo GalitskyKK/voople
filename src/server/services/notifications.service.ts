@@ -1,6 +1,6 @@
 import { getAdminClient } from "@/lib/supabase/admin";
-import { listCoreRoomInvitePreviewsRest } from "@/server/data/core-room-invitations-rest";
 import { mapSubscriptionFields } from "@/server/mappers/profile";
+import { listCoreRoomInvitePreviews } from "@/server/services/core-room-invitations.service";
 import type { CoreRoomInvitePreview } from "@/types/room-invitations";
 
 export type NotifType =
@@ -136,7 +136,7 @@ export async function listNotifications(userId: string, limit = 40) {
   const roomInviteIds = (rows ?? []).flatMap((row) =>
     row.type === "room_invite" && row.reference_id ? [String(row.reference_id)] : [],
   );
-  const roomInvites = await listCoreRoomInvitePreviewsRest(roomInviteIds, userId);
+  const roomInvites = await listCoreRoomInvitePreviews(roomInviteIds, userId);
 
   const actorIds = [
     ...new Set(

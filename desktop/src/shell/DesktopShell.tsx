@@ -50,6 +50,11 @@ const DesktopNotifications = lazy(() =>
     default: module.DesktopNotifications,
   })),
 );
+const DesktopRoomInvitePreview = lazy(() =>
+  import("@/components/chat/voice/CoreRoomInvitePreviewView").then((module) => ({
+    default: module.CoreRoomInvitePreviewView,
+  })),
+);
 const DesktopProfile = lazy(() =>
   import("../adapters/DesktopProfileAdapter").then((module) => ({
     default: module.DesktopProfileAdapter,
@@ -111,6 +116,7 @@ const RESERVED_PROFILE_SLUGS = new Set([
   "messages",
   "notifications",
   "post",
+  "room-invites",
   "settings",
   "shop",
 ]);
@@ -136,6 +142,12 @@ function chatIdFromPath(pathname: string) {
 function groupSettingsChatIdFromPath(pathname: string) {
   return pathname.match(
     /^\/messages\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/settings$/i,
+  )?.[1] ?? null;
+}
+
+function roomInviteIdFromPath(pathname: string) {
+  return pathname.match(
+    /^\/room-invites\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i,
   )?.[1] ?? null;
 }
 
@@ -313,6 +325,7 @@ export function DesktopShell({
   const postId = postIdFromPath(pathname);
   const chatId = chatIdFromPath(pathname);
   const groupSettingsChatId = groupSettingsChatIdFromPath(pathname);
+  const roomInviteId = roomInviteIdFromPath(pathname);
   const hashtag = hashtagFromPath(pathname);
   const groupSlug = groupSlugFromPath(pathname);
   const isProfileRoute = pathname === "/me" || profileUsername !== null;
@@ -401,6 +414,8 @@ export function DesktopShell({
               onUnreadCountChange={setUnreadNotifications}
               renderDestination={renderDestination}
             />
+          ) : roomInviteId ? (
+            <DesktopRoomInvitePreview inviteId={roomInviteId} />
           ) : pathname === "/events" ? (
             <AppPageContent><EventsPage /></AppPageContent>
           ) : pathname === "/settings" ? (

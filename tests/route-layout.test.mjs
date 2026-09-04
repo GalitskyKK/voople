@@ -28,4 +28,5 @@ test("profile slugs do not swallow reserved application routes", () => {
   assert.equal(isAppProfilePath("/nmkk"), true);
   assert.equal(isAppProfilePath("/me"), true);
   assert.equal(isAppProfilePath("/explore"), false);
+  assert.equal(isAppProfilePath("/room-invites"), false);
 });

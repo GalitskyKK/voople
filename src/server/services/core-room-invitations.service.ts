@@ -7,11 +7,15 @@ import {
   getCoreRoomInviteSessionRest,
   getCoreRoomInviteGroupForSenderRest,
   listCoreRoomInvitesForSenderRest,
+  listCoreRoomInvitePreviewsRest,
   respondToCoreRoomInviteRest,
   upsertCoreRoomInviteRest,
 } from "@/server/data/core-room-invitations-rest";
 import { filterUserIdsByPrivacyFieldRest } from "@/server/data/privacy-rest";
-import type { CoreRoomInviteCandidate } from "@/types/room-invitations";
+import type {
+  CoreRoomInviteCandidate,
+  CoreRoomInvitePreview,
+} from "@/types/room-invitations";
 
 async function requireRootGroupMember(groupId: string, userId: string) {
   const membership = await getChatMembershipRest(groupId, userId);
@@ -91,4 +95,42 @@ export async function cancelCoreRoomInvite(input: {
   const groupId = await getCoreRoomInviteGroupForSenderRest(input.inviteId, input.inviterId);
   await requireRootGroupMember(groupId, input.inviterId);
   return cancelCoreRoomInviteRest(input);
+}
+
+export async function listCoreRoomInvitePreviews(inviteIds: string[], userId: string) {
+  const previews = await listCoreRoomInvitePreviewsRest(inviteIds, userId);
+  const groupIds = [...new Set([...previews.values()].flatMap((preview) =>
+    preview.groupId ? [preview.groupId] : [],
+  ))];
+  const memberships = new Map((await Promise.all(groupIds.map(async (groupId) => {
+    try {
+      const membership = await requireRootGroupMember(groupId, userId);
+      return [groupId, membership] as const;
+    } catch {
+      return [groupId, null] as const;
+    }
+  }))));
+  const entries: Array<[string, CoreRoomInvitePreview]> = [...previews].map(([inviteId, preview]) => {
+    const membership = preview.groupId ? memberships.get(preview.groupId) : null;
+    if (!membership) {
+      return [inviteId, {
+        ...preview,
+        status: preview.status === "pending" ? "expired" as const : preview.status,
+        groupId: null,
+        groupName: null,
+        inviter: null,
+        room: null,
+      }];
+    }
+    return [inviteId, {
+      ...preview,
+      groupName: membership.name ?? "Группа",
+    }];
+  });
+  return new Map(entries);
+}
+
+export async function getCoreRoomInvitePreview(inviteId: string, userId: string) {
+  const previews = await listCoreRoomInvitePreviews([inviteId], userId);
+  return previews.get(inviteId) ?? null;
 }

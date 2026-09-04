@@ -135,3 +135,14 @@ test("public group presentation is shared by Next and desktop routes", () => {
   assert.match(desktopShell, /groupSlugFromPath/);
   assert.match(desktopShell, /<DesktopPublicGroup/);
 });
+
+test("Room invitation links use one protected preview on web and desktop", () => {
+  const web = read("src/app/(main)/room-invites/[inviteId]/page.tsx");
+  const shared = read("src/components/chat/voice/CoreRoomInvitePreviewView.tsx");
+  const desktop = read("desktop/src/shell/DesktopShell.tsx");
+
+  assert.match(web, /CoreRoomInvitePreviewView/);
+  assert.match(shared, /coreRoomInvitePreview\.useQuery/);
+  assert.match(desktop, /DesktopRoomInvitePreview/);
+  assert.match(desktop, /roomInviteIdFromPath/);
+});

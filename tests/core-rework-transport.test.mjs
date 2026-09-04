@@ -63,6 +63,7 @@ test("every internal Room procedure enforces capability access", async () => {
     "coreArchiveRoom",
     "coreJoinRoom",
     "coreRoomInviteCandidates",
+    "coreRoomInvitePreview",
     "coreSendRoomInvite",
     "coreRespondRoomInvite",
     "coreCancelRoomInvite",

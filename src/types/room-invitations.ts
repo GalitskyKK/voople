@@ -24,5 +24,12 @@ export type CoreRoomInvitePreview = {
   status: CoreRoomInviteStatus;
   expiresAt: string;
   groupId: string | null;
+  groupName: string | null;
+  inviter: {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl: string | null;
+  } | null;
   room: GroupNowRoom | null;
 };

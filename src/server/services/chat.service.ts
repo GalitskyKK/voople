@@ -88,6 +88,7 @@ export {
 
 export {
   cancelCoreRoomInvite,
+  getCoreRoomInvitePreview,
   listCoreRoomInviteCandidates,
   respondToCoreRoomInvite,
   sendCoreRoomInvite,

@@ -31,6 +31,9 @@ export function RoomInviteNotificationActions({ invite }: { invite: CoreRoomInvi
       await Promise.all([
         utils.notifications.list.invalidate(),
         utils.notifications.unreadCount.invalidate(),
+        ...(invite
+          ? [utils.chat.coreRoomInvitePreview.invalidate({ inviteId: invite.id })]
+          : []),
       ]);
     },
   });

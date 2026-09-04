@@ -7,6 +7,7 @@ import type { NavigationDestinationRenderer } from "@/components/layout/AppNavig
 import { SectionFrame } from "@/components/layout/SectionFrame";
 import { SectionPageHeader } from "@/components/layout/SectionPageHeader";
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
+import { AppInternalLink } from "@/components/ui/AppInternalLink";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { COPY } from "@/lib/constants/copy";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
@@ -154,7 +155,17 @@ export function NotificationsView({
                       </p>
                       <RelativeTime iso={notification.createdAt} className="mt-1 block text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]" />
                       {notification.type === "room_invite" ? (
-                        <RoomInviteNotificationActions invite={notification.roomInvite} />
+                        <>
+                          <RoomInviteNotificationActions invite={notification.roomInvite} />
+                          {notification.roomInvite ? (
+                            <AppInternalLink
+                              href={`/room-invites/${notification.roomInvite.id}`}
+                              className="mt-2 inline-flex text-xs font-medium text-[var(--theme-accent)] hover:underline"
+                            >
+                              Открыть приглашение
+                            </AppInternalLink>
+                          ) : null}
+                        </>
                       ) : null}
                     </div>
                   </>

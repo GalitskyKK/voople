@@ -9,6 +9,7 @@ const RESERVED_PROFILE_SLUGS = new Set([
   "notifications",
   "post",
   "register",
+  "room-invites",
   "settings",
   "shop",
 ]);

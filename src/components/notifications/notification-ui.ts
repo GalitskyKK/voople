@@ -41,6 +41,9 @@ export function notificationText(type: string, actorName: string) {
 }
 
 export function notificationHref(notification: NotificationView) {
+  if (notification.type === "room_invite" && notification.roomInvite?.id) {
+    return `/room-invites/${notification.roomInvite.id}`;
+  }
   if (notification.type === "room_invite") return "/notifications";
   if (
     (notification.type === "profile_canvas_draw" || notification.type === "question") &&

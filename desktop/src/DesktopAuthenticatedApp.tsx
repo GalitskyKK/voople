@@ -21,9 +21,13 @@ import { DesktopReleaseNotesDialog } from "./updates/DesktopReleaseNotesDialog";
 
 export function DesktopAuthenticatedApp({
   config,
+  initialPathname,
+  onInitialPathConsumed,
   session,
 }: {
   config: DesktopConfig;
+  initialPathname: string | null;
+  onInitialPathConsumed: () => void;
   session: Session;
 }) {
   const { preferences } = useAppPreferences();
@@ -83,7 +87,12 @@ export function DesktopAuthenticatedApp({
           subscribeToVoiceRooms={subscribeToVoiceRooms}
         >
           <DesktopPresenceProvider config={config} session={session}>
-            <DesktopShell config={config} session={session} />
+            <DesktopShell
+              config={config}
+              session={session}
+              initialPathname={initialPathname}
+              onInitialPathConsumed={onInitialPathConsumed}
+            />
           </DesktopPresenceProvider>
         </VoiceSessionProvider>
       </LegalConsentGate>

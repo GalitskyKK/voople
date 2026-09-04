@@ -10,8 +10,9 @@ use tauri::{
     ipc::{InvokeBody, Request},
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager, WindowEvent,
+    Emitter, Manager, WindowEvent,
 };
+use tauri_plugin_deep_link::DeepLinkExt;
 
 mod process_audio;
 mod release_notes;
@@ -30,6 +31,9 @@ struct VoiceHeartbeatTask {
 
 #[derive(Default)]
 struct VoiceHeartbeat(Mutex<Option<VoiceHeartbeatTask>>);
+
+#[derive(Default)]
+struct PendingDeepLink(Mutex<Option<String>>);
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -128,6 +132,52 @@ fn restore_main_window(app: &tauri::AppHandle) -> Result<(), String> {
     window.show().map_err(|error| error.to_string())?;
     window.unminimize().map_err(|error| error.to_string())?;
     window.set_focus().map_err(|error| error.to_string())
+}
+
+fn is_room_invite_id(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    bytes.len() == 36
+        && bytes.iter().enumerate().all(|(index, byte)| match index {
+            8 | 13 | 18 | 23 => *byte == b'-',
+            14 => matches!(*byte, b'1'..=b'8'),
+            19 => matches!(*byte, b'8' | b'9' | b'a'..=b'b' | b'A'..=b'B'),
+            _ => byte.is_ascii_hexdigit(),
+        })
+}
+
+fn internal_path_from_deep_link(url: &reqwest::Url) -> Option<String> {
+    if url.scheme() != "voople"
+        || !url.username().is_empty()
+        || url.password().is_some()
+        || url.port().is_some()
+        || url.query().is_some()
+        || url.fragment().is_some()
+    {
+        return None;
+    }
+
+    let invite_id = match url.host_str() {
+        Some("room-invites") => url.path().strip_prefix('/')?,
+        None => url.path().strip_prefix("/room-invites/")?,
+        _ => return None,
+    };
+    if !is_room_invite_id(invite_id) {
+        return None;
+    }
+    Some(format!("/room-invites/{invite_id}"))
+}
+
+fn keep_pending_deep_link(app: &tauri::AppHandle, urls: &[reqwest::Url]) -> Option<String> {
+    let path = urls.iter().find_map(internal_path_from_deep_link)?;
+    if let Ok(mut pending) = app.state::<PendingDeepLink>().0.lock() {
+        *pending = Some(path.clone());
+    }
+    Some(path)
+}
+
+#[tauri::command]
+fn take_pending_deep_link(state: tauri::State<'_, PendingDeepLink>) -> Option<String> {
+    state.0.lock().ok()?.take()
 }
 
 #[tauri::command]
@@ -346,7 +396,14 @@ pub fn run() {
     let builder = tauri::Builder::default()
         .manage(WindowBehavior::default())
         .manage(VoiceHeartbeat::default())
+        .manage(PendingDeepLink::default())
         .manage(screen_share_supervisor::ScreenShareSupervisor::default())
+        // This plugin must be registered first so a second Windows/Linux process
+        // forwards its validated deep-link arguments to the running instance.
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            let _ = restore_main_window(app);
+        }))
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
@@ -356,10 +413,22 @@ pub fn run() {
     let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
 
     builder
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            let _ = restore_main_window(app);
-        }))
         .setup(|app| {
+            #[cfg(any(target_os = "linux", all(debug_assertions, windows)))]
+            app.deep_link().register_all()?;
+
+            if let Some(urls) = app.deep_link().get_current()? {
+                keep_pending_deep_link(app.handle(), &urls);
+            }
+
+            let deep_link_app = app.handle().clone();
+            app.deep_link().on_open_url(move |event| {
+                if let Some(path) = keep_pending_deep_link(&deep_link_app, &event.urls()) {
+                    let _ = restore_main_window(&deep_link_app);
+                    let _ = deep_link_app.emit("desktop-deep-link", path);
+                }
+            });
+
             let open = MenuItem::with_id(app, "open", "Открыть Voople", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Выйти", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&open, &quit])?;
@@ -431,6 +500,7 @@ pub fn run() {
             start_process_audio_share,
             stop_process_audio_share,
             open_external_url,
+            take_pending_deep_link,
             upload_presigned_media,
             set_window_behavior,
             start_voice_heartbeat,
@@ -441,4 +511,35 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Voople desktop");
+}
+
+#[cfg(test)]
+mod deep_link_tests {
+    use super::internal_path_from_deep_link;
+
+    #[test]
+    fn accepts_only_room_invite_links() {
+        let id = "3b3a40a0-ff6e-4d1a-9864-f25ad830f1e3";
+        let url = reqwest::Url::parse(&format!("voople://room-invites/{id}")).unwrap();
+        assert_eq!(
+            internal_path_from_deep_link(&url).as_deref(),
+            Some("/room-invites/3b3a40a0-ff6e-4d1a-9864-f25ad830f1e3")
+        );
+
+        let path_only = reqwest::Url::parse(&format!("voople:///room-invites/{id}")).unwrap();
+        assert!(internal_path_from_deep_link(&path_only).is_some());
+    }
+
+    #[test]
+    fn rejects_untrusted_or_unknown_links() {
+        for value in [
+            "https://voople.ru/room-invites/3b3a40a0-ff6e-4d1a-9864-f25ad830f1e3",
+            "voople://room-invites/not-an-id",
+            "voople://room-invites/3b3a40a0-ff6e-4d1a-9864-f25ad830f1e3?accept=1",
+            "voople://settings/3b3a40a0-ff6e-4d1a-9864-f25ad830f1e3",
+        ] {
+            let url = reqwest::Url::parse(value).unwrap();
+            assert!(internal_path_from_deep_link(&url).is_none(), "{value}");
+        }
+    }
 }

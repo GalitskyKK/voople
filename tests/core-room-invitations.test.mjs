@@ -73,3 +73,33 @@ test("Room invite sender and notification action share the core join lifecycle",
   assert.match(action, /invite\?\.status === "pending"[\s\S]*respond\.data\?\.status \?\? invite\.status/);
   assert.doesNotMatch(action, /setLocalStatus|useEffect/);
 });
+
+test("desktop Room links survive authentication without bypassing the invite preview", async () => {
+  const [cargo, config, native, hook, router, authenticated, shell] = await Promise.all([
+    readFile(new URL("../desktop/src-tauri/Cargo.toml", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src-tauri/tauri.conf.json", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src-tauri/src/lib.rs", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/navigation/useDesktopDeepLink.ts", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/DesktopConfiguredApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/DesktopAuthenticatedApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/shell/DesktopShell.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(cargo, /tauri-plugin-single-instance = \{[^\n]+features = \["deep-link"\]/);
+  assert.match(cargo, /tauri-plugin-deep-link = "2"/);
+  assert.deepEqual(JSON.parse(config).plugins["deep-link"].desktop.schemes, ["voople"]);
+  assert.ok(
+    native.indexOf("tauri_plugin_single_instance::init") <
+      native.indexOf("tauri_plugin_deep_link::init"),
+  );
+  assert.match(native, /internal_path_from_deep_link[\s\S]+url\.query\(\)\.is_some\(\)[\s\S]+is_room_invite_id/);
+  assert.match(native, /fn take_pending_deep_link[\s\S]+\.take\(\)/);
+  assert.match(native, /keep_pending_deep_link[\s\S]+emit\("desktop-deep-link"/);
+  assert.match(hook, /roomInviteIdFromPath/);
+  assert.match(hook, /invoke<unknown>\("take_pending_deep_link"\)/);
+  assert.match(hook, /listen\(DEEP_LINK_EVENT[\s\S]+consumeNativePath/);
+  assert.match(router, /pendingPath=\{pendingPath\}/);
+  assert.match(authenticated, /initialPathname=\{initialPathname\}/);
+  assert.match(shell, /useState\(initialPathname \?\? "\/feed"\)/);
+  assert.match(shell, /navigate\(initialPathname\)[\s\S]+onInitialPathConsumed\(\)/);
+});

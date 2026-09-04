@@ -46,5 +46,14 @@
         "displayLanguageSelector": true
       }
     }
+  },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": [
+          "voople"
+        ]
+      }
+    }
   }
 }

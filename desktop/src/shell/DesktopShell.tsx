@@ -162,12 +162,16 @@ function groupSlugFromPath(pathname: string) {
 
 export function DesktopShell({
   config,
+  initialPathname,
+  onInitialPathConsumed,
   session,
 }: {
   config: DesktopConfig;
+  initialPathname: string | null;
+  onInitialPathConsumed: () => void;
   session: Session;
 }) {
-  const [pathname, setPathname] = useState("/feed");
+  const [pathname, setPathname] = useState(initialPathname ?? "/feed");
   const [syncError, setSyncError] = useState<string | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
   const [feedVersion, setFeedVersion] = useState(0);
@@ -248,6 +252,12 @@ export function DesktopShell({
     },
     [config],
   );
+
+  useEffect(() => {
+    if (!initialPathname) return;
+    navigate(initialPathname);
+    onInitialPathConsumed();
+  }, [initialPathname, navigate, onInitialPathConsumed]);
 
   useEffect(
     () => registerInternalNavigationAdapter(navigate),

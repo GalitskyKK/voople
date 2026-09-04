@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getChatMembershipRest } from "@/server/data/chat-access-rest";
+import { ChatAccessDeniedError, getChatMembershipRest } from "@/server/data/chat-access-rest";
 import { listGroupMembersRest } from "@/server/data/chat-group-members-rest";
 import {
   cancelCoreRoomInviteRest,
@@ -20,7 +20,7 @@ import type {
 async function requireRootGroupMember(groupId: string, userId: string) {
   const membership = await getChatMembershipRest(groupId, userId);
   if (membership.type !== "group" || membership.parentChatId) {
-    throw new Error("Приглашения доступны только участникам основной группы");
+    throw new ChatAccessDeniedError("Приглашения доступны только участникам основной группы");
   }
   return membership;
 }
@@ -106,7 +106,8 @@ export async function listCoreRoomInvitePreviews(inviteIds: string[], userId: st
     try {
       const membership = await requireRootGroupMember(groupId, userId);
       return [groupId, membership] as const;
-    } catch {
+    } catch (error) {
+      if (!(error instanceof ChatAccessDeniedError)) throw error;
       return [groupId, null] as const;
     }
   }))));

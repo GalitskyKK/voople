@@ -202,8 +202,8 @@ export const chatCoreReworkProcedures = {
       assertMultiRoomAccess(ctx.user.id);
       try {
         return await getCoreRoomInvitePreview(input.inviteId, ctx.user.id);
-      } catch (error) {
-        throw toRoomError(error, "Не удалось открыть приглашение");
+      } catch {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Не удалось открыть приглашение" });
       }
     }),
 

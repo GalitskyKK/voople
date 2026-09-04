@@ -70,9 +70,9 @@ function InviteActions({ invite }: { invite: CoreRoomInvitePreview | null }) {
     <div className="mt-3">
       {available ? (
         <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" disabled={join.pending || respond.isPending} onClick={() => void accept()}>
+          <Button type="button" size="sm" aria-label={join.pending ? "Подключаем" : `Зайти в ${invite?.room?.name}`} className="border border-[var(--theme-accent)] bg-[var(--app-accent-soft)] shadow-none [&>svg]:shrink-0" disabled={join.pending || respond.isPending} onClick={() => void accept()}>
             {join.pending ? <LoaderCircle className="h-4 w-4 animate-spin motion-reduce:animate-none" /> : <Radio className="h-4 w-4" />}
-            {join.pending ? "Подключаем" : `Зайти в ${invite?.room?.name}`}
+            {join.pending ? "Подключаем" : "Войти в комнату"}
           </Button>
           <Button type="button" size="sm" variant="ghost" disabled={join.pending || respond.isPending} onClick={() => void decline()}>
             <X className="h-4 w-4" />

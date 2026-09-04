@@ -133,6 +133,32 @@ Transport/media были заглушены: real DB, authorization, native desk
 | 60 | Market validation before scale | Планирование · P0 product | Один beachhead-сегмент и обещание перехода, interviews/concierge pilots, invite activation, connected-group W1/W4, Room joins/WAU и cost per connected group вместо feature-count roadmap |
 | 61 | Core rework foundation + Group Now contracts | Частично · P0 architecture | Tracked source gate, ADR, typed feature registry и additive schema дополнены server-owned Group Now read model, service-role-only atomic mutations и fail-closed internal tRPC transport. Root membership/privacy/current-member filters применяются до View; SQL сериализует actor/target Room, различает same-group/cross-context switch и использует session-bound stale-safe leave/heartbeat + grace lifecycle. Legacy enter учитывает новую LiveSession. Transport требует internal channel, `multi_room_groups` capability и user allowlist, валидирует input, rate-limit-ит записи и не пишет private IDs в telemetry. Shared web/desktop Group Now View использует плоские Room sections и полные состояния; controller по умолчанию `enabled=false`. Dynamic join coordinator обслуживает Group Now, Home, actionable Room notifications и protected invite links без второго token/cleanup implementation: explicit cross-context consent, muted join, session-bound token и compensating exact-session leave. Create + join использует один idempotent RPC/request UUID. Read model несёт session metadata/`isMe`, heartbeat привязан к session ID, а VoiceSession adapter переиспользует существующий `ChatRoomControl`; core reconnect/token/leave и нативный screen-audio grant проверяют точную server-owned session, active participant и root membership. Root-group header, Group Info, Home, joined public-group preview, notification и invite-link entrypoints подключены к shared lifecycle. Home live refresh и Room invite reads повторно проверяют session/membership/privacy; legacy Home CTA имеет fail-safe auto-connect без преждевременного `presence_room_joined`. Migration 58 хранит идемпотентные session-bound invites, migration 61 и безопасный Postgres gate покрывают Room idempotency/concurrency/rollback, но реальные DB runs в текущем окружении skipped из-за production-like URL. Остались Room-invite block/share/desktop-protocol gates, responsive visual evidence, отдельный Postgres gate, release migration evidence и old-client/two-client production gate |
 
+### Проверка authenticated invite preview — 2026-09-04
+
+Пункт 54 остаётся частичным. Web route и desktop router открывают общий
+`CoreRoomInvitePreview`, hook и stateless View. Предпросмотр проверяет адресата,
+текущее membership и участников именно этой группы; ошибка хранилища не
+выдаётся за истёкшее приглашение. Клиент скрывает данные при offline/error,
+повторяет чтение по focus/reconnect и каждые 10 секунд в видимом окне.
+Истечение срока убирает Room и кнопку входа без перезагрузки страницы.
+
+Локально прошли 195 native Node tests, architecture, lint без ошибок,
+web/desktop TypeScript и desktop renderer build. Web build остановился на
+разрешении путей Geist в checkout с junction на другом диске; нужен результат
+чистой CI-сборки, локального подтверждения web build нет.
+
+`node scripts/verify-room-invite-preview.mjs` после desktop build проверяет
+реальные View, hook и notification actions в Chromium: 360/1280 px, Void/Light,
+loading, длинные имена, offline/recovery, error/retry, unavailable, expiry,
+decline/cancel и keyboard focus. Скриншоты сохраняются в временный каталог,
+путь выводится тестом; overflow и ошибок страницы нет. Query и media transport
+заменены заглушками: это не authenticated E2E и не проверка нативного WebView.
+
+До приёмки остаются живые DB/multi-user проверки отзыва доступа и приглашения,
+block-модель, copy/share и OS deep links. Гостевой вход без аккаунта — отдельный
+контракт; эта ссылка не добавляет гостя в группу. Миграции и release flags
+в рамках этого среза не менялись.
+
 ## Cross-platform architecture gate
 
 - Канонические view-models и stateless views живут в `src/types`, `src/lib`,

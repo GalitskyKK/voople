@@ -1,117 +1,73 @@
 "use client";
 
-import { Clock3, LoaderCircle, MonitorUp, Radio, ShieldCheck, Users } from "lucide-react";
+import { Clock3, LoaderCircle, MonitorUp, Radio, Users } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { AppPageContent } from "@/components/layout/AppPageContent";
-import { RoomInviteNotificationActions } from "@/components/notifications/RoomInviteNotificationActions";
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
-import { Button } from "@/components/ui/Button";
 import { AppInternalLink } from "@/components/ui/AppInternalLink";
-import { trpc } from "@/lib/trpc/client";
+import { Button } from "@/components/ui/Button";
+import type { CoreRoomInvitePreviewState } from "@/lib/chat/core-room-invite-preview";
 
-function UnavailableInvite({ retry }: { retry?: () => void }) {
+const STATE_COPY = {
+  loading: ["Загружаем приглашение", "Проверяем доступ к комнате."],
+  offline: ["Нет подключения", "Подключитесь к сети, чтобы проверить приглашение и войти в комнату."],
+  error: ["Не удалось проверить приглашение", "Попробуйте ещё раз. До проверки вход в комнату недоступен."],
+  unavailable: ["Приглашение недоступно", "Оно адресовано другому аккаунту или у вас больше нет доступа."],
+} as const;
+
+export function CoreRoomInvitePreviewView({ state, onRetry, actions }: {
+  state: CoreRoomInvitePreviewState;
+  onRetry: () => void;
+  actions: ReactNode;
+}) {
+  const invite = state.kind === "ready" ? state.invite : null;
+  const inviter = invite?.inviter;
   return (
-    <section className="mx-auto mt-8 max-w-xl rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 text-center sm:mt-12 sm:p-8">
-      <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[var(--app-surface-soft)] text-[var(--app-muted)]">
-        <ShieldCheck className="h-5 w-5" aria-hidden="true" />
-      </span>
-      <h1 className="mt-4 text-xl font-semibold">Приглашение недоступно</h1>
-      <p className="mt-2 text-sm leading-6 text-[var(--app-muted)]">
-        Оно могло истечь, быть отменено или относиться к группе, в которой вас больше нет.
-      </p>
-      <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
-        {retry ? <Button type="button" variant="secondary" onClick={retry}>Повторить</Button> : null}
-        <AppInternalLink href="/notifications" className="inline-flex h-10 items-center justify-center rounded-xl px-4 text-sm font-medium text-[var(--theme-accent)] hover:bg-[var(--app-surface-soft)]">
-          К уведомлениям
-        </AppInternalLink>
-      </div>
-    </section>
-  );
-}
-
-export function CoreRoomInvitePreviewView({ inviteId }: { inviteId: string }) {
-  const preview = trpc.chat.coreRoomInvitePreview.useQuery(
-    { inviteId },
-    { retry: false, staleTime: 5_000 },
-  );
-
-  if (preview.isLoading) {
-    return (
-      <AppPageContent>
-        <div className="mx-auto mt-12 flex max-w-xl items-center justify-center gap-2 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface)] p-10 text-sm text-[var(--app-muted)]" aria-label="Загружаем приглашение">
-          <LoaderCircle className="h-5 w-5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-          Загружаем приглашение
-        </div>
-      </AppPageContent>
-    );
-  }
-  if (preview.error || !preview.data) {
-    return (
-      <AppPageContent>
-        <UnavailableInvite retry={preview.error ? () => void preview.refetch() : undefined} />
-      </AppPageContent>
-    );
-  }
-
-  const invite = preview.data;
-  const room = invite.room;
-  const inviter = invite.inviter;
-  return (
-    <AppPageContent>
-      <section className="mx-auto mt-6 max-w-2xl overflow-hidden rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[0_24px_80px_rgba(0,0,0,0.18)] sm:mt-10">
-        <div className="border-b border-[var(--app-border)] bg-[linear-gradient(135deg,var(--app-accent-soft),transparent_68%)] p-5 sm:p-7">
-          <div className="flex items-center gap-3">
-            {inviter ? (
-              <ProfileAvatarVisual
-                displayName={inviter.displayName}
-                size="md"
-                avatarImage={inviter.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={inviter.avatarUrl} alt="" className="h-full w-full object-cover" />
-                ) : undefined}
-              />
-            ) : (
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--app-accent-soft)] text-[var(--theme-accent)]">
-                <Radio className="h-5 w-5" aria-hidden="true" />
-              </span>
-            )}
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--theme-accent)]">Приглашение в комнату</p>
-              <h1 className="mt-1 truncate text-xl font-semibold sm:text-2xl">
-                {inviter ? `${inviter.displayName} зовёт вас` : "Вас зовут в комнату"}
-              </h1>
+    <AppPageContent className="min-h-0 overflow-y-auto pb-8">
+      <section className="mx-auto mt-6 max-w-xl rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] sm:mt-10">
+        <header className="flex items-center gap-3 border-b border-[var(--app-border)] p-4 sm:p-5">
+          {inviter ? (
+            <ProfileAvatarVisual size="sm" displayName={inviter.displayName} avatarImage={inviter.avatarUrl ? (
+              // Shared host-neutral avatar; both renderers supply the same protected preview.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={inviter.avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : undefined} />
+          ) : <Radio className="h-6 w-6 shrink-0 text-[var(--app-muted)]" aria-hidden />}
+          <div className="min-w-0 [overflow-wrap:anywhere]">
+            <h1 className="font-semibold">Приглашение в комнату</h1>
+            {inviter ? <p className="text-sm text-[var(--app-muted)]">{inviter.displayName} зовёт вас</p> : null}
+          </div>
+        </header>
+        <div className="p-4 sm:p-5">
+          {state.kind !== "ready" ? (
+            <div role={state.kind === "error" ? "alert" : "status"}>
+              <h2 className="flex items-center gap-2 font-medium">
+                {state.kind === "loading" ? <LoaderCircle className="h-4 w-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden /> : null}
+                {STATE_COPY[state.kind][0]}
+              </h2>
+              <p className="mt-2 text-sm text-[var(--app-muted)]">{STATE_COPY[state.kind][1]}</p>
+              {state.kind === "error" || state.kind === "offline" ? (
+                <Button type="button" size="sm" className="mt-4" disabled={state.kind === "offline"} onClick={onRetry}>Повторить</Button>
+              ) : null}
             </div>
-          </div>
-        </div>
-
-        <div className="p-5 sm:p-7">
-          {room ? (
+          ) : (
             <>
-              <p className="text-sm text-[var(--app-muted)]">{invite.groupName ?? "Группа"}</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-[-0.03em]">{room.name}</h2>
-              <div className="mt-5 grid gap-2 sm:grid-cols-3">
-                <div className="flex items-center gap-2 rounded-xl bg-[var(--app-surface-soft)] px-3 py-2.5 text-sm">
-                  <Users className="h-4 w-4 text-[var(--theme-accent)]" aria-hidden="true" />
-                  {room.participantCount} в комнате
+              {state.invite.room ? (
+                <div className="[overflow-wrap:anywhere]">
+                  <p className="text-sm text-[var(--app-muted)]">{state.invite.groupName}</p>
+                  <h2 className="mt-1 text-xl font-semibold">{state.invite.room.name}</h2>
+                  <div className="mt-3 flex flex-wrap gap-3 text-xs text-[var(--app-muted)]">
+                    <span className="flex items-center gap-1"><Users className="h-4 w-4" aria-hidden />{state.invite.room.participantCount} в комнате</span>
+                    {state.invite.room.hasScreenShare ? <span className="flex items-center gap-1"><MonitorUp className="h-4 w-4" aria-hidden />Демонстрация</span> : null}
+                    <span className="flex items-center gap-1"><Clock3 className="h-4 w-4" aria-hidden />До <time dateTime={state.invite.expiresAt}>{new Date(state.invite.expiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time></span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 rounded-xl bg-[var(--app-surface-soft)] px-3 py-2.5 text-sm">
-                  <Clock3 className="h-4 w-4 text-[var(--theme-accent)]" aria-hidden="true" />
-                  Действует 15 минут
-                </div>
-                <div className="flex items-center gap-2 rounded-xl bg-[var(--app-surface-soft)] px-3 py-2.5 text-sm">
-                  <MonitorUp className="h-4 w-4 text-[var(--theme-accent)]" aria-hidden="true" />
-                  {room.hasScreenShare ? "Идёт демонстрация" : "Без демонстрации"}
-                </div>
-              </div>
+              ) : null}
+              {actions}
             </>
-          ) : null}
-
-          <div className="mt-6 border-t border-[var(--app-border)] pt-5">
-            <RoomInviteNotificationActions invite={invite} />
-          </div>
-          <AppInternalLink href="/notifications" className="mt-5 inline-flex text-sm font-medium text-[var(--app-muted)] hover:text-[var(--foreground)]">
-            Все уведомления
-          </AppInternalLink>
+          )}
+          <AppInternalLink href="/notifications" className="mt-5 inline-block rounded text-sm text-[var(--app-muted)] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4">К уведомлениям</AppInternalLink>
         </div>
       </section>
     </AppPageContent>

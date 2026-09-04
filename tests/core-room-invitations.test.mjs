@@ -57,10 +57,14 @@ test("Room invite sender and notification action share the core join lifecycle",
   assert.match(action, /response: "accepted"/);
   assert.match(action, /response: "declined"/);
   assert.match(notificationService, /listCoreRoomInvitePreviews/);
-  assert.match(preview, /coreRoomInvitePreview\.useQuery/);
-  assert.match(preview, /RoomInviteNotificationActions/);
+  const hook = await readFile(new URL("../src/hooks/useCoreRoomInvitePreview.ts", import.meta.url), "utf8");
+  const container = await readFile(new URL("../src/components/chat/voice/CoreRoomInvitePreview.tsx", import.meta.url), "utf8");
+  assert.match(hook, /coreRoomInvitePreview\.useQuery/);
+  assert.match(hook, /refetchOnReconnect: true/);
+  assert.match(hook, /refetchOnWindowFocus: true/);
+  assert.match(container, /RoomInviteNotificationActions/);
   assert.match(preview, /Приглашение недоступно/);
-  assert.match(route, /CoreRoomInvitePreviewView/);
+  assert.match(route, /CoreRoomInvitePreview/);
   assert.match(route, /robots: \{ index: false, follow: false \}/);
   assert.match(desktop, /roomInviteIdFromPath/);
   assert.match(desktop, /<DesktopRoomInvitePreview inviteId=\{roomInviteId\}/);

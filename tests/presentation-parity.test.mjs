@@ -141,8 +141,11 @@ test("Room invitation links use one protected preview on web and desktop", () =>
   const shared = read("src/components/chat/voice/CoreRoomInvitePreviewView.tsx");
   const desktop = read("desktop/src/shell/DesktopShell.tsx");
 
-  assert.match(web, /CoreRoomInvitePreviewView/);
-  assert.match(shared, /coreRoomInvitePreview\.useQuery/);
+  const container = read("src/components/chat/voice/CoreRoomInvitePreview.tsx");
+  assert.match(web, /CoreRoomInvitePreview/);
+  assert.match(container, /CoreRoomInvitePreviewView/);
+  assert.match(container, /useCoreRoomInvitePreview/);
+  assert.doesNotMatch(shared, /useQuery|from ["']next\/|from ["']@\/server/);
   assert.match(desktop, /DesktopRoomInvitePreview/);
   assert.match(desktop, /roomInviteIdFromPath/);
 });

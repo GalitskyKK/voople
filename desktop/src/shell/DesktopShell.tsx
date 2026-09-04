@@ -16,6 +16,7 @@ import { FeedHeaderVisual } from "@/components/layout/FeedHeaderVisual";
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { NotFoundView } from "@/components/system/NotFoundView";
 import { COPY, type FeedTabId } from "@/lib/constants/copy";
+import { roomInviteIdFromPath } from "@/lib/chat/core-room-invite-preview";
 import { resolveRingStyle } from "@/lib/customization/rings";
 import { getAppRouteLayout } from "@/lib/layout/route-layout";
 import { registerInternalNavigationAdapter } from "@/lib/platform/internal-navigation";
@@ -51,8 +52,8 @@ const DesktopNotifications = lazy(() =>
   })),
 );
 const DesktopRoomInvitePreview = lazy(() =>
-  import("@/components/chat/voice/CoreRoomInvitePreviewView").then((module) => ({
-    default: module.CoreRoomInvitePreviewView,
+  import("@/components/chat/voice/CoreRoomInvitePreview").then((module) => ({
+    default: module.CoreRoomInvitePreview,
   })),
 );
 const DesktopProfile = lazy(() =>
@@ -142,12 +143,6 @@ function chatIdFromPath(pathname: string) {
 function groupSettingsChatIdFromPath(pathname: string) {
   return pathname.match(
     /^\/messages\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/settings$/i,
-  )?.[1] ?? null;
-}
-
-function roomInviteIdFromPath(pathname: string) {
-  return pathname.match(
-    /^\/room-invites\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i,
   )?.[1] ?? null;
 }
 

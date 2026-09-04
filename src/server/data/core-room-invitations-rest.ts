@@ -336,6 +336,7 @@ export async function listCoreRoomInvitePreviewsRest(
     .eq("invitee_id", userId);
   if (inviteResult.error) throw new Error(inviteResult.error.message);
   const invites = inviteResult.data ?? [];
+  if (!invites.length) return new Map();
   const sessionIds = invites.map((row) => String(row.room_session_id));
   const sessionResult = await admin
     .from("live_sessions")
@@ -357,6 +358,13 @@ export async function listCoreRoomInvitePreviewsRest(
   if (participantResult.error) throw new Error(participantResult.error.message);
   const rooms = new Map((roomResult.data ?? []).map((row) => [String(row.id), row]));
   const participantIds = (participantResult.data ?? []).map((row) => String(row.user_id));
+  const memberResult = participantIds.length
+    ? await admin.from("chat_members").select("chat_id, user_id")
+      .in("chat_id", [...new Set(invites.map((invite) => String(invite.chat_id)))])
+      .in("user_id", participantIds)
+    : { data: [], error: null };
+  if (memberResult.error) throw new Error(memberResult.error.message);
+  const currentMembers = new Set((memberResult.data ?? []).map((member) => `${member.chat_id}:${member.user_id}`));
   const visibleIds = new Set(await filterUserIdsByPrivacyFieldRest(participantIds, userId, "roomsScope"));
   const inviterIds = invites.map((invite) => String(invite.inviter_id));
   const users = await loadGroupNowUsersRest([...new Set([...visibleIds, ...inviterIds])]);
@@ -383,7 +391,8 @@ export async function listCoreRoomInvitePreviewsRest(
         if (String(participant.session_id) !== String(session.id)) return [];
         const participantId = String(participant.user_id);
         const user = users.get(participantId);
-        if (!user || !visibleIds.has(participantId)) return [];
+        if (!user || !visibleIds.has(participantId)
+          || !currentMembers.has(`${invite.chat_id}:${participantId}`)) return [];
         return [{
           ...user,
           isMe: participantId === userId,

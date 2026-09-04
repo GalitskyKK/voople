@@ -185,6 +185,13 @@ keyboard и overflow. Регрессия `verify-room-invite-preview.mjs` так
 это не подтверждает. Локальный web build упирается в известный cross-drive
 font path; чистый CI требуется отдельно.
 
+Интеграция `57b634d` в `dev` прошла
+[Quality gate](https://github.com/GalitskyKK/voople/actions/runs/33898866736):
+architecture, 202 unit-теста, lint/TypeScript, production web build и desktop
+renderer. [Проверка истории на секреты](https://github.com/GalitskyKK/voople/actions/runs/33898866795)
+тоже прошла. Это закрывает прежний copy/share gap в пунктах 10, 54 и 61,
+но не OS protocol и не реальные двухклиентные проверки.
+
 Пункт 54 остаётся частичным: впереди OS deep links, сохранение приглашения
 через вход в аккаунт, block-модель и двухклиентная приёмка. Guest entry не
 включён. Миграции, native registration и release flags не менялись.

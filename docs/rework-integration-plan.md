@@ -60,7 +60,14 @@ RC. Это не шесть итераций и не оценка остатка 
 
 Authenticated invite preview включён в `dev` на `f85cc55`: общие route/View,
 обновление статуса и offline/error/expiry проверены локально, CI зелёный.
-Следующий срез — copy/share и desktop OS deep links; затем guest entry и P1.
+Copy/share включён в `dev` на `57b634d`: 202 unit-теста, обе сборки и
+[Quality gate](https://github.com/GalitskyKK/voople/actions/runs/33898866736)
+прошли. Проверка истории на секреты также зелёная.
+Следующий срез — сохранение адресного приглашения через login/register и
+onboarding, затем desktop OS deep links, guest entry и P1. В web уже есть
+`redirect` после login; нужно переиспользовать его, закрыть потерю ссылки при
+переходе на register и проверить безопасный разбор внутреннего пути. Возврат
+открывает preview, а не автоматически присоединяет пользователя к Room.
 Живая проверка доступа и перехода в Room остаётся отдельным требованием
 стенда. Нельзя считать гостевой сценарий готовым по одному preview.
 

@@ -4,6 +4,21 @@
 завершении. Она объединяет исходную спецификацию, дополняющий social/UX-план,
 Reference Map и шесть референсных бордов.
 
+Интеграция на 2026-09-04: закоммиченная цепочка core rework до `fad1277`
+собрана в `dev`; это не меняет статусы готовности ниже. Порядок дальнейших
+этапов с учётом messenger-first дополнения, стенд и release gates описаны в
+[плане интеграции](./rework-integration-plan.md). Незавершённые invite links,
+живые DB/E2E и visual gates остаются открытыми.
+
+Регрессия интеграции, `7e7ef56`: штатный Node — 188/188; architecture, lint,
+web/desktop TypeScript и обе сборки проходят в GitHub CI. В реальных общих
+компонентах исправлены reset формы новой Room, согласование статуса invite и
+render-safe передача credentials в VoiceSessionProvider. Изолированный Chromium
+на 360/1280 px в Void/Light подтверждает reopen/back, смену invite ID/expiry,
+приоритет server status, однократный handoff/clear и legacy reset без page errors.
+Transport/media были заглушены: real DB, authorization, native desktop и
+двухклиентный media gate остаются открытыми. Подробности — в плане интеграции.
+
 ## Источники истины
 
 1. Текущий core, IA и порядок переработки:

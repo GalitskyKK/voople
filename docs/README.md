@@ -1,6 +1,7 @@
 # Документация Voople
 
 - [Архитектура глобальной core-переработки](./core-rework-architecture.md)
+- [Интеграция в dev, оставшиеся этапы и выпуск](./rework-integration-plan.md)
 - [Канонический core rework plan](../rework_plan/VOOPLE_CORE_REWORK_PLAN.md)
 - [Обязательный backlog следующего feature-релиза](./next-feature-release-backlog.md)
 - [Readiness текущего стабилизационного релиза](./current-stabilization-release-readiness.md)

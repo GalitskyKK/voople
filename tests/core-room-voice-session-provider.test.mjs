@@ -14,8 +14,11 @@ test("core Room launch enters the existing VoiceSessionProvider without persisti
   ]);
 
   assert.match(provider, /openCoreRoom: \(launch: CoreVoiceSessionLaunch\)/);
-  assert.match(provider, /initialCoreCredentialsRef = useRef/);
-  assert.match(provider, /initialCoreCredentialsRef\.current = null/);
+  assert.match(provider, /\[initialCoreCredentials, setInitialCoreCredentials\] = useState/);
+  assert.match(provider, /setInitialCoreCredentials\(null\)/);
+  assert.match(provider, /setInitialCoreCredentials\(launch\.credentials\)/);
+  assert.match(provider, /initialCoreCredentials=\{initialCoreCredentials \?\? undefined\}/);
+  assert.doesNotMatch(provider, /initialCoreCredentialsRef/);
   assert.match(provider, /coreSession: \{/);
   assert.match(provider, /coreSession\?\.join\.sessionId/);
   assert.match(provider, /state\.inside && activeSession\?\.coreSession/);

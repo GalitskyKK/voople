@@ -134,6 +134,11 @@ the backend through tRPC or an API route. Server modules must not import UI.
 
 ## Verification
 
+Run final verification from a checkout outside `node_modules`, using the
+repository's native Node test command. A TSX run or lint inside `node_modules`
+is not equivalent: module resolution and React compiler checks can differ and
+hide CI failures. Do not replace failed native tests with a different loader.
+
 Run before handing off a code change:
 
 1. `npm run check:architecture`

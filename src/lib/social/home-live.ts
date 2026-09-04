@@ -1,4 +1,4 @@
-import { selectRankedHomeItems } from "./home-ranking";
+import { selectRankedHomeItems } from "./home-ranking.ts";
 import type { HomeNowItem, HomeOverviewView } from "@/types/home";
 
 export function mergeHomeActiveRooms(

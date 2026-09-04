@@ -64,4 +64,7 @@ test("Room invite sender and notification action share the core join lifecycle",
   assert.match(route, /robots: \{ index: false, follow: false \}/);
   assert.match(desktop, /roomInviteIdFromPath/);
   assert.match(desktop, /<DesktopRoomInvitePreview inviteId=\{roomInviteId\}/);
+  assert.match(action, /key=\{invite \? `\$\{invite\.id\}:\$\{invite\.expiresAt\}`/);
+  assert.match(action, /invite\?\.status === "pending"[\s\S]*respond\.data\?\.status \?\? invite\.status/);
+  assert.doesNotMatch(action, /setLocalStatus|useEffect/);
 });

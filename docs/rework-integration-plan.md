@@ -63,11 +63,14 @@ Authenticated invite preview включён в `dev` на `f85cc55`: общие 
 Copy/share включён в `dev` на `57b634d`: 202 unit-теста, обе сборки и
 [Quality gate](https://github.com/GalitskyKK/voople/actions/runs/33898866736)
 прошли. Проверка истории на секреты также зелёная.
-Следующий срез — сохранение адресного приглашения через login/register и
-onboarding, затем desktop OS deep links, guest entry и P1. В web уже есть
-`redirect` после login; нужно переиспользовать его, закрыть потерю ссылки при
-переходе на register и проверить безопасный разбор внутреннего пути. Возврат
-открывает preview, а не автоматически присоединяет пользователя к Room.
+Web-переходы login/register/onboarding сохраняют проверенный `redirect` на
+`a632928`; 207 unit-тестов и обе сборки прошли в
+[Quality gate](https://github.com/GalitskyKK/voople/actions/runs/33901771972).
+Следующий срез — desktop OS deep links и pending invite до авторизации:
+проверить cold/warm start, повторную ссылку, отмену входа и смену аккаунта.
+Возврат открывает preview, а не автоматически присоединяет пользователя к Room.
+Отдельно остаётся контекст приглашения при подтверждении почты в новой вкладке.
+После этого — guest entry и P1.
 Живая проверка доступа и перехода в Room остаётся отдельным требованием
 стенда. Нельзя считать гостевой сценарий готовым по одному preview.
 

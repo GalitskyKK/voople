@@ -219,6 +219,11 @@ password pending/error/retry, OTP, оба ответа регистрации, c
 onboarding error/retry, отсутствие redirect и отклонение опасного адреса.
 Горизонтального overflow и ошибок страницы нет; сервер и браузер закрываются.
 
+Коммит `a632928` включён в `dev`;
+[Quality gate](https://github.com/GalitskyKK/voople/actions/runs/33901771972)
+прошёл, включая production web build и desktop renderer.
+[Secret scan](https://github.com/GalitskyKK/voople/actions/runs/33901771946) зелёный.
+
 Next navigation и auth/профиль API в probe заменены заглушками: это не проверка
 Supabase, реального письма или server-rendered redirect. Проверен возврат через
 исходную вкладку регистрации; отдельная вкладка из письма не получает этот

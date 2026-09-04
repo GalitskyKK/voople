@@ -196,6 +196,36 @@ renderer. [Проверка истории на секреты](https://github.c
 через вход в аккаунт, block-модель и двухклиентная приёмка. Guest entry не
 включён. Миграции, native registration и release flags не менялись.
 
+### Возврат к приглашению после авторизации — 2026-09-04
+
+Web сохраняет `redirect` между login/register, после входа паролем или OTP,
+регистрации с сессией и через кнопку входа на экране подтверждения почты.
+Onboarding передаёт тот же адрес дальше; если сессия истекла перед открытием
+страницы, повторный login сохраняет и onboarding, и вложенный адрес.
+Перезагрузка и переходы между формами не требуют browser storage.
+
+Вместо трёх проверок `startsWith` используется один client-safe валидатор:
+только внутренний путь, без внешнего origin, обратных слешей, управляющих
+символов и закодированных разделителей пути. Некорректный адрес отбрасывается.
+Возврат к Room invite открывает существующий protected preview; это не grant,
+не принятие приглашения и не автоматическое подключение к медиа.
+
+Проверки: 207 native Node tests, architecture, lint без ошибок, web/desktop
+TypeScript и desktop renderer build прошли. Локальный web build остановился
+на прежнем cross-drive разрешении шрифтов Geist; результат чистого CI нужен
+отдельно. `node scripts/verify-auth-continuation.mjs` проверяет реальные формы,
+ссылки и OnboardingFlow на 360/1280 px в Void/Light: keyboard, reload,
+password pending/error/retry, OTP, оба ответа регистрации, confirmation → login,
+onboarding error/retry, отсутствие redirect и отклонение опасного адреса.
+Горизонтального overflow и ошибок страницы нет; сервер и браузер закрываются.
+
+Next navigation и auth/профиль API в probe заменены заглушками: это не проверка
+Supabase, реального письма или server-rendered redirect. Проверен возврат через
+исходную вкладку регистрации; отдельная вкладка из письма не получает этот
+контекст автоматически. Desktop OS deep links и хранение pending invite в
+desktop session router ещё не реализованы. Пункты 47/54/61 остаются частичными;
+guest entry, миграции, release flags и production не менялись.
+
 ## Cross-platform architecture gate
 
 - Канонические view-models и stateless views живут в `src/types`, `src/lib`,

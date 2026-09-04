@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { authEntryHref, onboardingHref, safeAuthContinuation } from "@/lib/auth/continuation";
 
 import { WebSessionBootstrapRecovery } from "@/components/auth/WebSessionBootstrapRecovery";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 export default async function OnboardingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ username?: string; redirect?: string }>;
+  searchParams: Promise<{ username?: string | string[]; redirect?: string | string[] }>;
 }) {
   const [{ username, redirect: requestedRedirect }, bootstrap] = await Promise.all([
     searchParams,
@@ -23,11 +24,8 @@ export default async function OnboardingPage({
     return <WebSessionBootstrapRecovery reason={bootstrap.reason} />;
   }
   const user = bootstrap.value;
-  if (!user) redirect("/login");
-  if (!username) redirect("/feed");
-  const redirectAfter =
-    requestedRedirect?.startsWith("/") && !requestedRedirect.startsWith("//")
-      ? requestedRedirect
-      : undefined;
+  const redirectAfter = safeAuthContinuation(requestedRedirect) ?? undefined;
+  if (!user) redirect(authEntryHref("/login", typeof username === "string" ? onboardingHref(username, redirectAfter) : redirectAfter));
+  if (typeof username !== "string" || !username) redirect(redirectAfter ?? "/feed");
   return <OnboardingFlow username={username} redirectAfter={redirectAfter} />;
 }

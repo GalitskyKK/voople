@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { WebAuthContinuationLink } from "@/components/auth/WebAuthContinuationLink";
+import { authEntryHref, onboardingHref, safeAuthContinuation } from "@/lib/auth/continuation";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -42,10 +44,7 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: FormValues) => {
     const requestedRedirect = new URLSearchParams(window.location.search).get("redirect");
-    const redirectAfter =
-      requestedRedirect?.startsWith("/") && !requestedRedirect.startsWith("//")
-        ? requestedRedirect
-        : null;
+    const redirectAfter = safeAuthContinuation(requestedRedirect);
     if (TURNSTILE_SITE_KEY && !captchaToken) {
       setError("root", { message: captchaError ?? "Пройдите антибот-проверку" });
       return;
@@ -84,7 +83,7 @@ export default function RegisterPage() {
         await trustCurrentDevice({ accessToken: signUpData.session.access_token, platform: "web" }).catch(() => undefined);
         router.replace(
           username
-            ? `/onboarding?username=${encodeURIComponent(username)}${redirectAfter ? `&redirect=${encodeURIComponent(redirectAfter)}` : ""}`
+            ? onboardingHref(username, redirectAfter)
             : redirectAfter ?? "/feed",
         );
         router.refresh();
@@ -101,8 +100,6 @@ export default function RegisterPage() {
 
   if (confirmationEmail) {
     const loginHref = new URLSearchParams(window.location.search).get("redirect");
-    const safeRedirect =
-      loginHref?.startsWith("/") && !loginHref.startsWith("//") ? loginHref : null;
 
     return (
       <section
@@ -130,7 +127,7 @@ export default function RegisterPage() {
           type="button"
           className="w-full"
           onClick={() =>
-            router.push(safeRedirect ? `/login?redirect=${encodeURIComponent(safeRedirect)}` : "/login")
+            router.push(authEntryHref("/login", loginHref))
           }
         >
           Перейти ко входу
@@ -204,9 +201,9 @@ export default function RegisterPage() {
       </Button>
       <p className="text-center text-sm text-[var(--app-muted)]">
         Уже есть аккаунт?{" "}
-        <Link href="/login" className="voople-link">
+        <WebAuthContinuationLink entry="/login">
           {COPY.login}
-        </Link>
+        </WebAuthContinuationLink>
       </p>
     </form>
   );

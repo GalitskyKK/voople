@@ -27,6 +27,9 @@ const mockConversionHook = `import {useState} from 'react';
     window.setConversionState=setState;
     return {...state,registrationHref:'/register',loginHref:'/login',start:noop,retry:noop};
   }`;
+const mockNextLink = `export default function Link({href,children,...props}){
+  return <a href={typeof href === 'string' ? href : '#'} {...props}>{children}</a>;
+}`;
 const entry = `import {StrictMode} from 'react';import {createRoot} from 'react-dom/client';
   import {RoomGuestPage} from '@/components/chat/RoomGuestPage';
   import {AppThemeProvider,useAppTheme} from '@/components/theme/AppThemeProvider';
@@ -45,8 +48,10 @@ const bundle = await build({
     setup(builder) {
       builder.onResolve({ filter: /^@\/hooks\/useRoomGuestSession$/ }, () => ({ path: "guest-hook", namespace: "mock" }));
       builder.onResolve({ filter: /^@\/hooks\/useRoomGuestConversion$/ }, () => ({ path: "conversion-hook", namespace: "mock" }));
+      builder.onResolve({ filter: /^next\/link$/ }, () => ({ path: "next-link", namespace: "mock" }));
       builder.onLoad({ filter: /^guest-hook$/, namespace: "mock" }, () => ({ contents: mockHook, loader: "tsx", resolveDir: repo }));
       builder.onLoad({ filter: /^conversion-hook$/, namespace: "mock" }, () => ({ contents: mockConversionHook, loader: "tsx", resolveDir: repo }));
+      builder.onLoad({ filter: /^next-link$/, namespace: "mock" }, () => ({ contents: mockNextLink, loader: "tsx", resolveDir: repo }));
     },
   }],
 });
@@ -114,11 +119,17 @@ try {
     const page = await browser.newPage({ viewport: { width, height } });
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
+    page.on("console", (message) => {
+      if (message.type() === "error") errors.push(message.text());
+    });
     await page.addInitScript(({ guestState, conversionState }) => {
       window.initialGuestState = guestState;
       window.initialConversionState = conversionState;
     }, { guestState: baseState, conversionState: baseConversionState });
     await page.goto(`http://127.0.0.1:${server.address().port}`);
+    await page.waitForFunction(() => typeof window.changeTheme === "function").catch(() => {
+      throw new Error(`Visual harness failed: ${errors.join(" | ")}`);
+    });
     await page.evaluate((value) => window.changeTheme(value), theme);
     await page.waitForFunction((value) => document.documentElement.dataset.appTheme === value, theme);
     const joinButton = page.getByRole("button", { name: "Зайти гостем" });

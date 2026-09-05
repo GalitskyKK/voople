@@ -6,6 +6,7 @@ import { z } from "zod";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { loadGroupNowUsersRest } from "@/server/data/group-now-rest";
 import type {
+  RoomGuestConversionResult,
   RoomGuestInvitePreview,
   RoomGuestJoinResult,
 } from "@/types/room-guests";
@@ -25,6 +26,12 @@ const guestJoinSchema = z.object({
   providerSessionId: z.string().uuid(),
   displayName: z.string().min(1).max(40),
   expiresAt: z.string(),
+});
+
+const guestConversionSchema = z.object({
+  status: z.enum(["joined", "already_joined", "requested", "account_linked"]),
+  groupId: z.string().uuid(),
+  groupName: z.string().min(1),
 });
 
 function tokenHash(token: string) {
@@ -63,6 +70,10 @@ function roomGuestError(message: string) {
   if (message.includes("ROOM_GUEST_INVITE_FORBIDDEN")) return new Error("Создать ссылку может только участник комнаты");
   if (message.includes("ROOM_GUEST_INPUT_INVALID")) return new Error("Проверьте имя гостя");
   if (message.includes("ROOM_GUEST_IDEMPOTENCY_CONFLICT")) return new Error("Попытка входа устарела. Повторите вход");
+  if (message.includes("ROOM_GUEST_CONVERSION_GROUP_FULL")) return new Error("В группе больше нет свободных мест");
+  if (message.includes("ROOM_GUEST_CONVERSION_CLAIMED")) return new Error("Гостевое место уже связано с другим аккаунтом");
+  if (message.includes("ROOM_GUEST_CONVERSION_USER_MISSING")) return new Error("Сначала завершите создание профиля");
+  if (message.includes("ROOM_GUEST_CONVERSION")) return new Error("Не удалось сохранить гостевое участие");
   return new Error(message);
 }
 
@@ -219,4 +230,16 @@ export async function leaveRoomGuestRest(accessToken: string) {
   });
   if (error) throw roomGuestError(error.message);
   return { left: data === true };
+}
+
+export async function convertRoomGuestAccountRest(input: {
+  accessToken: string;
+  userId: string;
+}): Promise<RoomGuestConversionResult> {
+  const { data, error } = await getAdminClient().rpc("convert_room_guest_account", {
+    p_access_token_hash: tokenHash(input.accessToken),
+    p_user_id: input.userId,
+  });
+  if (error) throw roomGuestError(error.message);
+  return guestConversionSchema.parse(data);
 }

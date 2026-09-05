@@ -38,6 +38,7 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
   const [screenVisible, setScreenVisible] = useState(false);
   const roomRef = useRef<Room | null>(null);
   const manualDisconnectRef = useRef(false);
+  const accountConversionRef = useRef(false);
   const joinRequestIdRef = useRef<string | null>(null);
 
   const loadPreview = useCallback(async (signal?: AbortSignal) => {
@@ -187,6 +188,17 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
     await loadPreview();
   }, [clearMedia, loadPreview]);
 
+  const prepareAccountConversion = useCallback(async () => {
+    accountConversionRef.current = true;
+    manualDisconnectRef.current = true;
+    const room = roomRef.current;
+    roomRef.current = null;
+    await room?.disconnect();
+    clearMedia();
+    setMediaStatus("idle");
+    manualDisconnectRef.current = false;
+  }, [clearMedia]);
+
   useEffect(() => {
     if (!joined || mediaStatus !== "connected") return;
     const heartbeat = () => void fetch("/api/room-guests/session", {
@@ -202,6 +214,7 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
   useEffect(() => {
     if (!joined) return;
     const endGuestSession = () => {
+      if (accountConversionRef.current) return;
       void fetch("/api/room-guests/session", {
         method: "DELETE",
         credentials: "same-origin",
@@ -232,5 +245,6 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
     connect,
     toggleMicrophone,
     leave,
+    prepareAccountConversion,
   };
 }

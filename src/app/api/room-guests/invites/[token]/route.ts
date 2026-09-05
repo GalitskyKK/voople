@@ -12,6 +12,7 @@ import {
   joinRoomAsGuest,
   previewRoomGuestInvite,
 } from "@/server/services/room-guests.service";
+import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
 
 const joinSchema = z.object({
   displayName: z.string().min(1).max(80),
@@ -55,6 +56,12 @@ export async function POST(request: Request, context: GuestInviteRouteContext) {
       inviteToken: token,
       displayName: body.data.displayName,
       requestId: body.data.requestId,
+    });
+    await recordServerProductEvent({
+      name: "room_guest_joined",
+      actorId: result.guestId,
+      route: "/api/room-guests/invites/[token]",
+      properties: { source: "room_guest_link" },
     });
     const response = noStore({
       guestId: result.guestId,

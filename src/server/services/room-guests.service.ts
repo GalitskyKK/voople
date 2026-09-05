@@ -6,6 +6,7 @@ import { isRoomGuestInviteToken, roomGuestInviteUrl } from "@/lib/chat/room-gues
 import { getSiteUrl } from "@/lib/seo/site";
 import { issueRoomGuestMediaTokenRest } from "@/server/data/chat-room-media-rest";
 import {
+  convertRoomGuestAccountRest,
   createRoomGuestInviteRest,
   heartbeatRoomGuestRest,
   joinRoomAsGuestRest,
@@ -73,4 +74,14 @@ export function heartbeatRoomGuest(accessToken: string, micMuted: boolean) {
 
 export function leaveRoomGuest(accessToken: string) {
   return leaveRoomGuestRest(requireOpaqueToken(accessToken, "Гостевая сессия недоступна"));
+}
+
+export function convertRoomGuestAccount(input: {
+  accessToken: string;
+  userId: string;
+}) {
+  return convertRoomGuestAccountRest({
+    accessToken: requireOpaqueToken(input.accessToken, "Гостевая сессия недоступна"),
+    userId: z.string().uuid().parse(input.userId),
+  });
 }

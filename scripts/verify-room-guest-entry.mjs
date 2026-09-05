@@ -18,7 +18,14 @@ const mockHook = `import {useState} from 'react';
   export function useRoomGuestSession(){
     const [state,setState]=useState(window.initialGuestState);
     window.setGuestState=setState;
-    return {...state,loadPreview:noop,join:async(name)=>{window.joinName=name},connect:noop,toggleMicrophone:noop,leave:noop};
+    return {...state,loadPreview:noop,join:async(name)=>{window.joinName=name},connect:noop,toggleMicrophone:noop,leave:noop,prepareAccountConversion:noop};
+  }`;
+const mockConversionHook = `import {useState} from 'react';
+  const noop=async()=>{};
+  export function useRoomGuestConversion(){
+    const [state,setState]=useState(window.initialConversionState);
+    window.setConversionState=setState;
+    return {...state,registrationHref:'/register',loginHref:'/login',start:noop,retry:noop};
   }`;
 const entry = `import {StrictMode} from 'react';import {createRoot} from 'react-dom/client';
   import {RoomGuestPage} from '@/components/chat/RoomGuestPage';
@@ -37,7 +44,9 @@ const bundle = await build({
     name: "guest-hook",
     setup(builder) {
       builder.onResolve({ filter: /^@\/hooks\/useRoomGuestSession$/ }, () => ({ path: "guest-hook", namespace: "mock" }));
-      builder.onLoad({ filter: /.*/, namespace: "mock" }, () => ({ contents: mockHook, loader: "tsx", resolveDir: repo }));
+      builder.onResolve({ filter: /^@\/hooks\/useRoomGuestConversion$/ }, () => ({ path: "conversion-hook", namespace: "mock" }));
+      builder.onLoad({ filter: /^guest-hook$/, namespace: "mock" }, () => ({ contents: mockHook, loader: "tsx", resolveDir: repo }));
+      builder.onLoad({ filter: /^conversion-hook$/, namespace: "mock" }, () => ({ contents: mockConversionHook, loader: "tsx", resolveDir: repo }));
     },
   }],
 });
@@ -87,6 +96,11 @@ const baseState = {
   participantCount: 3,
   screenVisible: false,
 };
+const baseConversionState = {
+  phase: "idle",
+  result: null,
+  error: null,
+};
 
 let browser;
 try {
@@ -100,7 +114,10 @@ try {
     const page = await browser.newPage({ viewport: { width, height } });
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
-    await page.addInitScript((state) => { window.initialGuestState = state; }, baseState);
+    await page.addInitScript(({ guestState, conversionState }) => {
+      window.initialGuestState = guestState;
+      window.initialConversionState = conversionState;
+    }, { guestState: baseState, conversionState: baseConversionState });
     await page.goto(`http://127.0.0.1:${server.address().port}`);
     await page.evaluate((value) => window.changeTheme(value), theme);
     await page.waitForFunction((value) => document.documentElement.dataset.appTheme === value, theme);
@@ -122,8 +139,17 @@ try {
     await page.getByText("Вы в комнате как Гость", { exact: true }).waitFor();
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     await page.screenshot({ path: path.join(artifacts, `guest-room-${width}-${theme}.png`), fullPage: true });
+
+    await page.evaluate(() => window.setConversionState({
+      phase: "success",
+      result: { status: "joined", groupId: "group", groupName: "Сообщество дизайнеров" },
+      error: null,
+    }));
+    await page.getByText("Вы теперь в группе «Сообщество дизайнеров»", { exact: true }).waitFor();
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    await page.screenshot({ path: path.join(artifacts, `guest-conversion-${width}-${theme}.png`), fullPage: true });
     assert.deepEqual(errors, []);
-    console.log(`PASS ${width}px ${theme}: entry, keyboard form, joined Room, no overflow or page errors`);
+    console.log(`PASS ${width}px ${theme}: entry, joined Room, conversion, no overflow or page errors`);
     await page.close();
   }
 } finally {

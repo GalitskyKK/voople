@@ -29,3 +29,15 @@ export type RoomGuestJoinResult = {
   displayName: string;
   expiresAt: string;
 };
+
+export type RoomGuestConversionStatus =
+  | "joined"
+  | "already_joined"
+  | "requested"
+  | "account_linked";
+
+export type RoomGuestConversionResult = {
+  status: RoomGuestConversionStatus;
+  groupId: string;
+  groupName: string;
+};

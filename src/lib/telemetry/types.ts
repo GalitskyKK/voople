@@ -29,6 +29,8 @@ export const PRODUCT_EVENT_NAMES = [
   "room_compacted",
   "room_expanded",
   "room_invite_sent",
+  "room_guest_joined",
+  "room_guest_converted",
   "camera_started",
   "screen_share_started",
   "group_created",

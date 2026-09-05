@@ -9,9 +9,10 @@ export const metadata: Metadata = {
 
 type RoomGuestRouteProps = {
   params: Promise<{ token: string }>;
+  searchParams: Promise<{ convert?: string | string[] }>;
 };
 
-export default async function RoomGuestRoute({ params }: RoomGuestRouteProps) {
-  const { token } = await params;
-  return <RoomGuestPage token={token} />;
+export default async function RoomGuestRoute({ params, searchParams }: RoomGuestRouteProps) {
+  const [{ token }, query] = await Promise.all([params, searchParams]);
+  return <RoomGuestPage token={token} conversionRequested={query.convert === "1"} />;
 }

@@ -1,10 +1,12 @@
 "use client";
 
-import { Headphones, LoaderCircle, LogOut, Mic, MicOff, MonitorPlay, UsersRound } from "lucide-react";
+import { Headphones, LoaderCircle, LogOut, Mic, MicOff, MonitorPlay, UserPlus, UsersRound } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { VoopleMark } from "@/components/brand/VoopleMark";
+import { RoomGuestConversionPanel } from "@/components/chat/RoomGuestConversionPanel";
 import { Button } from "@/components/ui/Button";
+import { useRoomGuestConversion } from "@/hooks/useRoomGuestConversion";
 import { useRoomGuestSession } from "@/hooks/useRoomGuestSession";
 
 const UNAVAILABLE_COPY = {
@@ -15,10 +17,21 @@ const UNAVAILABLE_COPY = {
   full: "Все гостевые места заняты.",
 } as const;
 
-export function RoomGuestPage({ token }: { token: string }) {
+export function RoomGuestPage({
+  token,
+  conversionRequested = false,
+}: {
+  token: string;
+  conversionRequested?: boolean;
+}) {
   const audioRootRef = useRef<HTMLDivElement | null>(null);
   const screenRootRef = useRef<HTMLDivElement | null>(null);
   const guest = useRoomGuestSession(token, { audioRootRef, screenRootRef });
+  const conversion = useRoomGuestConversion({
+    token,
+    requested: conversionRequested,
+    prepareGuest: guest.prepareAccountConversion,
+  });
   const [displayName, setDisplayName] = useState("");
   const [joinPending, setJoinPending] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -46,7 +59,16 @@ export function RoomGuestPage({ token }: { token: string }) {
         </header>
 
         <section className="my-auto overflow-hidden rounded-[var(--app-radius-xl)] border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[var(--app-shadow-md)]">
-          {guest.previewLoading ? (
+          {conversion.phase !== "idle" ? (
+            <RoomGuestConversionPanel
+              phase={conversion.phase}
+              result={conversion.result}
+              error={conversion.error}
+              registrationHref={conversion.registrationHref}
+              loginHref={conversion.loginHref}
+              onRetry={() => void conversion.retry()}
+            />
+          ) : guest.previewLoading ? (
             <div className="grid min-h-[30rem] gap-8 p-6 md:grid-cols-[minmax(0,1fr)_21rem] md:p-10" aria-label="Проверяем приглашение">
               <div className="space-y-4">
                 <div className="h-5 w-32 animate-pulse rounded bg-[var(--app-surface-soft)] motion-reduce:animate-none" />
@@ -118,7 +140,7 @@ export function RoomGuestPage({ token }: { token: string }) {
                   </Button>
                 </div>
               ) : null}
-              <footer className="flex items-center justify-center gap-3 border-t border-[var(--app-border)] px-5 py-4">
+              <footer className="flex flex-wrap items-center justify-center gap-3 border-t border-[var(--app-border)] px-5 py-4">
                 <Button
                   variant={guest.micMuted ? "secondary" : "primary"}
                   aria-pressed={!guest.micMuted}
@@ -130,6 +152,9 @@ export function RoomGuestPage({ token }: { token: string }) {
                 </Button>
                 <Button variant="secondary" onClick={() => void guest.leave()}>
                   <LogOut className="h-4 w-4" /> Выйти
+                </Button>
+                <Button variant="ghost" onClick={() => void conversion.start()}>
+                  <UserPlus className="h-4 w-4" /> Сохранить участие
                 </Button>
               </footer>
             </div>

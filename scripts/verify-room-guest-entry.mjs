@@ -45,6 +45,7 @@ const bundle = await build({
 const cssRoot = path.join(repo, "desktop/dist/assets");
 const cssFiles = (await readdir(cssRoot, { recursive: true })).filter((file) => file.endsWith(".css"));
 const css = (await Promise.all(cssFiles.map((file) => readFile(path.join(cssRoot, file), "utf8")))).join("\n");
+const mark = await readFile(path.join(repo, "public/favicon/android-chrome-192x192.png"));
 const server = createServer((request, response) => {
   if (request.url === "/app.js") {
     response.setHeader("Content-Type", "text/javascript");
@@ -52,6 +53,9 @@ const server = createServer((request, response) => {
   } else if (request.url === "/style.css") {
     response.setHeader("Content-Type", "text/css");
     response.end(css);
+  } else if (request.url === "/favicon/android-chrome-192x192.png") {
+    response.setHeader("Content-Type", "image/png");
+    response.end(mark);
   } else {
     response.setHeader("Content-Type", "text/html; charset=utf-8");
     response.end('<!doctype html><html><head><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/style.css"></head><body><main id="root"></main><script src="/app.js"></script></body></html>');
@@ -103,10 +107,11 @@ try {
     const joinButton = page.getByRole("button", { name: "Зайти гостем" });
     await joinButton.waitFor();
     await page.getByLabel("Ваше имя").fill("Гость");
-    await joinButton.click();
-    assert.equal(await page.evaluate(() => window.joinName), "Гость");
+    await page.waitForFunction(() => document.querySelector('button[type="submit"]')?.disabled === false);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     await page.screenshot({ path: path.join(artifacts, `guest-entry-${width}-${theme}.png`), fullPage: true });
+    await joinButton.click();
+    assert.equal(await page.evaluate(() => window.joinName), "Гость");
 
     await page.evaluate((state) => window.setGuestState(state), {
       ...baseState,

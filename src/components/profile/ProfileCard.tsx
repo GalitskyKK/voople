@@ -3,8 +3,7 @@ import { ProfileBadges } from "./ProfileBadges";
 import { ProfileCardView } from "./ProfileCardView";
 import { ProfileReactions } from "./ProfileReactions";
 import { ProfileEditSheet } from "./ProfileEditSheet";
-import { ProfileFollowButton } from "./ProfileFollowButton";
-import { ProfileMessageButton } from "./ProfileMessageButton";
+import { ProfileRelationshipActions } from "./ProfileRelationshipActions";
 import { ProfileStatusSection } from "./ProfileStatusSection";
 import { ProfileShareCardButton } from "./ProfileShareCardButton";
 
@@ -26,11 +25,12 @@ export function ProfileCard({
       profile={profile}
       badges={<ProfileBadges userId={profile.id} compact className="mt-0 min-w-0 flex-nowrap overflow-hidden" />}
       relationshipActions={
-        isOwner || !canFollow ? undefined : (
-          <>
-            <ProfileFollowButton username={profile.username} canFollow={canFollow} />
-            <ProfileMessageButton username={profile.username} size="sm" />
-          </>
+        isOwner ? undefined : (
+          <ProfileRelationshipActions
+            userId={profile.id}
+            username={profile.username}
+            canFollow={canFollow}
+          />
         )
       }
       status={

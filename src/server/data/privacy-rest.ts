@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getAdminClient } from "@/lib/supabase/admin";
+import { filterUnblockedUserIdsRest } from "@/server/data/user-blocks-rest";
 import type { PrivacyScope, UserPrivacySettingsView } from "@/types/privacy";
 
 export type PrivacyScopeField = keyof Pick<
@@ -110,8 +111,11 @@ export async function filterUserIdsByPrivacyFieldRest(
   field: PrivacyScopeField,
 ) {
   const uniqueIds = [...new Set(ownerIds)];
-  const settings = await getPrivacySettingsByUserIdsRest(uniqueIds);
-  const decisions = await Promise.all(uniqueIds.map(async (ownerId) => ({
+  const eligibleIds = viewerId
+    ? await filterUnblockedUserIdsRest(viewerId, uniqueIds)
+    : uniqueIds;
+  const settings = await getPrivacySettingsByUserIdsRest(eligibleIds);
+  const decisions = await Promise.all(eligibleIds.map(async (ownerId) => ({
     ownerId,
     allowed: await canViewPrivateFieldRest(
       ownerId,
@@ -122,10 +126,16 @@ export async function filterUserIdsByPrivacyFieldRest(
   return decisions.filter((decision) => decision.allowed).map((decision) => decision.ownerId);
 }
 
-export async function filterRecommendationEligibleUserIdsRest(userIds: string[]) {
+export async function filterRecommendationEligibleUserIdsRest(
+  userIds: string[],
+  viewerId?: string | null,
+) {
   const uniqueIds = [...new Set(userIds)];
-  const settings = await getPrivacySettingsByUserIdsRest(uniqueIds);
-  return uniqueIds.filter((userId) => settings.get(userId)?.appearInRecommendations !== false);
+  const eligibleIds = viewerId
+    ? await filterUnblockedUserIdsRest(viewerId, uniqueIds)
+    : uniqueIds;
+  const settings = await getPrivacySettingsByUserIdsRest(eligibleIds);
+  return eligibleIds.filter((userId) => settings.get(userId)?.appearInRecommendations !== false);
 }
 
 export async function listVisibleOnlineUserIdsRest(viewerId: string): Promise<string[]> {
@@ -133,5 +143,8 @@ export async function listVisibleOnlineUserIdsRest(viewerId: string): Promise<st
     p_viewer_id: viewerId,
   });
   if (error) throw new Error(error.message);
-  return (data ?? []).map((row: { user_id: string }) => String(row.user_id));
+  return filterUnblockedUserIdsRest(
+    viewerId,
+    (data ?? []).map((row: { user_id: string }) => String(row.user_id)),
+  );
 }

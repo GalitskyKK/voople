@@ -33,6 +33,7 @@ export async function getTopUsersRest(viewerId?: string | null, limit = 6): Prom
   if (error) throw new Error(error.message);
   const eligibleIds = new Set(await filterRecommendationEligibleUserIdsRest(
     (data ?? []).map((row) => String(row.id)),
+    viewerId,
   ));
   const users = (data ?? [])
     .filter((row) => eligibleIds.has(String(row.id)))

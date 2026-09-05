@@ -14,6 +14,7 @@ import {
   upsertCoreRoomInviteRest,
 } from "@/server/data/core-room-invitations-rest";
 import { filterUserIdsByPrivacyFieldRest } from "@/server/data/privacy-rest";
+import { assertUsersCanInteractRest } from "@/server/data/user-blocks-rest";
 import type {
   CoreRoomInviteCandidate,
   CoreRoomInvitePreview,
@@ -70,6 +71,7 @@ export async function sendCoreRoomInvite(input: {
   if (context.participantIds.includes(input.inviteeId)) {
     throw new Error("Пользователь уже находится в комнате");
   }
+  await assertUsersCanInteractRest(input.inviterId, input.inviteeId);
   const allowedIds = await filterUserIdsByPrivacyFieldRest(
     [input.inviteeId],
     input.inviterId,

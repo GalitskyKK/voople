@@ -16,3 +16,8 @@ export {
   listContactPinsRest as listContactPins,
   toggleContactPinRest as toggleContactPin,
 } from "@/server/data/contact-pins-rest";
+
+export {
+  getUserBlockStateRest as getUserBlockState,
+  setUserBlockRest as setUserBlock,
+} from "@/server/data/user-blocks-rest";

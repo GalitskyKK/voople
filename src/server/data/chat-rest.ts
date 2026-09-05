@@ -9,10 +9,10 @@ import {
 import { mapSubscriptionFields } from "@/server/mappers/profile";
 import type { ChatMessageView, ChatThreadSummary } from "@/types/chat";
 import { assertChatMemberRest } from "@/server/data/chat-access-rest";
+import { assertCanUseDirectChatRest } from "@/server/data/chat-direct-privacy-rest";
 import { loadGroupCommunitySummariesRest } from "@/server/data/chat-community-rest";
 import { getOrCreateDirectChatRest } from "@/server/data/chat-management-rest";
 import { canViewPrivateFieldRest, getUserPrivacySettingsRest } from "@/server/data/privacy-rest";
-import { assertCanOpenDirectChatRest } from "@/server/data/chat-direct-privacy-rest";
 import {
   type ChatMessageContentInputNode,
   type StoredChatMessageContentNode,
@@ -527,7 +527,10 @@ export async function sendMessageRest(input: SendMessageInput) {
   }
   if (trimmed.length > 1000) throw new Error("Максимум 1000 символов");
 
-  await assertChatMemberRest(input.chatId, input.senderId);
+  const membership = await assertChatMemberRest(input.chatId, input.senderId);
+  if (membership.type === "direct") {
+    await assertCanUseDirectChatRest(input.chatId, input.senderId);
+  }
 
   if (input.replyToMessageId) {
     await assertReplyInChat(input.chatId, input.replyToMessageId);
@@ -683,7 +686,6 @@ export async function getDirectChatByUsernameRest(myId: string, username: string
   if (!user) throw new Error("Пользователь не найден");
 
   const otherUserId = user.id as string;
-  await assertCanOpenDirectChatRest(myId, otherUserId);
   const chatId = await getOrCreateDirectChatRest(myId, otherUserId);
   return { chatId };
 }

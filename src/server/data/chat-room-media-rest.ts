@@ -6,6 +6,7 @@ import { z } from "zod";
 import { screenShareQualityForEntitlements } from "@/lib/group-perks";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { getChatMembershipRest } from "@/server/data/chat-access-rest";
+import { assertCanUseDirectChatRest } from "@/server/data/chat-direct-privacy-rest";
 import { getGroupCommunityRest } from "@/server/data/chat-community-rest";
 import { hasActiveSubscriptionRest } from "@/server/data/subscription-rest";
 
@@ -119,6 +120,9 @@ async function issueParticipantMediaToken(input: {
 
 export async function createChatRoomMediaTokenRest(chatId: string, userId: string) {
   const membership = await getChatMembershipRest(chatId, userId);
+  if (membership.type === "direct") {
+    await assertCanUseDirectChatRest(chatId, userId);
+  }
   const screenShareQuality = await resolveRoomScreenShareQuality(
     userId,
     membership.type === "group" ? membership.accessChatId : null,

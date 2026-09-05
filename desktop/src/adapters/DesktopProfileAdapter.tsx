@@ -5,8 +5,7 @@ import { ProfileQuestions } from "@/components/profile/ProfileQuestions";
 import { ProfileBadgesView } from "@/components/profile/ProfileBadgesView";
 import { ProfileCardView } from "@/components/profile/ProfileCardView";
 import { ProfileEditSheet } from "@/components/profile/ProfileEditSheet";
-import { ProfileFollowButton } from "@/components/profile/ProfileFollowButton";
-import { ProfileMessageAction } from "@/components/profile/ProfileMessageAction";
+import { ProfileRelationshipActions } from "@/components/profile/ProfileRelationshipActions";
 import { ProfileReactions } from "@/components/profile/ProfileReactions";
 import { ProfileStatusSection } from "@/components/profile/ProfileStatusSection";
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
@@ -100,17 +99,12 @@ export function DesktopProfileAdapter({
                 }
                 relationshipActions={
                   data.isOwner ? undefined : (
-                    <>
-                      <ProfileFollowButton
-                        username={data.profile.username}
-                        canFollow
-                      />
-                      <ProfileMessageAction
-                        username={data.profile.username}
-                        size="sm"
-                        onNavigate={navigate}
-                      />
-                    </>
+                    <ProfileRelationshipActions
+                      userId={data.profile.id}
+                      username={data.profile.username}
+                      canFollow
+                      onNavigate={navigate}
+                    />
                   )
                 }
                 status={

@@ -3,6 +3,10 @@ import "server-only";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { loadGroupNowUsersRest } from "@/server/data/group-now-rest";
 import { filterUserIdsByPrivacyFieldRest } from "@/server/data/privacy-rest";
+import {
+  assertUsersCanInteractRest,
+  filterUnblockedUserIdsRest,
+} from "@/server/data/user-blocks-rest";
 import type { GroupNowRoom } from "@/types/group-now";
 import type {
   CoreRoomInvitePreview,
@@ -268,12 +272,13 @@ export async function respondToCoreRoomInviteRest(input: {
   const admin = getAdminClient();
   const inviteResult = await admin
     .from("chat_room_invites")
-    .select("id, room_session_id, status, expires_at")
+    .select("id, room_session_id, inviter_id, status, expires_at")
     .eq("id", input.inviteId)
     .eq("invitee_id", input.userId)
     .maybeSingle();
   if (inviteResult.error) throw new Error(inviteResult.error.message);
   if (!inviteResult.data) throw new Error("Приглашение недоступно");
+  await assertUsersCanInteractRest(input.userId, String(inviteResult.data.inviter_id));
   const currentStatus = inviteStatus(inviteResult.data.status);
   if (currentStatus === input.response) return { status: currentStatus };
   if (currentStatus !== "pending") throw new Error("На приглашение уже ответили");
@@ -367,10 +372,15 @@ export async function listCoreRoomInvitePreviewsRest(
   const currentMembers = new Set((memberResult.data ?? []).map((member) => `${member.chat_id}:${member.user_id}`));
   const visibleIds = new Set(await filterUserIdsByPrivacyFieldRest(participantIds, userId, "roomsScope"));
   const inviterIds = invites.map((invite) => String(invite.inviter_id));
-  const users = await loadGroupNowUsersRest([...new Set([...visibleIds, ...inviterIds])]);
+  const visibleInviterIds = new Set(await filterUnblockedUserIdsRest(userId, inviterIds));
+  const users = await loadGroupNowUsersRest([
+    ...new Set([...visibleIds, ...visibleInviterIds]),
+  ]);
   const now = Date.now();
 
   return new Map(invites.map((invite) => {
+    const inviterId = String(invite.inviter_id);
+    const canInteractWithInviter = visibleInviterIds.has(inviterId);
     const session = sessions.get(String(invite.room_session_id));
     const roomRecord = session?.room_id ? rooms.get(String(session.room_id)) : null;
     const active = Boolean(
@@ -384,7 +394,7 @@ export async function listCoreRoomInvitePreviewsRest(
       && (new Date(invite.expires_at).getTime() <= now || !active)
       ? "expired"
       : storedStatus;
-    const available = active && status === "pending";
+    const available = canInteractWithInviter && active && status === "pending";
     let room: GroupNowRoom | null = null;
     if (available && roomRecord && session) {
       const participants = (participantResult.data ?? []).flatMap((participant) => {
@@ -417,11 +427,11 @@ export async function listCoreRoomInvitePreviewsRest(
     }
     return [String(invite.id), {
       id: String(invite.id),
-      status,
+      status: canInteractWithInviter || status !== "pending" ? status : "cancelled",
       expiresAt: String(invite.expires_at),
       groupId: available ? String(invite.chat_id) : null,
       groupName: null,
-      inviter: users.get(String(invite.inviter_id)) ?? null,
+      inviter: canInteractWithInviter ? users.get(inviterId) ?? null : null,
       room,
     } satisfies CoreRoomInvitePreview] as const;
   }));

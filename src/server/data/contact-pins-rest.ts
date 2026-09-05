@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getAdminClient } from "@/lib/supabase/admin";
+import { assertUsersCanInteractRest } from "@/server/data/user-blocks-rest";
 
 export async function listContactPinsRest(userId: string) {
   const { data, error } = await getAdminClient()
@@ -13,6 +14,7 @@ export async function listContactPinsRest(userId: string) {
 }
 
 export async function toggleContactPinRest(userId: string, pinnedUserId: string) {
+  await assertUsersCanInteractRest(userId, pinnedUserId);
   const { data, error } = await getAdminClient().rpc("toggle_user_contact_pin", {
     p_user_id: userId,
     p_pinned_user_id: pinnedUserId,

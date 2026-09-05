@@ -4,6 +4,7 @@ import { createHash, randomBytes } from "node:crypto";
 
 import { getAdminClient } from "@/lib/supabase/admin";
 import { getChatMembershipRest } from "@/server/data/chat-access-rest";
+import { assertCanUseDirectChatRest } from "@/server/data/chat-direct-privacy-rest";
 import {
   acceptGroupVanityInviteRest,
   previewGroupVanityInviteRest,
@@ -393,6 +394,9 @@ export async function getChatRoomRest(chatId: string, userId: string): Promise<C
 
 export async function enterChatRoomRest(chatId: string, userId: string, micMuted: boolean) {
   const membership = await getMembership(chatId, userId);
+  if (membership.type === "direct") {
+    await assertCanUseDirectChatRest(chatId, userId);
+  }
   await assertNoOtherActiveRoom(chatId, userId);
   const current = await getChatRoomRest(chatId, userId);
   const admin = getAdminClient();

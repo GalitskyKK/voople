@@ -25,6 +25,9 @@ test("core Room invitations are session-bound, private and idempotent", async ()
   assert.match(service, /cancelCoreRoomInvite[\s\S]+requireRootGroupMember\(groupId, input\.inviterId\)/);
   assert.match(service, /listCoreRoomInvitePreviews[\s\S]+requireRootGroupMember\(groupId, userId\)/);
   assert.match(service, /filterUserIdsByPrivacyFieldRest[\s\S]+"inviteScope"/);
+  assert.match(service, /sendCoreRoomInvite[\s\S]+assertUsersCanInteractRest/);
+  assert.match(data, /respondToCoreRoomInviteRest[\s\S]+assertUsersCanInteractRest/);
+  assert.match(data, /filterUnblockedUserIdsRest\(userId, inviterIds\)/);
   assert.match(router, /rateLimits\.inviteToChatRoom/);
   assert.match(router, /name: "room_invite_sent"/);
   assert.doesNotMatch(router, /properties: \{[^}]*inviteeId/);

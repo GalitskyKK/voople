@@ -11,8 +11,7 @@ import type { ProfileViewModel } from "@/types/domain";
 import { DisplayNameWithPin } from "./DisplayNameWithPin";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ProfileEditSheet } from "./ProfileEditSheet";
-import { ProfileFollowButton } from "./ProfileFollowButton";
-import { ProfileMessageButton } from "./ProfileMessageButton";
+import { ProfileRelationshipActions } from "./ProfileRelationshipActions";
 
 type StickyProfileHeaderProps = {
   visible: boolean;
@@ -50,10 +49,12 @@ export function StickyProfileHeader({
       {isOwner ? (
         <ProfileEditSheet profile={profile} />
       ) : (
-        <>
-          <ProfileFollowButton username={username} canFollow={canFollow} layout="compact" />
-          <ProfileMessageButton username={username} size="sm" />
-        </>
+        <ProfileRelationshipActions
+          userId={profile.id}
+          username={username}
+          canFollow={canFollow}
+          layout="compact"
+        />
       )}
     </div>
   );

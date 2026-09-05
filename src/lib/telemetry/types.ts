@@ -45,6 +45,7 @@ export const PRODUCT_EVENT_NAMES = [
   "interest_added",
   "interest_removed",
   "privacy_updated",
+  "user_block_updated",
   "mini_profile_opened",
   "cosmetic_previewed",
   "cosmetic_equipped",

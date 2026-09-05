@@ -10,6 +10,7 @@ import {
 } from "@/server/mappers/user-search";
 import type { UserSearchHit } from "@/types/search";
 import { filterUserIdsByPrivacyFieldRest } from "@/server/data/privacy-rest";
+import { assertCanOpenDirectChatRest } from "@/server/data/chat-direct-privacy-rest";
 
 const USER_CARD_SELECT =
   "id, username, display_name, bio, subscriptions (started_at, expires_at), profile_customization (avatar_type, avatar_data, animated_avatar_id)";
@@ -357,6 +358,7 @@ export async function getOrCreateDirectChatRest(myId: string, otherUserId: strin
   if (myId === otherUserId) {
     throw new Error("Нельзя написать самому себе");
   }
+  await assertCanOpenDirectChatRest(myId, otherUserId);
 
   const admin = getAdminClient();
   const { data, error } = await admin.rpc("get_or_create_direct_chat", {

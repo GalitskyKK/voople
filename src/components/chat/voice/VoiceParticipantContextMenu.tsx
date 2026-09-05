@@ -37,7 +37,9 @@ export function VoiceParticipantContextMenu({
     >
       <div className="border-b border-[var(--app-border)] px-2 py-2" role="none">
         <p className="truncate text-sm font-semibold">{participant.displayName}</p>
-        <p className="truncate text-xs text-[var(--app-muted)]">@{participant.username}</p>
+        <p className="truncate text-xs text-[var(--app-muted)]">
+          {participant.guest ? "Гость этой комнаты" : `@${participant.username}`}
+        </p>
       </div>
       <label className="block px-2 py-2.5 text-xs text-[var(--app-muted)]" role="none">
         <span className="mb-2 flex items-center justify-between gap-3">

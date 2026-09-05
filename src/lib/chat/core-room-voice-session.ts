@@ -28,6 +28,7 @@ export function buildCoreRoomVoiceView(
       avatarRingId: null,
       micMuted: participant.micMuted ?? true,
       isMe: participant.isMe,
+      ...(participant.guest ? { guest: true } : {}),
     })),
     isInside: groupNow.currentUserRoomId === room.id,
   };

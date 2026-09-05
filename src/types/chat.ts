@@ -300,6 +300,7 @@ export type ChatRoomParticipantView = {
   avatarRingId: string | null;
   micMuted: boolean;
   isMe: boolean;
+  guest?: boolean;
 };
 
 export type ChatRoomView = {

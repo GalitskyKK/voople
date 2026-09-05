@@ -28,6 +28,14 @@ export type GroupNowSnapshotRest = {
     cameraEnabled: boolean;
     screenSharing: boolean;
   }>;
+  guests: Array<{
+    sessionId: string;
+    guestId: string;
+    displayName: string;
+    micMuted: boolean;
+    cameraEnabled: boolean;
+    screenSharing: boolean;
+  }>;
   memberIds: string[];
 };
 
@@ -93,6 +101,21 @@ export async function loadGroupNowSnapshotRest(
         .order("joined_at", { ascending: true })
     : { data: [], error: null };
   if (participantsResult.error) throw new Error(participantsResult.error.message);
+  const guestsResult = sessionIds.length
+    ? await admin
+        .from("live_session_guests")
+        .select("id, live_session_id, display_name, mic_muted, camera_enabled, screen_sharing, joined_at")
+        .in("live_session_id", sessionIds)
+        .is("left_at", null)
+        .is("converted_at", null)
+        .gt("access_expires_at", new Date().toISOString())
+        .gt("last_seen_at", new Date(Date.now() - 60_000).toISOString())
+        .order("joined_at", { ascending: true })
+    : { data: [], error: null };
+  if (guestsResult.error && guestsResult.error.code !== "42P01" && guestsResult.error.code !== "PGRST205") {
+    throw new Error(guestsResult.error.message);
+  }
+  const guestRows = guestsResult.error ? [] : guestsResult.data ?? [];
 
   return {
     rooms: (roomsResult.data ?? []).map((row) => ({
@@ -105,6 +128,14 @@ export async function loadGroupNowSnapshotRest(
     participants: (participantsResult.data ?? []).map((row) => ({
       sessionId: String(row.session_id),
       userId: String(row.user_id),
+      micMuted: row.mic_muted === true,
+      cameraEnabled: row.camera_enabled === true,
+      screenSharing: row.screen_sharing === true,
+    })),
+    guests: guestRows.map((row) => ({
+      sessionId: String(row.live_session_id),
+      guestId: String(row.id),
+      displayName: String(row.display_name),
       micMuted: row.mic_muted === true,
       cameraEnabled: row.camera_enabled === true,
       screenSharing: row.screen_sharing === true,

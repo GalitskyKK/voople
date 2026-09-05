@@ -26,7 +26,7 @@ export function GroupNowParticipant({
     </>
   );
 
-  if (!onOpenProfile) {
+  if (!onOpenProfile || user.guest) {
     return <span className="inline-flex min-w-0 items-center gap-2">{content}</span>;
   }
 

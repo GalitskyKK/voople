@@ -6,6 +6,7 @@ export type GroupNowUser = {
   username: string;
   displayName: string;
   avatarUrl: string | null;
+  guest?: boolean;
 };
 
 export type GroupNowParticipant = GroupNowUser & {

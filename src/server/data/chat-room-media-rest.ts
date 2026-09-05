@@ -157,6 +157,49 @@ export async function createGroupRoomMediaTokenRest(
   });
 }
 
+export async function issueRoomGuestMediaTokenRest(input: {
+  guestId: string;
+  providerSessionId: string;
+  displayName: string;
+}) {
+  const endpoints = getLiveKitEndpoints();
+  const apiKey = process.env.LIVEKIT_API_KEY?.trim();
+  const apiSecret = process.env.LIVEKIT_API_SECRET?.trim();
+  if (!endpoints.length || !apiKey || !apiSecret) {
+    return {
+      enabled: false as const,
+      screenShareQuality: "standard" as const,
+      expiresAt: null,
+      refreshAfter: null,
+    };
+  }
+
+  const identity = `guest:${input.guestId}`;
+  const token = new AccessToken(apiKey, apiSecret, {
+    identity,
+    name: input.displayName,
+    ttl: "10m",
+    metadata: JSON.stringify({ kind: "room-guest" }),
+    attributes: { "voople.kind": "room-guest" },
+  });
+  token.addGrant({
+    roomJoin: true,
+    room: `live-${input.providerSessionId}`,
+    canPublish: true,
+    canSubscribe: true,
+    canPublishData: false,
+    canPublishSources: [TrackSource.MICROPHONE],
+  });
+  return {
+    enabled: true as const,
+    url: endpoints[0]!.url,
+    endpoints,
+    token: await token.toJwt(),
+    screenShareQuality: "standard" as const,
+    ...createMediaLease(CORE_MEDIA_REFRESH_AFTER_MS, CORE_MEDIA_LEASE_MS),
+  };
+}
+
 async function resolveGroupRoomMediaContext(
   sessionId: string,
   userId: string,

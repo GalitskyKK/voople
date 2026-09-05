@@ -94,6 +94,8 @@ export {
   sendCoreRoomInvite,
 } from "@/server/services/core-room-invitations.service";
 
+export { createRoomGuestInvite } from "@/server/services/room-guests.service";
+
 export {
   getGroupCommunityRest as getGroupCommunity,
   setUserGroupProfileTagRest as setUserGroupProfileTag,

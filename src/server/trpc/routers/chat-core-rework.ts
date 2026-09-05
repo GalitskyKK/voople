@@ -10,6 +10,7 @@ import {
   createGroupRoomMediaToken,
   createGroupRoomScreenAudioToken,
   createGroupRoom,
+  createRoomGuestInvite,
   getCoreRoomInvitePreview,
   getGroupNow,
   heartbeatGroupRoom,
@@ -193,6 +194,21 @@ export const chatCoreReworkProcedures = {
         return await listCoreRoomInviteCandidates(input.sessionId, ctx.user.id);
       } catch (error) {
         throw toRoomError(error, "Не удалось загрузить участников для приглашения");
+      }
+    }),
+
+  coreCreateRoomGuestInvite: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
+      try {
+        return await createRoomGuestInvite({
+          sessionId: input.sessionId,
+          userId: ctx.user.id,
+        });
+      } catch (error) {
+        throw toRoomError(error, "Не удалось создать гостевую ссылку");
       }
     }),
 

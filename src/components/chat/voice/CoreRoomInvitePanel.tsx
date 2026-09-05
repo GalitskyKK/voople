@@ -1,12 +1,13 @@
 "use client";
 
-import { LoaderCircle, Search } from "lucide-react";
+import { Link2, LoaderCircle, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { CoreRoomInviteCandidateRow } from "./CoreRoomInviteCandidateRow";
 import { useBrowserOnline } from "@/hooks/useBrowserOnline";
 import { useVisibleClock } from "@/hooks/useVisibleClock";
 import { Button } from "@/components/ui/Button";
+import { ShareButton } from "@/components/ui/ShareButton";
 import { trpc } from "@/lib/trpc/client";
 
 export function CoreRoomInvitePanel({
@@ -29,6 +30,7 @@ export function CoreRoomInvitePanel({
   const refreshCandidates = () => utils.chat.coreRoomInviteCandidates.invalidate({ sessionId });
   const send = trpc.chat.coreSendRoomInvite.useMutation({ onSuccess: refreshCandidates });
   const cancel = trpc.chat.coreCancelRoomInvite.useMutation({ onSuccess: refreshCandidates });
+  const createGuest = trpc.chat.coreCreateRoomGuestInvite.useMutation();
   const visible = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("ru-RU");
     if (!normalized) return candidates.data ?? [];
@@ -68,6 +70,46 @@ export function CoreRoomInvitePanel({
         <p className="mt-1 text-sm leading-6 text-[var(--app-muted)]">
           Приглашение действует 15 минут и ведёт именно в текущую сессию.
         </p>
+      </div>
+      <div className="mt-5 border-y border-[var(--app-border)] py-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium">Позвать без аккаунта</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--app-muted)]">
+              Гость попадёт только в эту комнату и не станет участником группы.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={!enabled || !online || createGuest.isPending}
+            onClick={() => createGuest.mutate({ sessionId })}
+          >
+            {createGuest.isPending
+              ? <LoaderCircle className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+              : <Link2 className="h-4 w-4" aria-hidden="true" />}
+            Создать ссылку
+          </Button>
+        </div>
+        {createGuest.data ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <ShareButton
+              url={createGuest.data.shareUrl}
+              mode="copy"
+              label="Скопировать"
+              title="Войти в комнату Voople"
+            />
+            <ShareButton
+              url={createGuest.data.shareUrl}
+              label="Поделиться"
+              title="Войти в комнату Voople"
+            />
+            <span className="self-center text-xs text-[var(--app-muted)]">Действует 15 минут</span>
+          </div>
+        ) : null}
+        {createGuest.error ? (
+          <p className="mt-3 text-sm text-red-400" role="alert">{createGuest.error.message}</p>
+        ) : null}
       </div>
       <label className="mt-5 flex items-center gap-2 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 focus-within:border-[var(--theme-accent)]">
         <Search className="h-4 w-4 text-[var(--app-muted)]" aria-hidden="true" />

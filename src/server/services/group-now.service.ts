@@ -62,7 +62,19 @@ export async function getGroupNow(
         cameraEnabled: participant.cameraEnabled,
         screenSharing: participant.screenSharing,
       }];
-    }),
+    }).concat(snapshot.guests.map((guest) => ({
+      sessionId: guest.sessionId,
+      user: {
+        id: `guest:${guest.guestId}`,
+        username: "guest",
+        displayName: guest.displayName,
+        avatarUrl: null,
+        guest: true,
+      },
+      micMuted: guest.micMuted,
+      cameraEnabled: guest.cameraEnabled,
+      screenSharing: guest.screenSharing,
+    }))),
     legacyPresence: legacyUserIds.flatMap((userId) => {
       const room = legacyPresence.get(userId);
       const user = users.get(userId);

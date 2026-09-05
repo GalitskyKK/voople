@@ -129,7 +129,7 @@ export function VoiceParticipantCard({
           {participant.isMe ? " · вы" : ""}
         </p>
         <p className={cn("truncate text-xs", hasCamera ? "text-white/70" : "text-[var(--app-muted)]")}>
-          {speaking ? "говорит" : `@${participant.username}`}
+          {speaking ? "говорит" : participant.guest ? "гость" : `@${participant.username}`}
         </p>
       </div>
       {muted ? (

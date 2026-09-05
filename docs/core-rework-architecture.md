@@ -95,6 +95,30 @@ The read model remains an internal server contract until the capability-gated
 shell has complete loading, empty, error, offline and responsive states. It is
 not exposed by a public procedure merely because the tables and mapper exist.
 
+## Room guest boundary
+
+A guest is an ephemeral participant of one concrete LiveSession, not a User or
+a Group member. `live_session_guests` therefore remains separate from `users`,
+`chat_members` and registered `live_session_participants`. A guest link grants
+only the ability to preview and join its exact active Room before expiry; it
+never grants Group history, sections, member presence outside that Room or a
+reusable account session.
+
+Invite and access credentials are generated server-side. Only SHA-256 hashes
+are persisted, while the browser receives the access credential exclusively in
+an HttpOnly, same-site cookie scoped to the guest API. A server HMAC derives the
+same access credential from the invite plus a client request UUID, allowing a
+lost join response to be retried without storing a raw token or creating a
+second guest. The database serializes the invite, binds the request UUID to one
+invite, applies capacity atomically and rejects an idempotency conflict.
+
+Guest media identity is namespaced as `guest:<uuid>` and may subscribe plus
+publish microphone audio only. Camera, screen share, data publication and Room
+management remain unavailable until separately designed and authorized. A
+heartbeat drives presence; explicit leave ends it immediately and readers drop
+stale heartbeats after 60 seconds. Conversion to an account must be an explicit
+future operation and must not retroactively expose Group data.
+
 The mutation boundary is also server-owned. Release migration 60 provides
 service-role-only RPCs for create, pin, archive, join, switch, leave and media
 heartbeats. Join/switch serializes both the actor and target Room in one
@@ -160,7 +184,8 @@ notifications and recovery are never hidden.
    tests.
 4. Shared shell: compact navigation, Global Now and Group Now behind an internal
    flag.
-5. Room and messenger integration, followed by the staged rollout above.
+5. Room and messenger integration, including the constrained guest boundary,
+   followed by the staged rollout above.
 
 No schema-only slice is called product-complete. The delivery matrix remains the
 gate for authorization, states, web/desktop parity, responsive behaviour and

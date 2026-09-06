@@ -124,7 +124,7 @@ Transport/media были заглушены: real DB, authorization, native desk
 | 51 | Room compact and minimal states | Готово в коде · P1 UX | Shared web/desktop controller передаёт в dock текущего спикера и локальные capture states. Compact 52 px сохраняет название Room, число участников, speaking/connection state и persistent mic/camera/share indicators с доступными именами; minimal остаётся одной безопасной pill-поверхностью, но больше не теряет Room, participant count и active-media state. Source/unit, architecture, lint и TypeScript gates зелёные. До полного `Готово` остаются authenticated 360/390/1024/1440, обе темы, Windows scale 125/150%, keyboard/screen-reader и реальный multi-participant speaking/capture visual gate |
 | 52 | Saved Messages | Планирование · P1 | Owner-only data contract, полнотекстовый поиск, вложения, edit/delete, offline/retry, retention/export и parity; не моделировать через фиктивного собеседника |
 | 53 | Room-context messages | Планирование · P1 core | Сообщения остаются в Group Chat; Room side panel является access-aware фильтром по immutable Room/LiveSession context snapshot, а не вторым history lifecycle |
-| 54 | Full Room invitations | Частично · P0 Room | Migration 58 переиспользована как service-role-only session-bound store. Только актуальный участник точной core Room получает privacy- и block-filtered список участников группы и отправляет идемпотентный 15-minute invite под отдельным rate limit. Shared Room sheet web/desktop показывает поиск, loading/empty/error/retry и server-owned pending/accepted/declined/expired/cancelled status; pending invite можно атомарно и идемпотентно отменить только его отправителю из той же активной session. Notification и отдельный noindex authenticated `/room-invites/[inviteId]` preview повторно проверяют exact invitee, root membership, session, group/Room consistency, `roomsScope` и блокировку в обе стороны; заблокированный отправитель, закрытая, завершённая, expired или недоступная Room не раскрываются. Web и desktop используют один preview и общий cross-context confirmation + token/media handoff, а `accepted` сервер разрешает только после фактического join. Copy/share использует server-owned URL. Desktop регистрирует только `voople` protocol, принимает только точный Room-invite UUID без query/fragment, сохраняет последний адрес до завершения auth и открывает тот же preview без auto-accept. Release workflow устанавливает exact NSIS RC и fail-closed проверяет registry command, cold/warm replacement, unsafe query rejection, single-instance restore, renderer continuation и uninstall; provenance обязателен для stable promotion. Недоступный preview позволяет сменить аккаунт без раскрытия причины: web использует валидированный внутренний login redirect, desktop восстанавливает точный pending path только после успешного sign-out, а общий View показывает pending/error/retry. Остались реальный CI result installed-app gate, Authenticode certificate evidence, production migration evidence и multi-user responsive visual/E2E |
+| 54 | Full Room invitations | Частично · P0 Room | Migration 58 переиспользована как service-role-only session-bound store. Только актуальный участник точной core Room получает privacy- и block-filtered список участников группы и отправляет идемпотентный 15-minute invite под отдельным rate limit. Shared Room sheet web/desktop показывает поиск, loading/empty/error/retry и server-owned pending/accepted/declined/expired/cancelled status; pending invite можно атомарно и идемпотентно отменить только его отправителю из той же активной session. Notification и отдельный noindex authenticated `/room-invites/[inviteId]` preview повторно проверяют exact invitee, root membership, session, group/Room consistency, `roomsScope` и блокировку в обе стороны; заблокированный отправитель, закрытая, завершённая, expired или недоступная Room не раскрываются. Web и desktop используют один preview и общий cross-context confirmation + token/media handoff, а `accepted` сервер разрешает только после фактического join. Copy/share использует server-owned URL. Desktop регистрирует только `voople` protocol, принимает только точный Room-invite UUID без query/fragment, сохраняет последний адрес до завершения auth и открывает тот же preview без auto-accept. Release workflow устанавливает exact NSIS RC и fail-closed проверяет registry command, cold/warm replacement, unsafe query rejection, single-instance restore, renderer continuation и uninstall; provenance обязателен для stable promotion. Недоступный preview позволяет сменить аккаунт без раскрытия причины: web использует валидированный внутренний login redirect, desktop восстанавливает точный pending path только после успешного sign-out, а общий View показывает pending/error/retry. 221 source/unit tests, architecture, lint, web/desktop TypeScript, обе production-сборки и 360/1280 Void/Light visual gate зелёные. Остались реальный CI result installed-app gate, Authenticode certificate evidence, production migration evidence и multi-user authenticated E2E |
 | 55 | Direct Room expansion | Планирование · P1 Room | Явный consent и создание group conversation без переноса private DM history; роли, leave/rejoin и audit event |
 | 56 | Share to messages | Планирование · P1 | Typed access-aware preview для posts/profiles/events/Rooms/messages, unavailable state, optional comment, multi-recipient и idempotency |
 | 57 | Conversation attachments library | Планирование · P1 | Paginated Media/Files/Links/Audio query с membership/section authorization, safe preview/download и responsive states |
@@ -230,9 +230,36 @@ onboarding error/retry, отсутствие redirect и отклонение о
 Next navigation и auth/профиль API в probe заменены заглушками: это не проверка
 Supabase, реального письма или server-rendered redirect. Проверен возврат через
 исходную вкладку регистрации; отдельная вкладка из письма не получает этот
-контекст автоматически. Desktop OS deep links и хранение pending invite в
-desktop session router ещё не реализованы. Пункты 47/54/61 остаются частичными;
-guest entry, миграции, release flags и production не менялись.
+контекст автоматически. Desktop OS deep links, pending invite и guest entry
+закрывались последующими P0-срезами и отражены в пунктах 54 и 61–63. В рамках
+этого исторического web-среза миграции, release flags и production не менялись.
+
+### Смена аккаунта для Room invite — 2026-09-06
+
+В недоступном authenticated preview добавлено явное действие «Войти в другой
+аккаунт». Причина остаётся общей для wrong-account, отозванного, истёкшего,
+заблокированного и иного недоступного приглашения: клиент не получает новый
+privacy oracle. Общий controller/View владеет pending и безопасным error/retry;
+текст ошибки провайдера пользователю не показывается.
+
+Web выполняет sign-out и только после успеха заменяет маршрут на login с тем же
+валидированным внутренним invite path. Desktop также сначала завершает sign-out,
+затем восстанавливает exact pending path в остающемся смонтированным session
+router. При ошибке выхода текущий preview и возможность повтора сохраняются.
+Повторный вход снова открывает protected preview и не принимает приглашение
+автоматически.
+
+Локально прошли 221 source/unit tests, architecture, lint, web/desktop TypeScript
+и обе production-сборки. Расширенный `verify-room-invite-preview.mjs` проверяет
+реальный общий компонент на 360/1280 px в Void/Light: pending и error смены
+аккаунта, отсутствие horizontal overflow и private error copy, а также прежние
+loading/offline/retry/expiry/status/keyboard состояния. Impeccable detector не
+нашёл нарушений; скриншоты pending/error просмотрены вручную.
+
+Supabase auth, установленный NSIS protocol, реальный второй аккаунт и повторное
+получение invite с сервера в probe заменены контролируемыми boundary mocks. Это
+не заменяет authenticated multi-user E2E, Windows RC/Authenticode и production
+migration evidence. Миграции и production в этом срезе не применялись.
 
 ## Cross-platform architecture gate
 

@@ -24,7 +24,9 @@ const entry = `import {StrictMode} from 'react';import {createRoot} from 'react-
   import {CoreRoomInvitePreview} from '@/components/chat/voice/CoreRoomInvitePreview';
   import {AppThemeProvider,useAppTheme} from '@/components/theme/AppThemeProvider';
   function ThemeControl(){const theme=useAppTheme();window.changeTheme=theme.setThemeId;return null}
-  window.retries=0;window.joins=0;createRoot(document.getElementById('root')).render(<StrictMode><AppThemeProvider><ThemeControl/><CoreRoomInvitePreview inviteId="10000000-0000-4000-8000-000000000001"/></AppThemeProvider></StrictMode>);`;
+  window.retries=0;window.joins=0;window.switches=0;window.switchShouldFail=false;
+  const switchAccount=async()=>{window.switches++;if(window.switchShouldFail)throw new Error('private sign-out details');await new Promise(resolve=>{window.resolveSwitch=resolve})};
+  createRoot(document.getElementById('root')).render(<StrictMode><AppThemeProvider><ThemeControl/><CoreRoomInvitePreview inviteId="10000000-0000-4000-8000-000000000001" onSwitchAccount={switchAccount}/></AppThemeProvider></StrictMode>);`;
 const bundle=await build({stdin:{contents:entry,resolveDir:repo,loader:'tsx'},bundle:true,write:false,format:'iife',jsx:'automatic',alias:{'@':`${repo}/src`},define:{'process.env.NODE_ENV':'"development"'},plugins:[{name:'isolated-transports',setup(builder){builder.onResolve({filter:/.*/},args=>mocks[args.path]?{path:args.path,namespace:'mock'}:undefined);builder.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:mocks[args.path],loader:'tsx',resolveDir:repo}));}}]});
 const cssRoot=path.join(repo,'desktop/dist/assets');
 const cssFiles=(await readdir(cssRoot,{recursive:true})).filter(file=>file.endsWith('.css'));
@@ -60,6 +62,19 @@ try{
     await page.getByRole('button',{name:'Повторить',exact:true}).click();assert.equal(await page.evaluate(()=>window.retries),1);
     await set({data:null,isPending:false,fetchStatus:'idle'});
     await page.getByText('Приглашение недоступно',{exact:true}).waitFor();
+    const switchAccount=page.getByRole('button',{name:'Войти в другой аккаунт',exact:true});
+    await switchAccount.click();
+    await page.getByRole('button',{name:'Выходим из аккаунта…',exact:true}).waitFor();
+    assert.equal(await page.evaluate(()=>window.switches),1);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await page.screenshot({path:path.join(artifacts, `account-switch-pending-${width}-${theme}.png`)});
+    await page.evaluate(()=>window.resolveSwitch());
+    await switchAccount.waitFor();
+    await page.evaluate(()=>{window.switchShouldFail=true});
+    await switchAccount.click();
+    await page.getByRole('alert').waitFor();
+    assert.equal(await page.getByText('private sign-out details',{exact:true}).count(),0);
+    await page.screenshot({path:path.join(artifacts, `account-switch-error-${width}-${theme}.png`)});
     await set({data:invite,isPending:false,fetchStatus:'idle'});await join.waitFor();
     await page.clock.fastForward(15*60*1000+1000);
     await page.getByText('Приглашение истекло',{exact:true}).waitFor();assert.equal(await join.count(),0);
@@ -71,7 +86,7 @@ try{
     await page.getByRole('link',{name:'К уведомлениям'}).focus();
     assert.equal(await page.getByRole('link',{name:'К уведомлениям'}).evaluate(el=>el===document.activeElement),true);
     assert.deepEqual(errors,[]);
-    console.log(`PASS ${width}px ${theme}: loading, long names, join delegation, offline/recovery, error/retry, unavailable, expiry, decline/cancel, keyboard; no page errors`);
+    console.log(`PASS ${width}px ${theme}: loading, long names, join delegation, offline/recovery, error/retry, unavailable account switch, expiry, decline/cancel, keyboard; no page errors`);
     await page.close();
   }
 }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}

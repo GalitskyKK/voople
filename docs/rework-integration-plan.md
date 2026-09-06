@@ -94,8 +94,12 @@ promotion. Недоступный authenticated preview предлагает б�
 аккаунт: web возвращает на login с валидированным внутренним redirect, desktop
 сохраняет точный invite path только после успешного sign-out; ошибка выхода не
 теряет текущую сессию и допускает повтор. До интеграции нужны зелёный Windows RC
-result и Authenticode certificate evidence. Отдельно остаётся контекст
-приглашения при подтверждении почты в новой вкладке. После этого — P1.
+result и Authenticode certificate evidence. Web и desktop registration теперь
+передают только валидированный continuation в общий `/auth/confirm`: callback
+однократно обменивает PKCE code, синхронизирует профиль и возвращает в
+onboarding/invite даже из новой вкладки; ошибка имеет безопасный retry/login.
+Перед интеграцией production и preview callback URL нужно разрешить в Supabase
+Auth Redirect URLs и проверить живое письмо в том же браузере. После этого — P1.
 Живая проверка доступа и перехода в Room остаётся отдельным требованием
 стенда. Нельзя считать гостевой сценарий готовым по одному preview.
 

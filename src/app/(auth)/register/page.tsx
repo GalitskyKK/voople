@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { WebAuthContinuationLink } from "@/components/auth/WebAuthContinuationLink";
-import { authEntryHref, onboardingHref, safeAuthContinuation } from "@/lib/auth/continuation";
+import {
+  authEntryHref,
+  emailConfirmationRedirect,
+  onboardingHref,
+  safeAuthContinuation,
+} from "@/lib/auth/continuation";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -57,6 +62,7 @@ export default function RegisterPage() {
       password: data.password,
       options: {
         captchaToken: captchaToken ?? undefined,
+        emailRedirectTo: emailConfirmationRedirect(window.location.origin, redirectAfter),
         data: {
           username: data.username,
           privacy_accepted_at: acceptedAt,

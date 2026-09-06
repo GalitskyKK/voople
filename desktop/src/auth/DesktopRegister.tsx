@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 
 import { usernameSchema } from "@/lib/validation/username";
 import { getEmailDeliveryErrorMessage } from "@/lib/auth/email-delivery-error";
+import { emailConfirmationRedirect } from "@/lib/auth/continuation";
 import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/constants/legal";
 import { reportProductEvent } from "@/lib/telemetry/client";
 import { trustCurrentDevice } from "@/lib/auth/trusted-device-client";
@@ -57,6 +58,7 @@ export function DesktopRegister({
       password,
       options: {
         captchaToken: captchaToken ?? undefined,
+        emailRedirectTo: emailConfirmationRedirect(config.apiUrl, continuationPath),
         data: {
           username: parsedUsername.data,
           privacy_accepted_at: acceptedAt,

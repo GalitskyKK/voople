@@ -31,3 +31,14 @@ export function onboardingHref(username: string, requested: unknown) {
   const destination = safeAuthContinuation(requested);
   return `/onboarding?username=${encodeURIComponent(username)}${destination ? `&redirect=${encodeURIComponent(destination)}` : ""}`;
 }
+
+export function emailConfirmationRedirect(origin: string, requested: unknown) {
+  const base = new URL(origin);
+  if (base.protocol !== "https:" && base.protocol !== "http:") {
+    throw new Error("Unsupported email confirmation origin");
+  }
+  const callback = new URL("/auth/confirm", base.origin);
+  const destination = safeAuthContinuation(requested);
+  if (destination) callback.searchParams.set("redirect", destination);
+  return callback.toString();
+}

@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { authEntryHref, onboardingHref, safeAuthContinuation } from "../src/lib/auth/continuation.ts";
+import {
+  authEntryHref,
+  emailConfirmationRedirect,
+  onboardingHref,
+  safeAuthContinuation,
+} from "../src/lib/auth/continuation.ts";
 
 const invite = "/room-invites/11111111-1111-4111-8111-111111111111";
 const target = (href) => new URL(href, "https://voople.example").searchParams.get("redirect");
@@ -39,6 +44,15 @@ test("ordinary internal destinations retain search and hash without external nav
   assert.equal(authEntryHref("/register", null), "/register");
 });
 
+test("email confirmation keeps only a validated continuation on the Voople callback", () => {
+  const callback = new URL(emailConfirmationRedirect("https://voople.ru/some/path", invite));
+  assert.equal(callback.origin, "https://voople.ru");
+  assert.equal(callback.pathname, "/auth/confirm");
+  assert.equal(callback.searchParams.get("redirect"), invite);
+  assert.equal(new URL(emailConfirmationRedirect("https://voople.ru", "//evil.example")).search, "");
+  assert.throws(() => emailConfirmationRedirect("voople://desktop", invite));
+});
+
 test("web auth and onboarding use the same validator and preserve the continuation links", () => {
   const read = (path) => readFileSync(path, "utf8");
   for (const file of ["src/app/(auth)/login/page.tsx", "src/app/(auth)/register/page.tsx", "src/app/onboarding/page.tsx"]) {
@@ -52,4 +66,22 @@ test("web auth and onboarding use the same validator and preserve the continuati
   assert.match(link, /Suspense fallback/);
   assert.match(link, /authEntryHref\(entry, params.get\("redirect"\)\)/);
   assert.doesNotMatch(link, /localStorage|sessionStorage|joinRoom|acceptInvite/);
+});
+
+test("web and desktop registration complete email confirmation through the shared safe callback", () => {
+  const read = (path) => readFileSync(path, "utf8");
+  const webRegister = read("src/app/(auth)/register/page.tsx");
+  const desktopRegister = read("desktop/src/auth/DesktopRegister.tsx");
+  const confirmation = read("src/app/(auth)/auth/confirm/page.tsx");
+  const proxy = read("src/proxy.ts");
+
+  assert.match(webRegister, /emailRedirectTo: emailConfirmationRedirect\(window.location.origin, redirectAfter\)/);
+  assert.match(desktopRegister, /emailRedirectTo: emailConfirmationRedirect\(config.apiUrl, continuationPath\)/);
+  assert.match(confirmation, /auth\.exchangeCodeForSession\(code\)/);
+  assert.match(confirmation, /syncPublicUser\(\)/);
+  assert.match(confirmation, /onboardingHref\(result\.username, redirectAfter\)/);
+  assert.match(confirmation, /safeAuthContinuation\(params\.get\("redirect"\)\)/);
+  assert.match(confirmation, /searchParams\.delete\("code"\)/);
+  assert.doesNotMatch(confirmation, /error\.message|localStorage|sessionStorage|joinRoom|acceptInvite/);
+  assert.match(proxy, /"\/auth"/);
 });

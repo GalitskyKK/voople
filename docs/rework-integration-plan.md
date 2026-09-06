@@ -87,14 +87,15 @@ Desktop OS handler добавлен в рабочий срез: статичес
 принимает только `/room-invites/<uuid>` без query/fragment, single-instance
 передаёт повторный запуск работающему приложению, а pending-маршрут живёт до
 успешной desktop-авторизации. Возврат открывает preview и никогда не принимает
-приглашение автоматически. Локально пройдены Rust compile, TypeScript,
-architecture, unit, lint и desktop renderer build. Следующий рабочий срез
-добавляет installed-NSIS gate: registry contract, cold/warm replacement,
-повторная недоверенная ссылка, single-instance restore, наблюдаемый auth
-continuation и обязательный provenance перед stable promotion. До интеграции
-нужны зелёный Windows RC result, смена аккаунта и Authenticode certificate
-evidence. Отдельно остаётся контекст приглашения при подтверждении почты в
-новой вкладке. После этого — guest entry и P1.
+приглашение автоматически. Installed-NSIS gate проверяет registry contract,
+cold/warm replacement, повторную недоверенную ссылку, single-instance restore,
+наблюдаемый auth continuation, uninstall и обязательный provenance перед stable
+promotion. Недоступный authenticated preview предлагает безопасно сменить
+аккаунт: web возвращает на login с валидированным внутренним redirect, desktop
+сохраняет точный invite path только после успешного sign-out; ошибка выхода не
+теряет текущую сессию и допускает повтор. До интеграции нужны зелёный Windows RC
+result и Authenticode certificate evidence. Отдельно остаётся контекст
+приглашения при подтверждении почты в новой вкладке. После этого — P1.
 Живая проверка доступа и перехода в Room остаётся отдельным требованием
 стенда. Нельзя считать гостевой сценарий готовым по одному preview.
 

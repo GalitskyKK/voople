@@ -138,11 +138,15 @@ test("public group presentation is shared by Next and desktop routes", () => {
 
 test("Room invitation links use one protected preview on web and desktop", () => {
   const web = read("src/app/(main)/room-invites/[inviteId]/page.tsx");
+  const webAdapter = read("src/components/chat/voice/WebCoreRoomInvitePreview.tsx");
   const shared = read("src/components/chat/voice/CoreRoomInvitePreviewView.tsx");
+  const desktopAdapter = read("desktop/src/adapters/DesktopRoomInviteAdapter.tsx");
   const desktop = read("desktop/src/shell/DesktopShell.tsx");
 
   const container = read("src/components/chat/voice/CoreRoomInvitePreview.tsx");
-  assert.match(web, /CoreRoomInvitePreview/);
+  assert.match(web, /WebCoreRoomInvitePreview/);
+  assert.match(webAdapter, /<CoreRoomInvitePreview/);
+  assert.match(desktopAdapter, /<CoreRoomInvitePreview/);
   assert.match(container, /CoreRoomInvitePreviewView/);
   assert.match(container, /useCoreRoomInvitePreview/);
   assert.doesNotMatch(shared, /useQuery|from ["']next\/|from ["']@\/server/);

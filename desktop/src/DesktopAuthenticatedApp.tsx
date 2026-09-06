@@ -23,11 +23,13 @@ export function DesktopAuthenticatedApp({
   config,
   initialPathname,
   onInitialPathConsumed,
+  onPendingPathPreserved,
   session,
 }: {
   config: DesktopConfig;
   initialPathname: string | null;
   onInitialPathConsumed: () => void;
+  onPendingPathPreserved: (path: string) => void;
   session: Session;
 }) {
   const { preferences } = useAppPreferences();
@@ -92,6 +94,7 @@ export function DesktopAuthenticatedApp({
               session={session}
               initialPathname={initialPathname}
               onInitialPathConsumed={onInitialPathConsumed}
+              onPendingPathPreserved={onPendingPathPreserved}
             />
           </DesktopPresenceProvider>
         </VoiceSessionProvider>

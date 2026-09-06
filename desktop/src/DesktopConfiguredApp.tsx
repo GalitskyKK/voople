@@ -17,7 +17,7 @@ const DesktopAuthenticatedApp = lazy(() =>
 );
 
 export function DesktopConfiguredApp({ config }: { config: DesktopConfig }) {
-  const { clearPendingPath, pendingPath } = useDesktopDeepLink();
+  const { clearPendingPath, pendingPath, preservePendingPath } = useDesktopDeepLink();
   useEffect(() => registerExternalLinkOpener((url) => invoke("open_external_url", { url })), []);
   return (
     <>
@@ -27,6 +27,7 @@ export function DesktopConfiguredApp({ config }: { config: DesktopConfig }) {
           config={config}
           pendingPath={pendingPath}
           onPendingPathConsumed={clearPendingPath}
+          onPendingPathPreserved={preservePendingPath}
         />
       </AuthProvider>
     </>
@@ -37,10 +38,12 @@ function DesktopSessionRouter({
   config,
   pendingPath,
   onPendingPathConsumed,
+  onPendingPathPreserved,
 }: {
   config: DesktopConfig;
   pendingPath: string | null;
   onPendingPathConsumed: () => void;
+  onPendingPathPreserved: (path: string) => void;
 }) {
   const { bootstrapError, loading, retry, session } = useDesktopAuth();
   if (loading) return <BrandedLoadingView fullscreen />;
@@ -62,6 +65,7 @@ function DesktopSessionRouter({
         session={session}
         initialPathname={pendingPath}
         onInitialPathConsumed={onPendingPathConsumed}
+        onPendingPathPreserved={onPendingPathPreserved}
       />
     </Suspense>
   );

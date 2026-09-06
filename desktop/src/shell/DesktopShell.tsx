@@ -3,7 +3,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { Plus } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { BrandedLoadingView } from "@/components/brand/BrandedLoadingView";
 import {
   AppBottomNavigationVisual,
   AppSidebarVisual,
@@ -31,6 +30,7 @@ import type { DesktopConfig } from "../config";
 import { useDesktopHotkeys } from "../hooks/useDesktopHotkeys";
 import { useNativeVoiceHeartbeat } from "../hooks/useNativeVoiceHeartbeat";
 import { DesktopNotificationBridge } from "../notifications/DesktopNotificationBridge";
+import { DesktopRouteFallback } from "./DesktopRouteFallback";
 const DesktopFeedAdapter = lazy(() =>
   import("../adapters/DesktopFeedAdapter").then((module) => ({
     default: module.DesktopFeedAdapter,
@@ -52,8 +52,8 @@ const DesktopNotifications = lazy(() =>
   })),
 );
 const DesktopRoomInvitePreview = lazy(() =>
-  import("@/components/chat/voice/CoreRoomInvitePreview").then((module) => ({
-    default: module.CoreRoomInvitePreview,
+  import("../adapters/DesktopRoomInviteAdapter").then((module) => ({
+    default: module.DesktopRoomInviteAdapter,
   })),
 );
 const DesktopProfile = lazy(() =>
@@ -164,11 +164,13 @@ export function DesktopShell({
   config,
   initialPathname,
   onInitialPathConsumed,
+  onPendingPathPreserved,
   session,
 }: {
   config: DesktopConfig;
   initialPathname: string | null;
   onInitialPathConsumed: () => void;
+  onPendingPathPreserved: (path: string) => void;
   session: Session;
 }) {
   const [pathname, setPathname] = useState(initialPathname ?? "/feed");
@@ -420,7 +422,11 @@ export function DesktopShell({
               renderDestination={renderDestination}
             />
           ) : roomInviteId ? (
-            <DesktopRoomInvitePreview inviteId={roomInviteId} />
+            <DesktopRoomInvitePreview
+              inviteId={roomInviteId}
+              config={config}
+              onPendingPathPreserved={onPendingPathPreserved}
+            />
           ) : pathname === "/events" ? (
             <AppPageContent><EventsPage /></AppPageContent>
           ) : pathname === "/settings" ? (
@@ -507,13 +513,5 @@ export function DesktopShell({
         </Suspense>
       )}
     </AppShellFrame>
-  );
-}
-
-function DesktopRouteFallback() {
-  return (
-    <AppPageContent className="py-4 lg:py-6">
-      <BrandedLoadingView compact />
-    </AppPageContent>
   );
 }

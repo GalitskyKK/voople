@@ -114,3 +114,28 @@ test("desktop Room links survive authentication without bypassing the invite pre
   assert.match(continuation, /После входа откроем комнату/);
   assert.match(styles, /\.status-page, \.auth-page \{[\s\S]+height: 100%;[\s\S]+overflow-y: auto;/);
 });
+
+test("unavailable Room invitations can switch accounts without losing the protected path", async () => {
+  const [container, view, web, route, desktopHook, desktopAdapter, desktopRouter] = await Promise.all([
+    readFile(new URL("../src/components/chat/voice/CoreRoomInvitePreview.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/CoreRoomInvitePreviewView.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/WebCoreRoomInvitePreview.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/(main)/room-invites/[inviteId]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/navigation/useDesktopDeepLink.ts", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/adapters/DesktopRoomInviteAdapter.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/DesktopConfiguredApp.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(container, /state\.kind === "unavailable" && onSwitchAccount/);
+  assert.match(container, /switchAccountError/);
+  assert.match(view, /Войти в другой аккаунт/);
+  assert.match(view, /Не удалось выйти из аккаунта/);
+  assert.match(web, /auth\.signOut\(\)/);
+  assert.match(web, /router\.replace\(authEntryHref\("\/login", invitePath\)\)/);
+  assert.match(route, /WebCoreRoomInvitePreview/);
+  assert.match(desktopHook, /preservePendingPath[\s\S]+isSupportedDeepLinkPath\(path\)/);
+  assert.ok(
+    desktopAdapter.indexOf("auth.signOut()") < desktopAdapter.indexOf("onPendingPathPreserved(invitePath)"),
+  );
+  assert.match(desktopRouter, /onPendingPathPreserved=\{preservePendingPath\}/);
+});

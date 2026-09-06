@@ -43,5 +43,8 @@ export function useDesktopDeepLink() {
   }, []);
 
   const clearPendingPath = useCallback(() => setPendingPath(null), []);
-  return { clearPendingPath, pendingPath };
+  const preservePendingPath = useCallback((path: string) => {
+    if (isSupportedDeepLinkPath(path)) setPendingPath(path);
+  }, []);
+  return { clearPendingPath, pendingPath, preservePendingPath };
 }

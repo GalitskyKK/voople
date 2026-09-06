@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { CoreRoomInvitePreview } from "@/components/chat/voice/CoreRoomInvitePreview";
+import { WebCoreRoomInvitePreview } from "@/components/chat/voice/WebCoreRoomInvitePreview";
 
 export const metadata: Metadata = {
   title: "Приглашение в комнату",
@@ -13,5 +13,5 @@ export default async function RoomInvitePage({
   params: Promise<{ inviteId: string }>;
 }) {
   const { inviteId } = await params;
-  return <CoreRoomInvitePreview inviteId={inviteId} />;
+  return <WebCoreRoomInvitePreview inviteId={inviteId} />;
 }

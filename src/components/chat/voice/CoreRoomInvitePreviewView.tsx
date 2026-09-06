@@ -16,10 +16,15 @@ const STATE_COPY = {
   unavailable: ["Приглашение недоступно", "Оно адресовано другому аккаунту или у вас больше нет доступа."],
 } as const;
 
-export function CoreRoomInvitePreviewView({ state, onRetry, actions }: {
+export function CoreRoomInvitePreviewView({ state, onRetry, actions, switchAccountAction }: {
   state: CoreRoomInvitePreviewState;
   onRetry: () => void;
   actions: ReactNode;
+  switchAccountAction?: {
+    error: boolean;
+    pending: boolean;
+    onSelect: () => void;
+  } | null;
 }) {
   const invite = state.kind === "ready" ? state.invite : null;
   const inviter = invite?.inviter;
@@ -49,6 +54,27 @@ export function CoreRoomInvitePreviewView({ state, onRetry, actions }: {
               <p className="mt-2 text-sm text-[var(--app-muted)]">{STATE_COPY[state.kind][1]}</p>
               {state.kind === "error" || state.kind === "offline" ? (
                 <Button type="button" size="sm" className="mt-4" disabled={state.kind === "offline"} onClick={onRetry}>Повторить</Button>
+              ) : null}
+              {state.kind === "unavailable" && switchAccountAction ? (
+                <div className="mt-4 flex flex-col items-start gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    disabled={switchAccountAction.pending}
+                    onClick={switchAccountAction.onSelect}
+                  >
+                    {switchAccountAction.pending ? (
+                      <LoaderCircle className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden />
+                    ) : null}
+                    {switchAccountAction.pending ? "Выходим из аккаунта…" : "Войти в другой аккаунт"}
+                  </Button>
+                  {switchAccountAction.error ? (
+                    <p className="text-sm text-red-400" role="alert">
+                      Не удалось выйти из аккаунта. Попробуйте ещё раз.
+                    </p>
+                  ) : null}
+                </div>
               ) : null}
             </div>
           ) : (

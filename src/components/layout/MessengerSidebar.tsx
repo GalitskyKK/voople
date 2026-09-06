@@ -3,6 +3,7 @@
 import { GroupChatCreator } from "@/components/chat/GroupChatCreator";
 import { trpc } from "@/lib/trpc/client";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
+import { useMessengerGroupLiveStates } from "@/hooks/useMessengerGroupLiveStates";
 
 import type { NavigationDestinationRenderer } from "./AppNavigationVisual";
 import { MessengerSidebarView } from "./MessengerSidebarView";
@@ -15,6 +16,7 @@ export function MessengerSidebar({
   renderDestination: NavigationDestinationRenderer;
 }) {
   const { onlineUserIds } = useOnlineUsers();
+  const { liveByGroup } = useMessengerGroupLiveStates();
   const chats = trpc.chat.list.useQuery(undefined, {
     staleTime: 5_000,
     refetchOnWindowFocus: false,
@@ -28,6 +30,7 @@ export function MessengerSidebar({
       loading={chats.isLoading}
       error={chats.error?.message}
       onlineUserIds={onlineUserIds}
+      liveByGroup={liveByGroup}
       createGroupAction={<GroupChatCreator variant="sidebar" />}
       renderDestination={renderDestination}
       onRetry={() => void chats.refetch()}

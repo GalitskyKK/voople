@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { activeMessagesChatId } from "@/lib/layout/messages-path";
 import { cn } from "@/lib/utils";
 import type { ChatListItem } from "@/types/chat";
+import type { MessengerGroupLiveState } from "@/types/messenger-live";
 
 import type { NavigationDestinationRenderer } from "./AppNavigationVisual";
 import { MessengerDirectRow, MessengerGroupRow } from "./MessengerSidebarRows";
@@ -16,6 +17,7 @@ type MessengerSidebarViewProps = {
   loading: boolean;
   error?: string | null;
   onlineUserIds: ReadonlySet<string>;
+  liveByGroup?: ReadonlyMap<string, MessengerGroupLiveState>;
   createGroupAction?: ReactNode;
   renderDestination: NavigationDestinationRenderer;
   onRetry: () => void;
@@ -27,6 +29,7 @@ export function MessengerSidebarView({
   loading,
   error,
   onlineUserIds,
+  liveByGroup = new Map(),
   createGroupAction,
   renderDestination,
   onRetry,
@@ -58,6 +61,7 @@ export function MessengerSidebarView({
                   <MessengerGroupRow
                     key={chat.id}
                     chat={chat}
+                    live={liveByGroup.get(chat.id)}
                     activeChatId={activeChatId}
                     renderDestination={renderDestination}
                   />

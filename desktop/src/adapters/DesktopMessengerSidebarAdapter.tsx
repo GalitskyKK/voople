@@ -2,6 +2,7 @@ import type { Session } from "@supabase/supabase-js";
 
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { MessengerSidebarView } from "@/components/layout/MessengerSidebarView";
+import { useMessengerGroupLiveStates } from "@/hooks/useMessengerGroupLiveStates";
 
 import { useDesktopChats } from "../chat/useDesktopChats";
 import type { DesktopConfig } from "../config";
@@ -22,6 +23,7 @@ export function DesktopMessengerSidebarAdapter({
   renderDestination: NavigationDestinationRenderer;
 }) {
   const onlineUserIds = useDesktopPresence();
+  const { liveByGroup } = useMessengerGroupLiveStates();
   const { chats, error, loading, refresh, retry } = useDesktopChats();
 
   return (
@@ -31,6 +33,7 @@ export function DesktopMessengerSidebarAdapter({
       loading={loading}
       error={error}
       onlineUserIds={onlineUserIds}
+      liveByGroup={liveByGroup}
       createGroupAction={
         <DesktopGroupChatCreatorAdapter
           config={config}

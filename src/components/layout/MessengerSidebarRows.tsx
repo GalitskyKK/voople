@@ -1,15 +1,20 @@
+import { MonitorUp, Radio } from "lucide-react";
+
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { GroupAvatar } from "@/components/chat/GroupAvatar";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { cn } from "@/lib/utils";
 import type { ChatListItem } from "@/types/chat";
+import type { MessengerGroupLiveState } from "@/types/messenger-live";
 
 export function MessengerGroupRow({
   chat,
+  live,
   activeChatId,
   renderDestination,
 }: {
   chat: ChatListItem;
+  live?: MessengerGroupLiveState;
   activeChatId: string | null;
   renderDestination: NavigationDestinationRenderer;
 }) {
@@ -36,9 +41,18 @@ export function MessengerGroupRow({
         <SidebarRowCopy
           title={title}
           subtitle={
-            chat.lastMessage?.preview || `${chat.memberCount} участников`
+            live
+              ? `${live.participantCount} в голосе`
+              : chat.lastMessage?.preview || `${chat.memberCount} участников`
           }
+          online={Boolean(live)}
         />
+        {live ? (
+          <span className="flex min-w-6 shrink-0 flex-col items-center justify-center text-emerald-400" aria-label={`${live.roomCount} ${live.roomCount === 1 ? "комната" : "комнаты"}${live.hasScreenShare ? " · идёт демонстрация экрана" : ""}`}>
+            {live.hasScreenShare ? <MonitorUp className="h-3.5 w-3.5" aria-hidden="true" /> : <Radio className="h-3.5 w-3.5" aria-hidden="true" />}
+            {live.roomCount > 1 ? <span className="font-mono text-[9px] leading-none" aria-hidden="true">{live.roomCount}</span> : null}
+          </span>
+        ) : null}
       </>
     ),
   });

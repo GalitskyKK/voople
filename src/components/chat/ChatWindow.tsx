@@ -64,7 +64,6 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     chatId, viewerId: me?.id, text, replyTo, pendingUpload, pendingTrack,
     setText, setReplyTo, setPendingUpload, setPendingTrack,
   });
-
   const { containerRef: messagesRef, contentRef: messagesContentRef, isAwayFromBottom, scrollToBottom } =
     useChatAutoScroll(chatId, data?.messages.length ?? 0);
 

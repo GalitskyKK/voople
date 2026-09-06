@@ -6,10 +6,12 @@ import type { GroupNowRoom, GroupNowUser, GroupNowView } from "@/types/group-now
 
 import { GroupNowParticipant } from "./GroupNowParticipant";
 import { GroupNowRoomSection } from "./GroupNowRoomSection";
+import { GroupLiveShelfView } from "./GroupLiveShelfView";
 
 type PassiveStateProps = {
   mode: "loading" | "offline" | "error";
   groupName: string;
+  variant?: "surface" | "shelf";
   message?: string;
   onRetry?: () => void;
 };
@@ -17,6 +19,7 @@ type PassiveStateProps = {
 type ReadyStateProps = {
   mode: "ready";
   value: GroupNowView;
+  variant?: "surface" | "shelf";
   pendingRoomId?: string | null;
   actionError?: string | null;
   onJoinRoom: (room: GroupNowRoom) => void;
@@ -28,7 +31,19 @@ export type GroupNowPanelViewProps = PassiveStateProps | ReadyStateProps;
 
 export function GroupNowPanelView(props: GroupNowPanelViewProps) {
   if (props.mode !== "ready") {
+    if (props.variant === "shelf") return null;
     return <GroupNowPassiveState {...props} />;
+  }
+
+  if (props.variant === "shelf") {
+    return (
+      <GroupLiveShelfView
+        rooms={props.value.rooms}
+        currentUserRoomId={props.value.currentUserRoomId}
+        pendingRoomId={props.pendingRoomId}
+        onJoinRoom={props.onJoinRoom}
+      />
+    );
   }
 
   const quiet = isGroupNowQuiet(props.value.rooms);
@@ -37,16 +52,12 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
       className="mx-auto w-full max-w-[960px] px-4 py-5 text-[var(--foreground)] sm:px-6"
       aria-labelledby="group-now-title"
     >
-      <header className="flex items-end justify-between gap-4 border-b border-[var(--app-border)] pb-4">
+      <header className="flex items-end justify-between gap-4 border-b border-[var(--app-border)] pb-3">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--theme-accent)]">
-            Сейчас
-          </p>
-          <h2 id="group-now-title" className="mt-1 truncate text-xl font-semibold">
-            {props.value.groupName}
-          </h2>
+          <h2 id="group-now-title" className="truncate text-sm font-semibold uppercase tracking-[0.08em]">Комнаты сейчас</h2>
+          <p className="mt-1 text-xs text-[var(--app-muted)]">{props.value.groupName}</p>
         </div>
-        <span className="shrink-0 text-sm text-[var(--app-muted)]">
+        <span className="shrink-0 font-mono text-[11px] text-[var(--app-muted)]">
           {props.value.visibleOnlineCount} онлайн
         </span>
       </header>

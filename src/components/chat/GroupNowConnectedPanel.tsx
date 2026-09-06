@@ -14,6 +14,7 @@ export function GroupNowConnectedPanel({
   enabled = false,
   groupId,
   groupName,
+  variant = "surface",
   onJoined,
   onOpenLegacy,
   canCreatePinned = false,
@@ -22,6 +23,7 @@ export function GroupNowConnectedPanel({
   enabled?: boolean;
   groupId: string;
   groupName: string;
+  variant?: "surface" | "shelf";
   onJoined: (
     room: GroupNowRoom,
     result: GroupRoomJoinResult,
@@ -45,6 +47,7 @@ export function GroupNowConnectedPanel({
         enabled={enabled}
         groupId={groupId}
         groupName={groupName}
+        variant={variant}
         onJoinRoom={(room) => join.requestJoin({ groupId, room })}
         onCreateRoom={create.show}
         onOpenProfile={onOpenProfile}

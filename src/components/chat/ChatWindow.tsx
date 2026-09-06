@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
 import { useChatMessageEditor } from "@/hooks/useChatMessageEditor";
@@ -27,10 +28,9 @@ import { ChatSectionsBar } from "./ChatSectionsBar";
 import { ChatJumpToLatest } from "./ChatJumpToLatest";
 import { ChatSelectionController } from "./ChatSelectionController";
 import { ChatConversationStart } from "./ChatConversationStart";
-type ChatWindowProps = {
-  chatId: string;
-};
+type ChatWindowProps = { chatId: string };
 export function ChatWindow({ chatId }: ChatWindowProps) {
+  const router = useRouter();
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<ChatMessageView | null>(null);
   const [pendingUpload, setPendingUpload] = useState<PendingChatUpload | null>(null);
@@ -201,6 +201,12 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   return (
     <ChatThreadFrameView
       accentColor={isGroup ? data?.chat.groupAccentColor : null}
+      groupSurface={isGroup ? {
+        groupId: data?.chat.parentChatId ?? chatId,
+        groupName: data?.chat.parentName ?? chatTitle,
+        canCreatePinned: data?.chat.viewerRole !== "member", onlineUserIds,
+        onOpenProfile: (username) => router.push(`/${username}`),
+      } : undefined}
       header={selection.selecting ? (
         <ChatSelectionController messages={selection.selectedMessages} onCancel={selection.clear} onDeleteMessage={(messageId) => removeMessage.mutateAsync({ messageId })} />
       ) : <ChatWindowHeader

@@ -113,6 +113,12 @@ export function DesktopChatThreadAdapter({
   return (
     <ChatThreadFrameView
       accentColor={isGroup ? data.chat.groupAccentColor : null}
+      groupSurface={isGroup ? {
+        groupId: rootChat?.id ?? data.chat.parentChatId ?? chatId,
+        groupName: rootChat?.name ?? data.chat.parentName ?? title,
+        canCreatePinned: data.chat.viewerRole !== "member",
+        onlineUserIds, onOpenProfile: onNavigateProfile,
+      } : undefined}
       header={<ChatWindowHeaderVisual>
         <button
           type="button"

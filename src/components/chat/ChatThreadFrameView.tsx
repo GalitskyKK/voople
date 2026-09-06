@@ -4,10 +4,12 @@ import type { ChatTimelineItem } from "@/lib/chat/group-messages";
 
 import { ChatDateDivider } from "./ChatDateDivider";
 import { ChatRoomActivitySummary } from "./ChatRoomActivitySummary";
+import { GroupSurfaceShell, type GroupSurfaceConfig } from "./GroupSurfaceShell";
 
 export function ChatThreadFrameView({
   accentColor,
   header,
+  groupSurface,
   sections,
   timeline,
   messagesRef,
@@ -21,6 +23,7 @@ export function ChatThreadFrameView({
 }: {
   accentColor?: string | null;
   header: ReactNode;
+  groupSurface?: GroupSurfaceConfig;
   sections?: ReactNode;
   timeline: ChatTimelineItem[];
   messagesRef: { current: HTMLDivElement | null };
@@ -32,19 +35,8 @@ export function ChatThreadFrameView({
   composer: ReactNode;
   overlays?: ReactNode;
 }) {
-  return (
-    <div
-      className="voople-chat-window flex min-h-0 flex-1 flex-col"
-      style={
-        accentColor
-          ? ({
-              "--group-accent": accentColor,
-              "--theme-accent": accentColor,
-            } as CSSProperties)
-          : undefined
-      }
-    >
-      {header}
+  const chatContent = (
+    <>
       {sections}
       <div
         ref={(node) => {
@@ -88,6 +80,23 @@ export function ChatThreadFrameView({
         </p>
       ) : null}
       {composer}
+    </>
+  );
+
+  return (
+    <div
+      className="voople-chat-window flex min-h-0 flex-1 flex-col"
+      style={
+        accentColor
+          ? ({
+              "--group-accent": accentColor,
+              "--theme-accent": accentColor,
+            } as CSSProperties)
+          : undefined
+      }
+    >
+      {header}
+      {groupSurface ? <GroupSurfaceShell key={groupSurface.groupId} config={groupSurface} chatContent={chatContent} /> : chatContent}
       {overlays}
     </div>
   );

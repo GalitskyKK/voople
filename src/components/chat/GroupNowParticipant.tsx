@@ -14,6 +14,7 @@ export function GroupNowParticipant({
         displayName={user.displayName}
         size="sm"
         isOnline
+        shape="square"
         avatarImage={user.avatarUrl ? (
           // Shared portable surface: Next Image cannot be used by the Tauri renderer.
           // eslint-disable-next-line @next/next/no-img-element
@@ -34,7 +35,7 @@ export function GroupNowParticipant({
     <button
       type="button"
       onClick={() => onOpenProfile(user)}
-      className="inline-flex min-w-0 items-center gap-2 rounded-xl p-1.5 text-left transition hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]"
+      className="inline-flex min-w-0 items-center gap-2 rounded-[var(--app-radius-sm)] p-1.5 text-left transition hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]"
       aria-label={`Открыть профиль ${user.displayName}`}
     >
       {content}

@@ -1770,8 +1770,8 @@ button.voople-post-action:active {
     --app-radius-lg: 6px;
     --app-radius-xl: 6px;
     background: color-mix(in srgb, var(--background) 97%, black);
-    font-family: var(--font-geist-mono), ui-monospace, monospace;
-    letter-spacing: -0.012em;
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.01em;
   }
 
   .voople-shell[data-route-kind="messages"] .voople-sidebar {
@@ -1805,6 +1805,11 @@ button.voople-post-action:active {
 
   .voople-shell[data-route-kind="messages"] .voople-chat-list__create {
     display: none;
+  }
+
+  .voople-shell[data-route-kind="messages"] .font-mono {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    letter-spacing: -0.02em;
   }
 
   .voople-shell[data-route-kind="messages"]
@@ -1904,6 +1909,31 @@ button.voople-post-action:active {
   z-index: 5;
   background: color-mix(in srgb, var(--app-surface) 92%, transparent);
   backdrop-filter: blur(18px);
+}
+
+.voople-group-surface-tabs__tab[aria-selected="true"]::after {
+  position: absolute;
+  right: 0.75rem;
+  bottom: -1px;
+  left: 0.75rem;
+  height: 2px;
+  background: var(--group-accent, var(--theme-accent));
+  content: "";
+}
+
+.voople-group-live-shelf {
+  animation: voople-live-shelf-enter 180ms cubic-bezier(.2,.8,.25,1) both;
+}
+
+@keyframes voople-live-shelf-enter {
+  from { opacity: 0; clip-path: inset(0 0 100% 0); }
+  to { opacity: 1; clip-path: inset(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voople-group-live-shelf {
+    animation: none;
+  }
 }
 
 .voople-voice-session--active

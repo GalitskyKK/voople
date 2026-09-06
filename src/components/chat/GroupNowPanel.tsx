@@ -11,6 +11,7 @@ export function GroupNowPanel({
   enabled = false,
   groupId,
   groupName,
+  variant = "surface",
   onJoinRoom,
   onCreateRoom,
   onOpenProfile,
@@ -18,6 +19,7 @@ export function GroupNowPanel({
   enabled?: boolean;
   groupId: string;
   groupName: string;
+  variant?: "surface" | "shelf";
   onJoinRoom: (room: GroupNowRoom) => void | Promise<void>;
   onCreateRoom?: () => void;
   onOpenProfile?: (user: GroupNowUser) => void;
@@ -47,16 +49,17 @@ export function GroupNowPanel({
 
   if (!enabled) return null;
   if (!online) {
-    return <GroupNowPanelView mode="offline" groupName={groupName} onRetry={() => void query.refetch()} />;
+    return <GroupNowPanelView mode="offline" groupName={groupName} variant={variant} onRetry={() => void query.refetch()} />;
   }
   if (query.isLoading || !query.data && query.isFetching) {
-    return <GroupNowPanelView mode="loading" groupName={groupName} />;
+    return <GroupNowPanelView mode="loading" groupName={groupName} variant={variant} />;
   }
   if (query.error || !query.data) {
     return (
       <GroupNowPanelView
         mode="error"
         groupName={groupName}
+        variant={variant}
         message={query.error?.message}
         onRetry={() => void query.refetch()}
       />
@@ -79,6 +82,7 @@ export function GroupNowPanel({
     <GroupNowPanelView
       mode="ready"
       value={query.data}
+      variant={variant}
       pendingRoomId={pendingRoomId}
       actionError={actionError}
       onJoinRoom={(room) => void joinRoom(room)}

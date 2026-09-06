@@ -9,6 +9,7 @@ export function GroupNowVoicePanel({
   enabled = false,
   groupId,
   groupName,
+  variant = "surface",
   canCreatePinned = false,
   onRoomOpened,
   onOpenProfile,
@@ -16,6 +17,7 @@ export function GroupNowVoicePanel({
   enabled?: boolean;
   groupId: string;
   groupName: string;
+  variant?: "surface" | "shelf";
   canCreatePinned?: boolean;
   onRoomOpened?: () => void;
   onOpenProfile?: (user: GroupNowUser) => void;
@@ -37,6 +39,7 @@ export function GroupNowVoicePanel({
       enabled={enabled}
       groupId={groupId}
       groupName={groupName}
+      variant={variant}
       canCreatePinned={canCreatePinned}
       onOpenLegacy={openLegacy}
       onOpenProfile={onOpenProfile}

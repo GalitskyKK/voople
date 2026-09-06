@@ -9,10 +9,17 @@ import {
   startTrustedPasswordLogin,
   trustCurrentDevice,
 } from "@/lib/auth/trusted-device-client";
+import { DesktopAuthContinuationNotice } from "./DesktopAuthContinuationNotice";
 
 type LoginMode = "password" | "code";
 
-export function DesktopLogin({ config }: { config: DesktopConfig }) {
+export function DesktopLogin({
+  config,
+  continuationPath = null,
+}: {
+  config: DesktopConfig;
+  continuationPath?: string | null;
+}) {
   const [registering, setRegistering] = useState(false);
   const [mode, setMode] = useState<LoginMode>("password");
   const [email, setEmail] = useState("");
@@ -27,7 +34,13 @@ export function DesktopLogin({ config }: { config: DesktopConfig }) {
   const supabase = getSupabase(config);
 
   if (registering) {
-    return <DesktopRegister config={config} onLogin={() => setRegistering(false)} />;
+    return (
+      <DesktopRegister
+        config={config}
+        continuationPath={continuationPath}
+        onLogin={() => setRegistering(false)}
+      />
+    );
   }
 
   const submit = async (event: FormEvent) => {
@@ -131,6 +144,7 @@ export function DesktopLogin({ config }: { config: DesktopConfig }) {
         <p className="eyebrow">VOOPLE DESKTOP</p>
         <h1 id="login-title">С возвращением</h1>
         <p className="muted">Войдите в тот же аккаунт, которым пользуетесь в Voople.</p>
+        <DesktopAuthContinuationNotice path={continuationPath} />
 
         <form onSubmit={submit} className="auth-form">
           <label>

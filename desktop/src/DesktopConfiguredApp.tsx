@@ -54,7 +54,7 @@ function DesktopSessionRouter({
       />
     );
   }
-  if (!session) return <DesktopLogin config={config} />;
+  if (!session) return <DesktopLogin config={config} continuationPath={pendingPath} />;
   return (
     <Suspense fallback={<BrandedLoadingView fullscreen />}>
       <DesktopAuthenticatedApp

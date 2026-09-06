@@ -8,13 +8,16 @@ import { trustCurrentDevice } from "@/lib/auth/trusted-device-client";
 
 import type { DesktopConfig } from "../config";
 import { DesktopTurnstile } from "./DesktopTurnstile";
+import { DesktopAuthContinuationNotice } from "./DesktopAuthContinuationNotice";
 import { getSupabase } from "./supabase";
 
 export function DesktopRegister({
   config,
+  continuationPath,
   onLogin,
 }: {
   config: DesktopConfig;
+  continuationPath: string | null;
   onLogin: () => void;
 }) {
   const [email, setEmail] = useState("");
@@ -99,6 +102,7 @@ export function DesktopRegister({
             Мы отправили письмо на <strong>{confirmationEmail}</strong>. Перейдите по ссылке в письме,
             чтобы завершить регистрацию.
           </p>
+          <DesktopAuthContinuationNotice path={continuationPath} />
           <p className="captcha-note">Если письма нет, проверьте папку «Спам».</p>
           <button type="button" className="primary-button" onClick={onLogin}>
             Перейти ко входу
@@ -115,6 +119,7 @@ export function DesktopRegister({
         <p className="eyebrow">VOOPLE DESKTOP</p>
         <h1 id="register-title">Создать аккаунт</h1>
         <p className="muted">Username сохранится за вами после подтверждения регистрации.</p>
+        <DesktopAuthContinuationNotice path={continuationPath} />
 
         <form onSubmit={submit} className="auth-form">
           <label>

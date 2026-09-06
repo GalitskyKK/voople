@@ -146,3 +146,24 @@ test("public repository workflows pin actions and scope privileged credentials",
   );
   assert.doesNotMatch(smokeJobPreamble, /secrets\./);
 });
+
+test("desktop RC is installed before Room protocol evidence can be promoted", () => {
+  const workflow = read(".github/workflows/desktop-release.yml");
+  const installedSmoke = read("scripts/verify-installed-desktop-deep-links.ps1");
+  const rendererProbe = read("scripts/verify-installed-desktop-route.mjs");
+
+  assert.match(workflow, /Verify installed Room deep links/);
+  assert.match(workflow, /verify-installed-desktop-deep-links\.ps1/);
+  assert.match(workflow, /installedDeepLinkSmoke = \$true/);
+  assert.match(workflow, /installedDeepLinkSmoke -ne \$true/);
+  assert.match(installedSmoke, /Start-Process -FilePath \$installer -ArgumentList "\/S"/);
+  assert.match(installedSmoke, /HKEY_CURRENT_USER\\Software\\Classes\\voople/);
+  assert.match(installedSmoke, /Open-VoopleProtocol \$coldUri/);
+  assert.match(installedSmoke, /Open-VoopleProtocol \$warmUri/);
+  assert.match(installedSmoke, /Open-VoopleProtocol \$invalidUri/);
+  assert.match(installedSmoke, /VoopleWindowState.*IsIconic/s);
+  assert.match(installedSmoke, /Get-AuthenticodeSignature/);
+  assert.match(rendererProbe, /chromium\.connectOverCDP/);
+  assert.match(rendererProbe, /data-voople-continuation-path/);
+  assert.match(rendererProbe, /assert\.equal\(observedPath, expectedPath/);
+});

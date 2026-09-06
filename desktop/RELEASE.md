@@ -2,12 +2,19 @@
 
 The Windows release pipeline lives in `.github/workflows/desktop-release.yml`.
 It produces one signed RC artifact, optionally rehearses compatible migrations on staging,
-runs web, desktop, browser and native-audio gates, and retains that artifact in
+runs web, desktop, browser, native-audio and installed-NSIS gates, and retains that artifact in
 the internal Actions channel. The protected `desktop-stable` environment then
 promotes the exact same SHA/checksum/signature after approval: production
 migrations and the emoji backfill run first, followed by the private GitHub
 Release and stable CDN publication. No second installer is built during
 promotion and users see only the resulting stable release.
+
+The installed-NSIS gate performs a silent current-user install on the ephemeral
+Windows runner, verifies the quoted `voople://` registry command, then observes
+the production WebView2 renderer through a loopback-only debugging port. It
+checks cold delivery, replacement by a second warm Room invite, rejection of an
+invite URL with a query string, single-instance restoration and silent uninstall.
+The RC provenance must contain this successful result before stable promotion.
 
 A `desktop-vX.Y.Z` tag requests promotion automatically; a manual run promotes
 only when `publish` is enabled. Publishing an unsigned test build additionally

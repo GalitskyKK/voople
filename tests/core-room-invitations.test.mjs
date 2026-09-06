@@ -78,7 +78,7 @@ test("Room invite sender and notification action share the core join lifecycle",
 });
 
 test("desktop Room links survive authentication without bypassing the invite preview", async () => {
-  const [cargo, config, native, hook, router, authenticated, shell] = await Promise.all([
+  const [cargo, config, native, hook, router, authenticated, shell, login, continuation, styles] = await Promise.all([
     readFile(new URL("../desktop/src-tauri/Cargo.toml", import.meta.url), "utf8"),
     readFile(new URL("../desktop/src-tauri/tauri.conf.json", import.meta.url), "utf8"),
     readFile(new URL("../desktop/src-tauri/src/lib.rs", import.meta.url), "utf8"),
@@ -86,6 +86,9 @@ test("desktop Room links survive authentication without bypassing the invite pre
     readFile(new URL("../desktop/src/DesktopConfiguredApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../desktop/src/DesktopAuthenticatedApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../desktop/src/shell/DesktopShell.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/auth/DesktopLogin.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/auth/DesktopAuthContinuationNotice.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/styles.css", import.meta.url), "utf8"),
   ]);
 
   assert.match(cargo, /tauri-plugin-single-instance = \{[^\n]+features = \["deep-link"\]/);
@@ -102,7 +105,12 @@ test("desktop Room links survive authentication without bypassing the invite pre
   assert.match(hook, /invoke<unknown>\("take_pending_deep_link"\)/);
   assert.match(hook, /listen\(DEEP_LINK_EVENT[\s\S]+consumeNativePath/);
   assert.match(router, /pendingPath=\{pendingPath\}/);
+  assert.match(router, /continuationPath=\{pendingPath\}/);
   assert.match(authenticated, /initialPathname=\{initialPathname\}/);
   assert.match(shell, /useState\(initialPathname \?\? "\/feed"\)/);
   assert.match(shell, /navigate\(initialPathname\)[\s\S]+onInitialPathConsumed\(\)/);
+  assert.match(login, /DesktopAuthContinuationNotice path=\{continuationPath\}/);
+  assert.match(continuation, /data-voople-continuation-path=\{path\}/);
+  assert.match(continuation, /После входа откроем комнату/);
+  assert.match(styles, /\.status-page, \.auth-page \{[\s\S]+height: 100%;[\s\S]+overflow-y: auto;/);
 });

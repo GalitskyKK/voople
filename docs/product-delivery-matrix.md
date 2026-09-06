@@ -277,16 +277,17 @@ retry проверяет сохранённую сессию и продолжа
 одинаковую безопасную error surface с retry и входом, который сохраняет invite;
 сырой provider error не выводится.
 
-Локально прошли 223 source/unit tests, architecture и lint. Расширенный
+Локально прошли 223 source/unit tests, architecture, lint, web/desktop
+TypeScript и обе production-сборки точного коммита. Расширенный
 `verify-auth-continuation.mjs` проверяет реальный callback вместе с
 login/register/onboarding на 360/1280 px в Void/Light: pending, StrictMode
 single exchange, invalid link, private-error suppression, retry, keyboard path,
 overflow и возврат к invite. Impeccable detector зелёный, мобильный error и
 desktop loading просмотрены вручную.
 
-До release нужны production builds точного коммита, разрешённые в Supabase Auth
-Redirect URLs адреса `https://voople.ru/auth/confirm` и preview/dev equivalents,
-а также живое письмо в новой вкладке того же браузера. Другой браузер или
+До release нужны разрешённые в Supabase Auth Redirect URLs адреса
+`https://voople.ru/auth/confirm` и preview/dev equivalents, а также живое письмо
+в новой вкладке того же браузера. Другой браузер или
 устройство не имеют исходного PKCE verifier и штатно переходят в безопасный
 login; межустройственное подтверждение требует отдельного server-side OTP
 контракта. Миграции и production в этом срезе не менялись.

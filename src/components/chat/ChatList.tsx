@@ -42,7 +42,7 @@ export function ChatList({ activeChatId = null }: ChatListProps) {
       activeChatId={activeChatId}
       loading={isLoading}
       error={error?.message}
-      headerAction={<GroupChatCreator compact />}
+      headerAction={<GroupChatCreator variant="compact" />}
       emptyAction={
         <Link
           href="/explore"

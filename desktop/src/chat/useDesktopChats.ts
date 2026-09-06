@@ -1,5 +1,15 @@
 import type { Session } from "@supabase/supabase-js";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 import type { ChatListItem } from "@/types/chat";
 import { createDesktopTrpcClient } from "../api/trpc";
@@ -13,10 +23,41 @@ function parseChatList(value: unknown): ChatListItem[] {
   return value as ChatListItem[];
 }
 
-export function useDesktopChats(
+type DesktopChatsContextValue = {
+  chats: ChatListItem[];
+  error: string | null;
+  loading: boolean;
+  refresh: () => Promise<void>;
+  retry: () => Promise<void>;
+};
+
+const DesktopChatsContext = createContext<DesktopChatsContextValue | null>(null);
+
+export function DesktopChatsProvider({
+  config,
+  session,
+  children,
+}: {
+  config: DesktopConfig;
+  session: Session;
+  children: ReactNode;
+}) {
+  const value = useDesktopChatsController(config, session);
+  return createElement(DesktopChatsContext.Provider, { value }, children);
+}
+
+export function useDesktopChats() {
+  const value = useContext(DesktopChatsContext);
+  if (!value) {
+    throw new Error("useDesktopChats must be used inside DesktopChatsProvider");
+  }
+  return value;
+}
+
+function useDesktopChatsController(
   config: DesktopConfig,
   session: Session,
-) {
+): DesktopChatsContextValue {
   const [chats, setChats] = useState<ChatListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

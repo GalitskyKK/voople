@@ -26,6 +26,7 @@ type ProfileAvatarVisualProps = {
   className?: string;
   size?: ProfileAvatarVisualSize;
   isOnline?: boolean;
+  shape?: "round" | "square";
 };
 
 /**
@@ -40,6 +41,7 @@ export function ProfileAvatarVisual({
   className,
   size = "md",
   isOnline = false,
+  shape = "round",
 }: ProfileAvatarVisualProps) {
   return (
     <div
@@ -63,7 +65,8 @@ export function ProfileAvatarVisual({
       )}
       <span
         className={cn(
-          "relative flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-violet-600 to-violet-400 font-semibold text-[var(--foreground)]",
+          "relative flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-br from-violet-600 to-violet-400 font-semibold text-[var(--foreground)]",
+          shape === "square" ? "rounded-md" : "rounded-full",
           ringClassName,
         )}
       >

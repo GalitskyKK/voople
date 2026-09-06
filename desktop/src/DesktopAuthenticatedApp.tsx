@@ -16,6 +16,7 @@ import {
   prepareDesktopNotifications,
 } from "./notifications/incoming-call";
 import { DesktopPresenceProvider } from "./providers/DesktopPresenceProvider";
+import { DesktopChatsProvider } from "./chat/useDesktopChats";
 import { DesktopShell } from "./shell/DesktopShell";
 import { DesktopReleaseNotesDialog } from "./updates/DesktopReleaseNotesDialog";
 
@@ -89,13 +90,15 @@ export function DesktopAuthenticatedApp({
           subscribeToVoiceRooms={subscribeToVoiceRooms}
         >
           <DesktopPresenceProvider config={config} session={session}>
-            <DesktopShell
-              config={config}
-              session={session}
-              initialPathname={initialPathname}
-              onInitialPathConsumed={onInitialPathConsumed}
-              onPendingPathPreserved={onPendingPathPreserved}
-            />
+            <DesktopChatsProvider config={config} session={session}>
+              <DesktopShell
+                config={config}
+                session={session}
+                initialPathname={initialPathname}
+                onInitialPathConsumed={onInitialPathConsumed}
+                onPendingPathPreserved={onPendingPathPreserved}
+              />
+            </DesktopChatsProvider>
           </DesktopPresenceProvider>
         </VoiceSessionProvider>
       </LegalConsentGate>

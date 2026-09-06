@@ -36,6 +36,7 @@ type NavigationVisualProps = {
 
 type AppSidebarVisualProps = NavigationVisualProps & {
   accountNavigation?: ReactNode;
+  primaryNavigation?: ReactNode;
   navAfter?: ReactNode;
   footerAfter?: ReactNode;
   collapsed?: boolean;
@@ -47,6 +48,7 @@ export function AppSidebarVisual({
   renderDestination,
   notificationBadge,
   accountNavigation,
+  primaryNavigation,
   navAfter,
   footerAfter,
   collapsed = true,
@@ -83,54 +85,56 @@ export function AppSidebarVisual({
         ) : null}
       </div>
 
-      <nav
-        className="voople-sidebar__nav voople-scroll flex min-h-0 flex-1 flex-col gap-0.5 overflow-x-hidden overflow-y-auto px-3"
-        aria-label="Основная навигация"
-      >
-        {navigationItems.map(({ href, label, icon: Icon, match }) => {
-          const active = match(pathname);
-          return (
-            <SidebarItemTooltip
-              key={href}
-              label={label}
-              enabled={collapsed}
-              className="voople-sidebar__item"
-            >
-              {renderDestination({
-                href,
-                label,
-                active,
-                className: cn(
-                  "voople-sidebar__link relative flex w-full items-center gap-3 rounded-[var(--app-radius-lg)] px-3 py-2.5 text-left text-sm font-medium transition-all duration-200",
-                  active
-                    ? "bg-[var(--app-accent-soft)] text-[var(--foreground)]"
-                    : "text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[color-mix(in_srgb,var(--foreground)_88%,transparent)]",
-                ),
-                children: (
-                  <>
-                    {active && (
-                      <span
-                        aria-hidden
-                        className="absolute bottom-2 left-0 top-2 w-[3px] rounded-full bg-[var(--theme-accent)]"
-                      />
-                    )}
-                    <span className="relative inline-flex shrink-0">
-                      <Icon
-                        className="h-5 w-5"
-                        strokeWidth={active ? 2.25 : 1.75}
-                      />
-                      {href === "/notifications" && notificationBadge}
-                    </span>
-                    <span className="voople-sidebar__label">{label}</span>
-                  </>
-                ),
-              })}
-            </SidebarItemTooltip>
-          );
-        })}
-      </nav>
+      {primaryNavigation ?? (
+        <nav
+          className="voople-sidebar__nav voople-scroll flex min-h-0 flex-1 flex-col gap-0.5 overflow-x-hidden overflow-y-auto px-3"
+          aria-label="Основная навигация"
+        >
+          {navigationItems.map(({ href, label, icon: Icon, match }) => {
+            const active = match(pathname);
+            return (
+              <SidebarItemTooltip
+                key={href}
+                label={label}
+                enabled={collapsed}
+                className="voople-sidebar__item"
+              >
+                {renderDestination({
+                  href,
+                  label,
+                  active,
+                  className: cn(
+                    "voople-sidebar__link relative flex w-full items-center gap-3 rounded-[var(--app-radius-lg)] px-3 py-2.5 text-left text-sm font-medium transition-all duration-200",
+                    active
+                      ? "bg-[var(--app-accent-soft)] text-[var(--foreground)]"
+                      : "text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[color-mix(in_srgb,var(--foreground)_88%,transparent)]",
+                  ),
+                  children: (
+                    <>
+                      {active && (
+                        <span
+                          aria-hidden
+                          className="absolute bottom-2 left-0 top-2 w-[3px] rounded-full bg-[var(--theme-accent)]"
+                        />
+                      )}
+                      <span className="relative inline-flex shrink-0">
+                        <Icon
+                          className="h-5 w-5"
+                          strokeWidth={active ? 2.25 : 1.75}
+                        />
+                        {href === "/notifications" && notificationBadge}
+                      </span>
+                      <span className="voople-sidebar__label">{label}</span>
+                    </>
+                  ),
+                })}
+              </SidebarItemTooltip>
+            );
+          })}
+        </nav>
+      )}
 
-      {!collapsed ? navAfter : null}
+      {!primaryNavigation && !collapsed ? navAfter : null}
 
       <div className="voople-sidebar__footer shrink-0 border-t border-[var(--app-border)] px-3 pb-7 pt-5">
         {footerItems.map(({ href, label, icon: Icon }) => {

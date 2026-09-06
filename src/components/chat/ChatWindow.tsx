@@ -26,6 +26,7 @@ import { ChatWindowHeader } from "./ChatWindowHeader";
 import { ChatSectionsBar } from "./ChatSectionsBar";
 import { ChatJumpToLatest } from "./ChatJumpToLatest";
 import { ChatSelectionController } from "./ChatSelectionController";
+import { ChatConversationStart } from "./ChatConversationStart";
 type ChatWindowProps = {
   chatId: string;
 };
@@ -224,6 +225,21 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         <ChatSectionsBar chatId={chatId} viewerRole={data?.chat.viewerRole ?? "member"} />
       ) : null}
       timeline={timeline}
+      emptyState={
+        <ChatConversationStart
+          chatTitle={chatTitle}
+          isGroup={isGroup}
+          isSubchat={isSubchat}
+          parentName={data?.chat.parentName}
+          memberCount={data?.chat.memberCount ?? 0}
+          topicIcon={data?.chat.topicIcon}
+          groupIcon={data?.chat.groupIcon}
+          groupAvatarUrl={data?.chat.groupAvatarUrl}
+          groupAccentColor={data?.chat.groupAccentColor}
+          other={other}
+          otherOnline={otherOnline}
+        />
+      }
       messagesRef={messagesRef}
       messagesContentRef={messagesContentRef}
       renderMessage={(item) => (

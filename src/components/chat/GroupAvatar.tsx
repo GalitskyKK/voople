@@ -11,6 +11,7 @@ export function GroupAvatar({
   icon,
   accentColor,
   size = "sm",
+  shape = "round",
   className,
 }: {
   name: string;
@@ -18,6 +19,7 @@ export function GroupAvatar({
   icon?: string | null;
   accentColor?: string | null;
   size?: "sm" | "md" | "lg";
+  shape?: "round" | "square";
   className?: string;
 }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
@@ -29,7 +31,8 @@ export function GroupAvatar({
   return (
     <span
       className={cn(
-        "relative grid shrink-0 place-items-center overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--group-accent,var(--theme-accent))_16%,var(--app-surface-soft))] font-semibold text-[var(--group-accent,var(--theme-accent))]",
+        "relative grid shrink-0 place-items-center overflow-hidden bg-[color-mix(in_srgb,var(--group-accent,var(--theme-accent))_16%,var(--app-surface-soft))] font-semibold text-[var(--group-accent,var(--theme-accent))]",
+        shape === "square" ? "rounded-md" : "rounded-full",
         sizeClass,
         className,
       )}

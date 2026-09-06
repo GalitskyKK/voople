@@ -58,6 +58,7 @@ test("portable desktop UI baseline is empty and migrated domains use shared view
   const baseline = JSON.parse(read(".architecture-baseline.json"));
   const webThread = read("src/components/chat/ChatWindow.tsx");
   const desktopThread = read("desktop/src/adapters/DesktopChatThreadAdapter.tsx");
+  const conversationStart = read("src/components/chat/ChatConversationStart.tsx");
   const desktopMessages = read("desktop/src/adapters/DesktopMessagesAdapter.tsx");
   const desktopCreate = read("desktop/src/adapters/DesktopCreatePostAdapter.tsx");
   const desktopComments = read("desktop/src/adapters/DesktopPostCommentsAdapter.tsx");
@@ -69,6 +70,10 @@ test("portable desktop UI baseline is empty and migrated domains use shared view
   assert.deepEqual(baseline.desktopPortableUi, []);
   assert.match(webThread, /ChatThreadFrameView/);
   assert.match(desktopThread, /ChatThreadFrameView/);
+  assert.match(webThread, /ChatConversationStart/);
+  assert.match(desktopThread, /ChatConversationStart/);
+  assert.match(conversationStart, /isGroup \? \(isSubchat \? "section" : "group"\) : "direct"/);
+  assert.doesNotMatch(conversationStart, /useQuery|from ["']next\/|from ["']@\/server/);
   assert.match(desktopMessages, /MessagesLayoutView/);
   assert.match(desktopCreate, /CreatePostDialogView/);
   assert.match(desktopComments, /PostCommentsView/);

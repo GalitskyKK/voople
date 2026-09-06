@@ -1,6 +1,6 @@
 # Voople product delivery matrix
 
-Обновлено: 2026-09-01. Матрица — обязательный рабочий gate, а не декларация о
+Обновлено: 2026-09-06. Матрица — обязательный рабочий gate, а не декларация о
 завершении. Она объединяет исходную спецификацию, дополняющий social/UX-план,
 Reference Map и шесть референсных бордов.
 
@@ -41,7 +41,7 @@ Transport/media были заглушены: real DB, authorization, native desk
 | Board | Канонический результат | Web | Desktop | Visual/state gate | Статус |
 | --- | --- | --- | --- | --- | --- |
 | 1 — Shell + Home | Compact global rail по умолчанию, сохраняемый pinned-expanded, hover-only control и item tooltips, единое account menu, компактный «Сейчас», feed в первом meaningful viewport и right rail только при достаточной ширине main | Shared compact preference/navigation/account menu/tooltips и container-aware Home rail реализованы | Те же hook/View; platform adapter владеет только navigation/auth callbacks; Profile/Settings/Help/Logout не дублируются в rail | Architecture, lint, web/desktop TypeScript и production builds зелёные; public Playwright проверяет 360/390/1024/1280/1440 без overflow. Остаются authenticated dark/light, fullscreen, Windows scale 125/150%, keyboard/account-menu и screen-reader evidence | Частично |
-| 2 — Messaging | `Nav → Chat List → Conversation`, `+` внутри strip разделов, Members/Info drawers по запросу, presence/room context, единые header/composer/menus/Room CTA и безопасное закрытие conversation через active `Чаты`/Escape | Основной flow, shared tooltip/icon controls composer/group header, section-strip `+` и правый Members/Info drawer есть; фильтры `Сейчас/Онлайн/Все/Роли` используют server-owned room context с privacy и section-access checks; active `Чаты` и `Escape` возвращают в inbox, overlay/selection поглощают первый `Escape`, чтение отделено от query и ограничено последним реально показанным сообщением в видимом/focused окне | Те же shared section/drawer/exit/read contracts; unmount останавливает realtime channel, polling и stale load, draft остаётся локально; внешний thread/messages controller ещё расходится | Source contracts проверяют placement `+`, web/desktop composition, restricted-section и `roomsScope` guards. Нужны authenticated parity snapshots, 360/390/fullscreen, keyboard/context menu/upload/offline states и tooltip visual gate | Частично |
+| 2 — Messaging | Messenger-first shell: `Groups / Direct → Conversation`, inbox/search по запросу, `+` внутри strip разделов, Members/Info drawers, presence/room context, единые header/composer/menus/Room CTA и безопасное закрытие conversation через active `Чаты`/Escape | На `/messages` legacy primary-nav заменён общим плотным sidebar с Groups/Direct/Search; открытый thread больше не дублирует общий chat list, secondary-маршруты сохранены вне этой поверхности. Основной flow, shared tooltip/icon controls composer/group header, section-strip `+` и правый Members/Info drawer есть; фильтры `Сейчас/Онлайн/Все/Роли` используют server-owned room context с privacy и section-access checks; active `Чаты` и `Escape` возвращают в inbox, overlay/selection поглощают первый `Escape`, чтение отделено от query и ограничено последним реально показанным сообщением в видимом/focused окне | Тот же `MessengerSidebarView`; один desktop provider обслуживает sidebar и inbox без двойного polling/realtime subscription. Те же shared section/drawer/exit/read contracts; unmount останавливает realtime channel, polling и stale load, draft остаётся локально; внешний thread/messages controller ещё расходится | Source contracts и изолированный visual gate подтверждают 360/1024/1280, Void/Light, route-scoped 200 px sidebar, mono typography, square avatar tokens, приоритет conversation и отсутствие overflow. Нужны реальные unread/live badges, header activity, authenticated parity 390/1440/fullscreen, keyboard/context menu/upload/offline states и tooltip visual gate | Частично |
 | 3 — Room | Full, Share, Empty, Mini, Compact, Minimal, mobile как одна state machine | Состояния существуют; shared sheet сохраняет одну геометрию для loading/preview/connecting/inside/reconnecting/leaving/post-leave/error, ошибки имеют inline retry, подтверждённый выход — явные return/close actions, web-share использует общий stage, единые icon-only media controls/tooltips до и после входа и явные 720p30/1080p60 presets | Native LiveKit/libwebrtc изолирован в worker process; явные transition barriers не показывают stale stage при connect/leave, leave ждёт server refetch с bounded lifecycle deadline; UI stop мгновенный, graceful unpublish предшествует blocking join/forced kill, late session/track events изолированы; self-preview opt-in, unfocused preview приостанавливается; общий stage задаёт полный video box, `object-fit: contain` сохраняет весь кадр, оставшаяся высота и content-bound fullscreen остаются под desktop chrome; Room header/footer/media/dock используют shared controls, dialog возвращает focus | Source contracts проверяют phase precedence, timeout/retry/post-leave, focus restore, reduced-motion-safe state transition, стабильную sheet geometry, полный `width/height: 100%` video box вместе с `contain` и icon-only media controls. Остаются production-подтверждение RC, воспроизводимый двухклиентный stop/restart/quality gate, fullscreen/16:10/ultrawide/portrait visual matrix, reconnect/soak, фактические FPS/bitrate и screen-reader/keyboard/disabled-tooltip visual gate | Частично |
 | 4 — Identity | Реальный двухколоночный профиль + все cosmetics на каждой portable surface | Shared profile view есть | Shared profile view подключён | Mini-profile social context и полная surface matrix не закрыты | Частично |
 | 5 — Settings + Boosts | Полноэкранные настройки с локальным nav, identity preview, perks/allocation/capacity | Секции и данные есть | Composition ещё не везде едина | Нужны reference snapshots, grace/expiry E2E и removal старых sheets | Частично |
@@ -291,6 +291,31 @@ desktop loading просмотрены вручную.
 устройство не имеют исходного PKCE verifier и штатно переходят в безопасный
 login; межустройственное подтверждение требует отдельного server-side OTP
 контракта. Миграции и production в этом срезе не менялись.
+
+### Первый messenger-first shell — 2026-09-06
+
+На web и desktop маршруты `/messages` используют один плотный sidebar из
+нового core-rework reference: корневые Groups, Direct Messages и Search вместо
+старого списка primary-разделов. Secondary-функции не удалены и продолжают
+работать через существующие маршруты; их перенос в header/account/context
+поверхности остаётся отдельным срезом. Аватары в messenger shell слабо
+скруглены, violet обозначает current/focus, green — только подтверждённый
+presence.
+
+Desktop получает список чатов через один provider, поэтому sidebar и inbox не
+создают два polling/realtime lifecycle. На 1024 px открытый диалог получает
+приоритет и скрывает промежуточный список; на mobile остаётся только текущая
+conversation. Пустой direct/group/section использует общий web/desktop
+`ChatConversationStart`, а не отдельные заглушки платформ.
+
+Локально прошли 12 точечных source/unit tests, architecture, narrow lint,
+web/desktop TypeScript и desktop renderer build. Изолированный Chromium gate
+проверил 360/1024/1280 px, Void/Light, ширину sidebar 200 px, загрузку assets,
+отсутствие horizontal overflow/page errors и responsive priority. Скриншоты
+просмотрены вручную. До полного `Готово` остаются server-owned unread/live
+индикаторы, activity/inbox в header, перенос shell за пределы `/messages`,
+authenticated 390/1440/fullscreen, keyboard/screen-reader и реальные long/error/
+offline состояния.
 
 ## Cross-platform architecture gate
 

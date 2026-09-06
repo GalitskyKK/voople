@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, UserPlus, UsersRound } from "lucide-react";
+import { Loader2, Plus, UserPlus, UsersRound } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/Button";
@@ -12,7 +12,7 @@ import type { UserSearchHit } from "@/types/search";
 import { GroupChatMemberPicker } from "./GroupChatMemberPicker";
 
 type GroupChatCreatorViewProps = {
-  compact?: boolean;
+  variant?: "full" | "compact" | "sidebar";
   currentUserId: string;
   searchUsers: (query: string) => Promise<UserSearchHit[]>;
   createGroup: (input: { name: string; memberIds: string[] }) => Promise<string>;
@@ -21,7 +21,7 @@ type GroupChatCreatorViewProps = {
 };
 
 export function GroupChatCreatorView(props: GroupChatCreatorViewProps) {
-  const { compact = false, renderAvatar } = props;
+  const { variant = "full", renderAvatar } = props;
   const creator = useGroupChatCreator(props);
 
   return (
@@ -31,13 +31,21 @@ export function GroupChatCreatorView(props: GroupChatCreatorViewProps) {
         onClick={() => creator.setOpen(true)}
         className={cn(
           "flex items-center justify-center gap-2 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] text-sm font-medium transition hover:border-[var(--app-border-strong)] hover:bg-[var(--app-accent-soft)]",
-          compact ? "h-10 w-10 shrink-0" : "w-full px-3 py-2",
+          variant === "sidebar"
+            ? "h-5 w-5 shrink-0 rounded-[3px] bg-transparent"
+            : variant === "compact"
+              ? "h-10 w-10 shrink-0"
+              : "w-full px-3 py-2",
         )}
         aria-label="Создать группу"
         title="Создать группу"
       >
-        <UserPlus className="h-4 w-4 text-(--theme-accent)" />
-        {!compact ? "Новая группа" : null}
+        {variant === "sidebar" ? (
+          <Plus className="h-3.5 w-3.5 text-(--theme-accent)" />
+        ) : (
+          <UserPlus className="h-4 w-4 text-(--theme-accent)" />
+        )}
+        {variant === "full" ? "Новая группа" : null}
       </button>
 
       <Sheet

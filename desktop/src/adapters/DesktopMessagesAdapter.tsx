@@ -41,10 +41,7 @@ export function DesktopMessagesAdapter({
     [client, session.user.id],
   );
   const onlineUserIds = useDesktopPresence();
-  const { chats, error, loading, refresh } = useDesktopChats(
-    config,
-    session,
-  );
+  const { chats, error, loading, refresh } = useDesktopChats();
   const badgeUrl = vooplusBadgeUrl(config.assetsCdnUrl);
   const activeRootChat: ChatListItem | null = activeChatId
     ? chats.find(

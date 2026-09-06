@@ -13,10 +13,12 @@ export function DesktopGroupChatCreatorAdapter({
   config,
   session,
   onCreated,
+  variant = "compact",
 }: {
   config: DesktopConfig;
   session: Session;
   onCreated: (chatId: string) => void;
+  variant?: "compact" | "sidebar";
 }) {
   const client = useMemo(
     () => createDesktopTrpcClient(config, () => session.access_token),
@@ -35,7 +37,7 @@ export function DesktopGroupChatCreatorAdapter({
 
   return (
     <GroupChatCreatorView
-      compact
+      variant={variant}
       currentUserId={session.user.id}
       searchUsers={searchUsers}
       createGroup={createGroup}

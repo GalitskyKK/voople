@@ -19,6 +19,7 @@ export function MessagesLayoutView({
     <div
       className="voople-messages-layout flex min-h-0 flex-1 flex-col"
       data-chat-wallpaper={wallpaper}
+      data-thread={isThread ? "true" : "false"}
     >
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
         <aside

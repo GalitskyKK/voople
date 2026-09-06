@@ -8,7 +8,11 @@ import { trpc } from "@/lib/trpc/client";
 
 import { GroupChatCreatorView } from "./GroupChatCreatorView";
 
-export function GroupChatCreator({ compact = false }: { compact?: boolean }) {
+export function GroupChatCreator({
+  variant = "full",
+}: {
+  variant?: "full" | "compact" | "sidebar";
+}) {
   const router = useRouter();
   const utils = trpc.useUtils();
   const me = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
@@ -20,7 +24,7 @@ export function GroupChatCreator({ compact = false }: { compact?: boolean }) {
 
   return (
     <GroupChatCreatorView
-      compact={compact}
+      variant={variant}
       currentUserId={me.data?.id ?? ""}
       searchUsers={searchUsers}
       createGroup={(input) => create.mutateAsync(input)}

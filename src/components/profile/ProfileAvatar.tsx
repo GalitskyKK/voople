@@ -12,6 +12,7 @@ export type ProfileAvatarProps = {
   decorationUrl?: string | null;
   animatedAvatarUrl?: string | null;
   isOnline?: boolean;
+  shape?: "round" | "square";
 };
 
 export function ProfileAvatar({
@@ -23,6 +24,7 @@ export function ProfileAvatar({
   decorationUrl,
   animatedAvatarUrl,
   isOnline = false,
+  shape = "round",
 }: ProfileAvatarProps) {
   const ringStyle = ringId ? resolveRingStyle(ringId) : ring ? DEFAULT_RING : null;
 
@@ -33,6 +35,7 @@ export function ProfileAvatar({
       className={className}
       ringClassName={ringStyle?.className}
       isOnline={isOnline}
+      shape={shape}
       decorationImage={
         decorationUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- portable CDN image shared with Tauri.

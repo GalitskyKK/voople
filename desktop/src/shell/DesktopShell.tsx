@@ -5,23 +5,18 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 
 import {
   AppBottomNavigationVisual,
-  AppSidebarVisual,
   type NavigationDestinationRenderer,
 } from "@/components/layout/AppNavigationVisual";
 import { AppShellFrame } from "@/components/layout/AppShellFrame";
 import { AppPageContent } from "@/components/layout/AppPageContent";
-import { AccountMenuVisual } from "@/components/layout/AccountMenuVisual";
 import { FeedHeaderVisual } from "@/components/layout/FeedHeaderVisual";
-import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { NotFoundView } from "@/components/system/NotFoundView";
 import { COPY, type FeedTabId } from "@/lib/constants/copy";
 import { roomInviteIdFromPath } from "@/lib/chat/core-room-invite-preview";
-import { resolveRingStyle } from "@/lib/customization/rings";
 import { getAppRouteLayout } from "@/lib/layout/route-layout";
 import { registerInternalNavigationAdapter } from "@/lib/platform/internal-navigation";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 import { useVoiceSession } from "@/components/chat/voice/VoiceSessionProvider";
-import { useSidebarPreference } from "@/hooks/useSidebarPreference";
 
 import { syncDesktopUser } from "../api/sync-user";
 import { createDesktopTrpcClient } from "../api/trpc";
@@ -30,6 +25,7 @@ import type { DesktopConfig } from "../config";
 import { useDesktopHotkeys } from "../hooks/useDesktopHotkeys";
 import { useNativeVoiceHeartbeat } from "../hooks/useNativeVoiceHeartbeat";
 import { DesktopNotificationBridge } from "../notifications/DesktopNotificationBridge";
+import { DesktopAppSidebarAdapter } from "../adapters/DesktopAppSidebarAdapter";
 import { DesktopRouteFallback } from "./DesktopRouteFallback";
 const DesktopFeedAdapter = lazy(() =>
   import("../adapters/DesktopFeedAdapter").then((module) => ({
@@ -188,7 +184,6 @@ export function DesktopShell({
     avatarRingId?: string | null;
   } | null>(null);
   const { preferences } = useAppPreferences();
-  const { collapsed: sidebarCollapsed, setCollapsed: setSidebarCollapsed } = useSidebarPreference();
   const voiceSession = useVoiceSession();
   useNativeVoiceHeartbeat({
     config,
@@ -344,34 +339,14 @@ export function DesktopShell({
       routeKind={routeLayout.routeKind}
       fixedViewport
       sidebar={
-        <AppSidebarVisual
+        <DesktopAppSidebarAdapter
           pathname={pathname}
-          collapsed={sidebarCollapsed}
-          onCollapsedChange={setSidebarCollapsed}
-          notificationBadge={notificationBadge}
+          config={config}
+          session={session}
+          viewer={viewerSummary}
+          notificationBadge={notificationBadge ?? undefined}
           renderDestination={renderDestination}
-          accountNavigation={
-            viewerSummary ? (
-              <AccountMenuVisual
-                displayName={viewerSummary.displayName}
-                username={viewerSummary.username}
-                compact={sidebarCollapsed}
-                avatar={
-                  <ProfileAvatarVisual
-                    displayName={viewerSummary.displayName}
-                    size="sm"
-                    ringClassName={resolveRingStyle(viewerSummary.avatarRingId)?.className}
-                    avatarImage={viewerSummary.avatarUrl ? <img src={viewerSummary.avatarUrl} alt="" className="h-full w-full object-cover" /> : undefined}
-                    decorationImage={viewerSummary.avatarDecorationUrl ? <img src={viewerSummary.avatarDecorationUrl} alt="" className="h-full w-full object-contain" /> : undefined}
-                  />
-                }
-                onOpenProfile={() => navigate("/me")}
-                onOpenHelp={() => navigate("/help")}
-                onOpenSettings={() => navigate("/settings")}
-                onLogout={() => navigate("/login")}
-              />
-            ) : undefined
-          }
+          navigate={navigate}
         />
       }
       mainClassName={routeLayout.contentClassName}

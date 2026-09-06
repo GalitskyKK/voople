@@ -9,6 +9,7 @@ import { GlobalPlayer } from "@/components/player/GlobalPlayer";
 import { SidebarHighlights } from "./SidebarHighlights";
 import { AppSidebarVisual } from "./AppNavigationVisual";
 import { AppAccountMenu } from "./AppAccountMenu";
+import { MessengerSidebar } from "./MessengerSidebar";
 import { useSidebarPreference } from "@/hooks/useSidebarPreference";
 import { isMessagesThreadPath } from "@/lib/layout/messages-path";
 
@@ -18,20 +19,54 @@ export function DesktopSidebar({ authenticated }: { authenticated: boolean }) {
   const { collapsed, setCollapsed } = useSidebarPreference({
     forceExpanded: !authenticated,
   });
+  const messengerShell = authenticated && pathname.startsWith("/messages");
 
   return (
     <AppSidebarVisual
       pathname={pathname}
-      collapsed={collapsed}
-      onCollapsedChange={authenticated ? setCollapsed : undefined}
+      collapsed={messengerShell ? false : collapsed}
+      onCollapsedChange={
+        authenticated && !messengerShell ? setCollapsed : undefined
+      }
       mode={authenticated ? "authenticated" : "public"}
       notificationBadge={authenticated ? <NotificationNavBadge /> : undefined}
-      accountNavigation={authenticated ? <AppAccountMenu compact={collapsed} /> : undefined}
+      accountNavigation={
+        authenticated ? (
+          <AppAccountMenu compact={messengerShell ? false : collapsed} />
+        ) : undefined
+      }
+      primaryNavigation={
+        messengerShell ? (
+          <MessengerSidebar
+            pathname={pathname}
+            renderDestination={({
+              href,
+              label,
+              className,
+              active,
+              onNavigate,
+              children,
+            }) => (
+              <Link
+                href={href}
+                aria-label={label}
+                aria-current={active ? "page" : undefined}
+                className={className}
+                onClick={() => onNavigate?.()}
+              >
+                {children}
+              </Link>
+            )}
+          />
+        ) : undefined
+      }
       navAfter={
-        authenticated ? <>
-          <SidebarHighlights />
-          <GlobalPlayer variant="desktop" />
-        </> : undefined
+        authenticated ? (
+          <>
+            <SidebarHighlights />
+            <GlobalPlayer variant="desktop" />
+          </>
+        ) : undefined
       }
       footerAfter={!authenticated ? (
         <div className="mt-2 space-y-1 border-t border-[var(--app-border)] pt-3">

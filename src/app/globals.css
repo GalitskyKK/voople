@@ -1763,6 +1763,57 @@ button.voople-post-action:active {
     --voople-sticky-offset: 0px;
   }
 
+  .voople-shell[data-route-kind="messages"] {
+    --voople-sidebar-width: 200px;
+    --app-radius-sm: 3px;
+    --app-radius-md: 4px;
+    --app-radius-lg: 6px;
+    --app-radius-xl: 6px;
+    background: color-mix(in srgb, var(--background) 97%, black);
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    letter-spacing: -0.012em;
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-sidebar {
+    border-right: 1px solid var(--app-border);
+    background: color-mix(in srgb, var(--background) 98%, black);
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-sidebar__brand {
+    padding: 1rem 0.75rem 0.875rem;
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-sidebar__footer {
+    padding: 0.625rem;
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-shell__column {
+    padding: 0;
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-shell__workspace {
+    border-width: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__row,
+  .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__search,
+  .voople-shell[data-route-kind="messages"] .voople-sidebar__footer button {
+    border-radius: 4px;
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-chat-list__create {
+    display: none;
+  }
+
+  .voople-shell[data-route-kind="messages"]
+    .voople-messages-layout[data-thread="true"]
+    > div
+    > aside {
+    display: none;
+  }
+
   .voople-shell {
     position: fixed;
     inset: 0;

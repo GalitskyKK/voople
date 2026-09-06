@@ -14,6 +14,7 @@ export function ChatThreadFrameView({
   messagesContentRef,
   renderMessage,
   afterMessages,
+  emptyState,
   error,
   composer,
   overlays,
@@ -26,6 +27,7 @@ export function ChatThreadFrameView({
   messagesContentRef: { current: HTMLDivElement | null };
   renderMessage: (item: Extract<ChatTimelineItem, { type: "message" }>) => ReactNode;
   afterMessages?: ReactNode;
+  emptyState?: ReactNode;
   error?: string | null;
   composer: ReactNode;
   overlays?: ReactNode;
@@ -51,31 +53,32 @@ export function ChatThreadFrameView({
         data-voople-scroll=""
         className="voople-chat-window__messages voople-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-1 py-3"
       >
-        {timeline.length === 0 ? (
-          <p className="text-center text-sm text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]">
-            Напишите первое сообщение
-          </p>
-        ) : null}
         <div
           ref={(node) => {
             messagesContentRef.current = node;
           }}
-          className="mx-auto flex w-full flex-col gap-0.5 px-2"
+          className="mx-auto flex min-h-full w-full flex-col justify-end gap-0.5 px-2"
         >
-          {timeline.map((item) =>
-            item.type === "date" ? (
-              <ChatDateDivider key={item.key} label={item.label} />
-            ) : item.type === "roomSummary" ? (
-              <ChatRoomActivitySummary
-                key={item.key}
-                dayLabel={item.dayLabel}
-                durationSeconds={item.durationSeconds}
-                sessions={item.sessions}
-              />
-            ) : (
-              renderMessage(item)
-            ),
-          )}
+          {timeline.length === 0
+            ? emptyState ?? (
+                <p className="pb-4 text-sm text-[var(--app-muted)]">
+                  Напишите первое сообщение
+                </p>
+              )
+            : timeline.map((item) =>
+                item.type === "date" ? (
+                  <ChatDateDivider key={item.key} label={item.label} />
+                ) : item.type === "roomSummary" ? (
+                  <ChatRoomActivitySummary
+                    key={item.key}
+                    dayLabel={item.dayLabel}
+                    durationSeconds={item.durationSeconds}
+                    sessions={item.sessions}
+                  />
+                ) : (
+                  renderMessage(item)
+                ),
+              )}
         </div>
         {afterMessages}
       </div>

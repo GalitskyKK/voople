@@ -42,7 +42,9 @@ export function ChatListSearchPanel({
     <>
       <AppPanelHeader>
         <h1 className="min-w-0 flex-1 truncate text-lg font-bold tracking-[-0.025em]">Чаты</h1>
-        {headerAction}
+        {headerAction ? (
+          <span className="voople-chat-list__create">{headerAction}</span>
+        ) : null}
       </AppPanelHeader>
       <div className="shrink-0 space-y-2.5 border-b border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-3">
         <div className="flex gap-2">

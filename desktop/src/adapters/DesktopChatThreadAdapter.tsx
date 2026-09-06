@@ -12,6 +12,7 @@ import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { ChatMediaLightbox } from "@/components/chat/ChatMediaLightbox";
 import { ChatMessageBubble } from "@/components/chat/ChatMessageBubble";
+import { ChatConversationStart } from "@/components/chat/ChatConversationStart";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import type { ChatListItem, ChatMessageView, GroupEmojiView } from "@/types/chat";
@@ -304,6 +305,21 @@ export function DesktopChatThreadAdapter({
         />
       ) : null}
       timeline={timeline}
+      emptyState={
+        <ChatConversationStart
+          chatTitle={title}
+          isGroup={isGroup}
+          isSubchat={isSubchat}
+          parentName={data.chat.parentName}
+          memberCount={data.chat.memberCount}
+          topicIcon={data.chat.topicIcon}
+          groupIcon={data.chat.groupIcon}
+          groupAvatarUrl={data.chat.groupAvatarUrl}
+          groupAccentColor={data.chat.groupAccentColor}
+          other={other}
+          otherOnline={Boolean(other && onlineUserIds.has(other.id))}
+        />
+      }
       messagesRef={messagesRef}
       messagesContentRef={messagesContentRef}
       renderMessage={(item) => (

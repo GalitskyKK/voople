@@ -348,10 +348,11 @@ Messenger sidebar получил отдельный unread badge для Group и
 Source-тесты проверяют приватность, монотонность, агрегацию, ограниченный
 visible/focused acknowledgement и присутствие migration 65 в release ledger.
 Web и desktop используют один `ChatListItem` contract и один badge view;
-изолированный visual gate покрывает одновременные unread и live states. До
+изолированный visual gate покрывает одновременные unread и live states. Home
+ranking использует те же счётчики и определяет reply/mention только среди
+сообщений после персонального cursor, включая доступные разделы Group. До
 release migration 65 нужно применить перед кодом приложения. Production БД в
-этом срезе не менялась; Home attention всё ещё нужно перевести со старого
-глобального `read_at` на персональный cursor отдельным совместимым срезом.
+этом срезе не менялась.
 
 ## Cross-platform architecture gate
 

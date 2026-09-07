@@ -27,6 +27,17 @@ test("chat list aggregates section unread counts without mixing them with live s
   assert.match(view, /live\.participantCount/);
 });
 
+test("Home attention uses the same per-member cursor as the messenger sidebar", () => {
+  const data = source("src/server/data/home-overview-rest.ts");
+  const service = source("src/server/services/home.service.ts");
+
+  assert.match(data, /from\("chat_read_cursors"\)/);
+  assert.match(data, /readThroughByChat\.get\(chatId\) \?\? joinedAtByRoot\.get\(rootChatId\)/);
+  assert.doesNotMatch(data, /is\("read_at", null\)/);
+  assert.match(service, /const unreadCount = chat\.unreadCount/);
+  assert.match(service, /\.\.\.chat\.channels\.map/);
+});
+
 test("migration 65 is part of the release ledger", () => {
   const manifest = source("scripts/migration-manifest.mjs");
   const occurrences = manifest.match(/65-chat-read-cursors\.sql/g) ?? [];

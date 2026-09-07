@@ -18,6 +18,10 @@ import type { HomeNowItem, HomeOverviewView } from "@/types/home";
 export async function getHomeOverview(userId: string): Promise<HomeOverviewView> {
   const chats = await listChats(userId);
   const rootChats = chats.filter((chat) => !chat.parentChatId);
+  const attentionTargets = rootChats.flatMap((chat) => [
+    { chatId: chat.id, rootChatId: chat.id },
+    ...chat.channels.map((channel) => ({ chatId: channel.id, rootChatId: chat.id })),
+  ]);
   const directChats = rootChats.filter((chat) => chat.type === "direct" && chat.otherUser);
   const sharedGroupPeople = await listSharedGroupPeopleRest(userId);
   const directUserIds = new Set(directChats.map((chat) => chat.otherUser!.id));
@@ -29,7 +33,7 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
   const [viewer, activeRooms, attention, visibleOnlineIds, listeningActivity, relationshipScores, pinnedUserIds] = await Promise.all([
     fetchCurrentUserSummary(userId),
     listActiveHomeRoomItems(chats, userId),
-    getHomeChatAttentionRest(rootChats.map((chat) => chat.id), userId),
+    getHomeChatAttentionRest(attentionTargets, userId),
     listVisibleOnlineUserIdsRest(userId),
     getVisibleListeningActivityRest(userId, relationshipCandidates.map((candidate) => candidate.userId)),
     getRelationshipScoresRest(userId, relationshipCandidates),
@@ -95,7 +99,7 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
     const item = itemById.get(chat.id);
     if (!item?.subtitle) return [];
     const chatAttention = attention.get(chat.id);
-    const unreadCount = chatAttention?.unreadCount ?? 0;
+    const unreadCount = chat.unreadCount;
     const relationshipScore = item.userId ? relationshipScores.get(item.userId) ?? 0 : 0;
     const score = scoreHomeContinue({
       mentionOrReply: chatAttention?.mentionOrReply,

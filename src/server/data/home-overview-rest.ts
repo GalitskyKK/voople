@@ -104,24 +104,60 @@ export async function listSharedGroupPeopleRest(viewerId: string) {
   });
 }
 
-export async function getHomeChatAttentionRest(chatIds: string[], userId: string) {
-  const result = new Map<string, { unreadCount: number; mentionOrReply: boolean }>();
-  if (!chatIds.length) return result;
+export async function getHomeChatAttentionRest(
+  targets: Array<{ chatId: string; rootChatId: string }>,
+  userId: string,
+) {
+  const result = new Map<string, { mentionOrReply: boolean }>();
+  if (!targets.length) return result;
   const admin = getAdminClient();
-  const [messagesResult, viewerResult] = await Promise.all([
+  const chatIds = [...new Set(targets.map((target) => target.chatId))];
+  const rootChatIds = [...new Set(targets.map((target) => target.rootChatId))];
+  const rootByChat = new Map(targets.map((target) => [target.chatId, target.rootChatId]));
+  const [cursorResult, membershipResult, viewerResult] = await Promise.all([
     admin
-      .from("messages")
-      .select("chat_id, text, reply_to_message_id")
-      .in("chat_id", chatIds)
-      .neq("sender_id", userId)
-      .is("read_at", null)
-      .limit(1_000),
+      .from("chat_read_cursors")
+      .select("chat_id, read_through_at")
+      .eq("user_id", userId)
+      .in("chat_id", chatIds),
+    admin
+      .from("chat_members")
+      .select("chat_id, joined_at")
+      .eq("user_id", userId)
+      .in("chat_id", rootChatIds),
     admin.from("users").select("username").eq("id", userId).maybeSingle(),
   ]);
-  if (messagesResult.error) throw new Error(messagesResult.error.message);
-  if (viewerResult.error) throw new Error(viewerResult.error.message);
+  const setupFailure = cursorResult.error ?? membershipResult.error ?? viewerResult.error;
+  if (setupFailure) throw new Error(setupFailure.message);
 
-  const unread = messagesResult.data ?? [];
+  const joinedAtByRoot = new Map(
+    (membershipResult.data ?? []).map((row) => [String(row.chat_id), String(row.joined_at)]),
+  );
+  const readThroughByChat = new Map(
+    (cursorResult.data ?? []).map((row) => [String(row.chat_id), String(row.read_through_at)]),
+  );
+  const thresholdByChat = new Map<string, string>();
+  for (const { chatId, rootChatId } of targets) {
+    const threshold = readThroughByChat.get(chatId) ?? joinedAtByRoot.get(rootChatId);
+    if (threshold) thresholdByChat.set(chatId, threshold);
+  }
+  if (!thresholdByChat.size) return result;
+  const earliestThreshold = [...thresholdByChat.values()].sort()[0];
+
+  const messagesResult = await admin
+    .from("messages")
+    .select("chat_id, text, reply_to_message_id, created_at")
+    .in("chat_id", [...thresholdByChat.keys()])
+    .neq("sender_id", userId)
+    .gte("created_at", earliestThreshold)
+    .order("created_at", { ascending: false })
+    .limit(1_000);
+  if (messagesResult.error) throw new Error(messagesResult.error.message);
+
+  const unread = (messagesResult.data ?? []).filter((row) => {
+    const threshold = thresholdByChat.get(String(row.chat_id));
+    return Boolean(threshold && String(row.created_at) > threshold);
+  });
   const replyIds = [...new Set(unread.flatMap((row) => row.reply_to_message_id ? [String(row.reply_to_message_id)] : []))];
   const repliedToViewer = new Set<string>();
   if (replyIds.length) {
@@ -135,14 +171,14 @@ export async function getHomeChatAttentionRest(chatIds: string[], userId: string
   const username = typeof viewerResult.data?.username === "string" ? viewerResult.data.username : null;
 
   for (const row of unread) {
-    const chatId = String(row.chat_id);
-    const current = result.get(chatId) ?? { unreadCount: 0, mentionOrReply: false };
-    current.unreadCount += 1;
+    const rootChatId = rootByChat.get(String(row.chat_id));
+    if (!rootChatId) continue;
+    const current = result.get(rootChatId) ?? { mentionOrReply: false };
     current.mentionOrReply ||= Boolean(
       (row.reply_to_message_id && repliedToViewer.has(String(row.reply_to_message_id)))
       || messageMentionsUsername(typeof row.text === "string" ? row.text : null, username),
     );
-    result.set(chatId, current);
+    result.set(rootChatId, current);
   }
   return result;
 }

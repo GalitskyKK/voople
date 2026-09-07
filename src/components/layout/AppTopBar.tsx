@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Download, LogIn, ShoppingBag, Sparkles } from "lucide-react";
+import { Bell, Download, LogIn, ShoppingBag } from "lucide-react";
 
 import { COPY } from "@/lib/constants/copy";
 import { VoopleMark } from "@/components/brand/VoopleMark";
+import { NotificationNavBadge } from "@/components/notifications/NotificationNavBadge";
 import { AppAccountMenu } from "./AppAccountMenu";
 
 /** Mobile-only top bar; primary destinations live in bottom navigation. */
@@ -20,43 +21,45 @@ export function AppTopBar({ authenticated }: { authenticated: boolean }) {
         {COPY.appName}
       </Link>
       <div className="flex items-center gap-1">
-        {authenticated && !pathname.startsWith("/events") && (
-          <Link
-            href="/events"
-            className="relative flex items-center rounded-[var(--app-radius-sm)] px-2 py-1.5 text-(--theme-accent) transition hover:bg-[var(--app-accent-soft)]"
-            aria-label="События"
-          >
-            <Sparkles className="h-5 w-5" strokeWidth={1.75} />
-            <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-400 ring-2 ring-[var(--background)]" />
-          </Link>
-        )}
-        {!hideShop && (
-          <Link
-            href="/shop"
-            className="flex items-center gap-1.5 rounded-[var(--app-radius-sm)] px-2 py-1.5 text-sm text-[var(--app-muted)] transition-all duration-200 hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
-            aria-label={COPY.shop}
-          >
-            <ShoppingBag className="h-5 w-5" strokeWidth={1.75} />
-          </Link>
-        )}
-        <Link
-          href="/download/desktop"
-          prefetch={false}
-          className="flex items-center rounded-[var(--app-radius-sm)] px-2 py-1.5 text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
-          aria-label="Скачать приложение"
-        >
-          <Download className="h-5 w-5" strokeWidth={1.75} />
-        </Link>
         {authenticated ? (
-          <AppAccountMenu compact fill={false} />
+          <>
+            <Link
+              href="/notifications"
+              className="relative grid h-9 w-9 place-items-center rounded-[var(--app-radius-sm)] text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
+              aria-label={COPY.notifications}
+            >
+              <Bell className="h-5 w-5" strokeWidth={1.75} />
+              <NotificationNavBadge className="right-0 top-0" />
+            </Link>
+            <AppAccountMenu compact fill={false} />
+          </>
         ) : (
-          <Link
-            href={`/login?redirect=${encodeURIComponent(pathname)}`}
-            className="flex items-center gap-1.5 rounded-[var(--app-radius-sm)] bg-[var(--app-accent-soft)] px-2.5 py-1.5 text-xs font-semibold text-[var(--foreground)]"
-          >
-            <LogIn className="h-4 w-4" />
-            Войти
-          </Link>
+          <>
+            {!hideShop ? (
+              <Link
+                href="/shop"
+                className="flex items-center rounded-[var(--app-radius-sm)] px-2 py-1.5 text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
+                aria-label={COPY.shop}
+              >
+                <ShoppingBag className="h-5 w-5" strokeWidth={1.75} />
+              </Link>
+            ) : null}
+            <Link
+              href="/download/desktop"
+              prefetch={false}
+              className="flex items-center rounded-[var(--app-radius-sm)] px-2 py-1.5 text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
+              aria-label="Скачать приложение"
+            >
+              <Download className="h-5 w-5" strokeWidth={1.75} />
+            </Link>
+            <Link
+              href={`/login?redirect=${encodeURIComponent(pathname)}`}
+              className="flex items-center gap-1.5 rounded-[var(--app-radius-sm)] bg-[var(--app-accent-soft)] px-2.5 py-1.5 text-xs font-semibold text-[var(--foreground)]"
+            >
+              <LogIn className="h-4 w-4" />
+              Войти
+            </Link>
+          </>
         )}
       </div>
     </header>

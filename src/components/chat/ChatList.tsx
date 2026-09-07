@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
+import { Bell } from "lucide-react";
 
+import { NotificationNavBadge } from "@/components/notifications/NotificationNavBadge";
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { useRealtimeInbox } from "@/hooks/useRealtimeChat";
@@ -42,7 +44,19 @@ export function ChatList({ activeChatId = null }: ChatListProps) {
       activeChatId={activeChatId}
       loading={isLoading}
       error={error?.message}
-      headerAction={<GroupChatCreator variant="compact" />}
+      headerAction={(
+        <span className="flex items-center gap-1">
+          <Link
+            href="/notifications"
+            className="relative grid h-9 w-9 place-items-center rounded-xl text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
+            aria-label="Уведомления"
+          >
+            <Bell className="h-4 w-4" aria-hidden="true" />
+            <NotificationNavBadge className="right-0 top-0" />
+          </Link>
+          <GroupChatCreator variant="compact" />
+        </span>
+      )}
       emptyAction={
         <Link
           href="/explore"

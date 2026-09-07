@@ -48,11 +48,11 @@ export const PROFILE_NAV_ITEM = {
   match: (p: string) => p === "/me",
 } as const;
 
-/** Five primary destinations fit at 360 px; events and shop remain in the top bar. */
+/** Mobile keeps four daily destinations; activity moves to the current surface header. */
 export const MOBILE_NAV_ITEMS = [
-  ...MAIN_NAV_ITEMS.filter((item) =>
-    ["/feed", "/messages", "/explore", "/notifications"].includes(item.href),
-  ),
+  { ...MAIN_NAV_ITEMS[0], label: "Сейчас" },
+  MAIN_NAV_ITEMS[1],
+  MAIN_NAV_ITEMS[2],
   PROFILE_NAV_ITEM,
 ] as const;
 

@@ -184,7 +184,6 @@ export function AppSidebarVisual({
 export function AppBottomNavigationVisual({
   pathname,
   renderDestination,
-  notificationBadge,
   mode = "authenticated",
 }: NavigationVisualProps) {
   const navigationItems =
@@ -196,17 +195,17 @@ export function AppBottomNavigationVisual({
       className="voople-bottom-nav pointer-events-none fixed bottom-0 left-0 right-0 z-30 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] lg:hidden"
       aria-label="Основная навигация"
     >
-      <ul className="pointer-events-auto flex h-[3.625rem] items-center gap-0.5 rounded-full border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_92%,transparent)] px-2 shadow-[var(--app-shadow-nav)] backdrop-blur-xl">
+      <ul className="pointer-events-auto flex h-[3.625rem] w-[min(22rem,calc(100vw-1rem))] items-center justify-between gap-0.5 rounded-full border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_92%,transparent)] px-2 shadow-[var(--app-shadow-nav)] backdrop-blur-xl">
         {navigationItems.map(({ href, label, icon: Icon, match }) => {
           const active = match(pathname);
           return (
-            <li key={href}>
+            <li key={href} className="min-w-0 flex-1">
               {renderDestination({
                 href,
                 label,
                 active,
                 className: cn(
-                  "relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-full border-0 bg-transparent px-1.5 py-2 text-[10px] font-medium tracking-wide transition-all duration-200 sm:px-2.5",
+                  "relative flex w-full min-w-0 flex-col items-center gap-0.5 rounded-full border-0 bg-transparent px-1.5 py-2 text-[10px] font-medium tracking-wide transition-all duration-200 sm:px-2.5",
                   active
                     ? "text-[var(--foreground)]"
                     : "text-[var(--app-muted)] hover:text-[color-mix(in_srgb,var(--foreground)_82%,transparent)]",
@@ -218,7 +217,6 @@ export function AppBottomNavigationVisual({
                         className="h-5 w-5"
                         strokeWidth={active ? 2.25 : 1.75}
                       />
-                      {href === "/notifications" && notificationBadge}
                     </span>
                     <span>{label}</span>
                     <span

@@ -114,7 +114,7 @@ Transport/media были заглушены: real DB, authorization, native desk
 | 41 | Mini Profile adaptive positioning | Частично | Collision detection, flip/shift, viewport padding, zoom 125–200%, internal scroll и гарантия, что cosmetics не меняют geometry/actions |
 | 42 | Creator Cosmetics Program | Планирование | Не только шаблоны: constrained multi-layer canvas с anchors/masks/keyframes и расширяемым typed manifest, безопасные animated formats/static fallback, preview matrix, moderation/IP/takedown, performance budgets, payouts/KYC/anti-fraud и versioned creator contract |
 | 43 | Recognition Program | Планирование | Server-authoritative Founder 25 snapshot и event; subscription loyalty policy; role-based Developer/Team badges; audit log и отделение badges от permissions/cosmetics |
-| 44 | Shell useful-space and density | Частично | Реализованы shared preference/View, compact default 72 px, persisted 216 px, hover-only expand/collapse control, item tooltips, единое account menu, mobile Search без topbar/bottom-nav дубля, Chat List 280–320 px и container-aware Home rail. Architecture, lint, web/desktop TypeScript/build зелёные; public Playwright: 360/390/1024/1280/1440 без overflow. До `Готово` нужны compact media-player surface, обновлённая mobile IA с 4–5 destinations/compact badges/safe-area, authenticated fullscreen, Windows scale 125/150%, dark/light, keyboard/account-menu и screen-reader gates |
+| 44 | Shell useful-space and density | Частично | Реализованы shared preference/View, compact default 72 px, persisted 216 px, hover-only expand/collapse control, item tooltips, единое account menu, mobile Search без topbar/bottom-nav дубля, четыре mobile destinations (`Сейчас / Чаты / Поиск / Профиль`), activity badge в header и Chat List, Chat List 280–320 px и container-aware Home rail. Architecture, lint, web/desktop TypeScript/build зелёные; public Playwright: 360/390/1024/1280/1440 без overflow. До `Готово` нужны compact media-player surface, authenticated mobile/fullscreen visual gate, Windows scale 125/150%, dark/light, keyboard/account-menu и screen-reader gates |
 | 45 | Shared icon controls and tooltips | Частично | Общие `Tooltip`/`IconButton`, viewport flip/clamp с учётом native titlebar, hover-delay, focus/Escape, touch suppression, reduced-motion и aria-label подключены к compact sidebar, Room header/footer/media/dock, «Новому разделу» и «Комнате», composer/group-header controls; tooltip принимает pointer/focus только от физического trigger, поэтому portalled account menu больше не вызывает чужой `Аккаунт`; source/unit contracts зелёные. Остались инвентаризация остальных icon-only действий, authenticated web/desktop visual check, screen-reader pass и единый паттерн объяснения disabled-состояний |
 | 46 | Board-by-board convergence | Частично | Board 2 имеет safe conversation close, bounded read lifecycle, section-strip `+` и общий Members overlay drawer с presence/Room/roles; room context server-owned, privacy-aware и не раскрывает restricted sections. Source/unit, architecture, lint и web/desktop TypeScript gates зелёные; до закрытия нужны authenticated responsive/accessibility/visual matrix и controller parity, затем по тому же gate Boards 1, 3, 4, 5 и 6 |
 | 47 | Auth entry parity and branding | Частично | Web OTP уже six-slot. Web и desktop registration используют общий safe email callback: он сохраняет внутренний continuation, дедуплицирует PKCE exchange при React StrictMode, синхронизирует профиль, доверяет устройство и имеет loading/error/retry/login states без показа provider error. Нужны актуальный logo/landing/login/register visual language, shared password visibility control, единый web/desktop OTP interaction, timeout/offline copy, live email/redirect-allowlist и responsive/accessibility gates |
@@ -353,6 +353,21 @@ ranking использует те же счётчики и определяет 
 сообщений после персонального cursor, включая доступные разделы Group. До
 release migration 65 нужно применить перед кодом приложения. Production БД в
 этом срезе не менялась.
+
+### Mobile core navigation — 2026-09-07
+
+Authenticated bottom navigation сокращена до четырёх ежедневных направлений:
+`Сейчас`, `Чаты`, `Поиск`, `Профиль`. Уведомления больше не занимают отдельный
+пятый слот: компактная activity-кнопка со счётчиком находится в mobile topbar,
+а на экране списка чатов — в его собственном header, который остаётся видимым,
+когда общий topbar скрыт. Events, Store и download убраны из authenticated
+topbar; существующие маршруты и функции не удалены. Навигационная капсула имеет
+фиксированную доступную ширину, четыре равных touch-target и сохраняет safe-area.
+
+Source-тест фиксирует четыре пункта, отсутствие Notifications в bottom nav и
+наличие activity entry в header. До полного статуса остаются authenticated
+visual/keyboard/screen-reader gates на 360/390 px и перенос secondary-функций в
+контекстные Group/account surfaces без удаления их реализаций.
 
 ## Cross-platform architecture gate
 

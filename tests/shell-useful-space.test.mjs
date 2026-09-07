@@ -21,10 +21,11 @@ test("compact navigation is the safe default and only an explicit preference pin
 
 test("web and desktop share pinned compact state, account menu and item tooltips", () => {
   const web = read("src/components/layout/DesktopSidebar.tsx");
-  const desktop = read("desktop/src/shell/DesktopShell.tsx");
+  const desktopSidebar = read("desktop/src/adapters/DesktopAppSidebarAdapter.tsx");
   const sidebar = read("src/components/layout/AppNavigationVisual.tsx");
   const accountMenu = read("src/components/layout/AccountMenuVisual.tsx");
   const mobileTopBar = read("src/components/layout/AppTopBar.tsx");
+  const chatList = read("src/components/chat/ChatList.tsx");
   const tooltip = read("src/components/layout/SidebarItemTooltip.tsx");
   const tooltipPrimitive = read("src/components/ui/Tooltip.tsx");
   const navigation = read("src/lib/constants/nav.ts");
@@ -32,9 +33,9 @@ test("web and desktop share pinned compact state, account menu and item tooltips
   const desktopStyles = read("desktop/src/styles.css");
 
   assert.match(web, /useSidebarPreference/);
-  assert.match(desktop, /useSidebarPreference/);
+  assert.match(desktopSidebar, /useSidebarPreference/);
   assert.match(web, /AppAccountMenu/);
-  assert.match(desktop, /AccountMenuVisual/);
+  assert.match(desktopSidebar, /AccountMenuVisual/);
   assert.match(accountMenu, /role="menuitem"/);
   assert.match(accountMenu, /onOpenSettings/);
   assert.match(accountMenu, /onOpenHelp/);
@@ -52,6 +53,15 @@ test("web and desktop share pinned compact state, account menu and item tooltips
   assert.doesNotMatch(navigation, /href: "\/settings"/);
   assert.doesNotMatch(navigation, /href: "\/login"/);
   assert.doesNotMatch(mobileTopBar, /href="\/explore"/);
+  assert.match(mobileTopBar, /href="\/notifications"/);
+  assert.match(mobileTopBar, /NotificationNavBadge/);
+  assert.match(chatList, /href="\/notifications"/);
+  assert.match(chatList, /NotificationNavBadge/);
+  assert.match(navigation, /\{ \.\.\.MAIN_NAV_ITEMS\[0\], label: "Сейчас" \}/);
+  assert.doesNotMatch(
+    navigation.match(/export const MOBILE_NAV_ITEMS = \[[\s\S]*?\] as const;/)?.[0] ?? "",
+    /\/notifications/,
+  );
   assert.doesNotMatch(desktopStyles, /\.voople-sidebar button \{[\s\S]{0,80}background: transparent/);
 });
 

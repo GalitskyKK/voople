@@ -53,7 +53,7 @@ export function VoiceRoomSheet({
       containerClassName={fullscreen ? "p-0 sm:p-0" : undefined}
       closeOnEscape={!fullscreen}
       className={cn(
-        "h-[min(94dvh,860px)] max-h-[94dvh] max-w-6xl overflow-hidden p-0",
+        "voople-full-room h-[min(94dvh,860px)] max-h-[94dvh] max-w-6xl overflow-hidden p-0",
         fullscreen && "h-full max-h-none max-w-none rounded-none border-0 p-0 sm:rounded-none",
       )}
     >

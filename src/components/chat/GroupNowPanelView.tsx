@@ -77,7 +77,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
         </p>
       ) : null}
 
-      <div className="mt-3 space-y-1.5">
+      <div className="voople-group-now__rooms mt-3 border-t border-[var(--app-border)]">
         {props.value.rooms.map((room) => (
           <GroupNowRoomSection
             key={room.id}
@@ -108,7 +108,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
         <button
           type="button"
           onClick={props.onCreateRoom}
-          className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[var(--app-radius-sm)] border border-dashed border-[var(--app-border-strong)] px-3 text-sm font-medium text-[var(--theme-accent)] transition hover:border-[var(--theme-accent)] hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]"
+          className="voople-group-now__create inline-flex min-h-11 w-full items-center justify-center gap-2 border-b border-[var(--app-border)] px-3 text-sm font-medium text-[var(--theme-accent)] transition hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)]"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           Комната

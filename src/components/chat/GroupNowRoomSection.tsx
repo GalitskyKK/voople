@@ -33,8 +33,8 @@ export function GroupNowRoomSection({
 
   return (
     <section
-      data-layout="room-card"
-      className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-3 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_72%,transparent)] px-3 py-3 sm:grid-cols-[minmax(9rem,0.8fr)_minmax(0,1.5fr)_minmax(9rem,0.9fr)_auto] sm:items-center sm:px-4"
+      data-layout="room-section"
+      className="voople-group-now-room grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-3 border-b border-[var(--app-border)] px-3 py-3 sm:grid-cols-[minmax(9rem,0.8fr)_minmax(0,1.5fr)_minmax(9rem,0.9fr)_auto] sm:items-center sm:px-4"
       aria-labelledby={`group-now-room-${room.id}`}
     >
       <div className="order-1 min-w-0">
@@ -46,7 +46,7 @@ export function GroupNowRoomSection({
             {room.name}
           </h3>
           <span className="voople-group-now-room__count shrink-0 font-mono text-[10px] text-[var(--app-muted)]">
-            / {String(room.participantCount).padStart(2, "0")}
+            {room.participantCount}
           </span>
         </div>
         <p className="mt-1 inline-flex items-center gap-1.5 text-[11px] text-[var(--app-muted)]">

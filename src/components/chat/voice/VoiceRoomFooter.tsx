@@ -28,7 +28,7 @@ export function VoiceRoomFooter({
   const sessionPending = session.phase === "loading" || session.phase === "connecting" || session.phase === "leaving";
 
   return (
-    <footer className="shrink-0 border-t border-[var(--app-border)] bg-[color-mix(in_srgb,var(--background)_94%,transparent)] p-3 backdrop-blur-xl">
+    <footer className="voople-full-room__footer shrink-0 border-t border-[var(--app-border)] bg-[var(--background)] p-3">
       {connection.audioBlocked ? (
         <button
           type="button"

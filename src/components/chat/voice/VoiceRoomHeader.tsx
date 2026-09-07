@@ -53,10 +53,10 @@ export function VoiceRoomHeader({
     connection.quality === ConnectionQuality.Lost;
 
   return (
-    <header className="flex shrink-0 items-center gap-3 border-b border-[var(--app-border)] px-4 py-3 pr-14">
+    <header className="voople-full-room__header flex shrink-0 items-center gap-3 border-b border-[var(--app-border)] px-4 py-3 pr-14">
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
-          <h2 className="truncate text-base font-semibold sm:text-lg">{identity.chatName}</h2>
+          <h2 className="voople-full-room__title truncate text-base font-semibold uppercase tracking-[0.05em] sm:text-lg">{identity.chatName}</h2>
           {identity.durationLabel ? (
             <span className="shrink-0 text-xs tabular-nums text-[var(--app-muted)]">
               {identity.durationLabel}
@@ -88,7 +88,7 @@ export function VoiceRoomHeader({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="voople-full-room__header-actions flex shrink-0 items-center gap-1">
         {!identity.isDirect && identity.active && hasGroupSounds ? (
           <HeaderButton label="Открыть звуки группы" onClick={onOpenSoundboard}>
             <Music2 className="h-4 w-4" />
@@ -134,7 +134,7 @@ function HeaderButton({
       label={label}
       disabled={disabled}
       onClick={onClick}
-      className="grid h-9 w-9 place-items-center rounded-xl text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] disabled:cursor-wait disabled:opacity-45"
+      className="grid h-9 w-9 place-items-center rounded-xl text-[var(--foreground)] opacity-70 transition hover:bg-[var(--app-surface-soft)] hover:opacity-100 disabled:cursor-wait disabled:opacity-35"
     >
       {children}
     </IconButton>

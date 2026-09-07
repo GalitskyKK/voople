@@ -35,6 +35,18 @@ test("live shelf only shows occupied rooms and preserves direct room entry", () 
   assert.match(panel, /<GroupLiveShelfView/);
 });
 
+test("full Group Now follows the flat live hierarchy from the canonical plan", () => {
+  const panel = source("src/components/chat/GroupNowPanelView.tsx");
+  const room = source("src/components/chat/GroupNowRoomSection.tsx");
+
+  assert.match(panel, /voople-group-now__rooms/);
+  assert.match(panel, /voople-group-now__create/);
+  assert.doesNotMatch(panel, /border-dashed/);
+  assert.match(room, /voople-group-now-room/);
+  assert.doesNotMatch(room, /padStart/);
+  assert.doesNotMatch(room, /rounded-\[var\(--app-radius-sm\)\].*border/);
+});
+
 test("people view uses real member data and exposes room, presence and role context", () => {
   const controller = source("src/components/chat/GroupPeoplePanel.tsx");
   const view = source("src/components/chat/GroupPeoplePanelView.tsx");

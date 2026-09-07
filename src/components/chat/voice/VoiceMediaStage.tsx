@@ -21,7 +21,7 @@ export function VoiceMediaStage({
     <section
       className={cn(
         screenShareOwner
-          ? "relative grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-2xl border bg-black transition"
+          ? "voople-full-room__media relative grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-[var(--app-radius-sm)] border bg-black transition"
           : "hidden",
         focused
           ? "col-span-2 min-h-64 border-(--theme-accent) lg:col-span-4"

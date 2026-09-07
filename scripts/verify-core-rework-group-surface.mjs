@@ -105,7 +105,7 @@ try {
       }
     }
     if (tab === "now") {
-      assert.equal(await page.locator('[data-layout="room-card"]').count(), 2);
+      assert.equal(await page.locator('[data-layout="room-section"]').count(), 2);
     }
     if (tab === "people") {
       await page.getByLabel("Сейчас: 2").waitFor();

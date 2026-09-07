@@ -45,6 +45,44 @@ test("prejoin, connecting and active room reuse one stable sheet geometry", () =
   assert.match(control, /server\.room\.error\?\.message/);
 });
 
+test("full room uses one shared reference-aligned visual frame", () => {
+  const sheet = read("src/components/chat/voice/VoiceRoomSheet.tsx");
+  const header = read("src/components/chat/voice/VoiceRoomHeader.tsx");
+  const content = read("src/components/chat/voice/VoiceRoomContent.tsx");
+  const stage = read("src/components/chat/voice/VoiceRoomStage.tsx");
+  const media = read("src/components/chat/voice/VoiceMediaStage.tsx");
+  const participant = read("src/components/chat/voice/VoiceParticipantCard.tsx");
+  const footer = read("src/components/chat/voice/VoiceRoomFooter.tsx");
+  const styles = read("src/app/globals.css");
+
+  assert.match(sheet, /voople-full-room/);
+  assert.match(header, /voople-full-room__header/);
+  assert.match(header, /voople-full-room__title/);
+  assert.match(header, /text-\[var\(--foreground\)\] opacity-70/);
+  assert.match(content, /voople-full-room__content/);
+  assert.match(stage, /voople-full-room__stage/);
+  assert.match(media, /voople-full-room__media/);
+  assert.match(participant, /voople-full-room__participant/);
+  assert.match(footer, /voople-full-room__footer/);
+  assert.match(styles, /\.voople-full-room\s*\{/);
+  assert.doesNotMatch(participant, /shadow-\[0_0_0_2px/);
+});
+
+test("full Room gives its identity a dedicated mobile row without hiding actions", () => {
+  const header = read("src/components/chat/voice/VoiceRoomHeader.tsx");
+  const styles = read("src/app/globals.css");
+
+  assert.match(
+    styles,
+    /@media \(max-width: 639px\)[\s\S]*?\.voople-full-room__header \{[\s\S]*?flex-direction: column;[\s\S]*?align-items: stretch;/,
+  );
+  assert.match(
+    styles,
+    /\.voople-full-room__header-actions \{[\s\S]*?align-self: flex-end;/,
+  );
+  assert.doesNotMatch(header, /hidden.*voople-full-room__header-actions/);
+});
+
 test("room recovery is bounded, actionable and restores dialog focus", async () => {
   const states = read("src/components/chat/voice/VoiceRoomSessionStates.tsx");
   const surfaceSession = read("src/components/chat/voice/useVoiceRoomSurfaceSession.ts");

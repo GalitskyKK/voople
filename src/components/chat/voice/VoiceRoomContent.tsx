@@ -86,9 +86,9 @@ export function VoiceRoomContent({
   }
 
   return (
-    <div className="voople-room-surface voople-room-surface__state flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
+    <div className="voople-room-surface voople-room-surface__state voople-full-room__content flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
       {sessionPhase === "preview" && identity.active ? (
-        <div className="mb-3 shrink-0 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2 text-sm text-[var(--app-muted)]">
+        <div className="mb-3 shrink-0 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2 text-sm text-[var(--app-muted)]">
           Комната уже идёт — участники видны до подключения. Нажмите «Войти в комнату», чтобы присоединиться.
         </div>
       ) : null}
@@ -102,7 +102,7 @@ export function VoiceRoomContent({
         />
       ) : null}
       {stage.screenShareAvailable && !stage.watchingScreenShare && !controls.screenSharing ? (
-        <div className="mb-3 flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_35%,var(--app-border))] bg-[var(--app-accent-soft)] p-3">
+        <div className="mb-3 flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-[var(--app-radius-sm)] border border-[color-mix(in_srgb,var(--theme-accent)_35%,var(--app-border))] bg-[var(--app-accent-soft)] p-3">
           <div>
             <p className="text-sm font-semibold">Идёт демонстрация</p>
             <p className="text-xs text-[var(--app-muted)]">

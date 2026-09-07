@@ -387,18 +387,34 @@ loading/error/offline состояния.
 
 ### Group Now room hierarchy — 2026-09-07
 
-Полная поверхность `Сейчас` приблизилась к rework-референсу: каждая активная
-Room стала самостоятельной плотной строкой с названием и моноширинным счётчиком,
-участниками, live/screen-share сигналом и явным действием входа или перехода.
-На узкой ширине те же данные перестраиваются в две колонки без отдельной
-мобильной реализации. Создание Room остаётся внутри списка комнат как
-полноширинное вторичное действие. Поведение join/switch/current, server read
-model и прежние Group Chat/People/Info возможности не менялись и не удалялись.
+Полная поверхность `Сейчас` приблизилась к rework-референсу и каноническому
+плану: каждая активная Room стала самостоятельной плоской секцией с названием и
+простым счётчиком, участниками, live/screen-share сигналом и явным действием
+входа или перехода. На узкой ширине те же данные перестраиваются в две колонки
+без отдельной мобильной реализации. Создание Room остаётся внутри списка комнат
+как обычная компактная строка без пунктирной карточки. Поведение
+join/switch/current, server read model и прежние Group Chat/People/Info
+возможности не менялись и не удалялись.
 
-Source-тест фиксирует общий room-card contract и participant variant. Visual
-gate покрывает `Сейчас` на 390 и 1280 px без overflow/runtime errors. До полного
-статуса остаются настоящие аватары/длинные имена, loading/offline/error visual
-states и authenticated web/desktop parity.
+Source-тест фиксирует плоский room-section contract, простой счётчик и
+participant variant. Visual gate покрывает `Сейчас` на 390 и 1280 px без
+overflow/runtime errors. До полного статуса остаются настоящие аватары/длинные
+имена, loading/offline/error visual states и authenticated web/desktop parity.
+
+### Full Room visual hierarchy — 2026-09-07
+
+Общая web/desktop-поверхность активной Room получила близкий к rework-референсу
+каркас: демонстрация остаётся доминирующей, участники собраны во вторичную
+полосу, toolbar режима и header/footer используют тонкие разделители и малый
+радиус без декоративных теней. Active speaker обозначается границей, а не
+светящимся halo. На мобильной ширине идентификатор Room и действия разнесены по
+строкам, поэтому название не конкурирует с управлением и функции не скрываются.
+
+Source-тесты фиксируют общий каркас, доступные действия и отсутствие speaker
+glow. Stateless visual gate покрывает 390 px Light и 1280 px Void без
+overflow/runtime errors. До полного статуса остаются Room switcher из плана,
+authenticated multi-participant media, 1024/1440 и Windows scale 125/150%,
+loading/reconnecting/error/fullscreen состояния и keyboard/screen-reader gate.
 
 ### Group People presence hierarchy — 2026-09-07
 

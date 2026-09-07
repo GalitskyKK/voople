@@ -68,10 +68,10 @@ export function VoiceParticipantCard({
         onContextMenu={openContextMenu}
         onKeyDown={openContextMenuFromKeyboard}
         className={cn(
-          "relative flex flex-col items-center justify-end overflow-hidden rounded-2xl border bg-[var(--app-surface-soft)] text-center outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--theme-accent)]",
+          "voople-full-room__participant relative flex flex-col items-center justify-end overflow-hidden rounded-[var(--app-radius-sm)] border bg-[var(--app-surface-soft)] text-center outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--theme-accent)]",
           compact ? "min-h-32 gap-2 px-3 py-3" : "min-h-44 gap-3 px-4 py-4",
           focused && "col-span-2 h-full min-h-64 border-(--theme-accent) lg:col-span-4",
-          speaking ? "border-[var(--theme-accent)] shadow-[0_0_0_2px_color-mix(in_srgb,var(--theme-accent)_20%,transparent)]" : "border-[var(--app-border)]",
+          speaking ? "border-[var(--theme-accent)]" : "border-[var(--app-border)]",
           className,
         )}
       >

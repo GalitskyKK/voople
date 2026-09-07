@@ -106,17 +106,17 @@ export function VoiceRoomStage({
     );
 
     return (
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <p className="text-xs font-medium text-[var(--app-muted)]">
+      <div className="voople-full-room__stage flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="voople-full-room__stage-toolbar mb-2 flex items-center justify-between gap-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--app-muted)]">
             {layout === "focus" ? "Фокус" : "Сетка"}
           </p>
-          <div className="flex rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-1">
+          <div className="voople-full-room__layout-switch flex rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-1">
             <button
               type="button"
               onClick={() => selectLayout("focus")}
               className={cn(
-                "grid h-8 w-9 place-items-center rounded-lg transition",
+                "grid h-8 w-9 place-items-center rounded-[var(--app-radius-sm)] transition",
                 layout === "focus" && "bg-[var(--app-surface)] text-(--theme-accent) shadow-sm",
               )}
               aria-label="Показывать выбранное видео крупно"
@@ -128,7 +128,7 @@ export function VoiceRoomStage({
               type="button"
               onClick={() => selectLayout("grid")}
               className={cn(
-                "grid h-8 w-9 place-items-center rounded-lg transition",
+                "grid h-8 w-9 place-items-center rounded-[var(--app-radius-sm)] transition",
                 layout === "grid" && "bg-[var(--app-surface)] text-(--theme-accent) shadow-sm",
               )}
               aria-label="Показывать все видео сеткой"
@@ -183,7 +183,7 @@ export function VoiceRoomStage({
   return (
     <div
       className={cn(
-        "grid min-h-0 min-w-0 flex-1 content-center gap-2 overflow-y-auto [grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))]",
+        "voople-full-room__stage grid min-h-0 min-w-0 flex-1 content-center gap-2 overflow-y-auto [grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))]",
         participants.length === 1 && "mx-auto max-w-xl grid-cols-1",
         participants.length >= 5 && "lg:[grid-template-columns:repeat(3,minmax(0,1fr))]",
       )}

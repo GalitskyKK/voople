@@ -87,6 +87,7 @@ export function useVoiceRoomServerAdapter({
   if (!coreSession) {
     return {
       kind: "legacy" as const,
+      directory: null,
       room: {
         ...legacy.room,
         setData: (value: ChatRoomView) => legacy.utils.chat.room.setData({ chatId }, value),
@@ -118,6 +119,13 @@ export function useVoiceRoomServerAdapter({
 
   return {
     kind: "core" as const,
+    directory: {
+      groupName: coreQuery.data?.groupName ?? null,
+      rooms: coreQuery.data?.rooms ?? [coreSession.room],
+      error: coreQuery.error,
+      isFetching: coreQuery.isFetching,
+      refetch: coreQuery.refetch,
+    },
     room: {
       data: coreRoom.data,
       error: coreRoom.error ?? coreQuery.error,

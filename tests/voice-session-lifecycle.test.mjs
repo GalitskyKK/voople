@@ -45,6 +45,8 @@ test("ChatRoomControl is only a shared controller-to-view boundary", () => {
   assert.match(sheetModels, /identity: VoiceRoomIdentityModel/);
   assert.match(sheetModels, /connection: VoiceRoomConnectionModel/);
   assert.match(sheetModels, /session: VoiceRoomSessionModel/);
+  assert.match(sheetModels, /roomSwitcher: VoiceRoomSwitcherModel \| null/);
+  assert.match(sheet, /<VoiceRoomSwitcher/);
   assert.doesNotMatch(baseline, /ChatRoomControl\.tsx/);
 });
 

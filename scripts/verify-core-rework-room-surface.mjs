@@ -19,6 +19,7 @@ const entry = `import {createRoot} from 'react-dom/client';
   import {ConnectionQuality} from 'livekit-client';
   import {AppThemeProvider} from '@/components/theme/AppThemeProvider';
   import {VoiceRoomHeader} from '@/components/chat/voice/VoiceRoomHeader';
+  import {VoiceRoomSwitcher} from '@/components/chat/voice/VoiceRoomSwitcher';
   import {VoiceRoomStage} from '@/components/chat/voice/VoiceRoomStage';
   import {VoiceRoomFooter} from '@/components/chat/voice/VoiceRoomFooter';
   const noop=()=>{};
@@ -27,6 +28,11 @@ const entry = `import {createRoot} from 'react-dom/client';
     {id:'biba',username:'biba',displayName:'Biba',avatarUrl:null,avatarDecorationUrl:null,avatarRingId:null,micMuted:false,isMe:false},
     {id:'anya',username:'anya',displayName:'Anya',avatarUrl:null,avatarDecorationUrl:null,avatarRingId:null,micMuted:true,isMe:false},
   ];
+  const rooms=[
+    {id:'lobby',kind:'lobby',name:'Лобби',joinTarget:{kind:'room',roomId:'lobby'},state:'active',liveSessionId:'live-1',startedAt:null,startedBy:null,participantCount:2,hasScreenShare:false,participants:[]},
+    {id:'drg',kind:'temporary',name:'DRG',joinTarget:{kind:'room',roomId:'drg'},state:'active',liveSessionId:'live-2',startedAt:null,startedBy:null,participantCount:3,hasScreenShare:true,participants:[]},
+    {id:'chill',kind:'pinned',name:'Chill',joinTarget:{kind:'room',roomId:'chill'},state:'idle',liveSessionId:null,startedAt:null,startedBy:null,participantCount:0,hasScreenShare:false,participants:[]},
+  ];
   const bindScreen=(element)=>{if(!element||element.childNodes.length)return;const mock=document.createElement('div');mock.className='grid h-full w-full place-items-center bg-[linear-gradient(145deg,#111827,#1f2937)] text-center text-white/70';mock.innerHTML='<div><strong class="block text-lg text-white">Экран nmggk</strong><span class="mt-2 block text-xs">DEEP ROCK GALACTIC</span></div>';element.append(mock)};
   function Demo(){
     const identity={isDirect:false,callPhase:'connected',chatName:'VOICEKK / DRG',active:true,durationLabel:'01:42'};
@@ -34,10 +40,15 @@ const entry = `import {createRoot} from 'react-dom/client';
     const access={canManage:true,mode:'open',pending:false,onToggle:noop};
     const controls={micMuted:false,outputMuted:false,mediaActionPending:false,screenSharePending:false,screenSharing:false,screenShareHasAudio:true,cameraEnabled:false,cameraPending:false,onMicToggle:noop,onOutputToggle:noop,onScreenShareToggle:noop,onCameraToggle:noop};
     const session={phase:'inside',inside:true,leavePending:false,onLeave:noop,connectPending:false,connectDisabled:false,onConnect:noop,connectLabel:'Войти',retryLabel:'Повторить',retryPending:false,onRetry:noop};
-    return <main className="grid h-dvh place-items-center bg-[var(--background)] p-4 max-sm:p-0"><section className="voople-full-room flex h-[min(92dvh,760px)] w-full max-w-6xl min-w-0 flex-col overflow-hidden border border-[var(--app-border)]">
-      <VoiceRoomHeader identity={identity} connection={connection} participantCount={participants.length} hasGroupSounds access={access} fullscreen={false} fullscreenPending={false} onOpenSoundboard={noop} onOpenSettings={noop} onToggleFullscreen={noop}/>
-      <div className="voople-full-room__content flex min-h-0 flex-1 flex-col p-3 sm:p-4"><VoiceRoomStage screenContainerRef={bindScreen} screenShareOwner="nmggk" screenShareTrackId="screen-1" screenShareIsLocal={false} participants={participants} participantVolumes={{}} micMuted={false} remoteMicMutedById={{}} activeSpeakerIds={new Set(['biba'])} cameraParticipantIds={new Set()} onCameraContainerChange={noop} onParticipantVolumeChange={noop}/></div>
-      <VoiceRoomFooter connection={connection} controls={controls} access={access} session={session}/>
+    return <main className="grid h-dvh place-items-center bg-[var(--background)] p-4 max-sm:p-0"><section className="voople-full-room flex h-[min(92dvh,760px)] w-full max-w-[86rem] min-w-0 flex-col overflow-hidden border border-[var(--app-border)]">
+      <div className="voople-full-room__frame flex h-full min-h-0 min-w-0 max-sm:flex-col">
+        <VoiceRoomSwitcher rooms={rooms} currentRoomId="drg" pendingRoomId={null} errorMessage={null} refreshing={false} onSelect={noop} onRetry={noop}/>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <VoiceRoomHeader identity={identity} connection={connection} participantCount={participants.length} hasGroupSounds access={access} fullscreen={false} fullscreenPending={false} onOpenSoundboard={noop} onOpenSettings={noop} onToggleFullscreen={noop}/>
+          <div className="voople-full-room__content flex min-h-0 flex-1 flex-col p-3 sm:p-4"><VoiceRoomStage screenContainerRef={bindScreen} screenShareOwner="nmggk" screenShareTrackId="screen-1" screenShareIsLocal={false} participants={participants} participantVolumes={{}} micMuted={false} remoteMicMutedById={{}} activeSpeakerIds={new Set(['biba'])} cameraParticipantIds={new Set()} onCameraContainerChange={noop} onParticipantVolumeChange={noop}/></div>
+          <VoiceRoomFooter connection={connection} controls={controls} access={access} session={session}/>
+        </div>
+      </div>
     </section></main>
   }
   createRoot(document.getElementById('root')).render(<AppThemeProvider><Demo/></AppThemeProvider>);`;
@@ -75,6 +86,8 @@ try {
     await page.addInitScript((value) => window.localStorage.setItem("voople:app-theme", value), theme);
     await page.goto(`http://127.0.0.1:${server.address().port}`);
     await page.getByRole("heading", { name: "VOICEKK / DRG" }).waitFor();
+    await page.getByRole("complementary", { name: "Комнаты группы" }).waitFor();
+    assert.equal(await page.getByRole("button", { name: /DRG/ }).getAttribute("aria-current"), "true");
     await page.getByLabel("Демонстрация экрана: nmggk").waitFor();
     assert.equal(await page.locator(".voople-full-room__participant").count(), 3);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);

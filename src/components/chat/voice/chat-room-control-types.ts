@@ -2,6 +2,7 @@ import type {
   CoreVoiceSessionDescriptor,
   EnabledVoiceMediaCredentials,
 } from "@/types/voice";
+import type { GroupNowRoomTarget } from "@/types/group-now";
 
 import type { VoiceControlState } from "./voice-room-config";
 
@@ -14,6 +15,7 @@ export type ChatRoomControlProps = {
   onStateChange?: (state: VoiceControlState) => void;
   coreSession?: CoreVoiceSessionDescriptor;
   initialCoreCredentials?: EnabledVoiceMediaCredentials;
+  onCoreRoomSwitch?: (target: GroupNowRoomTarget) => void | Promise<void>;
 };
 
 export type ChatRoomControlHandle = {

@@ -12,21 +12,15 @@ import {
 } from "react";
 
 import type { IncomingCallView } from "@/types/chat";
-import type {
-  CoreVoiceSessionDescriptor,
-  CoreVoiceSessionLaunch,
-  EnabledVoiceMediaCredentials,
-} from "@/types/voice";
-import type {
-  ChatRoomControlHandle,
-  VoiceControlState,
-} from "../ChatRoomControl";
+import { GroupNowRoomSwitchDialog } from "@/components/chat/GroupNowRoomSwitchDialog";
+import { useGroupNowRoomJoin } from "@/hooks/useGroupNowRoomJoin";
+import type { GroupNowRoomTarget } from "@/types/group-now";
+import type { GroupRoomJoinResult } from "@/types/group-room-mutations";
+import type { CoreVoiceSessionDescriptor, CoreVoiceSessionLaunch, EnabledVoiceMediaCredentials } from "@/types/voice";
+import type { ChatRoomControlHandle, VoiceControlState } from "../ChatRoomControl";
 import { cn } from "@/lib/utils";
 import { IncomingCallOverlay } from "./IncomingCallOverlay";
-import {
-  useIncomingVoiceCalls,
-  type SubscribeToVoiceRooms,
-} from "./useIncomingVoiceCalls";
+import { useIncomingVoiceCalls, type SubscribeToVoiceRooms } from "./useIncomingVoiceCalls";
 
 const ChatRoomControl = lazy(() =>
   import("../ChatRoomControl").then((module) => ({
@@ -123,6 +117,16 @@ export function VoiceSessionProvider({
       },
     });
   }, []);
+  const handleCoreRoomJoined = useCallback((
+    target: GroupNowRoomTarget,
+    join: GroupRoomJoinResult,
+    credentials: EnabledVoiceMediaCredentials,
+  ) => {
+    openCoreRoom({ groupId: target.groupId, room: target.room, join, credentials });
+  }, [openCoreRoom]);
+  const roomSwitch = useGroupNowRoomJoin({
+    onJoined: handleCoreRoomJoined,
+  });
 
   const joinRoom = useCallback((session: VoiceSessionDescriptor) => {
     if (state.inside) {
@@ -207,12 +211,20 @@ export function VoiceSessionProvider({
               ref={handleControlRef}
               {...activeSession}
               initialCoreCredentials={initialCoreCredentials ?? undefined}
+              onCoreRoomSwitch={roomSwitch.requestJoin}
               renderTrigger={false}
               initialOpen
               onStateChange={handleStateChange}
             />
           </Suspense>
         ) : null}
+        <GroupNowRoomSwitchDialog
+          room={roomSwitch.confirmationTarget?.room ?? null}
+          pending={roomSwitch.pending}
+          error={roomSwitch.confirmationError}
+          onCancel={roomSwitch.cancelSwitch}
+          onConfirm={() => void roomSwitch.confirmSwitch()}
+        />
         <IncomingCallOverlay
           call={incoming.call}
           declinePending={incoming.declinePending}

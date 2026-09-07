@@ -52,6 +52,7 @@ test("full room uses one shared reference-aligned visual frame", () => {
   const stage = read("src/components/chat/voice/VoiceRoomStage.tsx");
   const media = read("src/components/chat/voice/VoiceMediaStage.tsx");
   const participant = read("src/components/chat/voice/VoiceParticipantCard.tsx");
+  const switcher = read("src/components/chat/voice/VoiceRoomSwitcher.tsx");
   const footer = read("src/components/chat/voice/VoiceRoomFooter.tsx");
   const styles = read("src/app/globals.css");
 
@@ -63,6 +64,9 @@ test("full room uses one shared reference-aligned visual frame", () => {
   assert.match(stage, /voople-full-room__stage/);
   assert.match(media, /voople-full-room__media/);
   assert.match(participant, /voople-full-room__participant/);
+  assert.match(switcher, /aria-label="Комнаты группы"/);
+  assert.match(switcher, /aria-current=\{current \? "true" : undefined\}/);
+  assert.match(sheet, /roomSwitcher \? <VoiceRoomSwitcher/);
   assert.match(footer, /voople-full-room__footer/);
   assert.match(styles, /\.voople-full-room\s*\{/);
   assert.doesNotMatch(participant, /shadow-\[0_0_0_2px/);

@@ -11,6 +11,7 @@ import { CoreRoomInvitePanel } from "./CoreRoomInvitePanel";
 import { VoiceRoomContent } from "./VoiceRoomContent";
 import { VoiceRoomFooter } from "./VoiceRoomFooter";
 import { VoiceRoomHeader } from "./VoiceRoomHeader";
+import { VoiceRoomSwitcher } from "./VoiceRoomSwitcher";
 import { VoiceSoundboardPanel } from "./VoiceSoundboardPanel";
 
 type SecondaryPanel = "settings" | "soundboard" | "invite" | null;
@@ -24,6 +25,7 @@ export function VoiceRoomSheet({
   controls,
   access,
   session,
+  roomSwitcher,
   invite,
   settingsPanel,
 }: VoiceRoomSheetProps) {
@@ -53,38 +55,41 @@ export function VoiceRoomSheet({
       containerClassName={fullscreen ? "p-0 sm:p-0" : undefined}
       closeOnEscape={!fullscreen}
       className={cn(
-        "voople-full-room h-[min(94dvh,860px)] max-h-[94dvh] max-w-6xl overflow-hidden p-0",
+        "voople-full-room h-[min(94dvh,860px)] max-h-[94dvh] max-w-[86rem] overflow-hidden p-0",
         fullscreen && "h-full max-h-none max-w-none rounded-none border-0 p-0 sm:rounded-none",
       )}
     >
-      <div className="flex h-full min-h-0 flex-col">
-        <VoiceRoomHeader
-          identity={identity}
-          connection={connection}
-          participantCount={stage.participants.length}
-          hasGroupSounds={stage.groupSounds.length > 0}
-          access={access}
-          fullscreen={fullscreen}
-          fullscreenPending={fullscreenPending}
-          onOpenSoundboard={() => setSecondaryPanel("soundboard")}
-          onOpenSettings={() => setSecondaryPanel("settings")}
-          onToggleFullscreen={toggleFullscreen}
-        />
-        <VoiceRoomContent
-          identity={identity}
-          stage={stage}
-          controls={controls}
-          session={session}
-          errorMessage={connection.errorMessage}
-          onInvite={invite ? () => setSecondaryPanel("invite") : undefined}
-          onClose={close}
-        />
-        <VoiceRoomFooter
-          connection={connection}
-          controls={controls}
-          access={access}
-          session={session}
-        />
+      <div className="voople-full-room__frame flex h-full min-h-0 min-w-0 max-sm:flex-col">
+        {roomSwitcher ? <VoiceRoomSwitcher {...roomSwitcher} /> : null}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <VoiceRoomHeader
+            identity={identity}
+            connection={connection}
+            participantCount={stage.participants.length}
+            hasGroupSounds={stage.groupSounds.length > 0}
+            access={access}
+            fullscreen={fullscreen}
+            fullscreenPending={fullscreenPending}
+            onOpenSoundboard={() => setSecondaryPanel("soundboard")}
+            onOpenSettings={() => setSecondaryPanel("settings")}
+            onToggleFullscreen={toggleFullscreen}
+          />
+          <VoiceRoomContent
+            identity={identity}
+            stage={stage}
+            controls={controls}
+            session={session}
+            errorMessage={connection.errorMessage}
+            onInvite={invite ? () => setSecondaryPanel("invite") : undefined}
+            onClose={close}
+          />
+          <VoiceRoomFooter
+            connection={connection}
+            controls={controls}
+            access={access}
+            session={session}
+          />
+        </div>
       </div>
 
       <Sheet

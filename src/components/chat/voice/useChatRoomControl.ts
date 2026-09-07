@@ -39,6 +39,7 @@ export function useChatRoomControl(
     onStateChange,
     coreSession,
     initialCoreCredentials,
+    onCoreRoomSwitch,
   }: ChatRoomControlProps,
   ref: ForwardedRef<ChatRoomControlHandle>,
 ) {
@@ -50,6 +51,8 @@ export function useChatRoomControl(
   const [connectionQuality, setConnectionQuality] = useState(ConnectionQuality.Unknown);
   const [activeSpeakerIds, setActiveSpeakerIds] = useState<ReadonlySet<string>>(() => new Set());
   const [remoteMicMutedById, setRemoteMicMutedById] = useState<Record<string, boolean>>({});
+  const [roomSwitchPendingId, setRoomSwitchPendingId] = useState<string | null>(null);
+  const [roomSwitchError, setRoomSwitchError] = useState<string | null>(null);
   const liveRoomRef = useRef<Room | null>(null);
   const screenShareQualityRef = useRef<"standard" | "plus">("standard");
   const desiredMicMutedRef = useRef(false);
@@ -249,6 +252,18 @@ export function useChatRoomControl(
     mediaConnection.disconnect();
     if (wasInside) await mediaConnection.connect();
   };
+  const switchCoreRoom = async (room: NonNullable<typeof server.directory>["rooms"][number]) => {
+    if (!coreSession || !onCoreRoomSwitch || room.id === coreSession.room.id || roomSwitchPendingId) return;
+    setRoomSwitchError(null);
+    setRoomSwitchPendingId(room.id);
+    try {
+      await onCoreRoomSwitch({ groupId: coreSession.groupId, room });
+    } catch (error) {
+      setRoomSwitchError(error instanceof Error ? error.message : "Не удалось перейти в комнату");
+    } finally {
+      setRoomSwitchPendingId(null);
+    }
+  };
 
   useImperativeHandle(ref, () => ({
     open: openRoom,
@@ -357,7 +372,9 @@ export function useChatRoomControl(
       identity: {
         isDirect,
         callPhase: getDirectCallPhase({ direct: isDirect, room: value, starter: meIsStarter }),
-        chatName,
+        chatName: coreSession && server.directory?.groupName
+          ? `${server.directory.groupName} / ${coreSession.room.name}`
+          : chatName,
         active,
         durationLabel,
       },
@@ -451,6 +468,17 @@ export function useChatRoomControl(
               ? () => void server.room.refetch()
               : enterAndConnect,
       },
+      roomSwitcher: coreSession && server.directory && onCoreRoomSwitch
+        ? {
+            rooms: server.directory.rooms,
+            currentRoomId: coreSession.room.id,
+            pendingRoomId: roomSwitchPendingId,
+            errorMessage: roomSwitchError ?? server.directory.error?.message ?? null,
+            refreshing: server.directory.isFetching,
+            onSelect: switchCoreRoom,
+            onRetry: async () => { await server.directory?.refetch(); },
+          }
+        : null,
     },
     picker: desktopAudio.capturePicker ? {
       sources: desktopAudio.capturePicker,

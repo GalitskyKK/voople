@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { ConnectionQuality } from "livekit-client";
 
 import type { ChatRoomParticipantView, GroupSoundView } from "@/types/chat";
+import type { GroupNowRoom } from "@/types/group-now";
 import type { VoiceRoomSurfacePhase } from "./voice-room-surface";
 
 import type { MediaStatus } from "./voice-room-config";
@@ -81,6 +82,16 @@ export type VoiceRoomSessionModel = {
   onRetry: () => void | Promise<void>;
 };
 
+export type VoiceRoomSwitcherModel = {
+  rooms: GroupNowRoom[];
+  currentRoomId: string;
+  pendingRoomId: string | null;
+  errorMessage: string | null;
+  refreshing: boolean;
+  onSelect: (room: GroupNowRoom) => void | Promise<void>;
+  onRetry: () => void | Promise<void>;
+};
+
 export type VoiceRoomSheetProps = {
   overlay: { open: boolean; onClose: () => void };
   identity: VoiceRoomIdentityModel;
@@ -89,6 +100,7 @@ export type VoiceRoomSheetProps = {
   controls: VoiceRoomControlsModel;
   access: VoiceRoomAccessModel;
   session: VoiceRoomSessionModel;
+  roomSwitcher: VoiceRoomSwitcherModel | null;
   invite: { sessionId: string } | null;
   settingsPanel: ReactNode;
 };

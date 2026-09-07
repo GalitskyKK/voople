@@ -409,11 +409,16 @@ overflow/runtime errors. До полного статуса остаются н�
 радиус без декоративных теней. Active speaker обозначается границей, а не
 светящимся halo. На мобильной ширине идентификатор Room и действия разнесены по
 строкам, поэтому название не конкурирует с управлением и функции не скрываются.
+Server-owned Room directory теперь образует switcher слева на desktop и
+горизонтальную полосу на mobile: текущая Room, live/share/free states и refresh
+берутся из `coreGroupNow`, а переход переиспользует существующие cross-context
+confirmation и media handoff вместо локальной подмены active Room.
 
 Source-тесты фиксируют общий каркас, доступные действия и отсутствие speaker
-glow. Stateless visual gate покрывает 390 px Light и 1280 px Void без
-overflow/runtime errors. До полного статуса остаются Room switcher из плана,
-authenticated multi-participant media, 1024/1440 и Windows scale 125/150%,
+glow, server directory и confirmation coordinator. Stateless visual gate
+покрывает switcher и stage на 390 px Light и 1280 px Void без overflow/runtime
+errors. До полного статуса остаются authenticated multi-Room handoff и
+multi-participant media, 1024/1440 и Windows scale 125/150%,
 loading/reconnecting/error/fullscreen состояния и keyboard/screen-reader gate.
 
 ### Group People presence hierarchy — 2026-09-07

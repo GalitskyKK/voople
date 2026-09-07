@@ -18,9 +18,9 @@ const { chromium } = require("playwright");
 const entry = `import {createRoot} from 'react-dom/client';
   import {ConnectionQuality} from 'livekit-client';
   import {AppThemeProvider} from '@/components/theme/AppThemeProvider';
+  import {VoiceRoomContent} from '@/components/chat/voice/VoiceRoomContent';
   import {VoiceRoomHeader} from '@/components/chat/voice/VoiceRoomHeader';
   import {VoiceRoomSwitcher} from '@/components/chat/voice/VoiceRoomSwitcher';
-  import {VoiceRoomStage} from '@/components/chat/voice/VoiceRoomStage';
   import {VoiceRoomFooter} from '@/components/chat/voice/VoiceRoomFooter';
   const noop=()=>{};
   const participants=[
@@ -35,17 +35,22 @@ const entry = `import {createRoot} from 'react-dom/client';
   ];
   const bindScreen=(element)=>{if(!element||element.childNodes.length)return;const mock=document.createElement('div');mock.className='grid h-full w-full place-items-center bg-[linear-gradient(145deg,#111827,#1f2937)] text-center text-white/70';mock.innerHTML='<div><strong class="block text-lg text-white">Экран nmggk</strong><span class="mt-2 block text-xs">DEEP ROCK GALACTIC</span></div>';element.append(mock)};
   function Demo(){
+    const params=new URLSearchParams(location.search);
+    const phase=params.get('phase')||'inside';
+    const fullscreen=params.get('fullscreen')==='1';
+    const connected=phase==='inside'||phase==='reconnecting'||phase==='leaving';
     const identity={isDirect:false,callPhase:'connected',chatName:'VOICEKK / DRG',active:true,durationLabel:'01:42'};
-    const connection={label:'Голос подключён',status:'connected',quality:ConnectionQuality.Excellent,audioBlocked:false,errorMessage:null,onResumeAudio:noop};
+    const connection={label:phase==='reconnecting'?'Восстанавливаем связь…':connected?'Голос подключён':null,status:phase==='reconnecting'?'reconnecting':phase==='error'?'error':connected?'connected':'idle',quality:phase==='reconnecting'?ConnectionQuality.Poor:ConnectionQuality.Excellent,audioBlocked:false,errorMessage:phase==='error'?'Сервер комнаты не ответил вовремя.':null,onResumeAudio:noop};
     const access={canManage:true,mode:'open',pending:false,onToggle:noop};
     const controls={micMuted:false,outputMuted:false,mediaActionPending:false,screenSharePending:false,screenSharing:false,screenShareHasAudio:true,cameraEnabled:false,cameraPending:false,onMicToggle:noop,onOutputToggle:noop,onScreenShareToggle:noop,onCameraToggle:noop};
-    const session={phase:'inside',inside:true,leavePending:false,onLeave:noop,connectPending:false,connectDisabled:false,onConnect:noop,connectLabel:'Войти',retryLabel:'Повторить',retryPending:false,onRetry:noop};
-    return <main className="grid h-dvh place-items-center bg-[var(--background)] p-4 max-sm:p-0"><section className="voople-full-room flex h-[min(92dvh,760px)] w-full max-w-[86rem] min-w-0 flex-col overflow-hidden border border-[var(--app-border)]">
+    const session={phase,inside:connected,leavePending:phase==='leaving',onLeave:noop,connectPending:phase==='loading',connectDisabled:false,onConnect:noop,connectLabel:'Войти',retryLabel:phase==='error'?'Повторить загрузку':'Повторить подключение',retryPending:false,onRetry:noop};
+    const stage={screenContainerRef:bindScreen,screenShareOwner:'nmggk',screenShareAvailable:null,screenShareTrackId:'screen-1',screenShareIsLocal:false,watchingScreenShare:true,screenShareVolume:1,participants,groupSounds:[],participantVolumes:{},remoteMicMutedById:{},activeSpeakerIds:new Set(['biba']),cameraParticipantIds:new Set(),onCameraContainerChange:noop,onParticipantVolumeChange:noop,onScreenShareVolumeChange:noop,onGroupSoundPlay:noop,onWatchScreenShare:noop,onStopWatchingScreenShare:noop};
+    return <main className={fullscreen?'grid h-dvh place-items-center bg-[var(--background)]':'grid h-dvh place-items-center bg-[var(--background)] p-4 max-sm:p-0'}><section className={fullscreen?'voople-full-room flex h-dvh w-full min-w-0 flex-col overflow-hidden border-0':'voople-full-room flex h-[min(92dvh,760px)] w-full max-w-[86rem] min-w-0 flex-col overflow-hidden border border-[var(--app-border)]'}>
       <div className="voople-full-room__frame flex h-full min-h-0 min-w-0 max-sm:flex-col">
         <VoiceRoomSwitcher rooms={rooms} currentRoomId="drg" pendingRoomId={null} errorMessage={null} refreshing={false} onSelect={noop} onRetry={noop}/>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <VoiceRoomHeader identity={identity} connection={connection} participantCount={participants.length} hasGroupSounds access={access} fullscreen={false} fullscreenPending={false} onOpenSoundboard={noop} onOpenSettings={noop} onToggleFullscreen={noop}/>
-          <div className="voople-full-room__content flex min-h-0 flex-1 flex-col p-3 sm:p-4"><VoiceRoomStage screenContainerRef={bindScreen} screenShareOwner="nmggk" screenShareTrackId="screen-1" screenShareIsLocal={false} participants={participants} participantVolumes={{}} micMuted={false} remoteMicMutedById={{}} activeSpeakerIds={new Set(['biba'])} cameraParticipantIds={new Set()} onCameraContainerChange={noop} onParticipantVolumeChange={noop}/></div>
+          <VoiceRoomHeader identity={identity} connection={connection} participantCount={participants.length} hasGroupSounds access={access} fullscreen={fullscreen} fullscreenPending={false} onOpenSoundboard={noop} onOpenSettings={noop} onToggleFullscreen={noop}/>
+          <VoiceRoomContent identity={identity} stage={stage} controls={controls} session={session} errorMessage={connection.errorMessage} onInvite={noop} onClose={noop}/>
           <VoiceRoomFooter connection={connection} controls={controls} access={access} session={session}/>
         </div>
       </div>
@@ -75,25 +80,35 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
-  for (const { width, height, theme } of [
-    { width: 1280, height: 800, theme: "void" },
-    { width: 390, height: 800, theme: "light" },
+  for (const { width, height, theme, phase, fullscreen = false, expected } of [
+    { width: 390, height: 800, theme: "light", phase: "inside", expected: "Демонстрация экрана: nmggk" },
+    { width: 1024, height: 720, theme: "void", phase: "reconnecting", expected: "Восстанавливаем связь" },
+    { width: 1280, height: 800, theme: "void", phase: "inside", expected: "Демонстрация экрана: nmggk" },
+    { width: 1440, height: 900, theme: "light", phase: "loading", expected: "Открываем комнату" },
+    { width: 1024, height: 720, theme: "light", phase: "error", expected: "Не удалось загрузить комнату" },
+    { width: 1440, height: 900, theme: "void", phase: "post-leave", expected: "Вы вышли из комнаты" },
+    { width: 1440, height: 900, theme: "void", phase: "inside", fullscreen: true, expected: "Демонстрация экрана: nmggk" },
   ]) {
     const page = await browser.newPage({ viewport: { width, height } });
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
     await page.addInitScript((value) => window.localStorage.setItem("voople:app-theme", value), theme);
-    await page.goto(`http://127.0.0.1:${server.address().port}`);
+    await page.goto(`http://127.0.0.1:${server.address().port}?phase=${phase}&fullscreen=${fullscreen ? "1" : "0"}`);
     await page.getByRole("heading", { name: "VOICEKK / DRG" }).waitFor();
     await page.getByRole("complementary", { name: "Комнаты группы" }).waitFor();
     assert.equal(await page.getByRole("button", { name: /DRG/ }).getAttribute("aria-current"), "true");
-    await page.getByLabel("Демонстрация экрана: nmggk").waitFor();
-    assert.equal(await page.locator(".voople-full-room__participant").count(), 3);
+    if (expected === "Демонстрация экрана: nmggk") {
+      await page.getByLabel(expected).waitFor();
+      assert.equal(await page.locator(".voople-full-room__participant").count(), 3);
+    } else {
+      await page.getByText(expected, { exact: false }).first().waitFor();
+    }
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);
-    await page.screenshot({ path: path.join(artifacts, `room-${width}-${theme}.png`) });
-    console.log(`PASS room ${width}px ${theme}: no overflow or runtime errors`);
+    const suffix = fullscreen ? "fullscreen" : phase;
+    await page.screenshot({ path: path.join(artifacts, `room-${width}-${theme}-${suffix}.png`) });
+    console.log(`PASS room ${width}px ${theme} ${suffix}: no overflow or runtime errors`);
     await page.close();
   }
 } finally {

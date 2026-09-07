@@ -37,6 +37,12 @@ export async function waitForVoiceRoomLifecycle<T>(
   }
 }
 
+export function resolveVoiceRoomErrorTitle(retryLabel: string) {
+  if (retryLabel.includes("выход")) return "Не удалось выйти из комнаты";
+  if (retryLabel.includes("загруз")) return "Не удалось загрузить комнату";
+  return "Не удалось подключиться к комнате";
+}
+
 export function resolveVoiceRoomSurfacePhase({
   transition,
   loading,

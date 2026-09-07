@@ -1,5 +1,7 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
+
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -17,6 +19,7 @@ import {
   VoiceRoomPostLeaveState,
   VoiceRoomTransitionState,
 } from "./VoiceRoomSessionStates";
+import { resolveVoiceRoomErrorTitle } from "./voice-room-surface";
 import { VoiceRoomStage } from "./VoiceRoomStage";
 
 export function VoiceRoomContent({
@@ -55,6 +58,7 @@ export function VoiceRoomContent({
   if (sessionPhase === "error") {
     return (
       <VoiceRoomErrorState
+        title={resolveVoiceRoomErrorTitle(session.retryLabel)}
         message={errorMessage}
         retryLabel={session.retryLabel}
         retryPending={session.retryPending}
@@ -87,6 +91,15 @@ export function VoiceRoomContent({
 
   return (
     <div className="voople-room-surface voople-room-surface__state voople-full-room__content flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
+      {sessionPhase === "reconnecting" ? (
+        <div className="mb-3 flex shrink-0 items-center gap-3 rounded-[var(--app-radius-sm)] border border-amber-400/35 bg-amber-400/8 px-3 py-2" role="status" aria-live="polite">
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-amber-400 motion-reduce:animate-none" aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">Восстанавливаем связь</p>
+            <p className="truncate text-xs text-[var(--app-muted)]">Участники и демонстрация останутся на месте.</p>
+          </div>
+        </div>
+      ) : null}
       {sessionPhase === "preview" && identity.active ? (
         <div className="mb-3 shrink-0 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2 text-sm text-[var(--app-muted)]">
           Комната уже идёт — участники видны до подключения. Нажмите «Войти в комнату», чтобы присоединиться.
@@ -143,14 +156,8 @@ export function VoiceRoomContent({
 
 function DirectCallState({ identity }: { identity: VoiceRoomIdentityModel }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center">
-      <div className="relative">
-        <div
-          className={cn(
-            "absolute -inset-5 rounded-full bg-[var(--theme-accent)]/20 blur-xl",
-            identity.callPhase !== "ended" && "animate-pulse",
-          )}
-        />
+    <div className="voople-full-room__content flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center">
+      <div className="rounded-[var(--app-radius-sm)] border border-[var(--app-border)] p-2">
         <ProfileAvatarVisual
           displayName={identity.chatName}
           size="lg"
@@ -171,7 +178,7 @@ function DirectCallState({ identity }: { identity: VoiceRoomIdentityModel }) {
 
 function DirectCallPreview({ chatName }: { chatName: string }) {
   return (
-    <div className="flex min-h-72 flex-col items-center justify-center px-6 py-10 text-center">
+    <div className="voople-full-room__content flex min-h-72 flex-col items-center justify-center px-6 py-10 text-center">
       <ProfileAvatarVisual displayName={chatName} size="lg" />
       <h3 className="mt-5 text-xl font-semibold">Начать разговор</h3>
       <p className="mt-2 max-w-sm text-sm leading-6 text-[var(--app-muted)]">
@@ -184,7 +191,7 @@ function DirectCallPreview({ chatName }: { chatName: string }) {
 function ScreenShareVolume({ stage }: { stage: VoiceRoomStageModel }) {
   const percent = Math.round(stage.screenShareVolume * 100);
   return (
-    <div className="mb-3 flex shrink-0 flex-wrap items-center gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2">
+    <div className="mb-3 flex shrink-0 flex-wrap items-center gap-3 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2">
       <label className="flex min-w-48 flex-1 items-center gap-3 text-xs font-medium">
         Звук демонстрации
         <input

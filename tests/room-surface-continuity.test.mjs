@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
+  resolveVoiceRoomErrorTitle,
   resolveVoiceRoomSurfacePhase,
   waitForVoiceRoomLifecycle,
 } from "../src/components/chat/voice/voice-room-surface.ts";
@@ -45,6 +46,12 @@ test("prejoin, connecting and active room reuse one stable sheet geometry", () =
   assert.match(control, /server\.room\.error\?\.message/);
 });
 
+test("room errors name the failed operation instead of using generic copy", () => {
+  assert.equal(resolveVoiceRoomErrorTitle("Повторить выход"), "Не удалось выйти из комнаты");
+  assert.equal(resolveVoiceRoomErrorTitle("Повторить загрузку"), "Не удалось загрузить комнату");
+  assert.equal(resolveVoiceRoomErrorTitle("Повторить подключение"), "Не удалось подключиться к комнате");
+});
+
 test("full room uses one shared reference-aligned visual frame", () => {
   const sheet = read("src/components/chat/voice/VoiceRoomSheet.tsx");
   const header = read("src/components/chat/voice/VoiceRoomHeader.tsx");
@@ -53,6 +60,7 @@ test("full room uses one shared reference-aligned visual frame", () => {
   const media = read("src/components/chat/voice/VoiceMediaStage.tsx");
   const participant = read("src/components/chat/voice/VoiceParticipantCard.tsx");
   const switcher = read("src/components/chat/voice/VoiceRoomSwitcher.tsx");
+  const states = read("src/components/chat/voice/VoiceRoomSessionStates.tsx");
   const footer = read("src/components/chat/voice/VoiceRoomFooter.tsx");
   const styles = read("src/app/globals.css");
 
@@ -70,6 +78,10 @@ test("full room uses one shared reference-aligned visual frame", () => {
   assert.match(footer, /voople-full-room__footer/);
   assert.match(styles, /\.voople-full-room\s*\{/);
   assert.doesNotMatch(participant, /shadow-\[0_0_0_2px/);
+  assert.match(content, /sessionPhase === "reconnecting"/);
+  assert.match(content, /role="status" aria-live="polite"/);
+  assert.doesNotMatch(content, /blur-xl|animate-pulse/);
+  assert.doesNotMatch(states, /rounded-3xl/);
 });
 
 test("full Room gives its identity a dedicated mobile row without hiding actions", () => {

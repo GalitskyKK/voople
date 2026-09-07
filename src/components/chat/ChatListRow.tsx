@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import type { ChatListItem } from "@/types/chat";
 
 import { GroupAvatar } from "./GroupAvatar";
+import { ChatUnreadBadge } from "./ChatUnreadBadge";
 
 export type ChatListDestinationRenderer = (input: {
   chat: ChatListItem;
@@ -94,6 +95,7 @@ export function ChatListRow({
                     {chat.memberCount} участников
                   </span>
                 ) : null}
+                <ChatUnreadBadge count={chat.unreadCount} />
               </div>
             </div>
           </>

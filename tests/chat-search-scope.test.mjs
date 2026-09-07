@@ -14,6 +14,10 @@ const sharedView = readFileSync(
   new URL("../src/components/chat/ChatListView.tsx", import.meta.url),
   "utf8",
 );
+const searchPanel = readFileSync(
+  new URL("../src/components/chat/ChatListSearchPanel.tsx", import.meta.url),
+  "utf8",
+);
 
 test("chat search stays scoped to chats, groups and existing contacts", () => {
   for (const adapter of [webAdapter, desktopAdapter]) {
@@ -23,4 +27,12 @@ test("chat search stays scoped to chats, groups and existing contacts", () => {
   }
   assert.doesNotMatch(sharedView, /ChatPublicGroupResults|usePublicGroupSearch/);
   assert.match(sharedView, /renderGlobalSearchAction/);
+});
+
+test("default inbox separates groups and direct conversations without persistent filters", () => {
+  assert.match(sharedView, /ChatListSection title="Группы"/);
+  assert.match(sharedView, /ChatListSection title="Личные сообщения"/);
+  assert.doesNotMatch(sharedView, /const \[filter, setFilter\]/);
+  assert.match(searchPanel, /searchActive \? \(/);
+  assert.match(searchPanel, /<ChatListFilters/);
 });

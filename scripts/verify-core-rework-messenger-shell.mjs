@@ -22,28 +22,29 @@ const { build } = require("esbuild");
 const { chromium } = require("playwright");
 
 const entry = `import {useRef} from 'react';import {createRoot} from 'react-dom/client';
-  import {Search} from 'lucide-react';
   import {AppThemeProvider,useAppTheme} from '@/components/theme/AppThemeProvider';
   import {AppSidebarVisual} from '@/components/layout/AppNavigationVisual';
   import {AppShellFrame} from '@/components/layout/AppShellFrame';
   import {MessengerSidebarView} from '@/components/layout/MessengerSidebarView';
   import {MessagesLayoutView} from '@/components/chat/MessagesLayoutView';
+  import {ChatListView} from '@/components/chat/ChatListView';
   import {ChatConversationStart} from '@/components/chat/ChatConversationStart';
   import {ChatThreadFrameView} from '@/components/chat/ChatThreadFrameView';
   import {GroupAvatar} from '@/components/chat/GroupAvatar';
   import {ProfileAvatar} from '@/components/profile/ProfileAvatar';
   function ThemeControl(){const theme=useAppTheme();window.changeTheme=theme.setThemeId;return null}
-  const common={parentChatId:null,topicsEnabled:false,topicsLayout:'tabs',topicIcon:null,groupVisibility:'private',joinPolicy:'invite_only',sectionAccessMode:'inherit',groupBannerUrl:null,groupTag:null,boostCount:0,boostedByMe:false,viewerRole:'member',lastMessage:null,channels:[]};
+  const common={parentChatId:null,topicsEnabled:false,topicsLayout:'tabs',topicIcon:null,groupVisibility:'private',joinPolicy:'invite_only',sectionAccessMode:'inherit',groupBannerUrl:null,groupTag:null,boostCount:0,boostedByMe:false,viewerRole:'member',lastMessage:null,unreadCount:0,channels:[]};
   const chats=[
-    {...common,id:'group-1',type:'group',name:'VOICEKK',groupIcon:'V',groupAvatarUrl:null,groupAccentColor:'#8b5cf6',memberCount:7,otherUser:null,lastMessage:{preview:'7 участников',text:null,createdAt:'',senderId:''}},
+    {...common,id:'group-1',type:'group',name:'VOICEKK',groupIcon:'V',groupAvatarUrl:null,groupAccentColor:'#8b5cf6',memberCount:7,otherUser:null,lastMessage:{preview:'7 участников',text:null,createdAt:'2026-09-07T09:10:00.000Z',senderId:''}},
     {...common,id:'group-2',type:'group',name:'Мы',groupIcon:'W',groupAvatarUrl:null,groupAccentColor:'#4ade80',memberCount:2,otherUser:null},
-    {...common,id:'direct-1',type:'direct',name:null,groupIcon:null,groupAvatarUrl:null,groupAccentColor:null,memberCount:2,otherUser:{id:'astra',username:'astra',displayName:'Astra',hasVooplePlus:false,avatarUrl:null,avatarDecorationUrl:null,avatarRingId:null,lastSeenAt:null},lastMessage:{preview:'почти здесь',text:'почти здесь',createdAt:'',senderId:''}},
+    {...common,id:'direct-1',type:'direct',name:null,groupIcon:null,groupAvatarUrl:null,groupAccentColor:null,memberCount:2,otherUser:{id:'astra',username:'astra',displayName:'Astra',hasVooplePlus:false,avatarUrl:null,avatarDecorationUrl:null,avatarRingId:null,lastSeenAt:null},lastMessage:{preview:'почти здесь',text:'почти здесь',createdAt:'2026-09-07T09:05:00.000Z',senderId:''}},
     {...common,id:'direct-2',type:'direct',name:null,groupIcon:null,groupAvatarUrl:null,groupAccentColor:null,memberCount:2,otherUser:{id:'biba',username:'biba',displayName:'Biba',hasVooplePlus:false,avatarUrl:null,avatarDecorationUrl:null,avatarRingId:null,lastSeenAt:null}}
   ];
   const renderDestination=({href,label,className,active,children})=><button type="button" data-href={href} aria-label={label} aria-current={active?'page':undefined} className={className}>{children}</button>;
-  function Inbox(){return <div className="flex min-h-0 flex-1 flex-col"><div className="border-b border-[var(--app-border)] px-3 py-3"><p className="text-xs font-semibold uppercase tracking-[0.12em]">Личные сообщения</p><div className="mt-2 flex h-8 items-center gap-2 border border-[var(--app-border)] px-2 text-xs text-[var(--app-muted)]"><Search className="h-3.5 w-3.5"/>Поиск</div></div><div className="space-y-0.5 p-2">{chats.filter(c=>c.type==='direct').map(c=><button key={c.id} className="flex h-11 w-full items-center gap-2 border-l-2 border-transparent px-2 text-left text-xs"><ProfileAvatar displayName={c.otherUser.displayName} size="sm" shape="square"/><span>{c.otherUser.displayName}</span></button>)}</div></div>}
+  const renderChatDestination=({chat,className,children})=><button type="button" aria-label={chat.name||chat.otherUser?.displayName||'Чат'} className={className}>{children}</button>;
+  function Inbox(){return <ChatListView chats={chats.map((chat,index)=>({...chat,unreadCount:index===0?12:index===2?3:0}))} renderDestination={renderChatDestination} renderAvatar={(chat,title)=><ProfileAvatar displayName={title} size="sm" animatedAvatarUrl={chat.otherUser?.avatarUrl}/>} headerAction={<button type="button" aria-label="Создать группу" className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--app-border)]">+</button>}/>}
   function Thread(){const messagesRef=useRef(null);const contentRef=useRef(null);return <ChatThreadFrameView accentColor="#8b5cf6" header={<header className="flex min-h-14 items-center gap-3 border-b border-[var(--app-border)] px-4"><GroupAvatar name="VOICEKK" icon="V" size="sm" shape="square"/><div><p className="text-sm font-semibold">VOICEKK</p><p className="text-[10px] text-emerald-400">7 участников</p></div></header>} timeline={[]} messagesRef={messagesRef} messagesContentRef={contentRef} renderMessage={()=>null} emptyState={<ChatConversationStart chatTitle="VOICEKK" isGroup isSubchat={false} memberCount={7} groupIcon="V" groupAccentColor="#8b5cf6" otherOnline={false}/>} composer={<div className="border-t border-[var(--app-border)] p-2"><div className="flex h-10 items-center border border-[var(--app-border)] px-3 text-xs text-[var(--app-muted)]">Сообщение VOICEKK…</div></div>}/>}
-  function Demo(){const sidebar=<AppSidebarVisual pathname="/messages/group-1" collapsed={false} renderDestination={renderDestination} primaryNavigation={<MessengerSidebarView pathname="/messages/group-1" chats={chats} loading={false} onlineUserIds={new Set(['astra'])} createGroupAction={<button type="button" aria-label="Создать группу" className="h-5 w-5 border border-[var(--app-border)] text-xs">+</button>} renderDestination={renderDestination} onRetry={()=>{}}/>} accountNavigation={<button type="button" className="flex w-full items-center gap-2 px-2 py-1 text-left"><ProfileAvatar displayName="Yozhik" size="sm" shape="square" isOnline/><span className="text-xs">Yozhik</span></button>}/>;return <AppShellFrame routeKind="messages" fixedViewport sidebar={sidebar}><MessagesLayoutView isThread list={<Inbox/>} thread={<Thread/>}/></AppShellFrame>}
+  function Demo(){const isThread=!new URLSearchParams(location.search).has('inbox');const sidebar=<AppSidebarVisual pathname="/messages/group-1" collapsed={false} renderDestination={renderDestination} primaryNavigation={<MessengerSidebarView pathname="/messages/group-1" chats={chats} loading={false} onlineUserIds={new Set(['astra'])} createGroupAction={<button type="button" aria-label="Создать группу" className="h-5 w-5 border border-[var(--app-border)] text-xs">+</button>} renderDestination={renderDestination} onRetry={()=>{}}/>} accountNavigation={<button type="button" className="flex w-full items-center gap-2 px-2 py-1 text-left"><ProfileAvatar displayName="Yozhik" size="sm" shape="square" isOnline/><span className="text-xs">Yozhik</span></button>}/>;return <AppShellFrame routeKind="messages" fixedViewport sidebar={sidebar}><MessagesLayoutView isThread={isThread} list={<Inbox/>} thread={<Thread/>}/></AppShellFrame>}
   createRoot(document.getElementById('root')).render(<AppThemeProvider><ThemeControl/><Demo/></AppThemeProvider>);`;
 
 const bundle = await build({
@@ -96,7 +97,9 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
-  for (const { width, height, theme } of [
+  for (const { width, height, theme, surface = "thread" } of [
+    { width: 360, height: 800, theme: "void", surface: "inbox" },
+    { width: 390, height: 844, theme: "light", surface: "inbox" },
     { width: 360, height: 800, theme: "void" },
     { width: 1024, height: 720, theme: "void" },
     { width: 1280, height: 800, theme: "void" },
@@ -108,14 +111,25 @@ try {
     page.on("console", (message) => {
       if (message.type() === "error") errors.push(message.text());
     });
-    await page.goto(`http://127.0.0.1:${server.address().port}`);
+    await page.goto(
+      `http://127.0.0.1:${server.address().port}${surface === "inbox" ? "?inbox" : ""}`,
+    );
     await page.waitForFunction(() => typeof window.changeTheme === "function");
     await page.evaluate((value) => window.changeTheme(value), theme);
     await page.waitForFunction(
       (value) => document.documentElement.dataset.appTheme === value,
       theme,
     );
-    await page.getByRole("heading", { name: "Начало группы VOICEKK" }).waitFor();
+    if (surface === "inbox") {
+      await page.getByRole("heading", { name: "Группы" }).waitFor();
+      await page.getByRole("heading", { name: "Личные сообщения" }).waitFor();
+      assert.equal(
+        await page.getByLabel("Непрочитанных сообщений: 12").isVisible(),
+        true,
+      );
+    } else {
+      await page.getByRole("heading", { name: "Начало группы VOICEKK" }).waitFor();
+    }
 
     assert.equal(
       await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
@@ -145,9 +159,14 @@ try {
     }
     assert.deepEqual(errors, []);
     await page.screenshot({
-      path: path.join(artifacts, `messenger-shell-${width}-${theme}.png`),
+      path: path.join(
+        artifacts,
+        `messenger-${surface}-${width}-${theme}.png`,
+      ),
     });
-    console.log(`PASS ${width}px ${theme}: dense shell, responsive priority, no overflow`);
+    console.log(
+      `PASS ${surface} ${width}px ${theme}: dense shell, responsive priority, no overflow`,
+    );
     await page.close();
   }
 } finally {

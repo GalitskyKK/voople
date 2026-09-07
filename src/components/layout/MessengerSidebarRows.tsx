@@ -2,6 +2,7 @@ import { MonitorUp, Radio } from "lucide-react";
 
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { GroupAvatar } from "@/components/chat/GroupAvatar";
+import { ChatUnreadBadge } from "@/components/chat/ChatUnreadBadge";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { cn } from "@/lib/utils";
 import type { ChatListItem } from "@/types/chat";
@@ -47,7 +48,7 @@ export function MessengerGroupRow({
           }
           online={Boolean(live)}
         />
-        <UnreadBadge count={chat.unreadCount} />
+        <ChatUnreadBadge count={chat.unreadCount} />
       </>
     ),
   });
@@ -113,19 +114,10 @@ export function MessengerDirectRow({
           }
           online={online}
         />
-        <UnreadBadge count={chat.unreadCount} />
+        <ChatUnreadBadge count={chat.unreadCount} />
       </>
     ),
   });
-}
-
-function UnreadBadge({ count }: { count: number }) {
-  if (count < 1) return null;
-  return (
-    <span className="inline-flex min-w-4 shrink-0 items-center justify-center rounded-full bg-[var(--theme-accent)] px-1 font-mono text-[9px] font-semibold leading-4 text-white" aria-label={`Непрочитанных сообщений: ${count}`}>
-      {count > 99 ? "99+" : count}
-    </span>
-  );
 }
 
 function SidebarRowCopy({

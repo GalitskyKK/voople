@@ -7,29 +7,24 @@ import { AppPanelHeader } from "@/components/layout/AppPanelHeader";
 
 import {
   ChatListFilters,
-  type ChatListFilter,
   type ChatSearchScope,
 } from "./ChatListFilters";
 
 export function ChatListSearchPanel({
   query,
   searchActive,
-  filter,
   searchScope,
   headerAction,
   onQueryChange,
   onSearchActiveChange,
-  onFilterChange,
   onSearchScopeChange,
 }: {
   query: string;
   searchActive: boolean;
-  filter: ChatListFilter;
   searchScope: ChatSearchScope;
   headerAction?: ReactNode;
   onQueryChange: (value: string) => void;
   onSearchActiveChange: (value: boolean) => void;
-  onFilterChange: (value: ChatListFilter) => void;
   onSearchScopeChange: (value: ChatSearchScope) => void;
 }) {
   const closeSearch = () => {
@@ -66,7 +61,6 @@ export function ChatListSearchPanel({
                 event.currentTarget.blur();
               }}
               onFocus={() => {
-                onFilterChange("all");
                 onSearchScopeChange("all");
                 onSearchActiveChange(true);
               }}
@@ -76,7 +70,12 @@ export function ChatListSearchPanel({
             />
           </label>
         </div>
-        <ChatListFilters searchActive={searchActive} filter={filter} searchScope={searchScope} onFilterChange={onFilterChange} onSearchScopeChange={onSearchScopeChange} />
+        {searchActive ? (
+          <ChatListFilters
+            searchScope={searchScope}
+            onSearchScopeChange={onSearchScopeChange}
+          />
+        ) : null}
       </div>
     </>
   );

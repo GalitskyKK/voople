@@ -11,7 +11,7 @@ import {
   type ChatListDestinationRenderer,
 } from "./ChatListRow";
 import { ChatContactResults } from "./ChatContactResults";
-import type { ChatListFilter, ChatSearchScope } from "./ChatListFilters";
+import type { ChatSearchScope } from "./ChatListFilters";
 import { ChatListSearchPanel } from "./ChatListSearchPanel";
 
 export type { ChatListDestinationRenderer } from "./ChatListRow";
@@ -50,7 +50,6 @@ export function ChatListView({
   renderGlobalSearchAction,
 }: ChatListViewProps) {
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<ChatListFilter>("all");
   const [searchActive, setSearchActive] = useState(false);
   const [searchScope, setSearchScope] = useState<ChatSearchScope>("all");
   const [openingContactId, setOpeningContactId] = useState<string | null>(null);
@@ -74,12 +73,12 @@ export function ChatListView({
           : searchScope === "groups"
             ? "group"
             : "all"
-        : filter;
+        : "all";
       if (typeFilter !== "all" && chat.type !== typeFilter) return false;
       if (!normalizedQuery) return true;
       return matchesQuery(chat) || chat.channels.some(matchesQuery);
     });
-  }, [chats, filter, query, searchActive, searchScope]);
+  }, [chats, query, searchActive, searchScope]);
   const {
     visibleContacts,
     loading: contactsLoading,
@@ -106,85 +105,132 @@ export function ChatListView({
       setOpeningContactId(null);
     }
   };
+  const groups = visibleChats.filter((chat) => chat.type === "group");
+  const directs = visibleChats.filter((chat) => chat.type === "direct");
+  const renderRows = (items: ChatListItem[]) =>
+    items.map((chat) => (
+      <ChatListRow
+        key={chat.id}
+        chat={chat}
+        activeChatId={activeChatId}
+        renderDestination={renderDestination}
+        renderAvatar={renderAvatar}
+        renderTitle={renderTitle}
+      />
+    ));
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <ChatListSearchPanel query={query} searchActive={searchActive} filter={filter} searchScope={searchScope} headerAction={headerAction} onQueryChange={setQuery} onSearchActiveChange={setSearchActive} onFilterChange={setFilter} onSearchScopeChange={setSearchScope} />
+      <ChatListSearchPanel
+        query={query}
+        searchActive={searchActive}
+        searchScope={searchScope}
+        headerAction={headerAction}
+        onQueryChange={setQuery}
+        onSearchActiveChange={setSearchActive}
+        onSearchScopeChange={setSearchScope}
+      />
 
       <div
         data-voople-scroll=""
         className="voople-messages-layout__list voople-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 py-2 pb-[max(5.5rem,calc(3.625rem+1.25rem+env(safe-area-inset-bottom)))] lg:pb-3"
       >
-      {loading ? (
-        <div
-          className="h-32 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]"
-          aria-label="Загружаем чаты"
-        />
-      ) : error ? (
-        <p className="px-3 py-4 text-sm text-red-400">{error}</p>
-      ) : <>
-
-      {visibleChats.length ? (
-        <div className={searchActive ? "order-2" : undefined}>
-          {query.trim() ? (
-            <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--app-muted)]">
-              Чаты и группы
-            </p>
-          ) : searchActive ? (
-            <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--app-muted)]">
-              Недавние чаты
-            </p>
-          ) : null}
-          <ul className="voople-chat-list space-y-0.5">
-          {visibleChats.map((chat) => (
-            <ChatListRow
-              key={chat.id}
-              chat={chat}
-              activeChatId={activeChatId}
-              renderDestination={renderDestination}
-              renderAvatar={renderAvatar}
-              renderTitle={renderTitle}
-            />
-          ))}
-          </ul>
-        </div>
-      ) : null}
-
-      <ChatContactResults
-        contacts={visibleContacts}
-        loading={contactsLoading}
-        openingContactId={openingContactId}
-        onOpen={(contact) => void handleOpenContact(contact)}
-        renderAvatar={renderContactAvatar}
-        renderTitle={renderContactTitle}
-      />
-
-      {contactsError ? (
-        <p className="order-3 px-3 text-xs text-red-400" role="alert">
-          {contactsError}
-        </p>
-      ) : null}
-      {!visibleChats.length &&
-      !visibleContacts.length &&
-      !contactsLoading ? (
-        chats.length || query.trim() ? (
-          <div className="order-4 rounded-xl px-3 py-8 text-center text-sm text-[var(--app-muted)]">
-            <p>Ничего не найдено</p>
-            {query.trim() ? renderGlobalSearchAction?.(query.trim()) : null}
-          </div>
+        {loading ? (
+          <div
+            className="h-32 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]"
+            aria-label="Загружаем чаты"
+          />
+        ) : error ? (
+          <p className="px-3 py-4 text-sm text-red-400">{error}</p>
         ) : (
-          <div className="rounded-2xl border border-dashed border-[var(--app-border)] px-4 py-6 text-center">
-            <MessageCircle className="mx-auto h-6 w-6 text-[var(--app-muted)]" />
-            <p className="mt-3 text-sm font-medium">Здесь появятся ваши чаты</p>
-            <p className="mt-1 text-xs leading-5 text-[var(--app-muted)]">
-              Найдите контакт или создайте группу.
-            </p>
-            {emptyAction}
-          </div>
-        )
-      ) : null}
-      </>}
+          <>
+            {visibleChats.length && !searchActive && !query.trim() ? (
+              <div className="space-y-4">
+                {groups.length ? (
+                  <ChatListSection title="Группы">
+                    {renderRows(groups)}
+                  </ChatListSection>
+                ) : null}
+                {directs.length ? (
+                  <ChatListSection title="Личные сообщения">
+                    {renderRows(directs)}
+                  </ChatListSection>
+                ) : null}
+              </div>
+            ) : visibleChats.length ? (
+              <div className={searchActive ? "order-2" : undefined}>
+                {query.trim() ? (
+                  <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--app-muted)]">
+                    Чаты и группы
+                  </p>
+                ) : searchActive ? (
+                  <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--app-muted)]">
+                    Недавние чаты
+                  </p>
+                ) : null}
+                <ul className="voople-chat-list space-y-0.5">
+                  {renderRows(visibleChats)}
+                </ul>
+              </div>
+            ) : null}
+
+            <ChatContactResults
+              contacts={visibleContacts}
+              loading={contactsLoading}
+              openingContactId={openingContactId}
+              onOpen={(contact) => void handleOpenContact(contact)}
+              renderAvatar={renderContactAvatar}
+              renderTitle={renderContactTitle}
+            />
+
+            {contactsError ? (
+              <p className="order-3 px-3 text-xs text-red-400" role="alert">
+                {contactsError}
+              </p>
+            ) : null}
+            {!visibleChats.length &&
+            !visibleContacts.length &&
+            !contactsLoading ? (
+              chats.length || query.trim() ? (
+                <div className="order-4 rounded-xl px-3 py-8 text-center text-sm text-[var(--app-muted)]">
+                  <p>Ничего не найдено</p>
+                  {query.trim()
+                    ? renderGlobalSearchAction?.(query.trim())
+                    : null}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-[var(--app-border)] px-4 py-6 text-center">
+                  <MessageCircle className="mx-auto h-6 w-6 text-[var(--app-muted)]" />
+                  <p className="mt-3 text-sm font-medium">
+                    Здесь появятся ваши чаты
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--app-muted)]">
+                    Найдите контакт или создайте группу.
+                  </p>
+                  {emptyAction}
+                </div>
+              )
+            ) : null}
+          </>
+        )}
       </div>
     </div>
+  );
+}
+
+function ChatListSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section>
+      <h2 className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--app-muted)]">
+        {title}
+      </h2>
+      <ul className="voople-chat-list space-y-0.5">{children}</ul>
+    </section>
   );
 }

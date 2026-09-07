@@ -19,11 +19,15 @@ test("unread cursors are per user, monotonic and private", () => {
 test("chat list aggregates section unread counts without mixing them with live state", () => {
   const data = source("src/server/data/chat-rest.ts");
   const view = source("src/components/layout/MessengerSidebarRows.tsx");
+  const listRow = source("src/components/chat/ChatListRow.tsx");
+  const badge = source("src/components/chat/ChatUnreadBadge.tsx");
 
   assert.match(data, /loadChatUnreadCountsRest\(userId\)/);
   assert.match(data, /unreadCount: unreadByChat\.get\(id\) \?\? 0/);
   assert.match(data, /item\.channels\.reduce\(\(total, channel\) => total \+ channel\.unreadCount, 0\)/);
-  assert.match(view, /<UnreadBadge count=\{chat\.unreadCount\}/);
+  assert.match(view, /<ChatUnreadBadge count=\{chat\.unreadCount\}/);
+  assert.match(listRow, /<ChatUnreadBadge count=\{chat\.unreadCount\}/);
+  assert.match(badge, /Непрочитанных сообщений/);
   assert.match(view, /live\.participantCount/);
 });
 

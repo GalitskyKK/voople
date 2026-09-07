@@ -3,7 +3,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { normalizeGroupJoinPolicy, normalizeGroupVisibility } from "@/lib/chat/group-access";
 import { isRoomTimelineMessage } from "@/lib/chat/chat-list-preview";
 import {
-  toProfileCustomizationView,
+  compactAvatarFields,
   type CustomizationRow,
 } from "@/server/mappers/customization";
 import { mapSubscriptionFields } from "@/server/mappers/profile";
@@ -12,6 +12,7 @@ import { assertChatMemberRest } from "@/server/data/chat-access-rest";
 import { assertCanUseDirectChatRest } from "@/server/data/chat-direct-privacy-rest";
 import { loadGroupCommunitySummariesRest } from "@/server/data/chat-community-rest";
 import { getOrCreateDirectChatRest } from "@/server/data/chat-management-rest";
+import { loadChatUnreadCountsRest, markChatReadCursorRest } from "@/server/data/chat-unread-rest";
 import { canViewPrivateFieldRest, getUserPrivacySettingsRest } from "@/server/data/privacy-rest";
 import {
   type ChatMessageContentInputNode,
@@ -37,19 +38,6 @@ export { deleteMessageRest, toggleMessageReactionRest } from "@/server/data/chat
 export type { ChatListItem, ChatMessageView } from "@/types/chat";
 
 import type { ChatListItem } from "@/types/chat";
-
-function compactAvatarFields(
-  related: CustomizationRow | CustomizationRow[] | null | undefined,
-) {
-  const customization = toProfileCustomizationView(
-    Array.isArray(related) ? related[0] : related,
-  );
-  return {
-    avatarUrl: customization.assets.animatedAvatarUrl ?? null,
-    avatarDecorationUrl: customization.assets.avatarDecorationUrl ?? null,
-    avatarRingId: customization.avatarRingId ?? null,
-  };
-}
 
 async function assertReplyInChat(chatId: string, replyToMessageId: string) {
   const admin = getAdminClient();
@@ -93,12 +81,15 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
   const channelRows = channelsResult.data ?? [];
   const channelIds = channelRows.map((channel) => channel.id as string);
   const allChatIds = [...chatIds, ...channelIds];
-  const msgsResult = await admin
-    .from("messages")
-    .select("chat_id, text, content, media_url, media_title, shared_track_id, created_at, sender_id")
-    .in("chat_id", allChatIds)
-    .order("created_at", { ascending: false })
-    .limit(Math.min(allChatIds.length * 5, 300));
+  const [msgsResult, unreadByChat] = await Promise.all([
+    admin
+      .from("messages")
+      .select("chat_id, text, content, media_url, media_title, shared_track_id, created_at, sender_id")
+      .in("chat_id", allChatIds)
+      .order("created_at", { ascending: false })
+      .limit(Math.min(allChatIds.length * 5, 300)),
+    loadChatUnreadCountsRest(userId),
+  ]);
   if (msgsResult.error) throw new Error(msgsResult.error.message);
   const typeByChat = new Map<string, "direct" | "group">();
   const nameByChat = new Map<string, string | null>();
@@ -273,6 +264,7 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
             senderId: last.senderId,
           }
         : null,
+      unreadCount: unreadByChat.get(id) ?? 0,
       channels: [],
     };
   };
@@ -303,6 +295,7 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
   const items = chatIds.map((id) => {
     const item = createItem(id, null);
     item.channels = channelsByParent.get(id) ?? [];
+    item.unreadCount += item.channels.reduce((total, channel) => total + channel.unreadCount, 0);
     const latestChannelMessage = item.channels
       .map((channel) => channel.lastMessage)
       .filter((message): message is NonNullable<typeof message> => Boolean(message))
@@ -489,6 +482,7 @@ export async function markMessagesReadRest(
   await assertChatMemberRest(chatId, userId);
   const admin = getAdminClient();
   const now = new Date().toISOString();
+  const cursorThroughAt = await markChatReadCursorRest(chatId, userId, throughAt);
 
   const { error } = await admin
     .from("messages")
@@ -496,7 +490,7 @@ export async function markMessagesReadRest(
     .eq("chat_id", chatId)
     .neq("sender_id", userId)
     .is("read_at", null)
-    .lte("created_at", throughAt);
+    .lte("created_at", cursorThroughAt);
 
   if (error) throw new Error(error.message);
   return { readAt: now };

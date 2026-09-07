@@ -133,6 +133,7 @@ export type ChatListItem = {
     createdAt: string;
     senderId: string;
   } | null;
+  unreadCount: number;
   channels: ChatListItem[];
 };
 

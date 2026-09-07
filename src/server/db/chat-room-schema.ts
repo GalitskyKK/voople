@@ -62,6 +62,20 @@ export const chatRoomParticipants = pgTable(
   }),
 );
 
+export const chatReadCursors = pgTable(
+  "chat_read_cursors",
+  {
+    chatId: uuid("chat_id").notNull().references(() => chats.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    readThroughAt: timestamp("read_through_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.chatId, t.userId] }),
+    userIdx: index("chat_read_cursors_user_idx").on(t.userId, t.chatId),
+  }),
+);
+
 export const chatRoomInvites = pgTable(
   "chat_room_invites",
   {

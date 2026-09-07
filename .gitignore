@@ -63,6 +63,7 @@
 !/drizzle/58-room-invitations.sql
 !/drizzle/59-core-room-foundation.sql
 !/drizzle/60-core-room-mutations.sql
+!/drizzle/65-chat-read-cursors.sql
 # Local toolchain experiment for the feature-gated Windows process-audio build.
 /desktop/src-tauri/.cargo/
 

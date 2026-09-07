@@ -1,0 +1,34 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+
+const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+
+test("unread cursors are per user, monotonic and private", () => {
+  const migration = source("drizzle/65-chat-read-cursors.sql");
+
+  assert.match(migration, /PRIMARY KEY \(chat_id, user_id\)/);
+  assert.match(migration, /message\.sender_id <> p_user_id/);
+  assert.match(migration, /COALESCE\(cursor\.read_through_at, root_member\.joined_at\)/);
+  assert.match(migration, /GREATEST\(chat_read_cursors\.read_through_at, EXCLUDED\.read_through_at\)/);
+  assert.match(migration, /LEAST\(p_read_through_at, now\(\)\)/);
+  assert.match(migration, /REVOKE ALL ON TABLE public\.chat_read_cursors FROM PUBLIC, anon, authenticated/);
+  assert.match(migration, /GRANT EXECUTE ON FUNCTION public\.list_chat_unread_counts\(uuid\) TO service_role/);
+});
+
+test("chat list aggregates section unread counts without mixing them with live state", () => {
+  const data = source("src/server/data/chat-rest.ts");
+  const view = source("src/components/layout/MessengerSidebarRows.tsx");
+
+  assert.match(data, /loadChatUnreadCountsRest\(userId\)/);
+  assert.match(data, /unreadCount: unreadByChat\.get\(id\) \?\? 0/);
+  assert.match(data, /item\.channels\.reduce\(\(total, channel\) => total \+ channel\.unreadCount, 0\)/);
+  assert.match(view, /<UnreadBadge count=\{chat\.unreadCount\}/);
+  assert.match(view, /live\.participantCount/);
+});
+
+test("migration 65 is part of the release ledger", () => {
+  const manifest = source("scripts/migration-manifest.mjs");
+  const occurrences = manifest.match(/65-chat-read-cursors\.sql/g) ?? [];
+  assert.equal(occurrences.length, 2);
+});

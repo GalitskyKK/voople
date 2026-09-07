@@ -22,7 +22,8 @@ test("message queries are read-only and acknowledgement is time-bounded", () => 
   const observeMessages = router.match(/observeMessages:[\s\S]*?\n  }\),/)?.[0] ?? "";
 
   assert.doesNotMatch(observeMessages, /markMessagesRead/);
-  assert.match(markRead, /\.lte\("created_at", throughAt\)/);
+  assert.match(markRead, /markChatReadCursorRest\(chatId, userId, throughAt\)/);
+  assert.match(markRead, /\.lte\("created_at", cursorThroughAt\)/);
   assert.match(router, /throughAt: z\.string\(\)\.datetime\(\)/);
   assert.match(router, /markMessagesRead\(input\.chatId, ctx\.user\.id, input\.throughAt\)/);
 });

@@ -23,11 +23,11 @@ export function MessengerGroupRow({
     activeChatId === chat.id ||
     chat.channels.some((section) => section.id === activeChatId);
 
-  return renderDestination({
+  const row = renderDestination({
     href: `/messages/${chat.id}`,
     label: title,
     active,
-    className: sidebarRowClassName(active),
+    className: cn(sidebarRowClassName(active), live && "pr-10"),
     children: (
       <>
         <GroupAvatar
@@ -47,15 +47,29 @@ export function MessengerGroupRow({
           }
           online={Boolean(live)}
         />
-        {live ? (
-          <span className="flex min-w-6 shrink-0 flex-col items-center justify-center text-emerald-400" aria-label={`${live.roomCount} ${live.roomCount === 1 ? "комната" : "комнаты"}${live.hasScreenShare ? " · идёт демонстрация экрана" : ""}`}>
-            {live.hasScreenShare ? <MonitorUp className="h-3.5 w-3.5" aria-hidden="true" /> : <Radio className="h-3.5 w-3.5" aria-hidden="true" />}
-            {live.roomCount > 1 ? <span className="font-mono text-[9px] leading-none" aria-hidden="true">{live.roomCount}</span> : null}
-          </span>
-        ) : null}
       </>
     ),
   });
+
+  if (!live) return row;
+
+  return (
+    <div className="relative">
+      {row}
+      {renderDestination({
+        href: `/messages/${chat.id}?surface=now`,
+        label: `Сейчас в группе ${title}: ${live.participantCount} в голосе`,
+        active: false,
+        className: "absolute right-1 top-1/2 flex min-h-8 min-w-8 -translate-y-1/2 flex-col items-center justify-center rounded-lg text-emerald-400 transition hover:bg-emerald-500/10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-emerald-400",
+        children: (
+          <>
+            {live.hasScreenShare ? <MonitorUp className="h-3.5 w-3.5" aria-hidden="true" /> : <Radio className="h-3.5 w-3.5" aria-hidden="true" />}
+            {live.roomCount > 1 ? <span className="font-mono text-[9px] leading-none" aria-hidden="true">{live.roomCount}</span> : null}
+          </>
+        ),
+      })}
+    </div>
+  );
 }
 
 export function MessengerDirectRow({

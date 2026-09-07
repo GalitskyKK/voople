@@ -64,6 +64,8 @@ test("web and desktop sidebar share one bounded live query and one visual state"
   assert.match(view, /live\.participantCount/);
   assert.match(view, /live\.roomCount/);
   assert.match(view, /live\.hasScreenShare/);
+  assert.match(view, /\?surface=now/);
+  assert.match(view, /Сейчас в группе/);
   assert.match(web, /useMessengerGroupLiveStates/);
   assert.match(desktop, /useMessengerGroupLiveStates/);
 });

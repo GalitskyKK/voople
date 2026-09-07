@@ -96,7 +96,7 @@ export function ChatThreadFrameView({
       }
     >
       {header}
-      {groupSurface ? <GroupSurfaceShell key={groupSurface.groupId} config={groupSurface} chatContent={chatContent} /> : chatContent}
+      {groupSurface ? <GroupSurfaceShell key={`${groupSurface.groupId}:${groupSurface.initialTab ?? "chat"}`} config={groupSurface} chatContent={chatContent} /> : chatContent}
       {overlays}
     </div>
   );

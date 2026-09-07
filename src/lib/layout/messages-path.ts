@@ -1,7 +1,13 @@
 /** UUID диалога из `/messages/[chatId]`, иначе `null`. */
 export function activeMessagesChatId(pathname: string): string | null {
-  const match = pathname.match(/^\/messages\/([^/]+)(?:\/|$)/);
+  const match = pathname.match(/^\/messages\/([^/?#]+)(?:[/?#]|$)/);
   return match?.[1] ?? null;
+}
+
+export function groupSurfaceFromPath(pathname: string): "chat" | "now" | "people" {
+  const query = pathname.split("?", 2)[1]?.split("#", 1)[0];
+  const surface = query ? new URLSearchParams(query).get("surface") : null;
+  return surface === "now" || surface === "people" ? surface : "chat";
 }
 
 export function isMessagesThreadPath(pathname: string): boolean {

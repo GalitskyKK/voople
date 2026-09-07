@@ -29,6 +29,7 @@ import { createDesktopTrpcClient } from "../api/trpc";
 export function DesktopChatThreadAdapter({
   chatId,
   rootChat,
+  initialGroupTab,
   config,
   session,
   onBack,
@@ -40,6 +41,7 @@ export function DesktopChatThreadAdapter({
 }: {
   chatId: string;
   rootChat: ChatListItem | null;
+  initialGroupTab: "chat" | "now" | "people";
   config: DesktopConfig;
   session: Session;
   onBack: () => void;
@@ -116,6 +118,7 @@ export function DesktopChatThreadAdapter({
       groupSurface={isGroup ? {
         groupId: rootChat?.id ?? data.chat.parentChatId ?? chatId,
         groupName: rootChat?.name ?? data.chat.parentName ?? title,
+        initialTab: initialGroupTab,
         canCreatePinned: data.chat.viewerRole !== "member",
         onlineUserIds, onOpenProfile: onNavigateProfile,
       } : undefined}

@@ -14,6 +14,7 @@ import { NotFoundView } from "@/components/system/NotFoundView";
 import { COPY, type FeedTabId } from "@/lib/constants/copy";
 import { roomInviteIdFromPath } from "@/lib/chat/core-room-invite-preview";
 import { getAppRouteLayout } from "@/lib/layout/route-layout";
+import { groupSurfaceFromPath } from "@/lib/layout/messages-path";
 import { registerInternalNavigationAdapter } from "@/lib/platform/internal-navigation";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 import { useVoiceSession } from "@/components/chat/voice/VoiceSessionProvider";
@@ -430,6 +431,7 @@ export function DesktopShell({
               config={config}
               session={session}
               activeChatId={chatId}
+              initialGroupTab={groupSurfaceFromPath(pathname)}
               navigate={navigate}
             />
           ) : postId ? (

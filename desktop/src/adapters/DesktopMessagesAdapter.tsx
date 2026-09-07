@@ -18,11 +18,13 @@ import { useConversationExit } from "@/hooks/useConversationExit";
 
 export function DesktopMessagesAdapter({
   activeChatId,
+  initialGroupTab,
   config,
   session,
   navigate,
 }: {
   activeChatId: string | null;
+  initialGroupTab: "chat" | "now" | "people";
   config: DesktopConfig;
   session: Session;
   navigate: (href: string) => void;
@@ -159,6 +161,7 @@ export function DesktopMessagesAdapter({
             key={activeChatId}
             chatId={activeChatId}
             rootChat={activeRootChat}
+            initialGroupTab={initialGroupTab}
             config={config}
             session={session}
             onBack={() => navigate("/messages")}

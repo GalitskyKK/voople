@@ -9,6 +9,7 @@ import { GroupSurfaceTabs, type GroupSurfaceTab } from "./GroupSurfaceTabs";
 export type GroupSurfaceConfig = {
   groupId: string;
   groupName: string;
+  initialTab?: GroupSurfaceTab;
   canCreatePinned: boolean;
   onlineUserIds: ReadonlySet<string>;
   onOpenProfile?: (username: string) => void;
@@ -21,7 +22,7 @@ export function GroupSurfaceShell({
   chatContent: ReactNode;
   config: GroupSurfaceConfig;
 }) {
-  const [activeTab, setActiveTab] = useState<GroupSurfaceTab>("chat");
+  const [activeTab, setActiveTab] = useState<GroupSurfaceTab>(config.initialTab ?? "chat");
 
   const openProfile = config.onOpenProfile
     ? (user: { username: string }) => config.onOpenProfile?.(user.username)

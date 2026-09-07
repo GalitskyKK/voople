@@ -10,7 +10,7 @@ test("group surface defaults to chat and keeps the three product modes accessibl
   const shell = source("src/components/chat/GroupSurfaceShell.tsx");
   const tabs = source("src/components/chat/GroupSurfaceTabs.tsx");
 
-  assert.match(shell, /useState<GroupSurfaceTab>\("chat"\)/);
+  assert.match(shell, /useState<GroupSurfaceTab>\(config\.initialTab \?\? "chat"\)/);
   assert.match(shell, /activeTab === "chat"/);
   assert.match(shell, /variant="shelf"/);
   assert.match(shell, /activeTab === "now"/);
@@ -58,6 +58,7 @@ test("web and desktop thread hosts enable the same group surface without replaci
     assert.match(host, /canCreatePinned/);
   }
   assert.match(frame, /<GroupSurfaceShell/);
+  assert.match(frame, /groupSurface\.initialTab/);
   assert.match(frame, /chatContent/);
   assert.match(web, /ChatSectionsBar/);
   assert.match(desktop, /ChatSectionsBarView/);

@@ -28,8 +28,8 @@ import { ChatSectionsBar } from "./ChatSectionsBar";
 import { ChatJumpToLatest } from "./ChatJumpToLatest";
 import { ChatSelectionController } from "./ChatSelectionController";
 import { ChatConversationStart } from "./ChatConversationStart";
-type ChatWindowProps = { chatId: string };
-export function ChatWindow({ chatId }: ChatWindowProps) {
+type ChatWindowProps = { chatId: string; initialGroupTab?: "chat" | "now" | "people" };
+export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps) {
   const router = useRouter();
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<ChatMessageView | null>(null);
@@ -37,9 +37,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   const [pendingTrack, setPendingTrack] = useState<PlaylistTrackView | null>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [playlistConfirmMessage, setPlaylistConfirmMessage] = useState<ChatMessageView | null>(
-    null,
-  );
+  const [playlistConfirmMessage, setPlaylistConfirmMessage] = useState<ChatMessageView | null>(null);
   const { onlineUserIds } = useOnlineUsers();
   const utils = trpc.useUtils();
   const editor = useChatMessageEditor(chatId, setText);
@@ -203,6 +201,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
       groupSurface={isGroup ? {
         groupId: data?.chat.parentChatId ?? chatId,
         groupName: data?.chat.parentName ?? chatTitle,
+        initialTab: initialGroupTab,
         canCreatePinned: data?.chat.viewerRole !== "member", onlineUserIds,
         onOpenProfile: (username) => router.push(`/${username}`),
       } : undefined}

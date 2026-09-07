@@ -1,8 +1,8 @@
 "use client";
 
 import type { GroupNowRoom, GroupNowUser } from "@/types/group-now";
+import { useGroupNowVoiceLauncher } from "@/hooks/useGroupNowVoiceLauncher";
 
-import { useVoiceSession } from "./voice/VoiceSessionProvider";
 import { GroupNowConnectedPanel } from "./GroupNowConnectedPanel";
 
 export function GroupNowVoicePanel({
@@ -22,16 +22,10 @@ export function GroupNowVoicePanel({
   onRoomOpened?: () => void;
   onOpenProfile?: (user: GroupNowUser) => void;
 }) {
-  const voice = useVoiceSession();
+  const launcher = useGroupNowVoiceLauncher({ groupId, onRoomOpened });
 
   const openLegacy = (room: GroupNowRoom) => {
-    if (room.joinTarget.kind !== "legacy") return;
-    voice.openRoom({
-      chatId: room.joinTarget.chatId,
-      chatName: room.name,
-      chatType: "group",
-    });
-    onRoomOpened?.();
+    launcher.openLegacyRoom(room);
   };
 
   return (
@@ -43,10 +37,11 @@ export function GroupNowVoicePanel({
       canCreatePinned={canCreatePinned}
       onOpenLegacy={openLegacy}
       onOpenProfile={onOpenProfile}
-      onJoined={(room, join, credentials) => {
-        voice.openCoreRoom({ groupId, room, join, credentials });
-        onRoomOpened?.();
-      }}
+      onJoined={(room, join, credentials) => launcher.openJoinedRoom(
+        { groupId, room },
+        join,
+        credentials,
+      )}
     />
   );
 }

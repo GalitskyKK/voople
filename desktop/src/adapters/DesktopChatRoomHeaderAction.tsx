@@ -1,4 +1,4 @@
-import { GroupRoomAction } from "@/components/chat/GroupRoomAction";
+import { GroupLobbyAction } from "@/components/chat/GroupLobbyAction";
 import { VoiceRoomButton } from "@/components/chat/voice/VoiceRoomButton";
 
 export function DesktopChatRoomHeaderAction({
@@ -6,8 +6,6 @@ export function DesktopChatRoomHeaderAction({
   chatName,
   chatType,
   isRootGroup,
-  canCreatePinned,
-  onOpenProfile,
 }: {
   chatId: string;
   chatName: string;
@@ -18,11 +16,9 @@ export function DesktopChatRoomHeaderAction({
 }) {
   if (isRootGroup) {
     return (
-      <GroupRoomAction
+      <GroupLobbyAction
         groupId={chatId}
         groupName={chatName}
-        canCreatePinned={canCreatePinned}
-        onOpenProfile={onOpenProfile}
       />
     );
   }

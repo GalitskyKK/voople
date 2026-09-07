@@ -56,7 +56,9 @@ export function ChatWindowHeader({
     isGroup && !isSubchat && (viewerRole === "owner" || viewerRole === "admin");
 
   return (
-    <ChatWindowHeaderVisual>
+    <ChatWindowHeaderVisual
+      className={isGroup && !isSubchat ? "voople-chat-window__header--group" : undefined}
+    >
       <Link
         href={isSubchat && parentChatId ? `/messages/${parentChatId}` : "/messages"}
         className="shrink-0 rounded-[var(--app-radius-sm)] p-1 text-[var(--app-muted)] transition-colors hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] lg:hidden"

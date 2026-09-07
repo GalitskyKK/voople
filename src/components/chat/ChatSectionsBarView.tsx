@@ -26,7 +26,7 @@ export function ChatSectionsBarView({
 
   return (
     <nav
-      className="voople-scroll flex shrink-0 gap-1 overflow-x-auto border-b border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-1.5"
+      className="voople-chat-sections voople-scroll flex shrink-0 gap-1 overflow-x-auto border-b border-[var(--app-border)] bg-[var(--app-surface)] px-3"
       aria-label="Разделы группы"
       style={rootChat.groupAccentColor ? { "--group-accent": rootChat.groupAccentColor } as React.CSSProperties : undefined}
     >
@@ -34,9 +34,9 @@ export function ChatSectionsBarView({
         renderDestination(
           section,
           cn(
-            "inline-flex h-8 max-w-52 shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition",
+            "voople-chat-sections__item relative inline-flex h-9 max-w-52 shrink-0 items-center gap-1.5 px-3 text-xs font-medium transition-colors",
             activeChatId === section.id
-              ? "bg-[color-mix(in_srgb,var(--group-accent,var(--theme-accent))_16%,var(--app-surface-soft))] text-[var(--group-accent,var(--theme-accent))]"
+              ? "voople-chat-sections__item--active text-[var(--group-accent,var(--theme-accent))]"
               : "text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]",
           ),
           <>

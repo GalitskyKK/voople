@@ -122,7 +122,9 @@ export function DesktopChatThreadAdapter({
         canCreatePinned: data.chat.viewerRole !== "member",
         onlineUserIds, onOpenProfile: onNavigateProfile,
       } : undefined}
-      header={<ChatWindowHeaderVisual>
+      header={<ChatWindowHeaderVisual
+        className={isGroup && !isSubchat ? "voople-chat-window__header--group" : undefined}
+      >
         <button
           type="button"
           onClick={() =>

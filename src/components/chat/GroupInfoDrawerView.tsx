@@ -102,7 +102,7 @@ export function GroupInfoDrawerView({
 
   return (
     <>
-      <button type="button" onClick={() => show("info")} className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left transition hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]" aria-label={`Информация о группе ${chatName}`}>
+      <button type="button" onClick={() => show("info")} className="voople-group-header-identity flex min-w-0 flex-1 items-center gap-3 rounded-[var(--app-radius-sm)] text-left transition hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]" aria-label={`Информация о группе ${chatName}`}>
         <GroupIdentity chatName={chatName} memberCount={memberCount} groupIcon={groupIcon} groupAvatarUrl={groupAvatarUrl} groupAccentColor={groupAccentColor} groupTag={groupTag} />
       </button>
       <IconButton label="Участники группы" tooltipSide="bottom" onClick={() => show("members")} tooltipClassName="hidden sm:inline-flex" className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]">

@@ -413,6 +413,25 @@ offline участников и проверяет доступные имена
 authenticated проверки длинных локализованных имён, guest/member moderation
 actions и mobile full-screen profile transition.
 
+### Messenger visual language — 2026-09-07
+
+Group Chat/Now/People получили общий для web и desktop визуальный каркас из
+rework-референса: усиленную uppercase-идентичность группы, моноширинные
+счётчики, центрированные режимы Group, линейное выделение разделов и почти
+прямоугольные message/composer surfaces без декоративного glow. Это не новая
+параллельная тема: слой ограничен messenger-маршрутом и использует существующие
+theme/group tokens. Mobile сохраняет те же данные и порядок действий, но
+оставляет более крупные touch-target и мягче скругляет интерактивные controls.
+Теги, роли, Group Info и остальные отложенные функции не удалялись.
+
+Source-тест фиксирует одинаковые маркеры Group header в web/desktop и единые
+sections/composer contracts. Изолированный visual gate рендерит реальные shared
+Header, Tabs, Sections и Composer вместе с Chat/Now/People; 1280 px проверяется
+в Void, 390 px — в Light, включая overflow и runtime errors. До полного
+визуального соответствия остаются активная Room, профиль/настройки и
+authenticated captures на 360/1024/1440 px с реальным пользовательским
+контентом.
+
 ## Cross-platform architecture gate
 
 - Канонические view-models и stateless views живут в `src/types`, `src/lib`,

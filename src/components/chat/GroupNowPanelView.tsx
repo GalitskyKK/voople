@@ -54,10 +54,10 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
     >
       <header className="flex items-end justify-between gap-4 border-b border-[var(--app-border)] pb-3">
         <div className="min-w-0">
-          <h2 id="group-now-title" className="truncate text-sm font-semibold uppercase tracking-[0.08em]">Комнаты сейчас</h2>
+          <h2 id="group-now-title" className="voople-group-now__title truncate text-base font-semibold uppercase tracking-[0.06em]">Комнаты сейчас</h2>
           <p className="mt-1 text-xs text-[var(--app-muted)]">{props.value.groupName}</p>
         </div>
-        <span className="shrink-0 font-mono text-[11px] text-[var(--app-muted)]">
+        <span className="voople-group-now__online shrink-0 font-mono text-[11px] text-[var(--app-muted)]">
           {props.value.visibleOnlineCount} онлайн
         </span>
       </header>

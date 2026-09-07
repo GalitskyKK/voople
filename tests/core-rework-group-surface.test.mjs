@@ -67,3 +67,24 @@ test("web and desktop thread hosts enable the same group surface without replaci
   assert.match(web, /ChatSectionsBar/);
   assert.match(desktop, /ChatSectionsBarView/);
 });
+
+test("messenger visual language is shared by web and desktop group threads", () => {
+  const web = source("src/components/chat/ChatWindowHeader.tsx");
+  const desktop = source("desktop/src/adapters/DesktopChatThreadAdapter.tsx");
+  const identity = source("src/components/chat/GroupManagementTrigger.tsx");
+  const sections = source("src/components/chat/ChatSectionsBarView.tsx");
+  const composer = source("src/components/chat/ChatComposerVisual.tsx");
+  const styles = source("src/app/globals.css");
+
+  for (const host of [web, desktop]) {
+    assert.match(host, /voople-chat-window__header--group/);
+  }
+  assert.match(identity, /voople-group-header-identity/);
+  assert.match(identity, /voople-group-identity__name/);
+  assert.match(identity, /voople-group-identity__meta/);
+  assert.match(sections, /voople-chat-sections__item--active/);
+  assert.match(composer, /voople-chat-composer__surface/);
+  assert.match(styles, /\.voople-chat-window__header--group/);
+  assert.match(styles, /\.voople-chat-sections__item--active::after/);
+  assert.match(styles, /\.voople-chat-bubble__body,/);
+});

@@ -41,11 +41,11 @@ export function GroupNowRoomSection({
         <div className="flex items-baseline gap-2">
           <h3
             id={`group-now-room-${room.id}`}
-            className="truncate text-sm font-semibold uppercase tracking-[0.08em] text-[var(--foreground)]"
+            className="voople-group-now-room__name truncate text-base font-semibold uppercase tracking-[0.06em] text-[var(--foreground)]"
           >
             {room.name}
           </h3>
-          <span className="shrink-0 font-mono text-[10px] text-[var(--app-muted)]">
+          <span className="voople-group-now-room__count shrink-0 font-mono text-[10px] text-[var(--app-muted)]">
             / {String(room.participantCount).padStart(2, "0")}
           </span>
         </div>

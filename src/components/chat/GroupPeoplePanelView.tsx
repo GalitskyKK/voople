@@ -50,6 +50,13 @@ export function GroupPeoplePanelView({
   });
   const liveCount = sorted.filter((member) => member.activeRoom).length;
   const onlineCount = sorted.filter((member) => onlineUserIds.has(member.id)).length;
+  const liveMembers = sorted.filter((member) => member.activeRoom);
+  const onlineMembers = sorted.filter(
+    (member) => !member.activeRoom && onlineUserIds.has(member.id),
+  );
+  const offlineMembers = sorted.filter(
+    (member) => !member.activeRoom && !onlineUserIds.has(member.id),
+  );
 
   return (
     <section className="voople-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6" aria-labelledby="group-people-title">
@@ -62,35 +69,25 @@ export function GroupPeoplePanelView({
           <span className="font-mono text-[11px] text-[var(--app-muted)]">{sorted.length} всего</span>
         </header>
 
-        <div className="divide-y divide-[var(--app-border)]">
-          {sorted.map((member) => {
-            const status = member.activeRoom
-              ? `Сейчас · ${member.activeRoom.name}`
-              : onlineUserIds.has(member.id)
-                ? "В сети"
-                : "Не в сети";
-            const content = (
-              <>
-                <GroupAvatar name={member.displayName} avatarUrl={member.avatarUrl} accentColor={member.roleColor} size="md" shape="square" />
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2">
-                    <strong className="truncate text-sm font-semibold">{member.displayName}</strong>
-                    {member.activeRoom ? <Radio className="h-3.5 w-3.5 shrink-0 text-emerald-400" aria-hidden="true" /> : onlineUserIds.has(member.id) ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" /> : null}
-                  </span>
-                  <span className="mt-0.5 block truncate text-xs text-[var(--app-muted)]">@{member.username} · {roleLabels[member.role]}</span>
-                </span>
-                <span className={member.activeRoom ? "max-w-48 truncate text-right text-xs text-emerald-400" : "max-w-32 truncate text-right text-xs text-[var(--app-muted)]"}>{status}</span>
-              </>
-            );
-
-            return onOpenProfile ? (
-              <button key={member.id} type="button" onClick={() => onOpenProfile(member.username)} className="flex w-full items-center gap-3 px-1 py-3 text-left transition-colors hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)]">
-                {content}
-              </button>
-            ) : (
-              <div key={member.id} className="flex items-center gap-3 px-1 py-3">{content}</div>
-            );
-          })}
+        <div className="space-y-5 pt-4">
+          <GroupPeopleSection
+            title="Сейчас"
+            members={liveMembers}
+            onlineUserIds={onlineUserIds}
+            onOpenProfile={onOpenProfile}
+          />
+          <GroupPeopleSection
+            title="Онлайн"
+            members={onlineMembers}
+            onlineUserIds={onlineUserIds}
+            onOpenProfile={onOpenProfile}
+          />
+          <GroupPeopleSection
+            title="Не в сети"
+            members={offlineMembers}
+            onlineUserIds={onlineUserIds}
+            onOpenProfile={onOpenProfile}
+          />
         </div>
 
         {!sorted.length ? (
@@ -101,5 +98,107 @@ export function GroupPeoplePanelView({
         ) : null}
       </div>
     </section>
+  );
+}
+
+function GroupPeopleSection({
+  title,
+  members,
+  onlineUserIds,
+  onOpenProfile,
+}: {
+  title: string;
+  members: ChatGroupMemberView[];
+  onlineUserIds: ReadonlySet<string>;
+  onOpenProfile?: (username: string) => void;
+}) {
+  if (!members.length) return null;
+
+  return (
+    <section aria-label={`${title}: ${members.length}`}>
+      <h3 className="flex items-center gap-2 px-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--app-muted)]">
+        {title}
+        <span className="font-mono text-[9px] font-normal">{members.length}</span>
+      </h3>
+      <div className="mt-1 divide-y divide-[var(--app-border)]">
+        {members.map((member) => (
+          <GroupPeopleRow
+            key={member.id}
+            member={member}
+            online={onlineUserIds.has(member.id)}
+            onOpenProfile={onOpenProfile}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function GroupPeopleRow({
+  member,
+  online,
+  onOpenProfile,
+}: {
+  member: ChatGroupMemberView;
+  online: boolean;
+  onOpenProfile?: (username: string) => void;
+}) {
+  const status = member.activeRoom
+    ? member.activeRoom.name
+    : online
+      ? "В сети"
+      : "Не в сети";
+  const content = (
+    <>
+      <GroupAvatar
+        name={member.displayName}
+        avatarUrl={member.avatarUrl}
+        accentColor={member.roleColor}
+        size="md"
+        shape="square"
+      />
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2">
+          <strong className="truncate text-sm font-semibold">
+            {member.displayName}
+          </strong>
+          {member.activeRoom ? (
+            <Radio
+              className="h-3.5 w-3.5 shrink-0 text-emerald-400"
+              aria-hidden="true"
+            />
+          ) : online ? (
+            <span
+              className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400"
+              aria-hidden="true"
+            />
+          ) : null}
+        </span>
+        <span className="mt-0.5 block truncate text-xs text-[var(--app-muted)]">
+          @{member.username} · {roleLabels[member.role]}
+        </span>
+      </span>
+      <span
+        className={
+          member.activeRoom
+            ? "max-w-48 truncate text-right text-xs text-emerald-400"
+            : "max-w-32 truncate text-right text-xs text-[var(--app-muted)]"
+        }
+      >
+        {status}
+      </span>
+    </>
+  );
+
+  return onOpenProfile ? (
+    <button
+      type="button"
+      onClick={() => onOpenProfile(member.username)}
+      className="flex w-full items-center gap-3 rounded-[var(--app-radius-sm)] px-1 py-2.5 text-left transition-colors hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)]"
+    >
+      {content}
+    </button>
+  ) : (
+    <div className="flex items-center gap-3 px-1 py-2.5">{content}</div>
   );
 }

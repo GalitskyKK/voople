@@ -400,6 +400,19 @@ gate покрывает `Сейчас` на 390 и 1280 px без overflow/runti
 статуса остаются настоящие аватары/длинные имена, loading/offline/error visual
 states и authenticated web/desktop parity.
 
+### Group People presence hierarchy — 2026-09-07
+
+Group `Люди` теперь разделяет один server-owned member list на три понятные
+секции: `Сейчас`, `Онлайн` и `Не в сети`. Участник активной Room показывает её
+название, обычный online остаётся отдельным состоянием, а роль и username
+сохранены в каждой строке. Сортировка и профильное действие используют прежний
+контракт; дополнительных запросов и отдельной desktop/mobile реализации нет.
+
+Source-тест фиксирует все три состояния. Visual fixture содержит live, online и
+offline участников и проверяет доступные имена секций. До полного статуса нужны
+authenticated проверки длинных локализованных имён, guest/member moderation
+actions и mobile full-screen profile transition.
+
 ## Cross-platform architecture gate
 
 - Канонические view-models и stateless views живут в `src/types`, `src/lib`,

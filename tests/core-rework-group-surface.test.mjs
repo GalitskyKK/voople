@@ -45,6 +45,10 @@ test("people view uses real member data and exposes room, presence and role cont
   assert.match(view, /onlineUserIds\.has/);
   assert.match(view, /roleLabels\[member\.role\]/);
   assert.match(view, /shape="square"/);
+  assert.match(view, /title="Сейчас"/);
+  assert.match(view, /title="Онлайн"/);
+  assert.match(view, /title="Не в сети"/);
+  assert.match(view, /<GroupPeopleSection/);
 });
 
 test("web and desktop thread hosts enable the same group surface without replacing legacy features", () => {

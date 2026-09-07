@@ -385,6 +385,21 @@ Source-тесты фиксируют секции, отсутствие пост
 360/390 px, keyboard/screen-reader проверка активного поиска и реальные
 loading/error/offline состояния.
 
+### Group Now room hierarchy — 2026-09-07
+
+Полная поверхность `Сейчас` приблизилась к rework-референсу: каждая активная
+Room стала самостоятельной плотной строкой с названием и моноширинным счётчиком,
+участниками, live/screen-share сигналом и явным действием входа или перехода.
+На узкой ширине те же данные перестраиваются в две колонки без отдельной
+мобильной реализации. Создание Room остаётся внутри списка комнат как
+полноширинное вторичное действие. Поведение join/switch/current, server read
+model и прежние Group Chat/People/Info возможности не менялись и не удалялись.
+
+Source-тест фиксирует общий room-card contract и participant variant. Visual
+gate покрывает `Сейчас` на 390 и 1280 px без overflow/runtime errors. До полного
+статуса остаются настоящие аватары/длинные имена, loading/offline/error visual
+states и authenticated web/desktop parity.
+
 ## Cross-platform architecture gate
 
 - Канонические view-models и stateless views живут в `src/types`, `src/lib`,

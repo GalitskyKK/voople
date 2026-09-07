@@ -58,7 +58,7 @@ test("shared Group Now view keeps flat accessible states for both hosts", async 
   assert.match(controller, /coreGroupNow\.useQuery/);
   assert.match(controller, /refetchInterval: enabled && online \? 15_000 : false/);
   assert.match(controller, /window\.addEventListener\("offline"/);
-  assert.match(viewSource, /max-w-\[960px\]/);
+  assert.match(viewSource, /max-w-\[1040px\]/);
   assert.match(viewSource, /GroupNowRoomSection/);
   assert.match(viewSource, /mode: "loading" \| "offline" \| "error"/);
   assert.match(viewSource, /role="status"/);
@@ -66,8 +66,9 @@ test("shared Group Now view keeps flat accessible states for both hosts", async 
   assert.match(viewSource, /aria-live="polite"/);
   assert.match(viewSource, /Сейчас тихо/);
   assert.match(viewSource, />\s*Комната\s*</);
-  assert.doesNotMatch(viewSource, /grid-cols-[234]/);
   assert.match(roomSource, /aria-label=\{`\$\{actionLabels\[action\]\}: \$\{room\.name\}`\}/);
-  assert.match(roomSource, /border-b border-\[var\(--app-border\)\]/);
+  assert.match(roomSource, /data-layout="room-card"/);
+  assert.match(roomSource, /variant="room"/);
+  assert.match(roomSource, /padStart\(2, "0"\)/);
   assert.doesNotMatch(controller, /desktop\/src|navigator\.userAgent/);
 });

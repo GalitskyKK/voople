@@ -68,6 +68,7 @@ try {
   for (const { width, height, tab } of [
     { width: 1280, height: 800, tab: "chat" }, { width: 1280, height: 800, tab: "now" },
     { width: 1280, height: 800, tab: "people" }, { width: 390, height: 800, tab: "chat" },
+    { width: 390, height: 800, tab: "now" },
   ]) {
     const page = await browser.newPage({ viewport: { width, height } });
     const errors = [];
@@ -75,7 +76,7 @@ try {
     page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
     await page.goto(`http://127.0.0.1:${server.address().port}`);
     await page.waitForFunction(() => typeof window.setGroupTab === "function");
-    if (tab === "now") {
+    if (tab === "now" && width >= 1024) {
       await page.getByRole("button", { name: /Сейчас в группе VOICEKK/ }).click();
     } else {
       await page.evaluate((value) => window.setGroupTab(value), tab);
@@ -92,6 +93,9 @@ try {
         await page.getByLabel("Непрочитанных сообщений: 2").waitFor();
         await page.getByRole("button", { name: /Сейчас в группе VOICEKK: 4 в голосе/ }).waitFor();
       }
+    }
+    if (tab === "now") {
+      assert.equal(await page.locator('[data-layout="room-card"]').count(), 2);
     }
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);

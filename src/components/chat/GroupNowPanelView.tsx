@@ -49,7 +49,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
   const quiet = isGroupNowQuiet(props.value.rooms);
   return (
     <section
-      className="mx-auto w-full max-w-[960px] px-4 py-5 text-[var(--foreground)] sm:px-6"
+      className="mx-auto w-full max-w-[1040px] px-3 py-4 text-[var(--foreground)] sm:px-6 sm:py-5"
       aria-labelledby="group-now-title"
     >
       <header className="flex items-end justify-between gap-4 border-b border-[var(--app-border)] pb-3">
@@ -77,7 +77,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
         </p>
       ) : null}
 
-      <div>
+      <div className="mt-3 space-y-1.5">
         {props.value.rooms.map((room) => (
           <GroupNowRoomSection
             key={room.id}
@@ -108,7 +108,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
         <button
           type="button"
           onClick={props.onCreateRoom}
-          className="mt-2 inline-flex min-h-10 items-center gap-2 rounded-xl px-2 text-sm font-medium text-[var(--theme-accent)] transition hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]"
+          className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[var(--app-radius-sm)] border border-dashed border-[var(--app-border-strong)] px-3 text-sm font-medium text-[var(--theme-accent)] transition hover:border-[var(--theme-accent)] hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           Комната

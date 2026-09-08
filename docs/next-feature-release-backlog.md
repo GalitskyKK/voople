@@ -35,15 +35,16 @@
   gate. Найденное визуальное или функциональное расхождение исправляется как
   дефект общего View/контракта, а не добавлением platform fork.
 - Закрыть зафиксированный component debt без повышения baseline: send/attention
-  orchestration уже вынесен из `ChatWindow`, его лимит снижен с 404 до 329 строк.
+  orchestration и вторичные message actions вынесены из `ChatWindow`, файл
+  уменьшен до обычного component budget и его baseline удалён.
   `ChatRoomControl` закрыт: публичная граница, controller/lifecycle, preferences
   и общий presentation View разделены, а его baseline удалён. `VoiceRoomSheet`
   также разделён на общие stateless header/content/footer-секции, его architecture
   notice закрыт. `ProfileEditSheet` также закрыт: transport/optimistic lifecycle
   вынесен в session-bound controller, preview/catalog/tag и панели стали общими
-  stateless-компонентами, а baseline удалён. Следующая цель — message-list
-  `ChatWindow`, затем остальные review-threshold компоненты и монолитные
-  data-модули по доменным ответственностям.
+  stateless-компонентами, а baseline удалён. Следующие цели — остальные
+  review-threshold компоненты и монолитные data-модули по доменным
+  ответственностям.
 - Windows application audio: если provenance текущего стабильного артефакта
   содержит `processAudioPublisher: false`, следующий feature-релиз нельзя
   продвигать в stable до восстановления обязательной native-сборки, проверки

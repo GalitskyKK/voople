@@ -509,6 +509,12 @@ desktop занимает контекстную правую колонку; ove
 нехватке ширины список прокручивается внутри себя и не отнимает высоту у
 истории сообщений.
 
+`ChatWindow` возвращён в обычный component budget: delete, optimistic reaction,
+playlist confirmation и lifecycle уведомлений теперь принадлежат одному
+доменному hook. Таймер уведомления очищается при размонтировании, а общий web/
+desktop Chat View и поведение сообщений не менялись. Architecture baseline для
+`ChatWindow` удалён и защищён отдельным source contract.
+
 ## Cross-platform architecture gate
 
 - Канонические view-models и stateless views живут в `src/types`, `src/lib`,

@@ -8,15 +8,13 @@ import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import { useChatMessageSelection } from "@/hooks/useChatMessageSelection";
 import { useChatConversationAttention } from "@/hooks/useChatConversationAttention";
 import { useChatSendMutation } from "@/hooks/useChatSendMutation";
+import { useChatMessageActions } from "@/hooks/useChatMessageActions";
 import type { PendingChatUpload } from "@/hooks/useChatUpload";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 import { trpc } from "@/lib/trpc/client";
 import type { ChatMessageView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
-import type { ChatReactionEmoji } from "@/lib/chat/reactions";
-import { playlistMetadataDefaultsFromMessage } from "@/lib/chat/playlist-from-message";
 import { parseComposerContent } from "@/lib/chat/message-content";
-import { reportProductEvent } from "@/lib/telemetry/client";
 import { Toast } from "@/components/ui/Toast";
 import { ChatComposer } from "./ChatComposer";
 import { ChatTrackMetadataDialog } from "./ChatTrackMetadataDialog";
@@ -36,10 +34,8 @@ export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps
   const [pendingUpload, setPendingUpload] = useState<PendingChatUpload | null>(null);
   const [pendingTrack, setPendingTrack] = useState<PlaylistTrackView | null>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-  const [playlistConfirmMessage, setPlaylistConfirmMessage] = useState<ChatMessageView | null>(null);
   const { onlineUserIds } = useOnlineUsers();
-  const utils = trpc.useUtils();
+  const actions = useChatMessageActions(chatId);
   const editor = useChatMessageEditor(chatId, setText);
   const { data: me } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
   const { realtimeDegraded } = useRealtimeChat(chatId, me?.id);
@@ -64,83 +60,6 @@ export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps
   });
   const { containerRef: messagesRef, contentRef: messagesContentRef, isAwayFromBottom, scrollToBottom } =
     useChatAutoScroll(chatId, data?.messages.length ?? 0);
-
-  const removeMessage = trpc.chat.deleteMessage.useMutation({
-    onSuccess: (_data, variables) => {
-      utils.chat.observeMessages.setData({ chatId }, (current) => {
-        if (!current) return current;
-        return {
-          ...current,
-          messages: current.messages.filter((m) => m.id !== variables.messageId),
-        };
-      });
-      void utils.chat.list.invalidate();
-    },
-    onError: (err) => {
-      setToast(err.message);
-      window.setTimeout(() => setToast(null), 3500);
-    },
-  });
-
-  const addToPlaylist = trpc.playlist.addFromChatMessage.useMutation({
-    onSuccess: () => {
-      setPlaylistConfirmMessage(null);
-      setToast("Добавлено в плейлист");
-      void utils.playlist.listMine.invalidate();
-      window.setTimeout(() => setToast(null), 2500);
-    },
-    onError: (err) => {
-      setToast(err.message);
-      window.setTimeout(() => setToast(null), 3500);
-    },
-  });
-
-  const toggleReaction = trpc.chat.toggleReaction.useMutation({
-    onMutate: async ({ messageId, emoji, emojiId }) => {
-      await utils.chat.observeMessages.cancel({ chatId });
-      const previous = utils.chat.observeMessages.getData({ chatId });
-      utils.chat.observeMessages.setData({ chatId }, (current) => {
-        if (!current) return current;
-        return {
-          ...current,
-          messages: current.messages.map((message) => {
-            if (message.id !== messageId) return message;
-            const reactions = [...message.reactions];
-            const index = reactions.findIndex((reaction) => emojiId
-              ? reaction.emojiId === emojiId
-              : reaction.emoji === emoji);
-            if (index < 0) {
-              reactions.push({ emoji: emoji ?? "Эмодзи", emojiId: emojiId ?? null, count: 1, reactedByMe: true });
-            } else {
-              const reaction = reactions[index]!;
-              if (reaction.reactedByMe && reaction.count <= 1) reactions.splice(index, 1);
-              else reactions[index] = {
-                ...reaction,
-                count: reaction.count + (reaction.reactedByMe ? -1 : 1),
-                reactedByMe: !reaction.reactedByMe,
-              };
-            }
-            return { ...message, reactions };
-          }),
-        };
-      });
-      return { previous };
-    },
-    onError: (error, _input, context) => {
-      if (context?.previous) utils.chat.observeMessages.setData({ chatId }, context.previous);
-      setToast(error.message);
-      window.setTimeout(() => setToast(null), 3000);
-    },
-    onSuccess: (result) => {
-      utils.chat.observeMessages.setData({ chatId }, (current) => current ? {
-        ...current,
-        messages: current.messages.map((message) => message.id === result.messageId
-          ? { ...message, reactions: result.reactions }
-          : message),
-      } : current);
-      reportProductEvent("reaction_used", { surface: "chat" });
-    },
-  });
 
   const handleSend = () => {
     const trimmed = text.trim();
@@ -191,10 +110,6 @@ export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps
   const timeline = buildChatTimeline(data?.messages ?? []);
   const viewerId = me?.id ?? null;
   const otherOnline = Boolean(other?.id && onlineUserIds.has(other.id));
-  const playlistDefaults = playlistConfirmMessage
-    ? playlistMetadataDefaultsFromMessage(playlistConfirmMessage)
-    : null;
-
   return (
     <ChatThreadFrameView
       accentColor={isGroup ? data?.chat.groupAccentColor : null}
@@ -206,7 +121,7 @@ export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps
         onOpenProfile: (username) => router.push(`/${username}`),
       } : undefined}
       header={selection.selecting ? (
-        <ChatSelectionController messages={selection.selectedMessages} onCancel={selection.clear} onDeleteMessage={(messageId) => removeMessage.mutateAsync({ messageId })} />
+        <ChatSelectionController messages={selection.selectedMessages} onCancel={selection.clear} onDeleteMessage={(messageId) => actions.removeMessage.mutateAsync({ messageId })} />
       ) : <ChatWindowHeader
         chatId={chatId}
         chatTitle={chatTitle}
@@ -263,17 +178,16 @@ export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps
             editor.beginEditing(message);
           }}
           onDelete={(message) => {
-            if (window.confirm("Удалить сообщение?")) removeMessage.mutate({ messageId: message.id });
+            if (window.confirm("Удалить сообщение?")) actions.removeMessage.mutate({ messageId: message.id });
           }}
-          onAddToPlaylist={(message) => setPlaylistConfirmMessage(message)}
+          onAddToPlaylist={actions.setPlaylistConfirmMessage}
           onOpenImage={setLightboxUrl}
           showSender={isGroup}
-          onToggleReaction={(message, reaction) => {
-            if (!toggleReaction.isPending) toggleReaction.mutate({
-              messageId: message.id,
-              ...(reaction.emojiId ? { emojiId: reaction.emojiId } : { emoji: reaction.emoji as ChatReactionEmoji }),
-            });
-          }}
+          onToggleReaction={(message, reaction) =>
+            actions.toggleMessageReaction(message.id, {
+              emoji: reaction.emoji,
+              emojiId: reaction.emojiId ?? null,
+            })}
         />
       )}
       afterMessages={isAwayFromBottom ? <ChatJumpToLatest onClick={scrollToBottom} /> : null}
@@ -302,24 +216,24 @@ export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps
       overlays={
         <>
           <ChatMediaLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
-          {playlistConfirmMessage && playlistDefaults ? (
+          {actions.playlistConfirmMessage && actions.playlistDefaults ? (
             <ChatTrackMetadataDialog
               open
-              initialTitle={playlistDefaults.title}
-              initialArtist={playlistDefaults.artist}
-              isSubmitting={addToPlaylist.isPending}
-              error={addToPlaylist.error?.message ?? null}
-              onClose={() => setPlaylistConfirmMessage(null)}
+              initialTitle={actions.playlistDefaults.title}
+              initialArtist={actions.playlistDefaults.artist}
+              isSubmitting={actions.addToPlaylist.isPending}
+              error={actions.addToPlaylist.error?.message ?? null}
+              onClose={() => actions.setPlaylistConfirmMessage(null)}
               onConfirm={(draft) =>
-                addToPlaylist.mutate({
-                  messageId: playlistConfirmMessage.id,
+                actions.addToPlaylist.mutate({
+                  messageId: actions.playlistConfirmMessage!.id,
                   title: draft.title,
                   artist: draft.artist,
                 })
               }
             />
           ) : null}
-          {toast ? <Toast message={toast} className="z-[130]" /> : null}
+          {actions.toast ? <Toast message={actions.toast} className="z-[130]" /> : null}
         </>
       }
     />

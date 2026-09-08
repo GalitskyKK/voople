@@ -10,6 +10,10 @@ const coreReworkPlanPath = new URL(
   "../rework_plan/VOOPLE_CORE_REWORK_PLAN.md",
   import.meta.url,
 );
+const coreReworkAddendumPath = new URL(
+  "../rework_plan/VOOPLE_CORE_REWORK_ADDENDUM.md",
+  import.meta.url,
+);
 const coreArchitecturePath = new URL(
   "../docs/core-rework-architecture.md",
   import.meta.url,
@@ -31,8 +35,9 @@ const p0Requirements = [
 ];
 
 test("canonical product sources and every P0 result remain release-tracked", async () => {
-  const [corePlan, finalPlan, coreArchitecture, matrix, agents] = await Promise.all([
+  const [corePlan, coreAddendum, finalPlan, coreArchitecture, matrix, agents] = await Promise.all([
     readFile(coreReworkPlanPath, "utf8"),
+    readFile(coreReworkAddendumPath, "utf8"),
     readFile(finalPlanPath, "utf8"),
     readFile(coreArchitecturePath, "utf8"),
     readFile(matrixPath, "utf8"),
@@ -41,6 +46,7 @@ test("canonical product sources and every P0 result remain release-tracked", asy
 
   assert.match(corePlan, /## 29\. Порядок реализации/);
   assert.match(corePlan, /## 30\. Definition of Done/);
+  assert.match(coreAddendum, /Voople остаётся \*\*ежедневным мессенджером с live-слоем/);
   assert.match(finalPlan, /# 37\. Порядок реализации/);
   assert.match(finalPlan, /^# \d+\. Acceptance criteria$/m);
   assert.match(coreArchitecture, /## Compatibility and rollout/);

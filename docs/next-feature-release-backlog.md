@@ -8,7 +8,7 @@
 ## Core rework transition
 
 Актуальный порядок учитывает также
-`rework_plan/VOOPLE_CORE_REWORK_ADDENDUM(1).md`: messenger-first, затем live-слой.
+`rework_plan/VOOPLE_CORE_REWORK_ADDENDUM.md`: messenger-first, затем live-слой.
 Шесть незакрытых этапов P0–P5 и порядок `feat → dev → master` описаны в
 [плане интеграции](./rework-integration-plan.md). Исторические приоритеты ниже
 применяются там, где эти планы их не переопределяют.

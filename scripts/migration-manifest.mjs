@@ -23,6 +23,7 @@ export const REQUIRED_MIGRATIONS = Object.freeze([
   "63-room-guest-account-conversion.sql",
   "64-user-blocks.sql",
   "65-chat-read-cursors.sql",
+  "66-room-message-context.sql",
 ]);
 
 // The ledger must exist before the feature migrations are replayed so every
@@ -52,4 +53,5 @@ export const RELEASE_APPLY_ORDER = Object.freeze([
   "63-room-guest-account-conversion.sql",
   "64-user-blocks.sql",
   "65-chat-read-cursors.sql",
+  "66-room-message-context.sql",
 ]);

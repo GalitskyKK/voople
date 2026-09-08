@@ -1,4 +1,5 @@
 import { dayKeyFromIso, formatMessageDateLabel } from "@/lib/format/message-time";
+import { messageRoomContextKey } from "@/lib/chat/message-room-context";
 import { summarizeGroupRoomActivity } from "@/lib/chat/room-activity";
 import type { ChatMessageView } from "@/types/chat";
 
@@ -19,6 +20,9 @@ function messagesBelongTogether(
 ) {
   if (!first || !second || first.senderId !== second.senderId) return false;
   if (dayKeyFromIso(first.createdAt) !== dayKeyFromIso(second.createdAt)) return false;
+  if (messageRoomContextKey(first.roomContext) !== messageRoomContextKey(second.roomContext)) {
+    return false;
+  }
   return (
     Math.abs(Date.parse(second.createdAt) - Date.parse(first.createdAt)) <=
     MESSAGE_GROUP_WINDOW_MS

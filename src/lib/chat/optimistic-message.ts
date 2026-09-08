@@ -1,5 +1,5 @@
 import type { PendingChatUpload } from "@/hooks/useChatUpload";
-import type { ChatMessageView } from "@/types/chat";
+import type { ChatMessageRoomContext, ChatMessageView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
 
 export function buildOptimisticMessage(input: {
@@ -9,6 +9,7 @@ export function buildOptimisticMessage(input: {
   replyTo?: ChatMessageView | null;
   pendingUpload?: PendingChatUpload | null;
   pendingTrack?: PlaylistTrackView | null;
+  roomContext?: ChatMessageRoomContext | null;
 }): ChatMessageView {
   const attachment = input.pendingTrack
     ? { kind: "track" as const, track: input.pendingTrack, ownerId: input.senderId }
@@ -34,6 +35,7 @@ export function buildOptimisticMessage(input: {
     createdAt: new Date().toISOString(),
     isMine: true,
     readAt: null,
+    roomContext: input.roomContext ?? null,
     replyTo: input.replyTo
       ? {
           id: input.replyTo.id,

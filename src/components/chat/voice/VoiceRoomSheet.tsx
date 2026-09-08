@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useVoiceRoomFullscreen } from "./useVoiceRoomFullscreen";
 import type { VoiceRoomSheetProps } from "./voice-room-sheet-models";
 import { CoreRoomInvitePanel } from "./CoreRoomInvitePanel";
+import { RoomMessagesPanel } from "./RoomMessagesPanel";
 import { VoiceRoomContent } from "./VoiceRoomContent";
 import { VoiceRoomFooter } from "./VoiceRoomFooter";
 import { VoiceRoomHeader } from "./VoiceRoomHeader";
@@ -15,7 +16,7 @@ import { VoiceRoomSwitchStatus } from "./VoiceRoomSwitchStatus";
 import { VoiceRoomSwitcher } from "./VoiceRoomSwitcher";
 import { VoiceSoundboardPanel } from "./VoiceSoundboardPanel";
 
-type SecondaryPanel = "settings" | "soundboard" | "invite" | null;
+type SecondaryPanel = "settings" | "soundboard" | "invite" | "messages" | null;
 
 /** Stateful sheet boundary; visual room sections remain stateless and platform-shared. */
 export function VoiceRoomSheet({
@@ -27,6 +28,7 @@ export function VoiceRoomSheet({
   access,
   session,
   roomSwitcher,
+  messages,
   invite,
   settingsPanel,
 }: VoiceRoomSheetProps) {
@@ -46,7 +48,6 @@ export function VoiceRoomSheet({
     void exitFullscreen();
     onClose();
   };
-
   useEffect(() => {
     if (!open) void exitFullscreen();
   }, [exitFullscreen, open]);
@@ -57,13 +58,13 @@ export function VoiceRoomSheet({
       onClose={close}
       ariaLabel={`Комната ${identity.chatName}`}
       containerClassName={fullscreen ? "p-0 sm:p-0" : undefined}
-      closeOnEscape={!fullscreen}
+      closeOnEscape={!fullscreen && secondaryPanel === null}
       className={cn(
         "voople-full-room h-[min(94dvh,860px)] max-h-[94dvh] max-w-[86rem] overflow-hidden p-0",
         fullscreen && "h-full max-h-none max-w-none rounded-none border-0 p-0 sm:rounded-none",
       )}
     >
-      <div className="voople-full-room__frame flex h-full min-h-0 min-w-0 max-sm:flex-col">
+      <div className="voople-full-room__frame relative flex h-full min-h-0 min-w-0 max-sm:flex-col">
         {roomSwitcher ? <VoiceRoomSwitcher {...roomSwitcher} /> : null}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <VoiceRoomHeader
@@ -71,10 +72,13 @@ export function VoiceRoomSheet({
             connection={connection}
             participantCount={stage.participants.length}
             hasGroupSounds={stage.groupSounds.length > 0}
+            hasRoomMessages={Boolean(messages)}
+            roomMessagesOpen={secondaryPanel === "messages"}
             access={access}
             fullscreen={fullscreen}
             fullscreenPending={fullscreenPending}
             onOpenSoundboard={() => setSecondaryPanel("soundboard")}
+            onToggleRoomMessages={() => setSecondaryPanel((current) => current === "messages" ? null : "messages")}
             onOpenSettings={() => setSecondaryPanel("settings")}
             onToggleFullscreen={toggleFullscreen}
           />
@@ -97,6 +101,9 @@ export function VoiceRoomSheet({
             session={session}
           />
         </div>
+        {messages && secondaryPanel === "messages" ? (
+          <RoomMessagesPanel model={messages} onClose={() => setSecondaryPanel(null)} />
+        ) : null}
       </div>
 
       <Sheet

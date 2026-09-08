@@ -123,7 +123,7 @@ Transport/media были заглушены: real DB, authorization, native desk
 | 50 | Mini-room geometry and participant controls | Готово в коде · P1 UX | Shared web/desktop mini-room двигается за любую неуправляющую поверхность, включая preview, сохраняет позицию/ширину/высоту, удерживается внутри viewport и меняется с восьми границ/углов pointer-жестом либо стрелками с клавиатуры. Базовое центрирование теперь объединено с пользовательским offset в одном transform и больше не перезаписывается inline `translate`, поэтому dock не уезжает за правый край. Preview имеет отдельную keyboard/tooltip-accessible кнопку открытия полного Room, которая больше не конкурирует с drag gesture. ПКМ, Context Menu и Shift+F10 на удалённом участнике открывают portalled collision-aware меню локальной громкости 0–200%, mute и reset; настройки продолжают применяться и сохраняться существующим LiveKit output controller. Stateless Light/Void visual gate покрывает Mini на 390/1280 px. До полного `Готово` остаются authenticated web/desktop checks, 360/1024/1440, Windows scale 125/150%, touch/trackpad и двухклиентный audio gate |
 | 51 | Room compact and minimal states | Готово в коде · P1 UX | Shared web/desktop controller передаёт в dock текущего спикера и локальные capture states. Mini, Compact и Minimal используют одну строгую token-геометрию без старых glass blur, oversized radius и hover-lift. Compact 52 px сохраняет название Room, число участников, speaking/connection state и persistent mic/camera/share indicators с доступными именами; Minimal остаётся одной безопасной компактной поверхностью и не теряет Room, participant count и active-media state. Source/unit, architecture, lint, TypeScript и stateless 390/1280 Light/Void visual gates зелёные. До полного `Готово` остаются authenticated 360/390/1024/1440, Windows scale 125/150%, keyboard/screen-reader и реальный multi-participant speaking/capture visual gate |
 | 52 | Saved Messages | Планирование · P1 | Owner-only data contract, полнотекстовый поиск, вложения, edit/delete, offline/retry, retention/export и parity; не моделировать через фиктивного собеседника |
-| 53 | Room-context messages | Планирование · P1 core | Сообщения остаются в Group Chat; Room side panel является access-aware фильтром по immutable Room/LiveSession context snapshot, а не вторым history lifecycle |
+| 53 | Room-context messages | Частично · P1 core | Сообщения остаются в Group Chat: migration 66 атомарно привязывает immutable Room/LiveSession snapshot в транзакции создания сообщения, выводя Room только из активной same-Group session отправителя. Клиент не передаёт Room ID. Общий read model совместим с ещё не обновлённой БД, разделяет визуальные группы при смене Room и показывает спокойную метку контекста в существующем message bubble без второй ленты. В активной core Room доступна боковая панель с точным LiveSession-фильтром, теми же bubble/composer, вложениями и optimistic Room context; она намеренно не двигает общий per-chat read cursor. Зафиксированы lifecycle, access/moderation и presentation policy. Остаются поиск/навигация к Room-контексту, отдельный точный read contract, реальный DB concurrency gate и authenticated web/desktop/mobile evidence |
 | 54 | Full Room invitations | Частично · P0 Room | Migration 58 переиспользована как service-role-only session-bound store. Только актуальный участник точной core Room получает privacy- и block-filtered список участников группы и отправляет идемпотентный 15-minute invite под отдельным rate limit. Shared Room sheet web/desktop показывает поиск, loading/empty/error/retry и server-owned pending/accepted/declined/expired/cancelled status; pending invite можно атомарно и идемпотентно отменить только его отправителю из той же активной session. Notification и отдельный noindex authenticated `/room-invites/[inviteId]` preview повторно проверяют exact invitee, root membership, session, group/Room consistency, `roomsScope` и блокировку в обе стороны; заблокированный отправитель, закрытая, завершённая, expired или недоступная Room не раскрываются. Web и desktop используют один preview и общий cross-context confirmation + token/media handoff, а `accepted` сервер разрешает только после фактического join. Copy/share использует server-owned URL. Desktop регистрирует только `voople` protocol, принимает только точный Room-invite UUID без query/fragment, сохраняет последний адрес до завершения auth и открывает тот же preview без auto-accept. Release workflow устанавливает exact NSIS RC и fail-closed проверяет registry command, cold/warm replacement, unsafe query rejection, single-instance restore, renderer continuation и uninstall; provenance обязателен для stable promotion. Недоступный preview позволяет сменить аккаунт без раскрытия причины: web использует валидированный внутренний login redirect, desktop восстанавливает точный pending path только после успешного sign-out, а общий View показывает pending/error/retry. 221 source/unit tests, architecture, lint, web/desktop TypeScript, обе production-сборки и 360/1280 Void/Light visual gate зелёные. Остались реальный CI result installed-app gate, Authenticode certificate evidence, production migration evidence и multi-user authenticated E2E |
 | 55 | Direct Room expansion | Планирование · P1 Room | Явный consent и создание group conversation без переноса private DM history; роли, leave/rejoin и audit event |
 | 56 | Share to messages | Планирование · P1 | Typed access-aware preview для posts/profiles/events/Rooms/messages, unavailable state, optional comment, multi-recipient и idempotency |
@@ -474,6 +474,40 @@ Header, Tabs, Sections и Composer вместе с Chat/Now/People; 1280 px пр
 визуального соответствия остаются активная Room, профиль/настройки и
 authenticated captures на 360/1024/1440 px с реальным пользовательским
 контентом.
+
+### Room-context message read model — 2026-09-08
+
+История Group Chat совместимо читает immutable snapshot из
+`message_room_contexts`; отсутствие ещё не применённой таблицы не ломает старый
+клиент. Контекст не выдаёт доступ к сообщению и появляется только после
+существующей проверки conversation/section membership. Сообщения разных Room
+или LiveSession больше не объединяются в одну визуальную группу, а общий
+web/desktop bubble показывает одну спокойную строку `Из комнаты <название>` без
+второй карточки или отдельной timeline.
+
+Прошли 250 source/unit tests, architecture, lint, web/desktop TypeScript и
+desktop renderer production build. Stateless visual gate реальных shared
+Messenger-компонентов прошёл на 390 px Light и 1280 px Void для Chat/Now/People:
+метка длинной Room не создаёт overflow или runtime errors. Migration 66
+добавляет транзакционный trigger: контекст выводится из активного участника и
+точной same-Group LiveSession, а клиент не может подставить Room ID. Активная
+core Room открывает сообщения в контекстной боковой панели: это точный
+LiveSession-фильтр той же Group-истории, использующий общий bubble/composer и
+optimistic snapshot, а не отдельный чат. Панель не меняет грубый per-chat read
+cursor, чтобы просмотр Room не пометил прочитанными скрытые сообщения Group.
+Остаются authenticated/mobile states, отдельный точный read contract, реальный
+DB concurrency gate и production migration evidence.
+
+Панель Room-сообщений дополнительно прошла изолированный visual gate на 390 px
+Light и 1280 px Void с реальными `RoomMessagesPanel`, message bubbles и composer:
+на мобильном она остаётся частью того же окна и безопасно перекрывает сцену, на
+desktop занимает контекстную правую колонку; overflow и runtime errors нет.
+
+В Chat-поверхности live shelf дополнительно сжат до одной горизонтальной строки:
+название Room, live/screen-share state и количество участников остаются
+видимыми, а полный состав и создание Room принадлежат вкладке `Сейчас`. При
+нехватке ширины список прокручивается внутри себя и не отнимает высоту у
+истории сообщений.
 
 ## Cross-platform architecture gate
 

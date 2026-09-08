@@ -7,6 +7,7 @@ import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { cn } from "@/lib/utils";
 import type { ChatMessageView } from "@/types/chat";
 import { ChatMessageContent } from "./ChatMessageContent";
+import { ChatMessageRoomContext } from "./ChatMessageRoomContext";
 
 type ChatMessageBubbleVisualProps = {
   message: ChatMessageView;
@@ -167,6 +168,10 @@ export function ChatMessageBubbleVisual({
               className="max-w-full px-0.5 text-[11px] font-semibold text-[var(--theme-accent)]">
               {message.sender.displayName}
             </DisplayNameWithPin>
+          ) : null}
+          {message.roomContext &&
+          (groupPosition === "only" || groupPosition === "start") ? (
+            <ChatMessageRoomContext context={message.roomContext} />
           ) : null}
           {replyTo ? (
             <div

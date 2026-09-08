@@ -20,6 +20,7 @@ const entry = `import {createRoot} from 'react-dom/client';
   import {AppThemeProvider} from '@/components/theme/AppThemeProvider';
   import {VoiceRoomContent} from '@/components/chat/voice/VoiceRoomContent';
   import {VoiceRoomHeader} from '@/components/chat/voice/VoiceRoomHeader';
+  import {RoomMessagesPanel} from '@/components/chat/voice/RoomMessagesPanel';
   import {VoiceRoomSwitcher} from '@/components/chat/voice/VoiceRoomSwitcher';
   import {VoiceRoomSwitchStatus} from '@/components/chat/voice/VoiceRoomSwitchStatus';
   import {VoiceRoomFooter} from '@/components/chat/voice/VoiceRoomFooter';
@@ -40,6 +41,7 @@ const entry = `import {createRoot} from 'react-dom/client';
     const phase=params.get('phase')||'inside';
     const fullscreen=params.get('fullscreen')==='1';
     const media=params.get('media')||'screen';
+    const messagesOpen=params.get('messages')==='1';
     const participantCount=Number(params.get('people')||3);
     const participants=allParticipants.slice(0,participantCount);
     const screenShareOwner=media==='screen'?'nmggk':null;
@@ -51,16 +53,17 @@ const entry = `import {createRoot} from 'react-dom/client';
     const session={phase,inside:connected,leavePending:phase==='leaving',onLeave:noop,connectPending:phase==='loading',connectDisabled:false,onConnect:noop,connectLabel:'Войти',retryLabel:phase==='error'?'Повторить загрузку':'Повторить подключение',retryPending:false,onRetry:noop};
     const stage={screenContainerRef:bindScreen,screenShareOwner,screenShareAvailable:null,screenShareTrackId:screenShareOwner?'screen-1':null,screenShareIsLocal:false,watchingScreenShare:Boolean(screenShareOwner),screenShareVolume:1,participants,groupSounds:[],participantVolumes:{},remoteMicMutedById:{},activeSpeakerIds:new Set(['biba']),cameraParticipantIds:new Set(),onCameraContainerChange:noop,onParticipantVolumeChange:noop,onScreenShareVolumeChange:noop,onGroupSoundPlay:noop,onWatchScreenShare:noop,onStopWatchingScreenShare:noop};
     return <main className={fullscreen?'grid h-dvh place-items-center bg-[var(--background)]':'grid h-dvh place-items-center bg-[var(--background)] p-4 max-sm:p-0'}><section className={fullscreen?'voople-full-room flex h-dvh w-full min-w-0 flex-col overflow-hidden border-0':'voople-full-room flex h-[min(94dvh,860px)] max-h-[94dvh] w-full max-w-[86rem] min-w-0 flex-col overflow-hidden border border-[var(--app-border)]'}>
-      <div className="voople-full-room__frame flex h-full min-h-0 min-w-0 max-sm:flex-col">
+      <div className="voople-full-room__frame relative flex h-full min-h-0 min-w-0 max-sm:flex-col">
         <VoiceRoomSwitcher rooms={rooms} currentRoomId="drg" pendingRoomId={phase==='switching'?'lobby':null} errorMessage={null} refreshing={false} onSelect={noop} onRetry={noop}/>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <VoiceRoomHeader identity={identity} connection={connection} participantCount={participants.length} hasGroupSounds access={access} fullscreen={fullscreen} fullscreenPending={false} onOpenSoundboard={noop} onOpenSettings={noop} onToggleFullscreen={noop}/>
+          <VoiceRoomHeader identity={identity} connection={connection} participantCount={participants.length} hasGroupSounds hasRoomMessages roomMessagesOpen={messagesOpen} access={access} fullscreen={fullscreen} fullscreenPending={false} onOpenSoundboard={noop} onToggleRoomMessages={noop} onOpenSettings={noop} onToggleFullscreen={noop}/>
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
             <VoiceRoomContent identity={identity} stage={stage} controls={controls} session={session} errorMessage={connection.errorMessage} onInvite={noop} onClose={noop}/>
             {phase==='switching'?<VoiceRoomSwitchStatus roomName="Лобби"/>:null}
           </div>
           <VoiceRoomFooter connection={connection} controls={controls} access={access} session={session}/>
         </div>
+        {messagesOpen?<RoomMessagesPanel model={{chatId:'group-1',roomId:'drg',liveSessionId:'live-2',roomName:'DRG',roomKind:'temporary'}} onClose={noop}/>:null}
       </div>
     </section></main>
   }
@@ -73,6 +76,28 @@ const bundle = await build({
   format: "iife",
   jsx: "automatic",
   alias: { "@": `${repo}/src` },
+  plugins: [{
+    name: "room-messages-trpc-fixture",
+    setup(build) {
+      build.onResolve({ filter: /^@\/lib\/trpc\/client$/ }, () => ({ path: "trpc-client", namespace: "room-fixture" }));
+      build.onLoad({ filter: /.*/, namespace: "room-fixture" }, () => ({
+        loader: "js",
+        contents: `const roomContext={roomId:'drg',liveSessionId:'live-2',roomName:'DRG',roomKind:'temporary',capturedAt:'2026-09-08T18:41:00Z'};
+          const messages=[
+            {id:'message-1',senderId:'biba',text:'Пойдём ещё один заход?',createdAt:'2026-09-08T18:41:00Z',isMine:false,readAt:null,reactions:[],sender:{username:'biba',displayName:'Biba',hasVooplePlus:false,avatarUrl:null},roomContext},
+            {id:'message-2',senderId:'me',text:'Да, я в комнате.',createdAt:'2026-09-08T18:42:00Z',isMine:true,readAt:null,reactions:[],sender:{username:'nmggk',displayName:'nmggk',hasVooplePlus:false,avatarUrl:null},roomContext},
+          ];
+          const mutation={mutate(){},mutateAsync:async()=>({}),isPending:false,error:null};
+          export const trpc={
+            useUtils:()=>({chat:{observeMessages:{cancel:async()=>{},getData:()=>({messages}),setData(){}},list:{invalidate:async()=>{}}}}),
+            user:{me:{useQuery:()=>({data:{id:'me'}})}},
+            chat:{observeMessages:{useQuery:()=>({data:{messages},isLoading:false,error:null,refetch:async()=>{}})},groupEmojis:{useQuery:()=>({data:{items:[]}})},send:{useMutation:()=>mutation}},
+            upload:{createPresigned:{useMutation:()=>mutation}},
+            playlist:{listMine:{useQuery:()=>({data:{tracks:[]},isLoading:false})},createFromUpload:{useMutation:()=>mutation}},
+          };`,
+      }));
+    },
+  }],
   define: { "process.env.NODE_ENV": '"development"' },
 });
 const cssFiles = (await readdir(path.join(distRoot, "assets"), { recursive: true })).filter((file) => file.endsWith(".css"));
@@ -88,7 +113,7 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
-  for (const { width, height, theme, phase, fullscreen = false, media = "screen", people = 3, expected } of [
+  const cases = [
     { width: 390, height: 800, theme: "light", phase: "inside", expected: "Демонстрация экрана: nmggk" },
     { width: 390, height: 800, theme: "void", phase: "inside", media: "voice", people: 1, expected: "Вы пока один" },
     { width: 1024, height: 720, theme: "void", phase: "reconnecting", expected: "Восстанавливаем связь" },
@@ -99,16 +124,25 @@ try {
     { width: 1024, height: 720, theme: "light", phase: "error", expected: "Не удалось загрузить комнату" },
     { width: 1440, height: 900, theme: "void", phase: "post-leave", expected: "Вы вышли из комнаты" },
     { width: 1440, height: 900, theme: "void", phase: "inside", fullscreen: true, expected: "Демонстрация экрана: nmggk" },
-  ]) {
+    { width: 390, height: 800, theme: "light", phase: "inside", media: "voice", messages: true, expected: "Сообщения комнаты" },
+    { width: 1280, height: 800, theme: "void", phase: "inside", media: "voice", messages: true, expected: "Сообщения комнаты" },
+  ];
+  const selectedCases = process.argv.includes("--messages-only")
+    ? cases.filter((item) => item.messages)
+    : cases;
+  for (const { width, height, theme, phase, fullscreen = false, media = "screen", messages = false, people = 3, expected } of selectedCases) {
     const page = await browser.newPage({ viewport: { width, height } });
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
     await page.addInitScript((value) => window.localStorage.setItem("voople:app-theme", value), theme);
-    await page.goto(`http://127.0.0.1:${server.address().port}?phase=${phase}&fullscreen=${fullscreen ? "1" : "0"}&media=${media}&people=${people}`);
+    await page.goto(`http://127.0.0.1:${server.address().port}?phase=${phase}&fullscreen=${fullscreen ? "1" : "0"}&media=${media}&messages=${messages ? "1" : "0"}&people=${people}`);
+    await page.waitForTimeout(250);
+    if (errors.length) throw new Error(errors.join("\n"));
     await page.getByRole("heading", { name: "VOICEKK / DRG" }).waitFor();
     await page.getByRole("complementary", { name: "Комнаты группы" }).waitFor();
-    assert.equal(await page.getByRole("button", { name: /DRG/ }).getAttribute("aria-current"), "true");
+    const roomSwitcher = page.getByRole("complementary", { name: "Комнаты группы" });
+    assert.equal(await roomSwitcher.getByRole("button", { name: /DRG/ }).getAttribute("aria-current"), "true");
     if (expected === "Демонстрация экрана: nmggk") {
       await page.getByLabel(expected).waitFor();
       assert.equal(await page.locator(".voople-full-room__participant").count(), 3);
@@ -121,7 +155,7 @@ try {
     await page.waitForTimeout(180);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);
-    const suffix = fullscreen ? "fullscreen" : `${phase}-${media}-${people}`;
+    const suffix = fullscreen ? "fullscreen" : `${phase}-${media}-${people}${messages ? "-messages" : ""}`;
     await page.screenshot({ path: path.join(artifacts, `room-${width}-${theme}-${suffix}.png`) });
     console.log(`PASS room ${width}px ${theme} ${suffix}: no overflow or runtime errors`);
     await page.close();

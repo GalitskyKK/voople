@@ -28,9 +28,10 @@ test("live shelf only shows occupied rooms and preserves direct room entry", () 
   const panel = source("src/components/chat/GroupNowPanelView.tsx");
 
   assert.match(shelf, /room\.participantCount > 0/);
-  assert.match(shelf, /room\.participants\.slice\(0, 4\)/);
   assert.match(shelf, /room\.hasScreenShare/);
   assert.match(shelf, /resolveGroupNowRoomAction/);
+  assert.match(shelf, /overflow-x-auto/);
+  assert.doesNotMatch(shelf, /min-h-11/);
   assert.match(panel, /props\.variant === "shelf"/);
   assert.match(panel, /<GroupLiveShelfView/);
 });

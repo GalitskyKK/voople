@@ -67,6 +67,14 @@ export type ChatPendingUpload = {
   purpose?: "voice" | "circle";
 };
 
+export type ChatMessageRoomContext = {
+  roomId: string | null;
+  liveSessionId: string | null;
+  roomName: string;
+  roomKind: "lobby" | "temporary" | "pinned";
+  capturedAt: string;
+};
+
 export type ChatMessageView = {
   id: string;
   senderId: string;
@@ -81,6 +89,7 @@ export type ChatMessageView = {
     avatarUrl?: string | null;
   } | null;
   readAt?: string | null;
+  roomContext?: ChatMessageRoomContext | null;
   replyTo?: ChatMessageReplyPreview | null;
   attachment?: ChatMessageAttachment | null;
   reactions: ChatMessageReaction[];

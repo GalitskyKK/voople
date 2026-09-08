@@ -1,6 +1,5 @@
 import { MonitorUp, Radio } from "lucide-react";
 
-import { GroupAvatar } from "@/components/chat/GroupAvatar";
 import { Button } from "@/components/ui/Button";
 import { resolveGroupNowRoomAction } from "@/lib/chat/group-now-presentation";
 import type { GroupNowRoom } from "@/types/group-now";
@@ -26,32 +25,43 @@ export function GroupLiveShelfView({
   if (!activeRooms.length) return null;
 
   return (
-    <section className="voople-group-live-shelf shrink-0 border-b border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_94%,var(--theme-accent))] px-3 py-2" aria-labelledby="group-live-shelf-title">
-      <div className="mx-auto w-full max-w-[960px]">
-        <h2 id="group-live-shelf-title" className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--app-muted)]">Сейчас</h2>
-        <div className="divide-y divide-[var(--app-border)]">
+    <section className="voople-group-live-shelf shrink-0 border-b border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_94%,var(--theme-accent))] px-3 py-1.5" aria-labelledby="group-live-shelf-title">
+      <div className="mx-auto flex min-h-8 w-full max-w-[960px] items-center gap-2">
+        <h2 id="group-live-shelf-title" className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--app-muted)]">Сейчас</h2>
+        <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {activeRooms.map((room) => {
             const action = resolveGroupNowRoomAction(room.id, currentUserRoomId);
             return (
-              <div key={room.id} className="flex min-h-11 items-center gap-3 py-1.5">
-                <span className="flex min-w-0 flex-1 items-center gap-2">
-                  <Radio className="h-3.5 w-3.5 shrink-0 text-emerald-400" aria-hidden="true" />
-                  <strong className="max-w-36 truncate text-xs font-semibold uppercase tracking-[0.06em]">{room.name}</strong>
-                  <span className="hidden min-w-0 items-center gap-1.5 sm:flex">
-                    {room.participants.slice(0, 4).map((participant) => (
-                      <span key={participant.id} className="flex min-w-0 items-center gap-1">
-                        <GroupAvatar name={participant.displayName} avatarUrl={participant.avatarUrl} size="sm" shape="square" />
-                        <span className="max-w-20 truncate text-[11px] text-[var(--app-muted)]">{participant.displayName}</span>
-                      </span>
-                    ))}
-                  </span>
+              <Button
+                key={room.id}
+                type="button"
+                size="sm"
+                variant={action === "current" ? "secondary" : "ghost"}
+                className="h-8 max-w-56 shrink-0 gap-1.5 rounded-[var(--app-radius-sm)] px-2 text-xs"
+                disabled={pendingRoomId === room.id}
+                aria-busy={pendingRoomId === room.id}
+                aria-current={action === "current" ? "true" : undefined}
+                onClick={() => {
+                  if (action !== "current") onJoinRoom(room);
+                }}
+                aria-label={`${actionLabels[action]}: ${room.name}${room.hasScreenShare ? ", идёт демонстрация" : ""}`}
+              >
+                <Radio className="h-3.5 w-3.5 shrink-0 text-emerald-400" aria-hidden="true" />
+                <strong className="min-w-0 truncate font-semibold uppercase tracking-[0.04em]">
+                  {room.name}
+                </strong>
+                {room.hasScreenShare ? (
+                  <MonitorUp className="h-3.5 w-3.5 shrink-0 text-emerald-400" aria-hidden="true" />
+                ) : null}
+                <span className="shrink-0 font-mono text-[10px] text-[var(--app-muted)]">
+                  {room.participantCount}
                 </span>
-                {room.hasScreenShare ? <span className="hidden items-center gap-1 text-[11px] text-emerald-400 md:inline-flex"><MonitorUp className="h-3.5 w-3.5" aria-hidden="true" /> экран</span> : null}
-                <span className="font-mono text-[11px] text-[var(--app-muted)]">{room.participantCount}</span>
-                <Button type="button" size="sm" variant={action === "current" ? "ghost" : "secondary"} disabled={pendingRoomId === room.id || action === "current"} onClick={() => onJoinRoom(room)} aria-label={`${actionLabels[action]}: ${room.name}`}>
-                  {pendingRoomId === room.id ? "Подключаем" : actionLabels[action]}
-                </Button>
-              </div>
+                {action === "current" ? (
+                  <span className="shrink-0 font-mono text-[9px] uppercase text-[var(--theme-accent)]">
+                    вы
+                  </span>
+                ) : null}
+              </Button>
             );
           })}
         </div>

@@ -369,6 +369,13 @@ export function useChatRoomControl(
     sheet: {
       overlay: { open, onClose: closeRoom },
       invite: coreSession && inside ? { sessionId: coreSession.join.sessionId } : null,
+      messages: coreSession && inside ? {
+        chatId: coreSession.groupId,
+        roomId: coreSession.room.id,
+        liveSessionId: coreSession.join.sessionId,
+        roomName: coreSession.room.name,
+        roomKind: coreSession.room.kind,
+      } : null,
       identity: {
         isDirect,
         callPhase: getDirectCallPhase({ direct: isDirect, room: value, starter: meIsStarter }),

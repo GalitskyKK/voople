@@ -6,6 +6,7 @@ import {
   Lock,
   LockOpen,
   Maximize2,
+  MessageSquareText,
   Minimize2,
   Music2,
   Settings2,
@@ -28,10 +29,13 @@ type VoiceRoomHeaderProps = {
   connection: VoiceRoomConnectionModel;
   participantCount: number;
   hasGroupSounds: boolean;
+  hasRoomMessages: boolean;
+  roomMessagesOpen: boolean;
   access: VoiceRoomAccessModel;
   fullscreen: boolean;
   fullscreenPending: boolean;
   onOpenSoundboard: () => void;
+  onToggleRoomMessages: () => void;
   onOpenSettings: () => void;
   onToggleFullscreen: () => void | Promise<void>;
 };
@@ -41,10 +45,13 @@ export function VoiceRoomHeader({
   connection,
   participantCount,
   hasGroupSounds,
+  hasRoomMessages,
+  roomMessagesOpen,
   access,
   fullscreen,
   fullscreenPending,
   onOpenSoundboard,
+  onToggleRoomMessages,
   onOpenSettings,
   onToggleFullscreen,
 }: VoiceRoomHeaderProps) {
@@ -89,6 +96,14 @@ export function VoiceRoomHeader({
       </div>
 
       <div className="voople-full-room__header-actions flex shrink-0 items-center gap-1">
+        {!identity.isDirect && identity.active && hasRoomMessages ? (
+          <HeaderButton
+            label={roomMessagesOpen ? "Закрыть сообщения комнаты" : "Открыть сообщения комнаты"}
+            onClick={onToggleRoomMessages}
+          >
+            <MessageSquareText className="h-4 w-4" />
+          </HeaderButton>
+        ) : null}
         {!identity.isDirect && identity.active && hasGroupSounds ? (
           <HeaderButton label="Открыть звуки группы" onClick={onOpenSoundboard}>
             <Music2 className="h-4 w-4" />

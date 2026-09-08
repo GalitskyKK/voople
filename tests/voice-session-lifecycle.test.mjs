@@ -54,7 +54,7 @@ test("room sheet owns one secondary panel and cancels stale fullscreen requests"
   const sheet = read("src/components/chat/voice/VoiceRoomSheet.tsx");
   const fullscreen = read("src/components/chat/voice/useVoiceRoomFullscreen.ts");
 
-  assert.match(sheet, /type SecondaryPanel = "settings" \| "soundboard" \| "invite" \| null/);
+  assert.match(sheet, /type SecondaryPanel = "settings" \| "soundboard" \| "invite" \| "messages" \| null/);
   assert.match(sheet, /setSecondaryPanel\(null\);\s+void exitFullscreen\(\);\s+onClose\(\)/);
   assert.doesNotMatch(sheet, /settingsOpen|soundboardOpen/);
   assert.match(fullscreen, /if \(pendingRef\.current\) return/);

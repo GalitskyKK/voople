@@ -38,7 +38,7 @@ export function VoiceMiniStage({
   return (
     <div
       data-voice-dock-drag-surface=""
-      className="group relative aspect-video h-full min-h-0 w-full cursor-grab overflow-hidden rounded-xl bg-black active:cursor-grabbing"
+      className="group relative aspect-video h-full min-h-0 w-full cursor-grab overflow-hidden rounded-[var(--app-radius-sm)] bg-black active:cursor-grabbing"
     >
       {screenShareOwner ? (
         <div
@@ -52,7 +52,7 @@ export function VoiceMiniStage({
           className="absolute inset-0"
         />
       ) : activeParticipant ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_50%_35%,color-mix(in_srgb,var(--theme-accent)_28%,transparent),transparent_62%),var(--app-surface-soft)]">
+        <div className="absolute inset-0 flex items-center justify-center bg-[var(--app-surface-soft)]">
           <div className="flex flex-col items-center gap-2 px-4 text-center">
             <span className="h-16 w-16 overflow-hidden rounded-full bg-[var(--app-accent-soft)] text-2xl font-semibold leading-[4rem] text-[var(--theme-accent)]">
               {activeParticipant.avatarUrl ? (
@@ -94,7 +94,7 @@ export function VoiceMiniStage({
         label="Открыть полное окно комнаты"
         onClick={onOpen}
         data-voice-dock-control=""
-        className="absolute right-1.5 top-1.5 z-10 grid h-8 w-8 place-items-center rounded-lg bg-black/45 text-white transition hover:bg-black/70 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white"
+        className="absolute right-1.5 top-1.5 z-10 grid h-8 w-8 place-items-center rounded-[var(--app-radius-sm)] bg-black/45 text-white transition hover:bg-black/70 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white"
       >
         <Maximize2 className="h-4 w-4" />
       </IconButton>

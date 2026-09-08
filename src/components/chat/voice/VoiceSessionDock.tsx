@@ -93,7 +93,7 @@ export function VoiceSessionDock({
     <div
       ref={dockRef}
       className={cn(
-        "voople-voice-dock fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] left-1/2 z-[70] flex -translate-x-1/2 touch-none select-none flex-col gap-2 overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_94%,transparent)] p-2 shadow-[var(--app-shadow-nav)] backdrop-blur-xl lg:bottom-4",
+        "voople-voice-dock fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] left-1/2 z-[70] flex touch-none select-none flex-col gap-2 overflow-hidden rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface)] p-2 shadow-[0_12px_36px_rgb(0_0_0/0.24)] lg:bottom-4",
         geometry.gestureActive ? "cursor-grabbing" : "cursor-grab",
       )}
       style={geometry.style}
@@ -137,11 +137,11 @@ export function VoiceSessionDock({
         <button
           type="button"
           onClick={onOpen}
-          className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-2 py-1.5 text-left transition hover:bg-[var(--app-surface-soft)]"
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-[var(--app-radius-sm)] px-2 py-1.5 text-left transition hover:bg-[var(--app-surface-soft)]"
         >
           <span
             className={cn(
-              "grid h-9 w-9 shrink-0 place-items-center rounded-full",
+              "grid h-9 w-9 shrink-0 place-items-center rounded-[var(--app-radius-sm)]",
               mediaStatus === "connected"
                 ? "bg-emerald-500/12 text-emerald-500"
                 : "bg-amber-500/12 text-amber-500",
@@ -164,7 +164,7 @@ export function VoiceSessionDock({
           disabled={mediaActionPending || mediaStatus !== "connected"}
           onClick={onToggleMic}
           className={cn(
-            "grid h-10 w-10 shrink-0 place-items-center rounded-xl border transition disabled:opacity-50",
+            "grid h-10 w-10 shrink-0 place-items-center rounded-[var(--app-radius-sm)] border transition disabled:opacity-50",
             micMuted
               ? "border-red-500/25 bg-red-500/10 text-red-500"
               : "border-[var(--theme-accent)] bg-[var(--theme-accent)] text-white",
@@ -176,7 +176,7 @@ export function VoiceSessionDock({
           label={outputMuted ? "Включить звук собеседников" : "Выключить звук собеседников"}
           onClick={onToggleOutput}
           className={cn(
-            "grid h-10 w-10 shrink-0 place-items-center rounded-xl border transition",
+            "grid h-10 w-10 shrink-0 place-items-center rounded-[var(--app-radius-sm)] border transition",
             outputMuted
               ? "border-red-500/25 bg-red-500/10 text-red-500"
               : "border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-muted)]",
@@ -187,7 +187,7 @@ export function VoiceSessionDock({
         <IconButton
           label="Участники и настройки"
           onClick={onOpen}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-muted)] transition hover:text-[var(--foreground)]"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-muted)] transition hover:text-[var(--foreground)]"
         >
           <Settings2 className="h-4 w-4" />
         </IconButton>
@@ -195,7 +195,7 @@ export function VoiceSessionDock({
           label="Выйти из разговора"
           disabled={leavePending}
           onClick={onLeave}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-red-500 text-white transition hover:bg-red-400 disabled:opacity-50"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-[var(--app-radius-sm)] bg-red-500 text-white transition hover:bg-red-400 disabled:opacity-50"
         >
           <PhoneOff className="h-4 w-4" />
         </IconButton>

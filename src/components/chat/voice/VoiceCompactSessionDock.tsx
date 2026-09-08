@@ -35,14 +35,14 @@ export function VoiceCompactSessionDock({
 
   return (
     <div
-      className="fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] left-1/2 z-[70] flex h-[52px] w-[min(480px,calc(100vw-1rem))] -translate-x-1/2 items-center gap-1 rounded-2xl border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_96%,transparent)] p-1.5 shadow-[var(--app-shadow-nav)] backdrop-blur-xl lg:bottom-4"
+      className="voople-voice-dock--compact fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] left-1/2 z-[70] flex h-[52px] w-[min(480px,calc(100vw-1rem))] -translate-x-1/2 items-center gap-1 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface)] p-1.5 shadow-[0_10px_30px_rgb(0_0_0/0.22)] lg:bottom-4"
       role="region"
       aria-label="Компактный голосовой разговор"
     >
       <button
         type="button"
         onClick={onOpen}
-        className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-1 text-left transition hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--theme-accent)]"
+        className="flex min-w-0 flex-1 items-center gap-2 rounded-[var(--app-radius-sm)] px-2 py-1 text-left transition hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--theme-accent)]"
       >
         <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", connected ? "bg-emerald-500" : "bg-amber-500")} />
         <span className="min-w-0 flex-1">
@@ -67,17 +67,17 @@ export function VoiceCompactSessionDock({
         label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
         onClick={onToggleMic}
         disabled={mediaActionPending || !connected}
-        className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-full", micMuted ? "bg-red-500/10 text-red-500" : "bg-[var(--theme-accent)] text-white")}
+        className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-[var(--app-radius-sm)]", micMuted ? "bg-red-500/10 text-red-500" : "bg-[var(--theme-accent)] text-white")}
       >
         {micMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
       </IconButton>
-      <IconButton label="Развернуть мини-комнату" onClick={() => onModeChange("mini")} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)]">
+      <IconButton label="Развернуть мини-комнату" onClick={() => onModeChange("mini")} className="grid h-9 w-9 shrink-0 place-items-center rounded-[var(--app-radius-sm)] text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)]">
         <ChevronUp className="h-4 w-4" />
       </IconButton>
-      <IconButton label="Свернуть до индикатора" onClick={() => onModeChange("minimal")} className="hidden h-9 w-9 shrink-0 place-items-center rounded-xl text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] min-[390px]:grid">
+      <IconButton label="Свернуть до индикатора" onClick={() => onModeChange("minimal")} className="hidden h-9 w-9 shrink-0 place-items-center rounded-[var(--app-radius-sm)] text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] min-[390px]:grid">
         <ChevronDown className="h-4 w-4" />
       </IconButton>
-      <IconButton label="Выйти из разговора" disabled={leavePending} onClick={onLeave} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-red-500 text-white disabled:opacity-50">
+      <IconButton label="Выйти из разговора" disabled={leavePending} onClick={onLeave} className="grid h-9 w-9 shrink-0 place-items-center rounded-[var(--app-radius-sm)] bg-red-500 text-white disabled:opacity-50">
         <PhoneOff className="h-4 w-4" />
       </IconButton>
     </div>

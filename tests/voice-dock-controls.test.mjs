@@ -68,6 +68,8 @@ test("mini room exposes full-surface drag, eight resize handles and keyboard res
   assert.match(handles, /onKeyDown=\{\(event\) => onKeyDown\(direction, event\)\}/);
   assert.match(geometry, /voople:voice-dock-geometry:v2/);
   assert.match(geometry, /window\.addEventListener\("resize", keepInsideViewport\)/);
+  assert.match(geometry, /transform: `translate\(calc\(-50% \+ \$\{geometry\.offsetX\}px\), \$\{geometry\.offsetY\}px\)`/);
+  assert.doesNotMatch(dock, /-translate-x-1\/2 touch-none/);
   assert.match(geometry, /captureClick/);
 });
 
@@ -111,4 +113,10 @@ test("compact room summary keeps participant, speaker and active capture state v
   assert.match(minimal, /participantLabel/);
   assert.match(minimal, /VoiceDockMediaIndicators/);
   assert.match(dock, /reportProductEvent\("room_expanded", \{ state: "full" \}\)/);
+  assert.match(dock, /rounded-\[var\(--app-radius-sm\)\]/);
+  assert.doesNotMatch(dock, /rounded-2xl|backdrop-blur-xl|radial-gradient/);
+  assert.match(compact, /voople-voice-dock--compact/);
+  assert.doesNotMatch(compact, /rounded-2xl|backdrop-blur-xl/);
+  assert.match(minimal, /voople-voice-dock--minimal/);
+  assert.doesNotMatch(minimal, /voople-voice-dock--minimal[^"\n]*rounded-full|hover:-translate-y/);
 });

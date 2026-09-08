@@ -183,7 +183,7 @@ export function VoiceRoomStage({
   return (
     <div
       className={cn(
-        "voople-full-room__stage grid min-h-0 min-w-0 flex-1 content-center gap-2 overflow-y-auto [grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))]",
+        "voople-full-room__stage grid min-h-0 min-w-0 flex-1 auto-rows-fr gap-2 overflow-y-auto [grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))]",
         participants.length === 1 && "mx-auto max-w-xl grid-cols-1",
         participants.length >= 5 && "lg:[grid-template-columns:repeat(3,minmax(0,1fr))]",
       )}

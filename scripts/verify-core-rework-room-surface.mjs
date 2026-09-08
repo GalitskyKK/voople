@@ -23,7 +23,7 @@ const entry = `import {createRoot} from 'react-dom/client';
   import {VoiceRoomSwitcher} from '@/components/chat/voice/VoiceRoomSwitcher';
   import {VoiceRoomFooter} from '@/components/chat/voice/VoiceRoomFooter';
   const noop=()=>{};
-  const participants=[
+  const allParticipants=[
     {id:'nmggk',username:'nmggk',displayName:'nmggk',avatarUrl:null,avatarDecorationUrl:null,avatarRingId:null,micMuted:false,isMe:true},
     {id:'biba',username:'biba',displayName:'Biba',avatarUrl:null,avatarDecorationUrl:null,avatarRingId:null,micMuted:false,isMe:false},
     {id:'anya',username:'anya',displayName:'Anya',avatarUrl:null,avatarDecorationUrl:null,avatarRingId:null,micMuted:true,isMe:false},
@@ -38,14 +38,18 @@ const entry = `import {createRoot} from 'react-dom/client';
     const params=new URLSearchParams(location.search);
     const phase=params.get('phase')||'inside';
     const fullscreen=params.get('fullscreen')==='1';
+    const media=params.get('media')||'screen';
+    const participantCount=Number(params.get('people')||3);
+    const participants=allParticipants.slice(0,participantCount);
+    const screenShareOwner=media==='screen'?'nmggk':null;
     const connected=phase==='inside'||phase==='reconnecting'||phase==='leaving';
     const identity={isDirect:false,callPhase:'connected',chatName:'VOICEKK / DRG',active:true,durationLabel:'01:42'};
     const connection={label:phase==='reconnecting'?'Восстанавливаем связь…':connected?'Голос подключён':null,status:phase==='reconnecting'?'reconnecting':phase==='error'?'error':connected?'connected':'idle',quality:phase==='reconnecting'?ConnectionQuality.Poor:ConnectionQuality.Excellent,audioBlocked:false,errorMessage:phase==='error'?'Сервер комнаты не ответил вовремя.':null,onResumeAudio:noop};
     const access={canManage:true,mode:'open',pending:false,onToggle:noop};
     const controls={micMuted:false,outputMuted:false,mediaActionPending:false,screenSharePending:false,screenSharing:false,screenShareHasAudio:true,cameraEnabled:false,cameraPending:false,onMicToggle:noop,onOutputToggle:noop,onScreenShareToggle:noop,onCameraToggle:noop};
     const session={phase,inside:connected,leavePending:phase==='leaving',onLeave:noop,connectPending:phase==='loading',connectDisabled:false,onConnect:noop,connectLabel:'Войти',retryLabel:phase==='error'?'Повторить загрузку':'Повторить подключение',retryPending:false,onRetry:noop};
-    const stage={screenContainerRef:bindScreen,screenShareOwner:'nmggk',screenShareAvailable:null,screenShareTrackId:'screen-1',screenShareIsLocal:false,watchingScreenShare:true,screenShareVolume:1,participants,groupSounds:[],participantVolumes:{},remoteMicMutedById:{},activeSpeakerIds:new Set(['biba']),cameraParticipantIds:new Set(),onCameraContainerChange:noop,onParticipantVolumeChange:noop,onScreenShareVolumeChange:noop,onGroupSoundPlay:noop,onWatchScreenShare:noop,onStopWatchingScreenShare:noop};
-    return <main className={fullscreen?'grid h-dvh place-items-center bg-[var(--background)]':'grid h-dvh place-items-center bg-[var(--background)] p-4 max-sm:p-0'}><section className={fullscreen?'voople-full-room flex h-dvh w-full min-w-0 flex-col overflow-hidden border-0':'voople-full-room flex h-[min(92dvh,760px)] w-full max-w-[86rem] min-w-0 flex-col overflow-hidden border border-[var(--app-border)]'}>
+    const stage={screenContainerRef:bindScreen,screenShareOwner,screenShareAvailable:null,screenShareTrackId:screenShareOwner?'screen-1':null,screenShareIsLocal:false,watchingScreenShare:Boolean(screenShareOwner),screenShareVolume:1,participants,groupSounds:[],participantVolumes:{},remoteMicMutedById:{},activeSpeakerIds:new Set(['biba']),cameraParticipantIds:new Set(),onCameraContainerChange:noop,onParticipantVolumeChange:noop,onScreenShareVolumeChange:noop,onGroupSoundPlay:noop,onWatchScreenShare:noop,onStopWatchingScreenShare:noop};
+    return <main className={fullscreen?'grid h-dvh place-items-center bg-[var(--background)]':'grid h-dvh place-items-center bg-[var(--background)] p-4 max-sm:p-0'}><section className={fullscreen?'voople-full-room flex h-dvh w-full min-w-0 flex-col overflow-hidden border-0':'voople-full-room flex h-[min(94dvh,860px)] max-h-[94dvh] w-full max-w-[86rem] min-w-0 flex-col overflow-hidden border border-[var(--app-border)]'}>
       <div className="voople-full-room__frame flex h-full min-h-0 min-w-0 max-sm:flex-col">
         <VoiceRoomSwitcher rooms={rooms} currentRoomId="drg" pendingRoomId={null} errorMessage={null} refreshing={false} onSelect={noop} onRetry={noop}/>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -80,9 +84,11 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
-  for (const { width, height, theme, phase, fullscreen = false, expected } of [
+  for (const { width, height, theme, phase, fullscreen = false, media = "screen", people = 3, expected } of [
     { width: 390, height: 800, theme: "light", phase: "inside", expected: "Демонстрация экрана: nmggk" },
+    { width: 390, height: 800, theme: "void", phase: "inside", media: "voice", people: 1, expected: "Вы пока один" },
     { width: 1024, height: 720, theme: "void", phase: "reconnecting", expected: "Восстанавливаем связь" },
+    { width: 1024, height: 720, theme: "light", phase: "inside", media: "voice", expected: "voice-grid" },
     { width: 1280, height: 800, theme: "void", phase: "inside", expected: "Демонстрация экрана: nmggk" },
     { width: 1440, height: 900, theme: "light", phase: "loading", expected: "Открываем комнату" },
     { width: 1024, height: 720, theme: "light", phase: "error", expected: "Не удалось загрузить комнату" },
@@ -94,19 +100,22 @@ try {
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
     await page.addInitScript((value) => window.localStorage.setItem("voople:app-theme", value), theme);
-    await page.goto(`http://127.0.0.1:${server.address().port}?phase=${phase}&fullscreen=${fullscreen ? "1" : "0"}`);
+    await page.goto(`http://127.0.0.1:${server.address().port}?phase=${phase}&fullscreen=${fullscreen ? "1" : "0"}&media=${media}&people=${people}`);
     await page.getByRole("heading", { name: "VOICEKK / DRG" }).waitFor();
     await page.getByRole("complementary", { name: "Комнаты группы" }).waitFor();
     assert.equal(await page.getByRole("button", { name: /DRG/ }).getAttribute("aria-current"), "true");
     if (expected === "Демонстрация экрана: nmggk") {
       await page.getByLabel(expected).waitFor();
       assert.equal(await page.locator(".voople-full-room__participant").count(), 3);
+    } else if (expected === "voice-grid") {
+      await page.locator(".voople-full-room__participant").first().waitFor();
+      assert.equal(await page.locator(".voople-full-room__participant").count(), people);
     } else {
       await page.getByText(expected, { exact: false }).first().waitFor();
     }
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);
-    const suffix = fullscreen ? "fullscreen" : phase;
+    const suffix = fullscreen ? "fullscreen" : `${phase}-${media}-${people}`;
     await page.screenshot({ path: path.join(artifacts, `room-${width}-${theme}-${suffix}.png`) });
     console.log(`PASS room ${width}px ${theme} ${suffix}: no overflow or runtime errors`);
     await page.close();

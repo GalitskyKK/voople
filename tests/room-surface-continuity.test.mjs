@@ -59,6 +59,7 @@ test("full room uses one shared reference-aligned visual frame", () => {
   const stage = read("src/components/chat/voice/VoiceRoomStage.tsx");
   const media = read("src/components/chat/voice/VoiceMediaStage.tsx");
   const participant = read("src/components/chat/voice/VoiceParticipantCard.tsx");
+  const empty = read("src/components/chat/voice/VoiceRoomEmptyState.tsx");
   const switcher = read("src/components/chat/voice/VoiceRoomSwitcher.tsx");
   const states = read("src/components/chat/voice/VoiceRoomSessionStates.tsx");
   const footer = read("src/components/chat/voice/VoiceRoomFooter.tsx");
@@ -82,6 +83,11 @@ test("full room uses one shared reference-aligned visual frame", () => {
   assert.match(content, /role="status" aria-live="polite"/);
   assert.doesNotMatch(content, /blur-xl|animate-pulse/);
   assert.doesNotMatch(states, /rounded-3xl/);
+  assert.match(stage, /auto-rows-fr/);
+  assert.match(participant, /color-mix\(in_srgb,var\(--app-border\)_65%,var\(--app-muted\)\)/);
+  assert.match(empty, /voople-full-room__solo/);
+  assert.match(empty, /sm:grid-cols-\[minmax\(0,1fr\)_minmax\(13rem,0\.55fr\)\]/);
+  assert.doesNotMatch(empty, /rounded-3xl|linear-gradient/);
 });
 
 test("full Room gives its identity a dedicated mobile row without hiding actions", () => {

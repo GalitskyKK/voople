@@ -2107,6 +2107,17 @@ button.voople-post-action:active {
   min-height: 4.25rem;
 }
 
+@keyframes voople-room-switch-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .voople-full-room__switch-status {
+    animation: voople-room-switch-enter 140ms var(--voople-ease-out) both;
+  }
+}
+
 @media (max-width: 639px) {
   .voople-full-room {
     height: 100dvh;

@@ -11,6 +11,7 @@ import { CoreRoomInvitePanel } from "./CoreRoomInvitePanel";
 import { VoiceRoomContent } from "./VoiceRoomContent";
 import { VoiceRoomFooter } from "./VoiceRoomFooter";
 import { VoiceRoomHeader } from "./VoiceRoomHeader";
+import { VoiceRoomSwitchStatus } from "./VoiceRoomSwitchStatus";
 import { VoiceRoomSwitcher } from "./VoiceRoomSwitcher";
 import { VoiceSoundboardPanel } from "./VoiceSoundboardPanel";
 
@@ -30,6 +31,9 @@ export function VoiceRoomSheet({
   settingsPanel,
 }: VoiceRoomSheetProps) {
   const [secondaryPanel, setSecondaryPanel] = useState<SecondaryPanel>(null);
+  const pendingRoom = roomSwitcher?.rooms.find(
+    (room) => room.id === roomSwitcher.pendingRoomId,
+  );
   const {
     fullscreen,
     pending: fullscreenPending,
@@ -74,15 +78,18 @@ export function VoiceRoomSheet({
             onOpenSettings={() => setSecondaryPanel("settings")}
             onToggleFullscreen={toggleFullscreen}
           />
-          <VoiceRoomContent
-            identity={identity}
-            stage={stage}
-            controls={controls}
-            session={session}
-            errorMessage={connection.errorMessage}
-            onInvite={invite ? () => setSecondaryPanel("invite") : undefined}
-            onClose={close}
-          />
+          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+            <VoiceRoomContent
+              identity={identity}
+              stage={stage}
+              controls={controls}
+              session={session}
+              errorMessage={connection.errorMessage}
+              onInvite={invite ? () => setSecondaryPanel("invite") : undefined}
+              onClose={close}
+            />
+            {pendingRoom ? <VoiceRoomSwitchStatus roomName={pendingRoom.name} /> : null}
+          </div>
           <VoiceRoomFooter
             connection={connection}
             controls={controls}

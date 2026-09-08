@@ -42,6 +42,7 @@ export function VoiceRoomSwitcher({
               key={room.id}
               type="button"
               aria-current={current ? "true" : undefined}
+              aria-busy={pending || undefined}
               disabled={current || pendingRoomId !== null}
               onClick={() => void onSelect(room)}
               className={cn(

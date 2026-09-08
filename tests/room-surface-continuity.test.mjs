@@ -61,6 +61,7 @@ test("full room uses one shared reference-aligned visual frame", () => {
   const participant = read("src/components/chat/voice/VoiceParticipantCard.tsx");
   const empty = read("src/components/chat/voice/VoiceRoomEmptyState.tsx");
   const switcher = read("src/components/chat/voice/VoiceRoomSwitcher.tsx");
+  const switchStatus = read("src/components/chat/voice/VoiceRoomSwitchStatus.tsx");
   const states = read("src/components/chat/voice/VoiceRoomSessionStates.tsx");
   const footer = read("src/components/chat/voice/VoiceRoomFooter.tsx");
   const styles = read("src/app/globals.css");
@@ -75,7 +76,12 @@ test("full room uses one shared reference-aligned visual frame", () => {
   assert.match(participant, /voople-full-room__participant/);
   assert.match(switcher, /aria-label="Комнаты группы"/);
   assert.match(switcher, /aria-current=\{current \? "true" : undefined\}/);
+  assert.match(switcher, /aria-busy=\{pending \|\| undefined\}/);
   assert.match(sheet, /roomSwitcher \? <VoiceRoomSwitcher/);
+  assert.match(sheet, /pendingRoom \? <VoiceRoomSwitchStatus roomName=\{pendingRoom\.name\}/);
+  assert.match(switchStatus, /role="status"/);
+  assert.match(switchStatus, /aria-live="polite"/);
+  assert.match(switchStatus, /motion-reduce:animate-none/);
   assert.match(footer, /voople-full-room__footer/);
   assert.match(styles, /\.voople-full-room\s*\{/);
   assert.doesNotMatch(participant, /shadow-\[0_0_0_2px/);

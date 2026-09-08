@@ -21,6 +21,7 @@ const entry = `import {createRoot} from 'react-dom/client';
   import {VoiceRoomContent} from '@/components/chat/voice/VoiceRoomContent';
   import {VoiceRoomHeader} from '@/components/chat/voice/VoiceRoomHeader';
   import {VoiceRoomSwitcher} from '@/components/chat/voice/VoiceRoomSwitcher';
+  import {VoiceRoomSwitchStatus} from '@/components/chat/voice/VoiceRoomSwitchStatus';
   import {VoiceRoomFooter} from '@/components/chat/voice/VoiceRoomFooter';
   const noop=()=>{};
   const allParticipants=[
@@ -42,7 +43,7 @@ const entry = `import {createRoot} from 'react-dom/client';
     const participantCount=Number(params.get('people')||3);
     const participants=allParticipants.slice(0,participantCount);
     const screenShareOwner=media==='screen'?'nmggk':null;
-    const connected=phase==='inside'||phase==='reconnecting'||phase==='leaving';
+    const connected=phase==='inside'||phase==='reconnecting'||phase==='leaving'||phase==='switching';
     const identity={isDirect:false,callPhase:'connected',chatName:'VOICEKK / DRG',active:true,durationLabel:'01:42'};
     const connection={label:phase==='reconnecting'?'Восстанавливаем связь…':connected?'Голос подключён':null,status:phase==='reconnecting'?'reconnecting':phase==='error'?'error':connected?'connected':'idle',quality:phase==='reconnecting'?ConnectionQuality.Poor:ConnectionQuality.Excellent,audioBlocked:false,errorMessage:phase==='error'?'Сервер комнаты не ответил вовремя.':null,onResumeAudio:noop};
     const access={canManage:true,mode:'open',pending:false,onToggle:noop};
@@ -51,10 +52,13 @@ const entry = `import {createRoot} from 'react-dom/client';
     const stage={screenContainerRef:bindScreen,screenShareOwner,screenShareAvailable:null,screenShareTrackId:screenShareOwner?'screen-1':null,screenShareIsLocal:false,watchingScreenShare:Boolean(screenShareOwner),screenShareVolume:1,participants,groupSounds:[],participantVolumes:{},remoteMicMutedById:{},activeSpeakerIds:new Set(['biba']),cameraParticipantIds:new Set(),onCameraContainerChange:noop,onParticipantVolumeChange:noop,onScreenShareVolumeChange:noop,onGroupSoundPlay:noop,onWatchScreenShare:noop,onStopWatchingScreenShare:noop};
     return <main className={fullscreen?'grid h-dvh place-items-center bg-[var(--background)]':'grid h-dvh place-items-center bg-[var(--background)] p-4 max-sm:p-0'}><section className={fullscreen?'voople-full-room flex h-dvh w-full min-w-0 flex-col overflow-hidden border-0':'voople-full-room flex h-[min(94dvh,860px)] max-h-[94dvh] w-full max-w-[86rem] min-w-0 flex-col overflow-hidden border border-[var(--app-border)]'}>
       <div className="voople-full-room__frame flex h-full min-h-0 min-w-0 max-sm:flex-col">
-        <VoiceRoomSwitcher rooms={rooms} currentRoomId="drg" pendingRoomId={null} errorMessage={null} refreshing={false} onSelect={noop} onRetry={noop}/>
+        <VoiceRoomSwitcher rooms={rooms} currentRoomId="drg" pendingRoomId={phase==='switching'?'lobby':null} errorMessage={null} refreshing={false} onSelect={noop} onRetry={noop}/>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <VoiceRoomHeader identity={identity} connection={connection} participantCount={participants.length} hasGroupSounds access={access} fullscreen={fullscreen} fullscreenPending={false} onOpenSoundboard={noop} onOpenSettings={noop} onToggleFullscreen={noop}/>
-          <VoiceRoomContent identity={identity} stage={stage} controls={controls} session={session} errorMessage={connection.errorMessage} onInvite={noop} onClose={noop}/>
+          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+            <VoiceRoomContent identity={identity} stage={stage} controls={controls} session={session} errorMessage={connection.errorMessage} onInvite={noop} onClose={noop}/>
+            {phase==='switching'?<VoiceRoomSwitchStatus roomName="Лобби"/>:null}
+          </div>
           <VoiceRoomFooter connection={connection} controls={controls} access={access} session={session}/>
         </div>
       </div>
@@ -89,6 +93,7 @@ try {
     { width: 390, height: 800, theme: "void", phase: "inside", media: "voice", people: 1, expected: "Вы пока один" },
     { width: 1024, height: 720, theme: "void", phase: "reconnecting", expected: "Восстанавливаем связь" },
     { width: 1024, height: 720, theme: "light", phase: "inside", media: "voice", expected: "voice-grid" },
+    { width: 1024, height: 720, theme: "light", phase: "switching", expected: "Переходим в Лобби" },
     { width: 1280, height: 800, theme: "void", phase: "inside", expected: "Демонстрация экрана: nmggk" },
     { width: 1440, height: 900, theme: "light", phase: "loading", expected: "Открываем комнату" },
     { width: 1024, height: 720, theme: "light", phase: "error", expected: "Не удалось загрузить комнату" },
@@ -113,6 +118,7 @@ try {
     } else {
       await page.getByText(expected, { exact: false }).first().waitFor();
     }
+    await page.waitForTimeout(180);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);
     const suffix = fullscreen ? "fullscreen" : `${phase}-${media}-${people}`;

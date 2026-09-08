@@ -3,6 +3,11 @@ import { resolve } from "path";
 import postgres from "postgres";
 import { migrationChecksum } from "./migration-checksum.mjs";
 
+const migrationDeadline = setTimeout(() => {
+  console.error("Migration application exceeded the 120 second safety deadline.");
+  process.exit(1);
+}, 120_000);
+
 function loadEnvFile(filename) {
   const path = resolve(process.cwd(), filename);
   if (!existsSync(path)) return;
@@ -141,4 +146,4 @@ async function main() {
   console.log("\nГотово. Table Editor → public → users, posts, …");
 }
 
-main();
+main().finally(() => clearTimeout(migrationDeadline));

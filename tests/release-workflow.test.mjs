@@ -45,6 +45,7 @@ test("release unit tests do not depend on shell glob expansion", () => {
 test("release migration readiness has process and database deadlines", () => {
   const releaseScript = read("scripts/release.mjs");
   const readiness = read("scripts/check-migration-readiness.mjs");
+  const applyMigration = read("scripts/apply-migration.mjs");
 
   assert.match(releaseScript, /timeout:\s*options\.timeout/);
   assert.match(
@@ -53,6 +54,21 @@ test("release migration readiness has process and database deadlines", () => {
   );
   assert.match(readiness, /statement_timeout:\s*30_000/);
   assert.match(readiness, /lock_timeout:\s*5_000/);
+  assert.match(readiness, /readinessDeadline/);
+  assert.match(readiness, /75_000/);
+  assert.match(applyMigration, /migrationDeadline/);
+  assert.match(applyMigration, /120_000/);
+});
+
+test("pending migration audit uses the checksum ledger without exposing secrets", () => {
+  const audit = read("scripts/check-pending-migrations.mjs");
+  const packageJson = read("package.json");
+
+  assert.match(audit, /app_schema_migrations\?select=id,checksum/);
+  assert.match(audit, /acceptedMigrationChecksums/);
+  assert.match(audit, /AbortSignal\.timeout\(15_000\)/);
+  assert.doesNotMatch(audit, /console\.log\([^\n]*(serviceRoleKey|SUPABASE_SERVICE_ROLE_KEY)/);
+  assert.match(packageJson, /"db:pending": "node scripts\/check-pending-migrations\.mjs"/);
 });
 
 test("verified migration readiness can only be reused without migration changes", () => {

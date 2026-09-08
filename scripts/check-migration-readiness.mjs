@@ -25,6 +25,11 @@ function loadEnvFile(filename) {
 loadEnvFile(".env.local");
 loadEnvFile(".env");
 
+const readinessDeadline = setTimeout(() => {
+  console.error("Migration readiness exceeded the 75 second safety deadline.");
+  process.exit(1);
+}, 75_000);
+
 const url = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
 if (!url) {
   console.error("Migration readiness requires DIRECT_URL or DATABASE_URL.");
@@ -102,5 +107,6 @@ try {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
 } finally {
+  clearTimeout(readinessDeadline);
   await sql.end({ timeout: 5 });
 }

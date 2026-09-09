@@ -21,6 +21,7 @@ import type { ChatRoomControlHandle, VoiceControlState } from "../ChatRoomContro
 import { cn } from "@/lib/utils";
 import { IncomingCallOverlay } from "./IncomingCallOverlay";
 import { useIncomingVoiceCalls, type SubscribeToVoiceRooms } from "./useIncomingVoiceCalls";
+import { resolveVoiceConversationId } from "./voice-conversation-context";
 import { IDLE_VOICE_CONTROL_STATE } from "./voice-session-state";
 
 const ChatRoomControl = lazy(() =>
@@ -106,6 +107,7 @@ export function VoiceSessionProvider({
       chatType: "group",
       coreSession: {
         groupId: launch.groupId,
+        conversationId: launch.conversationId ?? launch.groupId,
         room: launch.room,
         join: launch.join,
       },
@@ -116,8 +118,9 @@ export function VoiceSessionProvider({
     join: GroupRoomJoinResult,
     credentials: EnabledVoiceMediaCredentials,
   ) => {
-    openCoreRoom({ groupId: target.groupId, room: target.room, join, credentials });
-  }, [openCoreRoom]);
+    const conversationId = resolveVoiceConversationId(activeSession?.coreSession, target.groupId);
+    openCoreRoom({ groupId: target.groupId, conversationId, room: target.room, join, credentials });
+  }, [activeSession, openCoreRoom]);
   const roomSwitch = useGroupNowRoomJoin({
     onJoined: handleCoreRoomJoined,
   });

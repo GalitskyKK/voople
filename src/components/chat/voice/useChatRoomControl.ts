@@ -10,6 +10,7 @@ import { getDirectCallPhase } from "./call-phase";
 import { resolveVoiceRoomSurfacePhase } from "./voice-room-surface";
 import type { ChatRoomControlHandle, ChatRoomControlProps } from "./chat-room-control-types";
 import { getConnectionLabel, type MediaStatus } from "./voice-room-config";
+import { buildVoiceRoomMessagesModel } from "./voice-conversation-context";
 import { playVoiceRoomSound } from "./voice-room-sounds";
 import { useCallDuration } from "./useCallDuration";
 import { useDesktopScreenAudioPublisher } from "./useDesktopScreenAudioPublisher";
@@ -370,13 +371,7 @@ export function useChatRoomControl(
     sheet: {
       overlay: { open, onClose: closeRoom },
       invite: coreSession && inside ? { sessionId: coreSession.join.sessionId } : null,
-      messages: coreSession && inside ? {
-        chatId: coreSession.groupId,
-        roomId: coreSession.room.id,
-        liveSessionId: coreSession.join.sessionId,
-        roomName: coreSession.room.name,
-        roomKind: coreSession.room.kind,
-      } : null,
+      messages: buildVoiceRoomMessagesModel(coreSession, inside),
       identity: {
         isDirect,
         callPhase: getDirectCallPhase({ direct: isDirect, room: value, starter: meIsStarter }),

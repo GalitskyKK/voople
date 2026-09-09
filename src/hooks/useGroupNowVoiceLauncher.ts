@@ -9,9 +9,11 @@ import type { EnabledVoiceMediaCredentials } from "@/types/voice";
 
 export function useGroupNowVoiceLauncher({
   groupId,
+  conversationId,
   onRoomOpened,
 }: {
   groupId: string;
+  conversationId?: string;
   onRoomOpened?: () => void;
 }) {
   const voice = useVoiceSession();
@@ -31,9 +33,15 @@ export function useGroupNowVoiceLauncher({
     join: GroupRoomJoinResult,
     credentials: EnabledVoiceMediaCredentials,
   ) => {
-    voice.openCoreRoom({ groupId, room: target.room, join, credentials });
+    voice.openCoreRoom({
+      groupId,
+      conversationId: conversationId ?? groupId,
+      room: target.room,
+      join,
+      credentials,
+    });
     onRoomOpened?.();
-  }, [groupId, onRoomOpened, voice]);
+  }, [conversationId, groupId, onRoomOpened, voice]);
 
   return { openJoinedRoom, openLegacyRoom, voice };
 }

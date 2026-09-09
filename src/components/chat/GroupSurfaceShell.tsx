@@ -8,6 +8,7 @@ import { GroupSurfaceTabs, type GroupSurfaceTab } from "./GroupSurfaceTabs";
 
 export type GroupSurfaceConfig = {
   groupId: string;
+  conversationId: string;
   groupName: string;
   initialTab?: GroupSurfaceTab;
   combineHeader?: boolean;
@@ -39,12 +40,12 @@ export function GroupSurfaceShell({
       </div>
       {activeTab === "chat" ? (
         <>
-          <GroupNowVoicePanel enabled groupId={config.groupId} groupName={config.groupName} canCreatePinned={config.canCreatePinned} variant="shelf" onOpenProfile={openProfile} />
+          <GroupNowVoicePanel enabled groupId={config.groupId} conversationId={config.conversationId} groupName={config.groupName} canCreatePinned={config.canCreatePinned} variant="shelf" onOpenProfile={openProfile} />
           {chatContent}
         </>
       ) : activeTab === "now" ? (
         <div className="voople-scroll min-h-0 flex-1 overflow-y-auto">
-          <GroupNowVoicePanel enabled groupId={config.groupId} groupName={config.groupName} canCreatePinned={config.canCreatePinned} variant="surface" onOpenProfile={openProfile} />
+          <GroupNowVoicePanel enabled groupId={config.groupId} conversationId={config.conversationId} groupName={config.groupName} canCreatePinned={config.canCreatePinned} variant="surface" onOpenProfile={openProfile} />
         </div>
       ) : (
         <GroupPeoplePanel enabled groupId={config.groupId} onlineUserIds={config.onlineUserIds} onOpenProfile={config.onOpenProfile} />

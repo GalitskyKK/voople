@@ -114,6 +114,7 @@ export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps
       accentColor={isGroup ? data?.chat.groupAccentColor : null}
       groupSurface={isGroup ? {
         groupId: data?.chat.parentChatId ?? chatId,
+        conversationId: chatId,
         groupName: data?.chat.parentName ?? chatTitle,
         initialTab: initialGroupTab,
         combineHeader: !isSubchat && !selection.selecting,

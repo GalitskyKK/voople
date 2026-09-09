@@ -61,20 +61,29 @@ test("messages from different Room sessions never merge into one visual group", 
   assert.match(grouping, /messageRoomContextKey\(second\.roomContext\)/);
 });
 
-test("the Room surface reuses Group history and composer through an exact session filter", () => {
+test("the Room surface opens the ordinary selected Group or Section conversation", () => {
   const panel = read("src/components/chat/voice/RoomMessagesPanel.tsx");
   const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
   const header = read("src/components/chat/voice/VoiceRoomHeader.tsx");
   const control = read("src/components/chat/voice/useChatRoomControl.ts");
+  const launcher = read("src/hooks/useGroupNowVoiceLauncher.ts");
+  const provider = read("src/components/chat/voice/VoiceSessionProvider.tsx");
+  const context = read("src/components/chat/voice/voice-conversation-context.ts");
 
   assert.match(panel, /trpc\.chat\.observeMessages\.useQuery/);
-  assert.match(panel, /message\.roomContext\?\.liveSessionId === model\.liveSessionId/);
+  assert.doesNotMatch(panel, /\.filter\([\s\S]{0,160}liveSessionId/);
+  assert.match(panel, /buildChatTimeline\(conversationMessages\)/);
   assert.match(panel, /<ChatMessageBubble/);
   assert.match(panel, /<ChatComposer/);
   assert.doesNotMatch(panel, /markRead/);
   assert.match(surface, /secondaryPanel === "messages"/);
   assert.match(surface, /<RoomMessagesPanel model=\{messages\}/);
-  assert.match(header, /Открыть сообщения комнаты/);
-  assert.match(control, /liveSessionId: coreSession\.join\.sessionId/);
-  assert.match(control, /chatId: coreSession\.groupId/);
+  assert.match(header, /Открыть чат группы/);
+  assert.match(control, /buildVoiceRoomMessagesModel\(coreSession, inside\)/);
+  assert.match(launcher, /conversationId: conversationId \?\? groupId/);
+  assert.match(provider, /conversationId: launch\.conversationId \?\? launch\.groupId/);
+  assert.match(provider, /resolveVoiceConversationId\(activeSession\?\.coreSession, target\.groupId\)/);
+  assert.match(context, /current\.conversationId \?\? targetGroupId/);
+  assert.match(context, /chatId: session\.conversationId \?\? session\.groupId/);
+  assert.match(context, /liveSessionId: session\.join\.sessionId/);
 });

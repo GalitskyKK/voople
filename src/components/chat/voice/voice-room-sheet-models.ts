@@ -94,6 +94,7 @@ export type VoiceRoomSwitcherModel = {
 
 export type VoiceRoomMessagesModel = {
   chatId: string;
+  groupId: string;
   roomId: string;
   liveSessionId: string;
   roomName: string;

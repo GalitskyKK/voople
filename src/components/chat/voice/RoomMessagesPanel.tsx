@@ -51,16 +51,17 @@ export function RoomMessagesPanel({
     roomKind: model.roomKind,
     capturedAt: new Date().toISOString(),
   }), [model.liveSessionId, model.roomId, model.roomKind, model.roomName]);
-  const roomMessages = useMemo(
-    () => (messagesQuery.data?.messages ?? []).filter(
-      (message) => message.roomContext?.liveSessionId === model.liveSessionId,
-    ),
-    [messagesQuery.data?.messages, model.liveSessionId],
+  const conversationMessages = useMemo(
+    () => messagesQuery.data?.messages ?? [],
+    [messagesQuery.data?.messages],
   );
-  const timeline = useMemo(() => buildChatTimeline(roomMessages), [roomMessages]);
+  const timeline = useMemo(
+    () => buildChatTimeline(conversationMessages),
+    [conversationMessages],
+  );
   const { containerRef, contentRef } = useChatAutoScroll(
-    model.liveSessionId,
-    roomMessages.length,
+    model.chatId,
+    conversationMessages.length,
   );
   const send = useChatSendMutation({
     chatId: model.chatId,
@@ -104,16 +105,20 @@ export function RoomMessagesPanel({
       sharedTrackId: pendingTrack?.id,
     });
   };
+  const conversationName = messagesQuery.data?.chat.name || "Общий";
+  const audienceLabel = messagesQuery.data?.chat.parentChatId
+    ? `${messagesQuery.data.chat.parentName ?? "Группа"} / ${conversationName}`
+    : conversationName;
 
   return (
-    <aside className="absolute inset-0 z-30 flex min-h-0 flex-col bg-[var(--background)] sm:relative sm:z-auto sm:w-[22rem] sm:shrink-0 sm:border-l sm:border-[var(--app-border)]" aria-label={`Сообщения комнаты ${model.roomName}`}>
+    <aside className="absolute inset-0 z-30 flex min-h-0 flex-col bg-[var(--background)] sm:relative sm:z-auto sm:w-[22.5rem] sm:shrink-0 sm:border-l sm:border-[var(--app-border)]" aria-label={`Чат группы: ${audienceLabel}`}>
       <header className="flex min-h-16 shrink-0 items-center gap-3 border-b border-[var(--app-border)] px-4">
         <MessageSquareText className="h-4 w-4 shrink-0 text-[var(--theme-accent)]" aria-hidden="true" />
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-semibold">Сообщения комнаты</h3>
-          <p className="truncate text-[11px] text-[var(--app-muted)]">{model.roomName}</p>
+          <h3 className="truncate text-sm font-semibold">Чат группы</h3>
+          <p className="truncate text-[11px] text-[var(--app-muted)]">{audienceLabel}</p>
         </div>
-        <IconButton label="Закрыть сообщения комнаты" onClick={onClose} className="h-9 w-9">
+        <IconButton label="Закрыть чат группы" onClick={onClose} className="h-9 w-9">
           <X className="h-4 w-4" aria-hidden="true" />
         </IconButton>
       </header>
@@ -123,7 +128,7 @@ export function RoomMessagesPanel({
           {!online ? (
             <RoomMessagesState icon={<WifiOff className="h-5 w-5" />} title="Нет соединения" copy="История сохранена. Новые сообщения появятся после восстановления сети." />
           ) : messagesQuery.isLoading ? (
-            <RoomMessagesState title="Загружаем сообщения" copy="Открываем контекст этой комнаты…" />
+            <RoomMessagesState title="Загружаем сообщения" copy="Открываем историю выбранного раздела…" />
           ) : messagesQuery.error ? (
             <RoomMessagesState
               icon={<RefreshCw className="h-5 w-5" />}
@@ -132,7 +137,7 @@ export function RoomMessagesPanel({
               action={<button type="button" className="mt-3 text-xs font-semibold text-[var(--theme-accent)]" onClick={() => void messagesQuery.refetch()}>Повторить</button>}
             />
           ) : timeline.length === 0 ? (
-            <RoomMessagesState title="Здесь пока тихо" copy="Сообщение останется в истории группы и сохранит контекст комнаты." />
+            <RoomMessagesState title="Здесь пока тихо" copy="Начните разговор в выбранном разделе группы." />
           ) : timeline.map((item) => item.type === "date" ? (
             <ChatDateDivider key={item.key} label={item.label} />
           ) : item.type === "message" ? (

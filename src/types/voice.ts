@@ -23,6 +23,7 @@ export type VoiceSessionLease = VoiceMediaCredentials;
 
 export type CoreVoiceSessionDescriptor = {
   groupId: string;
+  conversationId?: string;
   room: GroupNowRoom;
   join: GroupRoomJoinResult;
 };

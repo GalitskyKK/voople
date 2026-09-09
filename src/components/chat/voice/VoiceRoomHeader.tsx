@@ -104,7 +104,7 @@ export function VoiceRoomHeader({
         </HeaderButton>
         {!identity.isDirect && identity.active && hasRoomMessages ? (
           <HeaderButton
-            label={roomMessagesOpen ? "Закрыть сообщения комнаты" : "Открыть сообщения комнаты"}
+            label={roomMessagesOpen ? "Закрыть чат группы" : "Открыть чат группы"}
             onClick={onToggleRoomMessages}
           >
             <MessageSquareText className="h-4 w-4" />

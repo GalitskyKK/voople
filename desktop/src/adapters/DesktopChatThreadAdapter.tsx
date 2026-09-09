@@ -113,6 +113,7 @@ export function DesktopChatThreadAdapter({
       accentColor={isGroup ? data.chat.groupAccentColor : null}
       groupSurface={isGroup ? {
         groupId: rootChat?.id ?? data.chat.parentChatId ?? chatId,
+        conversationId: chatId,
         groupName: rootChat?.name ?? data.chat.parentName ?? title,
         initialTab: initialGroupTab,
         combineHeader: !isSubchat,

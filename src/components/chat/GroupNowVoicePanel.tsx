@@ -8,6 +8,7 @@ import { GroupNowConnectedPanel } from "./GroupNowConnectedPanel";
 export function GroupNowVoicePanel({
   enabled = false,
   groupId,
+  conversationId,
   groupName,
   variant = "surface",
   canCreatePinned = false,
@@ -16,13 +17,14 @@ export function GroupNowVoicePanel({
 }: {
   enabled?: boolean;
   groupId: string;
+  conversationId?: string;
   groupName: string;
   variant?: "surface" | "shelf";
   canCreatePinned?: boolean;
   onRoomOpened?: () => void;
   onOpenProfile?: (user: GroupNowUser) => void;
 }) {
-  const launcher = useGroupNowVoiceLauncher({ groupId, onRoomOpened });
+  const launcher = useGroupNowVoiceLauncher({ groupId, conversationId, onRoomOpened });
 
   const openLegacy = (room: GroupNowRoom) => {
     launcher.openLegacyRoom(room);

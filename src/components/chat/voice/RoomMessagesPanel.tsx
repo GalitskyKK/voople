@@ -1,14 +1,16 @@
 "use client";
 
-import { MessageSquareText, RefreshCw, WifiOff, X } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { MessageSquareText, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import { ChatComposer } from "@/components/chat/ChatComposer";
-import { ChatDateDivider } from "@/components/chat/ChatDateDivider";
+import { ChatConversationState } from "@/components/chat/ChatConversationState";
 import { ChatMessageBubble } from "@/components/chat/ChatMessageBubble";
+import { ChatThreadFrameView } from "@/components/chat/ChatThreadFrameView";
 import { IconButton } from "@/components/ui/IconButton";
 import { useBrowserOnline } from "@/hooks/useBrowserOnline";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
+import { useChatConversationAttention } from "@/hooks/useChatConversationAttention";
 import { useChatSendMutation } from "@/hooks/useChatSendMutation";
 import type { PendingChatUpload } from "@/hooks/useChatUpload";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
@@ -58,6 +60,14 @@ export function RoomMessagesPanel({
   const timeline = useMemo(
     () => buildChatTimeline(conversationMessages),
     [conversationMessages],
+  );
+  useChatConversationAttention(
+    model.chatId,
+    me?.id,
+    text,
+    false,
+    setText,
+    conversationMessages,
   );
   const { containerRef, contentRef } = useChatAutoScroll(
     model.chatId,
@@ -110,87 +120,73 @@ export function RoomMessagesPanel({
     ? `${messagesQuery.data.chat.parentName ?? "Группа"} / ${conversationName}`
     : conversationName;
 
+  const initialState = !messagesQuery.data ? (
+    <ChatConversationState
+      mode={!online ? "offline" : messagesQuery.isLoading ? "loading" : "error"}
+      message={!online || messagesQuery.isLoading ? null : messagesQuery.error?.message}
+      onRetry={() => void messagesQuery.refetch()}
+    />
+  ) : (
+    <p className="pb-4 text-sm text-[var(--app-muted)]">
+      Начните разговор в выбранном разделе группы
+    </p>
+  );
+
   return (
     <aside className="absolute inset-0 z-30 flex min-h-0 flex-col bg-[var(--background)] sm:relative sm:z-auto sm:w-[22.5rem] sm:shrink-0 sm:border-l sm:border-[var(--app-border)]" aria-label={`Чат группы: ${audienceLabel}`}>
-      <header className="flex min-h-16 shrink-0 items-center gap-3 border-b border-[var(--app-border)] px-4">
-        <MessageSquareText className="h-4 w-4 shrink-0 text-[var(--theme-accent)]" aria-hidden="true" />
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-semibold">Чат группы</h3>
-          <p className="truncate text-[11px] text-[var(--app-muted)]">{audienceLabel}</p>
-        </div>
-        <IconButton label="Закрыть чат группы" onClick={onClose} className="h-9 w-9">
-          <X className="h-4 w-4" aria-hidden="true" />
-        </IconButton>
-      </header>
-
-      <div ref={containerRef} className="voople-scroll min-h-0 flex-1 overflow-y-auto px-2 py-3">
-        <div ref={contentRef} className="flex min-h-full flex-col justify-end gap-0.5">
-          {!online ? (
-            <RoomMessagesState icon={<WifiOff className="h-5 w-5" />} title="Нет соединения" copy="История сохранена. Новые сообщения появятся после восстановления сети." />
-          ) : messagesQuery.isLoading ? (
-            <RoomMessagesState title="Загружаем сообщения" copy="Открываем историю выбранного раздела…" />
-          ) : messagesQuery.error ? (
-            <RoomMessagesState
-              icon={<RefreshCw className="h-5 w-5" />}
-              title="Не удалось загрузить сообщения"
-              copy="Основная история не изменилась. Повторите загрузку."
-              action={<button type="button" className="mt-3 text-xs font-semibold text-[var(--theme-accent)]" onClick={() => void messagesQuery.refetch()}>Повторить</button>}
+      <ChatThreadFrameView
+        header={(
+          <header className="flex min-h-16 shrink-0 items-center gap-3 border-b border-[var(--app-border)] px-4">
+            <MessageSquareText className="h-4 w-4 shrink-0 text-[var(--theme-accent)]" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <h3 className="truncate text-sm font-semibold">Чат группы</h3>
+              <p className="truncate text-[11px] text-[var(--app-muted)]">{audienceLabel}</p>
+            </div>
+            <IconButton label="Закрыть чат группы" onClick={onClose} className="h-9 w-9">
+              <X className="h-4 w-4" aria-hidden="true" />
+            </IconButton>
+          </header>
+        )}
+        timeline={timeline}
+        emptyState={initialState}
+        messagesRef={containerRef}
+        messagesContentRef={contentRef}
+        renderMessage={(item) => (
+          <ChatMessageBubble
+            key={item.message.id}
+            message={item.message}
+            viewerId={me?.id ?? null}
+            groupPosition={item.groupPosition}
+            showSender
+            onReply={setReplyTo}
+          />
+        )}
+        connectionState={messagesQuery.data && !online ? (
+          <ChatConversationState mode="offline" variant="inline" onRetry={() => void messagesQuery.refetch()} />
+        ) : messagesQuery.data && messagesQuery.error ? (
+          <ChatConversationState mode="error" variant="inline" message={messagesQuery.error.message} onRetry={() => void messagesQuery.refetch()} />
+        ) : null}
+        composer={(
+          <div className="shrink-0 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+            <ChatComposer
+              chatId={model.chatId}
+              placeholder={`Сообщение ${audienceLabel}…`}
+              text={text}
+              onTextChange={setText}
+              replyTo={replyTo}
+              onReplyCancel={() => setReplyTo(null)}
+              pendingUpload={pendingUpload}
+              onPendingUploadChange={setPendingUpload}
+              pendingTrack={pendingTrack}
+              onPendingTrackChange={setPendingTrack}
+              onSend={handleSend}
+              isSending={send.isPending}
+              disabled={!online || Boolean(messagesQuery.error)}
+              customEmojis={groupEmojis.data?.items ?? []}
             />
-          ) : timeline.length === 0 ? (
-            <RoomMessagesState title="Здесь пока тихо" copy="Начните разговор в выбранном разделе группы." />
-          ) : timeline.map((item) => item.type === "date" ? (
-            <ChatDateDivider key={item.key} label={item.label} />
-          ) : item.type === "message" ? (
-            <ChatMessageBubble
-              key={item.message.id}
-              message={item.message}
-              viewerId={me?.id ?? null}
-              groupPosition={item.groupPosition}
-              showSender
-              onReply={setReplyTo}
-            />
-          ) : null)}
-        </div>
-      </div>
-
-      <div className="shrink-0 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        <ChatComposer
-          chatId={model.chatId}
-          text={text}
-          onTextChange={setText}
-          replyTo={replyTo}
-          onReplyCancel={() => setReplyTo(null)}
-          pendingUpload={pendingUpload}
-          onPendingUploadChange={setPendingUpload}
-          pendingTrack={pendingTrack}
-          onPendingTrackChange={setPendingTrack}
-          onSend={handleSend}
-          isSending={send.isPending}
-          disabled={!online || Boolean(messagesQuery.error)}
-          customEmojis={groupEmojis.data?.items ?? []}
-        />
-      </div>
+          </div>
+        )}
+      />
     </aside>
-  );
-}
-
-function RoomMessagesState({
-  icon,
-  title,
-  copy,
-  action,
-}: {
-  icon?: ReactNode;
-  title: string;
-  copy: string;
-  action?: ReactNode;
-}) {
-  return (
-    <div className="m-auto max-w-64 px-4 py-8 text-center" role="status">
-      {icon ? <span className="mx-auto mb-3 grid h-9 w-9 place-items-center text-[var(--app-muted)]">{icon}</span> : null}
-      <p className="text-sm font-semibold">{title}</p>
-      <p className="mt-1 text-xs leading-5 text-[var(--app-muted)]">{copy}</p>
-      {action}
-    </div>
   );
 }

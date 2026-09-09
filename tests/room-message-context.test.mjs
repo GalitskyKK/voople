@@ -69,13 +69,17 @@ test("the Room surface opens the ordinary selected Group or Section conversation
   const launcher = read("src/hooks/useGroupNowVoiceLauncher.ts");
   const provider = read("src/components/chat/voice/VoiceSessionProvider.tsx");
   const context = read("src/components/chat/voice/voice-conversation-context.ts");
+  const draft = read("src/hooks/useLocalChatDraft.ts");
 
   assert.match(panel, /trpc\.chat\.observeMessages\.useQuery/);
   assert.doesNotMatch(panel, /\.filter\([\s\S]{0,160}liveSessionId/);
   assert.match(panel, /buildChatTimeline\(conversationMessages\)/);
   assert.match(panel, /<ChatMessageBubble/);
   assert.match(panel, /<ChatComposer/);
-  assert.doesNotMatch(panel, /markRead/);
+  assert.match(panel, /<ChatThreadFrameView/);
+  assert.match(panel, /useChatConversationAttention\(/);
+  assert.match(panel, /placeholder=\{`Сообщение \$\{audienceLabel\}…`\}/);
+  assert.match(draft, /storeChatDraft\(accountId, chatId, textRef\.current\)/);
   assert.match(surface, /secondaryPanel === "messages"/);
   assert.match(surface, /<RoomMessagesPanel model=\{messages\}/);
   assert.match(header, /Открыть чат группы/);

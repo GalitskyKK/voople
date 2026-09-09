@@ -18,6 +18,7 @@ import { ChatVoiceRecorder, type ChatRecordMode } from "./ChatVoiceRecorder";
 
 export function ChatComposerInputView({
   focusKey,
+  placeholder = "Сообщение…",
   text,
   canSend,
   sending,
@@ -36,6 +37,7 @@ export function ChatComposerInputView({
   customEmojis = [],
 }: {
   focusKey: string;
+  placeholder?: string;
   text: string;
   canSend: boolean;
   sending: boolean;
@@ -104,7 +106,7 @@ export function ChatComposerInputView({
         rows={1}
         maxLength={1000}
         disabled={disabled}
-        placeholder="Сообщение…"
+        placeholder={placeholder}
         aria-label="Сообщение"
         className="min-h-10 min-w-0 flex-1 resize-none overflow-y-auto border-0 bg-transparent px-2 py-2.5 text-sm outline-none placeholder:text-[var(--app-muted)] disabled:opacity-50"
       />

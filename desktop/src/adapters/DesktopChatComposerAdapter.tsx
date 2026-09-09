@@ -13,6 +13,7 @@ import type { DesktopConfig } from "../config";
 
 export function DesktopChatComposerAdapter({
   chatId,
+  placeholder,
   config,
   session,
   replyTo,
@@ -25,6 +26,7 @@ export function DesktopChatComposerAdapter({
   customEmojis = [],
 }: {
   chatId: string;
+  placeholder?: string;
   config: DesktopConfig;
   session: Session;
   replyTo: ChatMessageView | null;
@@ -137,6 +139,7 @@ export function DesktopChatComposerAdapter({
         onSubmit={() => void submit()}
         input={{
           focusKey: chatId,
+          placeholder,
           text,
           canSend,
           sending,

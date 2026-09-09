@@ -363,6 +363,7 @@ export function DesktopChatThreadAdapter({
       ) : null}
       composer={<DesktopChatComposerAdapter
         chatId={chatId}
+        placeholder={`Сообщение ${title}…`}
         key={editing?.id ?? "new-message"}
         config={config}
         session={session}

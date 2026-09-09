@@ -2028,7 +2028,36 @@ button.voople-post-action:active {
 }
 
 .voople-group-live-shelf {
+  container-type: inline-size;
   animation: voople-live-shelf-enter 180ms cubic-bezier(.2,.8,.25,1) both;
+}
+
+.voople-group-live-shelf__layout {
+  display: none;
+}
+
+.voople-group-live-shelf__layout--wide {
+  display: flex;
+}
+
+@container (max-width: 760px) {
+  .voople-group-live-shelf__layout--wide {
+    display: none;
+  }
+
+  .voople-group-live-shelf__layout--medium {
+    display: flex;
+  }
+}
+
+@container (max-width: 520px) {
+  .voople-group-live-shelf__layout--medium {
+    display: none;
+  }
+
+  .voople-group-live-shelf__layout--compact {
+    display: flex;
+  }
 }
 
 @keyframes voople-live-shelf-enter {

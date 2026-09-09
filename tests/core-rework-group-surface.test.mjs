@@ -23,17 +23,26 @@ test("group surface defaults to chat and keeps the three product modes accessibl
   assert.match(tabs, /aria-selected=/);
 });
 
-test("live shelf only shows occupied rooms and preserves direct room entry", () => {
+test("live shelf is bounded, shows room rosters and preserves direct room entry", () => {
   const shelf = source("src/components/chat/GroupLiveShelfView.tsx");
+  const roomCell = source("src/components/chat/GroupLiveShelfRoomCell.tsx");
   const panel = source("src/components/chat/GroupNowPanelView.tsx");
+  const styles = source("src/app/globals.css");
 
   assert.match(shelf, /room\.participantCount > 0/);
   assert.match(shelf, /room\.hasScreenShare/);
   assert.match(shelf, /resolveGroupNowRoomAction/);
-  assert.match(shelf, /overflow-x-auto/);
-  assert.match(shelf, /min-h-8[^\n]*lg:min-h-7/);
-  assert.match(shelf, /className="h-8[^\n]*lg:h-7/);
-  assert.doesNotMatch(shelf, /min-h-11/);
+  assert.match(shelf, /\["wide", 3\]/);
+  assert.match(shelf, /\["medium", 2\]/);
+  assert.match(shelf, /\["compact", 1\]/);
+  assert.match(shelf, /activeRooms\.slice\(limit\)/);
+  assert.match(shelf, /Ещё комнат/);
+  assert.doesNotMatch(shelf, /overflow-x-auto/);
+  assert.match(roomCell, /room\.participants\.slice\(0, 3\)/);
+  assert.match(roomCell, /ProfileAvatarVisual/);
+  assert.match(roomCell, /onJoinRoom\(room\)/);
+  assert.match(styles, /container-type: inline-size/);
+  assert.match(styles, /@container \(max-width: 520px\)/);
   assert.match(panel, /props\.variant === "shelf"/);
   assert.match(panel, /<GroupLiveShelfView/);
 });

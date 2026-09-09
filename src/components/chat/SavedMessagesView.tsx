@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
+import { buildOptimisticMessage } from "@/lib/chat/optimistic-message";
 import type { PendingChatUpload } from "@/hooks/useChatUpload";
 import type { ChatMessageView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
@@ -67,7 +68,10 @@ export function SavedMessagesView({
   onQueryChange: (value: string) => void;
   onRetry: () => Promise<unknown>;
   onLoadMore: () => Promise<unknown>;
-  onCreate: (draft: SavedMessageDraft) => Promise<unknown>;
+  onCreate: (
+    draft: SavedMessageDraft,
+    optimistic: SavedMessageView,
+  ) => Promise<unknown>;
   onEdit: (messageId: string, text: string) => Promise<unknown>;
   onDelete: (messageId: string) => Promise<unknown>;
   onBack: () => void;
@@ -106,15 +110,37 @@ export function SavedMessagesView({
       if (editing) {
         await onEdit(editing.id, trimmed);
       } else {
+        const messageId = crypto.randomUUID();
         const isAudio = pendingUpload?.kind === "audio";
-        await onCreate({
-          messageId: crypto.randomUUID(),
+        const draft = {
+          messageId,
           text: trimmed || undefined,
           mediaKey: pendingUpload?.mediaKey,
           mediaTitle: isAudio ? pendingUpload?.title : undefined,
           mediaArtist: isAudio ? pendingUpload?.artist : undefined,
           sharedTrackId: pendingTrack?.id,
           replyToMessageId: replyTo?.id,
+        } satisfies SavedMessageDraft;
+        const optimisticChatMessage = buildOptimisticMessage({
+          messageId,
+          senderId: ownerId || "me",
+          text: trimmed || undefined,
+          replyTo,
+          pendingUpload,
+          pendingTrack,
+        });
+        await onCreate(draft, {
+          id: messageId,
+          text: optimisticChatMessage.text,
+          createdAt: optimisticChatMessage.createdAt,
+          editedAt: null,
+          replyTo: optimisticChatMessage.replyTo
+            ? {
+                id: optimisticChatMessage.replyTo.id,
+                text: optimisticChatMessage.replyTo.text,
+              }
+            : null,
+          attachment: optimisticChatMessage.attachment ?? null,
         });
       }
       clearDraft();

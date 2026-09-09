@@ -33,6 +33,7 @@ presence, notifications or relationship signals.
 The shared web/desktop View reuses the existing message bubble, composer,
 attachment and reply presentation while keeping an explicit `Избранное`
 identity. It includes loading, empty, error/retry, offline draft preservation,
-pagination, search and edit/delete states. Its route and shortcuts stay hidden
-unless the server capability is enabled. Mobile visual evidence, optimistic
-reconciliation, export/retention and migration rollout remain required.
+pagination, search and edit/delete states. Its route and sidebar entry stay hidden
+unless the server capability is enabled. Optimistic reconciliation with rollback
+and draft preservation is implemented. Mobile visual evidence, export/retention
+and migration rollout remain required.

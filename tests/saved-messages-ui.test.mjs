@@ -33,6 +33,20 @@ test("Saved Messages exposes complete private loading and recovery states", () =
   assert.match(view, /uploadChatId=\{null\}/);
 });
 
+test("Saved Messages reconciles optimistic mutations and restores the cache on failure", () => {
+  const controller = read("src/components/chat/SavedMessagesController.tsx");
+  const view = read("src/components/chat/SavedMessagesView.tsx");
+
+  assert.match(controller, /getInfiniteData\(listInput\)/);
+  assert.match(controller, /setInfiniteData\(listInput/);
+  assert.match(controller, /if \(previous\) utils\.savedMessages\.list\.setInfiniteData/);
+  assert.match(controller, /item\.id === saved\.id \? saved : item/);
+  assert.match(controller, /items: page\.items\.filter\(\(item\) => item\.id !== messageId\)/);
+  assert.match(view, /buildOptimisticMessage/);
+  assert.match(view, /await onCreate\(draft,/);
+  assert.match(view, /clearDraft\(\);/);
+});
+
 test("Saved Messages shortcuts stay fail-closed on web and desktop", () => {
   const webSidebar = read("src/components/layout/MessengerSidebar.tsx");
   const desktopSidebar = read("desktop/src/adapters/DesktopMessengerSidebarAdapter.tsx");

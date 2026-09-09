@@ -18,7 +18,7 @@ export function ChatThreadFrameView({
   beforeMessages,
   afterMessages,
   emptyState,
-  error,
+  connectionState,
   composer,
   overlays,
 }: {
@@ -33,7 +33,7 @@ export function ChatThreadFrameView({
   beforeMessages?: ReactNode;
   afterMessages?: ReactNode;
   emptyState?: ReactNode;
-  error?: string | null;
+  connectionState?: ReactNode;
   composer: ReactNode;
   overlays?: ReactNode;
 }) {
@@ -77,11 +77,7 @@ export function ChatThreadFrameView({
         </div>
         {afterMessages}
       </div>
-      {error ? (
-        <p className="px-4 pt-1 text-xs text-red-400" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {connectionState}
       {composer}
     </>
   );

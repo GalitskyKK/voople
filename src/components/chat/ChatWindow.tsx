@@ -9,6 +9,7 @@ import { useChatMessageSelection } from "@/hooks/useChatMessageSelection";
 import { useChatConversationAttention } from "@/hooks/useChatConversationAttention";
 import { useChatSendMutation } from "@/hooks/useChatSendMutation";
 import { useChatMessageActions } from "@/hooks/useChatMessageActions";
+import { useBrowserOnline } from "@/hooks/useBrowserOnline";
 import type { PendingChatUpload } from "@/hooks/useChatUpload";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 import { trpc } from "@/lib/trpc/client";
@@ -26,6 +27,7 @@ import { ChatSectionsBar } from "./ChatSectionsBar";
 import { ChatJumpToLatest } from "./ChatJumpToLatest";
 import { ChatSelectionController } from "./ChatSelectionController";
 import { ChatConversationStart } from "./ChatConversationStart";
+import { ChatConversationState } from "./ChatConversationState";
 type ChatWindowProps = { chatId: string; initialGroupTab?: "chat" | "now" | "people" };
 export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps) {
   const router = useRouter();
@@ -35,11 +37,12 @@ export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps
   const [pendingTrack, setPendingTrack] = useState<PlaylistTrackView | null>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const { onlineUserIds } = useOnlineUsers();
+  const online = useBrowserOnline();
   const actions = useChatMessageActions(chatId);
   const editor = useChatMessageEditor(chatId, setText);
   const { data: me } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
   const { realtimeDegraded } = useRealtimeChat(chatId, me?.id);
-  const { data, isLoading, error } = trpc.chat.observeMessages.useQuery(
+  const { data, isLoading, error, refetch } = trpc.chat.observeMessages.useQuery(
     { chatId },
     {
       staleTime: 5_000,
@@ -87,18 +90,14 @@ export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps
     });
   };
 
-  if (isLoading) {
+  if (!data) {
     return (
       <div className="voople-chat-window flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="voople-chat-window flex min-h-0 flex-1 flex-col justify-center">
-        <p className="text-sm text-red-400">{error.message}</p>
+        <ChatConversationState
+          mode={!online ? "offline" : isLoading ? "loading" : "error"}
+          message={!online || isLoading ? null : error?.message}
+          onRetry={() => void refetch()}
+        />
       </div>
     );
   }
@@ -192,6 +191,11 @@ export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps
         />
       )}
       afterMessages={isAwayFromBottom ? <ChatJumpToLatest onClick={scrollToBottom} /> : null}
+      connectionState={!online ? (
+        <ChatConversationState mode="offline" variant="inline" onRetry={() => void refetch()} />
+      ) : error ? (
+        <ChatConversationState mode="error" variant="inline" message={error.message} onRetry={() => void refetch()} />
+      ) : null}
       composer={
         <div className="px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:px-4 lg:pb-3">
         <ChatComposer

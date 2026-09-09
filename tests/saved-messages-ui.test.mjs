@@ -18,11 +18,15 @@ test("Saved Messages uses one shared web and desktop controller", () => {
 test("Saved Messages exposes complete private loading and recovery states", () => {
   const controller = read("src/components/chat/SavedMessagesController.tsx");
   const view = read("src/components/chat/SavedMessagesView.tsx");
+  const state = read("src/components/chat/ChatConversationState.tsx");
+  const savedState = read("src/components/chat/SavedMessagesConnectionState.tsx");
 
   assert.match(controller, /savedMessages\.availability\.useQuery/);
   assert.match(controller, /savedMessages\.list\.useInfiniteQuery/);
   assert.match(controller, /getNextPageParam/);
-  assert.match(view, /Нет сети\. Черновик останется на месте/);
+  assert.match(view, /SavedMessagesConnectionState/);
+  assert.match(savedState, /ChatConversationState mode="offline"/);
+  assert.match(state, /Черновик останется на месте/);
   assert.match(view, /messages\.length === 0/);
   assert.match(view, /SavedMessagesEmptyState/);
   assert.match(view, /Показать более ранние/);

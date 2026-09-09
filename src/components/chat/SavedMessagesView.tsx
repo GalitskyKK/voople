@@ -19,6 +19,7 @@ import { ChatMediaLightbox } from "./ChatMediaLightbox";
 import { ChatMessageBubble } from "./ChatMessageBubble";
 import { ChatThreadFrameView } from "./ChatThreadFrameView";
 import { SavedMessagesEmptyState } from "./SavedMessagesEmptyState";
+import { SavedMessagesConnectionState } from "./SavedMessagesConnectionState";
 import { SavedMessagesHeader } from "./SavedMessagesHeader";
 
 function toChatMessage(message: SavedMessageView, ownerId: string): ChatMessageView {
@@ -216,7 +217,7 @@ export function SavedMessagesView({
         />
       )}
       afterMessages={isAwayFromBottom ? <ChatJumpToLatest onClick={scrollToBottom} /> : null}
-      error={!online ? "Нет сети. Черновик останется на месте — отправьте его после подключения." : actionError ?? error}
+      connectionState={<SavedMessagesConnectionState online={online} loadError={error} actionError={actionError} onRetry={onRetry} />}
       composer={(
         <div className="px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:pb-3">
           <ChatComposer

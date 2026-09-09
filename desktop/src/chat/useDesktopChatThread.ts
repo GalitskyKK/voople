@@ -122,7 +122,10 @@ export function useDesktopChatThread(
         const thread = parseThread(
           await client.query("chat.observeMessages", { chatId }),
         );
-        if (currentRequest === requestId.current) setData(thread);
+        if (currentRequest === requestId.current) {
+          setData(thread);
+          setError(null);
+        }
       } catch (loadError) {
         if (currentRequest === requestId.current) {
           setError(

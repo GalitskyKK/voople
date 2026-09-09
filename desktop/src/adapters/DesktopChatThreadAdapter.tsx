@@ -15,7 +15,9 @@ import { ChatMessageBubble } from "@/components/chat/ChatMessageBubble";
 import { ChatConversationStart } from "@/components/chat/ChatConversationStart";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
+import { useBrowserOnline } from "@/hooks/useBrowserOnline";
 import type { ChatListItem, ChatMessageView, GroupEmojiView } from "@/types/chat";
+import { ChatConversationState } from "@/components/chat/ChatConversationState";
 
 import type { DesktopConfig } from "../config";
 import { DesktopChatComposerAdapter } from "./DesktopChatComposerAdapter";
@@ -66,6 +68,7 @@ export function DesktopChatThreadAdapter({
   const [editing, setEditing] = useState<ChatMessageView | null>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [groupEmojis, setGroupEmojis] = useState<GroupEmojiView[]>([]);
+  const online = useBrowserOnline();
   const groupPanel = useDesktopGroupPanel({
     chatId,
     config,
@@ -85,21 +88,14 @@ export function DesktopChatThreadAdapter({
     return () => { active = false; };
   }, [chatId, config, data?.chat.type, session.access_token]);
 
-  if (loading && !data) {
-    return (
-      <div className="voople-chat-window flex min-h-0 flex-1 animate-pulse bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]" />
-    );
-  }
-
   if (!data) {
     return (
-      <div className="voople-chat-window flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-        <p className="text-sm text-red-400">
-          {error ?? "Не удалось открыть переписку"}
-        </p>
-        <button type="button" className="voople-button" onClick={retry}>
-          Повторить
-        </button>
+      <div className="voople-chat-window flex min-h-0 flex-1 flex-col">
+        <ChatConversationState
+          mode={!online ? "offline" : loading ? "loading" : "error"}
+          message={!online || loading ? null : error}
+          onRetry={retry}
+        />
       </div>
     );
   }
@@ -359,7 +355,11 @@ export function DesktopChatThreadAdapter({
           onOpenImage={setLightboxUrl}
         />
       )}
-      error={error}
+      connectionState={!online ? (
+        <ChatConversationState mode="offline" variant="inline" onRetry={retry} />
+      ) : error ? (
+        <ChatConversationState mode="error" variant="inline" message={error} onRetry={retry} />
+      ) : null}
       composer={<DesktopChatComposerAdapter
         chatId={chatId}
         key={editing?.id ?? "new-message"}

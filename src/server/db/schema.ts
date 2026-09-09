@@ -466,6 +466,40 @@ export const messages = pgTable(
   }),
 );
 
+export const savedMessages = pgTable(
+  "saved_messages",
+  {
+    id: uuid("id").primaryKey(),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    text: varchar("text", { length: 1000 }),
+    content: jsonb("content"),
+    mediaUrl: varchar("media_url", { length: 500 }),
+    mediaTitle: varchar("media_title", { length: 100 }),
+    mediaArtist: varchar("media_artist", { length: 100 }),
+    sharedPostId: uuid("shared_post_id").references(() => posts.id, {
+      onDelete: "set null",
+    }),
+    sharedTrackId: uuid("shared_track_id").references(() => playlistTracks.id, {
+      onDelete: "set null",
+    }),
+    replyToMessageId: uuid("reply_to_message_id").references(
+      (): AnyPgColumn => savedMessages.id,
+      { onDelete: "set null" },
+    ),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    editedAt: timestamp("edited_at", { withTimezone: true }),
+  },
+  (table) => ({
+    ownerTimeIdx: index("saved_messages_owner_time_idx").on(
+      table.ownerId,
+      table.createdAt,
+      table.id,
+    ),
+  }),
+);
+
 export const messageReactions = pgTable(
   "message_reactions",
   {

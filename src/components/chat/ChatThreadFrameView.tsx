@@ -93,13 +93,23 @@ export function ChatThreadFrameView({
         accentColor
           ? ({
               "--group-accent": accentColor,
-              "--theme-accent": accentColor,
             } as CSSProperties)
           : undefined
       }
     >
-      {header}
-      {groupSurface ? <GroupSurfaceShell key={`${groupSurface.groupId}:${groupSurface.initialTab ?? "chat"}`} config={groupSurface} chatContent={chatContent} /> : chatContent}
+      {groupSurface ? (
+        <GroupSurfaceShell
+          key={`${groupSurface.groupId}:${groupSurface.initialTab ?? "chat"}`}
+          config={groupSurface}
+          header={header}
+          chatContent={chatContent}
+        />
+      ) : (
+        <>
+          {header}
+          {chatContent}
+        </>
+      )}
       {overlays}
     </div>
   );

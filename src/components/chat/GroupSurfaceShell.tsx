@@ -10,6 +10,7 @@ export type GroupSurfaceConfig = {
   groupId: string;
   groupName: string;
   initialTab?: GroupSurfaceTab;
+  combineHeader?: boolean;
   canCreatePinned: boolean;
   onlineUserIds: ReadonlySet<string>;
   onOpenProfile?: (username: string) => void;
@@ -18,9 +19,11 @@ export type GroupSurfaceConfig = {
 export function GroupSurfaceShell({
   chatContent,
   config,
+  header,
 }: {
   chatContent: ReactNode;
   config: GroupSurfaceConfig;
+  header: ReactNode;
 }) {
   const [activeTab, setActiveTab] = useState<GroupSurfaceTab>(config.initialTab ?? "chat");
 
@@ -30,7 +33,10 @@ export function GroupSurfaceShell({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <GroupSurfaceTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className={config.combineHeader ? "voople-group-surface-header voople-group-surface-header--combined" : "voople-group-surface-header"}>
+        {header}
+        <GroupSurfaceTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
       {activeTab === "chat" ? (
         <>
           <GroupNowVoicePanel enabled groupId={config.groupId} groupName={config.groupName} canCreatePinned={config.canCreatePinned} variant="shelf" onOpenProfile={openProfile} />

@@ -119,6 +119,7 @@ export function DesktopChatThreadAdapter({
         groupId: rootChat?.id ?? data.chat.parentChatId ?? chatId,
         groupName: rootChat?.name ?? data.chat.parentName ?? title,
         initialTab: initialGroupTab,
+        combineHeader: !isSubchat,
         canCreatePinned: data.chat.viewerRole !== "member",
         onlineUserIds, onOpenProfile: onNavigateProfile,
       } : undefined}

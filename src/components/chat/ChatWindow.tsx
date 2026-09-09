@@ -117,6 +117,7 @@ export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps
         groupId: data?.chat.parentChatId ?? chatId,
         groupName: data?.chat.parentName ?? chatTitle,
         initialTab: initialGroupTab,
+        combineHeader: !isSubchat && !selection.selecting,
         canCreatePinned: data?.chat.viewerRole !== "member", onlineUserIds,
         onOpenProfile: (username) => router.push(`/${username}`),
       } : undefined}

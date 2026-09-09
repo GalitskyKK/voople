@@ -12,6 +12,8 @@ test("group surface defaults to chat and keeps the three product modes accessibl
 
   assert.match(shell, /useState<GroupSurfaceTab>\(config\.initialTab \?\? "chat"\)/);
   assert.match(shell, /activeTab === "chat"/);
+  assert.match(shell, /voople-group-surface-header--combined/);
+  assert.match(shell, /\{header\}/);
   assert.match(shell, /variant="shelf"/);
   assert.match(shell, /activeTab === "now"/);
   assert.match(shell, /variant="surface"/);
@@ -48,13 +50,16 @@ test("live shelf is bounded, shows room rosters and preserves direct room entry"
 });
 
 test("desktop messenger keeps the conversation header stack compact", () => {
+  const frame = source("src/components/chat/ChatThreadFrameView.tsx");
   const tabs = source("src/components/chat/GroupSurfaceTabs.tsx");
   const styles = source("src/app/globals.css");
 
   assert.match(tabs, /min-h-10/);
+  assert.doesNotMatch(frame, /"--theme-accent": accentColor/);
   assert.match(styles, /\.voople-panel-header \{[\s\S]*?min-height: 3\.5rem;/);
   assert.match(styles, /\.voople-chat-window__header--group \{[\s\S]*?min-height: 3\.5rem;/);
   assert.match(styles, /\.voople-group-surface-tabs \{[\s\S]*?min-height: 2\.25rem;/);
+  assert.match(styles, /@media \(min-width: 1180px\)[\s\S]*?voople-group-surface-header--combined[\s\S]*?min-height: 4rem/);
 });
 
 test("full Group Now follows the flat live hierarchy from the canonical plan", () => {
@@ -94,6 +99,7 @@ test("web and desktop thread hosts enable the same group surface without replaci
     assert.match(host, /groupSurface=/);
     assert.match(host, /parentChatId/);
     assert.match(host, /canCreatePinned/);
+    assert.match(host, /combineHeader:/);
   }
   assert.match(frame, /<GroupSurfaceShell/);
   assert.match(frame, /groupSurface\.initialTab/);

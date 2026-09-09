@@ -2032,6 +2032,36 @@ button.voople-post-action:active {
   animation: voople-live-shelf-enter 180ms cubic-bezier(.2,.8,.25,1) both;
 }
 
+@media (min-width: 1180px) {
+  .voople-group-surface-header--combined {
+    position: relative;
+    min-height: 4rem;
+  }
+
+  .voople-group-surface-header--combined .voople-chat-window__header--group {
+    min-height: 4rem;
+    padding-block: 0.5rem;
+    padding-inline: 1rem;
+  }
+
+  .voople-group-surface-header--combined .voople-chat-window__header--group > [aria-hidden="true"] {
+    display: none;
+  }
+
+  .voople-group-surface-header--combined .voople-group-surface-tabs {
+    position: absolute;
+    z-index: 6;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    min-height: 4rem;
+    padding-inline: 0;
+    transform: translateX(-50%);
+    border-bottom: 0;
+    background: transparent;
+  }
+}
+
 .voople-group-live-shelf__layout {
   display: none;
 }

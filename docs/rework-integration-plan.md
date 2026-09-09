@@ -118,8 +118,11 @@ Auth Redirect URLs и проверить живое письмо в том же 
 5. Выпустить версию существующим release-процессом после его исправления для
    protected master; проверить RC и только затем продвигать в stable.
 
-Миграции в этой интеграции не запускались. Создание ветки не применяет SQL,
-не включает feature flags и не меняет production-данные.
+Migrations 58–66 применены штатным single-file runner и зарегистрированы в
+настроенной Supabase 2026-09-09. Повторный pending audit видит все 25
+обязательных миграций, а release-readiness подтверждает checksum, privacy RPC и
+`message_reactions` replica identity. Feature flags этим не менялись; реальный
+concurrency test по-прежнему запускается только на отдельной test-БД.
 
 Перед применением используется `npm run db:pending`: он читает только checksum-
 реестр через service-role REST, не выводит ключи и перечисляет точные ожидающие

@@ -267,6 +267,7 @@ export function useChatRoomControl(
 
   useImperativeHandle(ref, () => ({
     open: openRoom,
+    minimize: closeRoom,
     join: () => void enterAndConnect(),
     toggleMicrophone: () => void mediaActions.toggleMicrophone(),
     toggleOutput: () => void toggleOutputWithMicrophone(),

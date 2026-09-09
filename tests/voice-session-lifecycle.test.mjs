@@ -31,32 +31,33 @@ test("join uses microphone intent and compensates a cancelled server enter", () 
 test("ChatRoomControl is only a shared controller-to-view boundary", () => {
   const control = read("src/components/chat/ChatRoomControl.tsx");
   const view = read("src/components/chat/voice/ChatRoomControlView.tsx");
-  const sheet = read("src/components/chat/voice/VoiceRoomSheet.tsx");
-  const sheetModels = read("src/components/chat/voice/voice-room-sheet-models.ts");
+  const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
+  const surfaceModels = read("src/components/chat/voice/voice-room-sheet-models.ts");
   const baseline = read(".architecture-baseline.json");
 
   assert.match(control, /useChatRoomControl\(props, ref\)/);
   assert.match(control, /<ChatRoomControlView controller=\{controller\}/);
   assert.doesNotMatch(control, /useState|mutateAsync|new Room/);
-  assert.match(view, /<VoiceRoomSheet/);
-  assert.match(sheet, /<VoiceRoomHeader/);
-  assert.match(sheet, /<VoiceRoomContent/);
-  assert.match(sheet, /<VoiceRoomFooter/);
-  assert.match(sheetModels, /identity: VoiceRoomIdentityModel/);
-  assert.match(sheetModels, /connection: VoiceRoomConnectionModel/);
-  assert.match(sheetModels, /session: VoiceRoomSessionModel/);
-  assert.match(sheetModels, /roomSwitcher: VoiceRoomSwitcherModel \| null/);
-  assert.match(sheet, /<VoiceRoomSwitcher/);
+  assert.match(view, /<VoiceRoomMainSurface/);
+  assert.match(surface, /<VoiceRoomHeader/);
+  assert.match(surface, /<VoiceRoomContent/);
+  assert.match(surface, /<VoiceRoomFooter/);
+  assert.match(surfaceModels, /identity: VoiceRoomIdentityModel/);
+  assert.match(surfaceModels, /VoiceRoomMainSurfaceProps/);
+  assert.match(surfaceModels, /connection: VoiceRoomConnectionModel/);
+  assert.match(surfaceModels, /session: VoiceRoomSessionModel/);
+  assert.match(surfaceModels, /roomSwitcher: VoiceRoomSwitcherModel \| null/);
+  assert.match(surface, /<VoiceRoomSwitcher/);
   assert.doesNotMatch(baseline, /ChatRoomControl\.tsx/);
 });
 
-test("room sheet owns one secondary panel and cancels stale fullscreen requests", () => {
-  const sheet = read("src/components/chat/voice/VoiceRoomSheet.tsx");
+test("room main surface owns one secondary panel and cancels stale fullscreen requests", () => {
+  const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
   const fullscreen = read("src/components/chat/voice/useVoiceRoomFullscreen.ts");
 
-  assert.match(sheet, /type SecondaryPanel = "settings" \| "soundboard" \| "invite" \| "messages" \| null/);
-  assert.match(sheet, /setSecondaryPanel\(null\);\s+void exitFullscreen\(\);\s+onClose\(\)/);
-  assert.doesNotMatch(sheet, /settingsOpen|soundboardOpen/);
+  assert.match(surface, /type SecondaryPanel = "settings" \| "soundboard" \| "invite" \| "messages" \| null/);
+  assert.match(surface, /setSecondaryPanel\(null\);\s+void exitFullscreen\(\);\s+onClose\(\)/);
+  assert.doesNotMatch(surface, /settingsOpen|soundboardOpen/);
   assert.match(fullscreen, /if \(pendingRef\.current\) return/);
   assert.match(fullscreen, /generationRef\.current !== generation/);
   assert.match(fullscreen, /document\.fullscreenElement === target/);

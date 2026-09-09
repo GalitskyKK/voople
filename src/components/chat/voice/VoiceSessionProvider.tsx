@@ -21,6 +21,7 @@ import type { ChatRoomControlHandle, VoiceControlState } from "../ChatRoomContro
 import { cn } from "@/lib/utils";
 import { IncomingCallOverlay } from "./IncomingCallOverlay";
 import { useIncomingVoiceCalls, type SubscribeToVoiceRooms } from "./useIncomingVoiceCalls";
+import { IDLE_VOICE_CONTROL_STATE } from "./voice-session-state";
 
 const ChatRoomControl = lazy(() =>
   import("../ChatRoomControl").then((module) => ({
@@ -42,17 +43,10 @@ export type VoiceSessionContextValue = {
   joinRoom: (session: VoiceSessionDescriptor) => boolean;
   openCoreRoom: (launch: CoreVoiceSessionLaunch) => void;
   openPanel: () => void;
+  minimizePanel: () => void;
   toggleMicrophone: () => void;
   toggleOutput: () => void;
   leaveRoom: () => void;
-};
-
-const IDLE_STATE: VoiceControlState = {
-  inside: false,
-  mediaStatus: "idle",
-  participantCount: 0,
-  micMuted: true,
-  outputMuted: false,
 };
 
 const VoiceSessionContext = createContext<VoiceSessionContextValue | null>(null);
@@ -67,7 +61,7 @@ export function VoiceSessionProvider({
   subscribeToVoiceRooms?: SubscribeToVoiceRooms;
 }) {
   const [activeSession, setActiveSession] = useState<VoiceSessionDescriptor | null>(null);
-  const [state, setState] = useState<VoiceControlState>(IDLE_STATE);
+  const [state, setState] = useState<VoiceControlState>(IDLE_VOICE_CONTROL_STATE);
   const controlRef = useRef<ChatRoomControlHandle>(null);
   const autoConnectPendingRef = useRef(false);
   const [initialCoreCredentials, setInitialCoreCredentials] = useState<EnabledVoiceMediaCredentials | null>(null);
@@ -92,7 +86,7 @@ export function VoiceSessionProvider({
         return;
       }
       if (activeSession?.chatId !== session.chatId) {
-        setState(IDLE_STATE);
+        setState(IDLE_VOICE_CONTROL_STATE);
         setActiveSession(session);
       } else {
         setActiveSession(session);
@@ -105,7 +99,7 @@ export function VoiceSessionProvider({
   const openCoreRoom = useCallback((launch: CoreVoiceSessionLaunch) => {
     setInitialCoreCredentials(launch.credentials);
     autoConnectPendingRef.current = true;
-    setState(IDLE_STATE);
+    setState(IDLE_VOICE_CONTROL_STATE);
     setActiveSession({
       chatId: launch.groupId,
       chatName: launch.room.name,
@@ -138,7 +132,7 @@ export function VoiceSessionProvider({
       : null;
     setInitialCoreCredentials(null);
     autoConnectPendingRef.current = !existingControl;
-    if (!existingControl) setState(IDLE_STATE);
+    if (!existingControl) setState(IDLE_VOICE_CONTROL_STATE);
     setActiveSession(session);
     existingControl?.join();
     return true;
@@ -155,6 +149,7 @@ export function VoiceSessionProvider({
         : next,
     );
   }, []);
+  const minimizePanel = useCallback(() => controlRef.current?.minimize(), []);
 
   const value = useMemo(
     () => ({
@@ -164,6 +159,7 @@ export function VoiceSessionProvider({
       joinRoom,
       openCoreRoom,
       openPanel: () => controlRef.current?.open(),
+      minimizePanel,
       toggleMicrophone: () => {
         if (state.inside) controlRef.current?.toggleMicrophone();
       },
@@ -174,7 +170,7 @@ export function VoiceSessionProvider({
         if (state.inside) controlRef.current?.leave();
       },
     }),
-    [activeSession, joinRoom, openCoreRoom, openRoom, state],
+    [activeSession, joinRoom, minimizePanel, openCoreRoom, openRoom, state],
   );
   const incoming = useIncomingVoiceCalls({
     busy: state.inside,
@@ -185,7 +181,7 @@ export function VoiceSessionProvider({
         activeSession?.chatId === call.chatId ? controlRef.current : null;
       autoConnectPendingRef.current = !existingControl;
       setInitialCoreCredentials(null);
-      setState(IDLE_STATE);
+      setState(IDLE_VOICE_CONTROL_STATE);
       setActiveSession({
         chatId: call.chatId,
         chatName: call.chatName,
@@ -242,4 +238,8 @@ export function useVoiceSession() {
     throw new Error("useVoiceSession must be used inside VoiceSessionProvider");
   }
   return value;
+}
+
+export function useOptionalVoiceSession() {
+  return useContext(VoiceSessionContext);
 }

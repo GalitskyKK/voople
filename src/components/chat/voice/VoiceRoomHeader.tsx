@@ -7,6 +7,7 @@ import {
   LockOpen,
   Maximize2,
   MessageSquareText,
+  Minus,
   Minimize2,
   Music2,
   Settings2,
@@ -34,6 +35,7 @@ type VoiceRoomHeaderProps = {
   access: VoiceRoomAccessModel;
   fullscreen: boolean;
   fullscreenPending: boolean;
+  onMinimize: () => void;
   onOpenSoundboard: () => void;
   onToggleRoomMessages: () => void;
   onOpenSettings: () => void;
@@ -50,6 +52,7 @@ export function VoiceRoomHeader({
   access,
   fullscreen,
   fullscreenPending,
+  onMinimize,
   onOpenSoundboard,
   onToggleRoomMessages,
   onOpenSettings,
@@ -96,6 +99,9 @@ export function VoiceRoomHeader({
       </div>
 
       <div className="voople-full-room__header-actions flex shrink-0 items-center gap-1">
+        <HeaderButton label="Свернуть комнату" onClick={onMinimize}>
+          <Minus className="h-4 w-4" />
+        </HeaderButton>
         {!identity.isDirect && identity.active && hasRoomMessages ? (
           <HeaderButton
             label={roomMessagesOpen ? "Закрыть сообщения комнаты" : "Открыть сообщения комнаты"}

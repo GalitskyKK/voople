@@ -52,8 +52,9 @@ export function AppShellFrame({
           )}
         >
           <div
+            data-voople-main-area=""
             className={cn(
-              "voople-shell__main flex min-w-0 flex-1 flex-col lg:min-h-0 lg:overflow-hidden",
+              "voople-shell__main relative flex min-w-0 flex-1 flex-col lg:min-h-0 lg:overflow-hidden",
               fixedViewport && "h-full min-h-0 overflow-hidden",
               mainClassName,
             )}

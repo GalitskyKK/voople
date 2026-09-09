@@ -177,6 +177,7 @@ export function DesktopShell({
   const [feedTab, setFeedTab] = useState<FeedTabId>("overview");
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const previousPathnameRef = useRef("/feed");
+  const roomSurfacePathRef = useRef(initialPathname ?? "/feed");
   const [viewerSummary, setViewerSummary] = useState<{
     username: string;
     displayName: string;
@@ -186,11 +187,17 @@ export function DesktopShell({
   } | null>(null);
   const { preferences } = useAppPreferences();
   const voiceSession = useVoiceSession();
+  const { minimizePanel: minimizeVoicePanel } = voiceSession;
   useNativeVoiceHeartbeat({
     config,
     accessToken: session.access_token,
     voiceSession,
   });
+
+  useEffect(() => {
+    if (roomSurfacePathRef.current !== pathname) minimizeVoicePanel();
+    roomSurfacePathRef.current = pathname;
+  }, [minimizeVoicePanel, pathname]);
 
   useEffect(() => {
     let active = true;

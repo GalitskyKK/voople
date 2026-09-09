@@ -166,15 +166,15 @@ test("desktop sheets stay below the titlebar and fullscreen targets app content"
   const desktopApp = read("desktop/src/App.tsx");
   const desktopStyles = read("desktop/src/styles.css");
   const sheet = read("src/components/ui/Sheet.tsx");
-  const roomSheet = read("src/components/chat/voice/VoiceRoomSheet.tsx");
+  const roomSurface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
   const fullscreen = read("src/components/chat/voice/useVoiceRoomFullscreen.ts");
 
   assert.match(desktopApp, /id="voople-desktop-overlay-root"/);
   assert.match(desktopStyles, /\.desktop-overlay-root\s*\{[\s\S]*position: absolute;[\s\S]*inset: 0;/);
   assert.match(sheet, /desktopOverlayRoot[\s\S]*"absolute inset-0/);
   assert.match(fullscreen, /querySelector<HTMLElement>\("\.desktop-window-content"\)/);
-  assert.match(roomSheet, /fullscreen && "h-full max-h-none/);
-  assert.doesNotMatch(roomSheet, /fullscreen && "h-dvh/);
+  assert.match(roomSurface, /fullscreen \? "fixed inset-0 z-\[200\]"/);
+  assert.doesNotMatch(roomSurface, /fullscreen && "h-dvh/);
   assert.doesNotMatch(sheet, /z-\[300\]|z-\[301\]/);
 });
 

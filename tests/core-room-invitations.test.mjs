@@ -35,7 +35,7 @@ test("core Room invitations are session-bound, private and idempotent", async ()
 
 test("Room invite sender and notification action share the core join lifecycle", async () => {
   const [sheet, panel, notifications, notificationUi, action, notificationService, preview, route, desktop] = await Promise.all([
-    readFile(new URL("../src/components/chat/voice/VoiceRoomSheet.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/VoiceRoomMainSurface.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/components/chat/voice/CoreRoomInvitePanel.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/components/notifications/NotificationsView.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/components/notifications/notification-ui.ts", import.meta.url), "utf8"),

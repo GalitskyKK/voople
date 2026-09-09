@@ -100,7 +100,7 @@ export type VoiceRoomMessagesModel = {
   roomKind: GroupNowRoomKind;
 };
 
-export type VoiceRoomSheetProps = {
+export type VoiceRoomMainSurfaceProps = {
   overlay: { open: boolean; onClose: () => void };
   identity: VoiceRoomIdentityModel;
   connection: VoiceRoomConnectionModel;

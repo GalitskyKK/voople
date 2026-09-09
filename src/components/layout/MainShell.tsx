@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
+import { useOptionalVoiceSession } from "@/components/chat/voice/VoiceSessionProvider";
 import { PlayerShell } from "@/components/player/PlayerShell";
 import { useIsLgViewport } from "@/hooks/useIsLgViewport";
 import { isMessagesThreadPath } from "@/lib/layout/messages-path";
@@ -40,6 +41,9 @@ export function MainShell({
   const pathname = usePathname();
   const router = useRouter();
   const shellScrollRef = useRef<HTMLDivElement>(null);
+  const roomSurfacePathRef = useRef(pathname);
+  const voiceSession = useOptionalVoiceSession();
+  const minimizeVoicePanel = voiceSession?.minimizePanel;
   const isLg = useIsLgViewport();
   const scrollMode = useScrollMode(pathname);
   const usesWindowScroll = scrollMode === "window";
@@ -58,6 +62,11 @@ export function MainShell({
     () => registerInternalNavigationAdapter((href) => router.push(href)),
     [router],
   );
+
+  useEffect(() => {
+    if (roomSurfacePathRef.current !== pathname) minimizeVoicePanel?.();
+    roomSurfacePathRef.current = pathname;
+  }, [minimizeVoicePanel, pathname]);
 
   return (
     <AppShellFrame

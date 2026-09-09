@@ -22,17 +22,17 @@ test("room surface phase keeps explicit transitions ahead of stale server state"
   assert.equal(resolveVoiceRoomSurfacePhase({ transition: null, loading: false, inside: false, mediaStatus: "idle", hasError: false }), "preview");
 });
 
-test("prejoin, connecting and active room reuse one stable sheet geometry", () => {
-  const sheet = read("src/components/chat/voice/VoiceRoomSheet.tsx");
+test("prejoin, connecting and active room reuse one stable main-area geometry", () => {
+  const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
   const header = read("src/components/chat/voice/VoiceRoomHeader.tsx");
   const content = read("src/components/chat/voice/VoiceRoomContent.tsx");
   const control = read("src/components/chat/voice/useChatRoomControl.ts");
   const surfaceSession = read("src/components/chat/voice/useVoiceRoomSurfaceSession.ts");
 
-  assert.match(sheet, /h-\[min\(94dvh,860px\)\]/);
-  assert.doesNotMatch(sheet, /identity\.active\s*\?/);
+  assert.match(surface, /voople-full-room h-full min-h-0 w-full/);
+  assert.doesNotMatch(surface, /identity\.active\s*\?/);
   assert.doesNotMatch(header, /identity\.active\s*\?\s*\([\s\S]{0,240}onToggleFullscreen/);
-  assert.match(sheet, /session=\{session\}/);
+  assert.match(surface, /session=\{session\}/);
   assert.match(content, /sessionPhase === "connecting"/);
   assert.match(content, /sessionPhase === "leaving"/);
   assert.match(content, /sessionPhase === "loading"/);
@@ -52,8 +52,34 @@ test("room errors name the failed operation instead of using generic copy", () =
   assert.equal(resolveVoiceRoomErrorTitle("Повторить подключение"), "Не удалось подключиться к комнате");
 });
 
+test("full Room replaces main content and minimizes without ending its session", () => {
+  const shell = read("src/components/layout/AppShellFrame.tsx");
+  const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
+  const view = read("src/components/chat/voice/ChatRoomControlView.tsx");
+  const header = read("src/components/chat/voice/VoiceRoomHeader.tsx");
+  const control = read("src/components/chat/voice/useChatRoomControl.ts");
+  const provider = read("src/components/chat/voice/VoiceSessionProvider.tsx");
+  const webShell = read("src/components/layout/MainShell.tsx");
+  const desktopShell = read("desktop/src/shell/DesktopShell.tsx");
+
+  assert.match(shell, /data-voople-main-area=""/);
+  assert.match(shell, /voople-shell__main relative/);
+  assert.match(surface, /querySelector<HTMLElement>\("\[data-voople-main-area\]"\)/);
+  assert.match(surface, /createPortal\(/);
+  assert.match(surface, /data-voople-room-surface="full"/);
+  assert.doesNotMatch(surface, /<Sheet\s+open=\{open\}/);
+  assert.match(header, /label="Свернуть комнату"/);
+  assert.match(view, /dock && !sheet\.overlay\.open/);
+  assert.match(control, /minimize: closeRoom/);
+  assert.doesNotMatch(control, /minimize:[\s\S]{0,120}leaveRoom/);
+  assert.match(provider, /minimizePanel: \(\) => void/);
+  assert.match(provider, /controlRef\.current\?\.minimize\(\)/);
+  assert.match(webShell, /minimizeVoicePanel\?\.\(\)/);
+  assert.match(desktopShell, /minimizeVoicePanel\(\)/);
+});
+
 test("full room uses one shared reference-aligned visual frame", () => {
-  const sheet = read("src/components/chat/voice/VoiceRoomSheet.tsx");
+  const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
   const header = read("src/components/chat/voice/VoiceRoomHeader.tsx");
   const content = read("src/components/chat/voice/VoiceRoomContent.tsx");
   const stage = read("src/components/chat/voice/VoiceRoomStage.tsx");
@@ -66,7 +92,7 @@ test("full room uses one shared reference-aligned visual frame", () => {
   const footer = read("src/components/chat/voice/VoiceRoomFooter.tsx");
   const styles = read("src/app/globals.css");
 
-  assert.match(sheet, /voople-full-room/);
+  assert.match(surface, /voople-full-room/);
   assert.match(header, /voople-full-room__header/);
   assert.match(header, /voople-full-room__title/);
   assert.match(header, /text-\[var\(--foreground\)\] opacity-70/);
@@ -77,8 +103,8 @@ test("full room uses one shared reference-aligned visual frame", () => {
   assert.match(switcher, /aria-label="Комнаты группы"/);
   assert.match(switcher, /aria-current=\{current \? "true" : undefined\}/);
   assert.match(switcher, /aria-busy=\{pending \|\| undefined\}/);
-  assert.match(sheet, /roomSwitcher \? <VoiceRoomSwitcher/);
-  assert.match(sheet, /pendingRoom \? <VoiceRoomSwitchStatus roomName=\{pendingRoom\.name\}/);
+  assert.match(surface, /roomSwitcher \? <VoiceRoomSwitcher/);
+  assert.match(surface, /pendingRoom \? <VoiceRoomSwitchStatus roomName=\{pendingRoom\.name\}/);
   assert.match(switchStatus, /role="status"/);
   assert.match(switchStatus, /aria-live="polite"/);
   assert.match(switchStatus, /motion-reduce:animate-none/);

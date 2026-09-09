@@ -20,6 +20,7 @@ export type ChatRoomControlProps = {
 
 export type ChatRoomControlHandle = {
   open: () => void;
+  minimize: () => void;
   join: () => void;
   toggleMicrophone: () => void;
   toggleOutput: () => void;

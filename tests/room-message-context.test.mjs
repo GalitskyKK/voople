@@ -61,9 +61,9 @@ test("messages from different Room sessions never merge into one visual group", 
   assert.match(grouping, /messageRoomContextKey\(second\.roomContext\)/);
 });
 
-test("the Room sheet reuses Group history and composer through an exact session filter", () => {
+test("the Room surface reuses Group history and composer through an exact session filter", () => {
   const panel = read("src/components/chat/voice/RoomMessagesPanel.tsx");
-  const sheet = read("src/components/chat/voice/VoiceRoomSheet.tsx");
+  const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
   const header = read("src/components/chat/voice/VoiceRoomHeader.tsx");
   const control = read("src/components/chat/voice/useChatRoomControl.ts");
 
@@ -72,8 +72,8 @@ test("the Room sheet reuses Group history and composer through an exact session 
   assert.match(panel, /<ChatMessageBubble/);
   assert.match(panel, /<ChatComposer/);
   assert.doesNotMatch(panel, /markRead/);
-  assert.match(sheet, /secondaryPanel === "messages"/);
-  assert.match(sheet, /<RoomMessagesPanel model=\{messages\}/);
+  assert.match(surface, /secondaryPanel === "messages"/);
+  assert.match(surface, /<RoomMessagesPanel model=\{messages\}/);
   assert.match(header, /Открыть сообщения комнаты/);
   assert.match(control, /liveSessionId: coreSession\.join\.sessionId/);
   assert.match(control, /chatId: coreSession\.groupId/);

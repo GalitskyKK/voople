@@ -14,6 +14,7 @@ import { profileCanvasRouter } from "./routers/profile-canvas";
 import { profileRouter } from "./routers/profile";
 import { questionsRouter } from "./routers/questions";
 import { searchRouter } from "./routers/search";
+import { savedMessagesRouter } from "./routers/saved-messages";
 import { shopRouter } from "./routers/shop";
 import { socialRouter } from "./routers/social";
 import { statusRouter } from "./routers/status";
@@ -32,6 +33,7 @@ export const appRouter = createTRPCRouter({
   profileCanvas: profileCanvasRouter,
   questions: questionsRouter,
   search: searchRouter,
+  savedMessages: savedMessagesRouter,
   status: statusRouter,
   playlist: playlistRouter,
   chat: chatRouter,

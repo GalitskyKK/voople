@@ -55,6 +55,25 @@ test("core rework surfaces require both internal channel and server capability",
   }).enabled, true);
 });
 
+test("Saved Messages stays hidden until its internal migration capability is ready", () => {
+  assert.equal(resolveFeatureAvailability("saved_messages", {
+    platform: "web",
+    channel: "stable",
+    serverCapabilities: new Set(["saved_messages"]),
+  }).reason, "channel");
+
+  assert.equal(resolveFeatureAvailability("saved_messages", {
+    platform: "windows",
+    channel: "internal",
+  }).reason, "server");
+
+  assert.equal(resolveFeatureAvailability("saved_messages", {
+    platform: "windows",
+    channel: "internal",
+    serverCapabilities: new Set(["saved_messages"]),
+  }).enabled, true);
+});
+
 test("web beta surfaces stay hidden on unsupported platforms and stable", () => {
   assert.equal(resolveFeatureAvailability("feed_recommendations", {
     platform: "web",

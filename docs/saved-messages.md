@@ -1,7 +1,8 @@
 # Saved Messages
 
-Status: P1 foundation. The storage contract is implemented; transport and UI
-remain intentionally unavailable until their complete owner-only slice lands.
+Status: P1 server slice. The storage and owner-only transport contracts are
+implemented; UI remains intentionally unavailable until its complete shared
+web/desktop/mobile slice lands.
 
 `Избранное` is a private message surface owned by one user. It is not a direct
 conversation with a synthetic account, not a one-member Group and not a local
@@ -12,6 +13,8 @@ presence, notifications or relationship signals.
 
 - `saved_messages.owner_id` is mandatory and every server read/write must add
   the authenticated user ID as an equality predicate.
+- The entire transport is fail-closed behind the internal `saved_messages`
+  server capability, so stable clients cannot call it before migration rollout.
 - Browser roles have no table privileges or RLS policy. Only server-side
   service-role code may access the table.
 - Client-generated UUIDs provide idempotent retry without duplicating a saved
@@ -20,6 +23,8 @@ presence, notifications or relationship signals.
   supplies another user's message ID.
 - Text search is owner-scoped and backed by the `simple` PostgreSQL text-search
   index; private content must not enter telemetry or recommendation indexes.
+- Pagination uses a stable `(created_at, id)` cursor, and every list, search,
+  reply, edit, delete and idempotency lookup includes `owner_id`.
 - Attachments reuse the existing private chat upload policy, ownership checks,
   MIME allowlist and size limits. Raw object keys never become public URLs.
 

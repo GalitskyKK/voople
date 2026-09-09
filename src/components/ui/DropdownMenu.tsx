@@ -108,7 +108,13 @@ export function DropdownMenu({
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onOpenChange(false);
+      if (event.key !== "Escape") return;
+      onOpenChange(false);
+      requestAnimationFrame(() => {
+        triggerRef.current
+          ?.querySelector<HTMLElement>('button, [href], input, [tabindex]:not([tabindex="-1"])')
+          ?.focus();
+      });
     };
 
     window.addEventListener("pointerdown", onPointerDown);

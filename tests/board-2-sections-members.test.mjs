@@ -14,12 +14,17 @@ test("Board 2 keeps section creation in the section strip on web and desktop", (
 
   assert.match(sections, /createAction/);
   assert.match(sections, /<ChatSectionPicker/);
-  assert.match(sections, /slice\(0, 2\)/);
+  assert.doesNotMatch(sections, /topicsLayout/);
   assert.doesNotMatch(sections, /overflow-x-auto/);
   assert.match(picker, /type="search"/);
   assert.match(picker, /Раздел не найден/);
   assert.match(picker, /data-dropdown-autofocus/);
+  assert.match(picker, /Непрочитанное/);
+  assert.match(picker, /unreadElsewhere/);
+  assert.match(picker, /"ArrowDown", "ArrowUp", "Home", "End"/);
+  assert.match(picker, /ChatUnreadBadge/);
   assert.match(dropdown, /contentRole\?: "menu" \| "dialog"/);
+  assert.match(dropdown, /requestAnimationFrame/);
   assert.match(web, /<SubchatCreator/);
   assert.match(desktop, /<DesktopSubchatCreatorAdapter/);
   assert.doesNotMatch(header, /SubchatCreator/);

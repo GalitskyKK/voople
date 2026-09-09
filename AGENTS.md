@@ -17,23 +17,28 @@ directory.
 ## Product source gate
 
 Before changing product behaviour, layout or presentation, read the relevant
-parts of the tracked canonical product sources:
+parts of the tracked canonical product sources in this priority order:
 
-1. `rework_plan/VOOPLE_CORE_REWORK_PLAN.md`
-2. `docs/rework-integration-plan.md`
-3. `temp_info_for_redesign_and_improvement/VOOPLE_FINAL_PRODUCT_SOCIAL_UX_IMPLEMENTATION_PLAN.md`
-4. `docs/product-delivery-matrix.md`
-5. `docs/core-rework-architecture.md` for Group, Room, LiveSession or rollout work
+1. `rework_plan/VOOPLE_PRODUCT_DECISION_MEMO.md`
+2. `rework_plan/VOOPLE_IA_UI_SPEC.md`
+3. `rework_plan/VOOPLE_IMPLEMENTATION_BRIEF.md`
+4. `rework_plan/VOOPLE_CORE_REWORK_PLAN.md`
+5. `docs/rework-integration-plan.md`
+6. `temp_info_for_redesign_and_improvement/VOOPLE_FINAL_PRODUCT_SOCIAL_UX_IMPLEMENTATION_PLAN.md`
+7. `docs/product-delivery-matrix.md`
+8. `docs/core-rework-architecture.md` for Group, Room, LiveSession or rollout work
 
-The core rework plan owns current core behaviour, navigation and visual
-direction. The integration plan records the mandatory addendum corrections and
-overrides the core plan where they conflict. The final social/UX plan
-supplements secondary surfaces only where it does not conflict with either
-core source. The real application remains
-the source for working behaviour that the plans do not explicitly replace.
-The generated image in `rework_plan` is a moodboard, not a literal layout spec;
-apply the corrections listed in the plan's Visual baseline section. Preserve
-the real two-column profile skeleton as the documented exception.
+The decision memo owns the current product bet. The IA/UI specification owns
+navigation, composition and interaction; the implementation brief owns the
+accepted delivery order and supersedes older active instructions where it says
+so. The earlier core rework and integration plans remain historical context and
+fallback guidance only where they do not conflict with these three sources.
+The final social/UX plan supplements secondary surfaces only. The real
+application remains the source for working behaviour that the plans do not
+explicitly replace. Images in `rework_plan` are visual references, not literal
+layout specifications; apply the corrections and measurements in the IA/UI
+specification. Preserve the real two-column profile skeleton as the documented
+exception.
 
 For every completed product slice, update `docs/product-delivery-matrix.md` with
 the web, desktop, responsive, state and test evidence. A route, placeholder,

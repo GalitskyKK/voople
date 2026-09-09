@@ -1,8 +1,9 @@
 # Saved Messages
 
-Status: P1 gated UI slice. Storage, owner-only transport and a shared web/
-desktop surface are implemented behind the internal capability. Migration and
-authenticated visual evidence remain intentionally pending.
+Status: deferred gated UI slice. Storage, owner-only transport and a shared web/
+desktop surface are implemented behind the internal capability. Migration 67
+is applied and registered; authenticated visual evidence and explicit product
+promotion remain pending behind the messenger/live IA work.
 
 `Избранное` is a private message surface owned by one user. It is not a direct
 conversation with a synthetic account, not a one-member Group and not a local
@@ -36,4 +37,4 @@ identity. It includes loading, empty, error/retry, offline draft preservation,
 pagination, search and edit/delete states. Its route and sidebar entry stay hidden
 unless the server capability is enabled. Optimistic reconciliation with rollback
 and draft preservation is implemented. Mobile visual evidence, export/retention
-and migration rollout remain required.
+and a later product-priority decision remain required.

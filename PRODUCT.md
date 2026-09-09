@@ -56,11 +56,11 @@ identity are parts of the same relationship graph.
 - UI must support Void and Light themes, keyboard access, reduced motion and
   responsive widths of 360, 390, 1024 and 1440 px.
 - The canonical product sources remain the authority for behavior and design:
-  `temp_info_for_redesign_and_improvement/VOOPLE_PROJECT_SPEC.md`,
-  `temp_info_for_redesign_and_improvement/VOOPLE_FINAL_PRODUCT_SOCIAL_UX_IMPLEMENTATION_PLAN.md`,
-  `temp_info_for_redesign_and_improvement/VOOPLE_REFERENCE_MAP.md`,
-  `temp_info_for_redesign_and_improvement/VOOPLE_DESIGN_RULES.md`, the tracked
-  core rework plan and its approved addendum summary.
+  `rework_plan/VOOPLE_PRODUCT_DECISION_MEMO.md`,
+  `rework_plan/VOOPLE_IA_UI_SPEC.md` and
+  `rework_plan/VOOPLE_IMPLEMENTATION_BRIEF.md` lead the current messenger/live
+  implementation. Earlier project, social/UX, reference and core-rework plans
+  remain supplementary where they do not conflict with that decision set.
 
 ## Brand Commitments
 
@@ -89,6 +89,10 @@ customers, testimonials or adoption claims.
    supported clients.
 5. Visual fidelity includes loading, empty, offline, error, reconnect and narrow
    viewport states; a static shell is not a completed feature.
+6. Opening a Group defaults to Chat. Joining Lobby or a Room is one explicit
+   action and opens Full Room in the main content area; navigating elsewhere
+   preserves the same live session as Mini Room instead of opening another
+   product window.
 
 ## Accessibility & Inclusion
 

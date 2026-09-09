@@ -1,8 +1,10 @@
 # Core rework architecture
 
-Status: accepted foundation for the staged core rework. This document turns
-`rework_plan/VOOPLE_CORE_REWORK_PLAN.md` into implementation invariants without
-making the new shell public before its data contracts are ready.
+Status: accepted foundation for the staged core rework. The current product and
+interface contract is owned by `rework_plan/VOOPLE_PRODUCT_DECISION_MEMO.md`,
+`rework_plan/VOOPLE_IA_UI_SPEC.md` and
+`rework_plan/VOOPLE_IMPLEMENTATION_BRIEF.md`. This document retains the data,
+authorization and rollout invariants that support that contract.
 
 ## Aggregate model
 
@@ -54,8 +56,10 @@ and room-kind snapshots.
 
 The snapshot is intentional: a temporary room can later be archived or removed
 without erasing the context shown in history, search, pins, replies or media.
-A Room side panel is a filtered view of Group Chat messages with that context;
-it is not a second message history.
+Full Room reuses the ordinary selected Group/Section conversation in a
+contextual drawer. It must not filter the conversation by Room or LiveSession.
+The immutable Room snapshot is metadata on each message, not a second message
+history or an access boundary.
 
 ## Feature availability
 
@@ -175,17 +179,20 @@ data and domain code but do not define the primary messenger navigation. They
 may remain secondary or web-beta surfaces. Account security, privacy, legal,
 notifications and recovery are never hidden.
 
-## First implementation slices
+## Current implementation slices
 
-1. Foundation: tracked source gate, feature availability registry and additive
-   schema.
-2. Read model: Groups, Lobby, Rooms, participant presence and privacy filters.
-3. Mutation model: create, pin, archive, join, switch and leave with concurrency
-   tests.
-4. Shared shell: compact navigation, Global Now and Group Now behind an internal
-   flag.
-5. Room and messenger integration, including the constrained guest boundary,
-   followed by the staged rollout above.
+The foundation, Room read/mutation contracts and constrained guest boundary are
+already present. New interface work follows `VOOPLE_IMPLEMENTATION_BRIEF.md`:
+
+1. source-of-truth alignment;
+2. everyday messenger with Chat default and bounded Live Shelf;
+3. Full/Mini Room continuity with Full Room in the main content area;
+4. one shared Group/Section conversation in main and contextual drawer, plus
+   screen-share composition;
+5. real guest acquisition acceptance.
+
+Saved Messages, profiles, discovery and economy remain preserved secondary
+capabilities and do not interrupt this sequence.
 
 No schema-only slice is called product-complete. The delivery matrix remains the
 gate for authorization, states, web/desktop parity, responsive behaviour and

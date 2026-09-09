@@ -343,7 +343,7 @@ export function DesktopChatThreadAdapter({
           message={item.message}
           viewerId={session.user.id}
           groupPosition={item.groupPosition}
-          showSender={isGroup}
+          showSender
           onReply={setReplyTo}
           onEdit={(message) => {
             setReplyTo(null);

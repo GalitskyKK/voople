@@ -183,7 +183,7 @@ export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps
           }}
           onAddToPlaylist={actions.setPlaylistConfirmMessage}
           onOpenImage={setLightboxUrl}
-          showSender={isGroup}
+          showSender
           onToggleReaction={(message, reaction) =>
             actions.toggleMessageReaction(message.id, {
               emoji: reaction.emoji,

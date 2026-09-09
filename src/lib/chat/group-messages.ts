@@ -19,6 +19,7 @@ function messagesBelongTogether(
   second: ChatMessageView | undefined,
 ) {
   if (!first || !second || first.senderId !== second.senderId) return false;
+  if (first.replyTo || second.replyTo) return false;
   if (dayKeyFromIso(first.createdAt) !== dayKeyFromIso(second.createdAt)) return false;
   if (messageRoomContextKey(first.roomContext) !== messageRoomContextKey(second.roomContext)) {
     return false;

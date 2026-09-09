@@ -2266,13 +2266,16 @@ button.voople-post-action:active {
 }
 
 .voople-chat-bubble__body {
-  box-shadow: 0 1px 1px color-mix(in srgb, var(--foreground) 7%, transparent);
-  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  box-shadow: none;
 }
 
-.voople-chat-bubble:hover .voople-chat-bubble__body {
-  border-color: color-mix(in srgb, var(--theme-accent) 24%, var(--app-border));
-  box-shadow: 0 3px 12px color-mix(in srgb, var(--background) 45%, transparent);
+.voople-chat-stream-row {
+  transition: background-color 140ms ease;
+}
+
+.voople-chat-stream-row:hover,
+.voople-chat-stream-row:focus-within {
+  background: color-mix(in srgb, var(--app-surface-soft) 62%, transparent);
 }
 
 .voople-chat-bubble-row--selection {

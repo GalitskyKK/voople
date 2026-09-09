@@ -58,8 +58,10 @@ export function ChatMessageBubbleVisual({
   const isRoomEvent = message.content?.some((node) => node.type === "roomEvent") ?? false;
   const selectionActive = selectionState !== undefined;
   const hasText = Boolean(text?.trim());
+  const startsBlock = groupPosition === "only" || groupPosition === "start";
+  const showsBlockHeader = showSender && startsBlock;
   const messageMeta = (
-    <span className="voople-chat-bubble__meta ml-2 inline-flex translate-y-0.5 items-center gap-0.5 whitespace-nowrap text-[10px] leading-none text-[var(--app-muted)]">
+    <span className="voople-chat-bubble__meta ml-1.5 inline-flex translate-y-0.5 items-center gap-0.5 whitespace-nowrap text-[11px] leading-none text-[var(--app-muted)]">
       <LocalMessageTime iso={createdAt} />
       {isMine ? <MessageReadTicks readAt={readAt} /> : null}
     </span>
@@ -81,12 +83,11 @@ export function ChatMessageBubbleVisual({
   return (
     <div
       className={cn(
-        "voople-chat-bubble-row group/bubble relative flex w-full items-end gap-2",
+        "voople-chat-stream-row voople-chat-bubble-row group/bubble relative flex w-full items-start gap-2 rounded-[var(--app-radius-sm)] px-1 py-0.5",
         selectionActive && "voople-chat-bubble-row--selection",
         selectionState && "voople-chat-bubble-row--selected",
-        isMine ? "justify-end" : "justify-start",
-        (groupPosition === "only" || groupPosition === "start") && "mt-1.5",
-        className
+        startsBlock && "mt-2.5 pt-1.5",
+        className,
       )}
       onClick={selectionActive ? onClick : undefined}
       onContextMenu={selectionActive ? onContextMenu : undefined}
@@ -99,18 +100,9 @@ export function ChatMessageBubbleVisual({
           {selectionState ? <Check className="h-3.5 w-3.5" /> : null}
         </span>
       ) : null}
-      {/* {showSender && !isMine ? (
-        <div className="w-8 shrink-0">
-          {groupPosition === "only" || groupPosition === "end" ? senderAvatar : null}
-        </div>
-      ) : null} */}
-      {senderAvatar ? (
-        <div
-          className={cn(
-            "w-8 shrink-0",
-            showSender && !isMine ? "block" : "hidden",
-          )}>
-          {groupPosition === "only" || groupPosition === "end" ? senderAvatar : null}
+      {showSender ? (
+        <div className="w-8 shrink-0 pt-0.5">
+          {startsBlock ? senderAvatar : null}
         </div>
       ) : null}
       {swipeOffset > 0 && !selectionActive ? (
@@ -123,9 +115,9 @@ export function ChatMessageBubbleVisual({
       ) : null}
       <div
         className={cn(
-          "voople-chat-bubble relative max-w-[min(86%,36rem)]",
+          "voople-chat-bubble relative min-w-0 w-full max-w-[44rem]",
           swipeDragging && "voople-chat-bubble--swiping",
-          isMine ? "voople-chat-bubble--mine" : "voople-chat-bubble--theirs"
+          isMine ? "voople-chat-bubble--mine" : "voople-chat-bubble--theirs",
         )}
         style={swipeOffset > 0 ? { transform: `translateX(${swipeOffset}px)` } : undefined}
         onClick={selectionActive ? undefined : onClick}
@@ -139,40 +131,36 @@ export function ChatMessageBubbleVisual({
         role={!selectionActive && interactive ? "button" : undefined}
         tabIndex={!selectionActive && interactive ? 0 : undefined}>
         {menu}
+        {showsBlockHeader ? (
+          <div className="voople-chat-bubble__header flex min-h-5 min-w-0 flex-wrap items-center gap-x-1.5 text-xs leading-4">
+            {message.sender ? (
+              <DisplayNameWithPin
+                hasVooplePlus={message.sender.hasVooplePlus}
+                size="xs"
+                className="max-w-full font-semibold text-[var(--foreground)]"
+              >
+                {message.sender.displayName}
+              </DisplayNameWithPin>
+            ) : (
+              <span className="font-semibold text-[var(--foreground)]">
+                {isMine ? "Вы" : "Участник"}
+              </span>
+            )}
+            {isMine ? <span className="text-[var(--theme-accent)]">· вы</span> : null}
+            {message.roomContext ? (
+              <>
+                <span className="text-[var(--app-muted)]" aria-hidden="true">·</span>
+                <ChatMessageRoomContext context={message.roomContext} />
+              </>
+            ) : null}
+            <span className="ml-auto inline-flex items-center gap-0.5 text-[11px] text-[var(--app-muted)]">
+              <LocalMessageTime iso={createdAt} />
+              {isMine ? <MessageReadTicks readAt={readAt} /> : null}
+            </span>
+          </div>
+        ) : null}
         <div
-          className={cn(
-            "voople-chat-bubble__body flex flex-col gap-1 rounded-[1.15rem] px-3 py-1.5 text-sm leading-[1.45]",
-            isMine
-              ? "bg-[color-mix(in_srgb,var(--theme-accent)_22%,var(--app-surface))] text-[var(--foreground)]"
-              : "border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--foreground)]",
-            groupPosition === "start" &&
-              (isMine
-                ? "rounded-br-lg 2xl:rounded-bl-lg 2xl:rounded-br-[1.15rem]"
-                : "rounded-bl-lg"),
-
-            groupPosition === "middle" &&
-              (isMine ? "rounded-r-lg 2xl:rounded-l-lg 2xl:rounded-r-[1.15rem]" : "rounded-l-lg"),
-
-            (groupPosition === "only" || groupPosition === "end") &&
-              (isMine
-                ? "rounded-br-md 2xl:rounded-bl-md 2xl:rounded-br-[1.15rem]"
-                : "rounded-bl-md")
-          )}>
-          {showSender &&
-          !isMine &&
-          message.sender &&
-          (groupPosition === "only" || groupPosition === "start") ? (
-            <DisplayNameWithPin
-              hasVooplePlus={message.sender.hasVooplePlus}
-              size="xs"
-              className="max-w-full px-0.5 text-[11px] font-semibold text-[var(--theme-accent)]">
-              {message.sender.displayName}
-            </DisplayNameWithPin>
-          ) : null}
-          {message.roomContext &&
-          (groupPosition === "only" || groupPosition === "start") ? (
-            <ChatMessageRoomContext context={message.roomContext} />
-          ) : null}
+          className="voople-chat-bubble__body flex flex-col gap-1 py-0.5 text-sm leading-5 text-[var(--foreground)]">
           {replyTo ? (
             <div
               className={cn(
@@ -195,7 +183,7 @@ export function ChatMessageBubbleVisual({
           {hasText ? (
             <p className="whitespace-pre-wrap break-words">
               <ChatMessageContent nodes={message.content} fallback={text ?? ""} />
-              <span className="float-right">{messageMeta}</span>
+              {!showsBlockHeader ? <span className="float-right">{messageMeta}</span> : null}
             </p>
           ) : null}
 
@@ -227,7 +215,7 @@ export function ChatMessageBubbleVisual({
             </div>
           ) : null}
 
-          {!hasText ? <div className="flex justify-end">{messageMeta}</div> : null}
+          {!hasText && !showsBlockHeader ? <div className="flex justify-end">{messageMeta}</div> : null}
         </div>
       </div>
     </div>

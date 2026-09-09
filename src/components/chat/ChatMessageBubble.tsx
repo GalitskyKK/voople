@@ -7,7 +7,6 @@ import { useIsLgViewport } from "@/hooks/useIsLgViewport";
 import { useSwipeToReply } from "@/hooks/useSwipeToReply";
 import { messageHasMusicForPlaylist } from "@/lib/chat/playlist-from-message";
 import type { ChatReactionEmoji } from "@/lib/chat/reactions";
-import { cn } from "@/lib/utils";
 import type { ChatMessageView } from "@/types/chat";
 
 import { ChatMessageAttachment } from "./ChatMessageAttachment";
@@ -123,7 +122,7 @@ export function ChatMessageBubble({
       menu={
         hasMenu && onReply && !selectionMode ? (
           <div
-            className={cn("absolute top-1/2 z-20 -translate-y-1/2", isMine ? "-left-9" : "-right-9")}
+            className="absolute -right-9 top-1/2 z-20 -translate-y-1/2"
             onClick={(event) => event.stopPropagation()}
             onKeyDown={(event) => event.stopPropagation()}>
             <ChatMessageMenu

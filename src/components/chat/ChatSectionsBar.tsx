@@ -33,8 +33,8 @@ export function ChatSectionsBar({
           viewerRole={viewerRole}
         />
       }
-      renderDestination={(chat, className, children) => (
-        <Link key={chat.id} href={`/messages/${chat.id}`} className={className}>
+      renderDestination={(chat, className, children, onNavigate) => (
+        <Link key={chat.id} href={`/messages/${chat.id}`} className={className} onClick={onNavigate}>
           {children}
         </Link>
       )}

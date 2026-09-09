@@ -113,6 +113,7 @@ test("messenger visual language is shared by web and desktop group threads", () 
   const desktop = source("desktop/src/adapters/DesktopChatThreadAdapter.tsx");
   const identity = source("src/components/chat/GroupManagementTrigger.tsx");
   const sections = source("src/components/chat/ChatSectionsBarView.tsx");
+  const sectionPicker = source("src/components/chat/ChatSectionPicker.tsx");
   const composer = source("src/components/chat/ChatComposerVisual.tsx");
   const styles = source("src/app/globals.css");
 
@@ -122,7 +123,9 @@ test("messenger visual language is shared by web and desktop group threads", () 
   assert.match(identity, /voople-group-header-identity/);
   assert.match(identity, /voople-group-identity__name/);
   assert.match(identity, /voople-group-identity__meta/);
-  assert.match(sections, /voople-chat-sections__item--active/);
+  assert.match(sectionPicker, /voople-chat-sections__item--active/);
+  assert.match(sections, /ChatSectionPicker/);
+  assert.match(sectionPicker, /Найти раздел/);
   assert.match(composer, /voople-chat-composer__surface/);
   assert.match(styles, /\.voople-chat-window__header--group/);
   assert.match(styles, /\.voople-chat-sections__item--active::after/);

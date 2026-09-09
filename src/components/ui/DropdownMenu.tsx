@@ -25,6 +25,8 @@ type DropdownMenuProps = {
   anchorPoint?: { x: number; y: number } | null;
   align?: "start" | "end";
   side?: "bottom" | "left" | "right" | "inward";
+  contentRole?: "menu" | "dialog";
+  ariaLabel?: string;
   menuClassName?: string;
   className?: string;
 };
@@ -39,6 +41,8 @@ export function DropdownMenu({
   anchorPoint = null,
   align = "end",
   side = "bottom",
+  contentRole = "menu",
+  ariaLabel,
   menuClassName,
   className,
 }: DropdownMenuProps) {
@@ -128,13 +132,16 @@ export function DropdownMenu({
     if (!position || focusedOpenRef.current) return;
     focusedOpenRef.current = true;
     const frame = requestAnimationFrame(() => {
-      menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+      menuRef.current?.querySelector<HTMLElement>('[data-dropdown-autofocus], [role="menuitem"]')?.focus();
     });
     return () => cancelAnimationFrame(frame);
   }, [open, position]);
 
   const handleMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    if (
+      contentRole !== "menu"
+      || (event.key !== "ArrowDown" && event.key !== "ArrowUp")
+    ) return;
     const items = Array.from(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
     if (!items.length) return;
     event.preventDefault();
@@ -148,7 +155,8 @@ export function DropdownMenu({
       ? createPortal(
           <div
             ref={menuRef}
-            role="menu"
+            role={contentRole}
+            aria-label={ariaLabel}
             onKeyDown={handleMenuKeyDown}
             className={cn(
               "voople-dropdown-menu fixed z-[110] overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] py-1 text-[var(--foreground)] shadow-[var(--app-shadow-md)]",

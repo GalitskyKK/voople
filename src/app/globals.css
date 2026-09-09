@@ -2023,7 +2023,7 @@ button.voople-post-action:active {
   bottom: -1px;
   left: 0.75rem;
   height: 2px;
-  background: var(--group-accent, var(--theme-accent));
+  background: var(--theme-accent);
   content: "";
 }
 

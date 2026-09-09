@@ -304,12 +304,15 @@ export function DesktopChatThreadAdapter({
               }}
             />
           }
-          renderDestination={(chat, className, children) => (
+          renderDestination={(chat, className, children, onNavigate) => (
             <button
               key={chat.id}
               type="button"
               className={className}
-              onClick={() => onNavigateChat(chat.id)}
+              onClick={() => {
+                onNavigate?.();
+                onNavigateChat(chat.id);
+              }}
             >
               {children}
             </button>

@@ -7,6 +7,7 @@ import { activeMessagesChatId } from "@/lib/layout/messages-path";
 import { cn } from "@/lib/utils";
 import type { ChatListItem } from "@/types/chat";
 import type { MessengerGroupLiveState } from "@/types/messenger-live";
+import { SavedMessagesShortcut } from "@/components/chat/SavedMessagesShortcut";
 
 import type { NavigationDestinationRenderer } from "./AppNavigationVisual";
 import { MessengerDirectRow, MessengerGroupRow } from "./MessengerSidebarRows";
@@ -19,6 +20,7 @@ type MessengerSidebarViewProps = {
   onlineUserIds: ReadonlySet<string>;
   liveByGroup?: ReadonlyMap<string, MessengerGroupLiveState>;
   createGroupAction?: ReactNode;
+  savedMessagesEnabled?: boolean;
   renderDestination: NavigationDestinationRenderer;
   onRetry: () => void;
 };
@@ -31,6 +33,7 @@ export function MessengerSidebarView({
   onlineUserIds,
   liveByGroup = new Map(),
   createGroupAction,
+  savedMessagesEnabled = false,
   renderDestination,
   onRetry,
 }: MessengerSidebarViewProps) {
@@ -55,6 +58,21 @@ export function MessengerSidebarView({
           <SidebarError onRetry={onRetry} />
         ) : (
           <>
+            {savedMessagesEnabled ? (
+              <SidebarSection title="Ваше">
+                <SavedMessagesShortcut
+                  active={pathname === "/messages/saved"}
+                  variant="sidebar"
+                  renderDestination={({ className, children }) => renderDestination({
+                    href: "/messages/saved",
+                    label: "Избранное",
+                    active: pathname === "/messages/saved",
+                    className,
+                    children,
+                  })}
+                />
+              </SidebarSection>
+            ) : null}
             <SidebarSection title="Группы" action={createGroupAction}>
               {groups.length > 0 ? (
                 groups.map((chat) => (

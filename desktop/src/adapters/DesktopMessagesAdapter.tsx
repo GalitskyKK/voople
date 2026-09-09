@@ -15,15 +15,19 @@ import { DesktopChatThreadAdapter } from "./DesktopChatThreadAdapter";
 import { useDesktopChats } from "../chat/useDesktopChats";
 import { useDesktopPresence } from "../providers/DesktopPresenceProvider";
 import { useConversationExit } from "@/hooks/useConversationExit";
+import { trpc } from "@/lib/trpc/client";
+import { SavedMessagesController } from "@/components/chat/SavedMessagesController";
 
 export function DesktopMessagesAdapter({
   activeChatId,
+  savedMessagesActive,
   initialGroupTab,
   config,
   session,
   navigate,
 }: {
   activeChatId: string | null;
+  savedMessagesActive: boolean;
   initialGroupTab: "chat" | "now" | "people";
   config: DesktopConfig;
   session: Session;
@@ -44,6 +48,10 @@ export function DesktopMessagesAdapter({
   );
   const onlineUserIds = useDesktopPresence();
   const { chats, error, loading, refresh } = useDesktopChats();
+  const savedMessages = trpc.savedMessages.availability.useQuery(undefined, {
+    retry: false,
+    staleTime: 60_000,
+  });
   const badgeUrl = vooplusBadgeUrl(config.assetsCdnUrl);
   const activeRootChat: ChatListItem | null = activeChatId
     ? chats.find(
@@ -54,13 +62,13 @@ export function DesktopMessagesAdapter({
     : null;
 
   useConversationExit({
-    active: Boolean(activeChatId),
+    active: Boolean(activeChatId) || savedMessagesActive,
     onExit: () => navigate("/messages"),
   });
 
   return (
     <MessagesLayoutView
-      isThread={Boolean(activeChatId)}
+      isThread={Boolean(activeChatId) || savedMessagesActive}
       list={
         <ChatListView
           chats={chats}
@@ -153,10 +161,26 @@ export function DesktopMessagesAdapter({
               Искать «{query}» во всём Voople →
             </button>
           )}
+          savedMessagesActive={savedMessagesActive}
+          renderSavedMessagesDestination={
+            savedMessages.data?.enabled
+              ? ({ className, children }) => (
+                  <button
+                    type="button"
+                    className={className}
+                    onClick={() => navigate("/messages/saved")}
+                  >
+                    {children}
+                  </button>
+                )
+              : undefined
+          }
         />
       }
       thread={
-        activeChatId ? (
+        savedMessagesActive ? (
+          <SavedMessagesController onBack={() => navigate("/messages")} />
+        ) : activeChatId ? (
           <DesktopChatThreadAdapter
             key={activeChatId}
             chatId={activeChatId}

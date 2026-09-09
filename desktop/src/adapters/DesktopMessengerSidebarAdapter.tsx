@@ -3,6 +3,7 @@ import type { Session } from "@supabase/supabase-js";
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { MessengerSidebarView } from "@/components/layout/MessengerSidebarView";
 import { useMessengerGroupLiveStates } from "@/hooks/useMessengerGroupLiveStates";
+import { trpc } from "@/lib/trpc/client";
 
 import { useDesktopChats } from "../chat/useDesktopChats";
 import type { DesktopConfig } from "../config";
@@ -25,6 +26,10 @@ export function DesktopMessengerSidebarAdapter({
   const onlineUserIds = useDesktopPresence();
   const { liveByGroup } = useMessengerGroupLiveStates();
   const { chats, error, loading, refresh, retry } = useDesktopChats();
+  const savedMessages = trpc.savedMessages.availability.useQuery(undefined, {
+    retry: false,
+    staleTime: 60_000,
+  });
 
   return (
     <MessengerSidebarView
@@ -45,6 +50,7 @@ export function DesktopMessengerSidebarAdapter({
           }}
         />
       }
+      savedMessagesEnabled={savedMessages.data?.enabled === true}
       renderDestination={renderDestination}
       onRetry={() => void retry()}
     />

@@ -1,8 +1,8 @@
 # Saved Messages
 
-Status: P1 server slice. The storage and owner-only transport contracts are
-implemented; UI remains intentionally unavailable until its complete shared
-web/desktop/mobile slice lands.
+Status: P1 gated UI slice. Storage, owner-only transport and a shared web/
+desktop surface are implemented behind the internal capability. Migration and
+authenticated visual evidence remain intentionally pending.
 
 `Избранное` is a private message surface owned by one user. It is not a direct
 conversation with a synthetic account, not a one-member Group and not a local
@@ -30,8 +30,9 @@ presence, notifications or relationship signals.
 
 ## Required surface
 
-The eventual shared web/desktop/mobile View must reuse the existing message
-bubble, composer, attachment and reply presentation while keeping an explicit
-`Избранное` identity. It needs loading, empty, error, offline/retry, pagination,
-search, edit/delete and export/retention states. Until those contracts and
-their responsive evidence exist, the route and sidebar entry stay hidden.
+The shared web/desktop View reuses the existing message bubble, composer,
+attachment and reply presentation while keeping an explicit `Избранное`
+identity. It includes loading, empty, error/retry, offline draft preservation,
+pagination, search and edit/delete states. Its route and shortcuts stay hidden
+unless the server capability is enabled. Mobile visual evidence, optimistic
+reconciliation, export/retention and migration rollout remain required.

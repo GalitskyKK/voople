@@ -17,9 +17,13 @@ import { GroupChatCreator } from "./GroupChatCreator";
 
 type ChatListProps = {
   activeChatId?: string | null;
+  savedMessagesActive?: boolean;
 };
 
-export function ChatList({ activeChatId = null }: ChatListProps) {
+export function ChatList({
+  activeChatId = null,
+  savedMessagesActive = false,
+}: ChatListProps) {
   const router = useRouter();
   const { onlineUserIds } = useOnlineUsers();
   const utils = trpc.useUtils();
@@ -31,6 +35,10 @@ export function ChatList({ activeChatId = null }: ChatListProps) {
     refetchInterval: 60_000,
   });
   const openDirect = trpc.chat.openDirect.useMutation();
+  const savedMessages = trpc.savedMessages.availability.useQuery(undefined, {
+    retry: false,
+    staleTime: 60_000,
+  });
   const searchContacts = useCallback(
     async (query: string) => {
       const contacts = await utils.client.chat.contacts.query({ q: query.trim() });
@@ -119,6 +127,16 @@ export function ChatList({ activeChatId = null }: ChatListProps) {
           Искать «{query}» во всём Voople →
         </Link>
       )}
+      savedMessagesActive={savedMessagesActive}
+      renderSavedMessagesDestination={
+        savedMessages.data?.enabled
+          ? ({ className, children }) => (
+              <Link href="/messages/saved" className={className}>
+                {children}
+              </Link>
+            )
+          : undefined
+      }
     />
   );
 }

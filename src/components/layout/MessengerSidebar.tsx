@@ -22,6 +22,10 @@ export function MessengerSidebar({
     refetchOnWindowFocus: false,
     refetchInterval: 60_000,
   });
+  const savedMessages = trpc.savedMessages.availability.useQuery(undefined, {
+    retry: false,
+    staleTime: 60_000,
+  });
 
   return (
     <MessengerSidebarView
@@ -32,6 +36,7 @@ export function MessengerSidebar({
       onlineUserIds={onlineUserIds}
       liveByGroup={liveByGroup}
       createGroupAction={<GroupChatCreator variant="sidebar" />}
+      savedMessagesEnabled={savedMessages.data?.enabled === true}
       renderDestination={renderDestination}
       onRetry={() => void chats.refetch()}
     />

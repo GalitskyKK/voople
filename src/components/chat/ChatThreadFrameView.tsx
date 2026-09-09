@@ -15,6 +15,7 @@ export function ChatThreadFrameView({
   messagesRef,
   messagesContentRef,
   renderMessage,
+  beforeMessages,
   afterMessages,
   emptyState,
   error,
@@ -29,6 +30,7 @@ export function ChatThreadFrameView({
   messagesRef: { current: HTMLDivElement | null };
   messagesContentRef: { current: HTMLDivElement | null };
   renderMessage: (item: Extract<ChatTimelineItem, { type: "message" }>) => ReactNode;
+  beforeMessages?: ReactNode;
   afterMessages?: ReactNode;
   emptyState?: ReactNode;
   error?: string | null;
@@ -51,6 +53,7 @@ export function ChatThreadFrameView({
           }}
           className="mx-auto flex min-h-full w-full flex-col justify-end gap-0.5 px-2"
         >
+          {beforeMessages}
           {timeline.length === 0
             ? emptyState ?? (
                 <p className="pb-4 text-sm text-[var(--app-muted)]">

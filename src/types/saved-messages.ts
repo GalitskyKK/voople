@@ -21,3 +21,13 @@ export type SavedMessagePage = {
   items: SavedMessageView[];
   nextCursor: SavedMessageCursor | null;
 };
+
+export type SavedMessageDraft = {
+  messageId: string;
+  text?: string;
+  mediaKey?: string;
+  mediaTitle?: string;
+  mediaArtist?: string;
+  sharedTrackId?: string;
+  replyToMessageId?: string;
+};

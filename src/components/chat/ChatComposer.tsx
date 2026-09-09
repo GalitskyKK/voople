@@ -20,6 +20,7 @@ import type { ChatRecordMode } from "./ChatVoiceRecorder";
 
 type ChatComposerProps = {
   chatId: string;
+  uploadChatId?: string | null;
   text: string;
   onTextChange: (value: string) => void;
   replyTo: ChatMessageView | null;
@@ -38,6 +39,7 @@ type ChatComposerProps = {
 
 export function ChatComposer({
   chatId,
+  uploadChatId = chatId,
   text,
   onTextChange,
   replyTo,
@@ -56,7 +58,7 @@ export function ChatComposer({
   const [musicSheetOpen, setMusicSheetOpen] = useState(false);
   const [pendingAudioDraft, setPendingAudioDraft] = useState<PendingChatAudioDraft | null>(null);
   const [isParsingAudio, setIsParsingAudio] = useState(false);
-  const { uploadFile, isUploading, error, setError } = useChatUpload(chatId);
+  const { uploadFile, isUploading, error, setError } = useChatUpload(uploadChatId);
 
   const clearPendingUpload = () => {
     if (pendingUpload?.previewUrl) URL.revokeObjectURL(pendingUpload.previewUrl);

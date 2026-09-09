@@ -1,7 +1,11 @@
 /** UUID диалога из `/messages/[chatId]`, иначе `null`. */
 export function activeMessagesChatId(pathname: string): string | null {
   const match = pathname.match(/^\/messages\/([^/?#]+)(?:[/?#]|$)/);
-  return match?.[1] ?? null;
+  return match?.[1] === "saved" ? null : match?.[1] ?? null;
+}
+
+export function isSavedMessagesPath(pathname: string): boolean {
+  return /^\/messages\/saved(?:[?#]|$)/.test(pathname);
 }
 
 export function groupSurfaceFromPath(pathname: string): "chat" | "now" | "people" {
@@ -11,7 +15,7 @@ export function groupSurfaceFromPath(pathname: string): "chat" | "now" | "people
 }
 
 export function isMessagesThreadPath(pathname: string): boolean {
-  return activeMessagesChatId(pathname) !== null;
+  return activeMessagesChatId(pathname) !== null || isSavedMessagesPath(pathname);
 }
 
 export function isMessagesInboxPath(pathname: string): boolean {

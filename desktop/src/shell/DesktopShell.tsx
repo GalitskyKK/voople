@@ -327,12 +327,13 @@ export function DesktopShell({
   const profileUsername = profileUsernameFromPath(pathname);
   const postId = postIdFromPath(pathname);
   const chatId = chatIdFromPath(pathname);
+  const savedMessagesActive = pathname === "/messages/saved";
   const groupSettingsChatId = groupSettingsChatIdFromPath(pathname);
   const roomInviteId = roomInviteIdFromPath(pathname);
   const hashtag = hashtagFromPath(pathname);
   const groupSlug = groupSlugFromPath(pathname);
   const isProfileRoute = pathname === "/me" || profileUsername !== null;
-  const isMessagesRoute = pathname === "/messages" || chatId !== null || groupSettingsChatId !== null;
+  const isMessagesRoute = pathname === "/messages" || savedMessagesActive || chatId !== null || groupSettingsChatId !== null;
   const routeLayout = getAppRouteLayout(pathname);
 
   return (
@@ -431,6 +432,7 @@ export function DesktopShell({
               config={config}
               session={session}
               activeChatId={chatId}
+              savedMessagesActive={savedMessagesActive}
               initialGroupTab={groupSurfaceFromPath(pathname)}
               navigate={navigate}
             />
@@ -471,7 +473,7 @@ export function DesktopShell({
         </button>
       )}
 
-      {!chatId && !groupSettingsChatId ? (
+      {!chatId && !savedMessagesActive && !groupSettingsChatId ? (
         <AppBottomNavigationVisual
           pathname={pathname}
           notificationBadge={notificationBadge}

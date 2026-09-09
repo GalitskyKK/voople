@@ -13,6 +13,11 @@ import {
 import { ChatContactResults } from "./ChatContactResults";
 import type { ChatSearchScope } from "./ChatListFilters";
 import { ChatListSearchPanel } from "./ChatListSearchPanel";
+import { ChatListSection } from "./ChatListSection";
+import {
+  SavedMessagesShortcut,
+  type SavedMessagesDestinationRenderer,
+} from "./SavedMessagesShortcut";
 
 export type { ChatListDestinationRenderer } from "./ChatListRow";
 
@@ -31,6 +36,8 @@ type ChatListViewProps = {
   renderContactAvatar?: (user: UserSearchHit) => ReactNode;
   renderContactTitle?: (user: UserSearchHit) => ReactNode;
   renderGlobalSearchAction?: (query: string) => ReactNode;
+  savedMessagesActive?: boolean;
+  renderSavedMessagesDestination?: SavedMessagesDestinationRenderer;
 };
 
 export function ChatListView({
@@ -48,6 +55,8 @@ export function ChatListView({
   renderContactAvatar,
   renderContactTitle,
   renderGlobalSearchAction,
+  savedMessagesActive = false,
+  renderSavedMessagesDestination,
 }: ChatListViewProps) {
   const [query, setQuery] = useState("");
   const [searchActive, setSearchActive] = useState(false);
@@ -107,6 +116,9 @@ export function ChatListView({
   };
   const groups = visibleChats.filter((chat) => chat.type === "group");
   const directs = visibleChats.filter((chat) => chat.type === "direct");
+  const showSavedMessages = Boolean(
+    renderSavedMessagesDestination && !searchActive && !query.trim(),
+  );
   const renderRows = (items: ChatListItem[]) =>
     items.map((chat) => (
       <ChatListRow
@@ -144,6 +156,17 @@ export function ChatListView({
           <p className="px-3 py-4 text-sm text-red-400">{error}</p>
         ) : (
           <>
+            {showSavedMessages && renderSavedMessagesDestination ? (
+              <ChatListSection title="Ваше">
+                <li>
+                  <SavedMessagesShortcut
+                    active={savedMessagesActive}
+                    variant="inbox"
+                    renderDestination={renderSavedMessagesDestination}
+                  />
+                </li>
+              </ChatListSection>
+            ) : null}
             {visibleChats.length && !searchActive && !query.trim() ? (
               <div className="space-y-4">
                 {groups.length ? (
@@ -188,7 +211,8 @@ export function ChatListView({
                 {contactsError}
               </p>
             ) : null}
-            {!visibleChats.length &&
+            {!showSavedMessages &&
+            !visibleChats.length &&
             !visibleContacts.length &&
             !contactsLoading ? (
               chats.length || query.trim() ? (
@@ -215,22 +239,5 @@ export function ChatListView({
         )}
       </div>
     </div>
-  );
-}
-
-function ChatListSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <section>
-      <h2 className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--app-muted)]">
-        {title}
-      </h2>
-      <ul className="voople-chat-list space-y-0.5">{children}</ul>
-    </section>
   );
 }

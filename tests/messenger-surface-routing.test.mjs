@@ -5,6 +5,8 @@ import test from "node:test";
 import {
   activeMessagesChatId,
   groupSurfaceFromPath,
+  isMessagesThreadPath,
+  isSavedMessagesPath,
 } from "../src/lib/layout/messages-path.ts";
 
 test("messenger surface links preserve the chat id and accept only known tabs", () => {
@@ -13,6 +15,12 @@ test("messenger surface links preserve the chat id and accept only known tabs", 
   assert.equal(groupSurfaceFromPath("/messages/abc?surface=people"), "people");
   assert.equal(groupSurfaceFromPath("/messages/abc?surface=unknown"), "chat");
   assert.equal(groupSurfaceFromPath("/messages/abc"), "chat");
+});
+
+test("Saved Messages is a messenger thread without pretending to be a chat id", () => {
+  assert.equal(activeMessagesChatId("/messages/saved"), null);
+  assert.equal(isSavedMessagesPath("/messages/saved"), true);
+  assert.equal(isMessagesThreadPath("/messages/saved"), true);
 });
 
 test("web and desktop pass the requested group surface into the shared shell", () => {

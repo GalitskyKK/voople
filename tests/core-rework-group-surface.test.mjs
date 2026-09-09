@@ -31,9 +31,21 @@ test("live shelf only shows occupied rooms and preserves direct room entry", () 
   assert.match(shelf, /room\.hasScreenShare/);
   assert.match(shelf, /resolveGroupNowRoomAction/);
   assert.match(shelf, /overflow-x-auto/);
+  assert.match(shelf, /min-h-8[^\n]*lg:min-h-7/);
+  assert.match(shelf, /className="h-8[^\n]*lg:h-7/);
   assert.doesNotMatch(shelf, /min-h-11/);
   assert.match(panel, /props\.variant === "shelf"/);
   assert.match(panel, /<GroupLiveShelfView/);
+});
+
+test("desktop messenger keeps the conversation header stack compact", () => {
+  const tabs = source("src/components/chat/GroupSurfaceTabs.tsx");
+  const styles = source("src/app/globals.css");
+
+  assert.match(tabs, /min-h-10/);
+  assert.match(styles, /\.voople-panel-header \{[\s\S]*?min-height: 3\.5rem;/);
+  assert.match(styles, /\.voople-chat-window__header--group \{[\s\S]*?min-height: 3\.5rem;/);
+  assert.match(styles, /\.voople-group-surface-tabs \{[\s\S]*?min-height: 2\.25rem;/);
 });
 
 test("full Group Now follows the flat live hierarchy from the canonical plan", () => {

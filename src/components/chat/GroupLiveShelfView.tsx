@@ -25,8 +25,8 @@ export function GroupLiveShelfView({
   if (!activeRooms.length) return null;
 
   return (
-    <section className="voople-group-live-shelf shrink-0 border-b border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_94%,var(--theme-accent))] px-3 py-1.5" aria-labelledby="group-live-shelf-title">
-      <div className="mx-auto flex min-h-8 w-full max-w-[960px] items-center gap-2">
+    <section className="voople-group-live-shelf shrink-0 border-b border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_96%,var(--theme-accent))] px-3 py-1.5 lg:py-0.5" aria-labelledby="group-live-shelf-title">
+      <div className="mx-auto flex min-h-8 w-full max-w-[960px] items-center gap-2 lg:min-h-7">
         <h2 id="group-live-shelf-title" className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--app-muted)]">Сейчас</h2>
         <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {activeRooms.map((room) => {
@@ -37,7 +37,7 @@ export function GroupLiveShelfView({
                 type="button"
                 size="sm"
                 variant={action === "current" ? "secondary" : "ghost"}
-                className="h-8 max-w-56 shrink-0 gap-1.5 rounded-[var(--app-radius-sm)] px-2 text-xs"
+                className="h-8 max-w-56 shrink-0 gap-1.5 rounded-[var(--app-radius-sm)] px-2 text-xs lg:h-7"
                 disabled={pendingRoomId === room.id}
                 aria-busy={pendingRoomId === room.id}
                 aria-current={action === "current" ? "true" : undefined}

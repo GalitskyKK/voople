@@ -170,6 +170,7 @@ test("Full Room adapts the Group Chat drawer without collapsing the media stage"
 test("desktop conversation and Room drawer share the authenticated tRPC cache", () => {
   const desktopThread = read("desktop/src/chat/useDesktopChatThread.ts");
   const desktopRealtime = read("desktop/src/chat/useDesktopChatRealtime.ts");
+  const desktopComposer = read("desktop/src/adapters/DesktopChatComposerAdapter.tsx");
   const roomMessages = read("src/components/chat/voice/RoomMessagesPanel.tsx");
 
   assert.match(desktopThread, /trpc\.chat\.observeMessages\.useQuery/);
@@ -178,6 +179,9 @@ test("desktop conversation and Room drawer share the authenticated tRPC cache", 
   assert.match(desktopRealtime, /utils\.chat\.observeMessages\.invalidate/);
   assert.match(roomMessages, /trpc\.chat\.observeMessages\.useQuery/);
   assert.match(roomMessages, /useChatComposerSession\(model\.chatId\)/);
+  assert.match(desktopComposer, /pendingTrack/);
+  assert.match(desktopComposer, /ChatMusicAttachSheet/);
+  assert.match(desktopThread, /sharedTrackId: draft\.pendingTrack\?\.id/);
 });
 
 test("room recovery is bounded, actionable and restores dialog focus", async () => {

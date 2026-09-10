@@ -12,6 +12,7 @@ import type {
   ChatThreadSummary,
   GroupEmojiView,
 } from "@/types/chat";
+import type { PlaylistTrackView } from "@/types/playlist";
 
 import type { DesktopConfig } from "../config";
 import { useDesktopChatRealtime } from "./useDesktopChatRealtime";
@@ -26,6 +27,7 @@ export type DesktopMessageDraft = {
   text: string;
   replyTo: ChatMessageView | null;
   upload: ChatPendingUpload | null;
+  pendingTrack: PlaylistTrackView | null;
   customEmojis?: GroupEmojiView[];
 };
 
@@ -42,7 +44,7 @@ export function useDesktopChatThread(
     {
       staleTime: 5_000,
       refetchOnWindowFocus: false,
-      refetchInterval: live ? 60_000 : 2_500,
+      refetchInterval: 15_000,
       refetchIntervalInBackground: false,
     },
   );
@@ -59,7 +61,7 @@ export function useDesktopChatThread(
 
   const sendMessage = useCallback(async (draft: DesktopMessageDraft) => {
     const trimmed = draft.text.trim();
-    if ((!trimmed && !draft.upload) || send.isPending) return false;
+    if ((!trimmed && !draft.upload && !draft.pendingTrack) || send.isPending) return false;
     const messageId = crypto.randomUUID();
     const previous = utils.chat.observeMessages.getData({ chatId });
     const optimistic = buildOptimisticMessage({
@@ -68,6 +70,7 @@ export function useDesktopChatThread(
       text: trimmed,
       replyTo: draft.replyTo,
       pendingUpload: draft.upload,
+      pendingTrack: draft.pendingTrack,
     });
     setActionError(null);
     await utils.chat.observeMessages.cancel({ chatId });
@@ -91,6 +94,7 @@ export function useDesktopChatThread(
           ? draft.upload.artist?.trim() || "Аудиосообщение"
           : undefined,
         replyToMessageId: draft.replyTo?.id,
+        sharedTrackId: draft.pendingTrack?.id,
       });
       utils.chat.observeMessages.setData({ chatId }, (current) => current ? {
         ...current,
@@ -100,14 +104,16 @@ export function useDesktopChatThread(
       void utils.chat.list.invalidate();
       onInboxChange();
       reportProductEvent("message_sent", {
-        hasAttachment: Boolean(draft.upload),
+        hasAttachment: Boolean(draft.upload || draft.pendingTrack),
         hasReply: Boolean(draft.replyTo),
       });
       if (draft.replyTo) {
         reportProductEvent("message_replied", { source: "composer" });
       }
-      if (draft.upload) {
-        reportProductEvent("attachment_sent", { kind: draft.upload.kind });
+      if (draft.upload || draft.pendingTrack) {
+        reportProductEvent("attachment_sent", {
+          kind: draft.upload?.kind ?? "track",
+        });
       }
       return true;
     } catch (error) {

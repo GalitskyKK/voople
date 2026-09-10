@@ -1,7 +1,9 @@
 import type { Session } from "@supabase/supabase-js";
+import { useState } from "react";
 
 import { useChatComposerSession } from "@/components/chat/ChatComposerSessionProvider";
 import { ChatComposerFormView } from "@/components/chat/ChatComposerFormView";
+import { ChatMusicAttachSheet } from "@/components/chat/ChatMusicAttachSheet";
 import { ChatComposerPreviewView } from "@/components/chat/ChatComposerPreviewView";
 import { useLocalChatDraft } from "@/hooks/useLocalChatDraft";
 import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
@@ -31,9 +33,10 @@ export function DesktopChatComposerAdapter({
   customEmojis?: GroupEmojiView[];
 }) {
   const {
-    text, replyTo, editing, pendingUpload,
-    setText, setReplyTo, setEditing, setPendingUpload,
+    text, replyTo, editing, pendingUpload, pendingTrack,
+    setText, setReplyTo, setEditing, setPendingUpload, setPendingTrack,
   } = useChatComposerSession(chatId);
+  const [musicSheetOpen, setMusicSheetOpen] = useState(false);
   useLocalChatDraft({
     accountId: session.user.id,
     chatId,
@@ -64,7 +67,7 @@ export function DesktopChatComposerAdapter({
     !sending &&
     !uploading &&
     audioMetadataReady &&
-    Boolean(text.trim() || upload) &&
+    Boolean(text.trim() || upload || pendingTrack) &&
     (!editing || text.trim() !== editing.text?.trim());
 
   const submit = async () => {
@@ -76,19 +79,23 @@ export function DesktopChatComposerAdapter({
       }
       return;
     }
-    const sent = await onSend({ text, replyTo, upload, customEmojis });
+    const sent = await onSend({ text, replyTo, upload, pendingTrack, customEmojis });
     if (!sent) return;
     setText("");
     clear();
+    setPendingTrack(null);
     setReplyTo(null);
   };
 
   const selectImage = async (file?: File) => {
-    if (file) await uploadFile(file);
+    if (!file) return;
+    setPendingTrack(null);
+    await uploadFile(file);
   };
 
   const selectAudio = async (file?: File) => {
     if (!file) return;
+    setPendingTrack(null);
     const uploaded = await uploadFile(file);
     if (!uploaded) return;
     updateAudioMetadata({
@@ -103,6 +110,7 @@ export function DesktopChatComposerAdapter({
       if (kind === "audio") {
         await selectAudio(file);
       } else {
+        setPendingTrack(null);
         await uploadFile(
           file,
           kind === "circle" ? { purpose: "circle" } : undefined,
@@ -119,15 +127,25 @@ export function DesktopChatComposerAdapter({
 
   return (
     <div className="px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:px-4 lg:pb-3">
+      <ChatMusicAttachSheet
+        open={musicSheetOpen}
+        onClose={() => setMusicSheetOpen(false)}
+        onSelect={(track) => {
+          clear();
+          setPendingTrack(track);
+        }}
+      />
       <ChatComposerFormView
         preview={
           <ChatComposerPreviewView
             editing={editing}
             replyTo={replyTo}
             upload={upload}
+            track={pendingTrack}
             editableAudioMetadata
             onCancelReply={() => setReplyTo(null)}
             onClearUpload={clear}
+            onClearTrack={() => setPendingTrack(null)}
             onUpdateAudioMetadata={updateAudioMetadata}
             onCancelEdit={() => {
               setText("");
@@ -145,13 +163,14 @@ export function DesktopChatComposerAdapter({
           canSend,
           sending,
           busy: uploading,
-          hasAttachment: Boolean(upload),
+          hasAttachment: Boolean(upload || pendingTrack),
           editing: Boolean(editing),
           onTextChange: setText,
           onSubmit: () => void submit(),
           onImageSelected: selectImage,
           onAudioSelected: selectAudio,
           onPastedFile: pasteFile,
+          onPickMusic: () => setMusicSheetOpen(true),
           onVoiceRecorded: (file, durationSeconds, purpose) => {
             void uploadFile(file, { purpose, durationSeconds });
           },

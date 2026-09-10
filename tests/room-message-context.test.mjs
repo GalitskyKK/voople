@@ -70,6 +70,8 @@ test("the Room surface opens the ordinary selected Group or Section conversation
   const provider = read("src/components/chat/voice/VoiceSessionProvider.tsx");
   const context = read("src/components/chat/voice/voice-conversation-context.ts");
   const draft = read("src/hooks/useLocalChatDraft.ts");
+  const composerSession = read("src/components/chat/ChatComposerSessionProvider.tsx");
+  const mainConversation = read("src/components/chat/ChatWindow.tsx");
 
   assert.match(panel, /trpc\.chat\.observeMessages\.useQuery/);
   assert.doesNotMatch(panel, /\.filter\([\s\S]{0,160}liveSessionId/);
@@ -78,6 +80,18 @@ test("the Room surface opens the ordinary selected Group or Section conversation
   assert.match(panel, /<ChatComposer/);
   assert.match(panel, /<ChatThreadFrameView/);
   assert.match(panel, /useChatConversationAttention\(/);
+  assert.match(panel, /useChatComposerSession\(model\.chatId\)/);
+  assert.match(mainConversation, /useChatComposerSession\(chatId\)/);
+  assert.match(provider, /<ChatComposerSessionProvider>/);
+  assert.match(composerSession, /pendingUpload: PendingChatUpload \| null/);
+  assert.match(composerSession, /replyTo: ChatMessageView \| null/);
+  assert.match(composerSession, /editing: ChatMessageView \| null/);
+  assert.match(composerSession, /pendingTrack: PlaylistTrackView \| null/);
+  assert.match(composerSession, /URL\.revokeObjectURL\(session\.pendingUpload\.previewUrl\)/);
+  assert.match(panel, /replyToMessageId: replyTo\?\.id/);
+  assert.match(panel, /useChatMessageEditor\(model\.chatId/);
+  assert.match(panel, /actions\.toggleMessageReaction/);
+  assert.match(panel, /actions\.removeMessage\.mutate/);
   assert.match(panel, /placeholder=\{`Сообщение \$\{audienceLabel\}…`\}/);
   assert.match(draft, /storeChatDraft\(accountId, chatId, textRef\.current\)/);
   assert.match(surface, /secondaryPanel === "messages"/);

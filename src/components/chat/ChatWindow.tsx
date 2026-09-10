@@ -10,11 +10,8 @@ import { useChatConversationAttention } from "@/hooks/useChatConversationAttenti
 import { useChatSendMutation } from "@/hooks/useChatSendMutation";
 import { useChatMessageActions } from "@/hooks/useChatMessageActions";
 import { useBrowserOnline } from "@/hooks/useBrowserOnline";
-import type { PendingChatUpload } from "@/hooks/useChatUpload";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 import { trpc } from "@/lib/trpc/client";
-import type { ChatMessageView } from "@/types/chat";
-import type { PlaylistTrackView } from "@/types/playlist";
 import { parseComposerContent } from "@/lib/chat/message-content";
 import { Toast } from "@/components/ui/Toast";
 import { ChatComposer } from "./ChatComposer";
@@ -28,18 +25,19 @@ import { ChatJumpToLatest } from "./ChatJumpToLatest";
 import { ChatSelectionController } from "./ChatSelectionController";
 import { ChatConversationStart } from "./ChatConversationStart";
 import { ChatConversationState } from "./ChatConversationState";
+import { useChatComposerSession } from "./ChatComposerSessionProvider";
 type ChatWindowProps = { chatId: string; initialGroupTab?: "chat" | "now" | "people" };
 export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps) {
   const router = useRouter();
-  const [text, setText] = useState("");
-  const [replyTo, setReplyTo] = useState<ChatMessageView | null>(null);
-  const [pendingUpload, setPendingUpload] = useState<PendingChatUpload | null>(null);
-  const [pendingTrack, setPendingTrack] = useState<PlaylistTrackView | null>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const {
+    text, replyTo, editing, pendingUpload, pendingTrack,
+    setText, setReplyTo, setEditing, setPendingUpload, setPendingTrack,
+  } = useChatComposerSession(chatId);
   const { onlineUserIds } = useOnlineUsers();
   const online = useBrowserOnline();
   const actions = useChatMessageActions(chatId);
-  const editor = useChatMessageEditor(chatId, setText);
+  const editor = useChatMessageEditor(chatId, setText, editing, setEditing);
   const { data: me } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
   const { realtimeDegraded } = useRealtimeChat(chatId, me?.id);
   const { data, isLoading, error, refetch } = trpc.chat.observeMessages.useQuery(

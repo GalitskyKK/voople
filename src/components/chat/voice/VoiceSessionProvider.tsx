@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import type { IncomingCallView } from "@/types/chat";
+import { ChatComposerSessionProvider } from "@/components/chat/ChatComposerSessionProvider";
 import { GroupNowRoomSwitchDialog } from "@/components/chat/GroupNowRoomSwitchDialog";
 import { useGroupNowRoomJoin } from "@/hooks/useGroupNowRoomJoin";
 import type { GroupNowRoomTarget } from "@/types/group-now";
@@ -23,7 +24,6 @@ import { IncomingCallOverlay } from "./IncomingCallOverlay";
 import { useIncomingVoiceCalls, type SubscribeToVoiceRooms } from "./useIncomingVoiceCalls";
 import { resolveVoiceConversationId } from "./voice-conversation-context";
 import { IDLE_VOICE_CONTROL_STATE } from "./voice-session-state";
-
 const ChatRoomControl = lazy(() =>
   import("../ChatRoomControl").then((module) => ({
     default: module.ChatRoomControl,
@@ -51,7 +51,6 @@ export type VoiceSessionContextValue = {
 };
 
 const VoiceSessionContext = createContext<VoiceSessionContextValue | null>(null);
-
 export function VoiceSessionProvider({
   children,
   onIncomingCall,
@@ -196,41 +195,43 @@ export function VoiceSessionProvider({
 
   return (
     <VoiceSessionContext.Provider value={value}>
-      <div
-        className={cn(
-          "contents",
-          state.inside && "voople-voice-session voople-voice-session--active",
-        )}
-      >
-        {children}
-        {activeSession ? (
-          <Suspense fallback={null}>
-            <ChatRoomControl
-              key={`${activeSession.chatId}:${activeSession.coreSession?.join.sessionId ?? "legacy"}`}
-              ref={handleControlRef}
-              {...activeSession}
-              initialCoreCredentials={initialCoreCredentials ?? undefined}
-              onCoreRoomSwitch={roomSwitch.requestJoin}
-              renderTrigger={false}
-              initialOpen
-              onStateChange={handleStateChange}
-            />
-          </Suspense>
-        ) : null}
-        <GroupNowRoomSwitchDialog
-          room={roomSwitch.confirmationTarget?.room ?? null}
-          pending={roomSwitch.pending}
-          error={roomSwitch.confirmationError}
-          onCancel={roomSwitch.cancelSwitch}
-          onConfirm={() => void roomSwitch.confirmSwitch()}
-        />
-        <IncomingCallOverlay
-          call={incoming.call}
-          declinePending={incoming.declinePending}
-          onAnswer={incoming.answer}
-          onDecline={() => void incoming.decline()}
-        />
-      </div>
+      <ChatComposerSessionProvider>
+        <div
+          className={cn(
+            "contents",
+            state.inside && "voople-voice-session voople-voice-session--active",
+          )}
+        >
+          {children}
+          {activeSession ? (
+            <Suspense fallback={null}>
+              <ChatRoomControl
+                key={`${activeSession.chatId}:${activeSession.coreSession?.join.sessionId ?? "legacy"}`}
+                ref={handleControlRef}
+                {...activeSession}
+                initialCoreCredentials={initialCoreCredentials ?? undefined}
+                onCoreRoomSwitch={roomSwitch.requestJoin}
+                renderTrigger={false}
+                initialOpen
+                onStateChange={handleStateChange}
+              />
+            </Suspense>
+          ) : null}
+          <GroupNowRoomSwitchDialog
+            room={roomSwitch.confirmationTarget?.room ?? null}
+            pending={roomSwitch.pending}
+            error={roomSwitch.confirmationError}
+            onCancel={roomSwitch.cancelSwitch}
+            onConfirm={() => void roomSwitch.confirmSwitch()}
+          />
+          <IncomingCallOverlay
+            call={incoming.call}
+            declinePending={incoming.declinePending}
+            onAnswer={incoming.answer}
+            onDecline={() => void incoming.decline()}
+          />
+        </div>
+      </ChatComposerSessionProvider>
     </VoiceSessionContext.Provider>
   );
 }

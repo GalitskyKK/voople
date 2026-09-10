@@ -49,10 +49,18 @@ export function VoiceRoomMainSurface({
   } = useVoiceRoomFullscreen();
 
   const minimize = useCallback(() => {
-    setSecondaryPanel(null);
+    setSecondaryPanel((current) => current === "messages" ? current : null);
     void exitFullscreen();
     onClose();
   }, [exitFullscreen, onClose]);
+  const closeRoomMessages = useCallback(() => {
+    setSecondaryPanel(null);
+    window.requestAnimationFrame(() => {
+      document.querySelector<HTMLButtonElement>(
+        'button[aria-label="Открыть чат группы"]',
+      )?.focus({ preventScroll: true });
+    });
+  }, []);
 
   useEffect(() => {
     if (!open) void exitFullscreen();
@@ -106,7 +114,10 @@ export function VoiceRoomMainSurface({
         fullscreen ? "fixed inset-0 z-[200]" : "absolute inset-0 z-[80]",
       )}
     >
-      <div className="voople-full-room h-full min-h-0 w-full overflow-hidden border-0 shadow-none">
+      <div
+        data-chat-open={secondaryPanel === "messages" ? "true" : "false"}
+        className="voople-full-room h-full min-h-0 w-full overflow-hidden border-0 shadow-none"
+      >
         <div className="voople-full-room__frame relative flex h-full min-h-0 min-w-0 max-sm:flex-col">
           {roomSwitcher ? <VoiceRoomSwitcher {...roomSwitcher} /> : null}
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -117,12 +128,16 @@ export function VoiceRoomMainSurface({
               hasGroupSounds={stage.groupSounds.length > 0}
               hasRoomMessages={Boolean(messages)}
               roomMessagesOpen={secondaryPanel === "messages"}
+              roomSwitcher={roomSwitcher}
               access={access}
               fullscreen={fullscreen}
               fullscreenPending={fullscreenPending}
               onMinimize={minimize}
               onOpenSoundboard={() => setSecondaryPanel("soundboard")}
-              onToggleRoomMessages={() => setSecondaryPanel((current) => current === "messages" ? null : "messages")}
+              onToggleRoomMessages={() => {
+                if (secondaryPanel === "messages") closeRoomMessages();
+                else setSecondaryPanel("messages");
+              }}
               onOpenSettings={() => setSecondaryPanel("settings")}
               onToggleFullscreen={toggleFullscreen}
             />
@@ -146,7 +161,7 @@ export function VoiceRoomMainSurface({
             />
           </div>
           {messages && secondaryPanel === "messages" ? (
-            <RoomMessagesPanel model={messages} onClose={() => setSecondaryPanel(null)} />
+            <RoomMessagesPanel model={messages} onClose={closeRoomMessages} />
           ) : null}
         </div>
       </div>

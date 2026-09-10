@@ -7,6 +7,10 @@ import {
   resolveVoiceRoomSurfacePhase,
   waitForVoiceRoomLifecycle,
 } from "../src/components/chat/voice/voice-room-surface.ts";
+import {
+  clampRoomChatPanelWidth,
+  ROOM_CHAT_PANEL_DEFAULT_WIDTH,
+} from "../src/components/chat/voice/room-chat-panel-width.ts";
 
 const read = (path) => readFileSync(path, "utf8");
 
@@ -50,6 +54,13 @@ test("room errors name the failed operation instead of using generic copy", () =
   assert.equal(resolveVoiceRoomErrorTitle("Повторить выход"), "Не удалось выйти из комнаты");
   assert.equal(resolveVoiceRoomErrorTitle("Повторить загрузку"), "Не удалось загрузить комнату");
   assert.equal(resolveVoiceRoomErrorTitle("Повторить подключение"), "Не удалось подключиться к комнате");
+});
+
+test("Group Chat drawer width stays inside the product bounds", () => {
+  assert.equal(ROOM_CHAT_PANEL_DEFAULT_WIDTH, 360);
+  assert.equal(clampRoomChatPanelWidth(240), 320);
+  assert.equal(clampRoomChatPanelWidth(404.4), 404);
+  assert.equal(clampRoomChatPanelWidth(600), 480);
 });
 
 test("full Room replaces main content and minimizes without ending its session", () => {
@@ -135,6 +146,25 @@ test("full Room gives its identity a dedicated mobile row without hiding actions
     /\.voople-full-room__header-actions \{[\s\S]*?align-self: flex-end;/,
   );
   assert.doesNotMatch(header, /hidden.*voople-full-room__header-actions/);
+});
+
+test("Full Room adapts the Group Chat drawer without collapsing the media stage", () => {
+  const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
+  const header = read("src/components/chat/voice/VoiceRoomHeader.tsx");
+  const panel = read("src/components/chat/voice/RoomMessagesPanel.tsx");
+  const width = read("src/components/chat/voice/useRoomChatPanelWidth.ts");
+  const styles = read("src/app/globals.css");
+
+  assert.match(surface, /data-chat-open=\{secondaryPanel === "messages" \? "true" : "false"\}/);
+  assert.match(surface, /current === "messages" \? current : null/);
+  assert.match(header, /voople-full-room__room-selector/);
+  assert.match(header, /roomSwitcher\.onSelect\(room\)/);
+  assert.match(panel, /voople-room-chat-panel__resize/);
+  assert.match(width, /ArrowLeft/);
+  assert.match(width, /ArrowRight/);
+  assert.match(styles, /max-width: 40cqw/);
+  assert.match(styles, /@container \(max-width: 999px\)[\s\S]*?\.voople-room-chat-panel \{[\s\S]*?position: absolute;[\s\S]*?width: 100%;/);
+  assert.match(styles, /@container \(max-width: 799px\)[\s\S]*?\.voople-full-room__switcher \{[\s\S]*?display: none;/);
 });
 
 test("room recovery is bounded, actionable and restores dialog focus", async () => {

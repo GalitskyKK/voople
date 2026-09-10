@@ -56,7 +56,10 @@ test("room main surface owns one secondary panel and cancels stale fullscreen re
   const fullscreen = read("src/components/chat/voice/useVoiceRoomFullscreen.ts");
 
   assert.match(surface, /type SecondaryPanel = "settings" \| "soundboard" \| "invite" \| "messages" \| null/);
-  assert.match(surface, /setSecondaryPanel\(null\);\s+void exitFullscreen\(\);\s+onClose\(\)/);
+  assert.match(
+    surface,
+    /setSecondaryPanel\(\(current\) => current === "messages" \? current : null\);\s+void exitFullscreen\(\);\s+onClose\(\)/,
+  );
   assert.doesNotMatch(surface, /settingsOpen|soundboardOpen/);
   assert.match(fullscreen, /if \(pendingRef\.current\) return/);
   assert.match(fullscreen, /generationRef\.current !== generation/);

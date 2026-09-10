@@ -1,7 +1,7 @@
 "use client";
 
-import { MessageSquareText, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { GripVertical, MessageSquareText, X } from "lucide-react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { ChatConversationState } from "@/components/chat/ChatConversationState";
@@ -20,6 +20,7 @@ import type { ChatMessageRoomContext, ChatMessageView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
 
 import type { VoiceRoomMessagesModel } from "./voice-room-sheet-models";
+import { useRoomChatPanelWidth } from "./useRoomChatPanelWidth";
 
 export function RoomMessagesPanel({
   model,
@@ -29,6 +30,7 @@ export function RoomMessagesPanel({
   onClose: () => void;
 }) {
   const online = useBrowserOnline();
+  const panelWidth = useRoomChatPanelWidth();
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<ChatMessageView | null>(null);
   const [pendingUpload, setPendingUpload] = useState<PendingChatUpload | null>(null);
@@ -133,7 +135,24 @@ export function RoomMessagesPanel({
   );
 
   return (
-    <aside className="absolute inset-0 z-30 flex min-h-0 flex-col bg-[var(--background)] sm:relative sm:z-auto sm:w-[22.5rem] sm:shrink-0 sm:border-l sm:border-[var(--app-border)]" aria-label={`Чат группы: ${audienceLabel}`}>
+    <aside
+      className="voople-room-chat-panel flex min-h-0 flex-col bg-[var(--background)]"
+      style={{ "--room-chat-panel-width": `${panelWidth.width}px` } as CSSProperties}
+      aria-label={`Чат группы: ${audienceLabel}`}
+    >
+      <button
+        type="button"
+        className="voople-room-chat-panel__resize"
+        aria-label="Изменить ширину чата группы"
+        title="Ширина чата: стрелки, Shift — крупный шаг"
+        onPointerDown={panelWidth.onPointerDown}
+        onPointerMove={panelWidth.onPointerMove}
+        onPointerUp={panelWidth.onPointerEnd}
+        onPointerCancel={panelWidth.onPointerEnd}
+        onKeyDown={panelWidth.onKeyDown}
+      >
+        <GripVertical className="h-4 w-4" aria-hidden="true" />
+      </button>
       <ChatThreadFrameView
         header={(
           <header className="flex min-h-16 shrink-0 items-center gap-3 border-b border-[var(--app-border)] px-4">

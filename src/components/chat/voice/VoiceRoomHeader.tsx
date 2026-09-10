@@ -23,6 +23,7 @@ import type {
   VoiceRoomAccessModel,
   VoiceRoomConnectionModel,
   VoiceRoomIdentityModel,
+  VoiceRoomSwitcherModel,
 } from "./voice-room-sheet-models";
 
 type VoiceRoomHeaderProps = {
@@ -32,6 +33,7 @@ type VoiceRoomHeaderProps = {
   hasGroupSounds: boolean;
   hasRoomMessages: boolean;
   roomMessagesOpen: boolean;
+  roomSwitcher: VoiceRoomSwitcherModel | null;
   access: VoiceRoomAccessModel;
   fullscreen: boolean;
   fullscreenPending: boolean;
@@ -49,6 +51,7 @@ export function VoiceRoomHeader({
   hasGroupSounds,
   hasRoomMessages,
   roomMessagesOpen,
+  roomSwitcher,
   access,
   fullscreen,
   fullscreenPending,
@@ -73,6 +76,26 @@ export function VoiceRoomHeader({
             </span>
           ) : null}
         </div>
+        {roomSwitcher ? (
+          <label className="voople-full-room__room-selector mt-1 items-center gap-2 text-xs text-[var(--app-muted)]">
+            <span className="sr-only">Текущая комната</span>
+            <select
+              value={roomSwitcher.currentRoomId}
+              disabled={Boolean(roomSwitcher.pendingRoomId)}
+              className="min-h-11 min-w-0 max-w-48 border border-[var(--app-border)] bg-[var(--app-surface)] px-2 text-[var(--foreground)] outline-none focus-visible:border-[var(--theme-accent)]"
+              onChange={(event) => {
+                const room = roomSwitcher.rooms.find((item) => item.id === event.target.value);
+                if (room) void roomSwitcher.onSelect(room);
+              }}
+            >
+              {roomSwitcher.rooms.map((room) => (
+                <option key={room.id} value={room.id}>
+                  {room.name} · {room.participantCount}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--app-muted)]">
           <span>{identity.isDirect ? "Разговор вдвоём" : `${participantCount} в комнате`}</span>
           {connection.label ? (

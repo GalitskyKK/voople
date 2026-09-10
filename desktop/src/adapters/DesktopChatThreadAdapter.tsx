@@ -16,8 +16,9 @@ import { ChatConversationStart } from "@/components/chat/ChatConversationStart";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import { useBrowserOnline } from "@/hooks/useBrowserOnline";
-import type { ChatListItem, ChatMessageView, GroupEmojiView } from "@/types/chat";
+import type { ChatListItem, GroupEmojiView } from "@/types/chat";
 import { ChatConversationState } from "@/components/chat/ChatConversationState";
+import { useChatComposerSession } from "@/components/chat/ChatComposerSessionProvider";
 
 import type { DesktopConfig } from "../config";
 import { DesktopChatComposerAdapter } from "./DesktopChatComposerAdapter";
@@ -64,8 +65,11 @@ export function DesktopChatThreadAdapter({
     sending,
     toggleReaction,
   } = useDesktopChatThread(config, session, chatId, onInboxChange);
-  const [replyTo, setReplyTo] = useState<ChatMessageView | null>(null);
-  const [editing, setEditing] = useState<ChatMessageView | null>(null);
+  const {
+    replyTo,
+    setText, setReplyTo, setEditing, setPendingTrack,
+    discardPendingUpload,
+  } = useChatComposerSession(chatId);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [groupEmojis, setGroupEmojis] = useState<GroupEmojiView[]>([]);
   const online = useBrowserOnline();
@@ -344,7 +348,10 @@ export function DesktopChatThreadAdapter({
           onReply={setReplyTo}
           onEdit={(message) => {
             setReplyTo(null);
+            discardPendingUpload();
+            setPendingTrack(null);
             setEditing(message);
+            setText(message.text ?? "");
           }}
           onDelete={(message) => {
             if (replyTo?.id === message.id) setReplyTo(null);
@@ -364,16 +371,11 @@ export function DesktopChatThreadAdapter({
       composer={<DesktopChatComposerAdapter
         chatId={chatId}
         placeholder={`Сообщение ${title}…`}
-        key={editing?.id ?? "new-message"}
         config={config}
         session={session}
-        replyTo={replyTo}
-        editing={editing}
         sending={sending}
-        onCancelReply={() => setReplyTo(null)}
         onSend={sendMessage}
         onEdit={editMessage}
-        onCancelEdit={() => setEditing(null)}
         customEmojis={data.chat.type === "group" ? groupEmojis : []}
       />}
       overlays={<ChatMediaLightbox

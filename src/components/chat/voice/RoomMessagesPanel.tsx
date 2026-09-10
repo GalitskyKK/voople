@@ -37,7 +37,7 @@ export function RoomMessagesPanel({
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const {
     text, replyTo, editing, pendingUpload, pendingTrack,
-    setText, setReplyTo, setEditing, setPendingUpload, setPendingTrack,
+    setText, setReplyTo, setEditing, setPendingUpload, setPendingTrack, discardPendingUpload,
   } = useChatComposerSession(model.chatId);
   const { data: me } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
   const actions = useChatMessageActions(model.chatId);
@@ -193,7 +193,7 @@ export function RoomMessagesPanel({
             onReply={setReplyTo}
             onEdit={(message) => {
               setReplyTo(null);
-              setPendingUpload(null);
+              discardPendingUpload();
               setPendingTrack(null);
               editor.beginEditing(message);
             }}

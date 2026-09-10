@@ -33,6 +33,7 @@ export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps
   const {
     text, replyTo, editing, pendingUpload, pendingTrack,
     setText, setReplyTo, setEditing, setPendingUpload, setPendingTrack,
+    discardPendingUpload,
   } = useChatComposerSession(chatId);
   const { onlineUserIds } = useOnlineUsers();
   const online = useBrowserOnline();
@@ -172,7 +173,7 @@ export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps
           onReply={setReplyTo}
           onEdit={(message) => {
             setReplyTo(null);
-            setPendingUpload(null);
+            discardPendingUpload();
             setPendingTrack(null);
             editor.beginEditing(message);
           }}

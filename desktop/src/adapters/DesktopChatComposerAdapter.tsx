@@ -1,11 +1,11 @@
 import type { Session } from "@supabase/supabase-js";
-import { useState } from "react";
 
+import { useChatComposerSession } from "@/components/chat/ChatComposerSessionProvider";
 import { ChatComposerFormView } from "@/components/chat/ChatComposerFormView";
 import { ChatComposerPreviewView } from "@/components/chat/ChatComposerPreviewView";
 import { useLocalChatDraft } from "@/hooks/useLocalChatDraft";
 import { parseChatUploadMime } from "@/lib/object-storage/chat-mime";
-import type { ChatMessageView, GroupEmojiView } from "@/types/chat";
+import type { GroupEmojiView } from "@/types/chat";
 
 import type { DesktopMessageDraft } from "../chat/useDesktopChatThread";
 import { useDesktopChatUpload } from "../chat/useDesktopChatUpload";
@@ -16,29 +16,24 @@ export function DesktopChatComposerAdapter({
   placeholder,
   config,
   session,
-  replyTo,
-  editing,
   sending,
-  onCancelReply,
   onSend,
   onEdit,
-  onCancelEdit,
   customEmojis = [],
 }: {
   chatId: string;
   placeholder?: string;
   config: DesktopConfig;
   session: Session;
-  replyTo: ChatMessageView | null;
-  editing: ChatMessageView | null;
   sending: boolean;
-  onCancelReply: () => void;
   onSend: (draft: DesktopMessageDraft) => Promise<boolean>;
   onEdit: (messageId: string, text: string) => Promise<boolean>;
-  onCancelEdit: () => void;
   customEmojis?: GroupEmojiView[];
 }) {
-  const [text, setText] = useState(() => editing?.text ?? "");
+  const {
+    text, replyTo, editing, pendingUpload,
+    setText, setReplyTo, setEditing, setPendingUpload,
+  } = useChatComposerSession(chatId);
   useLocalChatDraft({
     accountId: session.user.id,
     chatId,
@@ -54,7 +49,13 @@ export function DesktopChatComposerAdapter({
     upload,
     uploadFile,
     uploading,
-  } = useDesktopChatUpload(config, session, chatId);
+  } = useDesktopChatUpload(
+    config,
+    session,
+    chatId,
+    pendingUpload,
+    setPendingUpload,
+  );
 
   const audioMetadataReady =
     upload?.kind !== "audio" ||
@@ -71,7 +72,7 @@ export function DesktopChatComposerAdapter({
     if (editing) {
       if (await onEdit(editing.id, text)) {
         setText("");
-        onCancelEdit();
+        setEditing(null);
       }
       return;
     }
@@ -79,7 +80,7 @@ export function DesktopChatComposerAdapter({
     if (!sent) return;
     setText("");
     clear();
-    onCancelReply();
+    setReplyTo(null);
   };
 
   const selectImage = async (file?: File) => {
@@ -125,12 +126,12 @@ export function DesktopChatComposerAdapter({
             replyTo={replyTo}
             upload={upload}
             editableAudioMetadata
-            onCancelReply={onCancelReply}
+            onCancelReply={() => setReplyTo(null)}
             onClearUpload={clear}
             onUpdateAudioMetadata={updateAudioMetadata}
             onCancelEdit={() => {
               setText("");
-              onCancelEdit();
+              setEditing(null);
             }}
           />
         }

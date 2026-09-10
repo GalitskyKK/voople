@@ -1,5 +1,5 @@
 import type { Session } from "@supabase/supabase-js";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 
 import {
   chatAttachmentKindFromKey,
@@ -20,11 +20,11 @@ export function useDesktopChatUpload(
   config: DesktopConfig,
   session: Session,
   chatId: string,
+  upload: ChatPendingUpload | null,
+  setUpload: Dispatch<SetStateAction<ChatPendingUpload | null>>,
 ) {
-  const [upload, setUpload] = useState<ChatPendingUpload | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const uploadRef = useRef<ChatPendingUpload | null>(null);
   const client = useMemo(
     () => createDesktopTrpcClient(config, () => session.access_token),
     [config, session.access_token],
@@ -35,16 +35,7 @@ export function useDesktopChatUpload(
       if (current?.previewUrl) URL.revokeObjectURL(current.previewUrl);
       return null;
     });
-    uploadRef.current = null;
-  }, []);
-
-  useEffect(
-    () => () => {
-      const previewUrl = uploadRef.current?.previewUrl;
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    },
-    [],
-  );
+  }, [setUpload]);
 
   const uploadFile = useCallback(
     async (file: File, options?: DesktopChatUploadOptions) => {
@@ -100,7 +91,6 @@ export function useDesktopChatUpload(
             : {}),
         };
         clear();
-        uploadRef.current = nextUpload;
         setUpload(nextUpload);
         return nextUpload;
       } catch (uploadError) {
@@ -114,7 +104,7 @@ export function useDesktopChatUpload(
         setUploading(false);
       }
     },
-    [chatId, clear, client],
+    [chatId, clear, client, setUpload],
   );
 
   const updateAudioMetadata = useCallback(
@@ -123,7 +113,7 @@ export function useDesktopChatUpload(
         current?.kind === "audio" ? { ...current, ...metadata } : current,
       );
     },
-    [],
+    [setUpload],
   );
 
   return {

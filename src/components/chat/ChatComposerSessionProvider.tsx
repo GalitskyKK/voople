@@ -105,6 +105,12 @@ export function useChatComposerSession(chatId: string) {
     setPendingUpload: ((value) => setField("pendingUpload", value)) as Dispatch<SetStateAction<PendingChatUpload | null>>,
     setPendingTrack: ((value) => setField("pendingTrack", value)) as Dispatch<SetStateAction<PlaylistTrackView | null>>,
   }), [setField]);
+  const discardPendingUpload = useCallback(() => {
+    setField("pendingUpload", (current) => {
+      if (current?.previewUrl) URL.revokeObjectURL(current.previewUrl);
+      return null;
+    });
+  }, [setField]);
 
-  return { ...state, ...setters };
+  return { ...state, ...setters, discardPendingUpload };
 }

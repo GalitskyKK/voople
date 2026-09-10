@@ -38,6 +38,8 @@ test("web and desktop home use one responsive feed layout", () => {
 test("web and desktop chat composer share one presentation layer", () => {
   const web = read("src/components/chat/ChatComposer.tsx");
   const desktop = read("desktop/src/adapters/DesktopChatComposerAdapter.tsx");
+  const desktopThread = read("desktop/src/adapters/DesktopChatThreadAdapter.tsx");
+  const desktopUpload = read("desktop/src/chat/useDesktopChatUpload.ts");
   const form = read("src/components/chat/ChatComposerFormView.tsx");
   const preview = read("src/components/chat/ChatComposerPreviewView.tsx");
   const baseline = JSON.parse(read(".architecture-baseline.json"));
@@ -46,6 +48,10 @@ test("web and desktop chat composer share one presentation layer", () => {
   assert.match(web, /ChatComposerPreviewView/);
   assert.match(desktop, /ChatComposerFormView/);
   assert.match(desktop, /ChatComposerPreviewView/);
+  assert.match(desktop, /useChatComposerSession\(chatId\)/);
+  assert.match(desktopThread, /useChatComposerSession\(chatId\)/);
+  assert.match(desktopUpload, /setUpload: Dispatch<SetStateAction<ChatPendingUpload \| null>>/);
+  assert.doesNotMatch(desktopUpload, /useState<ChatPendingUpload \| null>/);
   assert.match(form, /ChatComposerInputView/);
   assert.match(preview, /editableAudioMetadata/);
   assert.equal(

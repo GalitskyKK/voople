@@ -8,6 +8,7 @@ import {
   getScreenShareCaptureOptions,
 } from "../src/components/chat/voice/voice-room-config.ts";
 import { shouldSubscribeToScreenPublication } from "../src/components/chat/voice/useScreenShareSubscription.ts";
+import { screenPublicationBelongsToFocus } from "../src/components/chat/voice/screen-share-focus.ts";
 import { resolveDesktopProcessAudioSource } from "../src/lib/livekit/desktop-process-audio.ts";
 
 const read = (path) => readFileSync(path, "utf8");
@@ -135,6 +136,29 @@ test("local preview is opt-in, race-safe and pauses outside the focused window",
   assert.match(videoStage, /useLocalScreenPreviewVisibility/);
   assert.match(roomStage, /screenShareOwner && screenShareIsLocal \? "grid" : "focus"/);
   assert.match(roomStage, /selection\?\.screenTrackId === screenShareTrackId/);
+});
+
+test("concurrent screen shares keep focus until the active publication ends", () => {
+  const subscription = read("src/components/chat/voice/useScreenShareSubscription.ts");
+  const focus = read("src/components/chat/voice/screen-share-focus.ts");
+  const videoStage = read("src/components/chat/voice/useVoiceVideoStage.ts");
+  const activeVideo = { source: Track.Source.ScreenShare, trackSid: "screen-a" };
+  const otherVideo = { source: Track.Source.ScreenShare, trackSid: "screen-b" };
+  const screenAudio = { source: Track.Source.ScreenShareAudio, trackSid: "audio-a" };
+  const participant = { trackPublications: new Map([["video", activeVideo], ["audio", screenAudio]]) };
+
+  assert.equal(screenPublicationBelongsToFocus(activeVideo, participant, "screen-a"), true);
+  assert.equal(screenPublicationBelongsToFocus(screenAudio, participant, "screen-a"), true);
+  assert.equal(screenPublicationBelongsToFocus(otherVideo, participant, "screen-a"), false);
+  assert.match(focus, /screenPublicationBelongsToFocus/);
+  assert.match(subscription, /watchingRef\.current && ownsFocus/);
+  assert.match(subscription, /subscribed && ownsFocus && matchesExpectedSession/);
+  assert.match(subscription, /promoteNextScreen/);
+  assert.match(subscription, /if \(promoteNextScreen\(publication\.trackSid\)\)/);
+  assert.match(
+    videoStage,
+    /activeScreenTrackRef\.current && activeScreenTrackRef\.current !== publication\.trackSid\) return/,
+  );
 });
 
 test("room screen stage owns remaining height and contains remote video", () => {

@@ -51,7 +51,6 @@ export function useVoiceVideoStage() {
     screenContainerRef.current?.replaceChildren();
     screenParkingRef.current?.replaceChildren();
   }, []);
-
   const clearRemoteScreen = useCallback(() => {
     const localBrowserPreview = findBrowserScreenPreview(screenContainerRef.current);
     if (localBrowserPreview && screenParkingRef.current) {
@@ -177,6 +176,7 @@ export function useVoiceVideoStage() {
       if (track.kind !== Track.Kind.Video) return;
 
       if (publication.source === Track.Source.ScreenShare) {
+        if (activeScreenTrackRef.current && activeScreenTrackRef.current !== publication.trackSid) return;
         clearScreen();
         activeScreenTrackRef.current = publication.trackSid;
         setScreenShareTrackId(publication.trackSid);

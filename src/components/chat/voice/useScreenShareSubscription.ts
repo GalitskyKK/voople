@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, type RefObject } from "react";
 import { Track, VideoQuality, type RemoteParticipant, type RemoteTrackPublication, type Room } from "livekit-client";
+import { screenPublicationBelongsToFocus } from "./screen-share-focus.ts";
 
 export function isRemoteScreenPublication(publication: RemoteTrackPublication) {
   return publication.source === Track.Source.ScreenShare || publication.source === Track.Source.ScreenShareAudio;
@@ -75,20 +76,40 @@ export function useScreenShareSubscription({
         return;
       }
       if (publication.source === Track.Source.ScreenShare) {
-        activeScreenPublicationRef.current = publication.trackSid;
-        activeScreenIsLocalRef.current = ownNativeShare;
-        requestBestAvailableScreenVideo(publication);
-        setAvailable(ownNativeShare ? "Ваш экран" : participant.name || participant.identity || "Участник");
-        if (ownNativeShare) {
-          setLocalAvailable(true);
-          setLocalSharing(true);
+        const activeTrackId = activeScreenPublicationRef.current;
+        const ownsFocus = !activeTrackId || activeTrackId === publication.trackSid;
+        if (ownsFocus) {
+          activeScreenPublicationRef.current = publication.trackSid;
+          activeScreenIsLocalRef.current = ownNativeShare;
+          requestBestAvailableScreenVideo(publication);
+          setAvailable(ownNativeShare ? "Ваш экран" : participant.name || participant.identity || "Участник");
+          if (ownNativeShare) {
+            setLocalAvailable(true);
+            setLocalSharing(true);
+          }
+          participant.trackPublications.forEach((companion) => {
+            if (companion.source !== Track.Source.ScreenShareAudio) return;
+            (companion as RemoteTrackPublication).setSubscribed(
+              shouldSubscribeToScreenPublication({
+                source: companion.source,
+                ownerId,
+                viewerId,
+                watching: watchingRef.current,
+              }),
+            );
+          });
         }
       }
+      const ownsFocus = screenPublicationBelongsToFocus(
+        publication,
+        participant,
+        activeScreenPublicationRef.current,
+      );
       publication.setSubscribed(shouldSubscribeToScreenPublication({
         source: publication.source,
         ownerId,
         viewerId,
-        watching: watchingRef.current,
+        watching: watchingRef.current && ownsFocus,
       }));
     } else {
       publication.setSubscribed(true);
@@ -103,11 +124,27 @@ export function useScreenShareSubscription({
 
   const setScreenSubscribed = useCallback((subscribed: boolean) => {
     watchingRef.current = subscribed;
+    if (subscribed && !activeScreenPublicationRef.current) {
+      for (const participant of roomRef.current?.remoteParticipants.values() ?? []) {
+        for (const publication of participant.trackPublications.values()) {
+          const candidate = publication as RemoteTrackPublication;
+          if (candidate.source !== Track.Source.ScreenShare) continue;
+          syncPublication(candidate, participant);
+          if (activeScreenPublicationRef.current) break;
+        }
+        if (activeScreenPublicationRef.current) break;
+      }
+    }
     roomRef.current?.remoteParticipants.forEach((participant) => {
       participant.trackPublications.forEach((publication) => {
         const remotePublication = publication as RemoteTrackPublication;
         if (isRemoteScreenPublication(remotePublication)) {
-          requestBestAvailableScreenVideo(remotePublication);
+          const ownsFocus = screenPublicationBelongsToFocus(
+            remotePublication,
+            participant,
+            activeScreenPublicationRef.current,
+          );
+          if (ownsFocus) requestBestAvailableScreenVideo(remotePublication);
           const ownerId = participant.attributes["voople.ownerId"];
           const viewerId = roomRef.current?.localParticipant.identity;
           const ownNativeShare = Boolean(ownerId && viewerId && ownerId === viewerId);
@@ -118,14 +155,39 @@ export function useScreenShareSubscription({
             source: remotePublication.source,
             ownerId,
             viewerId,
-            watching: subscribed && matchesExpectedSession,
+            watching: subscribed && ownsFocus && matchesExpectedSession,
           }));
         }
       });
     });
     setWatching(subscribed);
     if (!subscribed) clearRemoteScreen();
-  }, [clearRemoteScreen, roomRef, setWatching]);
+  }, [clearRemoteScreen, roomRef, setWatching, syncPublication]);
+
+  const promoteNextScreen = useCallback((removedTrackId: string) => {
+    activeScreenPublicationRef.current = null;
+    activeScreenIsLocalRef.current = false;
+    for (const participant of roomRef.current?.remoteParticipants.values() ?? []) {
+      for (const publication of participant.trackPublications.values()) {
+        const candidate = publication as RemoteTrackPublication;
+        if (
+          candidate.source !== Track.Source.ScreenShare ||
+          candidate.trackSid === removedTrackId
+        ) {
+          continue;
+        }
+        syncPublication(candidate, participant);
+        if (!activeScreenPublicationRef.current) continue;
+        participant.trackPublications.forEach((companion) => {
+          if (companion.trackSid !== candidate.trackSid) {
+            syncPublication(companion as RemoteTrackPublication, participant);
+          }
+        });
+        return true;
+      }
+    }
+    return false;
+  }, [roomRef, syncPublication]);
 
   const removePublication = useCallback((
     publication: RemoteTrackPublication,
@@ -147,13 +209,15 @@ export function useScreenShareSubscription({
       setLocalAvailable(false);
       setLocalSharing(false);
     }
-    activeScreenPublicationRef.current = null;
-    activeScreenIsLocalRef.current = false;
+    clearRemoteScreen();
+    if (promoteNextScreen(publication.trackSid)) {
+      setWatching(watchingRef.current);
+      return;
+    }
     watchingRef.current = false;
     setAvailable(null);
     setWatching(false);
-    clearRemoteScreen();
-  }, [clearRemoteScreen, roomRef, setAvailable, setLocalAvailable, setLocalSharing, setWatching]);
+  }, [clearRemoteScreen, promoteNextScreen, roomRef, setAvailable, setLocalAvailable, setLocalSharing, setWatching]);
 
   const clearLocalShare = useCallback(() => {
     expectedLocalSessionRef.current = null;

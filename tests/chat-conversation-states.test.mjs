@@ -20,5 +20,7 @@ test("web and desktop preserve the conversation while surfacing network state", 
   assert.match(web, /mode="offline" variant="inline"/);
   assert.match(desktop, /useBrowserOnline/);
   assert.match(desktop, /mode="offline" variant="inline"/);
-  assert.match(desktopThread, /setData\(thread\);\s+setError\(null\);/);
+  assert.match(desktopThread, /trpc\.chat\.observeMessages\.useQuery/);
+  assert.match(desktopThread, /data: query\.data \?\? null/);
+  assert.match(desktopThread, /query\.error\?\.message/);
 });

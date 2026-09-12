@@ -34,18 +34,18 @@ test("the released getMessages contract remains compatible with older desktop cl
   const desktop = read("desktop/src/chat/useDesktopChatThread.ts");
 
   assert.match(legacy, /markMessagesRead\(input\.chatId, ctx\.user\.id, throughAt\)/);
-  assert.match(desktop, /client\.query\("chat\.observeMessages"/);
+  assert.match(desktop, /trpc\.chat\.observeMessages\.useQuery/);
 });
 
 test("web and desktop only acknowledge a visible focused conversation", () => {
   const shared = read("src/lib/chat/read-receipts.ts");
   const web = read("src/hooks/useChatConversationAttention.ts");
-  const desktop = read("desktop/src/chat/useDesktopChatThread.ts");
+  const desktop = read("desktop/src/chat/useDesktopChatRealtime.ts");
 
   assert.match(shared, /document\.visibilityState === "visible" && document\.hasFocus\(\)/);
   assert.match(web, /useChatReadReceipt\(chatId, messages\)/);
   assert.match(desktop, /canAcknowledgeConversation\(\)/);
-  assert.match(desktop, /chat\.markRead/);
+  assert.match(desktop, /trpc\.chat\.markRead\.useMutation/);
   assert.match(desktop, /throughAt: unreadThroughAt/);
 });
 

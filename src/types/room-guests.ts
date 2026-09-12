@@ -1,3 +1,5 @@
+import type { VoiceMediaCredentials } from "./voice";
+
 export type RoomGuestInviteUnavailableReason =
   | "missing"
   | "expired"
@@ -28,6 +30,13 @@ export type RoomGuestJoinResult = {
   providerSessionId: string;
   displayName: string;
   expiresAt: string;
+};
+
+export type RoomGuestSessionIdentity = Omit<RoomGuestJoinResult, "providerSessionId">;
+
+export type RoomGuestSessionSnapshot = {
+  guest: RoomGuestSessionIdentity;
+  media: VoiceMediaCredentials;
 };
 
 export type RoomGuestConversionStatus =

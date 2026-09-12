@@ -52,7 +52,8 @@ test("guest conversion is an explicit resumable auth continuation", async () => 
   assert.match(hook, /authEntryHref\("\/register", returnPath\)/);
   assert.match(hook, /authEntryHref\("\/login", returnPath\)/);
   assert.match(hook, /credentials: "same-origin"/);
-  assert.match(session, /accountConversionRef\.current/);
-  assert.match(session, /if \(accountConversionRef\.current\) return/);
+  assert.match(session, /prepareAccountConversion/);
+  assert.match(session, /await media\.disconnect\(\)/);
+  assert.doesNotMatch(session, /pagehide|keepalive: true/);
   assert.match(route, /conversionRequested=\{query\.convert === "1"\}/);
 });

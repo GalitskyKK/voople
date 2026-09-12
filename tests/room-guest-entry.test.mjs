@@ -70,6 +70,8 @@ test("guest transport keeps credentials out of browser JavaScript and restricts 
   assert.doesNotMatch(inviteRoute, /accessToken: result\.accessToken/);
   assert.match(sessionRoute, /Cache-Control": "private, no-store"/);
   assert.match(sessionRoute, /roomGuestCookieOptions/);
+  assert.match(sessionRoute, /resumeRoomGuestSession/);
+  assert.match(sessionRoute, /status: ended \? 410 : 503/);
   assert.match(media, /const identity = `guest:\$\{input\.guestId\}`/);
   assert.match(media, /canPublishData: false/);
   assert.match(media, /canPublishSources: \[TrackSource\.MICROPHONE\]/);
@@ -78,9 +80,10 @@ test("guest transport keeps credentials out of browser JavaScript and restricts 
 });
 
 test("guest UI joins muted, exposes recovery states and keeps guests out of profiles", async () => {
-  const [page, hook, snapshot, groupNow, participant] = await Promise.all([
+  const [page, hook, media, snapshot, groupNow, participant] = await Promise.all([
     readFile(new URL("../src/components/chat/RoomGuestPage.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/hooks/useRoomGuestSession.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/hooks/useRoomGuestMedia.ts", import.meta.url), "utf8"),
     readFile(new URL("../src/server/data/group-now-rest.ts", import.meta.url), "utf8"),
     readFile(new URL("../src/server/services/group-now.service.ts", import.meta.url), "utf8"),
     readFile(new URL("../src/components/chat/GroupNowParticipant.tsx", import.meta.url), "utf8"),
@@ -92,11 +95,12 @@ test("guest UI joins muted, exposes recovery states and keeps guests out of prof
   assert.match(page, /Нет подключения к интернету/);
   assert.match(page, /guest\.micError/);
   assert.match(page, /screenRootRef/);
-  assert.match(hook, /useState\(true\)/);
-  assert.match(hook, /RoomEvent\.Reconnecting/);
+  assert.match(media, /useState\(true\)/);
+  assert.match(media, /RoomEvent\.Reconnecting/);
   assert.match(hook, /setInterval\(heartbeat, 20_000\)/);
   assert.match(hook, /crypto\.randomUUID\(\)/);
-  assert.match(hook, /keepalive: true/);
+  assert.match(hook, /connectSession\(preview\.participantCount, true\)/);
+  assert.doesNotMatch(hook, /pagehide|keepalive: true/);
   assert.match(snapshot, /from\("live_session_guests"\)/);
   assert.match(snapshot, /last_seen_at/);
   assert.match(groupNow, /id: `guest:\$\{guest\.guestId\}`/);

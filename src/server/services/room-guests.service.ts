@@ -63,9 +63,18 @@ export function joinRoomAsGuest(input: {
   });
 }
 
-export async function createRoomGuestMediaToken(accessToken: string) {
+export async function resumeRoomGuestSession(accessToken: string) {
   const guest = await resolveRoomGuestRest(requireOpaqueToken(accessToken, "Гостевая сессия недоступна"));
-  return issueRoomGuestMediaTokenRest(guest);
+  const media = await issueRoomGuestMediaTokenRest(guest);
+  return {
+    guest: {
+      guestId: guest.guestId,
+      sessionId: guest.sessionId,
+      displayName: guest.displayName,
+      expiresAt: guest.expiresAt,
+    },
+    media,
+  };
 }
 
 export function heartbeatRoomGuest(accessToken: string, micMuted: boolean) {

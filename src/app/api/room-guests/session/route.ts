@@ -10,9 +10,9 @@ import {
   roomGuestCookieOptions,
 } from "@/lib/chat/room-guest-session";
 import {
-  createRoomGuestMediaToken,
   heartbeatRoomGuest,
   leaveRoomGuest,
+  resumeRoomGuestSession,
 } from "@/server/services/room-guests.service";
 
 const heartbeatSchema = z.object({ micMuted: z.boolean() });
@@ -33,9 +33,14 @@ export async function GET(request: Request) {
   const token = roomGuestAccessToken(request);
   if (!token) return noStore({ error: "Гостевая сессия не найдена" }, { status: 401 });
   try {
-    return noStore(await createRoomGuestMediaToken(token));
-  } catch {
-    return noStore({ error: "Гостевая сессия завершена" }, { status: 410 });
+    return noStore(await resumeRoomGuestSession(token));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    const ended = message.includes("сессия недоступна") || message.includes("Комната уже закрыта");
+    return noStore(
+      { error: ended ? "Гостевая сессия завершена" : "Не удалось восстановить гостевую сессию" },
+      { status: ended ? 410 : 503 },
+    );
   }
 }
 

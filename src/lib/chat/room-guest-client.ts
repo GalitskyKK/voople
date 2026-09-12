@@ -1,3 +1,17 @@
+import type { RoomGuestInviteUnavailableReason } from "@/types/room-guests";
+
+const UNAVAILABLE_COPY: Record<RoomGuestInviteUnavailableReason, string> = {
+  missing: "Ссылка не найдена или записана не полностью.",
+  expired: "Срок действия ссылки истёк. Попросите участника комнаты создать новую.",
+  revoked: "Ссылку отозвали. Попросите участника комнаты создать новую.",
+  ended: "Разговор уже завершился.",
+  full: "Все гостевые места заняты.",
+};
+
+export function roomGuestUnavailableCopy(reason: RoomGuestInviteUnavailableReason) {
+  return UNAVAILABLE_COPY[reason];
+}
+
 export async function roomGuestResponseJson<T>(response: Response): Promise<T> {
   const value = await response.json().catch(() => null) as T | { error?: string } | null;
   if (!response.ok) {

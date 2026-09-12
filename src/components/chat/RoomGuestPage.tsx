@@ -8,14 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { useBrowserOnline } from "@/hooks/useBrowserOnline";
 import { useRoomGuestConversion } from "@/hooks/useRoomGuestConversion";
 import { useRoomGuestSession } from "@/hooks/useRoomGuestSession";
-
-const UNAVAILABLE_COPY = {
-  missing: "Ссылка не найдена или записана не полностью.",
-  expired: "Срок действия ссылки истёк. Попросите участника комнаты создать новую.",
-  revoked: "Ссылку отозвали. Попросите участника комнаты создать новую.",
-  ended: "Разговор уже завершился.",
-  full: "Все гостевые места заняты.",
-} as const;
+import { roomGuestUnavailableCopy } from "@/lib/chat/room-guest-client";
 
 export function RoomGuestPage({
   token,
@@ -99,7 +92,9 @@ export function RoomGuestPage({
               </span>
               <h1 className="mt-5 text-2xl font-semibold">В комнату уже не войти</h1>
               <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[var(--app-muted)]">
-                {guest.preview ? UNAVAILABLE_COPY[guest.preview.reason as keyof typeof UNAVAILABLE_COPY] : "Приглашение недоступно."}
+                {guest.preview && guest.preview.reason !== "active"
+                  ? roomGuestUnavailableCopy(guest.preview.reason)
+                  : "Приглашение недоступно."}
               </p>
             </div>
           ) : guest.joined ? (
@@ -226,13 +221,18 @@ export function RoomGuestPage({
                   className="mt-2 h-11 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--background)] px-3 outline-none transition-colors placeholder:text-[var(--app-muted)] hover:border-[var(--app-border-strong)] focus:border-[var(--theme-accent)]"
                   placeholder="Например, Никита"
                 />
+                {guest.mediaError ? (
+                  <p className="mt-3 text-sm text-red-400" role="alert">
+                    {guest.mediaError} <button type="button" className="underline" onClick={() => void guest.connect()}>Повторить</button>
+                  </p>
+                ) : null}
                 {!online ? (
                   <p className="mt-3 flex items-center gap-2 text-sm text-amber-300" role="status">
                     <WifiOff className="h-4 w-4" aria-hidden="true" /> Нет подключения к интернету
                   </p>
                 ) : null}
                 {joinError ? <p className="mt-3 text-sm text-red-400" role="alert">{joinError}</p> : null}
-                <Button type="submit" size="lg" className="mt-5 w-full" disabled={!online || joinPending || !displayName.trim()}>
+                <Button type="submit" size="lg" className="mt-5 w-full" disabled={!online || Boolean(guest.mediaError) || joinPending || !displayName.trim()}>
                   {joinPending ? <LoaderCircle className="h-4 w-4 animate-spin motion-reduce:animate-none" /> : <Headphones className="h-4 w-4" />}
                   {joinPending ? "Подключаем" : "Зайти гостем"}
                 </Button>

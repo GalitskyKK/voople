@@ -25,7 +25,7 @@ export function VoiceMediaStage({
           : "hidden",
         focused
           ? "col-span-2 min-h-64 border-(--theme-accent) lg:col-span-4"
-          : "min-h-32 border-[var(--app-border)]",
+          : "min-h-20 border-[var(--app-border)]",
         className,
       )}
       aria-label={screenShareOwner ? `Демонстрация экрана: ${screenShareOwner}` : undefined}

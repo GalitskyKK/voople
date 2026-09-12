@@ -127,6 +127,11 @@ test("full room uses one shared reference-aligned visual frame", () => {
   assert.doesNotMatch(content, /blur-xl|animate-pulse/);
   assert.doesNotMatch(states, /rounded-3xl/);
   assert.match(stage, /auto-rows-fr/);
+  assert.match(stage, /grid-rows-\[minmax\(0,1fr\)_5rem\]/);
+  assert.match(stage, /grid-flow-col auto-cols-\[minmax\(7rem,10rem\)\]/);
+  assert.match(participant, /compact \? "min-h-20 gap-1 px-2 py-2"/);
+  assert.match(participant, /size=\{compact \? "sm" : "lg"\}/);
+  assert.match(media, /"min-h-20 border-\[var\(--app-border\)\]"/);
   assert.match(participant, /color-mix\(in_srgb,var\(--app-border\)_65%,var\(--app-muted\)\)/);
   assert.match(empty, /voople-full-room__solo/);
   assert.match(empty, /sm:grid-cols-\[minmax\(0,1fr\)_minmax\(13rem,0\.55fr\)\]/);
@@ -144,6 +149,10 @@ test("full Room gives its identity a dedicated mobile row without hiding actions
   assert.match(
     styles,
     /\.voople-full-room__header-actions \{[\s\S]*?align-self: flex-end;/,
+  );
+  assert.match(
+    styles,
+    /@media \(max-width: 639px\)[\s\S]*?\.voople-full-room__switcher \{[\s\S]*?display: none;/,
   );
   assert.doesNotMatch(header, /hidden.*voople-full-room__header-actions/);
 });

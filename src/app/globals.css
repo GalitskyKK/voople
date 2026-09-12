@@ -2281,6 +2281,7 @@ button.voople-post-action:active {
   }
 
   .voople-full-room__switcher {
+    display: none;
     width: 100%;
     min-width: 0;
     border-right-width: 0;

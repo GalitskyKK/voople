@@ -140,7 +140,7 @@ export function VoiceRoomStage({
         </div>
 
         {layout === "focus" ? (
-          <div className="grid min-h-0 flex-1 gap-2 lg:grid-cols-[minmax(0,1fr)_12rem]">
+          <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_5rem] gap-2">
             <div className="min-h-0 min-w-0">
               {activeFocusId === "screen" && screenShareOwner ? (
                 <VoiceMediaStage
@@ -153,12 +153,13 @@ export function VoiceRoomStage({
                 renderParticipant(focusedParticipant, "focused")
               ) : null}
             </div>
-            <div className="grid min-h-0 grid-cols-2 content-start gap-2 overflow-y-auto lg:grid-cols-1">
+            <div className="grid min-h-0 grid-flow-col auto-cols-[minmax(7rem,10rem)] gap-2 overflow-x-auto overflow-y-hidden">
               {screenShareOwner && activeFocusId !== "screen" ? (
                 <VoiceMediaStage
                   screenContainerRef={screenContainerRef}
                   screenShareOwner={screenShareOwner}
                   onFocus={() => focusMedia("screen")}
+                  className="h-full"
                 />
               ) : null}
               {remainingParticipants.map((participant) => renderParticipant(participant))}

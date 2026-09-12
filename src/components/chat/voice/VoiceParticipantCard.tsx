@@ -69,7 +69,7 @@ export function VoiceParticipantCard({
         onKeyDown={openContextMenuFromKeyboard}
         className={cn(
           "voople-full-room__participant relative flex flex-col items-center justify-end overflow-hidden rounded-[var(--app-radius-sm)] border bg-[var(--app-surface-soft)] text-center outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--theme-accent)]",
-          compact ? "min-h-32 gap-2 px-3 py-3" : "min-h-44 gap-3 px-4 py-4",
+          compact ? "min-h-20 gap-1 px-2 py-2" : "min-h-44 gap-3 px-4 py-4",
           focused && "col-span-2 h-full min-h-64 border-(--theme-accent) lg:col-span-4",
           speaking
             ? "border-[var(--theme-accent)]"
@@ -98,7 +98,7 @@ export function VoiceParticipantCard({
         <div className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center">
           <ProfileAvatarVisual
             displayName={participant.displayName}
-            size="lg"
+            size={compact ? "sm" : "lg"}
             isOnline
             ringClassName={resolveRingStyle(participant.avatarRingId)?.className}
             avatarImage={

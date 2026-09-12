@@ -97,6 +97,9 @@ test("guest UI joins muted, exposes recovery states and keeps guests out of prof
   assert.match(page, /screenRootRef/);
   assert.match(media, /useState\(true\)/);
   assert.match(media, /RoomEvent\.Reconnecting/);
+  assert.match(media, /activeScreenPublicationRef/);
+  assert.match(media, /screenPublicationBelongsToFocus/);
+  assert.match(media, /publication\.setSubscribed\(false\)/);
   assert.match(hook, /setInterval\(heartbeat, 20_000\)/);
   assert.match(hook, /crypto\.randomUUID\(\)/);
   assert.match(hook, /connectSession\(preview\.participantCount, true\)/);

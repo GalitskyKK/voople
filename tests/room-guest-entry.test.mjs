@@ -6,6 +6,7 @@ import {
   isRoomGuestInviteToken,
   roomGuestInviteUrl,
 } from "../src/lib/chat/room-guest-invite-url.ts";
+import { roomGuestMicrophoneError } from "../src/lib/chat/room-guest-client.ts";
 
 const token = "a".repeat(43);
 
@@ -17,6 +18,12 @@ test("Room guest links accept only opaque 256-bit base64url tokens and trusted o
   for (const origin of ["http://voople.ru", "https://user:pass@voople.ru", "https://voople.ru/path"]) {
     assert.equal(roomGuestInviteUrl(token, origin), null);
   }
+});
+
+test("guest microphone failures expose a useful recovery reason", () => {
+  assert.match(roomGuestMicrophoneError({ name: "NotAllowedError" }), /настройках браузера/);
+  assert.match(roomGuestMicrophoneError({ name: "NotFoundError" }), /Микрофон не найден/);
+  assert.equal(roomGuestMicrophoneError(new Error("device busy")), "device busy");
 });
 
 test("guest persistence is Room-only, hash-only and inaccessible to public database roles", async () => {
@@ -82,6 +89,8 @@ test("guest UI joins muted, exposes recovery states and keeps guests out of prof
   assert.match(page, /Зайти гостем/);
   assert.match(page, /Микрофон при входе выключен/);
   assert.match(page, /Подключить снова/);
+  assert.match(page, /Нет подключения к интернету/);
+  assert.match(page, /guest\.micError/);
   assert.match(page, /screenRootRef/);
   assert.match(hook, /useState\(true\)/);
   assert.match(hook, /RoomEvent\.Reconnecting/);

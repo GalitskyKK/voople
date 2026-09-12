@@ -1,24 +1,17 @@
 "use client";
 
 import { Room, RoomEvent, Track } from "livekit-client";
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { RefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 
 import { reconnectPolicy, VOICE_PUBLISH_OPTIONS } from "@/components/chat/voice/voice-room-config";
+import {
+  roomGuestMicrophoneError,
+  roomGuestResponseJson,
+} from "@/lib/chat/room-guest-client";
 import type { RoomGuestInvitePreview, RoomGuestJoinResult } from "@/types/room-guests";
 import type { VoiceMediaCredentials } from "@/types/voice";
 
 type GuestMediaStatus = "idle" | "connecting" | "connected" | "reconnecting" | "unavailable" | "error";
-
-async function responseJson<T>(response: Response): Promise<T> {
-  const value = await response.json().catch(() => null) as T | { error?: string } | null;
-  if (!response.ok) {
-    throw new Error(value && typeof value === "object" && "error" in value && value.error
-      ? String(value.error)
-      : "Сервис комнаты временно недоступен");
-  }
-  return value as T;
-}
 
 type RoomGuestMediaRoots = {
   audioRootRef: RefObject<HTMLDivElement | null>;
@@ -33,6 +26,7 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
   const [joined, setJoined] = useState<RoomGuestJoinResult | null>(null);
   const [mediaStatus, setMediaStatus] = useState<GuestMediaStatus>("idle");
   const [mediaError, setMediaError] = useState<string | null>(null);
+  const [micError, setMicError] = useState<string | null>(null);
   const [micMuted, setMicMuted] = useState(true);
   const [participantCount, setParticipantCount] = useState(0);
   const [screenVisible, setScreenVisible] = useState(false);
@@ -49,7 +43,7 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
         cache: "no-store",
         signal,
       });
-      setPreview(await responseJson<RoomGuestInvitePreview>(response));
+      setPreview(await roomGuestResponseJson<RoomGuestInvitePreview>(response));
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       setPreviewError(error instanceof Error ? error.message : "Не удалось проверить приглашение");
@@ -78,7 +72,7 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
     setMediaStatus("connecting");
     setMediaError(null);
     try {
-      const credentials = await responseJson<VoiceMediaCredentials>(await fetch("/api/room-guests/session", {
+      const credentials = await roomGuestResponseJson<VoiceMediaCredentials>(await fetch("/api/room-guests/session", {
         cache: "no-store",
         credentials: "same-origin",
       }));
@@ -142,7 +136,7 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
     const normalizedName = displayName.trim().replace(/\s+/g, " ");
     const requestId = joinRequestIdRef.current ?? crypto.randomUUID();
     joinRequestIdRef.current = requestId;
-    const result = await responseJson<RoomGuestJoinResult>(await fetch(
+    const result = await roomGuestResponseJson<RoomGuestJoinResult>(await fetch(
       `/api/room-guests/invites/${encodeURIComponent(token)}`,
       {
         method: "POST",
@@ -161,14 +155,18 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
     const room = roomRef.current;
     if (!room || mediaStatus !== "connected") return;
     const nextMuted = !micMuted;
-    await room.localParticipant.setMicrophoneEnabled(!nextMuted, undefined, VOICE_PUBLISH_OPTIONS);
-    setMicMuted(nextMuted);
-    await fetch("/api/room-guests/session", {
-      method: "PATCH",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ micMuted: nextMuted }),
-    }).catch(() => undefined);
+    setMicError(null);
+    try {
+      await room.localParticipant.setMicrophoneEnabled(!nextMuted, undefined, VOICE_PUBLISH_OPTIONS);
+      setMicMuted(nextMuted);
+      await fetch("/api/room-guests/session", {
+        method: "PATCH", credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ micMuted: nextMuted }),
+      }).catch(() => undefined);
+    } catch (error) {
+      setMicError(roomGuestMicrophoneError(error));
+    }
   }, [mediaStatus, micMuted]);
 
   const leave = useCallback(async () => {
@@ -183,6 +181,7 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
     }).catch(() => undefined);
     setJoined(null);
     setMicMuted(true);
+    setMicError(null);
     setMediaStatus("idle");
     manualDisconnectRef.current = false;
     await loadPreview();
@@ -237,6 +236,7 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
     joined,
     mediaStatus,
     mediaError,
+    micError,
     micMuted,
     participantCount,
     screenVisible,

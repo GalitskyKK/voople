@@ -1,11 +1,11 @@
 "use client";
-
-import { Headphones, LoaderCircle, LogOut, Mic, MicOff, MonitorPlay, UserPlus, UsersRound } from "lucide-react";
+import { Headphones, LoaderCircle, LogOut, Mic, MicOff, MonitorPlay, UserPlus, UsersRound, WifiOff } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { VoopleMark } from "@/components/brand/VoopleMark";
 import { RoomGuestConversionPanel } from "@/components/chat/RoomGuestConversionPanel";
 import { Button } from "@/components/ui/Button";
+import { useBrowserOnline } from "@/hooks/useBrowserOnline";
 import { useRoomGuestConversion } from "@/hooks/useRoomGuestConversion";
 import { useRoomGuestSession } from "@/hooks/useRoomGuestSession";
 
@@ -27,6 +27,7 @@ export function RoomGuestPage({
   const audioRootRef = useRef<HTMLDivElement | null>(null);
   const screenRootRef = useRef<HTMLDivElement | null>(null);
   const guest = useRoomGuestSession(token, { audioRootRef, screenRootRef });
+  const online = useBrowserOnline();
   const conversion = useRoomGuestConversion({
     token,
     requested: conversionRequested,
@@ -38,6 +39,10 @@ export function RoomGuestPage({
 
   const join = async () => {
     if (joinPending) return;
+    if (!online) {
+      setJoinError("Нет подключения к интернету. Восстановите связь и повторите.");
+      return;
+    }
     setJoinPending(true);
     setJoinError(null);
     try {
@@ -80,8 +85,10 @@ export function RoomGuestPage({
           ) : guest.previewError ? (
             <div className="grid min-h-[26rem] place-content-center px-6 py-12 text-center">
               <h1 className="text-2xl font-semibold">Не удалось проверить приглашение</h1>
-              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[var(--app-muted)]">{guest.previewError}</p>
-              <Button className="mx-auto mt-6" variant="secondary" onClick={() => void guest.loadPreview()}>
+              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[var(--app-muted)]">
+                {online ? guest.previewError : "Нет подключения к интернету. Восстановите связь и повторите."}
+              </p>
+              <Button className="mx-auto mt-6" variant="secondary" disabled={!online} onClick={() => void guest.loadPreview()}>
                 Повторить
               </Button>
             </div>
@@ -105,8 +112,8 @@ export function RoomGuestPage({
                   </p>
                 </div>
                 <p className="flex items-center gap-2 text-sm text-[var(--app-muted)]" role="status">
-                  <span className={`h-2 w-2 rounded-full ${guest.mediaStatus === "connected" ? "bg-emerald-400" : "bg-amber-400"}`} />
-                  {guest.mediaStatus === "connected" ? "Голос подключён"
+                  <span className={`h-2 w-2 rounded-full ${online && guest.mediaStatus === "connected" ? "bg-emerald-400" : "bg-amber-400"}`} />
+                  {!online ? "Нет сети" : guest.mediaStatus === "connected" ? "Голос подключён"
                     : guest.mediaStatus === "reconnecting" ? "Восстанавливаем связь"
                       : guest.mediaStatus === "connecting" ? "Подключаем голос" : "Голос не подключён"}
                 </p>
@@ -135,8 +142,16 @@ export function RoomGuestPage({
               {guest.mediaError ? (
                 <div className="border-t border-red-400/20 bg-red-400/10 px-5 py-3 text-sm text-red-300" role="alert">
                   {guest.mediaError}
-                  <Button size="sm" variant="ghost" className="ml-2" onClick={() => void guest.connect()}>
+                  <Button size="sm" variant="ghost" className="ml-2" disabled={!online} onClick={() => void guest.connect()}>
                     Подключить снова
+                  </Button>
+                </div>
+              ) : null}
+              {guest.micError ? (
+                <div className="border-t border-amber-400/20 bg-amber-400/10 px-5 py-3 text-sm text-amber-200" role="alert">
+                  {guest.micError}
+                  <Button size="sm" variant="ghost" className="ml-2" onClick={() => void guest.toggleMicrophone()}>
+                    Повторить
                   </Button>
                 </div>
               ) : null}
@@ -144,7 +159,7 @@ export function RoomGuestPage({
                 <Button
                   variant={guest.micMuted ? "secondary" : "primary"}
                   aria-pressed={!guest.micMuted}
-                  disabled={guest.mediaStatus !== "connected"}
+                  disabled={!online || guest.mediaStatus !== "connected"}
                   onClick={() => void guest.toggleMicrophone()}
                 >
                   {guest.micMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
@@ -211,8 +226,13 @@ export function RoomGuestPage({
                   className="mt-2 h-11 rounded-[var(--app-radius-md)] border border-[var(--app-border)] bg-[var(--background)] px-3 outline-none transition-colors placeholder:text-[var(--app-muted)] hover:border-[var(--app-border-strong)] focus:border-[var(--theme-accent)]"
                   placeholder="Например, Никита"
                 />
+                {!online ? (
+                  <p className="mt-3 flex items-center gap-2 text-sm text-amber-300" role="status">
+                    <WifiOff className="h-4 w-4" aria-hidden="true" /> Нет подключения к интернету
+                  </p>
+                ) : null}
                 {joinError ? <p className="mt-3 text-sm text-red-400" role="alert">{joinError}</p> : null}
-                <Button type="submit" size="lg" className="mt-5 w-full" disabled={joinPending || !displayName.trim()}>
+                <Button type="submit" size="lg" className="mt-5 w-full" disabled={!online || joinPending || !displayName.trim()}>
                   {joinPending ? <LoaderCircle className="h-4 w-4 animate-spin motion-reduce:animate-none" /> : <Headphones className="h-4 w-4" />}
                   {joinPending ? "Подключаем" : "Зайти гостем"}
                 </Button>

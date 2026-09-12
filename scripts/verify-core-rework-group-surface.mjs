@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { createRequire } from "node:module";
-import { mkdtemp, readdir, readFile } from "node:fs/promises";
+import { mkdtemp, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadCurrentVisualCss } from "./lib/load-current-visual-css.mjs";
 
 const repo = fileURLToPath(new URL("../", import.meta.url)).replaceAll("\\", "/").replace(/\/$/, "");
-const distRoot = path.resolve(process.argv[2] ?? path.join(repo, "desktop/dist"));
 const artifacts = await mkdtemp(path.join(os.tmpdir(), "voople-core-group-surface-"));
 console.log(`Screenshots: ${artifacts}`);
 
@@ -46,7 +46,7 @@ const entry = `import {useState} from 'react';import {createRoot} from 'react-do
   const common={parentChatId:null,topicsEnabled:false,topicsLayout:'tabs',topicIcon:null,groupVisibility:'private',joinPolicy:'invite_only',sectionAccessMode:'inherit',groupBannerUrl:null,groupTag:null,boostCount:0,boostedByMe:false,viewerRole:'member',lastMessage:null,unreadCount:0,channels:[]};
   const chats=[{...common,id:'group-1',type:'group',name:'VOICEKK',groupIcon:'V',groupAvatarUrl:null,groupAccentColor:'#8b5cf6',memberCount:7,unreadCount:5,otherUser:null},{...common,id:'direct-1',type:'direct',name:null,groupIcon:null,groupAvatarUrl:null,groupAccentColor:null,memberCount:2,unreadCount:2,otherUser:{id:'astra',username:'astra',displayName:'Astra',hasVooplePlus:false,avatarUrl:null,avatarDecorationUrl:null,avatarRingId:null,lastSeenAt:null}}];
   const renderDestination=({href,label,className,active,children})=><button type="button" data-href={href} aria-label={label} aria-current={active?'page':undefined} className={className} onClick={()=>{if(href.includes('surface=now'))window.setGroupTab?.('now')}}>{children}</button>;
-  function GroupSurface(){const [tab,setTab]=useState('chat');window.setGroupTab=setTab;const message={id:'message-1',senderId:'nmggk',text:'Кто сегодня в голос?',createdAt:'2026-09-08T18:41:00Z',isMine:false,readAt:null,reactions:[],sender:{displayName:'nmggk',hasVooplePlus:false,avatarUrl:null},roomContext:{roomId:'drg',liveSessionId:'s2',roomName:'DRG: Deep Rock Galactic',roomKind:'pinned',capturedAt:'2026-09-08T18:41:00Z'}};return <div className="flex min-h-0 flex-1 flex-col"><header className="voople-panel-header voople-chat-window__header voople-chat-window__header--group flex items-center gap-3 border-b border-[var(--app-border)] px-4"><button className="voople-group-header-identity flex min-w-0 flex-1 items-center gap-3 text-left"><GroupIdentity chatName="VOICEKK" memberCount={7} groupIcon="V" groupAvatarUrl={null} groupAccentColor="#8b5cf6" groupTag={null}/></button><button className="h-8 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] px-3 text-xs font-semibold">Войти в Лобби</button></header><GroupSurfaceTabs activeTab={tab} onTabChange={setTab}/>{tab==='chat'?<><GroupLiveShelfView rooms={rooms} currentUserRoomId={null} onJoinRoom={()=>{}}/><div className="flex min-h-0 flex-1 flex-col"><ChatSectionsBarView rootChat={{...chats[0],topicsEnabled:true,channels:[{...chats[0],id:'game',name:'Game',parentChatId:'group-1',topicIcon:null},{...chats[0],id:'memes',name:'Мемы',parentChatId:'group-1',topicIcon:null}]}} activeChatId="group-1" createAction={<button aria-label="Новый раздел" className="h-9 px-3 text-[var(--app-muted)]">+</button>} renderDestination={(chat,className,children)=><button key={chat.id} className={className}>{children}</button>}/><div className="flex min-h-0 flex-1 flex-col justify-end px-5 py-4"><ChatMessageBubbleVisual message={message} showSender groupPosition="only" senderAvatar={<ProfileAvatar displayName="nmggk" size="sm" shape="square"/>}/></div><ChatComposerFrame className="px-3"><div className={CHAT_COMPOSER_SURFACE_CLASS}><div className="h-8 px-2 py-1.5 text-sm text-[var(--app-muted)]">Сообщение VOICEKK…</div></div></ChatComposerFrame></div></>:tab==='now'?<GroupNowPanelView mode="ready" value={{groupId:'group-1',groupName:'VOICEKK',rooms,onlineOutsideRooms:[],visibleOnlineCount:7,currentUserRoomId:null}} onJoinRoom={()=>{}} onCreateRoom={()=>{}}/>:<GroupPeoplePanelView members={members} onlineUserIds={new Set(users.slice(0,3).map(user=>user.id))} onRetry={()=>{}}/>}</div>}
+  function GroupSurface(){const [tab,setTab]=useState('chat');window.setGroupTab=setTab;const message={id:'message-1',senderId:'nmggk',text:'Кто сегодня в голос?',createdAt:'2026-09-08T18:41:00Z',isMine:false,readAt:null,reactions:[],sender:{displayName:'nmggk',hasVooplePlus:false,avatarUrl:null},roomContext:{roomId:'drg',liveSessionId:'s2',roomName:'DRG: Deep Rock Galactic',roomKind:'pinned',capturedAt:'2026-09-08T18:41:00Z'}};return <div className="flex min-h-0 flex-1 flex-col"><div className="voople-group-surface-header voople-group-surface-header--combined"><header className="voople-panel-header voople-chat-window__header voople-chat-window__header--group flex items-center gap-3 border-b border-[var(--app-border)] px-4"><button className="voople-group-header-identity flex min-w-0 flex-1 items-center gap-3 text-left"><GroupIdentity chatName="VOICEKK" memberCount={7} groupIcon="V" groupAvatarUrl={null} groupAccentColor="#8b5cf6" groupTag={null}/></button><button className="h-8 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] px-3 text-xs font-semibold">Войти в Лобби</button></header><GroupSurfaceTabs activeTab={tab} onTabChange={setTab}/></div>{tab==='chat'?<><GroupLiveShelfView rooms={rooms} currentUserRoomId={null} onJoinRoom={()=>{}}/><div className="flex min-h-0 flex-1 flex-col"><ChatSectionsBarView rootChat={{...chats[0],topicsEnabled:true,channels:[{...chats[0],id:'game',name:'Game',parentChatId:'group-1',topicIcon:null},{...chats[0],id:'memes',name:'Мемы',parentChatId:'group-1',topicIcon:null}]}} activeChatId="group-1" createAction={<button aria-label="Новый раздел" className="h-9 px-3 text-[var(--app-muted)]">+</button>} renderDestination={(chat,className,children)=><button key={chat.id} className={className}>{children}</button>}/><div className="flex min-h-0 flex-1 flex-col justify-end px-5 py-4"><ChatMessageBubbleVisual message={message} showSender groupPosition="only" senderAvatar={<ProfileAvatar displayName="nmggk" size="sm" shape="square"/>}/></div><ChatComposerFrame className="px-3"><div className={CHAT_COMPOSER_SURFACE_CLASS}><div className="h-8 px-2 py-1.5 text-sm text-[var(--app-muted)]">Сообщение VOICEKK…</div></div></ChatComposerFrame></div></>:tab==='now'?<GroupNowPanelView mode="ready" value={{groupId:'group-1',groupName:'VOICEKK',rooms,onlineOutsideRooms:[],visibleOnlineCount:7,currentUserRoomId:null}} onJoinRoom={()=>{}} onCreateRoom={()=>{}}/>:<GroupPeoplePanelView members={members} onlineUserIds={new Set(users.slice(0,3).map(user=>user.id))} onRetry={()=>{}}/>}</div>}
   function Demo(){const sidebar=<AppSidebarVisual pathname="/messages/group-1" collapsed={false} renderDestination={renderDestination} primaryNavigation={<MessengerSidebarView pathname="/messages/group-1" chats={chats} loading={false} onlineUserIds={new Set(['astra'])} liveByGroup={new Map([['group-1',{groupId:'group-1',participantCount:4,roomCount:2,hasScreenShare:true}]])} createGroupAction={<button type="button" aria-label="Создать группу" className="h-5 w-5 border border-[var(--app-border)] text-xs">+</button>} renderDestination={renderDestination} onRetry={()=>{}}/>} accountNavigation={<button type="button" className="flex w-full items-center gap-2 px-2 py-1 text-left"><ProfileAvatar displayName="Yozhik" size="sm" shape="square" isOnline/><span className="text-xs">Yozhik</span></button>}/>;return <AppShellFrame routeKind="messages" fixedViewport sidebar={sidebar}><MessagesLayoutView isThread list={<div/>} thread={<GroupSurface/>}/></AppShellFrame>}
   createRoot(document.getElementById('root')).render(<AppThemeProvider><Demo/></AppThemeProvider>);`;
 
@@ -55,28 +55,37 @@ const bundle = await build({
   format: "iife", jsx: "automatic", alias: { "@": `${repo}/src` },
   define: { "process.env.NODE_ENV": '"development"' },
 });
-const cssFiles = (await readdir(path.join(distRoot, "assets"), { recursive: true })).filter((file) => file.endsWith(".css"));
-const css = (await Promise.all(cssFiles.map((file) => readFile(path.join(distRoot, "assets", file), "utf8")))).join("\n");
+const cssByHost = {
+  web: await loadCurrentVisualCss(repo, { host: "web" }),
+  desktop: await loadCurrentVisualCss(repo, { host: "desktop" }),
+};
 const logo = await readFile(path.join(repo, "public/favicon/android-chrome-192x192.png"));
+const geistSans = await readFile(path.join(repo, "node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2"));
+const geistMono = await readFile(path.join(repo, "node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2"));
 const server = createServer((request, response) => {
   if (request.url === "/favicon/android-chrome-192x192.png") { response.setHeader("Content-Type", "image/png"); response.end(logo); return; }
+  if (request.url === "/fonts/geist-sans.woff2") { response.setHeader("Content-Type", "font/woff2"); response.end(geistSans); return; }
+  if (request.url === "/fonts/geist-mono.woff2") { response.setHeader("Content-Type", "font/woff2"); response.end(geistMono); return; }
   if (request.url === "/app.js") { response.setHeader("Content-Type", "text/javascript"); response.end(bundle.outputFiles[0].text); return; }
-  if (request.url === "/style.css") { response.setHeader("Content-Type", "text/css"); response.end(css); return; }
+  if (request.url?.startsWith("/style.css")) { const host = new URL(request.url, "http://localhost").searchParams.get("host") === "desktop" ? "desktop" : "web"; response.setHeader("Content-Type", "text/css"); response.end(cssByHost[host]); return; }
+  const host = new URL(request.url ?? "/", "http://localhost").searchParams.get("host") === "desktop" ? "desktop" : "web";
   response.setHeader("Content-Type", "text/html; charset=utf-8");
-  response.end('<!doctype html><html data-app-theme="void"><head><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/style.css"></head><body><div id="root"></div><script src="/app.js"></script></body></html>');
+  response.end(`<!doctype html><html data-app-theme="void" data-visual-host="${host}"><head><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/style.css?host=${host}"></head><body><div id="root"></div><script src="/app.js"></script></body></html>`);
 });
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
-  for (const { width, height, tab, theme } of [
-    { width: 1280, height: 800, tab: "chat", theme: "void" },
-    { width: 1280, height: 800, tab: "now", theme: "void" },
-    { width: 1280, height: 800, tab: "people", theme: "void" },
-    { width: 390, height: 800, tab: "chat", theme: "light" },
-    { width: 390, height: 800, tab: "now", theme: "light" },
-    { width: 390, height: 800, tab: "people", theme: "light" },
+  for (const { width, height, tab, theme, host } of [
+    ...["web", "desktop"].flatMap((host) => [
+      { width: 1280, height: 800, tab: "chat", theme: "void", host },
+      { width: 1280, height: 800, tab: "now", theme: "void", host },
+      { width: 1280, height: 800, tab: "people", theme: "void", host },
+      { width: 390, height: 800, tab: "chat", theme: "light", host },
+      { width: 390, height: 800, tab: "now", theme: "light", host },
+      { width: 390, height: 800, tab: "people", theme: "light", host },
+    ]),
   ]) {
     const page = await browser.newPage({ viewport: { width, height } });
     const errors = [];
@@ -85,7 +94,8 @@ try {
     await page.addInitScript((value) => {
       window.localStorage.setItem("voople:app-theme", value);
     }, theme);
-    await page.goto(`http://127.0.0.1:${server.address().port}`);
+    await page.goto(`http://127.0.0.1:${server.address().port}?host=${host}`);
+    await page.evaluate(() => document.fonts.ready);
     await page.waitForFunction(() => typeof window.setGroupTab === "function");
     if (tab === "now" && width >= 1024) {
       await page.getByRole("button", { name: /Сейчас в группе VOICEKK/ }).click();
@@ -101,8 +111,8 @@ try {
         return shelf && getComputedStyle(shelf).opacity === "1";
       });
       if (width >= 1024) {
-        await page.getByLabel("Непрочитанных сообщений: 5").waitFor();
-        await page.getByLabel("Непрочитанных сообщений: 2").waitFor();
+        await page.locator(".voople-sidebar").getByLabel("Непрочитанных сообщений: 5").waitFor();
+        await page.locator(".voople-sidebar").getByLabel("Непрочитанных сообщений: 2").waitFor();
         await page.getByRole("button", { name: /Сейчас в группе VOICEKK: 4 в голосе/ }).waitFor();
       }
     }
@@ -116,8 +126,8 @@ try {
     }
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);
-    await page.screenshot({ path: path.join(artifacts, `group-${tab}-${width}-${theme}.png`) });
-    console.log(`PASS ${tab} ${width}px ${theme}: no overflow or runtime errors`);
+    await page.screenshot({ path: path.join(artifacts, `group-${host}-${tab}-${width}-${theme}.png`) });
+    console.log(`PASS ${host} ${tab} ${width}px ${theme}: no overflow or runtime errors`);
     await page.close();
   }
 } finally {

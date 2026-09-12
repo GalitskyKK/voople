@@ -1821,13 +1821,13 @@ button.voople-post-action:active {
   }
 
   .voople-shell[data-route-kind="messages"] .voople-group-identity__avatar {
-    width: 2rem;
-    height: 2rem;
+    width: 2.75rem;
+    height: 2.75rem;
     border-radius: 3px;
   }
 
   .voople-shell[data-route-kind="messages"] .voople-group-identity__name {
-    font-size: 1rem;
+    font-size: 1.125rem;
     line-height: 1;
     letter-spacing: 0.055em;
     text-transform: uppercase;
@@ -1848,7 +1848,7 @@ button.voople-post-action:active {
   .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab {
     min-width: 5.5rem;
     padding-inline: 1rem;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     letter-spacing: 0.11em;
   }
 
@@ -2059,6 +2059,12 @@ button.voople-post-action:active {
     transform: translateX(-50%);
     border-bottom: 0;
     background: transparent;
+  }
+}
+
+@media (min-width: 1200px) {
+  .voople-shell[data-route-kind="messages"] {
+    --voople-sidebar-width: 216px;
   }
 }
 

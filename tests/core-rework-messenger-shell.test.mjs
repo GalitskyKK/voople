@@ -56,6 +56,7 @@ test("messages shell geometry is dense and route-scoped", () => {
     css,
     /\.voople-shell\[data-route-kind="messages"\][\s\S]*--voople-sidebar-width: 200px/,
   );
+  assert.match(css, /@media \(min-width: 1200px\)[\s\S]*--voople-sidebar-width: 216px/);
   assert.match(css, /border-radius: 4px/);
   assert.match(layout, /data-thread=/);
 });

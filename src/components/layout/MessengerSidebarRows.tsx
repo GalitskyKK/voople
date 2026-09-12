@@ -131,10 +131,10 @@ function SidebarRowCopy({
 }) {
   return (
     <span className="min-w-0 flex-1">
-      <span className="block truncate text-xs font-semibold">{title}</span>
+      <span className="block truncate text-[13px] font-semibold">{title}</span>
       <span
         className={cn(
-          "block truncate text-[10px]",
+          "block truncate text-[11px] leading-4",
           online ? "text-emerald-400" : "text-[var(--app-muted)]",
         )}
       >
@@ -146,7 +146,7 @@ function SidebarRowCopy({
 
 function sidebarRowClassName(active: boolean) {
   return cn(
-    "voople-messenger-sidebar__row group flex min-h-11 w-full items-center gap-2 border-l-2 px-2 py-1.5 text-left transition-colors",
+    "voople-messenger-sidebar__row group flex min-h-12 w-full items-center gap-2 border-l-2 px-2 py-1.5 text-left transition-colors",
     active
       ? "border-[var(--theme-accent)] bg-[var(--app-accent-soft)] text-[var(--foreground)]"
       : "border-transparent text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]",

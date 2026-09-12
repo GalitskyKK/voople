@@ -49,7 +49,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
   const quiet = isGroupNowQuiet(props.value.rooms);
   return (
     <section
-      className="mx-auto w-full max-w-[1040px] px-3 py-4 text-[var(--foreground)] sm:px-6 sm:py-5"
+      className="mr-auto w-full max-w-[960px] px-3 py-4 text-[var(--foreground)] sm:px-6 sm:py-5"
       aria-labelledby="group-now-title"
     >
       <header className="flex items-end justify-between gap-4 border-b border-[var(--app-border)] pb-3">
@@ -130,7 +130,7 @@ function GroupNowPassiveState(props: PassiveStateProps) {
 
   return (
     <section
-      className="mx-auto flex min-h-72 w-full max-w-[960px] items-center justify-center px-4 py-8 text-[var(--foreground)]"
+      className="mr-auto flex min-h-72 w-full max-w-[960px] items-center justify-center px-4 py-8 text-[var(--foreground)]"
       aria-labelledby="group-now-state-title"
       aria-live="polite"
     >

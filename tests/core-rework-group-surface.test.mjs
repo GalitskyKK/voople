@@ -67,6 +67,8 @@ test("full Group Now follows the flat live hierarchy from the canonical plan", (
   const room = source("src/components/chat/GroupNowRoomSection.tsx");
 
   assert.match(panel, /voople-group-now__rooms/);
+  assert.match(panel, /max-w-\[960px\]/);
+  assert.match(panel, /mr-auto/);
   assert.match(panel, /voople-group-now__create/);
   assert.doesNotMatch(panel, /border-dashed/);
   assert.match(room, /voople-group-now-room/);
@@ -85,6 +87,7 @@ test("people view uses real member data and exposes room, presence and role cont
   assert.match(view, /onlineUserIds\.has/);
   assert.match(view, /roleLabels\[member\.role\]/);
   assert.match(view, /shape="square"/);
+  assert.match(view, /max-w-\[760px\]/);
   assert.match(view, /title="В разговоре"/);
   assert.match(view, /title="Онлайн"/);
   assert.match(view, /title="Остальные"/);

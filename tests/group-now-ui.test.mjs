@@ -58,7 +58,7 @@ test("shared Group Now view keeps flat accessible states for both hosts", async 
   assert.match(controller, /coreGroupNow\.useQuery/);
   assert.match(controller, /refetchInterval: enabled && online \? 15_000 : false/);
   assert.match(controller, /window\.addEventListener\("offline"/);
-  assert.match(viewSource, /max-w-\[1040px\]/);
+  assert.match(viewSource, /max-w-\[960px\]/);
   assert.match(viewSource, /GroupNowRoomSection/);
   assert.match(viewSource, /mode: "loading" \| "offline" \| "error"/);
   assert.match(viewSource, /role="status"/);

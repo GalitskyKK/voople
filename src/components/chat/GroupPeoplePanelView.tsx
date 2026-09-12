@@ -27,12 +27,12 @@ export function GroupPeoplePanelView({
   onOpenProfile,
 }: GroupPeoplePanelViewProps) {
   if (loading && !members) {
-    return <div className="mx-auto h-48 w-full max-w-[960px] animate-pulse border-y border-[var(--app-border)] bg-[var(--app-surface-soft)]" aria-label="Загружаем участников" />;
+    return <div className="mr-auto h-48 w-full max-w-[760px] animate-pulse border-y border-[var(--app-border)] bg-[var(--app-surface-soft)]" aria-label="Загружаем участников" />;
   }
 
   if (error && !members) {
     return (
-      <div className="mx-auto flex min-h-56 w-full max-w-[960px] flex-col items-center justify-center gap-3 px-5 text-center" role="alert">
+      <div className="mr-auto flex min-h-56 w-full max-w-[760px] flex-col items-center justify-center gap-3 px-5 text-center" role="alert">
         <p className="text-sm font-medium">Не удалось загрузить участников</p>
         <p className="max-w-md text-xs leading-5 text-[var(--app-muted)]">{error}</p>
         <button type="button" onClick={onRetry} className="inline-flex min-h-9 items-center gap-2 border border-[var(--app-border)] px-3 text-xs font-semibold hover:bg-[var(--app-surface-soft)]">
@@ -60,7 +60,7 @@ export function GroupPeoplePanelView({
 
   return (
     <section className="voople-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6" aria-labelledby="group-people-title">
-      <div className="mx-auto w-full max-w-[960px]">
+      <div className="mr-auto w-full max-w-[760px]">
         <header className="flex items-end justify-between gap-4 border-b border-[var(--app-border)] pb-3">
           <div>
             <h2 id="group-people-title" className="text-sm font-semibold uppercase tracking-[0.08em]">Люди</h2>

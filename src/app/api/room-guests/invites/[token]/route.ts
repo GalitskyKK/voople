@@ -12,7 +12,10 @@ import {
   joinRoomAsGuest,
   previewRoomGuestInvite,
 } from "@/server/services/room-guests.service";
-import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
+import {
+  recordRoomGuestJoined,
+  recordRoomGuestPreview,
+} from "@/server/services/room-guest-analytics.service";
 
 const joinSchema = z.object({
   displayName: z.string().min(1).max(80),
@@ -37,8 +40,12 @@ export async function GET(request: Request, context: GuestInviteRouteContext) {
   }
   try {
     const { token } = await context.params;
-    return noStore(await previewRoomGuestInvite(token));
+    const preview = await previewRoomGuestInvite(token);
+    await recordRoomGuestPreview(request, token, preview.reason);
+    return noStore(preview);
   } catch {
+    const { token } = await context.params;
+    await recordRoomGuestPreview(request, token, "service_error");
     return noStore({ error: "Приглашение временно недоступно" }, { status: 503 });
   }
 }
@@ -57,12 +64,7 @@ export async function POST(request: Request, context: GuestInviteRouteContext) {
       displayName: body.data.displayName,
       requestId: body.data.requestId,
     });
-    await recordServerProductEvent({
-      name: "room_guest_joined",
-      actorId: result.guestId,
-      route: "/api/room-guests/invites/[token]",
-      properties: { source: "room_guest_link" },
-    });
+    await recordRoomGuestJoined(request, token, result.guestId);
     const response = noStore({
       guestId: result.guestId,
       sessionId: result.sessionId,

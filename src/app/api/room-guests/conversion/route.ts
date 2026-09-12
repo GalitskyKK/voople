@@ -42,6 +42,7 @@ export async function POST(request: Request) {
     await recordServerProductEvent({
       name: "room_guest_converted",
       actorId: user.id,
+      dedupeId: accessToken,
       route: "/api/room-guests/conversion",
       properties: { state: result.status },
     });

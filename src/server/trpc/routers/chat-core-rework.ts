@@ -203,10 +203,18 @@ export const chatCoreReworkProcedures = {
       assertMultiRoomAccess(ctx.user.id);
       await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
       try {
-        return await createRoomGuestInvite({
+        const invite = await createRoomGuestInvite({
           sessionId: input.sessionId,
           userId: ctx.user.id,
         });
+        await recordServerProductEvent({
+          name: "room_invite_sent",
+          actorId: ctx.user.id,
+          dedupeId: invite.id,
+          route: "/trpc/chat.coreCreateRoomGuestInvite",
+          properties: { transport: "guest_link" },
+        });
+        return invite;
       } catch (error) {
         throw toRoomError(error, "Не удалось создать гостевую ссылку");
       }

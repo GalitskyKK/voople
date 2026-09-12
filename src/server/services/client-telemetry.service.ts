@@ -22,12 +22,16 @@ export async function recordServerProductEvent(input: {
   name: ProductEventName;
   actorId: string;
   route: string;
+  dedupeId?: string;
   properties?: Record<string, string | number | boolean>;
 }) {
   try {
     await insertProductAnalyticsEventRest({
       name: input.name,
       actorKey: actorKey(input.actorId),
+      dedupeKey: input.dedupeId
+        ? actorKey(`product:${input.name}:${input.dedupeId}`)
+        : undefined,
       route: telemetryRouteTemplate(input.route),
       properties: input.properties ?? {},
       occurredAt: new Date().toISOString(),

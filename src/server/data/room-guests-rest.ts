@@ -34,6 +34,14 @@ const guestConversionSchema = z.object({
   groupName: z.string().min(1),
 });
 
+const guestHeartbeatSchema = z.object({
+  ok: z.literal(true),
+  guestId: z.string().uuid(),
+  usefulParticipation: z.boolean(),
+});
+
+const guestAudienceSchema = z.enum(["existing", "member"]);
+
 function tokenHash(token: string) {
   return createHash("sha256").update(token, "utf8").digest("hex");
 }
@@ -215,13 +223,23 @@ export async function resolveRoomGuestRest(accessToken: string) {
 }
 
 export async function heartbeatRoomGuestRest(accessToken: string, micMuted: boolean) {
-  const { data, error } = await getAdminClient().rpc("heartbeat_room_guest", {
+  const { data, error } = await getAdminClient().rpc("heartbeat_room_guest_v2", {
     p_access_token_hash: tokenHash(accessToken),
     p_mic_muted: micMuted,
   });
   if (error) throw roomGuestError(error.message);
-  if (data !== true) throw new Error("Гостевая сессия завершена");
-  return { ok: true as const };
+  const parsed = guestHeartbeatSchema.safeParse(data);
+  if (!parsed.success) throw new Error("Гостевая сессия завершена");
+  return parsed.data;
+}
+
+export async function roomGuestInviteAudienceRest(inviteToken: string, userId: string) {
+  const { data, error } = await getAdminClient().rpc("room_guest_invite_audience", {
+    p_invite_token_hash: tokenHash(inviteToken),
+    p_user_id: userId,
+  });
+  if (error) throw new Error(error.message);
+  return guestAudienceSchema.parse(data);
 }
 
 export async function leaveRoomGuestRest(accessToken: string) {

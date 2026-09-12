@@ -61,6 +61,15 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
     return roomGuestResponseJson<RoomGuestSessionSnapshot>(response);
   }, []);
 
+  const updateMediaPresence = useCallback(async (milestone?: "media_connected") => {
+    await fetch("/api/room-guests/session", {
+      method: "PATCH",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ micMuted: media.micMuted, milestone }),
+    });
+  }, [media.micMuted]);
+
   const connectSession = useCallback(async (
     initialParticipantCount: number,
     allowMissing = false,
@@ -70,13 +79,16 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
       const snapshot = await fetchSession(allowMissing);
       if (!snapshot) return null;
       setJoined(snapshot.guest);
-      await media.connect(snapshot.media, Math.max(1, initialParticipantCount));
+      const mediaConnected = await media.connect(snapshot.media, Math.max(1, initialParticipantCount));
+      if (mediaConnected && snapshot.media.enabled) {
+        await updateMediaPresence("media_connected").catch(() => undefined);
+      }
       return snapshot.guest;
     } catch (error) {
       setSessionError(error instanceof Error ? error.message : "Не удалось подключиться к комнате");
       return null;
     }
-  }, [fetchSession, media]);
+  }, [fetchSession, media, updateMediaPresence]);
 
   useEffect(() => {
     if (!preview?.available || joined || restoreAttemptedRef.current) return;
@@ -126,15 +138,10 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
 
   useEffect(() => {
     if (!joined || media.status !== "connected") return;
-    const heartbeat = () => void fetch("/api/room-guests/session", {
-      method: "PATCH",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ micMuted: media.micMuted }),
-    });
+    const heartbeat = () => void updateMediaPresence().catch(() => undefined);
     const timer = window.setInterval(heartbeat, 20_000);
     return () => window.clearInterval(timer);
-  }, [joined, media.micMuted, media.status]);
+  }, [joined, media.status, updateMediaPresence]);
 
   return {
     preview,

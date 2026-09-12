@@ -3,21 +3,30 @@ import { getAdminClient } from "@/lib/supabase/admin";
 export async function insertProductAnalyticsEventRest(input: {
   name: string;
   actorKey: string;
+  dedupeKey?: string;
   route: string;
   properties: Record<string, string | number | boolean>;
   occurredAt: string;
 }) {
-  const { error } = await getAdminClient().from("client_telemetry_events").insert({
+  const record = {
     event_kind: "product",
     event_name: input.name,
     platform: "server",
     actor_key: input.actorKey,
+    dedupe_key: input.dedupeKey ?? null,
     route: input.route,
     release: process.env.NEXT_PUBLIC_APP_RELEASE?.trim() || null,
     properties: input.properties,
     metric_value: null,
     occurred_at: input.occurredAt,
-  });
+  };
+  const query = input.dedupeKey
+    ? getAdminClient().from("client_telemetry_events").upsert(record, {
+        onConflict: "event_name,dedupe_key",
+        ignoreDuplicates: true,
+      })
+    : getAdminClient().from("client_telemetry_events").insert(record);
+  const { error } = await query;
   if (error) throw new Error(error.code);
 }
 

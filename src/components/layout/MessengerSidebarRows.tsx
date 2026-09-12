@@ -60,7 +60,7 @@ export function MessengerGroupRow({
       {row}
       {renderDestination({
         href: `/messages/${chat.id}?surface=now`,
-        label: `Сейчас в группе ${title}: ${live.participantCount} в голосе`,
+        label: `Голосовые комнаты группы ${title}: ${live.participantCount} в голосе`,
         active: false,
         className: "absolute right-1 top-1/2 flex min-h-8 min-w-8 -translate-y-1/2 flex-col items-center justify-center rounded-lg text-emerald-400 transition hover:bg-emerald-500/10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-emerald-400",
         children: (

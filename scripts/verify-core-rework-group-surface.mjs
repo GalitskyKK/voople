@@ -98,11 +98,11 @@ try {
     await page.evaluate(() => document.fonts.ready);
     await page.waitForFunction(() => typeof window.setGroupTab === "function");
     if (tab === "now" && width >= 1024) {
-      await page.getByRole("button", { name: /Сейчас в группе VOICEKK/ }).click();
+      await page.getByRole("button", { name: /Голосовые комнаты группы VOICEKK/ }).click();
     } else {
       await page.evaluate((value) => window.setGroupTab(value), tab);
     }
-    await page.getByRole("tab", { name: tab === "chat" ? "Чат" : tab === "now" ? "Сейчас" : "Люди" }).waitFor();
+    await page.getByRole("tab", { name: tab === "chat" ? "Чат" : tab === "now" ? "Голос" : "Люди" }).waitFor();
     await page.waitForTimeout(250);
     if (tab === "chat") {
       await page.getByText("Из комнаты DRG: Deep Rock Galactic", { exact: true }).waitFor();
@@ -113,16 +113,16 @@ try {
       if (width >= 1024) {
         await page.locator(".voople-sidebar").getByLabel("Непрочитанных сообщений: 5").waitFor();
         await page.locator(".voople-sidebar").getByLabel("Непрочитанных сообщений: 2").waitFor();
-        await page.getByRole("button", { name: /Сейчас в группе VOICEKK: 4 в голосе/ }).waitFor();
+        await page.getByRole("button", { name: /Голосовые комнаты группы VOICEKK: 4 в голосе/ }).waitFor();
       }
     }
     if (tab === "now") {
       assert.equal(await page.locator('[data-layout="room-section"]').count(), 2);
     }
     if (tab === "people") {
-      await page.getByLabel("Сейчас: 2").waitFor();
+      await page.getByLabel("В разговоре: 2").waitFor();
       await page.getByLabel("Онлайн: 2").waitFor();
-      await page.getByLabel("Не в сети: 1").waitFor();
+      await page.getByLabel("Остальные: 1").waitFor();
     }
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);

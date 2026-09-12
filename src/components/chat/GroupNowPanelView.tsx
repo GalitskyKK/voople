@@ -54,7 +54,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
     >
       <header className="flex items-end justify-between gap-4 border-b border-[var(--app-border)] pb-3">
         <div className="min-w-0">
-          <h2 id="group-now-title" className="voople-group-now__title truncate text-base font-semibold uppercase tracking-[0.06em]">Комнаты сейчас</h2>
+          <h2 id="group-now-title" className="voople-group-now__title truncate text-base font-semibold uppercase tracking-[0.06em]">Голосовые комнаты</h2>
           <p className="mt-1 text-xs text-[var(--app-muted)]">{props.value.groupName}</p>
         </div>
         <span className="voople-group-now__online shrink-0 font-mono text-[11px] text-[var(--app-muted)]">
@@ -64,7 +64,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
 
       {quiet ? (
         <div className="border-b border-[var(--app-border)] py-4" role="status">
-          <p className="text-sm font-medium">Сейчас тихо</p>
+          <p className="text-sm font-medium">В голосе тихо</p>
           <p className="mt-1 text-xs leading-5 text-[var(--app-muted)]">
             Можно зайти в Лобби или создать комнату — участники увидят, что вы на связи.
           </p>
@@ -121,7 +121,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
 function GroupNowPassiveState(props: PassiveStateProps) {
   const offline = props.mode === "offline";
   const loading = props.mode === "loading";
-  const title = loading ? "Загружаем комнаты" : offline ? "Нет соединения" : "Не удалось открыть комнаты";
+  const title = loading ? "Загружаем голосовые комнаты" : offline ? "Нет соединения" : "Не удалось открыть голосовые комнаты";
   const message = loading
     ? "Собираем, кто и где сейчас общается."
     : props.message ?? (offline

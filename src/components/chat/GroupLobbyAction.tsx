@@ -107,12 +107,12 @@ export function GroupLobbyAction({
         onClick={() => void activate()}
         disabled={pending || loading || !targetRoom && !failed && !opensCurrentRoom}
         className={cn(
-          "inline-flex h-9 max-w-44 shrink-0 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-semibold transition max-sm:w-9 max-sm:px-0",
+          "inline-flex h-9 max-w-44 shrink-0 items-center justify-center gap-2 rounded-[var(--app-radius-sm)] border px-3 text-xs font-semibold transition max-sm:w-9 max-sm:px-0",
           currentRoom
             ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-400"
             : failed
               ? "border-red-500/35 text-red-400 hover:bg-red-500/10"
-              : "border-[var(--app-border)] text-[var(--foreground)] hover:bg-[var(--app-surface-soft)]",
+              : "border-[color-mix(in_srgb,var(--theme-accent)_72%,var(--app-border))] bg-[var(--app-accent-soft)] text-[var(--theme-accent)] hover:border-[var(--theme-accent)] hover:bg-[color-mix(in_srgb,var(--app-accent-soft)_78%,var(--theme-accent))]",
         )}
       >
         {pending || loading ? (

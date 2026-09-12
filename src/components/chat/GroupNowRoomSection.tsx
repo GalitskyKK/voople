@@ -1,6 +1,7 @@
 import { MonitorUp, Radio, UsersRound } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/utils";
 import {
   describeGroupNowRoom,
   resolveGroupNowRoomAction,
@@ -93,11 +94,16 @@ export function GroupNowRoomSection({
       <Button
         type="button"
         size="sm"
-        variant={action === "current" ? "ghost" : "secondary"}
+        variant="ghost"
         disabled={pending || action === "current"}
         onClick={() => onJoinRoom(room)}
         aria-label={`${actionLabels[action]}: ${room.name}`}
-        className="order-2 sm:order-4"
+        className={cn(
+          "order-2 rounded-[var(--app-radius-sm)] border sm:order-4",
+          action === "current"
+            ? "border-[var(--app-border)] text-[var(--app-muted)]"
+            : "border-[color-mix(in_srgb,var(--theme-accent)_72%,var(--app-border))] text-[var(--theme-accent)] hover:border-[var(--theme-accent)] hover:bg-[var(--app-accent-soft)]",
+        )}
       >
         {pending ? "Подключаем" : actionLabels[action]}
       </Button>

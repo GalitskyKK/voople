@@ -71,7 +71,7 @@ export function GroupPeoplePanelView({
 
         <div className="space-y-5 pt-4">
           <GroupPeopleSection
-            title="Сейчас"
+            title="В разговоре"
             members={liveMembers}
             onlineUserIds={onlineUserIds}
             onOpenProfile={onOpenProfile}
@@ -83,7 +83,7 @@ export function GroupPeoplePanelView({
             onOpenProfile={onOpenProfile}
           />
           <GroupPeopleSection
-            title="Не в сети"
+            title="Остальные"
             members={offlineMembers}
             onlineUserIds={onlineUserIds}
             onOpenProfile={onOpenProfile}

@@ -66,7 +66,7 @@ function RoomCreateSession({
             <DialogIcon icon="radio" />
             <h2 className="mt-4 text-xl font-semibold">Новая комната</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--app-muted)]">
-              Комната сразу откроется с выключенным микрофоном. Остальные участники увидят её в блоке «Сейчас».
+              Комната сразу откроется с выключенным микрофоном. Остальные участники увидят её во вкладке «Голос».
             </p>
           </div>
 

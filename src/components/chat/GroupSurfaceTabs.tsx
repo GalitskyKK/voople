@@ -8,7 +8,7 @@ export type GroupSurfaceTab = "chat" | "now" | "people";
 
 const tabs = [
   ["chat", "Чат"],
-  ["now", "Сейчас"],
+  ["now", "Голос"],
   ["people", "Люди"],
 ] as const;
 
@@ -33,7 +33,7 @@ export function GroupSurfaceTabs({
             onClick={() => onTabChange(id)}
             className={cn(
               "voople-group-surface-tabs__tab relative min-w-16 px-3 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--app-muted)] transition-colors hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)]",
-              activeTab === id && "text-[var(--foreground)]",
+              activeTab === id && "text-[var(--theme-accent)]",
             )}
           >
             {label}

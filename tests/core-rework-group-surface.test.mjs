@@ -19,7 +19,7 @@ test("group surface defaults to chat and keeps the three product modes accessibl
   assert.match(shell, /variant="surface"/);
   assert.match(shell, /<GroupPeoplePanel/);
   assert.match(tabs, /\["chat", "Чат"\]/);
-  assert.match(tabs, /\["now", "Сейчас"\]/);
+  assert.match(tabs, /\["now", "Голос"\]/);
   assert.match(tabs, /\["people", "Люди"\]/);
   assert.match(tabs, /role="tablist"/);
   assert.match(tabs, /aria-selected=/);
@@ -71,7 +71,8 @@ test("full Group Now follows the flat live hierarchy from the canonical plan", (
   assert.doesNotMatch(panel, /border-dashed/);
   assert.match(room, /voople-group-now-room/);
   assert.doesNotMatch(room, /padStart/);
-  assert.doesNotMatch(room, /rounded-\[var\(--app-radius-sm\)\].*border/);
+  const roomSectionClass = room.match(/data-layout="room-section"[\s\S]*?className="([^"]+)"/)?.[1] ?? "";
+  assert.doesNotMatch(roomSectionClass, /rounded-/);
 });
 
 test("people view uses real member data and exposes room, presence and role context", () => {
@@ -84,9 +85,9 @@ test("people view uses real member data and exposes room, presence and role cont
   assert.match(view, /onlineUserIds\.has/);
   assert.match(view, /roleLabels\[member\.role\]/);
   assert.match(view, /shape="square"/);
-  assert.match(view, /title="Сейчас"/);
+  assert.match(view, /title="В разговоре"/);
   assert.match(view, /title="Онлайн"/);
-  assert.match(view, /title="Не в сети"/);
+  assert.match(view, /title="Остальные"/);
   assert.match(view, /<GroupPeopleSection/);
 });
 

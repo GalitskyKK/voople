@@ -51,7 +51,7 @@ export function GroupAvatar({
       ) : icon ? (
         <span className={size === "lg" ? "text-3xl" : "text-base"}>{icon}</span>
       ) : name.trim() ? (
-        <span className={size === "lg" ? "text-2xl" : "text-sm"}>
+        <span className={cn("voople-avatar-token__glyph", size === "lg" ? "text-2xl" : "text-sm")}>
           {name.trim().slice(0, 1).toLocaleUpperCase("ru-RU")}
         </span>
       ) : (

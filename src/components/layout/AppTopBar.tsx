@@ -18,7 +18,7 @@ export function AppTopBar({ authenticated }: { authenticated: boolean }) {
     <header data-nosnippet className="voople-topbar sticky top-0 z-20 flex h-12 items-center justify-between border-b border-[var(--app-border)] bg-[color-mix(in_srgb,var(--background)_92%,transparent)] px-4 backdrop-blur-md lg:hidden">
       <Link href="/feed" className="inline-flex items-center gap-2 text-sm font-semibold tracking-[-0.02em] text-[var(--foreground)]">
         <VoopleMark className="h-7 w-7" />
-        {COPY.appName}
+        <span className="voople-wordmark">{COPY.wordmark}</span>
       </Link>
       <div className="flex items-center gap-1">
         {authenticated ? (

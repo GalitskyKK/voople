@@ -26,12 +26,14 @@ export async function loadCurrentVisualCss(repo, { host = "web" } = {}) {
   const fontPrelude = `
 @font-face { font-family: "Geist Voople"; src: url("/fonts/geist-sans.woff2") format("woff2"); font-style: normal; font-weight: 100 900; font-display: swap; }
 @font-face { font-family: "Geist Mono Voople"; src: url("/fonts/geist-mono.woff2") format("woff2"); font-style: normal; font-weight: 100 900; font-display: swap; }
-:root { --font-geist-sans: "Geist Voople"; --font-geist-mono: "Geist Mono Voople"; }
+@font-face { font-family: "Geist Pixel Square Voople"; src: url("/fonts/geist-pixel-square.woff2") format("woff2"); font-style: normal; font-weight: 400; font-display: swap; }
+:root { --font-geist-sans: "Geist Voople"; --font-geist-mono: "Geist Mono Voople"; --font-geist-pixel-square: "Geist Pixel Square Voople"; }
 body { font-family: var(--font-geist-sans), system-ui, sans-serif; }
 `;
   const desktopCss = desktop
     .replaceAll("../../node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2", "/fonts/geist-sans.woff2")
-    .replaceAll("../../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2", "/fonts/geist-mono.woff2");
+    .replaceAll("../../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2", "/fonts/geist-mono.woff2")
+    .replaceAll("../../node_modules/geist/dist/fonts/geist-pixel/GeistPixel-Square.woff2", "/fonts/geist-pixel-square.woff2");
 
   return `${compiled.css}\n${fontPrelude}\n${host === "desktop" ? desktopCss : ""}`;
 }

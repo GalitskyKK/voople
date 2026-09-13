@@ -14,9 +14,18 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Geist Pixel Square Voople";
+  src: url("../../node_modules/geist/dist/fonts/geist-pixel/GeistPixel-Square.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   --font-geist-sans: "Geist Voople";
   --font-geist-mono: "Geist Mono Voople";
+  --font-geist-pixel-square: "Geist Pixel Square Voople";
   --voople-tooltip-viewport-top: 32px;
   color: var(--foreground);
   background: var(--background);

@@ -65,12 +65,16 @@ export function ProfileAvatarVisual({
       )}
       <span
         className={cn(
-          "relative flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-br from-violet-600 to-violet-400 font-semibold text-[var(--foreground)]",
+          "relative flex h-full w-full items-center justify-center overflow-hidden border border-[color-mix(in_srgb,var(--theme-accent)_28%,var(--app-border))] bg-[color-mix(in_srgb,var(--theme-accent)_18%,var(--app-surface-soft))] font-semibold text-[var(--theme-accent)]",
           shape === "square" ? "rounded-md" : "rounded-full",
           ringClassName,
         )}
       >
-        {avatarImage ?? displayName.charAt(0).toUpperCase()}
+        {avatarImage ?? (
+          <span className="voople-avatar-token__glyph">
+            {displayName.charAt(0).toUpperCase()}
+          </span>
+        )}
       </span>
       {isOnline && (
         <span

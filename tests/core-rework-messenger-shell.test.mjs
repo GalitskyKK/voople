@@ -31,6 +31,28 @@ test("messenger sidebar follows the rework information hierarchy", () => {
   assert.match(rows, /text-emerald-400/);
 });
 
+test("messenger identity microtype stays restrained and host-shared", () => {
+  const layout = source("src/app/layout.tsx");
+  const navigation = source("src/components/layout/AppNavigationVisual.tsx");
+  const topBar = source("src/components/layout/AppTopBar.tsx");
+  const profileAvatar = source("src/components/profile/ProfileAvatarVisual.tsx");
+  const groupAvatar = source("src/components/chat/GroupAvatar.tsx");
+  const badge = source("src/components/chat/ChatUnreadBadge.tsx");
+  const styles = source("src/app/globals.css");
+  const desktopStyles = source("desktop/src/styles.css");
+
+  assert.match(layout, /GeistPixelSquare/);
+  assert.match(navigation, /COPY\.wordmark/);
+  assert.match(topBar, /COPY\.wordmark/);
+  assert.match(profileAvatar, /voople-avatar-token__glyph/);
+  assert.doesNotMatch(profileAvatar, /bg-gradient-to-br/);
+  assert.match(groupAvatar, /voople-avatar-token__glyph/);
+  assert.match(badge, /voople-counter/);
+  assert.match(styles, /--font-voople-pixel/);
+  assert.match(styles, /\.voople-wordmark,[\s\S]*?\.voople-avatar-token__glyph,[\s\S]*?\.voople-counter/);
+  assert.match(desktopStyles, /Geist Pixel Square Voople/);
+});
+
 test("web and desktop share chat data and presentation without duplicate desktop polling", () => {
   const provider = source("desktop/src/chat/useDesktopChats.ts");
   const authenticatedApp = source("desktop/src/DesktopAuthenticatedApp.tsx");

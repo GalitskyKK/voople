@@ -79,12 +79,14 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
-  for (const { width, height, tab, theme, host } of [
+  for (const { width, height, tab, theme, host, state = "default" } of [
     ...["web", "desktop"].flatMap((host) => [
       { width: 1280, height: 800, tab: "chat", theme: "void", host },
+      { width: 1280, height: 800, tab: "chat", theme: "void", host, state: "sections" },
       { width: 1280, height: 800, tab: "now", theme: "void", host },
       { width: 1280, height: 800, tab: "people", theme: "void", host },
       { width: 390, height: 800, tab: "chat", theme: "light", host },
+      { width: 390, height: 800, tab: "chat", theme: "light", host, state: "sections" },
       { width: 390, height: 800, tab: "now", theme: "light", host },
       { width: 390, height: 800, tab: "people", theme: "light", host },
     ]),
@@ -117,6 +119,11 @@ try {
         await page.locator(".voople-sidebar").getByLabel("Непрочитанных сообщений: 2").waitFor();
         await page.getByRole("button", { name: /Голосовые комнаты группы VOICEKK: 4 в голосе/ }).waitFor();
       }
+      if (state === "sections") {
+        await page.getByRole("button", { name: /Текущий раздел: Общий/ }).click();
+        await page.getByRole("dialog", { name: "Выбор раздела группы" }).waitFor();
+        await page.waitForTimeout(200);
+      }
     }
     if (tab === "now") {
       assert.equal(await page.locator('[data-layout="room-section"]').count(), 2);
@@ -128,8 +135,9 @@ try {
     }
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);
-    await page.screenshot({ path: path.join(artifacts, `group-${host}-${tab}-${width}-${theme}.png`) });
-    console.log(`PASS ${host} ${tab} ${width}px ${theme}: no overflow or runtime errors`);
+    const stateSuffix = state === "default" ? "" : `-${state}`;
+    await page.screenshot({ path: path.join(artifacts, `group-${host}-${tab}-${width}-${theme}${stateSuffix}.png`) });
+    console.log(`PASS ${host} ${tab}${stateSuffix} ${width}px ${theme}: no overflow or runtime errors`);
     await page.close();
   }
 } finally {

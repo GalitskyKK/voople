@@ -23,6 +23,9 @@ test("Board 2 keeps section creation in the section strip on web and desktop", (
   assert.match(picker, /unreadElsewhere/);
   assert.match(picker, /"ArrowDown", "ArrowUp", "Home", "End"/);
   assert.match(picker, /ChatUnreadBadge/);
+  assert.doesNotMatch(picker, /text-\[10px\]/);
+  assert.doesNotMatch(picker, /font-mono[^"\n]*uppercase/);
+  assert.match(picker, /text-xs font-semibold leading-4/);
   assert.match(dropdown, /contentRole\?: "menu" \| "dialog"/);
   assert.match(dropdown, /requestAnimationFrame/);
   assert.match(web, /<SubchatCreator/);

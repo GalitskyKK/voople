@@ -104,7 +104,7 @@ export function ChatSectionPicker({
           <span className="truncate">{sectionLabel(activeSection, rootChatId)}</span>
           <ChatUnreadBadge count={activeSection.unreadCount} />
           {unreadElsewhere ? (
-            <span className="hidden shrink-0 font-mono text-[10px] font-medium text-[var(--app-muted)] sm:inline">
+            <span className="hidden shrink-0 text-xs font-medium leading-4 text-[var(--app-muted)] sm:inline">
               · {unreadElsewhere > 99 ? "99+" : unreadElsewhere} в других
             </span>
           ) : null}
@@ -129,7 +129,7 @@ export function ChatSectionPicker({
         <div className="voople-scroll mt-2 max-h-72 overflow-y-auto" aria-live="polite">
           {unreadSections.length ? (
             <section aria-labelledby="chat-section-unread-title">
-              <p id="chat-section-unread-title" className="px-2.5 pb-1 pt-1 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--app-muted)]">
+              <p id="chat-section-unread-title" className="px-2.5 pb-1 pt-1 text-xs font-semibold leading-4 text-[var(--app-muted)]">
                 Непрочитанное
               </p>
               {unreadSections.map(renderSection)}
@@ -137,7 +137,7 @@ export function ChatSectionPicker({
           ) : null}
           {remainingSections.length ? (
             <section aria-labelledby="chat-section-all-title">
-              <p id="chat-section-all-title" className="px-2.5 pb-1 pt-2 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--app-muted)]">
+              <p id="chat-section-all-title" className="px-2.5 pb-1 pt-2 text-xs font-semibold leading-4 text-[var(--app-muted)]">
                 {query ? "Результаты" : "Все разделы"}
               </p>
               {remainingSections.map(renderSection)}

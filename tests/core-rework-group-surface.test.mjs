@@ -148,3 +148,12 @@ test("messenger visual language is shared by web and desktop group threads", () 
   assert.match(styles, /\.voople-chat-sections__item--active::after/);
   assert.match(styles, /\.voople-chat-bubble__body,/);
 });
+
+test("group visual gate includes the section selector at wide and mobile widths", () => {
+  const visualGate = source("scripts/verify-core-rework-group-surface.mjs");
+
+  assert.match(visualGate, /state: "sections"/);
+  assert.match(visualGate, /Текущий раздел: Общий/);
+  assert.match(visualGate, /Выбор раздела группы/);
+  assert.match(visualGate, /stateSuffix/);
+});

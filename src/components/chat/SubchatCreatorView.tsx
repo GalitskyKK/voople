@@ -1,20 +1,22 @@
 "use client";
 
-import { LoaderCircle, Plus } from "lucide-react";
+import { ChevronDown, LoaderCircle, Plus, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { IconButton } from "@/components/ui/IconButton";
-import { Sheet } from "@/components/ui/Sheet";
 import type { ChatGroupMemberView } from "@/types/chat";
 import { SubchatAccessPicker } from "./SubchatAccessPicker";
 
 export function SubchatCreatorView({
+  open,
+  onOpenChange,
   createSubchat,
   onCreated,
   canRestrict = false,
   loadMembers,
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   createSubchat: (
     name: string,
     icon: string | null,
@@ -25,7 +27,6 @@ export function SubchatCreatorView({
   canRestrict?: boolean;
   loadMembers?: () => Promise<ChatGroupMemberView[]>;
 }) {
-  const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("💬");
   const [pending, setPending] = useState(false);
@@ -34,9 +35,10 @@ export function SubchatCreatorView({
   const [members, setMembers] = useState<ChatGroupMemberView[]>([]);
   const [membersLoaded, setMembersLoaded] = useState(false);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [showOptions, setShowOptions] = useState(false);
 
   useEffect(() => {
-    if (!open || accessMode !== "restricted" || !loadMembers || membersLoaded) return;
+    if (!open || !showOptions || accessMode !== "restricted" || !loadMembers || membersLoaded) return;
     let active = true;
     void loadMembers()
       .then((result) => {
@@ -54,7 +56,16 @@ export function SubchatCreatorView({
     return () => {
       active = false;
     };
-  }, [accessMode, loadMembers, membersLoaded, open]);
+  }, [accessMode, loadMembers, membersLoaded, open, showOptions]);
+
+  const reset = () => {
+    setName("");
+    setIcon("💬");
+    setAccessMode("inherit");
+    setSelectedMemberIds([]);
+    setShowOptions(false);
+    setError(null);
+  };
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -69,10 +80,8 @@ export function SubchatCreatorView({
         canRestrict ? accessMode : "inherit",
         canRestrict && accessMode === "restricted" ? selectedMemberIds : [],
       );
-      setName("");
-      setAccessMode("inherit");
-      setSelectedMemberIds([]);
-      setOpen(false);
+      reset();
+      onOpenChange(false);
       onCreated(chatId);
     } catch (createError) {
       setError(
@@ -85,54 +94,96 @@ export function SubchatCreatorView({
     }
   };
 
+  if (!open) {
+    return (
+      <button
+        type="button"
+        aria-label="Новый раздел"
+        onClick={() => onOpenChange(true)}
+        className="flex min-h-10 w-full items-center gap-2 rounded-[var(--app-radius-sm)] px-2.5 text-left text-sm font-medium text-[var(--theme-accent)] transition-colors hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)]"
+      >
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        Создать раздел
+      </button>
+    );
+  }
+
   return (
-    <>
-      <IconButton
-        label="Новый раздел"
-        tooltipSide="bottom"
-        onClick={() => setOpen(true)}
-        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]"
+    <form
+      aria-label="Новый раздел"
+      onSubmit={(event) => void submit(event)}
+      onKeyDown={(event) => {
+        if (event.key !== "Escape") return;
+        event.preventDefault();
+        event.stopPropagation();
+        reset();
+        onOpenChange(false);
+      }}
+      className="rounded-[var(--app-radius-sm)] bg-[var(--app-surface-soft)] p-2"
+    >
+      <div className="flex items-center gap-1.5">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--background)] text-base" aria-hidden="true">
+          {icon || "💬"}
+        </span>
+        <label className="min-w-0 flex-1">
+          <span className="sr-only">Название раздела</span>
+          <input
+            autoFocus
+            value={name}
+            onChange={(event) => setName(event.target.value.slice(0, 50))}
+            className="h-9 w-full rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--background)] px-2.5 text-sm outline-none focus:border-[var(--theme-accent)]"
+            placeholder="Название раздела"
+            minLength={2}
+            maxLength={50}
+            required
+          />
+        </label>
+        <Button
+          type="submit"
+          size="sm"
+          aria-label={pending ? "Создаём раздел" : "Создать раздел"}
+          className="h-9 shrink-0 px-3"
+          disabled={pending || name.trim().length < 2}
+        >
+          {pending ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /> : "Создать"}
+        </Button>
+        <button
+          type="button"
+          aria-label="Отменить создание раздела"
+          onClick={() => {
+            reset();
+            onOpenChange(false);
+          }}
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-[var(--app-radius-sm)] text-[var(--app-muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-[var(--theme-accent)]"
+        >
+          <X className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </div>
+
+      <button
+        type="button"
+        aria-expanded={showOptions}
+        onClick={() => setShowOptions((current) => !current)}
+        className="mt-1.5 flex min-h-8 items-center gap-1.5 rounded-[var(--app-radius-sm)] px-2 text-xs font-medium text-[var(--app-muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-[var(--theme-accent)]"
       >
-        <Plus className="h-4 w-4" />
-      </IconButton>
-      <Sheet
-        open={open}
-        onClose={() => setOpen(false)}
-        ariaLabel="Новый раздел"
-      >
-        <form onSubmit={(event) => void submit(event)}>
-          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--app-accent-soft)] text-xl">
-            {icon || "💬"}
-          </span>
-          <h2 className="mt-4 text-xl font-semibold">Новый раздел</h2>
-          <p className="mt-1 text-sm leading-6 text-[var(--app-muted)]">
-            Раздел использует участников и администраторов основной группы.
-          </p>
-          <label className="mt-5 block text-sm font-medium">
-            Название
-            <input
-              autoFocus
-              value={name}
-              onChange={(event) => setName(event.target.value.slice(0, 50))}
-              className="voople-input mt-2 w-full"
-              placeholder="Например, Игровая комната"
-              minLength={2}
-              maxLength={50}
-              required
-            />
-          </label>
-          <fieldset className="mt-4">
-            <legend className="text-sm font-medium">Иконка</legend>
-            <div className="mt-2 flex flex-wrap gap-2">
+        Иконка{canRestrict ? " и доступ" : ""}
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showOptions ? "rotate-180" : ""}`} aria-hidden="true" />
+      </button>
+
+      {showOptions ? (
+        <div className="border-t border-[var(--app-border)] pt-2">
+          <fieldset>
+            <legend className="sr-only">Иконка</legend>
+            <div className="flex flex-wrap gap-1.5">
               {["💬", "🎮", "🎵", "🎨", "💡", "📌", "🔥", "🛠️"].map((value) => (
                 <button
                   key={value}
                   type="button"
                   onClick={() => setIcon(value)}
-                  className={`grid h-10 w-10 place-items-center rounded-xl border text-lg transition ${
+                  className={`grid h-9 w-9 place-items-center rounded-[var(--app-radius-sm)] border text-base transition ${
                     icon === value
                       ? "border-[var(--theme-accent)] bg-[var(--app-accent-soft)]"
-                      : "border-[var(--app-border)] hover:bg-[var(--app-surface-soft)]"
+                      : "border-[var(--app-border)] bg-[var(--background)] hover:bg-[var(--app-surface)]"
                   }`}
                   aria-label={`Иконка ${value}`}
                 >
@@ -157,17 +208,9 @@ export function SubchatCreatorView({
               }
             />
           ) : null}
-          {error ? <p className="mt-3 text-sm text-red-400">{error}</p> : null}
-          <Button
-            type="submit"
-            className="mt-5 w-full"
-            disabled={pending || name.trim().length < 2}
-          >
-            {pending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-            Создать раздел
-          </Button>
-        </form>
-      </Sheet>
-    </>
+        </div>
+      ) : null}
+      {error ? <p className="mt-2 text-xs leading-4 text-red-400" role="alert">{error}</p> : null}
+    </form>
   );
 }

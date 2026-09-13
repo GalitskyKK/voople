@@ -27,12 +27,14 @@ export function ChatSectionsBar({
     <ChatSectionsBarView
       rootChat={rootChat}
       activeChatId={chatId}
-      createAction={
+      createAction={({ open, onOpenChange }) => (
         <SubchatCreator
           parentChatId={rootChat.id}
           viewerRole={viewerRole}
+          open={open}
+          onOpenChange={onOpenChange}
         />
-      }
+      )}
       renderDestination={(chat, className, children, onNavigate) => (
         <Link key={chat.id} href={`/messages/${chat.id}`} className={className} onClick={onNavigate}>
           {children}

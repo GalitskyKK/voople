@@ -10,6 +10,7 @@ test("Board 2 keeps section creation in the section strip on web and desktop", (
   const dropdown = read("src/components/ui/DropdownMenu.tsx");
   const web = read("src/components/chat/ChatSectionsBar.tsx");
   const desktop = read("desktop/src/adapters/DesktopChatThreadAdapter.tsx");
+  const creator = read("src/components/chat/SubchatCreatorView.tsx");
   const header = read("src/components/chat/ChatWindowHeader.tsx");
 
   assert.match(sections, /createAction/);
@@ -23,6 +24,13 @@ test("Board 2 keeps section creation in the section strip on web and desktop", (
   assert.match(picker, /unreadElsewhere/);
   assert.match(picker, /"ArrowDown", "ArrowUp", "Home", "End"/);
   assert.match(picker, /ChatUnreadBadge/);
+  assert.match(picker, /createOpen/);
+  assert.match(picker, /aria-label="Новый раздел"/);
+  assert.match(picker, /createOpen \? createAction\(\{ open: true, onOpenChange: setCreateOpen \}\)/);
+  assert.match(creator, /placeholder="Название раздела"/);
+  assert.match(creator, /event\.key !== "Escape"/);
+  assert.match(creator, /Иконка\{canRestrict \? " и доступ" : ""\}/);
+  assert.doesNotMatch(creator, /<Sheet/);
   assert.doesNotMatch(picker, /text-\[10px\]/);
   assert.doesNotMatch(picker, /font-mono[^"\n]*uppercase/);
   assert.match(picker, /text-xs font-semibold leading-4/);

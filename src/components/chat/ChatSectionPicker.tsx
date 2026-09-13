@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Check, ChevronDown, Search } from "lucide-react";
 
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
@@ -17,13 +17,19 @@ export function ChatSectionPicker({
   activeSection,
   rootChatId,
   renderDestination,
+  createAction,
 }: {
   sections: ChatListItem[];
   activeSection: ChatListItem;
   rootChatId: string;
   renderDestination: ChatSectionDestinationRenderer;
+  createAction?: ReactNode | ((control: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+  }) => ReactNode);
 }) {
   const [open, setOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const [query, setQuery] = useState("");
   const unreadElsewhere = sections.reduce(
     (total, section) => total + (section.id === activeSection.id ? 0 : section.unreadCount),
@@ -47,6 +53,7 @@ export function ChatSectionPicker({
   const close = () => {
     setOpen(false);
     setQuery("");
+    setCreateOpen(false);
   };
 
   const moveOptionFocus = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -82,11 +89,15 @@ export function ChatSectionPicker({
   );
 
   return (
-    <DropdownMenu
+    <div className="flex min-w-0 flex-1 items-center gap-1">
+      <DropdownMenu
       open={open}
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen);
-        if (!nextOpen) setQuery("");
+        if (!nextOpen) {
+          setQuery("");
+          setCreateOpen(false);
+        }
       }}
       align="start"
       contentRole="dialog"
@@ -113,20 +124,22 @@ export function ChatSectionPicker({
       )}
     >
       <div onKeyDown={moveOptionFocus}>
-        <label className="flex h-10 items-center gap-2 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--background)] px-2.5 focus-within:border-[var(--theme-accent)]">
+        {!createOpen ? (
+          <>
+            <label className="flex h-10 items-center gap-2 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--background)] px-2.5 focus-within:border-[var(--theme-accent)]">
           <Search className="h-4 w-4 shrink-0 text-[var(--app-muted)]" aria-hidden="true" />
           <span className="sr-only">Найти раздел</span>
           <input
-            data-dropdown-autofocus=""
+            data-dropdown-autofocus={createOpen ? undefined : ""}
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Найти раздел"
             className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[var(--app-muted)]"
           />
-        </label>
+            </label>
 
-        <div className="voople-scroll mt-2 max-h-72 overflow-y-auto" aria-live="polite">
+            <div className="voople-scroll mt-2 max-h-72 overflow-y-auto" aria-live="polite">
           {unreadSections.length ? (
             <section aria-labelledby="chat-section-unread-title">
               <p id="chat-section-unread-title" className="px-2.5 pb-1 pt-1 text-xs font-semibold leading-4 text-[var(--app-muted)]">
@@ -147,9 +160,45 @@ export function ChatSectionPicker({
               Раздел не найден
             </p>
           )}
-        </div>
+            </div>
+          </>
+        ) : null}
+        {createAction ? (
+          <div className="mt-2 border-t border-[var(--app-border)] pt-2">
+            {typeof createAction === "function" ? (
+              createOpen ? createAction({ open: true, onOpenChange: setCreateOpen }) : (
+                <button
+                  type="button"
+                  aria-label="Новый раздел"
+                  onClick={() => setCreateOpen(true)}
+                  className="flex min-h-10 w-full items-center gap-2 rounded-[var(--app-radius-sm)] px-2.5 text-left text-sm font-medium text-[var(--theme-accent)] transition-colors hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)]"
+                >
+                  <span className="text-lg leading-none" aria-hidden="true">+</span>
+                  Создать раздел
+                </button>
+              )
+            ) : createAction}
+          </div>
+        ) : null}
       </div>
-    </DropdownMenu>
+      </DropdownMenu>
+      {createAction ? (
+        <button
+          type="button"
+          aria-label="Новый раздел"
+          aria-expanded={open && createOpen}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => {
+            setQuery("");
+            setCreateOpen(true);
+            setOpen(true);
+          }}
+          className="ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-[var(--app-radius-sm)] text-[var(--app-muted)] transition-colors hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)]"
+        >
+          <span className="text-lg leading-none" aria-hidden="true">+</span>
+        </button>
+      ) : null}
+    </div>
   );
 }
 

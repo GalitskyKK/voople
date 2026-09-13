@@ -161,9 +161,11 @@ test("group visual gate includes section selection and collapsed voice shelf at 
   const visualGate = source("scripts/verify-core-rework-group-surface.mjs");
 
   assert.match(visualGate, /state: "sections"/);
+  assert.match(visualGate, /state: "create"/);
   assert.match(visualGate, /state: "collapsed"/);
   assert.match(visualGate, /Текущий раздел: Общий/);
   assert.match(visualGate, /Выбор раздела группы/);
+  assert.match(visualGate, /getByRole\("form", \{ name: "Новый раздел" \}\)/);
   assert.match(visualGate, /Свернуть активные разговоры/);
   assert.match(visualGate, /Развернуть активные разговоры/);
   assert.match(visualGate, /stateSuffix/);

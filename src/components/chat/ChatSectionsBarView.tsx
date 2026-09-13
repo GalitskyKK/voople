@@ -16,7 +16,10 @@ export function ChatSectionsBarView({
   rootChat: ChatListItem;
   activeChatId: string;
   renderDestination: ChatSectionDestinationRenderer;
-  createAction?: ReactNode;
+  createAction?: ReactNode | ((control: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+  }) => ReactNode);
 }) {
   if (!rootChat.topicsEnabled) return null;
   const sections = [rootChat, ...rootChat.channels];
@@ -32,9 +35,8 @@ export function ChatSectionsBarView({
         activeSection={activeSection}
         rootChatId={rootChat.id}
         renderDestination={renderDestination}
+        createAction={createAction}
       />
-
-      {createAction ? <div className="ml-auto flex min-h-9 shrink-0 items-center">{createAction}</div> : null}
     </nav>
   );
 }

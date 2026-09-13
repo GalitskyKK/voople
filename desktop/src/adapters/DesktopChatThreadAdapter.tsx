@@ -293,18 +293,20 @@ export function DesktopChatThreadAdapter({
         <ChatSectionsBarView
           rootChat={rootChat}
           activeChatId={chatId}
-          createAction={
+          createAction={({ open, onOpenChange }) => (
             <DesktopSubchatCreatorAdapter
               parentChatId={rootChat.id}
               config={config}
               session={session}
               viewerRole={data.chat.viewerRole}
+              open={open}
+              onOpenChange={onOpenChange}
               onCreated={(createdChatId) => {
                 onInboxChange();
                 onNavigateChat(createdChatId);
               }}
             />
-          }
+          )}
           renderDestination={(chat, className, children, onNavigate) => (
             <button
               key={chat.id}

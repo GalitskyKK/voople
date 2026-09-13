@@ -520,8 +520,16 @@ Live Shelf теперь вручную сворачивается в компа�
 32 px на desktop и 44 px на touch, с краткой сводкой Rooms. Настройка хранится
 по Group на текущем устройстве; обновление комнат не раскрывает Shelf
 самовольно, а прямые действия возвращаются после раскрытия. Актуальный visual
-gate содержит 20 web/desktop кадров, включая collapsed-state на 1280 px Void и
+gate содержит 24 web/desktop кадра, включая collapsed-state и inline-create на 1280 px Void и
 390 px Light; overflow и runtime errors отсутствуют.
+
+Создание Section перенесено из отдельного Sheet в тот же searchable selector:
+toolbar сохраняет компактный `+`, click сразу открывает inline-поле, Enter
+создаёт, Escape отменяет только ввод. Ошибка остаётся рядом с полем. Выбор
+иконки и restricted-доступ не удалены, а раскрываются как вторичные настройки
+внутри того же popover. Web и desktop используют один View и
+свои transport-adapters; source/type/lint gates подтверждают паритет, а текущая
+24-кадровая матрица — отсутствие регрессии геометрии selector.
 
 ### Room-context message read model — 2026-09-08
 

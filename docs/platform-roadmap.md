@@ -188,6 +188,11 @@ SBOM и checksums. Отказ одной новой платформы не бл
 изолированных `spike/*` ветках. Следующий безопасный срез — RFC capability
 registry и Linux/macOS capture feasibility без обещания публичного релиза.
 
+Доменный cutover ведётся отдельно по
+[`docs/domain-cutover-checklist.md`](./domain-cutover-checklist.md). Он обязателен
+перед отключением `voople.ru`, включая перенос self-hosted LiveKit и desktop
+endpoints на `voople.app`.
+
 ## 8. Platform references
 
 - [Tauri: supported desktop/mobile platforms](https://v2.tauri.app/start/)

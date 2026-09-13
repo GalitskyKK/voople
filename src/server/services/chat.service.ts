@@ -24,6 +24,7 @@ export {
 } from "@/server/data/chat-rest";
 
 export { getMessageNotificationRest as getMessageNotification } from "@/server/data/chat-message-actions-rest";
+export { toggleChatSectionFavoriteRest as toggleChatSectionFavorite } from "@/server/data/chat-section-favorites-rest";
 
 export async function sendMessage(
   input: Parameters<typeof sendMessageRest>[0],

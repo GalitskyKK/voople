@@ -117,6 +117,7 @@ export type ChatListItem = {
   groupVisibility: GroupVisibility;
   joinPolicy: GroupJoinPolicy;
   sectionAccessMode: "inherit" | "restricted";
+  favoritePosition?: 1 | 2 | null;
   groupIcon: string | null;
   groupAvatarUrl: string | null;
   groupBannerUrl: string | null;

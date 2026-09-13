@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { Check, ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import type { ChatListItem } from "@/types/chat";
 
 import { ChatUnreadBadge } from "./ChatUnreadBadge";
+import { ChatSectionPickerOption } from "./ChatSectionPickerOption";
 import {
   ChatSectionIcon,
   type ChatSectionDestinationRenderer,
@@ -18,6 +19,9 @@ export function ChatSectionPicker({
   rootChatId,
   renderDestination,
   createAction,
+  onToggleFavorite,
+  pendingFavoriteId,
+  favoriteError,
 }: {
   sections: ChatListItem[];
   activeSection: ChatListItem;
@@ -27,6 +31,9 @@ export function ChatSectionPicker({
     open: boolean;
     onOpenChange: (open: boolean) => void;
   }) => ReactNode);
+  onToggleFavorite?: (sectionId: string) => void | Promise<void>;
+  pendingFavoriteId?: string | null;
+  favoriteError?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -49,6 +56,12 @@ export function ChatSectionPicker({
   const remainingSections = query
     ? visibleSections
     : visibleSections.filter((section) => !unreadIds.has(section.id));
+  const favoriteSections = sections
+    .filter((section) => section.id !== rootChatId && section.favoritePosition)
+    .sort(
+      (left, right) =>
+        (left.favoritePosition ?? 3) - (right.favoritePosition ?? 3),
+    );
 
   const close = () => {
     setOpen(false);
@@ -74,19 +87,22 @@ export function ChatSectionPicker({
     options[nextIndex]?.focus();
   };
 
-  const renderSection = (section: ChatListItem) => renderDestination(
-    section,
-    "voople-chat-section-option flex min-h-10 w-full items-center gap-2 rounded-[var(--app-radius-sm)] px-2.5 text-left text-sm text-[var(--foreground)] transition-colors hover:bg-[var(--app-surface-soft)] focus-visible:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)]",
-    <>
-      <ChatSectionIcon section={section} rootChatId={rootChatId} />
-      <span className="min-w-0 flex-1 truncate">{sectionLabel(section, rootChatId)}</span>
-      <ChatUnreadBadge count={section.unreadCount} />
-      {section.id === activeSection.id ? (
-        <Check className="h-4 w-4 shrink-0 text-[var(--theme-accent)]" aria-label="Выбран" />
-      ) : null}
-    </>,
-    close,
-  );
+  const renderSection = (section: ChatListItem) => {
+    const label = sectionLabel(section, rootChatId);
+    return (
+      <ChatSectionPickerOption
+        key={section.id}
+        section={section}
+        rootChatId={rootChatId}
+        label={label}
+        active={section.id === activeSection.id}
+        renderDestination={renderDestination}
+        onNavigate={close}
+        onToggleFavorite={onToggleFavorite}
+        favoriteUpdatePending={Boolean(pendingFavoriteId)}
+      />
+    );
+  };
 
   return (
     <div className="flex min-w-0 flex-1 items-center gap-1">
@@ -180,8 +196,29 @@ export function ChatSectionPicker({
             ) : createAction}
           </div>
         ) : null}
+        {favoriteError ? (
+          <p className="mt-2 px-2.5 text-xs leading-4 text-red-400" role="alert">
+            {favoriteError}
+          </p>
+        ) : null}
       </div>
       </DropdownMenu>
+      {favoriteSections
+        .filter((section) => section.id !== activeSection.id)
+        .map((section) =>
+          renderDestination(
+            section,
+            "hidden h-9 max-w-32 shrink-0 items-center gap-1.5 truncate rounded-[var(--app-radius-sm)] px-2.5 text-xs font-medium text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)] sm:inline-flex",
+            <>
+              <ChatSectionIcon section={section} rootChatId={rootChatId} />
+              <span className="truncate">
+                {sectionLabel(section, rootChatId)}
+              </span>
+              <ChatUnreadBadge count={section.unreadCount} />
+            </>,
+            close,
+          ),
+        )}
       {createAction ? (
         <button
           type="button"

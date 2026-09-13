@@ -72,6 +72,8 @@ export function DesktopChatThreadAdapter({
   } = useChatComposerSession(chatId);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [groupEmojis, setGroupEmojis] = useState<GroupEmojiView[]>([]);
+  const [pendingFavoriteId, setPendingFavoriteId] = useState<string | null>(null);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const online = useBrowserOnline();
   const groupPanel = useDesktopGroupPanel({
     chatId,
@@ -307,6 +309,28 @@ export function DesktopChatThreadAdapter({
               }}
             />
           )}
+          pendingFavoriteId={pendingFavoriteId}
+          favoriteError={favoriteError}
+          onToggleFavorite={async (sectionId) => {
+            setPendingFavoriteId(sectionId);
+            setFavoriteError(null);
+            try {
+              const client = createDesktopTrpcClient(
+                config,
+                () => session.access_token,
+              );
+              await client.mutation("chat.toggleSectionFavorite", { sectionId });
+              onInboxChange();
+            } catch (error) {
+              setFavoriteError(
+                error instanceof Error
+                  ? error.message
+                  : "Не удалось обновить избранное",
+              );
+            } finally {
+              setPendingFavoriteId(null);
+            }
+          }}
           renderDestination={(chat, className, children, onNavigate) => (
             <button
               key={chat.id}

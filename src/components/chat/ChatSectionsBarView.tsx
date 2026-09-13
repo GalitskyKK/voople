@@ -12,6 +12,9 @@ export function ChatSectionsBarView({
   activeChatId,
   renderDestination,
   createAction,
+  onToggleFavorite,
+  pendingFavoriteId,
+  favoriteError,
 }: {
   rootChat: ChatListItem;
   activeChatId: string;
@@ -20,6 +23,9 @@ export function ChatSectionsBarView({
     open: boolean;
     onOpenChange: (open: boolean) => void;
   }) => ReactNode);
+  onToggleFavorite?: (sectionId: string) => void | Promise<void>;
+  pendingFavoriteId?: string | null;
+  favoriteError?: string | null;
 }) {
   if (!rootChat.topicsEnabled) return null;
   const sections = [rootChat, ...rootChat.channels];
@@ -36,6 +42,9 @@ export function ChatSectionsBarView({
         rootChatId={rootChat.id}
         renderDestination={renderDestination}
         createAction={createAction}
+        onToggleFavorite={onToggleFavorite}
+        pendingFavoriteId={pendingFavoriteId}
+        favoriteError={favoriteError}
       />
     </nav>
   );

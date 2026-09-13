@@ -147,6 +147,19 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
   const allowedRestrictedSectionIds = new Set(
     (sectionMemberships ?? []).map((row) => row.chat_id as string),
   );
+  const { data: favoriteRows, error: favoriteRowsError } = channelIds.length
+    ? await admin
+        .from("user_chat_section_favorites")
+        .select("section_id, position")
+        .eq("user_id", userId)
+        .in("section_id", channelIds)
+    : { data: [], error: null };
+  if (favoriteRowsError) throw new Error(favoriteRowsError.message);
+  const favoritePositionBySection = new Map<string, 1 | 2>(
+    (favoriteRows ?? [])
+      .filter((row) => row.position === 1 || row.position === 2)
+      .map((row) => [String(row.section_id), row.position as 1 | 2]),
+  );
 
   const othersByChat = new Map<
     string,
@@ -246,6 +259,7 @@ export async function listChatsRest(userId: string): Promise<ChatListItem[]> {
       groupVisibility: groupVisibilityByChat.get(id) ?? "private",
       joinPolicy: joinPolicyByChat.get(id) ?? "invite_only",
       sectionAccessMode: sectionAccessByChat.get(id) ?? "inherit",
+      favoritePosition: favoritePositionBySection.get(id) ?? null,
       groupIcon: community?.icon ?? null,
       groupAvatarUrl: community?.avatarUrl ?? null,
       groupBannerUrl: community?.effectiveBannerUrl ?? null,

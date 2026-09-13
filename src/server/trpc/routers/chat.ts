@@ -27,6 +27,7 @@ import {
   setGroupVisibility,
   setGroupName,
   setSectionAccess,
+  toggleChatSectionFavorite,
   listChats,
   previewChatInvite,
   removeGroupMember,
@@ -396,6 +397,25 @@ export const chatRouter = createTRPCRouter({
             error instanceof Error
               ? error.message
               : "Не удалось создать раздел",
+        });
+      }
+    }),
+  toggleSectionFavorite: protectedProcedure
+    .input(z.object({ sectionId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.updateChatPreference, ctx.user.id);
+      try {
+        return await toggleChatSectionFavorite(ctx.user.id, input.sectionId);
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : "";
+        const message = detail.includes("CHAT_SECTION_FAVORITE_LIMIT")
+          ? "Можно закрепить не больше двух разделов"
+          : detail.includes("FAVORITE_ACCESS_DENIED")
+            ? "Раздел недоступен"
+            : "Не удалось обновить избранные разделы";
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message,
         });
       }
     }),

@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { createServer } from "node:http";
-import { mkdtemp, readdir, readFile } from "node:fs/promises";
+import { mkdtemp, readFile } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
+import { loadCurrentVisualCss } from "./lib/load-current-visual-css.mjs";
 
 const repo = fileURLToPath(new URL("../", import.meta.url)).replaceAll("\\", "/").replace(/\/$/, "");
 const artifacts = await mkdtemp(path.join(os.tmpdir(), "voople-room-guest-"));
@@ -56,10 +57,11 @@ const bundle = await build({
   }],
 });
 
-const cssRoot = path.join(repo, "desktop/dist/assets");
-const cssFiles = (await readdir(cssRoot, { recursive: true })).filter((file) => file.endsWith(".css"));
-const css = (await Promise.all(cssFiles.map((file) => readFile(path.join(cssRoot, file), "utf8")))).join("\n");
+const css = await loadCurrentVisualCss(repo, { host: "web" });
 const mark = await readFile(path.join(repo, "public/favicon/android-chrome-192x192.png"));
+const geistSans = await readFile(path.join(repo, "node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2"));
+const geistMono = await readFile(path.join(repo, "node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2"));
+const geistPixelSquare = await readFile(path.join(repo, "node_modules/geist/dist/fonts/geist-pixel/GeistPixel-Square.woff2"));
 const server = createServer((request, response) => {
   if (request.url === "/app.js") {
     response.setHeader("Content-Type", "text/javascript");
@@ -70,6 +72,15 @@ const server = createServer((request, response) => {
   } else if (request.url === "/favicon/android-chrome-192x192.png") {
     response.setHeader("Content-Type", "image/png");
     response.end(mark);
+  } else if (request.url === "/fonts/geist-sans.woff2") {
+    response.setHeader("Content-Type", "font/woff2");
+    response.end(geistSans);
+  } else if (request.url === "/fonts/geist-mono.woff2") {
+    response.setHeader("Content-Type", "font/woff2");
+    response.end(geistMono);
+  } else if (request.url === "/fonts/geist-pixel-square.woff2") {
+    response.setHeader("Content-Type", "font/woff2");
+    response.end(geistPixelSquare);
   } else {
     response.setHeader("Content-Type", "text/html; charset=utf-8");
     response.end('<!doctype html><html><head><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/style.css"></head><body><main id="root"></main><script src="/app.js"></script></body></html>');
@@ -159,8 +170,43 @@ try {
     await page.getByText("Вы теперь в группе «Сообщество дизайнеров»", { exact: true }).waitFor();
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     await page.screenshot({ path: path.join(artifacts, `guest-conversion-${width}-${theme}.png`), fullPage: true });
+
+    await page.evaluate(() => window.setConversionState({
+      phase: "idle",
+      result: null,
+      error: null,
+    }));
+    await page.evaluate((state) => window.setGuestState(state), {
+      ...baseState,
+      preview: {
+        ...preview,
+        available: false,
+        reason: "full",
+        participantCount: 0,
+        participants: [],
+      },
+    });
+    await page.getByText("Сейчас нет свободного места", { exact: true }).waitFor();
+    await page.getByRole("button", { name: "Проверить снова" }).waitFor();
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    await page.screenshot({ path: path.join(artifacts, `guest-full-${width}-${theme}.png`), fullPage: true });
+
+    await page.evaluate((state) => window.setGuestState(state), {
+      ...baseState,
+      preview: {
+        ...preview,
+        available: false,
+        reason: "expired",
+        participantCount: 0,
+        participants: [],
+      },
+    });
+    await page.getByText("Срок ссылки истёк", { exact: true }).waitFor();
+    assert.equal(await page.getByRole("button", { name: "Проверить снова" }).count(), 0);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    await page.screenshot({ path: path.join(artifacts, `guest-expired-${width}-${theme}.png`), fullPage: true });
     assert.deepEqual(errors, []);
-    console.log(`PASS ${width}px ${theme}: entry, joined Room, conversion, no overflow or page errors`);
+    console.log(`PASS ${width}px ${theme}: entry, joined Room, conversion, full and expired, no overflow or page errors`);
     await page.close();
   }
 } finally {

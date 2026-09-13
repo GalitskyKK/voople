@@ -13,7 +13,12 @@ import {
   leaveRoomGuestRest,
   previewRoomGuestInviteRest,
   resolveRoomGuestRest,
+  RoomGuestUnavailableError,
 } from "@/server/data/room-guests-rest";
+
+export function roomGuestUnavailableReason(error: unknown) {
+  return error instanceof RoomGuestUnavailableError ? error.reason : null;
+}
 
 function requireOpaqueToken(token: string, errorMessage: string) {
   if (!isRoomGuestInviteToken(token)) throw new Error(errorMessage);

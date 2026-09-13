@@ -8,17 +8,56 @@ const UNAVAILABLE_COPY: Record<RoomGuestInviteUnavailableReason, string> = {
   full: "Все гостевые места заняты.",
 };
 
+const unavailableReasons = new Set<RoomGuestInviteUnavailableReason>([
+  "missing",
+  "expired",
+  "revoked",
+  "ended",
+  "full",
+]);
+
+export class RoomGuestResponseError extends Error {
+  readonly status: number;
+  readonly unavailableReason: RoomGuestInviteUnavailableReason | null;
+
+  constructor(
+    message: string,
+    status: number,
+    unavailableReason: RoomGuestInviteUnavailableReason | null,
+  ) {
+    super(message);
+    this.name = "RoomGuestResponseError";
+    this.status = status;
+    this.unavailableReason = unavailableReason;
+  }
+}
+
+export function roomGuestUnavailableReasonFromError(error: unknown) {
+  return error instanceof RoomGuestResponseError
+    ? error.unavailableReason
+    : null;
+}
+
 export function roomGuestUnavailableCopy(reason: RoomGuestInviteUnavailableReason) {
   return UNAVAILABLE_COPY[reason];
 }
 
 export async function roomGuestResponseJson<T>(response: Response): Promise<T> {
-  const value = await response.json().catch(() => null) as T | { error?: string } | null;
+  const value = await response.json().catch(() => null) as
+    | T
+    | { error?: string; reason?: string }
+    | null;
   if (!response.ok) {
-    throw new Error(
+    const reason = value && typeof value === "object" && "reason" in value
+      && unavailableReasons.has(value.reason as RoomGuestInviteUnavailableReason)
+      ? value.reason as RoomGuestInviteUnavailableReason
+      : null;
+    throw new RoomGuestResponseError(
       value && typeof value === "object" && "error" in value && value.error
         ? String(value.error)
         : "Сервис комнаты временно недоступен",
+      response.status,
+      reason,
     );
   }
   return value as T;

@@ -69,19 +69,59 @@ function unavailable(
   };
 }
 
+export class RoomGuestUnavailableError extends Error {
+  readonly reason: Exclude<RoomGuestInvitePreview["reason"], "active">;
+
+  constructor(
+    message: string,
+    reason: Exclude<RoomGuestInvitePreview["reason"], "active">,
+  ) {
+    super(message);
+    this.name = "RoomGuestUnavailableError";
+    this.reason = reason;
+  }
+}
+
 function roomGuestError(message: string) {
-  if (message.includes("ROOM_GUEST_INVITE_MISSING")) return new Error("Приглашение не найдено");
-  if (message.includes("ROOM_GUEST_INVITE_REVOKED")) return new Error("Приглашение отозвано");
-  if (message.includes("ROOM_GUEST_INVITE_EXPIRED")) return new Error("Срок приглашения истёк");
-  if (message.includes("ROOM_GUEST_SESSION_ENDED")) return new Error("Комната уже закрыта");
-  if (message.includes("ROOM_GUEST_CAPACITY_REACHED")) return new Error("В комнате больше нет гостевых мест");
-  if (message.includes("ROOM_GUEST_INVITE_FORBIDDEN")) return new Error("Создать ссылку может только участник комнаты");
-  if (message.includes("ROOM_GUEST_INPUT_INVALID")) return new Error("Проверьте имя гостя");
-  if (message.includes("ROOM_GUEST_IDEMPOTENCY_CONFLICT")) return new Error("Попытка входа устарела. Повторите вход");
-  if (message.includes("ROOM_GUEST_CONVERSION_GROUP_FULL")) return new Error("В группе больше нет свободных мест");
-  if (message.includes("ROOM_GUEST_CONVERSION_CLAIMED")) return new Error("Гостевое место уже связано с другим аккаунтом");
-  if (message.includes("ROOM_GUEST_CONVERSION_USER_MISSING")) return new Error("Сначала завершите создание профиля");
-  if (message.includes("ROOM_GUEST_CONVERSION")) return new Error("Не удалось сохранить гостевое участие");
+  if (message.includes("ROOM_GUEST_INVITE_MISSING")) {
+    return new RoomGuestUnavailableError("Приглашение не найдено", "missing");
+  }
+  if (message.includes("ROOM_GUEST_INVITE_REVOKED")) {
+    return new RoomGuestUnavailableError("Приглашение отозвано", "revoked");
+  }
+  if (message.includes("ROOM_GUEST_INVITE_EXPIRED")) {
+    return new RoomGuestUnavailableError("Срок приглашения истёк", "expired");
+  }
+  if (message.includes("ROOM_GUEST_SESSION_ENDED")) {
+    return new RoomGuestUnavailableError("Комната уже закрыта", "ended");
+  }
+  if (message.includes("ROOM_GUEST_CAPACITY_REACHED")) {
+    return new RoomGuestUnavailableError(
+      "В комнате больше нет гостевых мест",
+      "full",
+    );
+  }
+  if (message.includes("ROOM_GUEST_INVITE_FORBIDDEN")) {
+    return new Error("Создать ссылку может только участник комнаты");
+  }
+  if (message.includes("ROOM_GUEST_INPUT_INVALID")) {
+    return new Error("Проверьте имя гостя");
+  }
+  if (message.includes("ROOM_GUEST_IDEMPOTENCY_CONFLICT")) {
+    return new Error("Попытка входа устарела. Повторите вход");
+  }
+  if (message.includes("ROOM_GUEST_CONVERSION_GROUP_FULL")) {
+    return new Error("В группе больше нет свободных мест");
+  }
+  if (message.includes("ROOM_GUEST_CONVERSION_CLAIMED")) {
+    return new Error("Гостевое место уже связано с другим аккаунтом");
+  }
+  if (message.includes("ROOM_GUEST_CONVERSION_USER_MISSING")) {
+    return new Error("Сначала завершите создание профиля");
+  }
+  if (message.includes("ROOM_GUEST_CONVERSION")) {
+    return new Error("Не удалось сохранить гостевое участие");
+  }
   return new Error(message);
 }
 

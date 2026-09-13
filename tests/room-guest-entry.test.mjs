@@ -6,7 +6,12 @@ import {
   isRoomGuestInviteToken,
   roomGuestInviteUrl,
 } from "../src/lib/chat/room-guest-invite-url.ts";
-import { roomGuestMicrophoneError } from "../src/lib/chat/room-guest-client.ts";
+import {
+  RoomGuestResponseError,
+  roomGuestMicrophoneError,
+  roomGuestResponseJson,
+  roomGuestUnavailableReasonFromError,
+} from "../src/lib/chat/room-guest-client.ts";
 
 const token = "a".repeat(43);
 
@@ -24,6 +29,17 @@ test("guest microphone failures expose a useful recovery reason", () => {
   assert.match(roomGuestMicrophoneError({ name: "NotAllowedError" }), /настройках браузера/);
   assert.match(roomGuestMicrophoneError({ name: "NotFoundError" }), /Микрофон не найден/);
   assert.equal(roomGuestMicrophoneError(new Error("device busy")), "device busy");
+});
+
+test("guest join failures keep a machine-readable unavailable reason", async () => {
+  const error = await roomGuestResponseJson(new Response(
+    JSON.stringify({ error: "В комнате больше нет гостевых мест", reason: "full" }),
+    { status: 409, headers: { "Content-Type": "application/json" } },
+  )).catch((caught) => caught);
+
+  assert.ok(error instanceof RoomGuestResponseError);
+  assert.equal(error.status, 409);
+  assert.equal(roomGuestUnavailableReasonFromError(error), "full");
 });
 
 test("guest persistence is Room-only, hash-only and inaccessible to public database roles", async () => {
@@ -67,6 +83,10 @@ test("guest transport keeps credentials out of browser JavaScript and restricts 
   assert.match(service, /normalizeGuestName/);
   assert.match(inviteRoute, /response\.cookies\.set\(ROOM_GUEST_COOKIE, result\.accessToken/);
   assert.match(inviteRoute, /requestId: z\.string\(\)\.uuid\(\)/);
+  assert.match(inviteRoute, /roomGuestUnavailableReason\(error\)/);
+  assert.match(inviteRoute, /\{ error: message, reason \}/);
+  assert.match(data, /class RoomGuestUnavailableError extends Error/);
+  assert.match(service, /error instanceof RoomGuestUnavailableError/);
   assert.doesNotMatch(inviteRoute, /accessToken: result\.accessToken/);
   assert.match(sessionRoute, /Cache-Control": "private, no-store"/);
   assert.match(sessionRoute, /roomGuestCookieOptions/);
@@ -80,8 +100,9 @@ test("guest transport keeps credentials out of browser JavaScript and restricts 
 });
 
 test("guest UI joins muted, exposes recovery states and keeps guests out of profiles", async () => {
-  const [page, hook, media, snapshot, groupNow, participant] = await Promise.all([
+  const [page, unavailable, hook, media, snapshot, groupNow, participant] = await Promise.all([
     readFile(new URL("../src/components/chat/RoomGuestPage.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/RoomGuestUnavailableState.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/hooks/useRoomGuestSession.ts", import.meta.url), "utf8"),
     readFile(new URL("../src/hooks/useRoomGuestMedia.ts", import.meta.url), "utf8"),
     readFile(new URL("../src/server/data/group-now-rest.ts", import.meta.url), "utf8"),
@@ -95,6 +116,9 @@ test("guest UI joins muted, exposes recovery states and keeps guests out of prof
   assert.match(page, /Нет подключения к интернету/);
   assert.match(page, /guest\.micError/);
   assert.match(page, /screenRootRef/);
+  assert.match(page, /roomGuestUnavailableReasonFromError\(error\)/);
+  assert.match(unavailable, /Сейчас нет свободного места/);
+  assert.match(unavailable, /Проверить снова/);
   assert.match(media, /useState\(true\)/);
   assert.match(media, /RoomEvent\.Reconnecting/);
   assert.match(media, /activeScreenPublicationRef/);

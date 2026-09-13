@@ -11,6 +11,7 @@ import {
 import {
   joinRoomAsGuest,
   previewRoomGuestInvite,
+  roomGuestUnavailableReason,
 } from "@/server/services/room-guests.service";
 import {
   recordRoomGuestJoined,
@@ -75,9 +76,8 @@ export async function POST(request: Request, context: GuestInviteRouteContext) {
     return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Не удалось войти гостем";
-    const status = message.includes("закрыта") || message.includes("истёк") ? 410
-      : message.includes("мест") ? 409
-        : 400;
-    return noStore({ error: message }, { status });
+    const reason = roomGuestUnavailableReason(error);
+    const status = reason === "full" ? 409 : reason ? 410 : 400;
+    return noStore({ error: message, reason }, { status });
   }
 }

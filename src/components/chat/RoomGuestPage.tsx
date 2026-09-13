@@ -4,11 +4,12 @@ import { useRef, useState } from "react";
 
 import { VoopleMark } from "@/components/brand/VoopleMark";
 import { RoomGuestConversionPanel } from "@/components/chat/RoomGuestConversionPanel";
+import { RoomGuestUnavailableState } from "@/components/chat/RoomGuestUnavailableState";
 import { Button } from "@/components/ui/Button";
 import { useBrowserOnline } from "@/hooks/useBrowserOnline";
 import { useRoomGuestConversion } from "@/hooks/useRoomGuestConversion";
 import { useRoomGuestSession } from "@/hooks/useRoomGuestSession";
-import { roomGuestUnavailableCopy } from "@/lib/chat/room-guest-client";
+import { roomGuestUnavailableReasonFromError } from "@/lib/chat/room-guest-client";
 
 export function RoomGuestPage({
   token,
@@ -42,6 +43,9 @@ export function RoomGuestPage({
       await guest.join(displayName);
     } catch (error) {
       setJoinError(error instanceof Error ? error.message : "Не удалось войти в комнату");
+      if (roomGuestUnavailableReasonFromError(error)) {
+        await guest.loadPreview();
+      }
     } finally {
       setJoinPending(false);
     }
@@ -86,17 +90,13 @@ export function RoomGuestPage({
               </Button>
             </div>
           ) : !guest.preview?.available && !guest.joined ? (
-            <div className="grid min-h-[26rem] place-content-center px-6 py-12 text-center">
-              <span className="mx-auto grid h-12 w-12 place-items-center rounded-[var(--app-radius-md)] bg-[var(--app-surface-soft)] text-[var(--app-muted)]">
-                <LogOut className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <h1 className="mt-5 text-2xl font-semibold">В комнату уже не войти</h1>
-              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[var(--app-muted)]">
-                {guest.preview && guest.preview.reason !== "active"
-                  ? roomGuestUnavailableCopy(guest.preview.reason)
-                  : "Приглашение недоступно."}
-              </p>
-            </div>
+            <RoomGuestUnavailableState
+              reason={guest.preview && guest.preview.reason !== "active"
+                ? guest.preview.reason
+                : "missing"}
+              online={online}
+              onRetry={guest.loadPreview}
+            />
           ) : guest.joined ? (
             <div className="flex min-h-[34rem] flex-col">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--app-border)] px-5 py-4 sm:px-7">

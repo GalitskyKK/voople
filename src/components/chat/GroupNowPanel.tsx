@@ -14,6 +14,8 @@ export function GroupNowPanel({
   variant = "surface",
   onJoinRoom,
   onCreateRoom,
+  createPending = false,
+  createError = null,
   onOpenProfile,
 }: {
   enabled?: boolean;
@@ -22,6 +24,8 @@ export function GroupNowPanel({
   variant?: "surface" | "shelf";
   onJoinRoom: (room: GroupNowRoom) => void | Promise<void>;
   onCreateRoom?: () => void;
+  createPending?: boolean;
+  createError?: string | null;
   onOpenProfile?: (user: GroupNowUser) => void;
 }) {
   const [online, setOnline] = useState(true);
@@ -87,6 +91,8 @@ export function GroupNowPanel({
       actionError={actionError}
       onJoinRoom={(room) => void joinRoom(room)}
       onCreateRoom={onCreateRoom}
+      createPending={createPending}
+      createError={createError}
       onOpenProfile={onOpenProfile}
     />
   );

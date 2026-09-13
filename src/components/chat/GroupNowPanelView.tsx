@@ -22,6 +22,8 @@ type ReadyStateProps = {
   variant?: "surface" | "shelf";
   pendingRoomId?: string | null;
   actionError?: string | null;
+  createPending?: boolean;
+  createError?: string | null;
   onJoinRoom: (room: GroupNowRoom) => void;
   onCreateRoom?: () => void;
   onOpenProfile?: (user: GroupNowUser) => void;
@@ -50,6 +52,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
   const lobby = props.value.rooms.find((room) => room.kind === "lobby") ?? null;
   const rooms = props.value.rooms.filter((room) => room.kind !== "lobby");
   const voiceSummary = formatGroupNowVoiceSummary(props.value.rooms);
+  const surfaceError = props.actionError ?? props.createError;
   return (
     <section
       className="mr-auto w-full max-w-[960px] px-3 py-4 text-[var(--foreground)] sm:px-6 sm:py-5"
@@ -66,18 +69,20 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
             type="button"
             size="sm"
             variant="ghost"
+            disabled={props.createPending}
             onClick={props.onCreateRoom}
+            aria-label="Создать комнату и войти"
             className="voople-group-now__create shrink-0 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] text-[var(--theme-accent)] hover:border-[var(--theme-accent)] hover:bg-[var(--app-accent-soft)]"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
-            Комната
+            {props.createPending ? "Создаём" : "Комната"}
           </Button>
         ) : null}
       </header>
 
-      {props.actionError ? (
+      {surfaceError ? (
         <p className="mt-4 rounded-xl border border-[var(--app-border-strong)] bg-[var(--app-surface-soft)] px-3 py-2 text-sm" role="alert">
-          {props.actionError}
+          {surfaceError}
         </p>
       ) : null}
 

@@ -73,7 +73,7 @@ test("shared Group Now view keeps flat accessible states for both hosts", async 
   assert.match(viewSource, /formatGroupNowVoiceSummary/);
   assert.match(viewSource, /room\.kind === "lobby"/);
   assert.match(viewSource, /Комнаты · \{rooms\.length\}/);
-  assert.match(viewSource, />\s*Комната\s*</);
+  assert.match(viewSource, /props\.createPending \? "Создаём" : "Комната"/);
   assert.match(roomSource, /aria-label=\{`\$\{actionLabel\}: \$\{room\.name\}`\}/);
   assert.match(roomSource, /Начать разговор/);
   assert.match(roomSource, /Присоединиться/);

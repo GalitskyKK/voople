@@ -50,6 +50,8 @@ export function GroupNowConnectedPanel({
         variant={variant}
         onJoinRoom={(room) => join.requestJoin({ groupId, room })}
         onCreateRoom={create.show}
+        createPending={create.pending}
+        createError={create.error}
         onOpenProfile={onOpenProfile}
       />
       <GroupNowRoomSwitchDialog
@@ -66,7 +68,7 @@ export function GroupNowConnectedPanel({
         pending={create.pending}
         error={create.error}
         onClose={create.close}
-        onBack={create.back}
+        onBack={create.close}
         onConfirm={() => void create.confirm()}
         onSubmit={(draft) => void create.submit(draft)}
       />

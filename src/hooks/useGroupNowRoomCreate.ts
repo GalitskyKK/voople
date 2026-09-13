@@ -20,6 +20,11 @@ export type GroupNowRoomCreateDraft = {
 
 type PendingCreation = GroupNowRoomCreateDraft & { requestId: string };
 
+const DEFAULT_ROOM_DRAFT: GroupNowRoomCreateDraft = {
+  kind: "temporary",
+  name: "Новая комната",
+};
+
 function toCreatedRoom(result: GroupRoomCreateAndJoinResult): GroupNowRoom {
   return {
     id: result.room.id,
@@ -76,14 +81,6 @@ export function useGroupNowRoomCreate({
     }, result.join);
   }, [createMutation, groupId, mediaHandoff]);
 
-  const show = useCallback(() => {
-    if (pending) return;
-    setConfirmation(null);
-    setRetryCreation(null);
-    setError(null);
-    setOpen(true);
-  }, [pending]);
-
   const close = useCallback(() => {
     if (pending) return;
     setConfirmation(null);
@@ -108,11 +105,20 @@ export function useGroupNowRoomCreate({
     } catch (cause) {
       if (isCrossContextRoomJoinError(cause)) {
         setConfirmation(pendingCreation);
+        setOpen(true);
         return;
       }
       setError(roomJoinErrorMessage(cause));
     }
   }, [finishCreate, pending, retryCreation]);
+
+  const show = useCallback(() => {
+    if (pending) return;
+    setConfirmation(null);
+    setError(null);
+    setOpen(false);
+    void submit(DEFAULT_ROOM_DRAFT);
+  }, [pending, submit]);
 
   const confirm = useCallback(async () => {
     if (!confirmation || pending) return;

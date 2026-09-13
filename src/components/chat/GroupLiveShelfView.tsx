@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, MonitorUp, Radio } from "lucide-react";
+import { useCallback, useState, useSyncExternalStore } from "react";
+import { ChevronDown, ChevronUp, MonitorUp, Radio } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
@@ -16,22 +16,64 @@ const layoutLimits = [
   ["compact", 1],
 ] as const;
 
+type ShelfPreferenceListener = () => void;
+
+const shelfPreferenceMemory = new Map<string, boolean>();
+const shelfPreferenceListeners = new Map<string, Set<ShelfPreferenceListener>>();
+
 export function GroupLiveShelfView({
+  groupId,
   rooms,
   currentUserRoomId,
   pendingRoomId,
   onJoinRoom,
 }: {
+  groupId: string;
   rooms: GroupNowRoom[];
   currentUserRoomId: string | null;
   pendingRoomId?: string | null;
   onJoinRoom: (room: GroupNowRoom) => void;
 }) {
   const [openOverflow, setOpenOverflow] = useState<string | null>(null);
+  const preferenceKey = shelfPreferenceKey(groupId);
+  const subscribeToPreference = useCallback(
+    (listener: ShelfPreferenceListener) => subscribeShelfPreference(preferenceKey, listener),
+    [preferenceKey],
+  );
+  const readPreference = useCallback(() => readShelfPreference(preferenceKey), [preferenceKey]);
+  const collapsed = useSyncExternalStore(subscribeToPreference, readPreference, () => false);
   const activeRooms = rooms
     .filter((room) => room.participantCount > 0)
     .sort((left, right) => Number(right.kind === "lobby") - Number(left.kind === "lobby"));
+
   if (!activeRooms.length) return null;
+
+  const toggleCollapsed = () => {
+    writeShelfPreference(preferenceKey, !collapsed);
+  };
+
+  if (collapsed) {
+    return (
+      <section className="voople-group-live-shelf shrink-0 border-b border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-1">
+        <div className="mx-auto w-full max-w-[1040px]">
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-expanded="false"
+            aria-label="Развернуть активные разговоры"
+            className="flex min-h-11 w-full items-center gap-2 rounded-[var(--app-radius-sm)] px-1 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)] lg:min-h-8"
+          >
+            <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
+            <span className="shrink-0 text-xs font-semibold leading-4 text-[var(--foreground)]">Сейчас в голосе</span>
+            <span className="min-w-0 truncate text-xs leading-4 text-[var(--app-muted)]">
+              {formatCollapsedRooms(activeRooms)}
+            </span>
+            <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-[var(--app-muted)]" aria-hidden="true" />
+          </button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -39,14 +81,21 @@ export function GroupLiveShelfView({
       aria-labelledby="group-live-shelf-title"
     >
       <div className="mx-auto flex w-full max-w-[1040px] items-center gap-3">
-        <div className="min-w-[5.5rem] shrink-0">
-          <h2 id="group-live-shelf-title" className="text-xs font-semibold leading-4 text-[var(--foreground)]">
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          aria-expanded="true"
+          aria-label="Свернуть активные разговоры"
+          className="min-h-11 min-w-[5.5rem] shrink-0 rounded-[var(--app-radius-sm)] px-1 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)] lg:min-h-8"
+        >
+          <span id="group-live-shelf-title" className="flex items-center gap-1 text-xs font-semibold leading-4 text-[var(--foreground)]">
             Сейчас в голосе
-          </h2>
-          <p className="mt-0.5 font-mono text-xs leading-4 text-[var(--app-muted)]">
+            <ChevronUp className="h-3.5 w-3.5 shrink-0 text-[var(--app-muted)]" aria-hidden="true" />
+          </span>
+          <span className="mt-0.5 block font-mono text-xs leading-4 text-[var(--app-muted)]">
             {formatConversationCount(activeRooms.length)}
-          </p>
-        </div>
+          </span>
+        </button>
 
         <div className="min-w-0 flex-1">
           {layoutLimits.map(([layout, limit]) => {
@@ -134,4 +183,58 @@ function formatConversationCount(count: number) {
         ? "разговора"
         : "разговоров";
   return `${count} ${noun}`;
+}
+
+function formatCollapsedRooms(rooms: GroupNowRoom[]) {
+  const visible = rooms.slice(0, 2).map((room) => `${room.name} ${room.participantCount}`);
+  const hiddenCount = rooms.length - visible.length;
+  if (hiddenCount > 0) visible.push(`Ещё ${hiddenCount}`);
+  return visible.join(" · ");
+}
+
+function shelfPreferenceKey(groupId: string) {
+  return `voople:group-live-shelf-collapsed:v1:${groupId}`;
+}
+
+function readShelfPreference(key: string) {
+  const memoryValue = shelfPreferenceMemory.get(key);
+  if (memoryValue !== undefined) return memoryValue;
+
+  let collapsed = false;
+  try {
+    collapsed = window.localStorage.getItem(key) === "1";
+  } catch {
+    // In-memory preferences keep the control usable when storage is unavailable.
+  }
+  shelfPreferenceMemory.set(key, collapsed);
+  return collapsed;
+}
+
+function writeShelfPreference(key: string, collapsed: boolean) {
+  shelfPreferenceMemory.set(key, collapsed);
+  try {
+    window.localStorage.setItem(key, collapsed ? "1" : "0");
+  } catch {
+    // In-memory preferences keep the control usable when storage is unavailable.
+  }
+  shelfPreferenceListeners.get(key)?.forEach((listener) => listener());
+}
+
+function subscribeShelfPreference(key: string, listener: ShelfPreferenceListener) {
+  const listeners = shelfPreferenceListeners.get(key) ?? new Set<ShelfPreferenceListener>();
+  listeners.add(listener);
+  shelfPreferenceListeners.set(key, listeners);
+
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key !== key) return;
+    shelfPreferenceMemory.delete(key);
+    listener();
+  };
+  window.addEventListener("storage", handleStorage);
+
+  return () => {
+    listeners.delete(listener);
+    if (listeners.size === 0) shelfPreferenceListeners.delete(key);
+    window.removeEventListener("storage", handleStorage);
+  };
 }

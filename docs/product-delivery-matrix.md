@@ -516,6 +516,13 @@ overflow и runtime errors. До полного
 authenticated captures на 360/1024/1440 px с реальным пользовательским
 контентом.
 
+Live Shelf теперь вручную сворачивается в компактную доступную строку: около
+32 px на desktop и 44 px на touch, с краткой сводкой Rooms. Настройка хранится
+по Group на текущем устройстве; обновление комнат не раскрывает Shelf
+самовольно, а прямые действия возвращаются после раскрытия. Актуальный visual
+gate содержит 20 web/desktop кадров, включая collapsed-state на 1280 px Void и
+390 px Light; overflow и runtime errors отсутствуют.
+
 ### Room-context message read model — 2026-09-08
 
 История Group Chat совместимо читает immutable snapshot из

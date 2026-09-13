@@ -39,6 +39,14 @@ test("live shelf is bounded, shows room rosters and preserves direct room entry"
   assert.match(shelf, /\["compact", 1\]/);
   assert.match(shelf, /activeRooms\.slice\(limit\)/);
   assert.match(shelf, /Ещё комнат/);
+  assert.match(shelf, /shelfPreferenceKey\(groupId\)/);
+  assert.match(shelf, /window\.localStorage\.getItem/);
+  assert.match(shelf, /window\.localStorage\.setItem/);
+  assert.match(shelf, /Свернуть активные разговоры/);
+  assert.match(shelf, /Развернуть активные разговоры/);
+  assert.match(shelf, /formatCollapsedRooms/);
+  assert.match(shelf, /aria-expanded="false"/);
+  assert.match(shelf, /aria-expanded="true"/);
   assert.doesNotMatch(shelf, /overflow-x-auto/);
   assert.match(roomCell, /room\.participants\.slice\(0, 3\)/);
   assert.match(roomCell, /ProfileAvatarVisual/);
@@ -149,11 +157,14 @@ test("messenger visual language is shared by web and desktop group threads", () 
   assert.match(styles, /\.voople-chat-bubble__body,/);
 });
 
-test("group visual gate includes the section selector at wide and mobile widths", () => {
+test("group visual gate includes section selection and collapsed voice shelf at wide and mobile widths", () => {
   const visualGate = source("scripts/verify-core-rework-group-surface.mjs");
 
   assert.match(visualGate, /state: "sections"/);
+  assert.match(visualGate, /state: "collapsed"/);
   assert.match(visualGate, /Текущий раздел: Общий/);
   assert.match(visualGate, /Выбор раздела группы/);
+  assert.match(visualGate, /Свернуть активные разговоры/);
+  assert.match(visualGate, /Развернуть активные разговоры/);
   assert.match(visualGate, /stateSuffix/);
 });

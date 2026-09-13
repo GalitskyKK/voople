@@ -38,6 +38,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
   if (props.variant === "shelf") {
     return (
       <GroupLiveShelfView
+        groupId={props.value.groupId}
         rooms={props.value.rooms}
         currentUserRoomId={props.value.currentUserRoomId}
         pendingRoomId={props.pendingRoomId}

@@ -66,7 +66,7 @@ export function VoiceRoomHeader({
     connection.quality === ConnectionQuality.Lost;
 
   return (
-    <header className="voople-full-room__header flex shrink-0 items-center gap-3 border-b border-[var(--app-border)] px-4 py-3 pr-14">
+    <header className="voople-full-room__header flex shrink-0 items-center gap-3 border-b border-[var(--app-border)] px-4 py-2">
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
           <h2 className="voople-full-room__title truncate text-base font-semibold uppercase tracking-[0.05em] sm:text-lg">{identity.chatName}</h2>

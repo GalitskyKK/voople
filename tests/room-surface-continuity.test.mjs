@@ -106,6 +106,8 @@ test("full room uses one shared reference-aligned visual frame", () => {
   assert.match(surface, /voople-full-room/);
   assert.match(header, /voople-full-room__header/);
   assert.match(header, /voople-full-room__title/);
+  assert.match(header, /px-4 py-2/);
+  assert.doesNotMatch(header, /pr-14/);
   assert.match(header, /text-\[var\(--foreground\)\] opacity-70/);
   assert.match(content, /voople-full-room__content/);
   assert.match(stage, /voople-full-room__stage/);
@@ -121,6 +123,8 @@ test("full room uses one shared reference-aligned visual frame", () => {
   assert.match(switchStatus, /motion-reduce:animate-none/);
   assert.match(footer, /voople-full-room__footer/);
   assert.match(styles, /\.voople-full-room\s*\{/);
+  assert.match(styles, /\.voople-full-room__header \{[\s\S]*?min-height: 3\.5rem;/);
+  assert.match(styles, /\.voople-full-room__switcher \{[\s\S]*?width: 10rem;[\s\S]*?min-width: 10rem;/);
   assert.doesNotMatch(participant, /shadow-\[0_0_0_2px/);
   assert.match(content, /sessionPhase === "reconnecting"/);
   assert.match(content, /role="status" aria-live="polite"/);

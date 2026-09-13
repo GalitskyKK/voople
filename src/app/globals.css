@@ -2203,14 +2203,14 @@ button.voople-post-action:active {
 }
 
 .voople-full-room__header {
-  min-height: 4.5rem;
+  min-height: 3.5rem;
   background: var(--background);
 }
 
 .voople-full-room__switcher {
   display: flex;
-  width: 10.75rem;
-  min-width: 10.75rem;
+  width: 10rem;
+  min-width: 10rem;
   flex-direction: column;
 }
 

@@ -141,7 +141,9 @@ try {
   ]);
   const selectedCases = process.argv.includes("--messages-only")
     ? cases.filter((item) => item.messages)
-    : cases;
+    : process.argv.includes("--wide-stage-only")
+      ? cases.filter((item) => item.width === 1280 && !item.messages)
+      : cases;
   for (const { width, height, theme, phase, fullscreen = false, media = "screen", messages = false, people = 3, expected, host } of selectedCases) {
     const page = await browser.newPage({ viewport: { width, height } });
     const errors = [];

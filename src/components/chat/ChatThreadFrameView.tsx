@@ -51,7 +51,7 @@ export function ChatThreadFrameView({
           ref={(node) => {
             messagesContentRef.current = node;
           }}
-          className="mr-auto flex min-h-full w-full max-w-[56rem] flex-col justify-end gap-0.5 px-2 sm:px-4"
+          className="mr-auto flex min-h-full w-full max-w-[65rem] flex-col justify-end gap-0.5 px-2 sm:px-4"
         >
           {beforeMessages}
           {timeline.length === 0

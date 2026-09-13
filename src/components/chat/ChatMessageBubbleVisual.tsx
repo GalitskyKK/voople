@@ -115,7 +115,7 @@ export function ChatMessageBubbleVisual({
       ) : null}
       <div
         className={cn(
-          "voople-chat-bubble relative min-w-0 w-full max-w-[44rem]",
+          "voople-chat-bubble relative min-w-0 flex-1",
           swipeDragging && "voople-chat-bubble--swiping",
           isMine ? "voople-chat-bubble--mine" : "voople-chat-bubble--theirs",
         )}
@@ -160,7 +160,7 @@ export function ChatMessageBubbleVisual({
           </div>
         ) : null}
         <div
-          className="voople-chat-bubble__body flex flex-col gap-1 py-0.5 text-sm leading-5 text-[var(--foreground)]">
+          className="voople-chat-bubble__body flex max-w-[44rem] flex-col gap-1 py-0.5 text-sm leading-5 text-[var(--foreground)]">
           {replyTo ? (
             <div
               className={cn(

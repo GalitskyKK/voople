@@ -19,7 +19,7 @@ test("group surface defaults to chat and keeps the three product modes accessibl
   assert.match(shell, /variant="surface"/);
   assert.match(shell, /<GroupPeoplePanel/);
   assert.match(tabs, /\["chat", "Чат"\]/);
-  assert.match(tabs, /\["now", "Голос"\]/);
+  assert.match(tabs, /\["now", "Войс"\]/);
   assert.match(tabs, /\["people", "Люди"\]/);
   assert.match(tabs, /role="tablist"/);
   assert.match(tabs, /aria-selected=/);
@@ -60,6 +60,15 @@ test("desktop messenger keeps the conversation header stack compact", () => {
   assert.match(styles, /\.voople-chat-window__header--group \{[\s\S]*?min-height: 3\.5rem;/);
   assert.match(styles, /\.voople-group-surface-tabs \{[\s\S]*?min-height: 2\.25rem;/);
   assert.match(styles, /@media \(min-width: 1180px\)[\s\S]*?voople-group-surface-header--combined[\s\S]*?min-height: 4rem/);
+});
+
+test("chat stream lets metadata reach the canonical wide edge without stretching message copy", () => {
+  const frame = source("src/components/chat/ChatThreadFrameView.tsx");
+  const bubble = source("src/components/chat/ChatMessageBubbleVisual.tsx");
+
+  assert.match(frame, /max-w-\[65rem\]/);
+  assert.match(bubble, /voople-chat-bubble relative min-w-0 flex-1/);
+  assert.match(bubble, /voople-chat-bubble__body flex max-w-\[44rem\]/);
 });
 
 test("full Group Now follows the flat live hierarchy from the canonical plan", () => {

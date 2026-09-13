@@ -104,7 +104,7 @@ try {
     } else {
       await page.evaluate((value) => window.setGroupTab(value), tab);
     }
-    await page.getByRole("tab", { name: tab === "chat" ? "Чат" : tab === "now" ? "Голос" : "Люди" }).waitFor();
+    await page.getByRole("tab", { name: tab === "chat" ? "Чат" : tab === "now" ? "Войс" : "Люди" }).waitFor();
     await page.waitForTimeout(250);
     if (tab === "chat") {
       await page.getByText("Из комнаты DRG: Deep Rock Galactic", { exact: true }).waitFor();

@@ -8,7 +8,7 @@ export type GroupSurfaceTab = "chat" | "now" | "people";
 
 const tabs = [
   ["chat", "Чат"],
-  ["now", "Голос"],
+  ["now", "Войс"],
   ["people", "Люди"],
 ] as const;
 

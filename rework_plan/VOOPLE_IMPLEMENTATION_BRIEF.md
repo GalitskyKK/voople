@@ -13,7 +13,7 @@
 - Лобби — постоянный общий разговор группы, визуально отдельно от дополнительных комнат; подробный контракт в §9 IA spec. Group остаётся общим хабом без новой Hub-сущности. Обычное открытие группы не подключает к звуку; явный общий voice action ведёт прямо в Лобби, конкретный Room Join — прямо к своей цели.
 - LiveSession — authoritative сессия. DM-call не получает фиктивную Group Room.
 - Message принадлежит ровно одному DM/root Group/Section. Room snapshot — metadata.
-- Обычный вход в Group → Chat. Live badge → Голос. Чат/Голос/Люди взаимоисключающие; внутренний id `now` не переименовывается.
+- Обычный вход в Group → Chat. Live badge → Войс. Чат/Войс/Люди взаимоисключающие; внутренний id `now` не переименовывается.
 - Join → Full Room в main content area. Global sidebar остаётся доступным.
 - Chat drawer → тот же выбранный Section Group Chat без implicit room/session filter.
 - Открытие DM, другой Group, Search/Profile → Mini той же session. Это не новый join/switch.

@@ -59,8 +59,8 @@ export function GroupLiveShelfRoomCell({
       </span>
 
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-xs font-semibold text-[var(--foreground)]">{room.name}</span>
-        <span className="mt-0.5 flex items-center gap-1 text-[10px] text-[var(--app-muted)]">
+        <span className="block truncate text-sm font-semibold leading-4 text-[var(--foreground)]">{room.name}</span>
+        <span className="mt-0.5 flex items-center gap-1 text-xs leading-4 text-[var(--app-muted)]">
           {room.hasScreenShare ? (
             <MonitorUp className="h-3 w-3 shrink-0 text-emerald-400" aria-hidden="true" />
           ) : (
@@ -71,7 +71,7 @@ export function GroupLiveShelfRoomCell({
           </span>
         </span>
       </span>
-      <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.06em] text-[var(--theme-accent)]">
+      <span className="shrink-0 font-mono text-xs leading-4 text-[var(--theme-accent)]">
         {pending ? "…" : action === "current" ? "Вы" : actionLabels[action]}
       </span>
     </button>

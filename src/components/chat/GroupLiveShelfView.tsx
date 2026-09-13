@@ -40,10 +40,10 @@ export function GroupLiveShelfView({
     >
       <div className="mx-auto flex w-full max-w-[1040px] items-center gap-3">
         <div className="min-w-[5.5rem] shrink-0">
-          <h2 id="group-live-shelf-title" className="text-[11px] font-semibold text-[var(--foreground)]">
+          <h2 id="group-live-shelf-title" className="text-xs font-semibold leading-4 text-[var(--foreground)]">
             Сейчас в голосе
           </h2>
-          <p className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--app-muted)]">
+          <p className="mt-0.5 font-mono text-xs leading-4 text-[var(--app-muted)]">
             {formatConversationCount(activeRooms.length)}
           </p>
         </div>
@@ -106,7 +106,7 @@ export function GroupLiveShelfView({
                             <Radio className="h-4 w-4 shrink-0 text-emerald-400" aria-hidden="true" />
                           )}
                           <span className="min-w-0 flex-1 truncate font-medium">{room.name}</span>
-                          <span className="font-mono text-[10px] text-[var(--app-muted)]">
+                          <span className="font-mono text-xs leading-4 text-[var(--app-muted)]">
                             {action === "current" ? "вы" : room.participantCount}
                           </span>
                         </button>

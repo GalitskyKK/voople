@@ -43,6 +43,10 @@ test("live shelf is bounded, shows room rosters and preserves direct room entry"
   assert.match(roomCell, /room\.participants\.slice\(0, 3\)/);
   assert.match(roomCell, /ProfileAvatarVisual/);
   assert.match(roomCell, /onJoinRoom\(room\)/);
+  assert.doesNotMatch(shelf, /text-\[(?:9|10|11)px\]/);
+  assert.doesNotMatch(roomCell, /text-\[(?:9|10|11)px\]/);
+  assert.match(roomCell, /text-sm font-semibold leading-4/);
+  assert.match(roomCell, /text-xs leading-4 text-\[var\(--app-muted\)\]/);
   assert.match(styles, /container-type: inline-size/);
   assert.match(styles, /@container \(max-width: 520px\)/);
   assert.match(panel, /props\.variant === "shelf"/);

@@ -29,6 +29,18 @@ export function isGroupNowQuiet(rooms: readonly GroupNowRoom[]) {
   return rooms.every((room) => room.participantCount === 0);
 }
 
+export function formatGroupNowVoiceSummary(rooms: readonly GroupNowRoom[]) {
+  const participantCount = rooms.reduce(
+    (total, room) => total + room.participantCount,
+    0,
+  );
+  const conversationCount = rooms.filter(
+    (room) => room.participantCount > 0,
+  ).length;
+
+  return `${participantCount} в голосе · ${conversationCount} ${pluralizeConversations(conversationCount)}`;
+}
+
 function pluralizePeople(count: number) {
   const mod100 = count % 100;
   const mod10 = count % 10;
@@ -36,4 +48,13 @@ function pluralizePeople(count: number) {
   if (mod10 === 1) return "человек";
   if (mod10 >= 2 && mod10 <= 4) return "человека";
   return "человек";
+}
+
+function pluralizeConversations(count: number) {
+  const mod100 = count % 100;
+  const mod10 = count % 10;
+  if (mod100 >= 11 && mod100 <= 14) return "разговоров";
+  if (mod10 === 1) return "разговор";
+  if (mod10 >= 2 && mod10 <= 4) return "разговора";
+  return "разговоров";
 }

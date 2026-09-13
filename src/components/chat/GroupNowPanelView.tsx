@@ -1,7 +1,7 @@
 import { LoaderCircle, Plus, RefreshCw, UsersRound, WifiOff } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
-import { isGroupNowQuiet } from "@/lib/chat/group-now-presentation";
+import { formatGroupNowVoiceSummary } from "@/lib/chat/group-now-presentation";
 import type { GroupNowRoom, GroupNowUser, GroupNowView } from "@/types/group-now";
 
 import { GroupNowParticipant } from "./GroupNowParticipant";
@@ -47,30 +47,33 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
     );
   }
 
-  const quiet = isGroupNowQuiet(props.value.rooms);
+  const lobby = props.value.rooms.find((room) => room.kind === "lobby") ?? null;
+  const rooms = props.value.rooms.filter((room) => room.kind !== "lobby");
+  const voiceSummary = formatGroupNowVoiceSummary(props.value.rooms);
   return (
     <section
       className="mr-auto w-full max-w-[960px] px-3 py-4 text-[var(--foreground)] sm:px-6 sm:py-5"
       aria-labelledby="group-now-title"
     >
-      <header className="flex items-end justify-between gap-4 border-b border-[var(--app-border)] pb-3">
+      <header className="flex min-h-11 items-center justify-between gap-4 border-b border-[var(--app-border)] pb-3">
         <div className="min-w-0">
-          <h2 id="group-now-title" className="voople-group-now__title truncate text-base font-semibold uppercase tracking-[0.06em]">Голосовые комнаты</h2>
-          <p className="mt-1 text-xs text-[var(--app-muted)]">{props.value.groupName}</p>
+          <h2 id="group-now-title" className="voople-group-now__title truncate text-sm font-semibold">
+            {voiceSummary}
+          </h2>
         </div>
-        <span className="voople-group-now__online shrink-0 font-mono text-[11px] text-[var(--app-muted)]">
-          {props.value.visibleOnlineCount} онлайн
-        </span>
+        {props.onCreateRoom ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={props.onCreateRoom}
+            className="voople-group-now__create shrink-0 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] text-[var(--theme-accent)] hover:border-[var(--theme-accent)] hover:bg-[var(--app-accent-soft)]"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Комната
+          </Button>
+        ) : null}
       </header>
-
-      {quiet ? (
-        <div className="border-b border-[var(--app-border)] py-4" role="status">
-          <p className="text-sm font-medium">В голосе тихо</p>
-          <p className="mt-1 text-xs leading-5 text-[var(--app-muted)]">
-            Можно зайти в Лобби или создать комнату — участники увидят, что вы на связи.
-          </p>
-        </div>
-      ) : null}
 
       {props.actionError ? (
         <p className="mt-4 rounded-xl border border-[var(--app-border-strong)] bg-[var(--app-surface-soft)] px-3 py-2 text-sm" role="alert">
@@ -78,24 +81,44 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
         </p>
       ) : null}
 
-      <div className="voople-group-now__rooms mt-3 border-t border-[var(--app-border)]">
-        {props.value.rooms.map((room) => (
+      {lobby ? (
+        <div className="voople-group-now__lobby mt-3 border-t border-[var(--app-border)]">
           <GroupNowRoomSection
-            key={room.id}
-            room={room}
+            room={lobby}
             currentUserRoomId={props.value.currentUserRoomId}
-            pending={props.pendingRoomId === room.id}
+            pending={props.pendingRoomId === lobby.id}
             onJoinRoom={props.onJoinRoom}
             onOpenProfile={props.onOpenProfile}
           />
-        ))}
-      </div>
+        </div>
+      ) : null}
+
+      {rooms.length > 0 ? (
+        <section className="voople-group-now__rooms" aria-labelledby="group-now-rooms-title">
+          <h3
+            id="group-now-rooms-title"
+            className="border-b border-[var(--app-border)] px-3 py-2 text-xs font-semibold text-[var(--app-muted)] sm:px-4"
+          >
+            Комнаты · {rooms.length}
+          </h3>
+          {rooms.map((room) => (
+            <GroupNowRoomSection
+              key={room.id}
+              room={room}
+              currentUserRoomId={props.value.currentUserRoomId}
+              pending={props.pendingRoomId === room.id}
+              onJoinRoom={props.onJoinRoom}
+              onOpenProfile={props.onOpenProfile}
+            />
+          ))}
+        </section>
+      ) : null}
 
       {props.value.onlineOutsideRooms.length > 0 ? (
         <section className="border-b border-[var(--app-border)] py-4" aria-labelledby="group-now-online-title">
           <h3 id="group-now-online-title" className="flex items-center gap-2 text-sm font-semibold">
             <UsersRound className="h-4 w-4 text-[var(--theme-accent)]" aria-hidden="true" />
-            Онлайн
+            В сети · {props.value.onlineOutsideRooms.length}
           </h3>
           <div className="mt-3 flex flex-wrap gap-x-3 gap-y-2">
             {props.value.onlineOutsideRooms.map((user) => (
@@ -103,17 +126,6 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
             ))}
           </div>
         </section>
-      ) : null}
-
-      {props.onCreateRoom ? (
-        <button
-          type="button"
-          onClick={props.onCreateRoom}
-          className="voople-group-now__create inline-flex min-h-11 w-full items-center justify-center gap-2 border-b border-[var(--app-border)] px-3 text-sm font-medium text-[var(--theme-accent)] transition hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)]"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          Комната
-        </button>
       ) : null}
     </section>
   );
@@ -133,6 +145,7 @@ function GroupNowPassiveState(props: PassiveStateProps) {
     <section
       className="mr-auto flex min-h-72 w-full max-w-[960px] items-center justify-center px-4 py-8 text-[var(--foreground)]"
       aria-labelledby="group-now-state-title"
+      role="status"
       aria-live="polite"
     >
       <div className="w-full max-w-md text-center">

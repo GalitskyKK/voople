@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   describeGroupNowRoom,
+  formatGroupNowVoiceSummary,
   isGroupNowQuiet,
   resolveGroupNowRoomAction,
 } from "../src/lib/chat/group-now-presentation.ts";
@@ -38,6 +39,11 @@ test("Group Now presentation resolves current, switch and live activity", () => 
   assert.equal(resolveGroupNowRoomAction(lobby.id, "another-room"), "switch");
   assert.equal(describeGroupNowRoom(lobby), "Biba: микрофон включён");
   assert.equal(isGroupNowQuiet([lobby]), false);
+  assert.equal(formatGroupNowVoiceSummary([lobby]), "1 в голосе · 1 разговор");
+  assert.equal(formatGroupNowVoiceSummary([
+    lobby,
+    { ...lobby, id: "second-room", participantCount: 4 },
+  ]), "5 в голосе · 2 разговора");
 
   assert.equal(describeGroupNowRoom({
     ...lobby,
@@ -64,9 +70,13 @@ test("shared Group Now view keeps flat accessible states for both hosts", async 
   assert.match(viewSource, /role="status"/);
   assert.match(viewSource, /role="alert"/);
   assert.match(viewSource, /aria-live="polite"/);
-  assert.match(viewSource, /В голосе тихо/);
+  assert.match(viewSource, /formatGroupNowVoiceSummary/);
+  assert.match(viewSource, /room\.kind === "lobby"/);
+  assert.match(viewSource, /Комнаты · \{rooms\.length\}/);
   assert.match(viewSource, />\s*Комната\s*</);
-  assert.match(roomSource, /aria-label=\{`\$\{actionLabels\[action\]\}: \$\{room\.name\}`\}/);
+  assert.match(roomSource, /aria-label=\{`\$\{actionLabel\}: \$\{room\.name\}`\}/);
+  assert.match(roomSource, /Начать разговор/);
+  assert.match(roomSource, /Присоединиться/);
   assert.match(roomSource, /data-layout="room-section"/);
   assert.match(roomSource, /variant="room"/);
   assert.doesNotMatch(roomSource, /padStart\(2, "0"\)/);

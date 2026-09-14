@@ -666,6 +666,17 @@ desktop Chat View и поведение сообщений не менялись
 
 ## Release acceptance gate
 
+### LiveKit infrastructure diagnostic — 2026-09-14
+
+Добавлен отдельный `npm run check:livekit`: он создаёт одноразовую двухминутную
+health-сессию без publish/subscribe прав, выполняет реальный WebSocket/WebRTC
+handshake в headless Chromium и удаляет Room сразу после проверки. Токен и
+секреты не выводятся; ошибки редактируются, весь gate ограничен 45 секундами.
+Настроенный `rtc-ru.voople.ru` прошёл проверку с текущими server credentials.
+Это подтверждает доступность инфраструктуры, но не заменяет authenticated
+проверку полного web-flow: серверная membership уже может быть создана, пока
+клиентский media-state остаётся в `connecting`.
+
 Перед заявлением о полном выполнении каждого пункта должны быть приложены:
 
 1. ссылка на contract/service/authorization;

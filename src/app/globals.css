@@ -2150,6 +2150,10 @@ button.voople-post-action:active {
   display: none;
 }
 
+.voople-full-room__room-selector button {
+  border-radius: var(--app-radius-sm);
+}
+
 .voople-room-chat-panel {
   position: relative;
   z-index: auto;
@@ -2304,37 +2308,21 @@ button.voople-post-action:active {
 
   .voople-full-room__switcher {
     display: none;
+  }
+
+  .voople-full-room__room-selector {
     width: 100%;
+  }
+
+  .voople-full-room__room-selector > :first-child {
     min-width: 0;
-    border-right-width: 0;
-    border-bottom: 1px solid var(--app-border);
+    flex: 1;
   }
 
-  .voople-full-room__switcher-heading {
-    display: none;
-  }
-
-  .voople-full-room__switcher-list {
-    display: flex;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 0.375rem 0.5rem;
-  }
-
-  .voople-full-room__switcher-room {
-    min-height: 2.75rem;
-    width: 9rem;
-    min-width: 9rem;
-    border-left-width: 0;
-    border-bottom: 2px solid transparent;
-  }
-
-  .voople-full-room__switcher-room[aria-current="true"] {
-    border-bottom-color: var(--theme-accent);
-  }
-
-  .voople-full-room__switcher-error {
-    border-top-width: 1px;
+  .voople-full-room__room-picker-sheet {
+    max-height: min(72dvh, 36rem);
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    border-radius: var(--app-radius-lg) var(--app-radius-lg) 0 0;
   }
 
   .voople-full-room__header-actions {

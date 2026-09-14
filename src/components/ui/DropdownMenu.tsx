@@ -161,6 +161,7 @@ export function DropdownMenu({
       ? createPortal(
           <div
             ref={menuRef}
+            data-voople-dropdown-menu="true"
             role={contentRole}
             aria-label={ariaLabel}
             onKeyDown={handleMenuKeyDown}

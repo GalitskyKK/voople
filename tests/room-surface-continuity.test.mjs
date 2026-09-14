@@ -166,14 +166,22 @@ test("full Room gives its identity a dedicated mobile row without hiding actions
 test("Full Room adapts the Group Chat drawer without collapsing the media stage", () => {
   const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
   const header = read("src/components/chat/voice/VoiceRoomHeader.tsx");
+  const selector = read("src/components/chat/voice/VoiceRoomSelector.tsx");
   const panel = read("src/components/chat/voice/RoomMessagesPanel.tsx");
   const width = read("src/components/chat/voice/useRoomChatPanelWidth.ts");
   const styles = read("src/app/globals.css");
+  const dropdown = read("src/components/ui/DropdownMenu.tsx");
+  const sheet = read("src/components/ui/Sheet.tsx");
 
   assert.match(surface, /data-chat-open=\{secondaryPanel === "messages" \? "true" : "false"\}/);
   assert.match(surface, /current === "messages" \? current : null/);
-  assert.match(header, /voople-full-room__room-selector/);
-  assert.match(header, /roomSwitcher\.onSelect\(room\)/);
+  assert.match(header, /VoiceRoomSelector model=\{roomSwitcher\}/);
+  assert.match(selector, /voople-full-room__room-selector/);
+  assert.match(selector, /model\.onSelect\(room\)/);
+  assert.match(selector, /placement="bottom"/);
+  assert.match(selector, /aria-label="Перейти в Лобби"/);
+  assert.match(dropdown, /data-voople-dropdown-menu="true"/);
+  assert.match(sheet, /querySelector\('\[data-voople-dropdown-menu="true"\]'\)/);
   assert.match(panel, /voople-room-chat-panel__resize/);
   assert.match(width, /ArrowLeft/);
   assert.match(width, /ArrowRight/);

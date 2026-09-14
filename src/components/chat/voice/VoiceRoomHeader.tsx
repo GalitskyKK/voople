@@ -19,6 +19,7 @@ import { ConnectionQuality } from "livekit-client";
 
 import { IconButton } from "@/components/ui/IconButton";
 import { getQualityLabel } from "./voice-room-config";
+import { VoiceRoomSelector } from "./VoiceRoomSelector";
 import { VoiceRoomTitle } from "./VoiceRoomTitle";
 import type {
   VoiceRoomAccessModel,
@@ -78,26 +79,7 @@ export function VoiceRoomHeader({
           durationLabel={identity.durationLabel}
           rename={roomRename}
         />
-        {roomSwitcher ? (
-          <label className="voople-full-room__room-selector mt-1 items-center gap-2 text-xs text-[var(--app-muted)]">
-            <span className="sr-only">Текущая комната</span>
-            <select
-              value={roomSwitcher.currentRoomId}
-              disabled={Boolean(roomSwitcher.pendingRoomId)}
-              className="min-h-11 min-w-0 max-w-48 border border-[var(--app-border)] bg-[var(--app-surface)] px-2 text-[var(--foreground)] outline-none focus-visible:border-[var(--theme-accent)]"
-              onChange={(event) => {
-                const room = roomSwitcher.rooms.find((item) => item.id === event.target.value);
-                if (room) void roomSwitcher.onSelect(room);
-              }}
-            >
-              {roomSwitcher.rooms.map((room) => (
-                <option key={room.id} value={room.id}>
-                  {room.name} · {room.participantCount}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
+        {roomSwitcher ? <VoiceRoomSelector model={roomSwitcher} /> : null}
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--app-muted)]">
           <span>{identity.isDirect ? "Разговор вдвоём" : `${participantCount} в комнате`}</span>
           {connection.label ? (

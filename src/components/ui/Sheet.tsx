@@ -58,6 +58,7 @@ export function Sheet({
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || !closeOnEscape) return;
+      if (document.querySelector('[data-voople-dropdown-menu="true"]')) return;
       event.preventDefault();
       event.stopPropagation();
       onClose();

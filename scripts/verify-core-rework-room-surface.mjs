@@ -135,7 +135,7 @@ let browser;
 try {
   browser = await chromium.launch({ headless: true });
   const cases = ["web", "desktop"].flatMap((host) => [
-    { width: 390, height: 800, theme: "light", phase: "inside", expected: "Демонстрация экрана: nmggk", host },
+    { width: 390, height: 800, theme: "light", phase: "inside", roomPicker: true, expected: "Демонстрация экрана: nmggk", host },
     { width: 390, height: 800, theme: "void", phase: "inside", media: "voice", people: 1, expected: "Вы пока один", host },
     { width: 1024, height: 720, theme: "void", phase: "reconnecting", expected: "Восстанавливаем связь", host },
     { width: 1280, height: 800, theme: "void", phase: "inside", expected: "Демонстрация экрана: nmggk", host },
@@ -150,10 +150,12 @@ try {
       ? cases.filter((item) => item.renameEdit)
     : process.argv.includes("--room-actions-only")
       ? cases.filter((item) => item.roomActions)
+    : process.argv.includes("--room-picker-only")
+      ? cases.filter((item) => item.roomPicker)
     : process.argv.includes("--wide-stage-only")
       ? cases.filter((item) => item.width === 1280 && !item.messages)
       : cases;
-  for (const { width, height, theme, phase, fullscreen = false, media = "screen", messages = false, people = 3, renameEdit = false, roomActions = false, expected, host } of selectedCases) {
+  for (const { width, height, theme, phase, fullscreen = false, media = "screen", messages = false, people = 3, renameEdit = false, roomActions = false, roomPicker = false, expected, host } of selectedCases) {
     const page = await browser.newPage({ viewport: { width, height } });
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
@@ -176,8 +178,20 @@ try {
     if (await roomSwitcher.isVisible()) {
       assert.equal(await roomSwitcher.locator('button[aria-current="true"]').getAttribute("aria-current"), "true");
     } else {
-      await page.getByLabel("Текущая комната").waitFor();
-      assert.equal(await page.getByLabel("Текущая комната").inputValue(), "drg");
+      const pickerTrigger = page.getByRole("button", { name: /Выбрать комнату\. Сейчас: DRG/ });
+      await pickerTrigger.waitFor();
+      assert.equal(await pickerTrigger.getAttribute("aria-expanded"), "false");
+      await page.getByRole("button", { name: "Перейти в Лобби" }).waitFor();
+      if (roomPicker) {
+        await pickerTrigger.click();
+        const roomDialog = page.getByRole("dialog", { name: "Комнаты группы" });
+        await roomDialog.waitFor();
+        await page.getByRole("button", { name: "Управление комнатой Chill" }).click();
+        await page.getByRole("menu", { name: "Управление комнатой Chill" }).waitFor();
+        await page.keyboard.press("Escape");
+        assert.equal(await roomDialog.isVisible(), true);
+        assert.equal(await page.getByRole("menu", { name: "Управление комнатой Chill" }).isVisible(), false);
+      }
     }
     if (expected === "Демонстрация экрана: nmggk") {
       await page.getByLabel(expected).waitFor();
@@ -191,7 +205,7 @@ try {
     await page.waitForTimeout(180);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);
-    const suffix = fullscreen ? "fullscreen" : `${phase}-${media}-${people}${messages ? "-messages" : ""}${renameEdit ? "-rename" : ""}${roomActions ? "-actions" : ""}`;
+    const suffix = fullscreen ? "fullscreen" : `${phase}-${media}-${people}${messages ? "-messages" : ""}${renameEdit ? "-rename" : ""}${roomActions ? "-actions" : ""}${roomPicker ? "-picker" : ""}`;
     await page.screenshot({ path: path.join(artifacts, `room-${host}-${width}-${theme}-${suffix}.png`) });
     console.log(`PASS room ${host} ${width}px ${theme} ${suffix}: no overflow or runtime errors`);
     await page.close();

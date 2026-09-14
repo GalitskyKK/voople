@@ -60,6 +60,8 @@ export function useVoiceRoomServerAdapter({
   const coreLeave = trpc.chat.coreLeaveRoom.useMutation();
   const coreMediaToken = trpc.chat.coreRoomMediaToken.useMutation();
   const coreRename = trpc.chat.coreRenameRoom.useMutation();
+  const coreSetKind = trpc.chat.coreSetRoomKind.useMutation();
+  const coreArchive = trpc.chat.coreArchiveRoom.useMutation();
   const initialCredentialsRef = useRef<VoiceMediaCredentials | null>(
     initialCoreCredentials ?? null,
   );
@@ -119,6 +121,15 @@ export function useVoiceRoomServerAdapter({
         isPending: false,
         error: null,
         run: async () => undefined,
+      },
+      roomActions: {
+        supported: false,
+        pendingRoomId: null,
+        errorRoomId: null,
+        error: null,
+        rename: async () => undefined,
+        setPinned: async () => undefined,
+        archive: async () => undefined,
       },
       heartbeatSessionId: null,
     };
@@ -186,6 +197,32 @@ export function useVoiceRoomServerAdapter({
           roomId: coreSession.room.id,
           name,
         });
+        await utils.chat.coreGroupNow.invalidate({ groupId: coreSession.groupId });
+      },
+    },
+    roomActions: {
+      supported: true,
+      pendingRoomId:
+        (coreRename.isPending ? coreRename.variables?.roomId : null)
+        ?? (coreSetKind.isPending ? coreSetKind.variables?.roomId : null)
+        ?? (coreArchive.isPending ? coreArchive.variables?.roomId : null)
+        ?? null,
+      errorRoomId:
+        (coreRename.error ? coreRename.variables?.roomId : null)
+        ?? (coreSetKind.error ? coreSetKind.variables?.roomId : null)
+        ?? (coreArchive.error ? coreArchive.variables?.roomId : null)
+        ?? null,
+      error: coreRename.error ?? coreSetKind.error ?? coreArchive.error,
+      rename: async (roomId: string, name: string) => {
+        await coreRename.mutateAsync({ roomId, name });
+        await utils.chat.coreGroupNow.invalidate({ groupId: coreSession.groupId });
+      },
+      setPinned: async (roomId: string, pinned: boolean) => {
+        await coreSetKind.mutateAsync({ roomId, kind: pinned ? "pinned" : "temporary" });
+        await utils.chat.coreGroupNow.invalidate({ groupId: coreSession.groupId });
+      },
+      archive: async (roomId: string) => {
+        await coreArchive.mutateAsync({ roomId });
         await utils.chat.coreGroupNow.invalidate({ groupId: coreSession.groupId });
       },
     },

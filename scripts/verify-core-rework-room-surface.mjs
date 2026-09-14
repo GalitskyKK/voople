@@ -35,10 +35,11 @@ const entry = `import {createRoot} from 'react-dom/client';
     {id:'anya',username:'anya',displayName:'Anya',avatarUrl:null,avatarDecorationUrl:null,avatarRingId:null,micMuted:true,isMe:false},
   ];
   const rooms=[
-    {id:'lobby',kind:'lobby',name:'Лобби',joinTarget:{kind:'room',roomId:'lobby'},state:'active',liveSessionId:'live-1',startedAt:null,startedBy:null,participantCount:2,hasScreenShare:false,participants:[]},
-    {id:'drg',kind:'temporary',name:'DRG',joinTarget:{kind:'room',roomId:'drg'},state:'active',liveSessionId:'live-2',startedAt:null,startedBy:null,participantCount:3,hasScreenShare:true,participants:[]},
-    {id:'chill',kind:'pinned',name:'Chill',joinTarget:{kind:'room',roomId:'chill'},state:'idle',liveSessionId:null,startedAt:null,startedBy:null,participantCount:0,hasScreenShare:false,participants:[]},
+    {id:'lobby',kind:'lobby',name:'Лобби',canManage:false,canPin:false,joinTarget:{kind:'room',roomId:'lobby'},state:'active',liveSessionId:'live-1',startedAt:null,startedBy:null,participantCount:2,hasScreenShare:false,participants:[]},
+    {id:'drg',kind:'temporary',name:'DRG',canManage:true,canPin:true,joinTarget:{kind:'room',roomId:'drg'},state:'active',liveSessionId:'live-2',startedAt:null,startedBy:null,participantCount:3,hasScreenShare:true,participants:[]},
+    {id:'chill',kind:'pinned',name:'Chill',canManage:true,canPin:true,joinTarget:{kind:'room',roomId:'chill'},state:'idle',liveSessionId:null,startedAt:null,startedBy:null,participantCount:0,hasScreenShare:false,participants:[]},
   ];
+  const management={pendingRoomId:null,errorRoomId:null,errorMessage:null,onRename:noop,onSetPinned:noop,onArchive:noop};
   const renderDestination=({href,label,className,active,children})=><button type="button" data-href={href} aria-label={label} aria-current={active?'page':undefined} className={className}>{children}</button>;
   const bindScreen=(element)=>{if(!element||element.childNodes.length)return;const mock=document.createElement('div');mock.className='grid h-full w-full place-items-center bg-[linear-gradient(145deg,#111827,#1f2937)] text-center text-white/70';mock.innerHTML='<div><strong class="block text-lg text-white">Экран nmggk</strong><span class="mt-2 block text-xs">DEEP ROCK GALACTIC</span></div>';element.append(mock)};
   function Demo(){
@@ -59,9 +60,9 @@ const entry = `import {createRoot} from 'react-dom/client';
     const stage={screenContainerRef:bindScreen,screenShareOwner,screenShareAvailable:null,screenShareTrackId:screenShareOwner?'screen-1':null,screenShareIsLocal:false,watchingScreenShare:Boolean(screenShareOwner),screenShareVolume:1,participants,groupSounds:[],participantVolumes:{},remoteMicMutedById:{},activeSpeakerIds:new Set(['biba']),cameraParticipantIds:new Set(),onCameraContainerChange:noop,onParticipantVolumeChange:noop,onScreenShareVolumeChange:noop,onGroupSoundPlay:noop,onWatchScreenShare:noop,onStopWatchingScreenShare:noop};
     const room=<section data-chat-open={messagesOpen?'true':'false'} className="voople-full-room flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden border-0 shadow-none">
       <div className="voople-full-room__frame relative flex h-full min-h-0 min-w-0 max-sm:flex-col">
-        <VoiceRoomSwitcher rooms={rooms} currentRoomId="drg" pendingRoomId={phase==='switching'?'lobby':null} errorMessage={null} refreshing={false} onSelect={noop} onRetry={noop}/>
+        <VoiceRoomSwitcher rooms={rooms} currentRoomId="drg" pendingRoomId={phase==='switching'?'lobby':null} errorMessage={null} refreshing={false} onSelect={noop} onRetry={noop} management={management}/>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <VoiceRoomHeader identity={identity} connection={connection} participantCount={participants.length} hasGroupSounds hasRoomMessages roomMessagesOpen={messagesOpen} roomSwitcher={{rooms,currentRoomId:'drg',pendingRoomId:phase==='switching'?'lobby':null,errorMessage:null,refreshing:false,onSelect:noop,onRetry:noop}} roomRename={{roomId:'drg',name:'DRG',pending:false,errorMessage:null,onSubmit:async()=>{}}} access={access} fullscreen={fullscreen} fullscreenPending={false} onMinimize={noop} onOpenSoundboard={noop} onToggleRoomMessages={noop} onOpenSettings={noop} onToggleFullscreen={noop}/>
+          <VoiceRoomHeader identity={identity} connection={connection} participantCount={participants.length} hasGroupSounds hasRoomMessages roomMessagesOpen={messagesOpen} roomSwitcher={{rooms,currentRoomId:'drg',pendingRoomId:phase==='switching'?'lobby':null,errorMessage:null,refreshing:false,onSelect:noop,onRetry:noop,management}} roomRename={{roomId:'drg',name:'DRG',pending:false,errorMessage:null,onSubmit:async()=>{}}} access={access} fullscreen={fullscreen} fullscreenPending={false} onMinimize={noop} onOpenSoundboard={noop} onToggleRoomMessages={noop} onOpenSettings={noop} onToggleFullscreen={noop}/>
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
             <VoiceRoomContent identity={identity} stage={stage} controls={controls} session={session} errorMessage={connection.errorMessage} onInvite={noop} onClose={noop}/>
             {phase==='switching'?<VoiceRoomSwitchStatus roomName="Лобби"/>:null}
@@ -139,6 +140,7 @@ try {
     { width: 1024, height: 720, theme: "void", phase: "reconnecting", expected: "Восстанавливаем связь", host },
     { width: 1280, height: 800, theme: "void", phase: "inside", expected: "Демонстрация экрана: nmggk", host },
     { width: 1280, height: 800, theme: "void", phase: "inside", media: "voice", people: 2, renameEdit: true, expected: "voice-grid", host },
+    { width: 1280, height: 800, theme: "void", phase: "inside", media: "voice", people: 2, roomActions: true, expected: "voice-grid", host },
     { width: 1280, height: 800, theme: "void", phase: "inside", media: "screen", messages: true, expected: "Чат группы", host },
     { width: 1440, height: 900, theme: "void", phase: "inside", fullscreen: true, expected: "Демонстрация экрана: nmggk", host },
   ]);
@@ -146,10 +148,12 @@ try {
     ? cases.filter((item) => item.messages)
     : process.argv.includes("--rename-only")
       ? cases.filter((item) => item.renameEdit)
+    : process.argv.includes("--room-actions-only")
+      ? cases.filter((item) => item.roomActions)
     : process.argv.includes("--wide-stage-only")
       ? cases.filter((item) => item.width === 1280 && !item.messages)
       : cases;
-  for (const { width, height, theme, phase, fullscreen = false, media = "screen", messages = false, people = 3, renameEdit = false, expected, host } of selectedCases) {
+  for (const { width, height, theme, phase, fullscreen = false, media = "screen", messages = false, people = 3, renameEdit = false, roomActions = false, expected, host } of selectedCases) {
     const page = await browser.newPage({ viewport: { width, height } });
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
@@ -164,9 +168,13 @@ try {
       await page.getByRole("button", { name: /Переименовать комнату/ }).click();
       await page.getByRole("textbox", { name: "Название комнаты" }).waitFor();
     }
+    if (roomActions) {
+      await page.getByRole("button", { name: "Управление комнатой Chill" }).click();
+      await page.getByRole("menu", { name: "Управление комнатой Chill" }).waitFor();
+    }
     const roomSwitcher = page.getByRole("complementary", { name: "Комнаты группы" });
     if (await roomSwitcher.isVisible()) {
-      assert.equal(await roomSwitcher.getByRole("button", { name: /DRG/ }).getAttribute("aria-current"), "true");
+      assert.equal(await roomSwitcher.locator('button[aria-current="true"]').getAttribute("aria-current"), "true");
     } else {
       await page.getByLabel("Текущая комната").waitFor();
       assert.equal(await page.getByLabel("Текущая комната").inputValue(), "drg");
@@ -183,7 +191,7 @@ try {
     await page.waitForTimeout(180);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);
-    const suffix = fullscreen ? "fullscreen" : `${phase}-${media}-${people}${messages ? "-messages" : ""}${renameEdit ? "-rename" : ""}`;
+    const suffix = fullscreen ? "fullscreen" : `${phase}-${media}-${people}${messages ? "-messages" : ""}${renameEdit ? "-rename" : ""}${roomActions ? "-actions" : ""}`;
     await page.screenshot({ path: path.join(artifacts, `room-${host}-${width}-${theme}-${suffix}.png`) });
     console.log(`PASS room ${host} ${width}px ${theme} ${suffix}: no overflow or runtime errors`);
     await page.close();

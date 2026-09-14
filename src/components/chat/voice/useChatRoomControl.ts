@@ -8,6 +8,7 @@ import { resolveVoiceDockActiveSpeaker } from "@/lib/livekit/voice-dock-state";
 
 import { getDirectCallPhase } from "./call-phase";
 import { buildVoiceRoomRenameModel } from "./buildVoiceRoomRenameModel";
+import { buildVoiceRoomSwitcherModel } from "./buildVoiceRoomSwitcherModel";
 import { resolveVoiceRoomSurfacePhase } from "./voice-room-surface";
 import type { ChatRoomControlHandle, ChatRoomControlProps } from "./chat-room-control-types";
 import { getConnectionLabel, type MediaStatus } from "./voice-room-config";
@@ -475,17 +476,15 @@ export function useChatRoomControl(
               ? () => void server.room.refetch()
               : enterAndConnect,
       },
-      roomSwitcher: coreSession && server.directory && onCoreRoomSwitch
-        ? {
-            rooms: server.directory.rooms,
-            currentRoomId: coreSession.room.id,
-            pendingRoomId: roomSwitchPendingId,
-            errorMessage: roomSwitchError ?? server.directory.error?.message ?? null,
-            refreshing: server.directory.isFetching,
-            onSelect: switchCoreRoom,
-            onRetry: async () => { await server.directory?.refetch(); },
-          }
-        : null,
+      roomSwitcher: buildVoiceRoomSwitcherModel(
+        coreSession?.room.id ?? null,
+        server.directory,
+        Boolean(onCoreRoomSwitch),
+        roomSwitchPendingId,
+        roomSwitchError,
+        switchCoreRoom,
+        server.roomActions,
+      ),
       roomRename: buildVoiceRoomRenameModel(currentCoreRoom, server.rename, currentCoreRoom?.canManage === true && active),
     },
     picker: desktopAudio.capturePicker ? {

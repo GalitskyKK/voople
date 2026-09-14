@@ -168,6 +168,23 @@ Web и desktop используют общий `VoiceRoomTitle` и один tRPC
 зарегистрирована, но не применена: она должна идти после ещё не применённых
 68–69 при интеграции feature-ветки.
 
+### Управление Room в switcher — 2026-09-14
+
+Дополнительные Room получили зарезервированное действие `...`, которое не
+сдвигает основную область Join. Portalled menu доступно мышью и клавиатурой:
+rename остаётся inline, owner/admin может закрепить или открепить Room, а
+архивирование требует явного подтверждения и блокируется, пока внутри есть
+участники. Lobby не получает административных действий. Права `canManage` и
+`canPin` вычисляются сервером из root membership и автора Room; клиент не
+выводит их из видимости кнопки.
+
+Web и desktop используют один switcher, actions model и существующие
+rate-limited tRPC mutations. Ошибка и pending относятся к конкретной Room,
+Escape отменяет локальный rename без закрытия Full Room. Source/unit gate
+проверяет authorization plumbing, отсутствие modal/Sheet и visual harness для
+обоих hosts; до полного release остаются authenticated keyboard/screen-reader
+и реальный DB concurrency run.
+
 ### Проверка authenticated invite preview — 2026-09-04
 
 Пункт 54 остаётся частичным. Web route и desktop router открывают общий

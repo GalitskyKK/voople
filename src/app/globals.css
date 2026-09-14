@@ -2478,6 +2478,15 @@ button.voople-post-action:active {
   color: #f87171;
 }
 
+.voople-room-actions__danger {
+  color: var(--voople-danger);
+}
+
+.voople-room-actions__danger-primary {
+  background: var(--voople-danger);
+  color: #fff;
+}
+
 .voople-dropdown-menu {
   transform-origin: top center;
   animation: voople-menu-enter 150ms cubic-bezier(.2,.85,.25,1) both;

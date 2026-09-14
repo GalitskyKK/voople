@@ -5,6 +5,7 @@ import { LoaderCircle, Mic2, MonitorUp, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { GroupNowRoom } from "@/types/group-now";
 
+import { VoiceRoomActionsMenu } from "./VoiceRoomActionsMenu";
 import type { VoiceRoomSwitcherModel } from "./voice-room-sheet-models";
 
 function RoomSignal({ room }: { room: GroupNowRoom }) {
@@ -25,6 +26,7 @@ export function VoiceRoomSwitcher({
   refreshing,
   onSelect,
   onRetry,
+  management,
 }: VoiceRoomSwitcherModel) {
   return (
     <aside className="voople-full-room__switcher shrink-0 border-r border-[var(--app-border)] bg-[var(--background)]" aria-label="Комнаты группы">
@@ -38,28 +40,37 @@ export function VoiceRoomSwitcher({
           const current = room.id === currentRoomId;
           const pending = room.id === pendingRoomId;
           return (
-            <button
+            <div
               key={room.id}
-              type="button"
-              aria-current={current ? "true" : undefined}
-              aria-busy={pending || undefined}
-              disabled={current || pendingRoomId !== null}
-              onClick={() => void onSelect(room)}
               className={cn(
-                "voople-full-room__switcher-room flex min-h-12 w-full min-w-0 items-center gap-2 border-l-2 border-transparent px-2 py-2 text-left transition hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)] disabled:cursor-default",
+                "group/room voople-full-room__switcher-room flex min-h-12 w-full min-w-0 items-center border-l-2 border-transparent transition hover:bg-[var(--app-surface-soft)]",
                 current && "border-l-[var(--theme-accent)] bg-[var(--app-surface-soft)]",
               )}
             >
-              <span className={cn("shrink-0 text-[var(--app-muted)]", current && "text-[var(--theme-accent)]")}>
-                {pending ? <LoaderCircle className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-label="Переход" /> : <RoomSignal room={room} />}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[13px] font-semibold uppercase leading-4 tracking-[0.035em]">{room.name}</span>
-                <span className="mt-0.5 block text-xs leading-4 tabular-nums text-[var(--app-muted)]">
-                  {current ? "Вы здесь" : room.participantCount > 0 ? `${room.participantCount} в комнате` : "Свободно"}
+              <button
+                type="button"
+                aria-current={current ? "true" : undefined}
+                aria-busy={pending || undefined}
+                disabled={current || pendingRoomId !== null}
+                onClick={() => void onSelect(room)}
+                className="flex min-h-12 min-w-0 flex-1 items-center gap-2 px-2 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)] disabled:cursor-default"
+              >
+                <span className={cn("shrink-0 text-[var(--app-muted)]", current && "text-[var(--theme-accent)]")}>
+                  {pending ? <LoaderCircle className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-label="Переход" /> : <RoomSignal room={room} />}
                 </span>
-              </span>
-            </button>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13px] font-semibold uppercase leading-4 tracking-[0.035em]">{room.name}</span>
+                  <span className="mt-0.5 block text-xs leading-4 tabular-nums text-[var(--app-muted)]">
+                    {current ? "Вы здесь" : room.participantCount > 0 ? `${room.participantCount} в комнате` : "Свободно"}
+                  </span>
+                </span>
+              </button>
+              {management && room.canManage && room.kind !== "lobby" ? (
+                <div className="pr-1 opacity-60 transition group-focus-within/room:opacity-100 group-hover/room:opacity-100 motion-reduce:transition-none md:opacity-0">
+                  <VoiceRoomActionsMenu room={room} management={management} />
+                </div>
+              ) : null}
+            </div>
           );
         })}
       </div>

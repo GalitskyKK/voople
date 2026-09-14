@@ -56,6 +56,7 @@ export async function getGroupNow(
         membership.role === "owner"
         || membership.role === "admin"
         || room.createdBy === viewerId,
+      canPin: membership.role === "owner" || membership.role === "admin",
     })),
     sessions: snapshot.sessions,
     participants: snapshot.participants.flatMap((participant) => {

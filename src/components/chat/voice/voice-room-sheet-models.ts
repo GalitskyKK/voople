@@ -90,6 +90,16 @@ export type VoiceRoomSwitcherModel = {
   refreshing: boolean;
   onSelect: (room: GroupNowRoom) => void | Promise<void>;
   onRetry: () => void | Promise<void>;
+  management: VoiceRoomManagementModel | null;
+};
+
+export type VoiceRoomManagementModel = {
+  pendingRoomId: string | null;
+  errorRoomId: string | null;
+  errorMessage: string | null;
+  onRename: (roomId: string, name: string) => void | Promise<void>;
+  onSetPinned: (roomId: string, pinned: boolean) => void | Promise<void>;
+  onArchive: (roomId: string) => void | Promise<void>;
 };
 
 export type VoiceRoomRenameModel = {

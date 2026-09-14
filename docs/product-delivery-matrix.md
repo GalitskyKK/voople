@@ -150,6 +150,23 @@ Web и desktop используют тот же `GroupNowConnectedPanel`; target
 проверяют default draft, атомарную mutation, retry identity, media handoff и
 отмену cross-context confirmation без открытия старой формы.
 
+### Inline-переименование Room — 2026-09-14
+
+Каноническое IA-24 продолжено без отдельного окна настроек: автор активной
+temporary/pinned Room переименовывает её прямо в заголовке Full Room. Enter
+сохраняет, Escape и явная кнопка отменяют draft; pending, пустое имя, лимит
+80 символов и server error имеют отдельные состояния. Lobby переименовать
+нельзя. Сервер повторно проверяет root membership и разрешает mutation только
+owner/admin либо создателю Room; RPC закрыт для публичных ролей и сериализует
+изменение advisory lock.
+
+Web и desktop используют общий `VoiceRoomTitle` и один tRPC/server-service/data
+контракт. Source/unit-проверки Room, transport и непрерывности поверхности —
+17/17. Актуальный source-CSS/Geist visual gate подтвердил edit-состояние в web
+и desktop при 1280 px Void без overflow и runtime errors. Migration 70
+зарегистрирована, но не применена: она должна идти после ещё не применённых
+68–69 при интеграции feature-ветки.
+
 ### Проверка authenticated invite preview — 2026-09-04
 
 Пункт 54 остаётся частичным. Web route и desktop router открывают общий

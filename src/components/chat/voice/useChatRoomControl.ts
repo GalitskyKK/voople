@@ -7,6 +7,7 @@ import { reportProductEvent } from "@/lib/telemetry/client";
 import { resolveVoiceDockActiveSpeaker } from "@/lib/livekit/voice-dock-state";
 
 import { getDirectCallPhase } from "./call-phase";
+import { buildVoiceRoomRenameModel } from "./buildVoiceRoomRenameModel";
 import { resolveVoiceRoomSurfacePhase } from "./voice-room-surface";
 import type { ChatRoomControlHandle, ChatRoomControlProps } from "./chat-room-control-types";
 import { getConnectionLabel, type MediaStatus } from "./voice-room-config";
@@ -95,6 +96,9 @@ export function useChatRoomControl(
     screenSharing: video.screenSharing,
   });
   const { server, value, active, inside, participants, participantCount, heartbeat } = runtime;
+  const currentCoreRoom = coreSession
+    ? server.directory?.rooms.find((room) => room.id === coreSession.room.id) ?? coreSession.room
+    : null;
   const sessionOperation = useVoiceSessionOperation();
   const durationLabel = useCallDuration(
     value?.startedAt ?? null,
@@ -375,8 +379,8 @@ export function useChatRoomControl(
       identity: {
         isDirect,
         callPhase: getDirectCallPhase({ direct: isDirect, room: value, starter: meIsStarter }),
-        chatName: coreSession && server.directory?.groupName
-          ? `${server.directory.groupName} / ${coreSession.room.name}`
+        chatName: currentCoreRoom && server.directory?.groupName
+          ? `${server.directory.groupName} / ${currentCoreRoom.name}`
           : chatName,
         active,
         durationLabel,
@@ -482,6 +486,7 @@ export function useChatRoomControl(
             onRetry: async () => { await server.directory?.refetch(); },
           }
         : null,
+      roomRename: buildVoiceRoomRenameModel(currentCoreRoom, server.rename, currentCoreRoom?.canManage === true && active),
     },
     picker: desktopAudio.capturePicker ? {
       sources: desktopAudio.capturePicker,

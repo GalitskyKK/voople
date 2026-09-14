@@ -18,6 +18,7 @@ import {
   listCoreRoomInviteCandidates,
   leaveGroupRoom,
   respondToCoreRoomInvite,
+  renameGroupRoom,
   sendCoreRoomInvite,
   setGroupRoomKind,
 } from "@/server/services/chat.service";
@@ -143,6 +144,21 @@ export const chatCoreReworkProcedures = {
         return await setGroupRoomKind({ ...input, userId: ctx.user.id });
       } catch (error) {
         throw toRoomError(error, "Не удалось изменить тип комнаты");
+      }
+    }),
+
+  coreRenameRoom: protectedProcedure
+    .input(z.object({
+      roomId: z.string().uuid(),
+      name: z.string().trim().min(1).max(80),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      try {
+        return await renameGroupRoom({ ...input, userId: ctx.user.id });
+      } catch (error) {
+        throw toRoomError(error, "Не удалось переименовать комнату");
       }
     }),
 

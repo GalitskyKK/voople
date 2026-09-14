@@ -61,7 +61,7 @@ const entry = `import {createRoot} from 'react-dom/client';
       <div className="voople-full-room__frame relative flex h-full min-h-0 min-w-0 max-sm:flex-col">
         <VoiceRoomSwitcher rooms={rooms} currentRoomId="drg" pendingRoomId={phase==='switching'?'lobby':null} errorMessage={null} refreshing={false} onSelect={noop} onRetry={noop}/>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <VoiceRoomHeader identity={identity} connection={connection} participantCount={participants.length} hasGroupSounds hasRoomMessages roomMessagesOpen={messagesOpen} roomSwitcher={{rooms,currentRoomId:'drg',pendingRoomId:phase==='switching'?'lobby':null,errorMessage:null,refreshing:false,onSelect:noop,onRetry:noop}} access={access} fullscreen={fullscreen} fullscreenPending={false} onMinimize={noop} onOpenSoundboard={noop} onToggleRoomMessages={noop} onOpenSettings={noop} onToggleFullscreen={noop}/>
+          <VoiceRoomHeader identity={identity} connection={connection} participantCount={participants.length} hasGroupSounds hasRoomMessages roomMessagesOpen={messagesOpen} roomSwitcher={{rooms,currentRoomId:'drg',pendingRoomId:phase==='switching'?'lobby':null,errorMessage:null,refreshing:false,onSelect:noop,onRetry:noop}} roomRename={{roomId:'drg',name:'DRG',pending:false,errorMessage:null,onSubmit:async()=>{}}} access={access} fullscreen={fullscreen} fullscreenPending={false} onMinimize={noop} onOpenSoundboard={noop} onToggleRoomMessages={noop} onOpenSettings={noop} onToggleFullscreen={noop}/>
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
             <VoiceRoomContent identity={identity} stage={stage} controls={controls} session={session} errorMessage={connection.errorMessage} onInvite={noop} onClose={noop}/>
             {phase==='switching'?<VoiceRoomSwitchStatus roomName="Лобби"/>:null}
@@ -138,15 +138,18 @@ try {
     { width: 390, height: 800, theme: "void", phase: "inside", media: "voice", people: 1, expected: "Вы пока один", host },
     { width: 1024, height: 720, theme: "void", phase: "reconnecting", expected: "Восстанавливаем связь", host },
     { width: 1280, height: 800, theme: "void", phase: "inside", expected: "Демонстрация экрана: nmggk", host },
+    { width: 1280, height: 800, theme: "void", phase: "inside", media: "voice", people: 2, renameEdit: true, expected: "voice-grid", host },
     { width: 1280, height: 800, theme: "void", phase: "inside", media: "screen", messages: true, expected: "Чат группы", host },
     { width: 1440, height: 900, theme: "void", phase: "inside", fullscreen: true, expected: "Демонстрация экрана: nmggk", host },
   ]);
   const selectedCases = process.argv.includes("--messages-only")
     ? cases.filter((item) => item.messages)
+    : process.argv.includes("--rename-only")
+      ? cases.filter((item) => item.renameEdit)
     : process.argv.includes("--wide-stage-only")
       ? cases.filter((item) => item.width === 1280 && !item.messages)
       : cases;
-  for (const { width, height, theme, phase, fullscreen = false, media = "screen", messages = false, people = 3, expected, host } of selectedCases) {
+  for (const { width, height, theme, phase, fullscreen = false, media = "screen", messages = false, people = 3, renameEdit = false, expected, host } of selectedCases) {
     const page = await browser.newPage({ viewport: { width, height } });
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
@@ -156,7 +159,11 @@ try {
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(250);
     if (errors.length) throw new Error(errors.join("\n"));
-    await page.getByRole("heading", { name: "VOICEKK / DRG" }).waitFor();
+    await page.getByRole("heading", { name: "DRG" }).waitFor();
+    if (renameEdit) {
+      await page.getByRole("button", { name: "Переименовать комнату" }).click();
+      await page.getByRole("textbox", { name: "Название комнаты" }).waitFor();
+    }
     const roomSwitcher = page.getByRole("complementary", { name: "Комнаты группы" });
     if (await roomSwitcher.isVisible()) {
       assert.equal(await roomSwitcher.getByRole("button", { name: /DRG/ }).getAttribute("aria-current"), "true");
@@ -176,7 +183,7 @@ try {
     await page.waitForTimeout(180);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);
-    const suffix = fullscreen ? "fullscreen" : `${phase}-${media}-${people}${messages ? "-messages" : ""}`;
+    const suffix = fullscreen ? "fullscreen" : `${phase}-${media}-${people}${messages ? "-messages" : ""}${renameEdit ? "-rename" : ""}`;
     await page.screenshot({ path: path.join(artifacts, `room-${host}-${width}-${theme}-${suffix}.png`) });
     console.log(`PASS room ${host} ${width}px ${theme} ${suffix}: no overflow or runtime errors`);
     await page.close();

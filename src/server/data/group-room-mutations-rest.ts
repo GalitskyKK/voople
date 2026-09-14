@@ -54,6 +54,9 @@ function throwRoomMutationError(message: string) {
   if (message.includes("ROOM_IDEMPOTENCY_CONFLICT")) {
     throw new Error("Запрос создания комнаты уже использован");
   }
+  if (message.includes("ROOM_NAME_INVALID")) {
+    throw new Error("Название комнаты должно содержать от 1 до 80 символов");
+  }
   throw new Error(message);
 }
 
@@ -128,6 +131,18 @@ export function setGroupRoomKindRest(input: {
     p_room_id: input.roomId,
     p_user_id: input.userId,
     p_kind: input.kind,
+  }, roomSchema);
+}
+
+export function renameGroupRoomRest(input: {
+  roomId: string;
+  userId: string;
+  name: string;
+}) {
+  return roomRpc("rename_group_room", {
+    p_room_id: input.roomId,
+    p_user_id: input.userId,
+    p_name: input.name,
   }, roomSchema);
 }
 

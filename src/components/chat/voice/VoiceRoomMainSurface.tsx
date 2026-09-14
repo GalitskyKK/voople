@@ -30,6 +30,7 @@ export function VoiceRoomMainSurface({
   access,
   session,
   roomSwitcher,
+  roomRename,
   messages,
   invite,
   settingsPanel,
@@ -129,6 +130,7 @@ export function VoiceRoomMainSurface({
               hasRoomMessages={Boolean(messages)}
               roomMessagesOpen={secondaryPanel === "messages"}
               roomSwitcher={roomSwitcher}
+              roomRename={roomRename}
               access={access}
               fullscreen={fullscreen}
               fullscreenPending={fullscreenPending}

@@ -19,10 +19,12 @@ import { ConnectionQuality } from "livekit-client";
 
 import { IconButton } from "@/components/ui/IconButton";
 import { getQualityLabel } from "./voice-room-config";
+import { VoiceRoomTitle } from "./VoiceRoomTitle";
 import type {
   VoiceRoomAccessModel,
   VoiceRoomConnectionModel,
   VoiceRoomIdentityModel,
+  VoiceRoomRenameModel,
   VoiceRoomSwitcherModel,
 } from "./voice-room-sheet-models";
 
@@ -34,6 +36,7 @@ type VoiceRoomHeaderProps = {
   hasRoomMessages: boolean;
   roomMessagesOpen: boolean;
   roomSwitcher: VoiceRoomSwitcherModel | null;
+  roomRename: VoiceRoomRenameModel | null;
   access: VoiceRoomAccessModel;
   fullscreen: boolean;
   fullscreenPending: boolean;
@@ -52,6 +55,7 @@ export function VoiceRoomHeader({
   hasRoomMessages,
   roomMessagesOpen,
   roomSwitcher,
+  roomRename,
   access,
   fullscreen,
   fullscreenPending,
@@ -68,14 +72,12 @@ export function VoiceRoomHeader({
   return (
     <header className="voople-full-room__header flex shrink-0 items-center gap-3 border-b border-[var(--app-border)] px-4 py-2">
       <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-center gap-2">
-          <h2 className="voople-full-room__title truncate text-base font-semibold uppercase tracking-[0.05em] sm:text-lg">{identity.chatName}</h2>
-          {identity.durationLabel ? (
-            <span className="shrink-0 text-xs tabular-nums text-[var(--app-muted)]">
-              {identity.durationLabel}
-            </span>
-          ) : null}
-        </div>
+        <VoiceRoomTitle
+          key={roomRename?.roomId ?? identity.chatName}
+          title={identity.chatName}
+          durationLabel={identity.durationLabel}
+          rename={roomRename}
+        />
         {roomSwitcher ? (
           <label className="voople-full-room__room-selector mt-1 items-center gap-2 text-xs text-[var(--app-muted)]">
             <span className="sr-only">Текущая комната</span>

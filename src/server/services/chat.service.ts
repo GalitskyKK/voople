@@ -68,6 +68,7 @@ export {
   heartbeatGroupRoom,
   joinGroupRoom,
   leaveGroupRoom,
+  renameGroupRoom,
   setGroupRoomKind,
 } from "@/server/services/group-room-mutations.service";
 export {

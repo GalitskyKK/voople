@@ -12,6 +12,7 @@ export type GroupNowRoomInput = {
   kind: GroupNowRoomKind;
   name: string;
   createdAt: string;
+  canManage: boolean;
 };
 
 export type GroupNowSessionInput = {
@@ -108,6 +109,7 @@ export function buildGroupNowView(input: BuildGroupNowViewInput): GroupNowView {
       id: room.id,
       kind: room.kind,
       name: room.name,
+      canManage: room.canManage,
       joinTarget: { kind: "room", roomId: room.id },
       state: session?.status ?? "idle",
       liveSessionId: session?.id ?? null,
@@ -131,6 +133,7 @@ export function buildGroupNowView(input: BuildGroupNowViewInput): GroupNowView {
         id: roomId,
         kind: "temporary",
         name: legacy.roomName,
+        canManage: false,
         joinTarget: { kind: "legacy", chatId: legacy.chatId },
         state: "active",
         liveSessionId: null,

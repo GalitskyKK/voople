@@ -27,6 +27,7 @@ export const REQUIRED_MIGRATIONS = Object.freeze([
   "67-saved-messages.sql",
   "68-guest-funnel-analytics.sql",
   "69-chat-section-favorites.sql",
+  "70-group-room-rename.sql",
 ]);
 
 // The ledger must exist before the feature migrations are replayed so every
@@ -60,4 +61,5 @@ export const RELEASE_APPLY_ORDER = Object.freeze([
   "67-saved-messages.sql",
   "68-guest-funnel-analytics.sql",
   "69-chat-section-favorites.sql",
+  "70-group-room-rename.sql",
 ]);

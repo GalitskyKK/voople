@@ -13,6 +13,7 @@ export type GroupNowSnapshotRest = {
     kind: "lobby" | "temporary" | "pinned";
     name: string;
     createdAt: string;
+    createdBy: string | null;
   }>;
   sessions: Array<{
     id: string;
@@ -60,7 +61,7 @@ export async function loadGroupNowSnapshotRest(
   const [roomsResult, sessionsResult, membersResult] = await Promise.all([
     admin
       .from("group_rooms")
-      .select("id, kind, name, created_at")
+      .select("id, kind, name, created_at, created_by")
       .eq("group_chat_id", groupId)
       .is("archived_at", null)
       .order("created_at", { ascending: true }),
@@ -123,6 +124,7 @@ export async function loadGroupNowSnapshotRest(
       kind: normalizeRoomKind(row.kind),
       name: String(row.name),
       createdAt: String(row.created_at),
+      createdBy: row.created_by ? String(row.created_by) : null,
     })),
     sessions,
     participants: (participantsResult.data ?? []).map((row) => ({

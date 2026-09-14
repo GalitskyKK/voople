@@ -92,6 +92,14 @@ export type VoiceRoomSwitcherModel = {
   onRetry: () => void | Promise<void>;
 };
 
+export type VoiceRoomRenameModel = {
+  roomId: string;
+  name: string;
+  pending: boolean;
+  errorMessage: string | null;
+  onSubmit: (name: string) => void | Promise<void>;
+};
+
 export type VoiceRoomMessagesModel = {
   chatId: string;
   groupId: string;
@@ -110,6 +118,7 @@ export type VoiceRoomMainSurfaceProps = {
   access: VoiceRoomAccessModel;
   session: VoiceRoomSessionModel;
   roomSwitcher: VoiceRoomSwitcherModel | null;
+  roomRename: VoiceRoomRenameModel | null;
   messages: VoiceRoomMessagesModel | null;
   invite: { sessionId: string } | null;
   settingsPanel: ReactNode;

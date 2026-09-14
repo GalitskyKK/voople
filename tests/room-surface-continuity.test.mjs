@@ -92,6 +92,7 @@ test("full Room replaces main content and minimizes without ending its session",
 test("full room uses one shared reference-aligned visual frame", () => {
   const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
   const header = read("src/components/chat/voice/VoiceRoomHeader.tsx");
+  const title = read("src/components/chat/voice/VoiceRoomTitle.tsx");
   const content = read("src/components/chat/voice/VoiceRoomContent.tsx");
   const stage = read("src/components/chat/voice/VoiceRoomStage.tsx");
   const media = read("src/components/chat/voice/VoiceMediaStage.tsx");
@@ -105,7 +106,8 @@ test("full room uses one shared reference-aligned visual frame", () => {
 
   assert.match(surface, /voople-full-room/);
   assert.match(header, /voople-full-room__header/);
-  assert.match(header, /voople-full-room__title/);
+  assert.match(header, /VoiceRoomTitle/);
+  assert.match(title, /voople-full-room__title/);
   assert.match(header, /px-4 py-2/);
   assert.doesNotMatch(header, /pr-14/);
   assert.match(header, /text-\[var\(--foreground\)\] opacity-70/);

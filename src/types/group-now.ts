@@ -20,6 +20,7 @@ export type GroupNowRoom = {
   id: string;
   kind: GroupNowRoomKind;
   name: string;
+  canManage?: boolean;
   joinTarget:
     | { kind: "room"; roomId: string }
     | { kind: "legacy"; chatId: string };

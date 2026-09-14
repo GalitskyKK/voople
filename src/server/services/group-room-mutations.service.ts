@@ -10,6 +10,7 @@ import {
   heartbeatGroupRoomRest,
   joinGroupRoomRest,
   leaveGroupRoomRest,
+  renameGroupRoomRest,
   setGroupRoomKindRest,
 } from "@/server/data/group-room-mutations-rest";
 import {
@@ -76,6 +77,22 @@ export async function setGroupRoomKind(input: {
   const membership = await requireRootGroup(room.groupId, input.userId);
   requireRoomAdmin(membership.role);
   return setGroupRoomKindRest(input);
+}
+
+export async function renameGroupRoom(input: {
+  roomId: string;
+  userId: string;
+  name: string;
+}) {
+  const room = await getGroupRoomRecordRest(input.roomId);
+  const membership = await requireRootGroup(room.groupId, input.userId);
+  const ownsRoom = room.createdBy === input.userId;
+  if (!ownsRoom) requireRoomAdmin(membership.role);
+  const name = input.name.trim();
+  if (!name || name.length > 80) {
+    throw new Error("Название комнаты должно содержать от 1 до 80 символов");
+  }
+  return renameGroupRoomRest({ ...input, name });
 }
 
 export async function archiveGroupRoom(roomId: string, userId: string) {

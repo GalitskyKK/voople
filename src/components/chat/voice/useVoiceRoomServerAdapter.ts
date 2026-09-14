@@ -59,6 +59,7 @@ export function useVoiceRoomServerAdapter({
   );
   const coreLeave = trpc.chat.coreLeaveRoom.useMutation();
   const coreMediaToken = trpc.chat.coreRoomMediaToken.useMutation();
+  const coreRename = trpc.chat.coreRenameRoom.useMutation();
   const initialCredentialsRef = useRef<VoiceMediaCredentials | null>(
     initialCoreCredentials ?? null,
   );
@@ -112,6 +113,12 @@ export function useVoiceRoomServerAdapter({
         isPending: legacy.access.isPending,
         error: legacy.access.error,
         set: (accessMode: "open" | "locked") => legacy.access.mutate({ chatId, accessMode }),
+      },
+      rename: {
+        supported: false,
+        isPending: false,
+        error: null,
+        run: async () => undefined,
       },
       heartbeatSessionId: null,
     };
@@ -169,6 +176,18 @@ export function useVoiceRoomServerAdapter({
       isPending: false,
       error: null,
       set: () => undefined,
+    },
+    rename: {
+      supported: true,
+      isPending: coreRename.isPending,
+      error: coreRename.error,
+      run: async (name: string) => {
+        await coreRename.mutateAsync({
+          roomId: coreSession.room.id,
+          name,
+        });
+        await utils.chat.coreGroupNow.invalidate({ groupId: coreSession.groupId });
+      },
     },
     heartbeatSessionId: coreSession.join.sessionId,
   };

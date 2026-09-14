@@ -50,7 +50,13 @@ export async function getGroupNow(
     groupId,
     groupName: membership.name?.trim() || "Группа",
     viewerId,
-    rooms: snapshot.rooms,
+    rooms: snapshot.rooms.map((room) => ({
+      ...room,
+      canManage:
+        membership.role === "owner"
+        || membership.role === "admin"
+        || room.createdBy === viewerId,
+    })),
     sessions: snapshot.sessions,
     participants: snapshot.participants.flatMap((participant) => {
       const user = users.get(participant.userId);

@@ -107,7 +107,7 @@ Transport/media были заглушены: real DB, authorization, native desk
 | 34 | Store contextual previews | Частично | Реальные profile/post/community previews, gift delivery and Board 6 parity |
 | 35 | Responsive/mobile polish | Частично | 360/390/1024/1440 snapshots и safe-area/touch gates всех verticals |
 | 36 | Accessibility | Частично | Keyboard/focus/screen reader/contrast matrix, reduced motion |
-| 37 | Analytics dashboards | Частично | Server guest funnel теперь фиксирует реальное создание external invite, дедуплированный preview с разделением new/existing/member, explicit join, фактическое media connection, участие с собеседником ≥3 минут и conversion; HMAC actor/dedupe keys не сохраняют invite/access tokens, raw IDs, content или private media identifiers. Нужны migration 68, production event audit и dashboards для company activation/retention/cost |
+| 37 | Analytics dashboards | Частично | Server guest funnel теперь фиксирует реальное создание external invite, дедуплированный preview с разделением new/existing/member, explicit join, фактическое media connection, участие с собеседником ≥3 минут и conversion; HMAC actor/dedupe keys не сохраняют invite/access tokens, raw IDs, content или private media identifiers. Migration 68 применена и зарегистрирована в настроенной Supabase 2026-09-14; нужны production event audit и dashboards для company activation/retention/cost |
 | 38 | Screen Share source preview polish | Частично | Worker isolation, session-owned idempotent stop, graceful server unpublish, stale session/track barriers, self-audio suppression, opt-in/focus-aware local preview, titlebar-safe fullscreen и explicit 720p30/1080p60 publish contract готовы в коде; receiving stage заполняет доступный box через `width/height: 100%`, сохраняя полный кадр `object-fit: contain`. При нескольких screen publications первая выбранная остаётся в фокусе, остальные не подписываются и не перехватывают stage; после завершения активной детерминированно продвигается следующая вместе со своим audio companion. Та же focus-policy применяется в узкой guest surface, поэтому второй stream или его audio не захватывает гостевой stage. Остаются production-подтверждение нового RC, воспроизводимый multi-client stop/restart/switch gate, fullscreen/16:10/ultrawide/portrait visual matrix, явный chooser/thumbnails для нескольких streams, measured end-to-end FPS/bitrate, dynamic-resize E2E и web post-selection track preview |
 | 39 | Release notes long-content polish | Частично | Shared View есть; нужны short/long/very-long fixtures, очистка Markdown-артефактов, viewport-relative max-height, внутренний scroll и web/desktop visual E2E |
 | 40 | Search desktop/responsive parity | Частично | Пересобрать default/results/empty/loading по Board 6 и проверить сетку/scroll на 1024/1280/1440 и mobile hierarchy |
@@ -137,6 +137,16 @@ Transport/media были заглушены: real DB, authorization, native desk
 | 64 | User blocking + Room invite gate | Готово в коде · P0 safety/core | Directional `user_blocks` доступна только service role; атомарная mutation запрещает self-block, сериализует пару пользователей, удаляет взаимные follows/contact pins и отменяет pending Room invites. DB triggers fail-closed для новых follows, pins, direct pairs/messages/Room participants и Room invites, а server повторно проверяет direct chat/message/call/media-token и invite send/respond. Presence, Room participants, candidates, previews и рекомендации фильтруют блокировку в обе стороны без раскрытия направления. Shared profile action для web и desktop имеет accessible menu/tooltip, явное подтверждение, pending/error и unblock state; telemetry хранит только итоговое состояние. Migration 64 применена и зарегистрирована 2026-09-09. 219 source/unit tests, architecture, lint, web/desktop TypeScript, production Next/desktop renderer builds и воспроизводимый 360/1440 light/void menu/unblock visual gate зелёные. До release остаются реальный Postgres concurrency run и authenticated in-app responsive/keyboard gate. |
 | 65 | Messenger/live IA replacement | В работе · P1 messenger | Decision Memo, IA/UI Spec и Implementation Brief приняты как верхний decision set; source hierarchy, architecture и integration plan синхронизированы. Group открывается в Chat; bounded Shelf держит Lobby первым, показывает 3/2/1 Room по ширине, до трёх avatar tokens, count, live/share/current state, прямое действие и подписанный portalled overflow; пустой Shelf не рендерится. Значимые Shelf labels приведены к контракту 12/16 px, названия Room — к 14/16 px без увеличения заданной высоты. Root Group на wide desktop объединяет identity, `Чат / Войс / Люди` и Lobby action в один 64 px header; пользовательское название live overview уточнено до `Войс`, внутренний id `now` сохранён. `Войс` следует каноническому порядку: реальный summary участников/разговоров и `+ Комната` находятся сверху, Лобби выделено как общий разговор, дополнительные Room сгруппированы под `Комнаты · N`, а люди вне голоса остаются отдельными compact tokens. Действие Лобби различает начало, присоединение, переход и текущую Room; на mobile сохраняет полный accessible label при короткой подписи и укладывает identity, roster и action в компактную строку. Wide messenger следует измерениям IA: sidebar 216 px при 1200+, строки 48 px, identity-avatar 44 px; `Войс` выровнен от начала и ограничен 960 px, `Люди` — 760 px, чтобы рабочие области не плавали по центру пустого экрана. Sections не образуют horizontal scroller: текущий раздел открывает searchable dialog-picker, `+` остаётся в той же 36/44 px toolbar, unread текущего и сумма других видны у адресата, а picker группирует unread без дублей и поддерживает Arrow/Home/End с возвратом focus по Escape. Его служебные заголовки и unread summary используют читаемые 12/16 px и clean grotesk вместо 10 px mono-uppercase. Автоматические «первые две вкладки» заменены отдельным per-user favorites contract: максимум два доступных Section сохраняются сервером и выводятся рядом с selector только при достаточной ширине. Общий web/desktop renderer выводит Group и DM единым ограниченным по ширине левым dense stream: avatar/автор/Room snapshot один раз на 5-minute block, свои помечены `вы` и delivery ticks, replies разрывают блок, а текст больше не получает отдельную bubble-card; вложения, reactions, reply, edit/delete и selection сохранены. Поток использует канонические 1040 px, строка metadata доходит до его правого края, а содержимое сообщения остаётся ограничено 704 px для читаемости. Общая conversation-state surface покрывает initial loading, offline и error; при stale history история и composer не исчезают, retry находится в компактной полосе, а desktop очищает ошибку после успешного background recovery. Full Room теперь portalled точно в общую main area без внешнего Sheet/backdrop/body scroll lock: global sidebar остаётся, отдельная кнопка, Escape и смена web/desktop route сворачивают поверхность без выхода из LiveKit session, существующий Mini становится единственным представлением сессии вне Full. Full и Mini одновременно не рендерятся; fullscreen по-прежнему перекрывает всё content-пространство. P3 использует корректный audience contract: drawer читает обычную выбранную Group/Section без LiveSession-фильтра, а её `conversationId` сохраняется при same-Group Room switch. Drawer переиспользует `ChatThreadFrameView`; main и drawer в web и desktop используют один conversation-keyed composer store и общий tRPC query cache для text/reply/edit/upload/track, отправки, edit/delete/reaction и realtime invalidation. Desktop upload не отзывает preview при временном unmount. Desktop drawer стартует с 360 px, меняется мышью или клавиатурой в пределах 320–480 px и не занимает больше 40% main; ниже 1160 px Room switcher заменяется selector при открытом чате, ниже 1000 px drawer становится overlay и не сжимает media stage, ниже 800 px selector используется и без drawer. Закрытие возвращает focus на trigger. Screen-share subscription удерживает выбранную публикацию и после её завершения поднимает следующую, поэтому одновременный второй stream не перехватывает stage самовольно. Visual harness компилирует актуальный source CSS вместо устаревающего `desktop/dist`, загружает фактические Geist Sans/Mono/Pixel и отдельно фиксирует все `Чат / Войс / Люди`, открытый selector Sections, inline-create и collapsed Shelf в 1280 Void / 390 Light для web и desktop; 24 stateless captures подтверждают текущую геометрию, restrained `VOOPLE`/avatar/counter microtype и отсутствие overflow/runtime errors, но authenticated parity ещё не заявляется. Профильные native-тесты, architecture, targeted lint и web TypeScript зелёные. Web production build снова остановился до компиляции кода на Windows `os error 5` при запуске внутреннего Turbopack Node pool; desktop TypeScript не стартует без отсутствующего локального `vite/client`. Впереди convergence control language и identity glyphs по `voople_ref_rework` и `other_ref1/2`, authenticated web/desktop/mobile evidence и multi-client screen-share gates; затем P4 guest acceptance. |
 
+### Migration readiness — 2026-09-14
+
+Миграции 68 (`guest funnel analytics`), 69 (`chat section favorites`) и 70
+(`group room rename`) применены по одной и зарегистрированы в настроенной
+Supabase. Полный release-readiness gate подтвердил 29 обязательных миграций,
+их checksum, atomic direct-chat privacy gate и `REPLICA IDENTITY FULL` для
+реакций. Эта запись заменяет более ранние пометки ниже о необходимости применить
+68/69; для соответствующих срезов остаются только продуктовые и multi-client
+acceptance gates.
+
 ### Быстрое создание Room — 2026-09-13
 
 Канонические IA-23/24 больше не ведут через обязательную prejoin-форму:
@@ -165,8 +175,8 @@ Web и desktop используют общий `VoiceRoomTitle` и один tRPC
 контракт. Source/unit-проверки Room, transport и непрерывности поверхности —
 17/17. Актуальный source-CSS/Geist visual gate подтвердил edit-состояние в web
 и desktop при 1280 px Void без overflow и runtime errors. Migration 70
-зарегистрирована, но не применена: она должна идти после ещё не применённых
-68–69 при интеграции feature-ветки.
+применена и зарегистрирована 2026-09-14 после 68–69; полный readiness подтвердил
+её checksum.
 
 ### Управление Room в switcher — 2026-09-14
 
@@ -184,6 +194,15 @@ Escape отменяет локальный rename без закрытия Full R
 проверяет authorization plumbing, отсутствие modal/Sheet и visual harness для
 обоих hosts; до полного release остаются authenticated keyboard/screen-reader
 и реальный DB concurrency run.
+
+При скрытом switcher обычный native select заменён единым Room picker. На узком
+desktop он открывается как dropdown, на mobile — как bottom sheet; оба варианта
+показывают те же Room states и server-owned rename/pin/archive actions. Для
+дополнительной Room рядом остаётся прямое действие `В Лобби`, поэтому возврат
+не требует открытия picker даже на 360 px. Escape сначала закрывает вложенное
+меню управления и только следующим нажатием сам sheet. Source/unit gate зелёный;
+headless web/desktop проверка на 390 px Light подтвердила keyboard flow,
+геометрию, отсутствие overflow и runtime errors.
 
 ### Проверка authenticated invite preview — 2026-09-04
 
@@ -589,9 +608,10 @@ Section отозван. Browser-роли не получают прямого д
 web/desktop используют защищённую rate-limited mutation и один shared View,
 а настройка включена в account export. Три новых contract-теста, TypeScript,
 lint и architecture зелёные; 24 stateless web/desktop captures на 390/1280 px
-подтвердили ярлыки без overflow/runtime errors. До выпуска migration 69 нужно
-применить и зарегистрировать, затем проверить authenticated keyboard/error
-states на реальных данных.
+подтвердили ярлыки без overflow/runtime errors. Migration 69 применена и
+зарегистрирована в настроенной Supabase 2026-09-14; полный readiness подтвердил
+её checksum. До приёмки остаются authenticated keyboard/error states на реальных
+данных.
 
 ### Room-context message read model — 2026-09-08
 

@@ -89,20 +89,23 @@ export function VoiceRoomTitle({
             </IconButton>
           </form>
         ) : (
-          <>
+          rename ? (
+            <button
+              type="button"
+              aria-label={`Переименовать комнату ${rename.name}`}
+              onClick={beginEdit}
+              className="group/title flex min-w-0 items-center gap-2 rounded-[var(--app-radius-sm)] text-left outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-accent)]"
+            >
+              <h2 className="voople-full-room__title truncate text-base font-semibold sm:text-lg">
+                {rename.name}
+              </h2>
+              <Pencil className="h-3.5 w-3.5 shrink-0 text-[var(--app-muted)] opacity-0 transition group-hover/title:opacity-100 group-focus-visible/title:opacity-100 motion-reduce:transition-none" aria-hidden="true" />
+            </button>
+          ) : (
             <h2 className="voople-full-room__title truncate text-base font-semibold sm:text-lg">
-              {rename?.name ?? title}
+              {title}
             </h2>
-            {rename ? (
-              <IconButton
-                label="Переименовать комнату"
-                onClick={beginEdit}
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-[var(--app-radius-sm)] text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
-              >
-                <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-              </IconButton>
-            ) : null}
-          </>
+          )
         )}
         {durationLabel ? (
           <span className="shrink-0 text-xs tabular-nums text-[var(--app-muted)]">

@@ -161,7 +161,7 @@ try {
     if (errors.length) throw new Error(errors.join("\n"));
     await page.getByRole("heading", { name: "DRG" }).waitFor();
     if (renameEdit) {
-      await page.getByRole("button", { name: "Переименовать комнату" }).click();
+      await page.getByRole("button", { name: /Переименовать комнату/ }).click();
       await page.getByRole("textbox", { name: "Название комнаты" }).waitFor();
     }
     const roomSwitcher = page.getByRole("complementary", { name: "Комнаты группы" });

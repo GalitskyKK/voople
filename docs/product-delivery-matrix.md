@@ -153,7 +153,8 @@ Web и desktop используют тот же `GroupNowConnectedPanel`; target
 ### Inline-переименование Room — 2026-09-14
 
 Каноническое IA-24 продолжено без отдельного окна настроек: автор активной
-temporary/pinned Room переименовывает её прямо в заголовке Full Room. Enter
+temporary/pinned Room кликает само имя в заголовке Full Room и переименовывает
+его на месте. Enter
 сохраняет, Escape и явная кнопка отменяют draft; pending, пустое имя, лимит
 80 символов и server error имеют отдельные состояния. Lobby переименовать
 нельзя. Сервер повторно проверяет root membership и разрешает mutation только

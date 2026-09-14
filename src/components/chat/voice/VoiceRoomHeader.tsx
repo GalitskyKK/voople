@@ -180,7 +180,7 @@ function HeaderButton({
       label={label}
       disabled={disabled}
       onClick={onClick}
-      className="grid h-9 w-9 place-items-center rounded-xl text-[var(--foreground)] opacity-70 transition hover:bg-[var(--app-surface-soft)] hover:opacity-100 disabled:cursor-wait disabled:opacity-35"
+      className="grid h-9 w-9 place-items-center rounded-[var(--app-radius-sm)] text-[var(--foreground)] opacity-70 transition hover:bg-[var(--app-surface-soft)] hover:opacity-100 disabled:cursor-wait disabled:opacity-35"
     >
       {children}
     </IconButton>

@@ -10,8 +10,8 @@ services:
       HOSTNAME: 0.0.0.0
       NODE_ENV: production
       PORT: 3000
-    expose:
-      - "3000"
+    ports:
+      - "127.0.0.1:3000:3000"
     healthcheck:
       test:
         - CMD
@@ -32,31 +32,5 @@ services:
     security_opt:
       - no-new-privileges:true
 
-  caddy:
-    image: caddy:2.10.2-alpine
-    restart: unless-stopped
-    depends_on:
-      web:
-        condition: service_healthy
-    environment:
-      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in deploy/production/.env}
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
-    logging:
-      driver: json-file
-      options:
-        max-size: 20m
-        max-file: "5"
-    security_opt:
-      - no-new-privileges:true
-
 volumes:
-  caddy-data:
-  caddy-config:
   next-cache:

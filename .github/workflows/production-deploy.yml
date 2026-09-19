@@ -81,7 +81,7 @@ jobs:
         run: |
           target="${DEPLOY_USER}@${DEPLOY_HOST}"
           ssh -p "${DEPLOY_PORT}" "${target}" "mkdir -p /opt/voople"
-          tar -C deploy/production -czf - compose.yaml Caddyfile \
+          tar -C deploy/production -czf - compose.yaml \
             | ssh -p "${DEPLOY_PORT}" "${target}" "tar -xzf - -C /opt/voople"
 
       - name: Start release and wait for health
@@ -96,6 +96,6 @@ jobs:
           ssh -p "${DEPLOY_PORT}" "${target}" \
             "test -s /opt/voople/.env && test -s /opt/voople/app.env"
           ssh -p "${DEPLOY_PORT}" "${target}" \
-            "cd /opt/voople && VOOPLE_IMAGE='${VOOPLE_IMAGE}' docker compose pull && VOOPLE_IMAGE='${VOOPLE_IMAGE}' docker compose up -d --remove-orphans --wait --wait-timeout 120"
+            "export XDG_RUNTIME_DIR=/run/user/1000; export DOCKER_HOST=unix:///run/user/1000/docker.sock; cd /opt/voople && VOOPLE_IMAGE='${VOOPLE_IMAGE}' docker compose pull && VOOPLE_IMAGE='${VOOPLE_IMAGE}' docker compose up -d --remove-orphans --wait --wait-timeout 120"
           curl --fail --show-error --silent --retry 6 --retry-delay 5 \
             https://voople.app/api/health

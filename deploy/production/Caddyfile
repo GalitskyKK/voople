@@ -1,5 +1,4 @@
 {
-	email {$ACME_EMAIL}
 	admin off
 }
 
@@ -18,7 +17,7 @@ voople.app {
 		Referrer-Policy "strict-origin-when-cross-origin"
 	}
 
-	reverse_proxy web:3000 {
+	reverse_proxy 127.0.0.1:3000 {
 		health_uri /api/health
 		health_interval 30s
 		health_timeout 5s

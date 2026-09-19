@@ -6,6 +6,12 @@
 
 Этот brief предназначен для следующей задачи реализации. Сам файл не является командой немедленно менять приложение, базу, ветки или выпуск. Решения по hook находятся в [VOOPLE_PRODUCT_DECISION_MEMO.md](./VOOPLE_PRODUCT_DECISION_MEMO.md). Они не добавляют новые обязательные функции в P0–P3.
 
+**Актуализация 2026-09-19.** Реализация следует voice-first delta из первых
+разделов Decision Memo и IA/UI Spec. Whole-card Switch не раскрывает Full
+автоматически; Split и Voop владеют temporary lifecycle; `+ Комната` создаёт
+permanent/pinned Room. Более ранние требования ниже о `Зайти → Full` и
+`+ Комната → temporary` считаются историческими там, где они конфликтуют.
+
 ## 1. Продуктовый контракт
 
 - Одна Group соответствует постоянной компании. Group Chat и необязательные Sections сохраняют историю.
@@ -14,19 +20,32 @@
 - LiveSession — authoritative сессия. DM-call не получает фиктивную Group Room.
 - Message принадлежит ровно одному DM/root Group/Section. Room snapshot — metadata.
 - Обычный вход в Group → Chat. Live badge → Войс. Чат/Войс/Люди взаимоисключающие; внутренний id `now` не переименовывается.
-- Join → Full Room в main content area. Global sidebar остаётся доступным.
+- Join/Switch → current state внутри Group / Войс. Explicit Expand → Full Room
+  в main content area; global sidebar остаётся доступным.
 - Chat drawer → тот же выбранный Section Group Chat без implicit room/session filter.
 - Открытие DM, другой Group, Search/Profile → Mini той же session. Это не новый join/switch.
 - Switch внутри actual active Group без confirmation; между voice contexts — с confirmation.
 - Guest scope ограничен одной LiveSession; guest не видит Group Chat и не становится member при signup автоматически.
 
-Сквозной interaction contract — §1 IA spec: ordinary actions сразу, короткий ввод inline, небольшие selectors/invites в одном popover, большие формы/settings в main route. Не заменять лишние modal лишними drawers. Join, temporary create-and-join, same-group switch, mute и self-leave — одно осознанное действие при готовых разрешениях. Никакого обязательного prejoin wizard или повторного Join после platform permission.
+Сквозной interaction contract — §1 IA spec: ordinary actions сразу, короткий ввод inline, небольшие selectors/invites в одном popover, большие формы/settings в main route. Не заменять лишние modal лишними drawers. Whole-card join/switch, Split, mute и self-leave — одно осознанное действие при готовых разрешениях. Никакого обязательного prejoin wizard или повторного Join после platform permission.
 
-`+ Комната` создаёт temporary Room и входит в неё существующей атомарной операцией с одним request ID. Default name «Новая комната» проходит действующие правила имён; optional rename — inline уже в Full Room. Type/icon/privacy/capacity не требуют заполнения до входа. Pin — отдельное действие после создания при наличии права. Cross-context confirmation выполняется до mutation; cancel не создаёт Room. Platform permission/source picker и подтверждения destructive consequences допустимы, но не оборачиваются дополнительными product dialogs.
+`Split` создаёт temporary Room и переключает только инициатора существующей
+атомарной операцией с одним request ID, без имени и setup. `Вуп` создаёт тот же
+тип Room только после server-confirmed accept конкретного получателя и никогда
+не перемещает его принудительно. `+ Комната` создаёт permanent/pinned Room через
+короткий deliberate flow. Cross-context confirmation выполняется до mutation;
+cancel не создаёт Room. Platform permission/source picker и подтверждения
+destructive consequences допустимы, но не оборачиваются дополнительными
+product dialogs.
 
 Лобби занимает отдельный компактный блок в Сейчас и постоянную первую позицию над разделителем локального switcher. Пустое Лобби не создаёт Chat Shelf. При скрытом switcher дополнительная Room имеет прямое действие `В Лобби` в header, включая 360 px. Оно выполняет same-group switch; self-leave прекращает участие и не отправляет в Лобби. `Комнаты · N` исключает Lobby; `N разговоров` включает занятое Lobby; голосовой roster не заполняется online/member presence. Использовать существующие Room/LiveSession contracts; permanent Lobby не означает permanent media session. Закрытие комнаты, kick, refresh и guest invite не создают автоматический вход в Лобби.
 
-Запрещённые интерпретации brief: полноэкранный Room modal вместо main; отдельная room-owned история; второй global sidebar; permanent Chat + People + Room одновременно; десятки горизонтальных sections tabs; новый media provider для drawer/Mini; скрытый auto-join по route/hover; client-only authorization.
+Запрещённые интерпретации brief: полноэкранный Room modal вместо main; auto-Full
+после клика карточки; отдельная Join-кнопка внутри Room card; `+ Комната` как
+temporary shortcut; принудительный Voop; отдельная room-owned история; второй
+global sidebar; permanent Chat + People + Room одновременно; десятки
+горизонтальных sections tabs; новый media provider для drawer/Mini; скрытый
+auto-join по route/hover; client-only authorization.
 
 ## 2. Что в репозитории уже есть
 
@@ -102,7 +121,7 @@ Presentation (`full/mini`, drawer, fullscreen, selected stream) не владе�
 | ID | Действие | Ожидаемый результат |
 | --- | --- | --- |
 | IA-01 | Открыть Group без live | Chat; нет пустого Shelf контейнера |
-| IA-02 | Появились 8 occupied rooms | Bounded Shelf + подписанный overflow; каждая доступна по имени и Join |
+| IA-02 | Появились 8 occupied rooms | Bounded Shelf + подписанный overflow; каждая доступна по имени и whole-card Switch |
 | IA-03 | Добавить/найти 30-й Section | Width toolbar не растёт; searchable picker; stable shortcuts |
 | IA-04 | Читать Game при unread в Мемах | Только viewed range Game считается прочитанным |
 | IA-05 | Join DRG | Full Room занимает main; sidebar остаётся доступным, modal backdrop отсутствует |
@@ -123,19 +142,21 @@ Presentation (`full/mini`, drawer, fullscreen, selected stream) не владе�
 | IA-20 | Refresh/Back/deep link | Просмотр route не начинает новый звонок; active session reconciles |
 | IA-21 | Room archive после сообщений | Сообщения доступны через прежний Group/Section/search/pins/media по тем же правам |
 | IA-22 | Access revoked / session on another device | Media stop/reconcile; нет ложного connected или доступной cached private history |
-| IA-23 | `+ Комната` из своей Group | Одно действие create-and-join; без обязательной формы, temporary/default name, final Full geometry |
+| IA-23 | `Split` из своей Group | Одно действие create-and-switch; без имени/setup; temporary lifecycle; Group / Войс остаётся открытым |
 | IA-24 | Rename новой Room / создать Section | Inline ввод и Enter; validation/retry на месте, без modal |
 | IA-25 | Первый Join с запросом микрофона | После platform allow продолжается исходный join; повторное подтверждение входа не появляется |
 | IA-26 | Invite link / device change | Один popover, success/error на месте; без вложенных dialogs и без потери сессии |
 | IA-27 | Создать Room при другом active context, отменить | Текущий разговор продолжается; Room и новая session не созданы |
 | IA-28 | Перейти между main/drawer/mobile selector | Нет добавленных шагов только ради layout; draft/scroll/focus сохраняются |
 | IA-29 | Открыть Group с тремя людьми в Лобби | Chat + реальный roster в Shelf; у просмотревшего нет нового participant record или аудиоподписки |
-| IA-30 | Нажать общий voice action группы | Сразу Join Lobby в main, без выбора комнаты; target-specific Join и create-and-join обходят Lobby |
+| IA-30 | Нажать карточку Lobby/Room | Сразу join/switch с pending/current state в карточке; Full открывается только по Expand |
 | IA-31 | Трое в Lobby, двое в DRG, один online вне голоса | `5 в голосе · 2 разговора`; `Комнаты · 1`; online не изображён в Lobby. Недоступный roster не раскрывается |
 | IA-32 | DRG → `В Лобби` на desktop и 360 px | Прямое видимое действие, один switch без picker/confirm; перед ACK нет ложного placement |
 | IA-33 | DRG → self-leave / закрытие Room / kick | Нет автоматического участия в Lobby; media stop/reconcile и корректные права на дальнейшие действия |
 | IA-34 | Последний человек покидает Lobby | LiveSession завершается, постоянная Lobby остаётся; Chat Shelf исчезает при отсутствии других разговоров |
 | IA-35 | Уже в Lobby → header `Открыть разговор` | Возвращается тот же Full; повторная session не создаётся; mic/share не перезапускаются |
+| IA-36 | `+ Комната` | Создаётся permanent/pinned Room через deliberate flow; temporary Split не создаётся |
+| IA-37 | `Вуп` человеку → decline/accept | Decline ничего не меняет; accept атомарно создаёт Split и переносит только согласившихся участников |
 
 Проверять не только source regex. Native logic tests покрывают инварианты, browser interaction — действия/фокус/read state, два реальных клиента — membership/media, screenshots — layout. Ни один тип проверки не заменяет остальные.
 

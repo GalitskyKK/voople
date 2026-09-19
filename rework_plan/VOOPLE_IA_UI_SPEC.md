@@ -12,13 +12,45 @@
 2. Group открывает Chat. `Чат / Войс / Люди` — взаимоисключающие views. `Войс` — пользовательское название Group live overview; внутренний id `now` сохраняется.
 3. Group Chat — постоянный текстовый контекст группы с необязательными Sections. Room не владеет сообщениями.
 4. Активный live появляется над Chat в ограниченном по высоте Live Shelf. Пустой Shelf отсутствует.
-5. `Зайти` открывает Full Room **вместо main content area**, оставляя global sidebar.
+5. Нажатие всей Room card выполняет join/switch и оставляет пользователя в
+   Group / Войс с явным current state. Full Room **вместо main content area**
+   открывается отдельным действием раскрытия, оставляя global sidebar.
 6. Full Room имеет один локальный Room Switcher. Его присутствие зависит от полезной ширины stage.
 7. Кнопка `Чат` в Full Room показывает обычный Group Chat в contextual drawer. По умолчанию без фильтра по Room/LiveSession.
 8. Навигация в другую Group, DM, Search или Profile сворачивает сессию в Mini Room. Она не переключает сам разговор.
 9. Максимум одна активная live-сессия на пользователя, включая другие устройства. Сервер — источник истины.
 10. Room Guest видит только разрешённую ему Room; полный Group Chat ему не открывается.
 11. Лобби — постоянный общий разговор группы, выделенный среди дополнительных комнат. Открыть группу означает увидеть общий контекст; явное действие входа в голос без выбранной комнаты ведёт прямо в Лобби. Автоматического подключения к звуку при навигации нет. Подробный контракт — §9.
+12. `Split` создаёт безымянный temporary разговор и перемещает только инициатора;
+    `Вуп` приглашает конкретного человека и создаёт Split только после accept.
+    `+ Комната` создаёт deliberate permanent/pinned Room.
+
+### Voice-first interaction delta — 19 сентября 2026
+
+Это уточнение заменяет старые подписи и переходы во всём документе:
+
+- Room card — единый доступный hit target для Switch. Внутри нет отдельной
+  кнопки `Зайти`; overflow не должен перехватывать клик карточки.
+- Join/switch показывает pending прямо в карточке, затем current marker и
+  компактные controls. Full stage не раскрывается сам.
+- `Split` доступен рядом с текущим разговором и не открывает форму имени,
+  privacy или capacity. Empty Split удаляется существующим grace lifecycle.
+- `Вуп` находится в hover/focus/context actions человека. Invite компактен,
+  имеет accept/decline/expired, а сервер создаёт и переключает только после
+  явного accept. Force-move отсутствует даже у владельца Group.
+- `+ Комната` остаётся лёгкой dashed tile, но ведёт к осознанному созданию
+  постоянной/закрепляемой Room. Это не Split.
+- Leave находится у current Room в hover/focus/context state и остаётся
+  keyboard/touch доступным. Отдельный dock не требуется для выхода.
+- Full, screen share и расширенные media controls открываются по явному Expand;
+  Mini появляется после пользовательского сворачивания Full, а не дублирует
+  и без того видимый roster на обычном Group / Войс.
+
+Визуальный характер: near-black/deep navy, холодный `#8FD3FF`-диапазон для
+brand accent, бело-голубые highlights, бордовый только как слабый атмосферный
+фон, зелёный только для online. Карточки имеют тёмный центр, тонкую границу и
+мягкий медленный specular glint по верхнему краю при hover/focus; случайные glow
+blobs и oversized primary buttons запрещены.
 
 ### Сквозной принцип: действие без промежуточного экрана
 
@@ -28,8 +60,10 @@
 
 | Действие | Минимальный путь | Поверхность |
 | --- | --- | --- |
-| Войти в существующую Room/Lobby | Один click «Зайти» | Сразу Full Room в main, connecting внутри; без промежуточного Voople prejoin dialog |
-| Создать временную Room | Один click `+ Комната` = создать и войти | Сразу конечная Room surface; имя по умолчанию, optional inline rename после входа |
+| Войти/переключиться в существующую Room/Lobby | Один click всей карточки | Pending и current state в Group / Войс; без отдельной Join-кнопки и prejoin dialog |
+| Создать временный разговор | Один click `Split` | Создать без имени/setup и переместить только инициатора; Group / Войс остаётся текущей поверхностью |
+| Позвать человека в отдельный разговор | `Вуп` у человека → accept получателя | После accept создать Split и переместить обоих; decline/timeout ничего не перемещает |
+| Создать постоянную Room | Один click `+ Комната` | Лёгкий deliberate creation flow; новая Room не подменяет Split |
 | Назвать/переименовать Room | Click имени → текст → Enter | Inline field; Escape отменяет правку, ошибка под полем |
 | Закрепить Room | Action «Закрепить» при наличии права | Обновляется marker; без создания ещё одной Room и без подтверждения |
 | Сменить Room внутри Group | Один click цели | Pending в текущей поверхности, затем actual placement; без нового setup |
@@ -45,13 +79,26 @@
 | Выйти из своего разговора | Один click leave | Сразу local stop + server reconciliation; без «Вы уверены?» |
 | Удалить данные / завершить разговор всем | Явное подтверждение конкретного последствия | Inline confirm либо один dialog; без вложенных подтверждений |
 
-**Создание Room.** Default — temporary с именем «Новая комната», нормализованным существующими правилами имён; если контракт требует уникальности, имя выбирается сервером. Никаких обязательных полей icon/type/privacy/capacity перед первым разговором. Имя меняется на месте в Full Room, pinned применяется отдельным действием при правах. Создание и join используют существующую атомарную операцию и один request ID. Повторный click не создаёт дубль. При cancel во время pending согласовать поздний ответ и компенсировать участие; пустую temporary Room завершает существующий lifecycle. Если уже идёт разговор в другой Group/DM, предупреждение предшествует mutation: отмена не оставляет созданную Room.
+**Создание Room и Split.** Обычная `+ Комната` создаёт постоянную/закрепляемую
+Room через короткий deliberate flow и не подключает пользователя скрыто.
+Temporary создаётся только действием Split либо принятым Voop. Split не имеет
+обязательного имени, icon/type/privacy/capacity; create-and-switch использует
+один request ID. Повторный click не создаёт дубль. При cancel/late ACK нужна
+session-bound компенсация; пустую temporary Room завершает существующий grace
+lifecycle. Если уже идёт разговор в другой Group/DM, предупреждение предшествует
+mutation: отмена не оставляет созданную Room.
 
 **Первый вход.** Отдельный product prejoin экран не обязателен. Разрешение микрофона запрашивает платформа после явного Join; запрос, denied/retry и выбор устройства отображаются внутри конечной Room surface. При доступной возможности разрешить слушать без микрофона. После platform permission не просить повторно нажать «Зайти». Guest nickname вводится на уже открытом invite preview; отдельное окно регистрации перед участием не появляется.
 
 **Mobile.** Маленький anchored picker может стать одним bottom sheet с теми же действиями. Это адаптация списка к touch, а не дополнительный шаг. Sheet не открывает поверх себя следующий sheet: inline ввод заменяет его содержимое с понятным Back. При переходе на основную поверхность picker закрывается автоматически.
 
-**Бюджет взаимодействия.** Join, same-group switch, temporary create-and-join, mute и leave — одно осознанное действие при готовых разрешениях и доступе. Действие даёт локальную визуальную реакцию сразу; animation не задерживает mutation. Сеть, permission, авторизация и recovery остаются реальными состояниями, а не маскируются ложным успехом. При смене views сохраняются draft, scroll, selected Section, session и осмысленный focus. Эти правила проверять одинаково в web/desktop/mobile.
+**Бюджет взаимодействия.** Whole-card join/switch, Split, mute и leave — одно
+осознанное действие при готовых разрешениях и доступе. Voop требует ровно одного
+accept со стороны получателя. Действие даёт локальную визуальную реакцию сразу;
+animation не задерживает mutation. Сеть, permission, авторизация и recovery
+остаются реальными состояниями, а не маскируются ложным успехом. При смене views
+сохраняются draft, scroll, selected Section, session и осмысленный focus. Эти
+правила проверять одинаково в web/desktop/mobile.
 
 ## 2. Что ушло не туда в текущем UI
 
@@ -66,7 +113,7 @@
 | Header, отдельная полоса Group tabs и отдельная полоса Sections | current1–3 | Высота chrome расходуется до первого сообщения | На широком desktop identity, Group tabs и CTA в одном header 64 px; sections toolbar 36 px |
 | Online-status разнесён к правому краю, роли повторяются у каждого человека | current2 | People напоминает справочник/таблицу администрации | Имя и положение рядом; роль вторична, управление через context menu |
 | Очень маленькая metadata и контент у краёв широкого полотна | current1–3 | Большое разрешение не превращается в удобочитаемую композицию | Ограниченная ширина stream; основной текст 14/20 px, metadata 12/16 px |
-| В Shelf кодом реализованы небольшие горизонтальные chips без состава | `GroupLiveShelfView` | Названия видны, «кто где» приходится выяснять отдельно | Компактные строки с 2–3 avatar tokens, count и явным Join; bounded overflow |
+| В Shelf кодом реализованы небольшие горизонтальные chips без состава | `GroupLiveShelfView` | Названия видны, «кто где» приходится выяснять отдельно | Компактные строки с 2–3 avatar tokens и count; вся строка выполняет Switch; bounded overflow |
 | Full Room размещён в `Sheet` | `VoiceRoomSheet` | Глобальная навигация и room surface принадлежат разным overlay слоям | Full Room — main-area composition; invites/device selection — anchored popovers; большие settings — отдельная страница |
 | Room panel фильтрует по `liveSessionId`, называется «Сообщения комнаты» | `RoomMessagesPanel` | Пользователь видит неполный групповой контекст и может ожидать отдельную историю | Переиспользовать полный Conversation view; header «Чат группы · VOICEKK» |
 
@@ -291,12 +338,17 @@ Join/leave/move не создают отдельные видимые сообщ
 
 **Прямой вход.** Если человек сам нажал голосовое действие группы, а конкретная комната не выбрана, подключаем прямо в Лобби: без выбора комнаты, modal или обязательного setup. В header остаётся одна компактная точка входа `Войти в Лобби` с доступным названием «Присоединиться к общему разговору группы». В блоке самого Лобби действие называется `Начать разговор`, если оно пусто, и `Присоединиться`, если там есть люди. На узком экране допустимо короткое `Зайти` с тем же полным accessible name. Это один и тот же join, а не разные сценарии. При неизвестном статусе не утверждать, что разговор пуст: нейтральное `Войти в Лобби` + состояние загрузки/ошибки.
 
-Если пользователь уже участвует в разговоре, header показывает фактические Group/Room и действие `Открыть разговор`; повторного Join в текущую сессию нет. Явный переход в Лобби доступен в Shelf/Войс и локальном switcher. Выбор конкретной DRG или `+ Комната` ведёт сразу к цели, минуя Лобби. Общий разговор — удобный default, а не обязательная пересадка.
+Если пользователь уже участвует в разговоре, header показывает фактические
+Group/Room и действие `Открыть разговор`; повторного Join в текущую сессию нет.
+Явный переход в Лобби доступен в Shelf/Войс и локальном switcher. Выбор карточки
+DRG ведёт прямо к ней, `Split` создаёт временный разговор, а `+ Комната` открывает
+создание постоянной Room. Общий разговор — удобный default, а не обязательная
+пересадка.
 
 | Ситуация | Результат |
 | --- | --- |
 | Открыть приложение, Group или приглашение в Group | Видеть общий контекст; не подключаться к голосу автоматически |
-| Нажать `Войти в Лобби` без текущего разговора | Один join в Lobby → Full в main; в пустом Лобби пользователь начинает разговор |
+| Нажать карточку Лобби без текущего разговора | Один join в Lobby; карточка становится current, Full не раскрывается автоматически |
 | Открыть DRG по ссылке | Показать указанную цель; явный Join ведёт сразу в DRG, без захода в Лобби |
 | Уже в Лобби → выбрать DRG | Один атомарный switch; server ACK определяет фактическое место |
 | Уже в DRG → `В Лобби` | Один switch в общий разговор; без подтверждения внутри той же Group |
@@ -316,14 +368,19 @@ Join/leave/move не создают отдельные видимые сообщ
 
 ### Сейчас: порядок сверху вниз
 
-1. Компактный summary `5 в голосе · 2 разговора` и action `+ Комната`.
-2. Отдельный блок `Лобби · Общий разговор`: активное — компактный roster и Join; пустое — строка 40 px `Лобби · Начать разговор`.
+1. Компактный summary `5 в голосе · 2 разговора`, actions `Split` и `+ Комната`.
+2. Отдельный блок `Лобби · Общий разговор`: вся карточка — join/switch; активное — компактный roster и current/Expand/Leave state, пустое — строка 40 px `Лобби · Начать разговор`.
 3. Секция `Комнаты · N` с active дополнительными Rooms: стабильный порядок, текущая с marker «Вы здесь»; pinned status не поднимает пустую Room выше активной. При отсутствии дополнительных комнат пустая секция не рисуется; `+ Комната` остаётся доступной по правам.
 4. Online outside rooms: компактные avatar/name tokens, не полноценная ещё одна «комната Онлайн».
 5. Empty pinned: collapsed section `Закреплённые (N)`, row 40 px.
 6. Temporary grace: короткая помеченная строка только пока сервер возвращает grace; после archive исчезает, текст остаётся в Group Chat.
 
-Active row: room name слева, люди рядом кластером, справа speaking/share и Join. Нет колонок role/created date/capacity как в admin table. До 6 участников показываются компактно; остальные через `+N` с accessible списоком. Когда имён много, row может вырасти до 112 px; не растягивать по экрану каждый avatar. Create — обычная кнопка, default Temporary; pinned только при наличии права.
+Active row: room name слева, люди рядом кластером, справа speaking/share и
+контекстные current/Expand/Leave controls; отдельной Join-кнопки нет. До 6
+участников показываются компактно; остальные через `+N` с accessible списком.
+Когда имён много, row может вырасти до 112 px; не растягивать по экрану каждый
+avatar. `Split` — temporary без setup; `+ Комната` — dashed deliberate tile для
+permanent/pinned Room.
 
 Вход из Сейчас открывает Full Room. После leave возврат в прежний Group view Сейчас сохраняется. Состояние «вы здесь» всегда отражает session store, даже когда пользователь просматривает другую Group.
 
@@ -413,8 +470,8 @@ Room switch из Mini выполняется в popover и сохраняет т
 | ID | Основной экран | Одновременно видимо | Отсутствует | Выход / ошибка |
 | --- | --- | --- | --- | --- |
 | A | Group Chat, никто live | Global + Group header + sections при наличии + stream + composer | Shelf, switcher, stage | Empty chat invitation; offline draft + retry |
-| B | Group Chat, active live | Всё A + bounded Shelf | Permanent People/room panel | Join → connecting Full; stale Shelf помечен |
-| C | Group Сейчас | Global + header + flat rooms/people clusters | Main chat/composer | Join → Full; list error inline |
+| B | Group Chat, active live | Всё A + bounded Shelf | Permanent People/room panel | Join/switch → compact current state; stale Shelf помечен |
+| C | Group Войс | Global + header + flat rooms/people clusters | Main chat/composer | Whole-card switch; Expand → Full; list error inline |
 | D | Group Люди | Global + header + searchable people list | Main Chat/Room/Shelf | Profile по действию; privacy-aware unknown status |
 | E | Full Room voice | Global + local switcher по B + voice stage + controls | Group tabs, main chat, Mini | Minimize → предыдущий route; reconnect в stage |
 | F | Full Room share | Global + switcher по B + focused stream + participant strip + controls | Chat до открытия | Stream ended → voice/оставшийся stream |
@@ -643,7 +700,7 @@ E/F/G/H -- Leave --> leaving -- acknowledged/reconciled --> no active session
 | Переход | Мгновенная реакция UI | Что ожидается | Animation | Confirmation |
 | --- | --- | --- | --- | --- |
 | Group click / Chat↔Сейчас↔Люди | Выбран view, cached данные/skeleton | Query по необходимости | 0–120 ms | Нет |
-| Join, без другой сессии | Full geometry, connecting | Permissions + server join + media readiness | 120–180 ms | Только явный Join; first permission по платформе |
+| Join, без другой сессии | Pending в Room card, затем current state | Permissions + server join + media readiness | 120–180 ms | Только явный click карточки; first permission по платформе |
 | Join в другую Room той же Group | Pending marker цели; old actual room до ACK | Atomic switch + media reconciliation | 120–200 ms | Нет |
 | Join в другую Group / DM→Group / Group→DM | Короткий confirmation с названием текущего и целевого разговора | После согласия authoritative switch | 120–180 ms после согласия | Да: текущий разговор закончится |
 | Open/close Chat | Panel/split появляется, focus управляется | History при cache miss | 160 ms | Нет |
@@ -768,6 +825,11 @@ ConversationState [canonical cache/store]
 
 Ключевые сценарии: A→B→F→G→F→H→другая Group→DM→switch same Group→leave; DM incoming/decline/accept; cross-context cancel/confirm; guest valid/expired/revoked; lost join response; switch с active share; server state изменён другим устройством; draft/reply/upload сохранены при всех UI переходах.
 
-Отдельный gate простоты: temporary create-and-join одним click без формы, optional rename после входа, device selection и invite без modal chain, Section creation inline, отсутствие повторного Join после permission. Для каждого основного действия записать число осознанных шагов и проверить сохранение draft/scroll/focus. Замена modal на drawer при сохранении лишних шагов не закрывает этот gate.
+Отдельный gate простоты: whole-card switch и Split одним click, Voop с одним
+accept получателя, permanent Room отдельно через `+ Комната`, device selection и
+invite без modal chain, Section creation inline, отсутствие повторного Join
+после permission. Для каждого основного действия записать число осознанных шагов
+и проверить сохранение draft/scroll/focus. Замена modal на drawer при сохранении
+лишних шагов не закрывает этот gate.
 
 Architecture, native Node tests, lint, TypeScript, web/desktop production checks выполняются из checkout вне `node_modules`. В delivery matrix вносятся реальные web/desktop/responsive/state/test результаты. Этот документ сам по себе не меняет ни одной строки на «Готово».

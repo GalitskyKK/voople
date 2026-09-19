@@ -190,8 +190,8 @@ registry и Linux/macOS capture feasibility без обещания публич
 
 Доменный cutover ведётся отдельно по
 [`docs/domain-cutover-checklist.md`](./domain-cutover-checklist.md). Он обязателен
-перед отключением `voople.ru`, включая перенос self-hosted LiveKit и desktop
-endpoints на `voople.app`.
+перед окончательным удалением старых `.ru` endpoints, включая перенос
+self-hosted LiveKit и desktop endpoints на `voople.app`.
 
 ## 8. Platform references
 

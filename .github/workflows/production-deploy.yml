@@ -1,0 +1,101 @@
+name: Production web deploy
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "web-v*"
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: production-web
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    name: Build immutable web image
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Resolve image name
+        id: meta
+        shell: bash
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}/web:${GITHUB_SHA}"
+          echo "image=${image}" >> "${GITHUB_OUTPUT}"
+
+      - name: Authenticate to GHCR
+        shell: bash
+        run: echo "${{ github.token }}" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
+
+      - name: Build production image
+        shell: bash
+        run: |
+          docker build \
+            --file Dockerfile \
+            --build-arg NEXT_PUBLIC_APP_URL=https://voople.app \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL="${{ vars.NEXT_PUBLIC_SUPABASE_URL }}" \
+            --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
+            --build-arg NEXT_PUBLIC_ASSETS_CDN_URL=https://cdn.voople.app \
+            --build-arg NEXT_PUBLIC_LIVEKIT_URL=wss://rtc.voople.app \
+            --build-arg NEXT_PUBLIC_APP_RELEASE="${GITHUB_SHA}" \
+            --tag "${{ steps.meta.outputs.image }}" \
+            .
+
+      - name: Push immutable image
+        run: docker push "${{ steps.meta.outputs.image }}"
+
+  deploy:
+    name: Deploy to Selectel
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - name: Check out deployment configuration
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Configure SSH trust
+        shell: bash
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "${{ secrets.PRODUCTION_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload deployment configuration
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.PRODUCTION_SSH_HOST }}
+          DEPLOY_PORT: ${{ secrets.PRODUCTION_SSH_PORT }}
+          DEPLOY_USER: ${{ secrets.PRODUCTION_SSH_USER }}
+        run: |
+          target="${DEPLOY_USER}@${DEPLOY_HOST}"
+          ssh -p "${DEPLOY_PORT}" "${target}" "mkdir -p /opt/voople"
+          tar -C deploy/production -czf - compose.yaml Caddyfile \
+            | ssh -p "${DEPLOY_PORT}" "${target}" "tar -xzf - -C /opt/voople"
+
+      - name: Start release and wait for health
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.PRODUCTION_SSH_HOST }}
+          DEPLOY_PORT: ${{ secrets.PRODUCTION_SSH_PORT }}
+          DEPLOY_USER: ${{ secrets.PRODUCTION_SSH_USER }}
+          VOOPLE_IMAGE: ${{ needs.build-and-push.outputs.image }}
+        run: |
+          target="${DEPLOY_USER}@${DEPLOY_HOST}"
+          ssh -p "${DEPLOY_PORT}" "${target}" \
+            "test -s /opt/voople/.env && test -s /opt/voople/app.env"
+          ssh -p "${DEPLOY_PORT}" "${target}" \
+            "cd /opt/voople && VOOPLE_IMAGE='${VOOPLE_IMAGE}' docker compose pull && VOOPLE_IMAGE='${VOOPLE_IMAGE}' docker compose up -d --remove-orphans --wait --wait-timeout 120"
+          curl --fail --show-error --silent --retry 6 --retry-delay 5 \
+            https://voople.app/api/health

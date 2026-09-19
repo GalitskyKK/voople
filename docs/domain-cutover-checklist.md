@@ -9,8 +9,9 @@
 
 1. Добавить DNS-зону `voople.app` у выбранного DNS-провайдера. Регистратор и
    DNS-хостинг могут быть разными; перенос инфраструктуры с Selectel не нужен.
-2. Подключить `voople.app` и нужный `www`-вариант к Vercel, выпустить TLS и
-   выбрать один canonical host.
+2. Направить `voople.app` и `www.voople.app` на Selectel VDS, развернуть
+   tracked Caddy/Compose-конфигурацию, выпустить TLS и оставить `voople.app`
+   canonical host. Vercel удалить из production DNS после smoke.
 3. Добавить новые Supabase Auth Site URL и redirect allowlist для web, desktop
    callback/deep links и email confirmation. Старые callbacks не удалять до
    проверки новой сборки.
@@ -18,7 +19,7 @@
    шаблоны и все ссылки из писем. Проверить доставку на нескольких почтовых
    провайдерах.
 5. Перенести self-hosted LiveKit до отключения `.ru`:
-   - создать DNS для `rtc-ru.voople.app` и отдельного TURN-host, если он
+   - создать DNS для `rtc.voople.app` и отдельного TURN-host, если он
      используется;
    - выпустить доверенные TLS-сертификаты для signaling и TURN/TLS;
    - обновить reverse proxy/Caddy и `turn.domain` в LiveKit;
@@ -32,12 +33,13 @@
    приглашениях, Open Graph, legal/support links, sitemap/robots, release
    workflows, тестах и документации. Перед изменением использовать `rg`, а не
    слепую глобальную замену.
-8. Обновить GitHub/Vercel/Selectel environment variables и secrets только через
+8. Обновить GitHub/Selectel environment variables и secrets только через
    защищённые настройки. Значения секретов в git не добавлять.
 
 ## Порядок переключения
 
-1. Развернуть backend/web и LiveKit на `.app`, пока `.ru` ещё работает.
+1. Развернуть backend/web и LiveKit на `.app`; доступность `.ru` не считать
+   условием cutover, так как production ещё не был публично запущен.
 2. Выпустить desktop-версию, которая использует `.app`, и проверить updater,
    auth callback, приглашение, чат и реальный звонок с демонстрацией экрана.
 3. Перевести всех существующих пользователей на новую сборку. Если redirect не
@@ -57,4 +59,3 @@
 - updater и release metadata больше не зависят от `.ru`;
 - `rg -n "voople\.ru"` оставляет только явно сохранённую историю либо ничего;
 - в репозитории, артефактах и логах нет ключей, токенов и приватных URL.
-

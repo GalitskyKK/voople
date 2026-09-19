@@ -12,7 +12,7 @@ export function ProfileShareCardButton({
   const publish = trpc.post.create.useMutation();
   const profileUrl =
     typeof window === "undefined"
-      ? `https://voople.ru/${profile.username}`
+      ? `https://voople.app/${profile.username}`
       : `${window.location.origin}/${profile.username}`;
 
   return (

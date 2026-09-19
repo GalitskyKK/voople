@@ -18,9 +18,9 @@ const token = "a".repeat(43);
 test("Room guest links accept only opaque 256-bit base64url tokens and trusted origins", () => {
   assert.equal(isRoomGuestInviteToken(token), true);
   assert.equal(isRoomGuestInviteToken("short"), false);
-  assert.equal(roomGuestInviteUrl(token, "https://voople.ru"), `https://voople.ru/room-guest/${token}`);
+  assert.equal(roomGuestInviteUrl(token, "https://voople.app"), `https://voople.app/room-guest/${token}`);
   assert.equal(roomGuestInviteUrl(token, "http://localhost:3000"), `http://localhost:3000/room-guest/${token}`);
-  for (const origin of ["http://voople.ru", "https://user:pass@voople.ru", "https://voople.ru/path"]) {
+  for (const origin of ["http://voople.app", "https://user:pass@voople.app", "https://voople.app/path"]) {
     assert.equal(roomGuestInviteUrl(token, origin), null);
   }
 });

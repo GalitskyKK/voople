@@ -4,7 +4,7 @@ export const MERCHANT = {
   email: "ngalitskikh@gmail.com",
   status: "Плательщик налога на профессиональный доход (самозанятый)",
   serviceName: "Voople",
-  siteUrl: "https://voople.ru",
+  siteUrl: "https://voople.app",
 } as const;
 
 export const LEGAL_PAGES = [

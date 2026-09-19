@@ -10,7 +10,7 @@ const emojis = [
   {
     id: "emoji-chill",
     name: "chill_guy",
-    url: "https://cdn.voople.ru/chill.webp",
+    url: "https://cdn.voople.app/chill.webp",
     animated: false,
     createdBy: "user-1",
   },

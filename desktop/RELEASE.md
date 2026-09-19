@@ -52,8 +52,8 @@ promotion remain mandatory for every stable release.
 
 Configure these repository variables:
 
-- `DESKTOP_API_URL`, for example `https://voople.ru`
-- `DESKTOP_ASSETS_CDN_URL`, for example `https://cdn.voople.ru`
+- `DESKTOP_API_URL`, for example `https://voople.app`
+- `DESKTOP_ASSETS_CDN_URL`, for example `https://cdn.voople.app`
 - `DESKTOP_RELEASE_PUBLIC_BASE_URL`, the public bucket or CDN origin
 - `DESKTOP_TURNSTILE_SITE_KEY`, when Turnstile is enabled
 - `DESKTOP_RELEASE_S3_FORCE_PATH_STYLE`, set to `true` only when the provider

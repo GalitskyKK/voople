@@ -177,7 +177,7 @@ Guest Join нельзя оставлять только как поздний ac
 ```text
 участник создаёт live invite
         ↓
-voople.ru/invite/...
+voople.app/invite/...
         ↓
 web preview
         ↓

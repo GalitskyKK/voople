@@ -21,7 +21,7 @@ import "./styles.css";
 const root = document.getElementById("root");
 const desktopConfig = getDesktopConfig();
 setPublicAssetBaseUrl(desktopConfig?.assetsCdnUrl);
-const telemetryEndpoint = `${desktopConfig?.apiUrl ?? "https://voople.ru"}/api/telemetry`;
+const telemetryEndpoint = `${desktopConfig?.apiUrl ?? "https://voople.app"}/api/telemetry`;
 
 initializeClientTelemetry({
   enabled: import.meta.env.PROD,

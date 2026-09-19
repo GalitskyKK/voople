@@ -666,6 +666,18 @@ desktop Chat View и поведение сообщений не менялись
 
 ## Release acceptance gate
 
+### Self-hosted `.app` production path — 2026-09-19
+
+Web production больше не зависит от Vercel: добавлены non-root standalone
+Next.js image, Caddy с automatic TLS, внутренний healthcheck, ограничение
+container logs и immutable GHCR deploy на Selectel через защищённый GitHub
+environment. Активные web/desktop/invite/legal/CDN defaults переведены на
+`voople.app`; managed Supabase остаётся отдельным failure domain. Contract-тесты
+и `docker compose config` проходят. До operational acceptance остаются покупка
+VDS, создание DNS/TLS для app/CDN/LiveKit, внесение server secrets и реальный
+post-deploy smoke — наличие файлов в репозитории не считается работающим
+production.
+
 ### LiveKit infrastructure diagnostic — 2026-09-14
 
 Добавлен отдельный `npm run check:livekit`: он создаёт одноразовую двухминутную

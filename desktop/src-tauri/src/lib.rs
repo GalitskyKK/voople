@@ -533,7 +533,7 @@ mod deep_link_tests {
     #[test]
     fn rejects_untrusted_or_unknown_links() {
         for value in [
-            "https://voople.ru/room-invites/3b3a40a0-ff6e-4d1a-9864-f25ad830f1e3",
+            "https://voople.app/room-invites/3b3a40a0-ff6e-4d1a-9864-f25ad830f1e3",
             "voople://room-invites/not-an-id",
             "voople://room-invites/3b3a40a0-ff6e-4d1a-9864-f25ad830f1e3?accept=1",
             "voople://settings/3b3a40a0-ff6e-4d1a-9864-f25ad830f1e3",

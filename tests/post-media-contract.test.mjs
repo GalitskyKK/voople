@@ -28,8 +28,8 @@ test("post media count and free/Plus limits match the product contract", () => {
 
 test("gallery dual-read prefers ordered post_media and falls back to legacy fields", () => {
   const media = [
-    { id: "second", position: 2, url: "https://cdn.voople.ru/2.webp", type: "image" },
-    { id: "first", position: 0, url: "https://cdn.voople.ru/1.webp", type: "image" },
+    { id: "second", position: 2, url: "https://cdn.voople.app/2.webp", type: "image" },
+    { id: "first", position: 0, url: "https://cdn.voople.app/1.webp", type: "image" },
   ];
   assert.deepEqual(
     normalizePostMedia({ id: "post", media, mediaUrl: "legacy", mediaType: "image" }).map((item) => item.id),

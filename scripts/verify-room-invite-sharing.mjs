@@ -62,7 +62,7 @@ try {
       }});
     }, theme);
     await page.waitForFunction(theme => document.documentElement.dataset.appTheme === theme, theme);
-    const url="https://voople.ru/room-invites/10000000-0000-4000-8000-000000000001";
+    const url="https://voople.app/room-invites/10000000-0000-4000-8000-000000000001";
     const candidate={id:"person",displayName:"Участник с длинным именем",username:"long_username_for_invitation",avatarUrl:null,invite:{id:"10000000-0000-4000-8000-000000000001",status:"pending",expiresAt:"2026-09-04T10:15:00Z",shareUrl:url}};
     const set=async(data)=>page.evaluate(data=>window.setCandidates({data:[data],isLoading:false,fetchStatus:"idle"}),data);
     await set(candidate);

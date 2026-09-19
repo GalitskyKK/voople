@@ -6,16 +6,16 @@ import { coreRoomInviteUrl } from "../src/lib/chat/core-room-invite-url.ts";
 import { shareLink } from "../src/lib/platform/share-link.ts";
 
 const id = "10000000-0000-4000-8000-000000000001";
-const url = `https://voople.ru/room-invites/${id}`;
+const url = `https://voople.app/room-invites/${id}`;
 
 test("invite URLs use the server website, not a desktop WebView origin", () => {
-  assert.equal(coreRoomInviteUrl(id, "https://voople.ru"), url);
+  assert.equal(coreRoomInviteUrl(id, "https://voople.app"), url);
   assert.equal(coreRoomInviteUrl(id, "https://staging.example.com/"), `https://staging.example.com/room-invites/${id}`);
   assert.equal(coreRoomInviteUrl(id, "http://localhost:3000"), `http://localhost:3000/room-invites/${id}`);
-  for (const base of ["tauri://localhost", "http://tauri.localhost", "http://example.com", "https://user:password@example.com", "https://voople.ru/path", "https://voople.ru/?token=x", "https://voople.ru/#x", "not a URL"]) {
+  for (const base of ["tauri://localhost", "http://tauri.localhost", "http://example.com", "https://user:password@example.com", "https://voople.app/path", "https://voople.app/?token=x", "https://voople.app/#x", "not a URL"]) {
     assert.equal(coreRoomInviteUrl(id, base), null);
   }
-  assert.equal(coreRoomInviteUrl("../settings", "https://voople.ru"), null);
+  assert.equal(coreRoomInviteUrl("../settings", "https://voople.app"), null);
 });
 
 test("successful native sharing never also writes the clipboard", async () => {
@@ -32,7 +32,7 @@ test("successful native sharing never also writes the clipboard", async () => {
 test("cancelling the native sheet does not silently copy a private invitation", async () => {
   let copies = 0;
   const result = await shareLink({ url }, {
-    origin: "https://voople.ru", share: async () => { throw { name: "AbortError" }; },
+    origin: "https://voople.app", share: async () => { throw { name: "AbortError" }; },
     copy: async () => { copies++; },
   });
   assert.equal(result, "cancelled");
@@ -53,17 +53,17 @@ test("unavailable or failed native sharing falls back to clipboard", async () =>
   for (const share of [undefined, async () => { throw new Error("unsupported"); }]) {
     const copied = [];
     assert.equal(await shareLink({ url: "/example?ask=1" }, {
-      origin: "https://voople.ru", share, copy: async (value) => copied.push(value),
+      origin: "https://voople.app", share, copy: async (value) => copied.push(value),
     }), "copied");
-    assert.deepEqual(copied, ["https://voople.ru/example?ask=1"]);
+    assert.deepEqual(copied, ["https://voople.app/example?ask=1"]);
   }
 });
 
 test("clipboard failure remains actionable, unsafe links never reach platform APIs", async () => {
-  await assert.rejects(shareLink({ url }, { origin: "https://voople.ru" }));
-  await assert.rejects(shareLink({ url }, { origin: "https://voople.ru", copy: async () => { throw new Error("denied"); } }));
+  await assert.rejects(shareLink({ url }, { origin: "https://voople.app" }));
+  await assert.rejects(shareLink({ url }, { origin: "https://voople.app", copy: async () => { throw new Error("denied"); } }));
   for (const value of ["javascript:alert(1)", "file:///tmp/private", "https://user:password@example.com"]) {
-    await assert.rejects(shareLink({ url: value }, { origin: "https://voople.ru", share: async () => assert.fail("unsafe share"), copy: async () => assert.fail("unsafe copy") }));
+    await assert.rejects(shareLink({ url: value }, { origin: "https://voople.app", share: async () => assert.fail("unsafe share"), copy: async () => assert.fail("unsafe copy") }));
   }
 });
 

@@ -45,11 +45,11 @@ test("ordinary internal destinations retain search and hash without external nav
 });
 
 test("email confirmation keeps only a validated continuation on the Voople callback", () => {
-  const callback = new URL(emailConfirmationRedirect("https://voople.ru/some/path", invite));
-  assert.equal(callback.origin, "https://voople.ru");
+  const callback = new URL(emailConfirmationRedirect("https://voople.app/some/path", invite));
+  assert.equal(callback.origin, "https://voople.app");
   assert.equal(callback.pathname, "/auth/confirm");
   assert.equal(callback.searchParams.get("redirect"), invite);
-  assert.equal(new URL(emailConfirmationRedirect("https://voople.ru", "//evil.example")).search, "");
+  assert.equal(new URL(emailConfirmationRedirect("https://voople.app", "//evil.example")).search, "");
   assert.throws(() => emailConfirmationRedirect("voople://desktop", invite));
 });
 

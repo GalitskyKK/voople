@@ -92,7 +92,7 @@ Configure these server-only Vercel values:
 - `ACCOUNT_DELETION_WORKER_SECRET`.
 
 GitHub Actions needs `ACCOUNT_DELETION_WORKER_URL` (for example
-`https://voople.ru`) and the same `ACCOUNT_DELETION_WORKER_SECRET`. The hourly
+`https://voople.app`) and the same `ACCOUNT_DELETION_WORKER_SECRET`. The hourly
 workflow is serialized and can also be started manually.
 
 Use three independent random secrets of at least 32 characters. Rotation of a

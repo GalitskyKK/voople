@@ -21,7 +21,7 @@ export function useTerminalVoiceRecovery(options: RecoveryOptions) {
   const mountedRef = useRef(true);
   const timerRef = useRef<number | null>(null);
   const attemptsRef = useRef(0);
-  const connectMediaRef = useRef<(() => Promise<void>) | null>(null);
+  const connectMediaRef = useRef<(() => Promise<unknown>) | null>(null);
   const optionsRef = useRef(options);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function useTerminalVoiceRecovery(options: RecoveryOptions) {
     cancelRecovery();
   }, [cancelRecovery]);
 
-  const setConnectMedia = useCallback((connectMedia: () => Promise<void>) => {
+  const setConnectMedia = useCallback((connectMedia: () => Promise<unknown>) => {
     connectMediaRef.current = connectMedia;
   }, []);
 

@@ -156,10 +156,13 @@ export function useVoiceRoomServerAdapter({
       isPending: false,
       error: null,
       run: async () => {
-        if (!coreRoom.data?.isInside) {
-          throw new Error("Сессия завершилась. Откройте комнату заново.");
+        // coreSession уже получен из успешного coreJoinRoom.
+        // Не блокируем media connect из-за отстающего coreGroupNow snapshot.
+        if (coreRoom.data?.isInside) {
+          return coreRoom.data;
         }
-        return coreRoom.data;
+    
+        return optimisticCoreView(coreSession);
       },
     },
     leave: {

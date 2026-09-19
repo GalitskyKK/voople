@@ -20,14 +20,14 @@ export function SavedMessagesShortcut({
   return renderDestination({
     className: cn(
       variant === "sidebar"
-        ? "voople-messenger-sidebar__row group flex min-h-11 w-full items-center gap-2 border-l-2 px-2 py-1.5 text-left transition-colors"
+        ? "voople-messenger-sidebar__row group flex min-h-11 w-full items-center gap-2 px-2 py-1.5 text-left transition-colors"
         : "voople-chat-list__row flex min-h-[4.25rem] w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors",
       active
         ? variant === "sidebar"
-          ? "border-[var(--theme-accent)] bg-[var(--app-accent-soft)] text-[var(--foreground)]"
+          ? "bg-[var(--app-accent-soft)] text-[var(--foreground)]"
           : "voople-chat-list__row--active bg-[var(--app-accent-soft)]"
         : variant === "sidebar"
-          ? "border-transparent text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
+          ? "text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
           : "hover:bg-[var(--app-surface-soft)]",
     ),
     children: (

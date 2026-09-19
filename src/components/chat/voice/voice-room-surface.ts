@@ -18,22 +18,51 @@ export type VoiceRoomSessionTransition =
 
 export const VOICE_ROOM_LIFECYCLE_TIMEOUT_MS = 10_000;
 
+export const VOICE_MEDIA_CREDENTIALS_TIMEOUT_MS = 12_000;
+export const VOICE_MEDIA_ENDPOINT_TIMEOUT_MS = 18_000;
+
+// Общий бюджет mediaConnection.connect(), включая получение credentials
+// и перебор всех LiveKit endpoints.
+export const VOICE_MEDIA_CONNECTION_TIMEOUT_MS = 35_000;
+
+// Последний watchdog на уровне UI.
+export const VOICE_MEDIA_SURFACE_TIMEOUT_MS = 40_000;
+
 export async function waitForVoiceRoomLifecycle<T>(
   operation: Promise<T>,
-  timeoutMs = VOICE_ROOM_LIFECYCLE_TIMEOUT_MS,
+  timeoutMs = VOICE_ROOM_LIFECYCLE_TIMEOUT_MS
 ): Promise<T> {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+
   const timeout = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(
       () => reject(new Error("Не удалось подтвердить изменение комнаты вовремя")),
-      timeoutMs,
-    );
-  });
+      timeoutMs
+    )
+  })
 
   try {
-    return await Promise.race([operation, timeout]);
+    return await Promise.race([operation, timeout])
   } finally {
-    if (timeoutId !== null) clearTimeout(timeoutId);
+    if (timeoutId !== null) clearTimeout(timeoutId)
+  }
+}
+
+export async function waitForVoiceMediaConnection<T>(
+  operation: Promise<T>,
+  timeoutMs = VOICE_MEDIA_CONNECTION_TIMEOUT_MS,
+  timeoutMessage = "Медиасервер не ответил вовремя. Повторите подключение или включите совместимый режим."
+): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs)
+  })
+
+  try {
+    return await Promise.race([operation, timeout])
+  } finally {
+    if (timeoutId !== null) clearTimeout(timeoutId)
   }
 }
 

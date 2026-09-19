@@ -41,6 +41,18 @@ export function formatGroupNowVoiceSummary(rooms: readonly GroupNowRoom[]) {
   return `${participantCount} в голосе · ${conversationCount} ${pluralizeConversations(conversationCount)}`;
 }
 
+export function formatGroupNowElapsed(startedAt: string | null, nowMs = Date.now()) {
+  if (!startedAt) return null;
+  const startedMs = Date.parse(startedAt);
+  if (Number.isNaN(startedMs)) return null;
+  const totalMinutes = Math.max(0, Math.floor((nowMs - startedMs) / 60_000));
+  if (totalMinutes < 1) return "только что";
+  if (totalMinutes < 60) return `${totalMinutes} мин`;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes === 0 ? `${hours} ч` : `${hours} ч ${minutes} мин`;
+}
+
 function pluralizePeople(count: number) {
   const mod100 = count % 100;
   const mod10 = count % 10;

@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   describeGroupNowRoom,
+  formatGroupNowElapsed,
   formatGroupNowVoiceSummary,
   isGroupNowQuiet,
   resolveGroupNowRoomAction,
@@ -50,6 +51,8 @@ test("Group Now presentation resolves current, switch and live activity", () => 
     hasScreenShare: true,
     participants: [{ ...user, screenSharing: true }],
   }), "Biba показывает экран");
+  assert.equal(formatGroupNowElapsed(null), null);
+  assert.equal(formatGroupNowElapsed("2026-08-31T12:00:00.000Z", Date.parse("2026-08-31T12:24:00.000Z")), "24 мин");
 });
 
 test("shared Group Now view keeps flat accessible states for both hosts", async () => {
@@ -73,7 +76,8 @@ test("shared Group Now view keeps flat accessible states for both hosts", async 
   assert.match(viewSource, /formatGroupNowVoiceSummary/);
   assert.match(viewSource, /room\.kind === "lobby"/);
   assert.match(viewSource, /Комнаты · \{rooms\.length\}/);
-  assert.match(viewSource, /props\.createPending \? "Создаём" : "Комната"/);
+  assert.match(viewSource, /GroupNowCreateCard/);
+  assert.match(roomSource, /pending \? "Создаём" : "Создать комнату"/);
   assert.match(roomSource, /aria-label=\{`\$\{actionLabel\}: \$\{room\.name\}`\}/);
   assert.match(roomSource, /Начать разговор/);
   assert.match(roomSource, /Присоединиться/);

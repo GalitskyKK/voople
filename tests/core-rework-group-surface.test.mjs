@@ -91,10 +91,10 @@ test("full Group Now follows the flat live hierarchy from the canonical plan", (
   assert.match(panel, /max-w-\[960px\]/);
   assert.match(panel, /mr-auto/);
   assert.match(panel, /voople-group-now__create/);
-  assert.doesNotMatch(panel, /border-dashed/);
+  assert.match(panel, /voople-group-now__grid/);
   assert.match(room, /voople-group-now-room/);
   assert.doesNotMatch(room, /padStart/);
-  const roomSectionClass = room.match(/data-layout="room-section"[\s\S]*?className="([^"]+)"/)?.[1] ?? "";
+  const roomSectionClass = room.match(/data-layout="room-section"[\s\S]*?className=\{cn\(([\s\S]*?)\)\}/)?.[1] ?? "";
   assert.doesNotMatch(roomSectionClass, /rounded-/);
 });
 

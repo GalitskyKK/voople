@@ -30,6 +30,10 @@ const ChatRoomControl = lazy(() =>
   })),
 );
 
+if (typeof window !== "undefined") {
+  console.error("[VOICE-BUILD-MARKER] VoiceSessionProvider module loaded");
+}
+
 export type VoiceSessionDescriptor = {
   chatId: string;
   chatName: string;
@@ -61,17 +65,86 @@ export function VoiceSessionProvider({
   subscribeToVoiceRooms?: SubscribeToVoiceRooms;
 }) {
   const [activeSession, setActiveSession] = useState<VoiceSessionDescriptor | null>(null);
+  console.error("[VOICE-PROVIDER-RENDER]", {
+    activeSession,
+  });
   const [state, setState] = useState<VoiceControlState>(IDLE_VOICE_CONTROL_STATE);
   const controlRef = useRef<ChatRoomControlHandle>(null);
   const autoConnectPendingRef = useRef(false);
+  const autoStartedCoreSessionRef = useRef<string | null>(null);
+
+  const coreSessionId =
+    activeSession?.coreSession?.join.sessionId ?? null;
   const [initialCoreCredentials, setInitialCoreCredentials] = useState<EnabledVoiceMediaCredentials | null>(null);
-  const handleControlRef = useCallback((control: ChatRoomControlHandle | null) => {
-    controlRef.current = control;
-    if (!control || !autoConnectPendingRef.current) return;
-    setInitialCoreCredentials(null);
-    autoConnectPendingRef.current = false;
-    control.join();
-  }, []);
+  const handleControlRef = useCallback(
+    (control: ChatRoomControlHandle | null) => {
+      controlRef.current = control;
+  
+      console.error("[VOICE-REF]", {
+        hasControl: Boolean(control),
+        coreSessionId,
+        autoConnectPending: autoConnectPendingRef.current,
+        autoStartedCoreSession:
+          autoStartedCoreSessionRef.current,
+      });
+  
+      if (!control) return;
+  
+      const shouldStart =
+        autoConnectPendingRef.current ||
+        (
+          coreSessionId !== null &&
+          autoStartedCoreSessionRef.current !== coreSessionId
+        );
+  
+      if (!shouldStart) return;
+  
+      // ВАЖНО:
+      // здесь ничего не помечаем started и не сбрасываем pending.
+      // React ещё может заменить экземпляр control.
+      window.setTimeout(() => {
+        const latestControl = controlRef.current;
+  
+        if (!latestControl) {
+          console.error("[VOICE-JOIN-TIMER] no current control");
+          return;
+        }
+  
+        const stillShouldStart =
+          autoConnectPendingRef.current ||
+          (
+            coreSessionId !== null &&
+            autoStartedCoreSessionRef.current !== coreSessionId
+          );
+  
+        console.error("[VOICE-JOIN-TIMER]", {
+          hasLatestControl: true,
+          stillShouldStart,
+          coreSessionId,
+        });
+  
+        if (!stillShouldStart) return;
+  
+        // Только непосредственно перед реальным join
+        // считаем сессию запущенной.
+        if (coreSessionId !== null) {
+          autoStartedCoreSessionRef.current =
+            coreSessionId;
+        }
+  
+        autoConnectPendingRef.current = false;
+  
+        console.error("[VOICE-JOIN-CALL]");
+  
+        latestControl.join();
+  
+        console.error("[VOICE-JOIN-CALLED]");
+  
+        setInitialCoreCredentials(null);
+      }, 0);
+    },
+    [coreSessionId],
+  );
 
   const openRoom = useCallback(
     (session: VoiceSessionDescriptor) => {
@@ -96,22 +169,35 @@ export function VoiceSessionProvider({
     [activeSession, state.inside],
   );
 
-  const openCoreRoom = useCallback((launch: CoreVoiceSessionLaunch) => {
-    setInitialCoreCredentials(launch.credentials);
-    autoConnectPendingRef.current = true;
-    setState(IDLE_VOICE_CONTROL_STATE);
-    setActiveSession({
-      chatId: launch.groupId,
-      chatName: launch.room.name,
-      chatType: "group",
-      coreSession: {
-        groupId: launch.groupId,
-        conversationId: launch.conversationId ?? launch.groupId,
-        room: launch.room,
-        join: launch.join,
-      },
-    });
-  }, []);
+  const openCoreRoom = useCallback(
+    (launch: CoreVoiceSessionLaunch) => {
+      const nextSessionId = launch.join.sessionId;
+
+      if (
+        autoStartedCoreSessionRef.current !==
+        nextSessionId
+      ) {
+        autoConnectPendingRef.current = true;
+      }
+
+      setInitialCoreCredentials(launch.credentials);
+      setState(IDLE_VOICE_CONTROL_STATE);
+
+      setActiveSession({
+        chatId: launch.groupId,
+        chatName: launch.room.name,
+        chatType: "group",
+        coreSession: {
+          groupId: launch.groupId,
+          conversationId:
+            launch.conversationId ?? launch.groupId,
+          room: launch.room,
+          join: launch.join,
+        },
+      });
+    },
+    [],
+  );
   const handleCoreRoomJoined = useCallback((
     target: GroupNowRoomTarget,
     join: GroupRoomJoinResult,
@@ -212,7 +298,7 @@ export function VoiceSessionProvider({
                 initialCoreCredentials={initialCoreCredentials ?? undefined}
                 onCoreRoomSwitch={roomSwitch.requestJoin}
                 renderTrigger={false}
-                initialOpen
+                // initialOpen
                 onStateChange={handleStateChange}
               />
             </Suspense>

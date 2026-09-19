@@ -8,6 +8,26 @@ import type { GroupNowRoomTarget } from "@/types/group-now";
 import type { GroupRoomJoinResult } from "@/types/group-room-mutations";
 import type { EnabledVoiceMediaCredentials } from "@/types/voice";
 
+const MEDIA_TOKEN_TIMEOUT_MS = 12_000
+
+async function waitForMediaToken<T>(operation: Promise<T>): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error("Сервер слишком долго выдаёт доступ к голосовой комнате."))
+    }, MEDIA_TOKEN_TIMEOUT_MS)
+  })
+
+  try {
+    return await Promise.race([operation, timeout])
+  } finally {
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId)
+    }
+  }
+}
+
 export function useGroupNowMediaHandoff({
   onJoined,
 }: {
@@ -26,9 +46,11 @@ export function useGroupNowMediaHandoff({
     result: GroupRoomJoinResult,
   ) => {
     try {
-      const credentials = await mediaTokenMutation.mutateAsync({
-        sessionId: result.sessionId,
-      });
+      const credentials = await waitForMediaToken(
+        mediaTokenMutation.mutateAsync({
+          sessionId: result.sessionId
+        })
+      )
       if (!credentials.enabled) {
         throw new Error("Медиасервер для комнаты временно недоступен");
       }

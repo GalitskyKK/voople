@@ -9,17 +9,7 @@ import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 import { GroupInfoDrawerView, type GroupInfoDrawerTab } from "./GroupInfoDrawerView";
 import { GroupRoomAction } from "./GroupRoomAction";
 
-export function GroupInfoDrawer({
-  chatId,
-  chatName,
-  memberCount,
-  groupIcon,
-  groupAvatarUrl,
-  groupBannerUrl,
-  groupAccentColor,
-  groupTag,
-  canManage,
-}: {
+export function GroupInfoDrawer({ chatId, chatName, memberCount, groupIcon, groupAvatarUrl, groupBannerUrl, groupAccentColor, groupTag, canManage }: {
   chatId: string;
   chatName: string;
   memberCount: number;
@@ -36,28 +26,17 @@ export function GroupInfoDrawer({
   const [tab, setTab] = useState<GroupInfoDrawerTab>("info");
   const community = trpc.chat.groupCommunity.useQuery({ chatId }, { enabled: open });
   const utils = trpc.useUtils();
-  const setProfileTag = trpc.chat.setGroupProfileTag.useMutation({
-    onSuccess: async () => {
-      await Promise.all([
-        utils.chat.groupCommunity.invalidate({ chatId }),
-        utils.profile.getByUsername.invalidate(),
-      ]);
-    },
-  });
-  const members = trpc.chat.groupMembers.useQuery({ chatId }, { enabled: open });
-  const room = trpc.chat.room.useQuery({ chatId }, { enabled: open });
+  const setProfileTag = trpc.chat.setGroupProfileTag.useMutation({ onSuccess: async () => { await Promise.all([utils.chat.groupCommunity.invalidate({ chatId }), utils.profile.getByUsername.invalidate()]); } });
+
+  // Header needs member/voice state even when the drawer itself is closed.
+  const members = trpc.chat.groupMembers.useQuery({ chatId }, { staleTime: 10_000, refetchInterval: 20_000, refetchOnWindowFocus: false });
+  const room = trpc.chat.room.useQuery({ chatId }, { staleTime: 10_000, refetchInterval: 20_000, refetchOnWindowFocus: false });
   const chats = trpc.chat.list.useQuery(undefined, { enabled: open, staleTime: 5_000 });
   const discovery = trpc.social.groupDiscoveryProfile.useQuery({ chatId }, { enabled: open });
   const catalog = trpc.social.interestCatalog.useQuery(undefined, { enabled: open, staleTime: 60_000 });
   const rootChat = chats.data?.find((chat) => chat.id === chatId);
-  const topicNames = (discovery.data?.topicSlugs ?? []).map((slug) =>
-    catalog.data?.categories.flatMap((category) => category.interests).find((interest) => interest.slug === slug)?.name ?? slug,
-  );
-
-  const navigate = (href: string) => {
-    setOpen(false);
-    router.push(href);
-  };
+  const topicNames = (discovery.data?.topicSlugs ?? []).map((slug) => catalog.data?.categories.flatMap((category) => category.interests).find((interest) => interest.slug === slug)?.name ?? slug);
+  const navigate = (href: string) => { setOpen(false); router.push(href); };
 
   return (
     <GroupInfoDrawerView
@@ -82,16 +61,7 @@ export function GroupInfoDrawer({
       error={tab === "members" ? members.error?.message : community.error?.message}
       topics={topicNames}
       sections={rootChat?.channels.map((section) => ({ id: section.id, name: section.name || "Раздел" })) ?? []}
-      roomAction={(
-        <GroupRoomAction
-          groupId={chatId}
-          groupName={chatName}
-          canCreatePinned={canManage}
-          display="label"
-          onBeforeOpen={() => setOpen(false)}
-          onOpenProfile={(username) => navigate(`/${username}`)}
-        />
-      )}
+      roomAction={<GroupRoomAction groupId={chatId} groupName={chatName} canCreatePinned={canManage} display="label" onBeforeOpen={() => setOpen(false)} onOpenProfile={(username) => navigate(`/${username}`)} />}
       onOpenChange={setOpen}
       onTabChange={setTab}
       onManage={() => navigate(`/messages/${chatId}/settings`)}

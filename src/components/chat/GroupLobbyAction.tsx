@@ -54,44 +54,55 @@ export function GroupLobbyAction({
   }
 
   const lobby = now.data?.rooms.find((room) => room.kind === "lobby") ?? null;
-  const serverRoom = now.data?.rooms.find((room) => room.id === now.data.currentUserRoomId) ?? null;
-  const isLocalGroupSession = launcher.voice.activeSession?.coreSession?.groupId === groupId;
-  const localRoom = isLocalGroupSession ? launcher.voice.activeSession?.coreSession?.room : null;
+  const serverRoom =
+    now.data?.rooms.find((room) => room.id === now.data.currentUserRoomId) ?? null;
+  const isLocalGroupSession =
+    launcher.voice.activeSession?.coreSession?.groupId === groupId;
+  const localRoom = isLocalGroupSession
+    ? launcher.voice.activeSession?.coreSession?.room
+    : null;
   const currentRoom = localRoom ?? serverRoom;
-  const localSessionActive = launcher.voice.state.inside
-    || launcher.voice.state.mediaStatus === "connecting"
-    || launcher.voice.state.mediaStatus === "reconnecting";
+  const localSessionActive =
+    launcher.voice.state.inside ||
+    launcher.voice.state.mediaStatus === "connecting" ||
+    launcher.voice.state.mediaStatus === "reconnecting";
   const opensCurrentRoom = Boolean(isLocalGroupSession && localSessionActive);
   const targetRoom = currentRoom ?? lobby;
-  const loading = now.isLoading || !now.data && now.isFetching;
+  const loading = now.isLoading || (!now.data && now.isFetching);
   const pending = join.pending;
   const failed = Boolean(actionError || now.error);
+
   const label = pending
     ? "Входим…"
     : currentRoom
       ? currentRoom.name
       : failed
         ? "Повторить"
-        : "Войти в Лобби";
+        : "Войти";
+
   const accessibleLabel = opensCurrentRoom
     ? `Открыть комнату ${currentRoom?.name ?? groupName}`
     : currentRoom
       ? `Вернуться в комнату ${currentRoom.name}`
-    : failed
-      ? `Повторить открытие Лобби группы ${groupName}`
-      : `Войти в Лобби группы ${groupName}`;
+      : failed
+        ? `Повторить открытие Лобби группы ${groupName}`
+        : `Войти в Лобби группы ${groupName}`;
 
   const activate = async () => {
     setActionError(null);
+
     if (opensCurrentRoom) {
       launcher.voice.openPanel();
       return;
     }
+
     if (now.error || !now.data) {
       await now.refetch();
       return;
     }
+
     if (!targetRoom) return;
+
     try {
       await join.requestJoin({ groupId, room: targetRoom });
     } catch (error) {
@@ -105,26 +116,33 @@ export function GroupLobbyAction({
         label={accessibleLabel}
         tooltipSide="bottom"
         onClick={() => void activate()}
-        disabled={pending || loading || !targetRoom && !failed && !opensCurrentRoom}
+        disabled={pending || loading || (!targetRoom && !failed && !opensCurrentRoom)}
         className={cn(
-          "inline-flex h-9 max-w-44 shrink-0 items-center justify-center gap-2 rounded-[var(--app-radius-sm)] border px-3 text-xs font-semibold transition max-sm:w-9 max-sm:px-0",
-          currentRoom
-            ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-400"
-            : failed
-              ? "border-red-500/35 text-red-400 hover:bg-red-500/10"
-              : "border-[color-mix(in_srgb,var(--theme-accent)_72%,var(--app-border))] bg-[var(--app-accent-soft)] text-[var(--theme-accent)] hover:border-[var(--theme-accent)] hover:bg-[color-mix(in_srgb,var(--app-accent-soft)_78%,var(--theme-accent))]",
+          "voople-group-header-voice inline-flex h-9 max-w-40 shrink-0 items-center justify-center gap-2 rounded-full px-3 text-xs font-semibold transition max-sm:w-9 max-sm:px-0",
+          currentRoom && "voople-group-header-voice--active",
+          failed && "voople-group-header-voice--error",
         )}
       >
         {pending || loading ? (
-          <LoaderCircle className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+          <LoaderCircle
+            className="h-4 w-4 animate-spin motion-reduce:animate-none"
+            aria-hidden="true"
+          />
         ) : currentRoom ? (
           <Radio className="h-4 w-4" aria-hidden="true" />
         ) : (
           <Headphones className="h-4 w-4" aria-hidden="true" />
         )}
+
         <span className="truncate max-sm:hidden">{label}</span>
       </IconButton>
-      {actionError ? <span className="sr-only" role="alert">{actionError}</span> : null}
+
+      {actionError ? (
+        <span className="sr-only" role="alert">
+          {actionError}
+        </span>
+      ) : null}
+
       <GroupNowRoomSwitchDialog
         room={join.confirmationTarget?.room ?? null}
         pending={join.pending}

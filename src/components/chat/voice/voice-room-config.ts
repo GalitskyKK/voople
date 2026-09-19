@@ -172,6 +172,8 @@ export function getConnectionLabel(status: MediaStatus) {
       return "Восстанавливаем связь…";
     case "unavailable":
       return "LiveKit не настроен";
+    case "error":
+      return "Ошибка подключения";
     default:
       return null;
   }

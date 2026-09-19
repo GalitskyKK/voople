@@ -1,11 +1,10 @@
-import { LoaderCircle, Plus, RefreshCw, UsersRound, WifiOff } from "lucide-react";
+import { LoaderCircle, RefreshCw, WifiOff } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
-import { formatGroupNowVoiceSummary } from "@/lib/chat/group-now-presentation";
 import type { GroupNowRoom, GroupNowUser, GroupNowView } from "@/types/group-now";
 
 import { GroupNowParticipant } from "./GroupNowParticipant";
-import { GroupNowRoomSection } from "./GroupNowRoomSection";
+import { GroupNowCreateCard, GroupNowRoomSection } from "./GroupNowRoomSection";
 import { GroupLiveShelfView } from "./GroupLiveShelfView";
 
 type PassiveStateProps = {
@@ -50,63 +49,29 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
   }
 
   const lobby = props.value.rooms.find((room) => room.kind === "lobby") ?? null;
-  const rooms = props.value.rooms.filter((room) => room.kind !== "lobby");
-  const voiceSummary = formatGroupNowVoiceSummary(props.value.rooms);
+  const otherRooms = props.value.rooms.filter((room) => room.kind !== "lobby");
+  const visibleRooms = lobby ? [lobby, ...otherRooms] : otherRooms;
   const surfaceError = props.actionError ?? props.createError;
-  return (
-    <section
-      className="mr-auto w-full max-w-[960px] px-3 py-4 text-[var(--foreground)] sm:px-6 sm:py-5"
-      aria-labelledby="group-now-title"
-    >
-      <header className="flex min-h-11 items-center justify-between gap-4 border-b border-[var(--app-border)] pb-3">
-        <div className="min-w-0">
-          <h2 id="group-now-title" className="voople-group-now__title truncate text-sm font-semibold">
-            {voiceSummary}
-          </h2>
-        </div>
-        {props.onCreateRoom ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            disabled={props.createPending}
-            onClick={props.onCreateRoom}
-            aria-label="Создать комнату и войти"
-            className="voople-group-now__create shrink-0 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] text-[var(--theme-accent)] hover:border-[var(--theme-accent)] hover:bg-[var(--app-accent-soft)]"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            {props.createPending ? "Создаём" : "Комната"}
-          </Button>
-        ) : null}
-      </header>
+  const onlineCount = props.value.visibleOnlineCount || props.value.onlineOutsideRooms.length;
 
+  return (
+    <section className="voople-group-now min-h-full w-full min-w-0 px-5 py-6 text-[var(--foreground)] md:px-6 xl:px-7" aria-labelledby="group-now-voice-title">
       {surfaceError ? (
-        <p className="mt-4 rounded-xl border border-[var(--app-border-strong)] bg-[var(--app-surface-soft)] px-3 py-2 text-sm" role="alert">
+        <p className="mb-4 rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-red-300" role="alert">
           {surfaceError}
         </p>
       ) : null}
 
-      {lobby ? (
-        <div className="voople-group-now__lobby mt-3 border-t border-[var(--app-border)]">
-          <GroupNowRoomSection
-            room={lobby}
-            currentUserRoomId={props.value.currentUserRoomId}
-            pending={props.pendingRoomId === lobby.id}
-            onJoinRoom={props.onJoinRoom}
-            onOpenProfile={props.onOpenProfile}
-          />
-        </div>
-      ) : null}
+      <section aria-labelledby="group-now-voice-title">
+        <header className="voople-group-now__section-header mb-3 flex items-center gap-2">
+          <h2 id="group-now-voice-title" className="text-[17px] font-semibold tracking-[-0.02em] text-[var(--foreground)]">Голос</h2>
+          <span className="voople-group-now__section-count rounded-md px-2.5 py-0.5 text-[10px] text-[var(--app-muted)]">
+            {formatRoomCount(visibleRooms.length)}
+          </span>
+        </header>
 
-      {rooms.length > 0 ? (
-        <section className="voople-group-now__rooms" aria-labelledby="group-now-rooms-title">
-          <h3
-            id="group-now-rooms-title"
-            className="border-b border-[var(--app-border)] px-3 py-2 text-xs font-semibold text-[var(--app-muted)] sm:px-4"
-          >
-            Комнаты · {rooms.length}
-          </h3>
-          {rooms.map((room) => (
+        <div className="voople-group-now__grid">
+          {visibleRooms.map((room) => (
             <GroupNowRoomSection
               key={room.id}
               room={room}
@@ -116,22 +81,27 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
               onOpenProfile={props.onOpenProfile}
             />
           ))}
-        </section>
-      ) : null}
+          {props.onCreateRoom ? (
+            <GroupNowCreateCard pending={Boolean(props.createPending)} onCreateRoom={props.onCreateRoom} />
+          ) : null}
+        </div>
+      </section>
 
-      {props.value.onlineOutsideRooms.length > 0 ? (
-        <section className="border-b border-[var(--app-border)] py-4" aria-labelledby="group-now-online-title">
-          <h3 id="group-now-online-title" className="flex items-center gap-2 text-sm font-semibold">
-            <UsersRound className="h-4 w-4 text-[var(--theme-accent)]" aria-hidden="true" />
-            В сети · {props.value.onlineOutsideRooms.length}
-          </h3>
-          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-2">
+      <section className="voople-group-now__online mt-8" aria-labelledby="group-now-online-title">
+        <header className="voople-group-now__section-header mb-3 flex items-center gap-2">
+          <h3 id="group-now-online-title" className="text-[17px] font-semibold tracking-[-0.02em] text-[var(--foreground)]">Доступны</h3>
+          <span className="voople-group-now__section-count rounded-md px-2.5 py-0.5 text-[10px] text-[var(--app-muted)]">{onlineCount} онлайн</span>
+        </header>
+        {props.value.onlineOutsideRooms.length > 0 ? (
+          <div className="voople-group-now__available flex flex-wrap gap-x-5 gap-y-3">
             {props.value.onlineOutsideRooms.map((user) => (
               <GroupNowParticipant key={user.id} user={user} onOpenProfile={props.onOpenProfile} />
             ))}
           </div>
-        </section>
-      ) : null}
+        ) : (
+          <p className="text-[11px] text-[var(--app-muted)]">Сейчас все уже в разговорах или офлайн.</p>
+        )}
+      </section>
     </section>
   );
 }
@@ -139,33 +109,18 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
 function GroupNowPassiveState(props: PassiveStateProps) {
   const offline = props.mode === "offline";
   const loading = props.mode === "loading";
-  const title = loading ? "Загружаем голосовые комнаты" : offline ? "Нет соединения" : "Не удалось открыть голосовые комнаты";
+  const title = loading ? "Загружаем голос" : offline ? "Нет соединения" : "Не удалось открыть голос";
   const message = loading
-    ? "Собираем, кто и где сейчас общается."
-    : props.message ?? (offline
-      ? "Сессия сохранена. Комнаты появятся после восстановления сети."
-      : "Повторите загрузку — текущий разговор не изменится.");
+    ? "Собираем текущие разговоры группы."
+    : props.message ?? (offline ? "Сессия сохранена. Комнаты появятся после восстановления сети." : "Повторите загрузку — текущий разговор не изменится.");
 
   return (
-    <section
-      className="mr-auto flex min-h-72 w-full max-w-[960px] items-center justify-center px-4 py-8 text-[var(--foreground)]"
-      aria-labelledby="group-now-state-title"
-      role="status"
-      aria-live="polite"
-    >
+    <section className="flex min-h-72 w-full items-center justify-center px-4 py-8 text-[var(--foreground)]" aria-labelledby="group-now-state-title" role="status" aria-live="polite">
       <div className="w-full max-w-md text-center">
-        <span className="mx-auto grid h-11 w-11 place-items-center rounded-2xl bg-[var(--app-surface-soft)] text-[var(--theme-accent)]">
-          {loading ? (
-            <LoaderCircle className="h-5 w-5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-          ) : offline ? (
-            <WifiOff className="h-5 w-5" aria-hidden="true" />
-          ) : (
-            <RefreshCw className="h-5 w-5" aria-hidden="true" />
-          )}
+        <span className="mx-auto grid h-11 w-11 place-items-center rounded-xl bg-[var(--app-surface-soft)] text-[var(--theme-accent)]">
+          {loading ? <LoaderCircle className="h-5 w-5 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : offline ? <WifiOff className="h-5 w-5" aria-hidden="true" /> : <RefreshCw className="h-5 w-5" aria-hidden="true" />}
         </span>
-        <p className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--app-muted)]">
-          {props.groupName}
-        </p>
+        <p className="mt-4 text-xs text-[var(--app-muted)]">{props.groupName}</p>
         <h2 id="group-now-state-title" className="mt-1 text-lg font-semibold">{title}</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--app-muted)]">{message}</p>
         {!loading && props.onRetry ? (
@@ -177,4 +132,11 @@ function GroupNowPassiveState(props: PassiveStateProps) {
       </div>
     </section>
   );
+}
+
+function formatRoomCount(count: number) {
+  const mod100 = count % 100;
+  const mod10 = count % 10;
+  const noun = mod100 >= 11 && mod100 <= 14 ? "комнат" : mod10 === 1 ? "комната" : mod10 >= 2 && mod10 <= 4 ? "комнаты" : "комнат";
+  return `${count} ${noun}`;
 }

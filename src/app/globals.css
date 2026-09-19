@@ -40,6 +40,8 @@
   --foreground: #e8e8ec;
   --theme-primary: #0b0b10;
   --theme-accent: #8b5cf6;
+  --voople-wine: #8a4452;
+  --voople-ice: #6a8aa3;
   --app-surface: #17171e;
   --app-surface-soft: rgba(255, 255, 255, 0.045);
   --app-border: rgba(255, 255, 255, 0.08);
@@ -1767,18 +1769,25 @@ button.voople-post-action:active {
 
   .voople-shell[data-route-kind="messages"] {
     --voople-sidebar-width: 200px;
-    --app-radius-sm: 3px;
-    --app-radius-md: 4px;
-    --app-radius-lg: 6px;
-    --app-radius-xl: 6px;
-    background: color-mix(in srgb, var(--background) 97%, black);
+    --voople-wine: #8a4452;
+    --voople-ice: #6a8aa3;
+    --theme-accent: var(--voople-wine);
+    --app-accent-soft: color-mix(in srgb, var(--voople-wine) 18%, transparent);
+    --app-radius-sm: 8px;
+    --app-radius-md: 12px;
+    --app-radius-lg: 16px;
+    --app-radius-xl: 20px;
+    background:
+      radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--voople-wine) 16%, transparent), transparent 28rem),
+      radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--voople-ice) 12%, transparent), transparent 24rem),
+      color-mix(in srgb, var(--background) 94%, var(--app-surface));
     font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
     letter-spacing: -0.01em;
   }
 
   .voople-shell[data-route-kind="messages"] .voople-sidebar {
     border-right: 1px solid var(--app-border);
-    background: color-mix(in srgb, var(--background) 98%, black);
+    background: color-mix(in srgb, var(--background) 88%, var(--app-surface));
   }
 
   .voople-shell[data-route-kind="messages"] .voople-sidebar__brand {
@@ -1825,7 +1834,7 @@ button.voople-post-action:active {
   .voople-shell[data-route-kind="messages"] .voople-group-identity__avatar {
     width: 2.75rem;
     height: 2.75rem;
-    border-radius: 3px;
+    border-radius: 0.75rem;
   }
 
   .voople-shell[data-route-kind="messages"] .voople-group-identity__name {
@@ -1837,9 +1846,9 @@ button.voople-post-action:active {
 
   .voople-shell[data-route-kind="messages"] .voople-group-identity__meta {
     margin-top: 0.125rem;
-    color: color-mix(in srgb, #34d399 86%, var(--foreground));
-    font-size: 0.6875rem;
-    letter-spacing: 0.025em;
+    color: var(--app-muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.01em;
   }
 
   .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs {
@@ -1908,7 +1917,19 @@ button.voople-post-action:active {
   .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__row,
   .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__search,
   .voople-shell[data-route-kind="messages"] .voople-sidebar__footer button {
+    border-radius: 8px;
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__search {
+    border: 1px solid var(--app-border);
+    background: var(--app-surface-soft);
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__kbd {
+    border: 1px solid var(--app-border);
     border-radius: 4px;
+    padding: 0.125rem 0.375rem;
+    color: var(--app-muted);
   }
 
   .voople-shell[data-route-kind="messages"] .voople-chat-list__create {
@@ -2027,6 +2048,83 @@ button.voople-post-action:active {
   height: 2px;
   background: var(--theme-accent);
   content: "";
+}
+
+.voople-group-now__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10.75rem, 1fr));
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.voople-group-now__lobby {
+  grid-column: 1 / -1;
+}
+
+.voople-group-now-room {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--voople-ice, var(--theme-accent)) 26%, var(--app-border));
+  border-radius: var(--app-radius-lg);
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--voople-ice, var(--theme-accent)) 14%, transparent),
+      color-mix(in srgb, var(--background) 42%, transparent) 48%,
+      color-mix(in srgb, var(--voople-wine, var(--theme-accent)) 8%, transparent)
+    );
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
+  backdrop-filter: blur(18px);
+  color: inherit;
+}
+
+.voople-group-now-room:hover {
+  border-color: color-mix(in srgb, var(--voople-ice, var(--theme-accent)) 46%, var(--app-border));
+}
+
+.voople-group-now-room:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--voople-wine, var(--theme-accent)) 70%, white);
+  outline-offset: 2px;
+}
+
+.voople-group-now-room--current {
+  border-color: color-mix(in srgb, var(--voople-ice, var(--theme-accent)) 58%, var(--app-border));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--voople-ice, var(--theme-accent)) 28%, transparent),
+    0 16px 36px color-mix(in srgb, var(--voople-ice, var(--theme-accent)) 16%, transparent);
+}
+
+.voople-group-now-room--create {
+  border-style: dashed;
+  background: color-mix(in srgb, var(--voople-wine, var(--theme-accent)) 8%, transparent);
+}
+
+.voople-group-now-room--create:hover {
+  border-color: var(--voople-wine, var(--theme-accent));
+  background: var(--app-accent-soft);
+}
+
+@media (min-width: 720px) {
+  .voople-group-now__lobby {
+    grid-column: span 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voople-group-now-room {
+    backdrop-filter: none;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
+  }
+}
+
+html[data-app-theme="light"] .voople-group-now-room {
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--voople-ice, var(--theme-accent)) 18%, white),
+      color-mix(in srgb, white 62%, transparent)
+    );
 }
 
 .voople-group-live-shelf {
@@ -3264,23 +3362,44 @@ html[data-density="compact"] .shop-category {
 
 /* Public product surface. Scoped aliases keep the landing expressive without
    leaking marketing colours into authenticated light/dark themes. */
-.voople-landing {
-  --background: var(--voople-canvas-deep);
-  --foreground: var(--voople-ink-warm);
-  --theme-accent: var(--voople-brand-400);
-  --app-surface: var(--voople-surface-deep);
-  --app-surface-soft: rgba(247, 244, 255, 0.055);
-  --app-border: rgba(247, 244, 255, 0.105);
-  --app-border-strong: rgba(247, 244, 255, 0.19);
-  --app-accent-soft: rgba(124, 109, 219, 0.16);
-  --app-muted: rgba(247, 244, 255, 0.62);
-  min-height: 100dvh;
-  overflow-x: clip;
-  background:
-    radial-gradient(circle at 72% 7%, rgba(124, 109, 219, 0.12), transparent 26rem),
-    var(--background);
-  color: var(--foreground);
-}
+   .voople-landing {
+     --landing-bg: #07090c;
+     --landing-surface: #0b0e13;
+     --landing-surface-soft: #10141a;
+     --landing-border: #282d35;
+     --landing-border-strong: #3a414c;
+   
+     --landing-text: #f0eee8;
+     --landing-muted: #888e98;
+     --landing-muted-2: #626873;
+   
+     --landing-violet: #a160ff;
+     --landing-violet-soft: #7d42cc;
+     --landing-green: #7cf05a;
+   
+     min-height: 100dvh;
+     color: var(--landing-text);
+     background-color: var(--landing-bg);
+     background-image:
+       linear-gradient(
+         rgba(255, 255, 255, 0.016) 1px,
+         transparent 1px
+       ),
+       linear-gradient(
+         90deg,
+         rgba(255, 255, 255, 0.016) 1px,
+         transparent 1px
+       );
+     background-size: 32px 32px;
+   
+     font-family:
+       Inter,
+       system-ui,
+       -apple-system,
+       BlinkMacSystemFont,
+       "Segoe UI",
+       sans-serif;
+   }
 
 .landing-header {
   position: absolute;
@@ -5163,4 +5282,697 @@ html[data-density="compact"] .shop-category {
   .settings-hotkey-field {
     grid-column: 1 / -1;
   }
+}
+
+/* ========================================================================== 
+   Messages / Groups — unified glass system
+   Reference-scale layout + restrained burgundy/ice glass.
+   ========================================================================== */
+
+.voople-shell[data-route-kind="messages"] {
+  --voople-sidebar-width: 266px;
+  --voople-room-radius: 18px;
+
+  --voople-wine: #8e4058;
+  --voople-wine-bright: #ad536b;
+  --voople-wine-deep: #281018;
+  --voople-wine-soft: rgb(142 64 88 / 0.17);
+  --voople-wine-wash: rgb(94 34 55 / 0.18);
+
+  --voople-ice: #79bdff;
+  --voople-ice-strong: #c1e0ff;
+  --voople-ice-soft: rgb(121 189 255 / 0.12);
+
+  --voople-red: #b94f63;
+
+  --theme-accent: var(--voople-ice);
+  --app-accent-soft: rgb(121 189 255 / 0.09);
+  --app-surface: #0c131d;
+  --app-surface-soft: rgb(255 255 255 / 0.030);
+  --app-border: rgb(225 235 246 / 0.060);
+  --app-border-strong: rgb(225 235 246 / 0.105);
+  --app-muted: rgb(216 225 236 / 0.58);
+
+  /* Room material copied from the DevTools state approved by the user. */
+  --voople-glass-fill:
+    linear-gradient(167deg,
+      #8f40580b 0%,
+      #0000002e 31% 73%,
+      #79bdff09 100%),
+    radial-gradient(124% 154% at 50% 57%,
+      #0c1721ed 0%,
+      #68788124 46%,
+      #fdfdfd59 73%,
+      #7b383894 100%);
+
+  /* Hover keeps the same material. Interaction is expressed by the rim only. */
+  --voople-glass-fill-hover: var(--voople-glass-fill);
+  --voople-glass-border: rgb(226 237 247 / 0.035);
+  --voople-glass-border-hover: rgb(205 226 245 / 0.090);
+  --voople-glass-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.045),
+    0 10px 26px rgb(0 0 0 / 0.16);
+
+  color-scheme: dark;
+  background: #090d14;
+}
+
+/* --------------------------------------------------------------------------
+   Workspace / persistent atmosphere
+   -------------------------------------------------------------------------- */
+
+.voople-shell[data-route-kind="messages"] .voople-shell__column {
+  padding: 0;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-shell__workspace {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.038);
+  border-radius: 12px;
+  background:
+    linear-gradient(104deg, rgb(77 26 45 / 0.24) 0%, rgb(43 20 31 / 0.13) 24%, rgb(15 18 26 / 0.035) 48%, transparent 66%),
+    linear-gradient(270deg, rgb(58 87 119 / 0.045), transparent 30%),
+    linear-gradient(180deg, #0a1018, #090d14 72%);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.26);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-sidebar {
+  width: var(--voople-sidebar-width) !important;
+  min-width: var(--voople-sidebar-width) !important;
+  border-right: 1px solid rgb(255 255 255 / 0.044);
+  background:
+    linear-gradient(112deg, rgb(94 34 55 / 0.17) 0%, rgb(36 20 31 / 0.075) 34%, transparent 62%),
+    linear-gradient(180deg, #0b1019 0%, #081019 46%, #071019 100%);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-sidebar__brand {
+  padding: 1.15rem 1.15rem 1rem;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-sidebar__footer {
+  padding: 0.85rem 0.9rem;
+  border-top: 1px solid rgb(255 255 255 / 0.040);
+  background:
+    linear-gradient(110deg, rgb(94 34 55 / 0.095), transparent 58%),
+    rgb(7 11 18 / 0.66);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-messenger-sidebar {
+  padding-inline: 0.75rem;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__search {
+  height: 44px !important;
+  border: 1px solid rgb(255 255 255 / 0.052);
+  border-radius: 12px;
+  background:
+    linear-gradient(110deg, rgb(142 64 88 / 0.050), transparent 52%),
+    rgb(255 255 255 / 0.020);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.022);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__row {
+  min-height: 46px !important;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  transform: none !important;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__row:hover:not(.voople-messenger-sidebar__row--active) {
+  background: linear-gradient(104deg, rgb(142 64 88 / 0.065), rgb(255 255 255 / 0.014) 58%, transparent);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__row--active {
+  border-color: rgb(121 189 255 / 0.12);
+  background:
+    linear-gradient(103deg, rgb(142 64 88 / 0.11) 0%, rgb(121 189 255 / 0.075) 100%),
+    rgb(255 255 255 / 0.014);
+  box-shadow: inset 2px 0 0 rgb(121 189 255 / 0.72);
+}
+
+/* The scroll host owns the full-height atmosphere. This fixes the visual
+   cutoff where GroupNowPanelView ended after its content. */
+.voople-shell[data-route-kind="messages"] .voople-scroll:has(> .voople-group-now),
+.voople-shell[data-route-kind="messages"] .voople-scroll:has(> .voople-group-people) {
+  background:
+    linear-gradient(102deg, rgb(78 23 43 / 0.27) 0%, rgb(47 20 32 / 0.14) 25%, rgb(13 17 24 / 0.025) 53%, transparent 68%),
+    linear-gradient(270deg, rgb(55 84 117 / 0.035), transparent 31%),
+    linear-gradient(180deg, #09111a, #090d14 74%);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-group-now,
+.voople-shell[data-route-kind="messages"] .voople-group-people {
+  min-height: 100%;
+  background: transparent !important;
+}
+
+/* --------------------------------------------------------------------------
+   Group header: reference scale
+   -------------------------------------------------------------------------- */
+
+.voople-shell[data-route-kind="messages"] .voople-panel-header,
+.voople-shell[data-route-kind="messages"] .voople-chat-window__header--group {
+  min-height: 176px;
+  padding: 24px 38px 20px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.040);
+  background:
+    linear-gradient(105deg, rgb(82 28 48 / 0.22) 0%, rgb(43 21 32 / 0.105) 31%, transparent 60%),
+    linear-gradient(270deg, rgb(60 88 120 / 0.035), transparent 34%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.018), transparent 48%),
+    rgb(8 13 21 / 0.82);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.026);
+  -webkit-backdrop-filter: blur(16px) saturate(1.05);
+  backdrop-filter: blur(16px) saturate(1.05);
+}
+
+.voople-group-header-identity {
+  min-width: 0;
+  padding: 0;
+  border-radius: 14px;
+}
+
+.voople-group-header-identity:hover { background: transparent; }
+
+.voople-group-header-avatar > * {
+  width: 116px !important;
+  height: 116px !important;
+  border-radius: 18px !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 0 0 1px rgb(255 255 255 / 0.07),
+    0 14px 32px rgb(0 0 0 / 0.24);
+}
+
+.voople-group-header-name {
+  color: #f6f4f7;
+  font-size: 30px;
+  font-weight: 720;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+.voople-group-header-meta {
+  font-size: 14px !important;
+  line-height: 1.3;
+}
+
+.voople-group-header-ring {
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgb(231 236 243 / 0.62);
+  border-radius: 999px;
+}
+
+.voople-group-header-members {
+  margin-left: auto;
+  padding-left: 18px;
+}
+
+.voople-group-header-member {
+  position: relative;
+  z-index: 1;
+  width: 42px;
+  height: 42px;
+  margin-left: -8px;
+  overflow: hidden;
+  border: 2px solid rgb(9 14 22 / 0.97);
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.07);
+}
+
+.voople-group-header-member:first-child { margin-left: 0; }
+.voople-group-header-member > * { width: 100% !important; height: 100% !important; border-radius: inherit !important; }
+
+.voople-group-header-overflow {
+  display: grid;
+  min-width: 42px;
+  height: 42px;
+  margin-left: -6px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 999px;
+  background: rgb(19 24 34 / 0.72);
+  padding-inline: 7px;
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 650;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.045);
+}
+
+.voople-group-header-actions { gap: 12px !important; }
+
+.voople-group-header-invite,
+.voople-group-header-more {
+  position: relative;
+  overflow: hidden;
+  height: 54px !important;
+  border: 1px solid rgb(255 255 255 / 0.058);
+  border-radius: 13px;
+  background:
+    linear-gradient(108deg, rgb(142 64 88 / 0.085), transparent 54%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.030), rgb(255 255 255 / 0.006)),
+    rgb(24 15 23 / 0.58);
+  color: rgb(215 224 235 / 0.80);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.035);
+  -webkit-backdrop-filter: blur(10px) saturate(1.04);
+  backdrop-filter: blur(10px) saturate(1.04);
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+}
+
+.voople-group-header-invite {
+  padding-inline: 20px !important;
+  color: var(--voople-ice-strong);
+  font-size: 14px !important;
+}
+
+.voople-group-header-more { width: 54px !important; }
+
+.voople-group-header-invite:hover,
+.voople-group-header-more:hover {
+  border-color: rgb(121 189 255 / 0.10);
+  background:
+    linear-gradient(108deg, rgb(142 64 88 / 0.105), transparent 54%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.038), rgb(255 255 255 / 0.008)),
+    rgb(26 16 25 / 0.64);
+  color: #eef6ff;
+}
+
+/* --------------------------------------------------------------------------
+   Group tabs
+   -------------------------------------------------------------------------- */
+
+.voople-shell[data-route-kind="messages"] .voople-group-surface-tabs {
+  min-height: 52px;
+  padding-inline: 38px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.038);
+  background:
+    linear-gradient(104deg, rgb(82 28 48 / 0.13), rgb(38 20 30 / 0.055) 34%, transparent 62%),
+    rgb(8 13 21 / 0.64);
+  -webkit-backdrop-filter: blur(12px) saturate(1.04);
+  backdrop-filter: blur(12px) saturate(1.04);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-group-surface-tabs > [role="tablist"] {
+  justify-content: flex-start;
+  gap: 3.2rem;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab {
+  min-width: auto;
+  height: 50px;
+  padding: 0;
+  border: 0 !important;
+  background: transparent !important;
+  color: rgb(222 226 235 / 0.58);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  outline: 0;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab:hover { color: rgb(239 243 248 / 0.90); }
+.voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab[aria-selected="true"] { color: var(--voople-ice-strong); }
+
+.voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab[aria-selected="true"]::after {
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(90deg, transparent, var(--voople-ice), transparent);
+  box-shadow: 0 0 10px rgb(121 189 255 / 0.22);
+}
+
+/* --------------------------------------------------------------------------
+   Room glass: static panel, border-only sheen on hover
+   -------------------------------------------------------------------------- */
+
+.voople-room-material,
+.voople-group-people-list,
+.voople-chat-composer__surface {
+  border: 1px solid var(--voople-glass-border) !important;
+  background: var(--voople-glass-fill) !important;
+  box-shadow: var(--voople-glass-shadow) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(1.08) contrast(1.01);
+  backdrop-filter: blur(14px) saturate(1.08) contrast(1.01);
+}
+
+.voople-room-material {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: var(--voople-room-radius) !important;
+  transform: none !important;
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 170ms ease, opacity 150ms ease !important;
+}
+
+.voople-room-material::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(82% 76% at 50% 52%, rgb(0 0 0 / 0.12), transparent 76%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.032);
+  content: "";
+}
+
+.voople-room-material__highlight {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: 26px;
+  left: 26px;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.050), transparent);
+  opacity: 0.18;
+}
+
+/* Top-edge specular: a soft optical glint travelling along the rim only.
+   There is no vertical clip, so there is no visibly cut-off highlight. */
+.voople-room-material__reflection {
+  position: absolute;
+  z-index: 6;
+  top: 0;
+  right: 18px;
+  left: 18px;
+  height: 1px;
+  pointer-events: none;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg,
+      transparent 0%,
+      transparent 34%,
+      rgb(143 64 88 / 0.045) 40%,
+      rgb(124 194 255 / 0.12) 44%,
+      rgb(242 249 255 / 0.78) 49%,
+      rgb(190 225 255 / 0.22) 53%,
+      rgb(124 194 255 / 0.055) 58%,
+      transparent 66%,
+      transparent 100%);
+  background-size: 260% 100%;
+  background-position: 145% 0;
+  opacity: 0;
+  filter:
+    drop-shadow(0 0 2px rgb(239 248 255 / 0.22))
+    drop-shadow(0 1px 4px rgb(124 194 255 / 0.10));
+}
+
+button.voople-room-material:hover {
+  transform: none !important;
+  border-color: var(--voople-glass-border-hover) !important;
+  background: var(--voople-glass-fill) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.060),
+    0 12px 28px rgb(0 0 0 / 0.18) !important;
+}
+
+button.voople-room-material:hover .voople-room-material__reflection {
+  animation: voople-border-specular 4.8s cubic-bezier(0.20, 0.62, 0.18, 1) 1 both;
+}
+
+@keyframes voople-border-specular {
+  0%   { background-position: 145% 0; opacity: 0; }
+  10%  { opacity: 0.10; }
+  24%  { opacity: 0.38; }
+  46%  { opacity: 0.72; }
+  70%  { opacity: 0.58; }
+  88%  { opacity: 0.16; }
+  100% { background-position: -45% 0; opacity: 0; }
+}
+
+/* --------------------------------------------------------------------------
+   Voice surface: dimensions follow the reference
+   -------------------------------------------------------------------------- */
+
+.voople-group-now {
+  width: 100%;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 32px 38px 42px !important;
+}
+
+.voople-group-now__section-header {
+  min-height: 28px;
+  margin-bottom: 18px;
+}
+
+.voople-group-now__section-header h2,
+.voople-group-now__section-header h3 {
+  font-size: 20px !important;
+  line-height: 1.2;
+}
+
+.voople-group-now__section-count,
+.voople-group-live-shelf__count {
+  border: 1px solid rgb(255 255 255 / 0.065);
+  background: rgb(255 255 255 / 0.032);
+  color: rgb(220 229 239 / 0.58);
+}
+
+.voople-group-now__grid {
+  display: grid !important;
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 20px !important;
+  justify-content: stretch !important;
+  align-items: stretch;
+}
+
+.voople-group-now-room,
+.voople-group-now-create-tile {
+  min-height: 170px !important;
+}
+
+.voople-group-now-room__name {
+  font-size: 18px !important;
+  letter-spacing: -0.018em;
+}
+
+.voople-group-now-room__count,
+.voople-live-room-card__count,
+.voople-group-now-room__activity-icon,
+.voople-live-room-card__activity {
+  border: 1px solid rgb(255 255 255 / 0.060);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.025), transparent),
+    rgb(0 0 0 / 0.13);
+  color: rgb(211 225 239 / 0.58);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.025);
+}
+
+.voople-group-now-room__activity-icon--screen,
+.voople-live-room-card__activity--screen { color: var(--voople-ice); }
+
+.voople-group-now-room__overflow,
+.voople-live-room-card__overflow {
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background: rgb(12 18 27 / 0.82);
+  color: rgb(220 230 241 / 0.60);
+}
+
+.voople-group-now-room__empty { color: rgb(220 229 239 / 0.34); }
+
+.voople-group-now-room--current,
+.voople-live-room-card--current {
+  border-color: rgb(121 189 255 / 0.18) !important;
+  background: var(--voople-glass-fill) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.055),
+    inset 0 0 0 1px rgb(121 189 255 / 0.018),
+    0 11px 27px rgb(0 0 0 / 0.17) !important;
+}
+
+.voople-group-now-room__current-copy,
+.voople-live-room-card__current {
+  color: var(--voople-ice-strong) !important;
+  font-weight: 600;
+}
+
+.voople-group-now-room--pending,
+.voople-live-room-card--pending { opacity: 0.64; }
+
+.voople-group-now-room--empty {
+  background:
+    linear-gradient(167deg,
+      #8f40580b 0%,
+      #0000002e 31% 73%,
+      #79bdff09 100%),
+    radial-gradient(124% 154% at 50% 57%,
+      #0c1721ed 0%,
+      #68788124 46%,
+      #fdfdfd59 73%,
+      #7b383894 100%) !important;
+}
+
+.voople-group-now-create-tile {
+  border: 1px dashed rgb(196 213 231 / 0.105) !important;
+  border-radius: var(--voople-room-radius) !important;
+  background:
+    linear-gradient(108deg, rgb(142 64 88 / 0.020), transparent 48%),
+    rgb(9 15 23 / 0.12) !important;
+  color: rgb(189 204 220 / 0.43) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease !important;
+}
+
+.voople-group-now-create-tile__plus {
+  border: 1px solid rgb(196 213 231 / 0.09);
+  background: rgb(255 255 255 / 0.018);
+  color: rgb(121 189 255 / 0.72);
+}
+
+.voople-group-now-create-tile:hover {
+  transform: none !important;
+  border-color: rgb(121 189 255 / 0.16) !important;
+  background:
+    linear-gradient(108deg, rgb(142 64 88 / 0.035), transparent 48%),
+    rgb(11 18 27 / 0.25) !important;
+  color: rgb(205 220 235 / 0.64) !important;
+}
+
+.voople-group-now__online { margin-top: 42px !important; }
+.voople-group-now__available { min-height: 48px; gap: 1rem 1.45rem; }
+
+.voople-group-now-participant--room {
+  width: 52px !important;
+  height: 52px !important;
+}
+
+.voople-group-now-participant--room > *:first-child {
+  width: 52px !important;
+  height: 52px !important;
+  border: 2px solid rgb(12 18 27 / 0.94) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 4px 12px rgb(0 0 0 / 0.19) !important;
+}
+
+.voople-group-now-participant--me > *:first-child {
+  border-color: rgb(121 189 255 / 0.72) !important;
+  box-shadow: 0 0 0 1px rgb(121 189 255 / 0.10), 0 0 12px rgb(121 189 255 / 0.05) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Live shelf / people / chat
+   -------------------------------------------------------------------------- */
+
+.voople-group-live-shelf {
+  container-type: inline-size;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.038);
+  background:
+    linear-gradient(104deg, rgb(82 28 48 / 0.11), rgb(38 20 30 / 0.045) 34%, transparent 62%),
+    rgb(8 13 21 / 0.58);
+  -webkit-backdrop-filter: blur(10px) saturate(1.04);
+  backdrop-filter: blur(10px) saturate(1.04);
+}
+
+.voople-group-live-shelf__layout { display: none; }
+.voople-group-live-shelf__layout--wide { display: flex; }
+.voople-live-room-card { min-height: 112px !important; }
+
+.voople-group-people-control {
+  min-height: 44px;
+  border: 1px solid rgb(255 255 255 / 0.055) !important;
+  background:
+    linear-gradient(108deg, rgb(142 64 88 / 0.050), transparent 48%),
+    rgb(13 20 30 / 0.52) !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.026);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.voople-group-people-list {
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.voople-group-people-row { background: transparent; transition: background 140ms ease; }
+.voople-group-people-row:hover { background: linear-gradient(102deg, rgb(142 64 88 / 0.065), rgb(121 189 255 / 0.020) 100%); }
+
+.voople-shell[data-route-kind="messages"] .voople-chat-window__messages {
+  touch-action: pan-y;
+  background:
+    linear-gradient(102deg, rgb(78 23 43 / 0.24) 0%, rgb(46 20 32 / 0.13) 26%, rgb(12 16 23 / 0.025) 54%, transparent 68%),
+    linear-gradient(270deg, rgb(55 84 117 / 0.030), transparent 30%),
+    #090d14 !important;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-chat-composer__surface {
+  border-radius: 15px !important;
+  background:
+    linear-gradient(108deg, rgb(142 64 88 / 0.065), transparent 48%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.035), rgb(255 255 255 / 0.008)),
+    rgb(18 17 25 / 0.56) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive / performance
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 1280px) {
+  .voople-shell[data-route-kind="messages"] { --voople-sidebar-width: 220px; }
+  .voople-shell[data-route-kind="messages"] .voople-panel-header,
+  .voople-shell[data-route-kind="messages"] .voople-chat-window__header--group { min-height: 136px; padding: 18px 24px 16px; }
+  .voople-group-header-avatar > * { width: 92px !important; height: 92px !important; }
+  .voople-group-header-name { font-size: 24px; }
+  .voople-group-header-meta { font-size: 12px !important; }
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs { min-height: 48px; padding-inline: 24px; }
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab { height: 46px; font-size: 12px; }
+  .voople-group-now { padding: 26px 24px 34px !important; }
+  .voople-group-now__grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+
+@media (max-width: 900px) {
+  .voople-shell[data-route-kind="messages"] { --voople-sidebar-width: 184px; }
+  .voople-group-header-members { display: none; }
+
+  .voople-room-material,
+  .voople-group-people-list,
+  .voople-chat-composer__surface,
+  .voople-group-header-invite,
+  .voople-group-header-more,
+  .voople-shell[data-route-kind="messages"] .voople-panel-header,
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs,
+  .voople-group-people-control {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .voople-room-material {
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.060), rgb(255 255 255 / 0.016)),
+      linear-gradient(126deg, rgb(143 64 88 / 0.055), transparent 42%, rgb(121 189 255 / 0.032)),
+      rgb(16 22 32 / 0.88) !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs { padding-inline: 12px; }
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs > [role="tablist"] { gap: 1.2rem; }
+  .voople-group-now { padding: 18px 12px 28px !important; }
+  .voople-group-now__grid { grid-template-columns: 1fr !important; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .voople-room-material,
+  .voople-group-people-list,
+  .voople-chat-composer__surface,
+  .voople-group-header-invite,
+  .voople-group-header-more,
+  .voople-shell[data-route-kind="messages"] .voople-panel-header,
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button.voople-room-material:hover .voople-room-material__reflection { animation: none !important; opacity: 0.18; background-position: 48% 0; }
 }

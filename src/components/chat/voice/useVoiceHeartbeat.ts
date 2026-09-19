@@ -51,13 +51,9 @@ export function useVoiceHeartbeat(
       }
       consecutiveFailuresRef.current = 0;
       setActiveHealth("healthy");
-    } catch (error) {
+    } catch {
       consecutiveFailuresRef.current += 1;
       if (consecutiveFailuresRef.current >= 2) setActiveHealth("degraded");
-      console.error("Room heartbeat failed", {
-        kind: targetKind,
-        message: error instanceof Error ? error.message : String(error),
-      });
     } finally {
       pendingRef.current = false;
     }

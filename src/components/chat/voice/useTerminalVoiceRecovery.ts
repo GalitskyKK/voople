@@ -49,11 +49,6 @@ export function useTerminalVoiceRecovery(options: RecoveryOptions) {
     current.roomRef.current = null;
     current.clearAttachedMedia();
     current.setMicMuted(true);
-    console.warn("Voice media connection ended", {
-      sessionKind: current.sessionKind,
-      reason: String(reason ?? "unknown"),
-      attempt: attemptsRef.current,
-    });
     if (!insideRef.current || !mountedRef.current) {
       current.setMediaStatus("idle");
       return;

@@ -1,13 +1,13 @@
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { cn } from "@/lib/utils";
-import type { GroupNowUser } from "@/types/group-now";
+import type { GroupNowParticipant as GroupNowParticipantView, GroupNowUser } from "@/types/group-now";
 
 export function GroupNowParticipant({
   user,
   onOpenProfile,
   variant = "inline",
 }: {
-  user: GroupNowUser;
+  user: GroupNowUser | GroupNowParticipantView;
   onOpenProfile?: (user: GroupNowUser) => void;
   variant?: "inline" | "room";
 }) {
@@ -41,7 +41,7 @@ export function GroupNowParticipant({
     variant === "room"
       ? "voople-group-now-participant voople-group-now-participant--room relative inline-grid h-8 w-8 shrink-0 place-items-center rounded-full"
       : "inline-flex min-w-0 items-center gap-2",
-    variant === "room" && "isMe" in user && user.isMe && "voople-group-now-participant--me",
+    variant === "room" && "isMe" in user && user.isMe === true && "voople-group-now-participant--me",
   );
 
   if (!onOpenProfile || user.guest) return <span className={className}>{content}</span>;

@@ -689,6 +689,20 @@ handshake в headless Chromium и удаляет Room сразу после пр
 проверку полного web-flow: серверная membership уже может быть создана, пока
 клиентский media-state остаётся в `connecting`.
 
+### Web voice connection hardening — 2026-09-19
+
+Клиентский media-handshake снова использует один прямой `Room.connect` вместо
+предварительного диагностического WebSocket-подключения, которое дублировало
+handshake и могло оставить поверхность в `connecting`. Восстановлены
+`adaptiveStream`, `dynacast`, reconnect policy, audio/publish defaults и
+disconnect lifecycle; получение credentials, каждая endpoint-попытка и общий
+UI-переход ограничены отдельными дедлайнами. Повторные нажатия используют один
+in-flight promise, stale Room отключается, а временные `[VOICE-*]` и token-adjacent
+browser logs удалены. TypeScript, targeted lint и 22 lifecycle/provider/surface
+теста проходят. До operational acceptance остаётся authenticated двухклиентный
+web/desktop gate уже на `rtc.voople.app`; source-проверки не доказывают реальный
+TURN/ICE маршрут из российских сетей.
+
 Перед заявлением о полном выполнении каждого пункта должны быть приложены:
 
 1. ссылка на contract/service/authorization;

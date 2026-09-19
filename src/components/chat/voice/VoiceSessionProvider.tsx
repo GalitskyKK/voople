@@ -30,10 +30,6 @@ const ChatRoomControl = lazy(() =>
   })),
 );
 
-if (typeof window !== "undefined") {
-  console.error("[VOICE-BUILD-MARKER] VoiceSessionProvider module loaded");
-}
-
 export type VoiceSessionDescriptor = {
   chatId: string;
   chatName: string;
@@ -65,86 +61,24 @@ export function VoiceSessionProvider({
   subscribeToVoiceRooms?: SubscribeToVoiceRooms;
 }) {
   const [activeSession, setActiveSession] = useState<VoiceSessionDescriptor | null>(null);
-  console.error("[VOICE-PROVIDER-RENDER]", {
-    activeSession,
-  });
   const [state, setState] = useState<VoiceControlState>(IDLE_VOICE_CONTROL_STATE);
   const controlRef = useRef<ChatRoomControlHandle>(null);
   const autoConnectPendingRef = useRef(false);
-  const autoStartedCoreSessionRef = useRef<string | null>(null);
-
-  const coreSessionId =
-    activeSession?.coreSession?.join.sessionId ?? null;
   const [initialCoreCredentials, setInitialCoreCredentials] = useState<EnabledVoiceMediaCredentials | null>(null);
-  const handleControlRef = useCallback(
-    (control: ChatRoomControlHandle | null) => {
-      controlRef.current = control;
-  
-      console.error("[VOICE-REF]", {
-        hasControl: Boolean(control),
-        coreSessionId,
-        autoConnectPending: autoConnectPendingRef.current,
-        autoStartedCoreSession:
-          autoStartedCoreSessionRef.current,
-      });
-  
-      if (!control) return;
-  
-      const shouldStart =
-        autoConnectPendingRef.current ||
-        (
-          coreSessionId !== null &&
-          autoStartedCoreSessionRef.current !== coreSessionId
-        );
-  
-      if (!shouldStart) return;
-  
-      // ВАЖНО:
-      // здесь ничего не помечаем started и не сбрасываем pending.
-      // React ещё может заменить экземпляр control.
-      window.setTimeout(() => {
-        const latestControl = controlRef.current;
-  
-        if (!latestControl) {
-          console.error("[VOICE-JOIN-TIMER] no current control");
-          return;
-        }
-  
-        const stillShouldStart =
-          autoConnectPendingRef.current ||
-          (
-            coreSessionId !== null &&
-            autoStartedCoreSessionRef.current !== coreSessionId
-          );
-  
-        console.error("[VOICE-JOIN-TIMER]", {
-          hasLatestControl: true,
-          stillShouldStart,
-          coreSessionId,
-        });
-  
-        if (!stillShouldStart) return;
-  
-        // Только непосредственно перед реальным join
-        // считаем сессию запущенной.
-        if (coreSessionId !== null) {
-          autoStartedCoreSessionRef.current =
-            coreSessionId;
-        }
-  
-        autoConnectPendingRef.current = false;
-  
-        console.error("[VOICE-JOIN-CALL]");
-  
-        latestControl.join();
-  
-        console.error("[VOICE-JOIN-CALLED]");
-  
-        setInitialCoreCredentials(null);
-      }, 0);
-    },
-    [coreSessionId],
-  );
+  const handleControlRef = useCallback((control: ChatRoomControlHandle | null) => {
+    controlRef.current = control;
+    if (!control || !autoConnectPendingRef.current) return;
+
+    // A keyed controller can be replaced once while the lazy boundary settles.
+    // Start against the latest mounted handle and consume the pending join once.
+    window.setTimeout(() => {
+      const latestControl = controlRef.current;
+      if (!latestControl || !autoConnectPendingRef.current) return;
+      autoConnectPendingRef.current = false;
+      latestControl.join();
+      setInitialCoreCredentials(null);
+    }, 0);
+  }, []);
 
   const openRoom = useCallback(
     (session: VoiceSessionDescriptor) => {
@@ -171,15 +105,7 @@ export function VoiceSessionProvider({
 
   const openCoreRoom = useCallback(
     (launch: CoreVoiceSessionLaunch) => {
-      const nextSessionId = launch.join.sessionId;
-
-      if (
-        autoStartedCoreSessionRef.current !==
-        nextSessionId
-      ) {
-        autoConnectPendingRef.current = true;
-      }
-
+      autoConnectPendingRef.current = true;
       setInitialCoreCredentials(launch.credentials);
       setState(IDLE_VOICE_CONTROL_STATE);
 
@@ -298,7 +224,6 @@ export function VoiceSessionProvider({
                 initialCoreCredentials={initialCoreCredentials ?? undefined}
                 onCoreRoomSwitch={roomSwitch.requestJoin}
                 renderTrigger={false}
-                // initialOpen
                 onStateChange={handleStateChange}
               />
             </Suspense>

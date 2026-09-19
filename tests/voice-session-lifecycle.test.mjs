@@ -25,7 +25,7 @@ test("join uses microphone intent and compensates a cancelled server enter", () 
   assert.match(lifecycle, /server\.enter\.run\(desiredMicMutedRef\.current\)/);
   assert.doesNotMatch(lifecycle, /mutateAsync\(\{ chatId, micMuted \}\)/);
   assert.match(lifecycle, /if \(!isCurrent\(\)\) \{\s+await server\.leave\.run/);
-  assert.match(lifecycle, /sessionOperation\.cancel\(\);\s+mediaConnection\.disconnect\(\)/);
+  assert.match(lifecycle, /sessionOperation\.cancel\(\);?\s+mediaConnection\.disconnect\(\)/);
 });
 
 test("ChatRoomControl is only a shared controller-to-view boundary", () => {
@@ -78,12 +78,29 @@ test("microphone test cancels pending device access and prevents duplicate start
   assert.match(micTest, /mountedRef\.current = false/);
 });
 
-test("LiveKit connect checks its generation after every long async boundary", () => {
+test("LiveKit connect is bounded, single-flight and abandons stale rooms", () => {
   const connection = read("src/components/chat/voice/useVoiceMediaConnection.ts");
 
+  assert.match(connection, /if \(connectPromiseRef\.current\) return connectPromiseRef\.current/);
   assert.match(connection, /const isCurrent = \(\) =>/);
-  assert.match(connection, /await getCredentials\(\);\s+if \(!isCurrent\(\)\) return/);
-  assert.match(connection, /await room\.prepareConnection[\s\S]*if \(!isCurrent\(\)\) return abandonRoom\(room\)/);
-  assert.match(connection, /await room\.startAudio\(\)[\s\S]*if \(!isCurrent\(\)\) return abandonRoom\(room\)/);
-  assert.match(connection, /await syncVoiceTrackProcessor[\s\S]*if \(!isCurrent\(\)\) return abandonRoom\(room\)/);
+  assert.match(connection, /waitForVoiceMediaConnection\(\s*getCredentials\(\)/);
+  assert.match(connection, /VOICE_MEDIA_CREDENTIALS_TIMEOUT_MS/);
+  assert.match(connection, /VOICE_MEDIA_ENDPOINT_TIMEOUT_MS/);
+  assert.match(connection, /room\.connect\(endpoint\.url, credentials\.token/);
+  assert.match(connection, /adaptiveStream: true/);
+  assert.match(connection, /disconnectOnPageLeave: true/);
+  assert.doesNotMatch(connection, /ConnectionCheck/);
+  assert.match(connection, /if \(!isCurrent\(\)\) \{\s+abandonRoom\(room\)/);
+  assert.match(connection, /const isCurrentRoom = \(\) => isCurrent\(\) && roomRef\.current === room/);
+  assert.match(connection, /await room\.startAudio\(\)[\s\S]*if \(isCurrentRoom\(\)\)/);
+  assert.match(connection, /await syncVoiceTrackProcessor[\s\S]*if \(!isCurrentRoom\(\)\) return/);
+});
+
+test("voice connection ships without temporary browser debug markers", () => {
+  const provider = read("src/components/chat/voice/VoiceSessionProvider.tsx");
+  const connection = read("src/components/chat/voice/useVoiceMediaConnection.ts");
+  const surface = read("src/components/chat/voice/useVoiceRoomSurfaceSession.ts");
+
+  assert.doesNotMatch(`${provider}\n${connection}\n${surface}`, /console\.|\[VOICE-/);
+  assert.doesNotMatch(connection, /credentials\.token[^)]*console/s);
 });

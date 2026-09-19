@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   resolveVoiceRoomErrorTitle,
   resolveVoiceRoomSurfacePhase,
+  waitForVoiceMediaConnection,
   waitForVoiceRoomLifecycle,
 } from "../src/components/chat/voice/voice-room-surface.ts";
 import {
@@ -218,6 +219,11 @@ test("room recovery is bounded, actionable and restores dialog focus", async () 
     /Не удалось подтвердить изменение комнаты вовремя/,
   );
   assert.equal(await waitForVoiceRoomLifecycle(Promise.resolve("ok"), 50), "ok");
+  await assert.rejects(
+    waitForVoiceMediaConnection(new Promise(() => undefined), 5, "media timeout"),
+    /media timeout/,
+  );
+  assert.equal(await waitForVoiceMediaConnection(Promise.resolve("connected"), 50), "connected");
   assert.match(states, /retryLabel/);
   assert.match(states, /Вы вышли из комнаты/);
   assert.match(surfaceSession, /setFailedOperation\("leave"\)/);

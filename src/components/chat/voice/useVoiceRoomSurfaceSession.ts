@@ -54,12 +54,6 @@ export function useVoiceRoomSurfaceSession({
 
   const enterAndConnect = () =>
     sessionOperation.run(async ({ isCurrent }) => {
-      console.log("[VOICE-4] enterAndConnect started", {
-        inside,
-        active,
-        current: isCurrent()
-      })
-
       setTransition("connecting")
       setFailedOperation(null)
       setMediaError(null)
@@ -74,15 +68,11 @@ export function useVoiceRoomSurfaceSession({
           if (!active) reportProductEvent("room_created", { kind: chatType })
         }
         if (!isCurrent()) return
-        console.log("[VOICE-5] calling mediaConnection.connect()")
         const mediaConnected = await waitForVoiceMediaConnection(
           mediaConnection.connect(),
           VOICE_MEDIA_SURFACE_TIMEOUT_MS,
           "Подключение к голосовой комнате не завершилось вовремя."
         )
-        console.log("[VOICE-6] mediaConnection.connect returned", {
-          mediaConnected
-        })
 
         if (!isCurrent()) {
           mediaConnection.disconnect()

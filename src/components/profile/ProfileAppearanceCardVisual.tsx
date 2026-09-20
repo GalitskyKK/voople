@@ -144,7 +144,7 @@ export function ProfileAppearanceCardVisual({
         </div>
         <ProfileCardFrameOverlay frame={customization.assets.frame} />
       </article>
-      <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between text-[10px] font-medium text-white/50"><span>Мой образ сейчас</span><span>voople.ru/{profile.username}</span></div>
+      <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between text-[10px] font-medium text-white/50"><span>Мой образ сейчас</span><span>voople.app/{profile.username}</span></div>
     </div>
   );
 }

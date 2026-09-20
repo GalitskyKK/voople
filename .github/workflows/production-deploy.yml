@@ -1,0 +1,92 @@
+name: Production web deploy
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "web-v*"
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: production-web
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    name: Build immutable web image
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Resolve image name
+        id: meta
+        shell: bash
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}/web:${GITHUB_SHA}"
+          echo "image=${image}" >> "${GITHUB_OUTPUT}"
+
+      - name: Authenticate to GHCR
+        shell: bash
+        run: echo "${{ github.token }}" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
+
+      - name: Build production image
+        shell: bash
+        run: |
+          docker build \
+            --file Dockerfile \
+            --build-arg NEXT_PUBLIC_APP_URL=https://voople.app \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL="${{ vars.NEXT_PUBLIC_SUPABASE_URL }}" \
+            --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
+            --build-arg NEXT_PUBLIC_ASSETS_CDN_URL=https://cdn.voople.app \
+            --build-arg NEXT_PUBLIC_LIVEKIT_URL=wss://rtc.voople.app \
+            --build-arg NEXT_PUBLIC_APP_RELEASE="${GITHUB_SHA}" \
+            --tag "${{ steps.meta.outputs.image }}" \
+            .
+
+      - name: Push immutable image
+        run: docker push "${{ steps.meta.outputs.image }}"
+
+  deploy:
+    name: Deploy to Selectel
+    needs: build-and-push
+    runs-on: [self-hosted, linux, x64, voople-production]
+    timeout-minutes: 10
+    environment: production
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Check out deployment configuration
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Authenticate to GHCR
+        shell: bash
+        run: echo "${{ github.token }}" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
+
+      - name: Install deployment configuration
+        shell: bash
+        run: |
+          test -s /opt/voople/app.env
+          install -m 0644 deploy/production/compose.yaml /opt/voople/compose.yaml
+
+      - name: Start release and wait for health
+        shell: bash
+        env:
+          VOOPLE_IMAGE: ${{ needs.build-and-push.outputs.image }}
+          XDG_RUNTIME_DIR: /run/user/1000
+          DOCKER_HOST: unix:///run/user/1000/docker.sock
+        run: |
+          cd /opt/voople
+          docker compose pull
+          docker compose up -d --remove-orphans --wait --wait-timeout 120
+          curl --fail --show-error --silent --retry 6 --retry-delay 5 \
+            http://127.0.0.1:3000/api/health
+          curl --fail --show-error --silent --retry 6 --retry-delay 5 \
+            https://voople.app/api/health

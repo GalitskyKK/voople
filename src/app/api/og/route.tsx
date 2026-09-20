@@ -78,7 +78,7 @@ export function GET(request: Request) {
           ) : null}
         </div>
 
-        <span style={{ fontSize: 28, color: "#ffffff66" }}>voople.ru</span>
+        <span style={{ fontSize: 28, color: "#ffffff66" }}>voople.app</span>
       </div>
     ),
     { width: 1200, height: 630 },

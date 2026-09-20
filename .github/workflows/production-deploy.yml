@@ -46,6 +46,7 @@ jobs:
             --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
             --build-arg NEXT_PUBLIC_ASSETS_CDN_URL=https://cdn.voople.app \
             --build-arg NEXT_PUBLIC_LIVEKIT_URL=wss://rtc.voople.app \
+            --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY="${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}" \
             --build-arg NEXT_PUBLIC_APP_RELEASE="${GITHUB_SHA}" \
             --tag "${{ steps.meta.outputs.image }}" \
             .

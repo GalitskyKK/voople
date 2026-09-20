@@ -35,12 +35,17 @@ test("production container is reachable only through host Caddy", async () => {
 });
 
 test("production deploy uses an immutable image and an outbound runner", async () => {
-  const workflow = await read(".github/workflows/production-deploy.yml");
+  const [dockerfile, workflow] = await Promise.all([
+    read("Dockerfile"),
+    read(".github/workflows/production-deploy.yml"),
+  ]);
 
   assert.match(workflow, /web-v\*/);
   assert.match(workflow, /web:\$\{GITHUB_SHA\}/);
   assert.match(workflow, /self-hosted, linux, x64, voople-production/);
   assert.doesNotMatch(workflow, /PRODUCTION_SSH_/);
   assert.doesNotMatch(workflow, /StrictHostKeyChecking=no/);
+  assert.match(dockerfile, /ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY/);
+  assert.match(workflow, /vars\.NEXT_PUBLIC_TURNSTILE_SITE_KEY/);
   assert.match(workflow, /docker compose up -d --remove-orphans --wait/);
 });

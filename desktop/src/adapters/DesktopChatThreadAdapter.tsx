@@ -121,6 +121,7 @@ export function DesktopChatThreadAdapter({
         groupId: rootChat?.id ?? data.chat.parentChatId ?? chatId,
         conversationId: chatId,
         groupName: rootChat?.name ?? data.chat.parentName ?? title,
+        currentUserId: session.user.id,
         initialTab: initialGroupTab,
         combineHeader: !isSubchat,
         canCreatePinned: data.chat.viewerRole !== "member",

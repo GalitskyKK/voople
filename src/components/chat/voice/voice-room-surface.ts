@@ -18,15 +18,15 @@ export type VoiceRoomSessionTransition =
 
 export const VOICE_ROOM_LIFECYCLE_TIMEOUT_MS = 10_000;
 
-export const VOICE_MEDIA_CREDENTIALS_TIMEOUT_MS = 12_000;
-export const VOICE_MEDIA_ENDPOINT_TIMEOUT_MS = 18_000;
+export const VOICE_MEDIA_CREDENTIALS_TIMEOUT_MS = 8_000;
+export const VOICE_MEDIA_ENDPOINT_TIMEOUT_MS = 12_000;
 
 // Общий бюджет mediaConnection.connect(), включая получение credentials
 // и перебор всех LiveKit endpoints.
-export const VOICE_MEDIA_CONNECTION_TIMEOUT_MS = 35_000;
+export const VOICE_MEDIA_CONNECTION_TIMEOUT_MS = 20_000;
 
 // Последний watchdog на уровне UI.
-export const VOICE_MEDIA_SURFACE_TIMEOUT_MS = 40_000;
+export const VOICE_MEDIA_SURFACE_TIMEOUT_MS = 24_000;
 
 export async function waitForVoiceRoomLifecycle<T>(
   operation: Promise<T>,

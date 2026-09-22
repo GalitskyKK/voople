@@ -55,7 +55,7 @@ test("Group Now presentation resolves current, switch and live activity", () => 
   assert.equal(formatGroupNowElapsed("2026-08-31T12:00:00.000Z", Date.parse("2026-08-31T12:24:00.000Z")), "24 мин");
 });
 
-test("shared Group Now view keeps flat accessible states for both hosts", async () => {
+test("shared Group Now view keeps accessible voice actions for both hosts", async () => {
   const [controller, viewSource, roomSource] = await Promise.all([
     readFile(new URL("../src/components/chat/GroupNowPanel.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/components/chat/GroupNowPanelView.tsx", import.meta.url), "utf8"),
@@ -67,18 +67,22 @@ test("shared Group Now view keeps flat accessible states for both hosts", async 
   assert.match(controller, /coreGroupNow\.useQuery/);
   assert.match(controller, /refetchInterval: enabled && online \? 15_000 : false/);
   assert.match(controller, /window\.addEventListener\("offline"/);
-  assert.match(viewSource, /max-w-\[960px\]/);
   assert.match(viewSource, /GroupNowRoomSection/);
   assert.match(viewSource, /mode: "loading" \| "offline" \| "error"/);
   assert.match(viewSource, /role="status"/);
   assert.match(viewSource, /role="alert"/);
   assert.match(viewSource, /aria-live="polite"/);
-  assert.match(viewSource, /formatGroupNowVoiceSummary/);
   assert.match(viewSource, /room\.kind === "lobby"/);
-  assert.match(viewSource, /Комнаты · \{rooms\.length\}/);
+  assert.doesNotMatch(viewSource, />Голос</);
+  assert.match(roomSource, /Отделиться во временную комнату/);
+  assert.match(roomSource, /voople-group-now-room__current-actions/);
   assert.match(viewSource, /GroupNowCreateCard/);
-  assert.match(roomSource, /pending \? "Создаём" : "Создать комнату"/);
+  assert.match(roomSource, /pending \? "Создаём…" : "Комната"/);
+  assert.match(roomSource, /останется в группе/);
   assert.match(roomSource, /aria-label=\{`\$\{actionLabel\}: \$\{room\.name\}`\}/);
+  assert.match(roomSource, /aria-label=\{`Выйти из разговора: \$\{room\.name\}`\}/);
+  assert.match(roomSource, /onLeaveCurrent\(room\)/);
+  assert.match(controller, /Не удалось выйти из разговора/);
   assert.match(roomSource, /Начать разговор/);
   assert.match(roomSource, /Присоединиться/);
   assert.match(roomSource, /data-layout="room-section"/);

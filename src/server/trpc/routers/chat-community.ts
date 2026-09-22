@@ -61,7 +61,13 @@ export const chatCommunityProcedures = {
       try {
         const result = await joinPublicGroup(input.chatId, ctx.user.id);
         if (result.status === "joined") {
-          await recordServerProductEvent({ name: "group_joined", actorId: ctx.user.id, route: "/trpc/chat.joinPublicGroup", properties: { source: "discovery" } });
+          await recordServerProductEvent({
+            name: "group_joined",
+            actorId: ctx.user.id,
+            route: "/trpc/chat.joinPublicGroup",
+            subject: { kind: "group", id: input.chatId },
+            properties: { source: "discovery" },
+          });
         }
         return result;
       } catch (error) {

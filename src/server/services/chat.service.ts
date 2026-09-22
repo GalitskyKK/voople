@@ -89,11 +89,14 @@ export {
 } from "@/server/data/chat-discovery-rest";
 
 export {
+  acceptCoreVoopRequest,
   cancelCoreRoomInvite,
   getCoreRoomInvitePreview,
+  getCoreVoopStatus,
   listCoreRoomInviteCandidates,
   respondToCoreRoomInvite,
   sendCoreRoomInvite,
+  sendCoreVoopRequest,
 } from "@/server/services/core-room-invitations.service";
 
 export { createRoomGuestInvite } from "@/server/services/room-guests.service";

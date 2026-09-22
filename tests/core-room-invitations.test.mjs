@@ -13,7 +13,7 @@ test("core Room invitations are session-bound, private and idempotent", async ()
   assert.match(migration, /UNIQUE \(chat_id, room_session_id, invitee_id\)/);
   assert.match(migration, /REVOKE ALL ON TABLE public\.chat_room_invites FROM anon, authenticated/);
   assert.match(data, /eq\("session_id", sessionId\)[\s\S]+eq\("user_id", actorId\)[\s\S]+is\("left_at", null\)/);
-  assert.match(data, /onConflict: "chat_id,room_session_id,invitee_id"/);
+  assert.match(data, /onConflict: "chat_id,room_session_id,invitee_id,intent"/);
   assert.match(data, /INVITE_TTL_MS = 15 \* 60_000/);
   assert.match(data, /Сначала войдите в приглашённую комнату/);
   assert.match(data, /eq\("status", "pending"\)\s+\.select\("status"\)\s+\.maybeSingle\(\)/);

@@ -19,19 +19,18 @@ test("production image is standalone, non-root and health checked", async () => 
   assert.match(route, /Cache-Control["']:\s*"no-store"/);
 });
 
-test("production compose exposes only Caddy and bounds container logs", async () => {
+test("production compose binds only localhost for system Caddy and bounds container logs", async () => {
   const [compose, caddy] = await Promise.all([
     read("deploy/production/compose.yaml"),
     read("deploy/production/Caddyfile"),
   ]);
 
-  assert.match(compose, /web:[\s\S]*expose:[\s\S]*"3000"/);
-  assert.doesNotMatch(compose, /web:[\s\S]*ports:[\s\S]*3000:3000/);
-  assert.match(compose, /caddy:[\s\S]*"80:80"[\s\S]*"443:443"/);
+  assert.match(compose, /web:[\s\S]*ports:[\s\S]*"127\.0\.0\.1:3000:3000"/);
+  assert.doesNotMatch(compose, /"(?:0\.0\.0\.0:)?3000:3000"/);
   assert.match(compose, /max-size:\s*20m/);
   assert.match(compose, /no-new-privileges:true/);
   assert.match(caddy, /voople\.app/);
-  assert.match(caddy, /reverse_proxy web:3000/);
+  assert.match(caddy, /reverse_proxy 127\.0\.0\.1:3000/);
   assert.match(caddy, /health_uri \/api\/health/);
 });
 

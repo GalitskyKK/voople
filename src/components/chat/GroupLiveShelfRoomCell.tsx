@@ -47,8 +47,8 @@ export function GroupLiveShelfRoomCell({
 
       <span className="relative z-[3] flex min-w-0 flex-1 flex-col">
         <span className="flex min-w-0 items-center justify-between gap-2">
-          <span className="min-w-0 truncate text-[13px] font-semibold tracking-[-0.01em] text-[var(--foreground)]">{room.name}</span>
-          <span className="voople-live-room-card__count flex h-5 shrink-0 items-center gap-1 rounded-md px-1.5 text-[9px]">
+          <span className="min-w-0 truncate text-sm font-semibold leading-4 tracking-[-0.01em] text-[var(--foreground)]">{room.name}</span>
+          <span className="voople-live-room-card__count flex h-5 shrink-0 items-center gap-1 rounded-md px-1.5 text-xs leading-4">
             <UsersRound className="h-2.5 w-2.5" aria-hidden="true" />
             {room.participantCount}
           </span>
@@ -75,7 +75,7 @@ export function GroupLiveShelfRoomCell({
                   />
                 ))}
                 {overflowCount > 0 ? (
-                  <span className="voople-live-room-card__overflow -ml-1.5 grid h-7 min-w-7 place-items-center rounded-full px-1 text-[8px] font-semibold">+{overflowCount}</span>
+                  <span className="voople-live-room-card__overflow -ml-1.5 grid h-7 min-w-7 place-items-center rounded-full px-1 text-xs font-semibold">+{overflowCount}</span>
                 ) : null}
               </>
             ) : (
@@ -90,10 +90,10 @@ export function GroupLiveShelfRoomCell({
         </span>
 
         <span className="mt-auto flex min-w-0 items-end justify-between gap-2 pt-2">
-          <span className={cn("min-w-0 truncate text-[10px] leading-3.5", current ? "voople-live-room-card__current" : "text-[var(--app-muted)]")}>
+          <span className={cn("min-w-0 truncate text-xs leading-4", current ? "voople-live-room-card__current" : "text-[var(--app-muted)]")}>
             {current ? "Вы здесь" : room.hasScreenShare ? "Идёт демонстрация" : `${room.participantCount} в голосе`}
           </span>
-          {!current ? <span className="shrink-0 text-[9px] font-medium text-[var(--voople-ice)] opacity-0 transition-opacity group-hover:opacity-100">{pending ? "…" : actionLabels[action]}</span> : null}
+          {!current ? <span className="shrink-0 text-xs font-medium leading-4 text-[var(--voople-ice)] opacity-0 transition-opacity group-hover:opacity-100">{pending ? "…" : actionLabels[action]}</span> : null}
         </span>
       </span>
     </button>

@@ -13,6 +13,9 @@ export function GroupNowPanel({
   groupName,
   variant = "surface",
   onJoinRoom,
+  onLeaveCurrent,
+  leavePending = false,
+  onCreateSplit,
   onCreateRoom,
   createPending = false,
   createError = null,
@@ -23,6 +26,9 @@ export function GroupNowPanel({
   groupName: string;
   variant?: "surface" | "shelf";
   onJoinRoom: (room: GroupNowRoom) => void | Promise<void>;
+  onLeaveCurrent?: (room: GroupNowRoom) => void | Promise<void>;
+  leavePending?: boolean;
+  onCreateSplit?: (user?: GroupNowUser) => void;
   onCreateRoom?: () => void;
   createPending?: boolean;
   createError?: string | null;
@@ -82,6 +88,19 @@ export function GroupNowPanel({
     }
   };
 
+  const leaveRoom = async (room: GroupNowRoom) => {
+    if (!onLeaveCurrent) return;
+    setActionError(null);
+    setPendingRoomId(room.id);
+    try {
+      await onLeaveCurrent(room);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Не удалось выйти из разговора");
+    } finally {
+      setPendingRoomId(null);
+    }
+  };
+
   return (
     <GroupNowPanelView
       mode="ready"
@@ -90,6 +109,9 @@ export function GroupNowPanel({
       pendingRoomId={pendingRoomId}
       actionError={actionError}
       onJoinRoom={(room) => void joinRoom(room)}
+      onLeaveCurrent={onLeaveCurrent ? (room) => void leaveRoom(room) : undefined}
+      leavePending={leavePending}
+      onCreateSplit={onCreateSplit}
       onCreateRoom={onCreateRoom}
       createPending={createPending}
       createError={createError}

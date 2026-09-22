@@ -9,7 +9,7 @@
 ### Зафиксированная модель
 
 1. Один global sidebar на desktop. Он содержит Groups, DMs, Search и current user.
-2. Group открывает Chat. `Чат / Войс / Люди` — взаимоисключающие views. `Войс` — пользовательское название Group live overview; внутренний id `now` сохраняется.
+2. Group открывает `Войс`. `Войс / Чат / Люди` — взаимоисключающие views; внутренний id live overview `now` сохраняется. Chat остаётся постоянным first-class контекстом и доступен одним переключением.
 3. Group Chat — постоянный текстовый контекст группы с необязательными Sections. Room не владеет сообщениями.
 4. Активный live появляется над Chat в ограниченном по высоте Live Shelf. Пустой Shelf отсутствует.
 5. Нажатие всей Room card выполняет join/switch и оставляет пользователя в
@@ -24,6 +24,29 @@
 12. `Split` создаёт безымянный temporary разговор и перемещает только инициатора;
     `Вуп` приглашает конкретного человека и создаёт Split только после accept.
     `+ Комната` создаёт deliberate permanent/pinned Room.
+13. Пользовательская модель новых Group/live-сценариев ограничена Group, Room и
+    Invite. Запланированный сбор — planned Room; приглашение человека, Group или
+    внешней компании начинается из одного contextual `Позвать`.
+14. Повторяющийся состав не создаёт новую Group. Он может стать Frequent Room —
+    сохранённым составом внутри текущей Group с действием `Собрать`. Новая Group
+    всегда создаётся вручную или через явное сохранение самостоятельной внешней
+    компании.
+
+### Group / Room / Invite delta — 21 сентября 2026
+
+- В sidebar показываются только постоянные Groups. Joint sessions, relation и
+  frequent compositions туда не добавляются.
+- Group header использует `+ В группу` только для постоянного membership.
+- Room action `Позвать` открывает один popover/bottom sheet: люди, знакомые
+  Groups при наличии server-authorized relation, затем `Ссылка для компании`.
+- Group invite раскрывает только минимальную presence (`KSK · 3 сейчас`) и
+  доступ к конкретной Room. Chat, history, settings, другие Rooms и точный
+  roster исходной Group не раскрываются.
+- `+ Комната` добавляет выбор `Сейчас / Позже` в том же коротком creation flow.
+  Planned Room использует ту же карточку, participant intent и lifecycle, а не
+  новый постоянный экран.
+- Frequent Room показывается контекстно внутри `Войс` как состав и действие
+  `Собрать`; это preset, а не membership container и не sidebar destination.
 
 ### Voice-first interaction delta — 19 сентября 2026
 
@@ -129,11 +152,11 @@ animation не задерживает mutation. Сеть, permission, автор
 
 | Конфликт | Решение для целевой IA | Последствие для внедрения |
 | --- | --- | --- |
-| Старый core plan §9: default Сейчас; addendum: Chat | Всегда Chat при обычном входе в Group | Deep link в Сейчас остаётся явным исключением |
-| Поздний addendum допускает last-used Group view | Обычный click Group открывает Chat; live badge открывает Сейчас | Убирает неожиданное попадание в People после прошлого визита |
+| Старый core plan §9: default Сейчас; addendum: Chat | Согласно решению 21 сентября обычный вход открывает Войс | Chat остаётся одним переключением; rollout не должен терять deep links и drafts |
+| Поздний addendum допускает last-used Group view | Обычный click Group открывает Войс; last-used не восстанавливает People автоматически | Убирает неожиданное попадание в People и показывает core live context сразу |
 | Core architecture описывает Room-context filter в side panel | Drawer по умолчанию показывает выбранный Section Group Chat без room filter | Изменить архитектурное описание и текущий source-contract test одновременно с реализацией |
 | Secondary plan допускает modal/sheet continuity | Continuity сохранить внутри main-area Full Room | Миграция presentation, а не новый media/session runtime |
-| Старые mobile tabs включают Global Сейчас | P1 mobile destinations: Чаты / Поиск / Профиль | Это осознанное изменение IA; Group Сейчас остаётся внутри группы |
+| Старые mobile tabs включают Global Сейчас | P1 mobile destinations: Чаты / Поиск / Профиль | Это осознанное изменение IA; Group Войс остаётся внутри группы |
 | Старые boards описывают rail + Chat List | В messenger один sidebar со списками, без второго app rail | Secondary surfaces не возвращают старый двойной shell |
 | Текущая тема допускает orange/group-accent на controls | System controls всегда используют системные tokens | Косметика остаётся на identity/content, без изменения навигации |
 | «Каждая активная Room отдельно» против ограниченной высоты Shelf | До трёх видимых комнат, остальные — через подписанный overflow список | Все active rooms доступны и представлены отдельно; не все постоянно занимают main canvas |
@@ -148,12 +171,12 @@ App shell
 ├─ Global navigation [desktop sidebar / mobile Chats index]
 │  ├─ Groups [+ создать]
 │  │  └─ Group
-│  │     ├─ Чат [default]
+│  │     ├─ Войс [default; rooms → online outside → Frequent Room suggestions]
+│  │     ├─ Чат
 │  │     │  ├─ Live Shelf [только при live]
 │  │     │  ├─ Section selector [если sections > 1]
 │  │     │  ├─ Message stream
 │  │     │  └─ Composer
-│  │     ├─ Сейчас [rooms → online outside → empty pinned]
 │  │     ├─ Люди [сейчас / online / остальные]
 │  │     └─ Info / media / pins / search / events / settings [по действию]
 │  ├─ DMs [+ новый диалог]
@@ -197,9 +220,9 @@ Notifications не смешиваются с Search и не требуют от�
 | Metadata | 12/16 px | Вторичная, но читаемая; не 9–10 px для значимых labels |
 | Avatar token | 44 px base | Shared compact variant 28–32 в stream/shelf; 48 в People; cosmetics не меняют hit box |
 | Composer | min 48 px | Растёт до 144, затем внутренний scroll; attachments/reply отдельными строками |
-| Live Shelf | 64–76 px при одной строке | Максимум 112 desktop, 104 mobile; подробности в Сейчас |
-| Сейчас content | max 960 px | Align-start в main с 24 px inset; не растягивать участников на всю ширину |
-| Room row в Сейчас | 72–88 px | Люди компактным кластером; больше 6 — `+N` |
+| Live Shelf | 64–76 px при одной строке | Максимум 112 desktop, 104 mobile; подробности в Войс |
+| Войс content | max 960 px | Align-start в main с 24 px inset; не растягивать участников на всю ширину |
+| Room row в Войс | 72–88 px | Люди компактным кластером; больше 6 — `+N` |
 | People content | max 760 px | Align-start; row 56, status рядом с именем |
 | Local Room Switcher | 160 px | Range 144–184; комнаты в rows 40 px |
 | Full Room header | 56 px | Название группы/Room, Chat, свернуть, меню |
@@ -245,9 +268,9 @@ Group tabs имеют tablist semantics; room selector не auto-activates пр�
 
 Строка группы: avatar, имя, под ним `3 в голосе · 2 комнаты` или `Нет активных разговоров` только если нужен status, отдельный unread badge. Не писать «3 говорят», когда сервер знает лишь membership session. Speaking signal означает фактическое локально наблюдаемое speaking состояние, без ложного обещания точности устаревшего snapshot.
 
-Click по названию открывает Group Chat и восстановленный Section/scroll. Click по live badge открывает Group Сейчас. Hover mic — дополнительный shortcut Lobby; он также доступен через keyboard focus и context menu на touch. Никакое hover действие не выполняется само. Нажатие уже выбранной Group не завершает сессию и не закрывает переписку.
+Click по названию открывает Group Chat и восстановленный Section/scroll. Click по live badge открывает Group Войс. Hover mic — дополнительный shortcut Lobby; он также доступен через keyboard focus и context menu на touch. Никакое hover действие не выполняется само. Нажатие уже выбранной Group не завершает сессию и не закрывает переписку.
 
-Не показывать room tree постоянно под Group. Это одновременно нагружает sidebar и дублирует Сейчас. При нескольких десятках DMs сохранять поиск и стабильные pinned items, остальное сортировать по последнему message activity. Live updates не переставляют группы под курсором.
+Не показывать room tree постоянно под Group. Это одновременно нагружает sidebar и дублирует Войс. При нескольких десятках DMs сохранять поиск и стабильные pinned items, остальное сортировать по последнему message activity. Live updates не переставляют группы под курсором.
 
 ## 7. Sections и Group Chat
 
@@ -353,7 +376,7 @@ DRG ведёт прямо к ней, `Split` создаёт временный �
 | Уже в Лобби → выбрать DRG | Один атомарный switch; server ACK определяет фактическое место |
 | Уже в DRG → `В Лобби` | Один switch в общий разговор; без подтверждения внутри той же Group |
 | Уже в DRG → выйти из разговора | Прекратить участие; не подключать автоматически к Лобби |
-| Уже в DRG → открыть Chat/Сейчас | Сохранить DRG и Mini; просмотр группы не переводит в Лобби |
+| Уже в DRG → открыть Chat/Войс | Сохранить DRG и Mini; просмотр группы не переводит в Лобби |
 | Звонок в другой Group/DM → явный вход в Лобби | Сначала короткое подтверждение смены voice context; отмена сохраняет текущий разговор |
 | Комната закрыта, доступ отозван или пользователь исключён | Остановить/reconcile участие; не переносить звук в Лобби. Предложить отдельный вход только при актуальном праве |
 | Refresh или reconnect действующего разговора | Восстановить разрешённую сервером текущую сессию по существующему контракту; не создавать новый вход в Лобби |
@@ -366,7 +389,7 @@ DRG ведёт прямо к ней, `Split` создаёт временный �
 
 **Архитектура.** Сохраняется ровно одна постоянная Lobby на Group в существующей Room-модели и обычный LiveSession lifecycle. Постоянно существует место, а не бесконечная медиасессия. Пустая сессия завершается; Лобби остаётся. Отдельные Hub, LobbyParticipant, второй audio provider, автоматическая подписка всех online и новая история сообщений не нужны. Лобби нельзя удалить или архивировать; общий чат остаётся Group/Section Chat. Guest invite продолжает вести только в разрешённую LiveSession, без доступа к остальному хабу и без fallback в Лобби.
 
-### Сейчас: порядок сверху вниз
+### Войс: порядок сверху вниз
 
 1. Компактный summary `5 в голосе · 2 разговора`, actions `Split` и `+ Комната`.
 2. Отдельный блок `Лобби · Общий разговор`: вся карточка — join/switch; активное — компактный roster и current/Expand/Leave state, пустое — строка 40 px `Лобби · Начать разговор`.
@@ -382,7 +405,7 @@ Active row: room name слева, люди рядом кластером, спр
 avatar. `Split` — temporary без setup; `+ Комната` — dashed deliberate tile для
 permanent/pinned Room.
 
-Вход из Сейчас открывает Full Room. После leave возврат в прежний Group view Сейчас сохраняется. Состояние «вы здесь» всегда отражает session store, даже когда пользователь просматривает другую Group.
+Вход из Войс открывает Full Room. После leave возврат в прежний Group view Войс сохраняется. Состояние «вы здесь» всегда отражает session store, даже когда пользователь просматривает другую Group.
 
 ### Люди
 
@@ -490,7 +513,7 @@ Room switch из Mini выполняется в popover и сохраняет т
 
 ```text
 +-- G 216 --------+-- M ------------------------------------------------+
-| VOOPLE          | VOICEKK   [Чат] Сейчас Люди    inbox   [Войти в Лобби]|
+| VOOPLE          | VOICEKK   [Чат] Войс Люди      inbox   [Войти в Лобби]|
 | ГРУППЫ       +  +-----------------------------------------------------+
 | > VOICEKK       | [Общий v] [Game] [Мемы]               поиск media ... |
 |   Мы            +-----------------------------------------------------+
@@ -508,7 +531,7 @@ Room switch из Mini выполняется в popover и сохраняет т
 
 ```text
 +-- G -----------+-- M ------------------------------------------------+
-| Groups / DMs   | VOICEKK   [Чат] Сейчас Люди          [Войти в Лобби] |
+| Groups / DMs   | VOICEKK   [Чат] Войс Люди            [Войти в Лобби] |
 | VOICEKK  5 live+-----------------------------------------------------+
 |                | Лобби [a][b][c] 3 [Зайти] | DRG [d][e] 2 ▣ [Зайти] |
 |                +-----------------------------------------------------+
@@ -522,11 +545,11 @@ Room switch из Mini выполняется в popover и сохраняет т
 +----------------+-----------------------------------------------------+
 ```
 
-### C. Group / Сейчас
+### C. Group / Войс
 
 ```text
 +-- G -----------+-- M ------------------------------------------------+
-| Groups / DMs   | VOICEKK   Чат [Сейчас] Люди          [Войти в Лобби] |
+| Groups / DMs   | VOICEKK   Чат [Войс] Люди            [Войти в Лобби] |
 |                +-----------------------------------------------------+
 |                | 5 в голосе · 2 разговора              [+ Комната]  |
 |                | ЛОББИ · ОБЩИЙ РАЗГОВОР                             |
@@ -547,7 +570,7 @@ Room switch из Mini выполняется в popover и сохраняет т
 
 ```text
 +-- G -----------+-- M ------------------------------------------------+
-| Groups / DMs   | VOICEKK   Чат Сейчас [Люди]          [Войти в Лобби] |
+| Groups / DMs   | VOICEKK   Чат Войс [Люди]            [Войти в Лобби] |
 |                +-----------------------------------------------------+
 |                | [Найти участника...]             Пригласить         |
 |                | В разговоре                                         |
@@ -699,7 +722,7 @@ E/F/G/H -- Leave --> leaving -- acknowledged/reconciled --> no active session
 
 | Переход | Мгновенная реакция UI | Что ожидается | Animation | Confirmation |
 | --- | --- | --- | --- | --- |
-| Group click / Chat↔Сейчас↔Люди | Выбран view, cached данные/skeleton | Query по необходимости | 0–120 ms | Нет |
+| Group click / Chat↔Войс↔Люди | Выбран view, cached данные/skeleton | Query по необходимости | 0–120 ms | Нет |
 | Join, без другой сессии | Pending в Room card, затем current state | Permissions + server join + media readiness | 120–180 ms | Только явный click карточки; first permission по платформе |
 | Join в другую Room той же Group | Pending marker цели; old actual room до ACK | Atomic switch + media reconciliation | 120–200 ms | Нет |
 | Join в другую Group / DM→Group / Group→DM | Короткий confirmation с названием текущего и целевого разговора | После согласия authoritative switch | 120–180 ms после согласия | Да: текущий разговор закончится |
@@ -816,7 +839,7 @@ ConversationState [canonical cache/store]
 | Full Group Chat в drawer не создаёт ошибку аудитории | Написать из DRG, затем открыть другой Group | Хотя бы один отправляет чувствительное сообщение, считая его room-private: усилить Group/Section адресат до выпуска |
 | Shelf overflow достаточно обнаружим | 1/3/8 active rooms, 360 и 1440 | Не находят нужный разговор; увеличить видимость overflow, не высоту до половины чата |
 | Minimal dock хватает для контроля | Mute, switch, leave из DM на mobile/desktop | Пропускают mic/share-on; усилить постоянные controls |
-| Group click всегда Chat предсказуем | Повторный вход после People/Сейчас | Если большинство ищет возврат в Сейчас, тестировать explicit remember-view setting |
+| Group click всегда Chat предсказуем | Повторный вход после People/Войс | Если большинство ищет возврат в Войс, тестировать explicit remember-view setting |
 | Profile cosmetics отделены от system palette | Сильные темы профилей в light/dark | Снижается чтение/поиск controls; ограничить surface, не identity richness |
 
 ## 21. Приёмка

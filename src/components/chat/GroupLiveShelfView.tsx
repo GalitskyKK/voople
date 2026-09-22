@@ -37,8 +37,8 @@ export function GroupLiveShelfView({ groupId, rooms, currentUserRoomId, pendingR
       <section className="voople-group-live-shelf voople-group-live-shelf--collapsed shrink-0 px-4 py-1.5">
         <button type="button" onClick={toggleCollapsed} aria-expanded="false" aria-label="Развернуть активные разговоры" className="voople-group-live-shelf__collapsed-button flex min-h-9 w-full items-center gap-2 rounded-lg px-2 text-left">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
-          <span className="shrink-0 text-[10.5px] font-semibold text-[var(--foreground)]">Сейчас</span>
-          <span className="min-w-0 truncate text-[10px] text-[var(--app-muted)]">{formatCollapsedRooms(activeRooms)}</span>
+          <span className="shrink-0 text-xs font-semibold leading-4 text-[var(--foreground)]">Сейчас</span>
+          <span className="min-w-0 truncate text-xs leading-4 text-[var(--app-muted)]">{formatCollapsedRooms(activeRooms)}</span>
           <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-[var(--app-muted)]" aria-hidden="true" />
         </button>
       </section>
@@ -49,8 +49,8 @@ export function GroupLiveShelfView({ groupId, rooms, currentUserRoomId, pendingR
     <section className="voople-group-live-shelf shrink-0 px-4 py-3" aria-labelledby="group-live-shelf-title">
       <div className="mb-2.5 flex items-center justify-between gap-3">
         <button type="button" onClick={toggleCollapsed} aria-expanded="true" aria-label="Свернуть активные разговоры" className="flex items-center gap-2 rounded-md text-left">
-          <span id="group-live-shelf-title" className="text-[11px] font-semibold text-[var(--foreground)]">Сейчас в голосе</span>
-          <span className="voople-group-live-shelf__count rounded-md px-1.5 py-0.5 text-[9px] text-[var(--app-muted)]">{formatConversationCount(activeRooms.length)}</span>
+          <span id="group-live-shelf-title" className="text-xs font-semibold leading-4 text-[var(--foreground)]">Сейчас в голосе</span>
+          <span className="voople-group-live-shelf__count rounded-md px-1.5 py-0.5 text-xs leading-4 text-[var(--app-muted)]">{formatConversationCount(activeRooms.length)}</span>
           <ChevronUp className="h-3.5 w-3.5 text-[var(--app-muted)]" aria-hidden="true" />
         </button>
       </div>
@@ -70,7 +70,7 @@ export function GroupLiveShelfView({ groupId, rooms, currentUserRoomId, pendingR
                   onOpenChange={(open) => setOpenOverflow(open ? layout : null)}
                   align="end"
                   trigger={(
-                    <Button type="button" size="sm" variant="ghost" className="voople-group-live-shelf__more min-h-[6rem] shrink-0 rounded-xl px-3 text-[10px]" aria-label={`Ещё комнат: ${overflowRooms.length}`} aria-expanded={openOverflow === layout}>
+                    <Button type="button" size="sm" variant="ghost" className="voople-group-live-shelf__more min-h-[6rem] shrink-0 rounded-xl px-3 text-xs" aria-label={`Ещё комнат: ${overflowRooms.length}`} aria-expanded={openOverflow === layout}>
                       +{overflowRooms.length}<ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
                     </Button>
                   )}

@@ -13,8 +13,9 @@ test("messenger surface links preserve the chat id and accept only known tabs", 
   assert.equal(activeMessagesChatId("/messages/abc?surface=now"), "abc");
   assert.equal(groupSurfaceFromPath("/messages/abc?surface=now"), "now");
   assert.equal(groupSurfaceFromPath("/messages/abc?surface=people"), "people");
-  assert.equal(groupSurfaceFromPath("/messages/abc?surface=unknown"), "chat");
-  assert.equal(groupSurfaceFromPath("/messages/abc"), "chat");
+  assert.equal(groupSurfaceFromPath("/messages/abc?surface=chat"), "chat");
+  assert.equal(groupSurfaceFromPath("/messages/abc?surface=unknown"), "now");
+  assert.equal(groupSurfaceFromPath("/messages/abc"), "now");
 });
 
 test("Saved Messages is a messenger thread without pretending to be a chat id", () => {

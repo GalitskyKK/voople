@@ -51,5 +51,6 @@ test("Board 2 room context hides inaccessible sections and respects room privacy
   assert.match(presence, /filterUserIdsByPrivacyFieldRest/);
   assert.match(presence, /"roomsScope"/);
   assert.match(members, /activeRoom: activeRooms\.get\(user\.id\) \?\? null/);
-  assert.match(view, /Сейчас в комнате · \{activeRoom\.name\}/);
+  assert.match(view, /\["now", "Войс"\]/);
+  assert.match(view, /Войс · \{activeRoom\.name\}/);
 });

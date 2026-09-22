@@ -11,7 +11,7 @@ export function isSavedMessagesPath(pathname: string): boolean {
 export function groupSurfaceFromPath(pathname: string): "chat" | "now" | "people" {
   const query = pathname.split("?", 2)[1]?.split("#", 1)[0];
   const surface = query ? new URLSearchParams(query).get("surface") : null;
-  return surface === "now" || surface === "people" ? surface : "chat";
+  return surface === "chat" || surface === "people" ? surface : "now";
 }
 
 export function isMessagesThreadPath(pathname: string): boolean {

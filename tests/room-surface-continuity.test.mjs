@@ -86,6 +86,7 @@ test("full Room replaces main content and minimizes without ending its session",
   assert.doesNotMatch(control, /minimize:[\s\S]{0,120}leaveRoom/);
   assert.match(provider, /minimizePanel: \(\) => void/);
   assert.match(provider, /controlRef\.current\?\.minimize\(\)/);
+  assert.match(provider, /latestControl\.open\(\);\s+latestControl\.join\(\)/);
   assert.match(webShell, /minimizeVoicePanel\?\.\(\)/);
   assert.match(desktopShell, /minimizeVoicePanel\(\)/);
 });

@@ -17,6 +17,8 @@ export function GroupNowConnectedPanel({
   variant = "surface",
   onJoined,
   onOpenLegacy,
+  onLeaveCurrent,
+  leavePending = false,
   canCreatePinned = false,
   onOpenProfile,
 }: {
@@ -30,6 +32,8 @@ export function GroupNowConnectedPanel({
     credentials: EnabledVoiceMediaCredentials,
   ) => void | Promise<void>;
   onOpenLegacy?: (room: GroupNowRoom) => void | Promise<void>;
+  onLeaveCurrent?: (room: GroupNowRoom) => void | Promise<void>;
+  leavePending?: boolean;
   canCreatePinned?: boolean;
   onOpenProfile?: (user: GroupNowUser) => void;
 }) {
@@ -49,7 +53,10 @@ export function GroupNowConnectedPanel({
         groupName={groupName}
         variant={variant}
         onJoinRoom={(room) => join.requestJoin({ groupId, room })}
-        onCreateRoom={create.show}
+        onLeaveCurrent={onLeaveCurrent}
+        leavePending={leavePending}
+        onCreateSplit={create.startSplit}
+        onCreateRoom={canCreatePinned ? create.showRoom : undefined}
         createPending={create.pending}
         createError={create.error}
         onOpenProfile={onOpenProfile}
@@ -63,7 +70,6 @@ export function GroupNowConnectedPanel({
       />
       <GroupNowRoomCreateDialog
         open={create.open}
-        canCreatePinned={canCreatePinned}
         confirmation={create.confirmation}
         pending={create.pending}
         error={create.error}

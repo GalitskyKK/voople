@@ -40,14 +40,13 @@ test("core group Room navigation is shared, gated and falls back to legacy Room"
   assert.match(lobbyAction, /Войти в Лобби/);
   assert.match(lobbyAction, /<VoiceRoomButton/);
 
-  assert.match(webHeader, /<GroupLobbyAction/);
+  assert.match(webHeader, /<GroupInfoDrawer/);
   assert.match(webDrawer, /<GroupRoomAction/);
   assert.match(publicGroup, /group\.joined \? \(/);
   assert.match(publicGroup, /<GroupRoomAction/);
   assert.match(publicGroupView, /roomAction\?: ReactNode/);
   assert.match(desktop, /<GroupRoomAction/);
   assert.match(desktop, /<DesktopChatRoomHeaderAction/);
-  assert.match(desktopHeader, /<GroupLobbyAction/);
   assert.match(desktopHeader, /<VoiceRoomButton/);
   assert.match(desktopPublicGroup, /group\.joined \? \(/);
   assert.match(desktopPublicGroup, /<GroupRoomAction/);

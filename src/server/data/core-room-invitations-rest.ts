@@ -9,6 +9,7 @@ import {
 } from "@/server/data/user-blocks-rest";
 import type { GroupNowRoom } from "@/types/group-now";
 import type {
+  CoreRoomInviteIntent,
   CoreRoomInvitePreview,
   CoreRoomInviteStatus,
 } from "@/types/room-invitations";
@@ -31,6 +32,10 @@ function inviteStatus(value: unknown): CoreRoomInviteStatus {
     || value === "expired" || value === "cancelled"
   ) return value;
   return "expired";
+}
+
+function inviteIntent(value: unknown): CoreRoomInviteIntent {
+  return value === "voop" ? "voop" : "join_room";
 }
 
 function roomKind(value: unknown): "lobby" | "temporary" | "pinned" {
@@ -96,6 +101,7 @@ export async function upsertCoreRoomInviteRest(input: {
   context: InviteSessionContext;
   inviterId: string;
   inviteeId: string;
+  intent?: CoreRoomInviteIntent;
 }) {
   const admin = getAdminClient();
   const now = new Date();
@@ -107,11 +113,13 @@ export async function upsertCoreRoomInviteRest(input: {
       room_session_id: input.context.sessionId,
       inviter_id: input.inviterId,
       invitee_id: input.inviteeId,
+      intent: input.intent ?? "join_room",
       status: "pending",
+      target_room_session_id: null,
       expires_at: expiresAt,
       responded_at: null,
       updated_at: now.toISOString(),
-    }, { onConflict: "chat_id,room_session_id,invitee_id" })
+    }, { onConflict: "chat_id,room_session_id,invitee_id,intent" })
     .select("id, expires_at")
     .single();
   if (error) throw new Error(error.message);
@@ -150,7 +158,8 @@ export async function listCoreRoomInvitesForSenderRest(
     .select("id, invitee_id, status, expires_at")
     .eq("chat_id", context.groupId)
     .eq("room_session_id", context.sessionId)
-    .eq("inviter_id", inviterId);
+    .eq("inviter_id", inviterId)
+    .eq("intent", "join_room");
   if (result.error) throw new Error(result.error.message);
   const now = Date.now();
   const expiredIds = (result.data ?? []).flatMap((row) =>
@@ -272,7 +281,7 @@ export async function respondToCoreRoomInviteRest(input: {
   const admin = getAdminClient();
   const inviteResult = await admin
     .from("chat_room_invites")
-    .select("id, room_session_id, inviter_id, status, expires_at")
+    .select("id, room_session_id, inviter_id, status, expires_at, intent")
     .eq("id", input.inviteId)
     .eq("invitee_id", input.userId)
     .maybeSingle();
@@ -288,6 +297,9 @@ export async function respondToCoreRoomInviteRest(input: {
       updated_at: new Date().toISOString(),
     }).eq("id", input.inviteId).eq("status", "pending");
     throw new Error("Срок приглашения истёк");
+  }
+  if (input.response === "accepted" && inviteIntent(inviteResult.data.intent) === "voop") {
+    throw new Error("Вуп принимается отдельным действием");
   }
   if (input.response === "accepted") {
     const participantResult = await admin
@@ -327,6 +339,90 @@ export async function respondToCoreRoomInviteRest(input: {
   return { status: input.response };
 }
 
+export async function getCoreVoopRequestForInviteeRest(
+  inviteId: string,
+  inviteeId: string,
+) {
+  const result = await getAdminClient()
+    .from("chat_room_invites")
+    .select("id, chat_id, room_session_id, inviter_id, invitee_id, status, expires_at, target_room_session_id")
+    .eq("id", inviteId)
+    .eq("invitee_id", inviteeId)
+    .eq("intent", "voop")
+    .maybeSingle();
+  if (result.error) throw new Error(result.error.message);
+  if (!result.data) throw new Error("Вуп недоступен");
+  return {
+    id: String(result.data.id),
+    groupId: String(result.data.chat_id),
+    sourceSessionId: String(result.data.room_session_id),
+    inviterId: String(result.data.inviter_id),
+    inviteeId: String(result.data.invitee_id),
+    status: inviteStatus(result.data.status),
+    expiresAt: String(result.data.expires_at),
+    targetSessionId: result.data.target_room_session_id
+      ? String(result.data.target_room_session_id)
+      : null,
+  };
+}
+
+export async function getCoreVoopRequestForSenderRest(
+  inviteId: string,
+  inviterId: string,
+) {
+  const result = await getAdminClient()
+    .from("chat_room_invites")
+    .select("id, chat_id, invitee_id, status, expires_at, target_room_session_id")
+    .eq("id", inviteId)
+    .eq("inviter_id", inviterId)
+    .eq("intent", "voop")
+    .maybeSingle();
+  if (result.error) throw new Error(result.error.message);
+  if (!result.data) throw new Error("Вуп недоступен");
+  const status = inviteStatus(result.data.status);
+  const expired = status === "pending"
+    && new Date(result.data.expires_at).getTime() <= Date.now();
+  return {
+    id: String(result.data.id),
+    groupId: String(result.data.chat_id),
+    inviteeId: String(result.data.invitee_id),
+    status: expired ? "expired" as const : status,
+    targetSessionId: result.data.target_room_session_id
+      ? String(result.data.target_room_session_id)
+      : null,
+  };
+}
+
+export async function markCoreVoopAcceptedRest(input: {
+  inviteId: string;
+  inviteeId: string;
+  targetSessionId: string;
+}) {
+  const respondedAt = new Date().toISOString();
+  const result = await getAdminClient()
+    .from("chat_room_invites")
+    .update({
+      status: "accepted",
+      target_room_session_id: input.targetSessionId,
+      responded_at: respondedAt,
+      updated_at: respondedAt,
+    })
+    .eq("id", input.inviteId)
+    .eq("invitee_id", input.inviteeId)
+    .eq("intent", "voop")
+    .eq("status", "pending")
+    .select("status")
+    .maybeSingle();
+  if (result.error) throw new Error(result.error.message);
+  if (!result.data) {
+    const current = await getCoreVoopRequestForInviteeRest(input.inviteId, input.inviteeId);
+    if (current.status !== "accepted" || current.targetSessionId !== input.targetSessionId) {
+      throw new Error("На Вуп уже ответили");
+    }
+  }
+  return { status: "accepted" as const };
+}
+
 export async function listCoreRoomInvitePreviewsRest(
   inviteIds: string[],
   userId: string,
@@ -336,7 +432,7 @@ export async function listCoreRoomInvitePreviewsRest(
   const admin = getAdminClient();
   const inviteResult = await admin
     .from("chat_room_invites")
-    .select("id, chat_id, room_session_id, inviter_id, status, expires_at")
+    .select("id, chat_id, room_session_id, inviter_id, status, expires_at, intent")
     .in("id", uniqueIds)
     .eq("invitee_id", userId);
   if (inviteResult.error) throw new Error(inviteResult.error.message);
@@ -380,14 +476,20 @@ export async function listCoreRoomInvitePreviewsRest(
 
   return new Map(invites.map((invite) => {
     const inviterId = String(invite.inviter_id);
+    const intent = inviteIntent(invite.intent);
     const canInteractWithInviter = visibleInviterIds.has(inviterId);
     const session = sessions.get(String(invite.room_session_id));
     const roomRecord = session?.room_id ? rooms.get(String(session.room_id)) : null;
+    const inviterStillInSource = (participantResult.data ?? []).some((participant) =>
+      String(participant.session_id) === String(invite.room_session_id)
+      && String(participant.user_id) === inviterId
+    );
     const active = Boolean(
       session && roomRecord && !roomRecord.archived_at && !session.ended_at
       && ACTIVE_SESSION_STATES.includes(String(session.status))
       && String(session.conversation_id) === String(invite.chat_id)
-      && String(roomRecord.group_chat_id) === String(invite.chat_id),
+      && String(roomRecord.group_chat_id) === String(invite.chat_id)
+      && (intent !== "voop" || inviterStillInSource),
     );
     const storedStatus = inviteStatus(invite.status);
     const status = storedStatus === "pending"
@@ -427,6 +529,7 @@ export async function listCoreRoomInvitePreviewsRest(
     }
     return [String(invite.id), {
       id: String(invite.id),
+      intent,
       status: canInteractWithInviter || status !== "pending" ? status : "cancelled",
       expiresAt: String(invite.expires_at),
       groupId: available ? String(invite.chat_id) : null,

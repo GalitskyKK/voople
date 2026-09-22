@@ -41,6 +41,7 @@
 !/docs/readme-shot-list.md
 !/docs/core-rework-architecture.md
 !/docs/rework-integration-plan.md
+!/docs/product-metrics.md
 !/docs/readme-assets/
 !/docs/readme-assets/.gitkeep
 !/docs/readme-assets/*.webp
@@ -65,6 +66,10 @@
 !/drizzle/60-core-room-mutations.sql
 !/drizzle/65-chat-read-cursors.sql
 !/drizzle/68-guest-funnel-analytics.sql
+!/drizzle/71-product-group-metrics.sql
+!/drizzle/72-deferred-voop.sql
+# Local release checkouts are separate Git worktrees, not project sources.
+/.worktrees/
 # Local toolchain experiment for the feature-gated Windows process-audio build.
 /desktop/src-tauri/.cargo/
 

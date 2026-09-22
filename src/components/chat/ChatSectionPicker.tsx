@@ -119,11 +119,11 @@ export function ChatSectionPicker({
       contentRole="dialog"
       ariaLabel="Выбор раздела группы"
       className="min-w-0"
-      menuClassName="w-[min(22rem,calc(100vw-1rem))] rounded-[var(--app-radius-md)] p-2"
+      menuClassName="voople-chat-section-menu w-[min(22rem,calc(100vw-1rem))] rounded-[var(--app-radius-md)] p-2"
       trigger={(
         <button
           type="button"
-          className="voople-chat-sections__selector voople-chat-sections__item--active relative inline-flex h-9 min-w-0 max-w-72 items-center gap-1.5 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--background)] px-2.5 text-xs font-semibold text-[var(--foreground)] transition-colors hover:border-[var(--app-border-strong)] hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)]"
+          className="voople-chat-sections__selector relative inline-flex h-9 min-w-0 max-w-72 items-center gap-1.5 rounded-[var(--app-radius-sm)] px-2 text-xs font-semibold text-[var(--foreground)] transition-colors hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)]"
           aria-label={`Текущий раздел: ${sectionLabel(activeSection, rootChatId)}${unreadElsewhere ? `. Непрочитано в других разделах: ${unreadElsewhere}` : ""}. Выбрать раздел`}
           aria-expanded={open}
         >
@@ -208,7 +208,7 @@ export function ChatSectionPicker({
         .map((section) =>
           renderDestination(
             section,
-            "hidden h-9 max-w-32 shrink-0 items-center gap-1.5 truncate rounded-[var(--app-radius-sm)] px-2.5 text-xs font-medium text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)] sm:inline-flex",
+            "voople-chat-sections__favorite hidden h-9 max-w-32 shrink-0 items-center gap-1.5 truncate rounded-[var(--app-radius-sm)] px-2.5 text-xs font-medium text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)] sm:inline-flex",
             <>
               <ChatSectionIcon section={section} rootChatId={rootChatId} />
               <span className="truncate">
@@ -230,7 +230,7 @@ export function ChatSectionPicker({
             setCreateOpen(true);
             setOpen(true);
           }}
-          className="ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-[var(--app-radius-sm)] text-[var(--app-muted)] transition-colors hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)]"
+          className="voople-chat-sections__create ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-[var(--app-radius-sm)] text-[var(--app-muted)] transition-colors hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--theme-accent)]"
         >
           <span className="text-lg leading-none" aria-hidden="true">+</span>
         </button>

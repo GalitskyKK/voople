@@ -111,12 +111,13 @@ export async function joinGroupRoom(input: {
 }) {
   const room = await getGroupRoomRecordRest(input.roomId);
   await requireRootGroup(room.groupId, input.userId);
-  return joinGroupRoomRest({
+  const result = await joinGroupRoomRest({
     roomId: input.roomId,
     userId: input.userId,
     micMuted: input.micMuted ?? true,
     allowCrossContext: input.allowCrossContext ?? false,
   });
+  return { result, groupId: room.groupId, roomKind: room.kind };
 }
 
 export const leaveGroupRoom = leaveGroupRoomRest;

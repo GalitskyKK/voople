@@ -4,6 +4,8 @@ export async function insertProductAnalyticsEventRest(input: {
   name: string;
   actorKey: string;
   dedupeKey?: string;
+  subjectKind?: "group" | "room" | "invite";
+  subjectKey?: string;
   route: string;
   properties: Record<string, string | number | boolean>;
   occurredAt: string;
@@ -14,6 +16,8 @@ export async function insertProductAnalyticsEventRest(input: {
     platform: "server",
     actor_key: input.actorKey,
     dedupe_key: input.dedupeKey ?? null,
+    subject_kind: input.subjectKind ?? null,
+    subject_key: input.subjectKey ?? null,
     route: input.route,
     release: process.env.NEXT_PUBLIC_APP_RELEASE?.trim() || null,
     properties: input.properties,

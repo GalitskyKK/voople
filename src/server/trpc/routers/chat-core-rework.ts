@@ -4,6 +4,7 @@ import { z } from "zod";
 import { assertRateLimit } from "@/lib/ratelimit-guard";
 import { rateLimits } from "@/lib/ratelimit";
 import {
+  acceptCoreVoopRequest,
   archiveGroupRoom,
   cancelCoreRoomInvite,
   createAndJoinGroupRoom,
@@ -12,6 +13,7 @@ import {
   createGroupRoom,
   createRoomGuestInvite,
   getCoreRoomInvitePreview,
+  getCoreVoopStatus,
   getGroupNow,
   heartbeatGroupRoom,
   joinGroupRoom,
@@ -20,6 +22,7 @@ import {
   respondToCoreRoomInvite,
   renameGroupRoom,
   sendCoreRoomInvite,
+  sendCoreVoopRequest,
   setGroupRoomKind,
 } from "@/server/services/chat.service";
 import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
@@ -92,6 +95,7 @@ export const chatCoreReworkProcedures = {
           name: "room_created",
           actorId: ctx.user.id,
           route: "/trpc/chat.coreCreateRoom",
+          subject: { kind: "group", id: input.groupId },
           properties: { kind: room.kind },
         });
         return room;
@@ -126,8 +130,18 @@ export const chatCoreReworkProcedures = {
         await recordServerProductEvent({
           name: "room_created",
           actorId: ctx.user.id,
+          dedupeId: `created:${input.requestId}`,
           route: "/trpc/chat.coreCreateAndJoinRoom",
+          subject: { kind: "group", id: input.groupId },
           properties: { kind: result.room.kind, joined: true },
+        });
+        await recordServerProductEvent({
+          name: "room_joined",
+          actorId: ctx.user.id,
+          dedupeId: `joined:${input.requestId}`,
+          route: "/trpc/chat.coreCreateAndJoinRoom",
+          subject: { kind: "group", id: input.groupId },
+          properties: { roomKind: result.room.kind, transition: "create" },
         });
         return result;
       } catch (error) {
@@ -184,7 +198,7 @@ export const chatCoreReworkProcedures = {
       assertMultiRoomAccess(ctx.user.id);
       await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
       try {
-        const result = await joinGroupRoom({
+        const joined = await joinGroupRoom({
           roomId: input.roomId,
           userId: ctx.user.id,
           micMuted: input.micMuted,
@@ -193,10 +207,15 @@ export const chatCoreReworkProcedures = {
         await recordServerProductEvent({
           name: "room_joined",
           actorId: ctx.user.id,
+          dedupeId: `session:${joined.result.sessionId}`,
           route: "/trpc/chat.coreJoinRoom",
-          properties: { switched: result.switched },
+          subject: { kind: "group", id: joined.groupId },
+          properties: {
+            roomKind: joined.roomKind,
+            transition: joined.result.switched ? "switch" : "join",
+          },
         });
-        return result;
+        return joined.result;
       } catch (error) {
         throw toRoomError(error, "Не удалось войти в комнату");
       }
@@ -269,6 +288,92 @@ export const chatCoreReworkProcedures = {
         return invite;
       } catch (error) {
         throw toRoomError(error, "Не удалось отправить приглашение");
+      }
+    }),
+
+  coreSendVoop: protectedProcedure
+    .input(z.object({
+      sessionId: z.string().uuid(),
+      inviteeId: z.string().uuid(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
+      try {
+        const invite = await sendCoreVoopRequest({
+          ...input,
+          inviterId: ctx.user.id,
+        });
+        await recordServerProductEvent({
+          name: "room_invite_sent",
+          actorId: ctx.user.id,
+          dedupeId: `voop:${invite.id}`,
+          route: "/trpc/chat.coreSendVoop",
+          subject: { kind: "group", id: invite.groupId },
+          properties: { transport: "voop" },
+        });
+        return invite;
+      } catch (error) {
+        throw toRoomError(error, "Не удалось отправить Вуп");
+      }
+    }),
+
+  coreVoopStatus: protectedProcedure
+    .input(z.object({ inviteId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      try {
+        return await getCoreVoopStatus(input.inviteId, ctx.user.id);
+      } catch (error) {
+        throw toRoomError(error, "Не удалось проверить Вуп");
+      }
+    }),
+
+  coreAcceptVoop: protectedProcedure
+    .input(z.object({
+      inviteId: z.string().uuid(),
+      confirmedCrossContext: z.boolean().default(false),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
+      try {
+        const accepted = await acceptCoreVoopRequest({
+          inviteId: input.inviteId,
+          userId: ctx.user.id,
+          allowCrossContext: input.confirmedCrossContext,
+        });
+        const credentials = await createGroupRoomMediaToken(
+          accepted.join.sessionId,
+          ctx.user.id,
+        );
+        await recordServerProductEvent({
+          name: "room_joined",
+          actorId: ctx.user.id,
+          dedupeId: `voop-accepted:${input.inviteId}`,
+          route: "/trpc/chat.coreAcceptVoop",
+          subject: { kind: "group", id: accepted.groupId },
+          properties: { roomKind: "temporary", transition: "voop" },
+        });
+        return {
+          ...accepted,
+          credentials,
+          room: {
+            id: accepted.room.id,
+            kind: accepted.room.kind,
+            name: accepted.room.name,
+            joinTarget: { kind: "room" as const, roomId: accepted.room.id },
+            state: "active" as const,
+            liveSessionId: accepted.join.sessionId,
+            startedAt: new Date().toISOString(),
+            startedBy: ctx.user.id,
+            participantCount: 1,
+            hasScreenShare: false,
+            participants: [],
+          },
+        };
+      } catch (error) {
+        throw toRoomError(error, "Не удалось принять Вуп");
       }
     }),
 

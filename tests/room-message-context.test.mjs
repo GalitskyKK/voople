@@ -99,7 +99,7 @@ test("the Room surface opens the ordinary selected Group or Section conversation
   assert.match(header, /Открыть чат группы/);
   assert.match(control, /buildVoiceRoomMessagesModel\(coreSession, inside\)/);
   assert.match(launcher, /conversationId: conversationId \?\? groupId/);
-  assert.match(provider, /conversationId: launch\.conversationId \?\? launch\.groupId/);
+  assert.match(provider, /conversationId:\s+launch\.conversationId \?\? launch\.groupId/);
   assert.match(provider, /resolveVoiceConversationId\(activeSession\?\.coreSession, target\.groupId\)/);
   assert.match(context, /current\.conversationId \?\? targetGroupId/);
   assert.match(context, /chatId: session\.conversationId \?\? session\.groupId/);

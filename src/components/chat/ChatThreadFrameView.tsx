@@ -51,7 +51,7 @@ export function ChatThreadFrameView({
           ref={(node) => {
             messagesContentRef.current = node;
           }}
-          className="mr-auto flex min-h-full w-full max-w-[65rem] flex-col justify-end gap-0.5 px-2 sm:px-4"
+          className="mx-auto flex min-h-full w-full max-w-[72rem] flex-col justify-end gap-0.5 px-2 sm:px-5 lg:px-6"
         >
           {beforeMessages}
           {timeline.length === 0
@@ -95,7 +95,7 @@ export function ChatThreadFrameView({
     >
       {groupSurface ? (
         <GroupSurfaceShell
-          key={`${groupSurface.groupId}:${groupSurface.initialTab ?? "chat"}`}
+          key={`${groupSurface.groupId}:${groupSurface.initialTab ?? "now"}`}
           config={groupSurface}
           header={header}
           chatContent={chatContent}

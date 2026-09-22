@@ -119,7 +119,7 @@ export function SubchatCreatorView({
         reset();
         onOpenChange(false);
       }}
-      className="rounded-[var(--app-radius-sm)] bg-[var(--app-surface-soft)] p-2"
+      className="voople-subchat-creator rounded-[var(--app-radius-sm)] bg-[var(--app-surface-soft)] p-2"
     >
       <div className="flex items-center gap-1.5">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--background)] text-base" aria-hidden="true">
@@ -184,7 +184,7 @@ export function SubchatCreatorView({
                     icon === value
                       ? "border-[var(--theme-accent)] bg-[var(--app-accent-soft)]"
                       : "border-[var(--app-border)] bg-[var(--background)] hover:bg-[var(--app-surface)]"
-                  }`}
+                  } focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]`}
                   aria-label={`Иконка ${value}`}
                 >
                   {value}

@@ -153,7 +153,7 @@ export function ChatMessageBubbleVisual({
                 <ChatMessageRoomContext context={message.roomContext} />
               </>
             ) : null}
-            <span className="ml-auto inline-flex items-center gap-0.5 text-[11px] text-[var(--app-muted)]">
+            <span className="inline-flex items-center gap-0.5 text-[11px] text-[var(--app-muted)]">
               <LocalMessageTime iso={createdAt} />
               {isMine ? <MessageReadTicks readAt={readAt} /> : null}
             </span>
@@ -183,7 +183,7 @@ export function ChatMessageBubbleVisual({
           {hasText ? (
             <p className="whitespace-pre-wrap break-words">
               <ChatMessageContent nodes={message.content} fallback={text ?? ""} />
-              {!showsBlockHeader ? <span className="float-right">{messageMeta}</span> : null}
+              {!showsBlockHeader ? messageMeta : null}
             </p>
           ) : null}
 

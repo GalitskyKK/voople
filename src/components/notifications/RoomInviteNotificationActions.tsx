@@ -7,6 +7,7 @@ import { GroupNowRoomSwitchDialog } from "@/components/chat/GroupNowRoomSwitchDi
 import { useVoiceSession } from "@/components/chat/voice/VoiceSessionProvider";
 import { Button } from "@/components/ui/Button";
 import { useGroupNowRoomJoin } from "@/hooks/useGroupNowRoomJoin";
+import { isCrossContextRoomJoinError } from "@/lib/chat/group-room-join";
 import { trpc } from "@/lib/trpc/client";
 import type { CoreRoomInvitePreview } from "@/types/room-invitations";
 
@@ -25,17 +26,20 @@ function InviteActions({ invite }: { invite: CoreRoomInvitePreview | null }) {
   const voice = useVoiceSession();
   const utils = trpc.useUtils();
   const [error, setError] = useState<string | null>(null);
+  const [confirmVoop, setConfirmVoop] = useState(false);
+  const invalidate = async () => {
+    await Promise.all([
+      utils.notifications.list.invalidate(),
+      utils.notifications.unreadCount.invalidate(),
+      ...(invite
+        ? [utils.chat.coreRoomInvitePreview.invalidate({ inviteId: invite.id })]
+        : []),
+    ]);
+  };
   const respond = trpc.chat.coreRespondRoomInvite.useMutation({
-    onSuccess: async () => {
-      await Promise.all([
-        utils.notifications.list.invalidate(),
-        utils.notifications.unreadCount.invalidate(),
-        ...(invite
-          ? [utils.chat.coreRoomInvitePreview.invalidate({ inviteId: invite.id })]
-          : []),
-      ]);
-    },
+    onSuccess: invalidate,
   });
+  const acceptVoop = trpc.chat.coreAcceptVoop.useMutation({ onSuccess: invalidate });
   const join = useGroupNowRoomJoin({
     onJoined: ({ groupId, room }, result, credentials) => {
       voice.openCoreRoom({ groupId, room, join: result, credentials });
@@ -43,16 +47,37 @@ function InviteActions({ invite }: { invite: CoreRoomInvitePreview | null }) {
     },
   });
   const status = invite?.status === "pending"
-    ? respond.data?.status ?? invite.status
+    ? acceptVoop.data ? "accepted" : respond.data?.status ?? invite.status
     : invite?.status ?? "expired";
   const available = status === "pending" && Boolean(invite?.groupId && invite.room);
 
-  const accept = async () => {
+  const accept = async (confirmedCrossContext = false) => {
     if (!invite?.groupId || !invite.room || join.pending) return;
     setError(null);
     try {
+      if (invite.intent === "voop") {
+        const accepted = await acceptVoop.mutateAsync({
+          inviteId: invite.id,
+          confirmedCrossContext,
+        });
+        if (!accepted.credentials.enabled) {
+          throw new Error("Медиасервер для комнаты временно недоступен");
+        }
+        setConfirmVoop(false);
+        voice.openCoreRoom({
+          groupId: accepted.groupId,
+          room: accepted.room,
+          join: accepted.join,
+          credentials: accepted.credentials,
+        });
+        return;
+      }
       await join.requestJoin({ groupId: invite.groupId, room: invite.room });
     } catch (cause) {
+      if (invite.intent === "voop" && isCrossContextRoomJoinError(cause)) {
+        setConfirmVoop(true);
+        return;
+      }
       setError(cause instanceof Error ? cause.message : "Не удалось войти в комнату");
     }
   };
@@ -68,13 +93,13 @@ function InviteActions({ invite }: { invite: CoreRoomInvitePreview | null }) {
 
   return (
     <div className="mt-3">
-      {available ? (
+      {available && invite ? (
         <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" aria-label={join.pending ? "Подключаем" : `Зайти в ${invite?.room?.name}`} className="border border-[var(--theme-accent)] bg-[var(--app-accent-soft)] shadow-none [&>svg]:shrink-0" disabled={join.pending || respond.isPending} onClick={() => void accept()}>
-            {join.pending ? <LoaderCircle className="h-4 w-4 animate-spin motion-reduce:animate-none" /> : <Radio className="h-4 w-4" />}
-            {join.pending ? "Подключаем" : "Войти в комнату"}
+          <Button type="button" size="sm" aria-label={join.pending || acceptVoop.isPending ? "Подключаем" : invite.intent === "voop" ? "Принять Вуп" : `Зайти в ${invite.room?.name}`} className="border border-[var(--theme-accent)] bg-[var(--app-accent-soft)] shadow-none [&>svg]:shrink-0" disabled={join.pending || acceptVoop.isPending || respond.isPending} onClick={() => void accept()}>
+            {join.pending || acceptVoop.isPending ? <LoaderCircle className="h-4 w-4 animate-spin motion-reduce:animate-none" /> : <Radio className="h-4 w-4" />}
+            {join.pending || acceptVoop.isPending ? "Подключаем" : invite.intent === "voop" ? "Отойти" : "Войти в комнату"}
           </Button>
-          <Button type="button" size="sm" variant="ghost" disabled={join.pending || respond.isPending} onClick={() => void decline()}>
+          <Button type="button" size="sm" variant="ghost" disabled={join.pending || acceptVoop.isPending || respond.isPending} onClick={() => void decline()}>
             <X className="h-4 w-4" />
             Отклонить
           </Button>
@@ -84,15 +109,15 @@ function InviteActions({ invite }: { invite: CoreRoomInvitePreview | null }) {
           {status === "pending" ? "Комната больше недоступна" : STATUS_LABELS[status]}
         </p>
       )}
-      {error || respond.error ? (
-        <p className="mt-2 text-xs text-red-400" role="alert">{error ?? respond.error?.message}</p>
+      {error || respond.error || acceptVoop.error ? (
+        <p className="mt-2 text-xs text-red-400" role="alert">{error ?? respond.error?.message ?? acceptVoop.error?.message}</p>
       ) : null}
       <GroupNowRoomSwitchDialog
-        room={join.confirmationTarget?.room ?? null}
-        pending={join.pending}
+        room={confirmVoop && invite?.room ? { ...invite.room, name: "Сплит" } : join.confirmationTarget?.room ?? null}
+        pending={join.pending || acceptVoop.isPending}
         error={join.confirmationError}
-        onCancel={join.cancelSwitch}
-        onConfirm={() => void join.confirmSwitch()}
+        onCancel={confirmVoop ? () => setConfirmVoop(false) : join.cancelSwitch}
+        onConfirm={confirmVoop ? () => void accept(true) : () => void join.confirmSwitch()}
       />
     </div>
   );

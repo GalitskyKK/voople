@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { createVoiceOperationGate } from "../src/lib/livekit/voice-operation-gate.ts";
+import {
+  VOICE_MEDIA_CONNECTION_TIMEOUT_MS,
+  VOICE_MEDIA_SURFACE_TIMEOUT_MS,
+} from "../src/components/chat/voice/voice-room-surface.ts";
 
 const read = (path) => readFileSync(path, "utf8");
 
@@ -94,6 +98,8 @@ test("LiveKit connect is bounded, single-flight and abandons stale rooms", () =>
   assert.match(connection, /const isCurrentRoom = \(\) => isCurrent\(\) && roomRef\.current === room/);
   assert.match(connection, /await room\.startAudio\(\)[\s\S]*if \(isCurrentRoom\(\)\)/);
   assert.match(connection, /await syncVoiceTrackProcessor[\s\S]*if \(!isCurrentRoom\(\)\) return/);
+  assert.equal(VOICE_MEDIA_CONNECTION_TIMEOUT_MS, 20_000);
+  assert.equal(VOICE_MEDIA_SURFACE_TIMEOUT_MS, 24_000);
 });
 
 test("voice connection ships without temporary browser debug markers", () => {

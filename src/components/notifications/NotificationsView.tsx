@@ -143,13 +143,17 @@ export function NotificationsView({
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">
                         {notification.type === "profile_canvas_draw" || !actor ? (
-                          notificationText(notification.type, actor?.displayName ?? "")
+                          notificationText(
+                            notification.type,
+                            actor?.displayName ?? "",
+                            notification.roomInvite?.intent,
+                          )
                         ) : (
                           <span className="inline-flex flex-wrap items-center gap-x-1 gap-y-0.5">
                             <DisplayNameWithPin hasVooplePlus={actor.hasVooplePlus} badgeUrl={badgeUrl} size="xs">
                               {actor.displayName}
                             </DisplayNameWithPin>
-                            <span>{notificationActionText(notification.type)}</span>
+                            <span>{notificationActionText(notification.type, notification.roomInvite?.intent)}</span>
                           </span>
                         )}
                       </p>
@@ -180,6 +184,7 @@ export function NotificationsView({
                       label: notificationText(
                         notification.type,
                         actor?.displayName ?? "",
+                        notification.roomInvite?.intent,
                       ),
                       className,
                       active: false,

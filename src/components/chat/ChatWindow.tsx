@@ -27,7 +27,7 @@ import { ChatConversationStart } from "./ChatConversationStart";
 import { ChatConversationState } from "./ChatConversationState";
 import { useChatComposerSession } from "./ChatComposerSessionProvider";
 type ChatWindowProps = { chatId: string; initialGroupTab?: "chat" | "now" | "people" };
-export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps) {
+export function ChatWindow({ chatId, initialGroupTab = "now" }: ChatWindowProps) {
   const router = useRouter();
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const {
@@ -115,6 +115,7 @@ export function ChatWindow({ chatId, initialGroupTab = "chat" }: ChatWindowProps
         groupId: data?.chat.parentChatId ?? chatId,
         conversationId: chatId,
         groupName: data?.chat.parentName ?? chatTitle,
+        currentUserId: me?.id,
         initialTab: initialGroupTab,
         combineHeader: !isSubchat && !selection.selecting,
         canCreatePinned: data?.chat.viewerRole !== "member", onlineUserIds,

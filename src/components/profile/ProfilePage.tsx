@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 import { PostCard } from "@/components/feed/PostCard";
+import { CreatePostBlock } from "@/components/feed/CreatePostBlock";
 import { createClient } from "@/lib/supabase/client";
 import { trpc } from "@/lib/trpc/client";
 import type { PostViewModel, ProfileViewModel } from "@/types/domain";
@@ -29,6 +30,7 @@ export function ProfilePage({
   posts: initialPosts,
   initialCanvasStrokes = [],
   viewerId = null,
+  canPost = false,
   canFollow = false,
   askDeepLink = false,
 }: ProfilePageProps) {
@@ -179,6 +181,9 @@ export function ProfilePage({
           canReact={Boolean(viewerId)}
           autoFocusAsk={askDeepLink}
         />
+      )}
+      renderComposer={() => (
+        <CreatePostBlock profile={profile} canPost={canPost && isOwner} />
       )}
       renderPost={(post) => (
         <PostCard

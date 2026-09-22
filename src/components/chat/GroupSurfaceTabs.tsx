@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
 export type GroupSurfaceTab = "chat" | "now" | "people";
 
 const tabs = [
-  ["chat", "ЧАТ"],
-  ["now", "СЕЙЧАС"],
-  ["people", "ЛЮДИ"],
+  ["now", "Войс"],
+  ["chat", "Чат"],
+  ["people", "Люди"],
 ] as const;
 
 export function GroupSurfaceTabs({
@@ -22,7 +22,7 @@ export function GroupSurfaceTabs({
   onTabChange: (tab: GroupSurfaceTab) => void;
 }) {
   return (
-    <div className="voople-group-surface-tabs flex min-h-11 shrink-0 items-stretch border-b border-[var(--app-border)] px-6">
+    <div className="voople-group-surface-tabs flex min-h-10 shrink-0 items-stretch border-b border-[var(--app-border)] px-6">
       <div className="flex min-w-0 flex-1 items-stretch" role="tablist" aria-label="Раздел группы">
         {tabs.map(([id, label]) => (
           <button
@@ -32,7 +32,7 @@ export function GroupSurfaceTabs({
             aria-selected={activeTab === id}
             onClick={() => onTabChange(id)}
             className={cn(
-              "voople-group-surface-tabs__tab relative px-0 text-[11px] font-semibold tracking-[0.03em] transition-colors",
+              "voople-group-surface-tabs__tab relative px-0 text-xs font-semibold tracking-[0.03em] transition-colors",
               activeTab === id ? "text-[var(--voople-ice)]" : "text-[var(--app-muted)] hover:text-[var(--foreground)]",
             )}
           >

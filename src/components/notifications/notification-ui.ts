@@ -4,9 +4,13 @@ import type { LucideIcon } from "lucide-react";
 import { Heart, HelpCircle, MessageCircle, Palette, Radio, Repeat2, UserPlus } from "lucide-react";
 
 import type { NotificationView } from "@/types/notifications";
+import type { CoreRoomInviteIntent } from "@/types/room-invitations";
 
 /** Текст после имени актёра (для inline-пина в UI). */
-export function notificationActionText(type: string): string {
+export function notificationActionText(
+  type: string,
+  roomInviteIntent?: CoreRoomInviteIntent,
+): string {
   switch (type) {
     case "like":
       return "оценил(а) ваш пост";
@@ -23,7 +27,9 @@ export function notificationActionText(type: string): string {
     case "question":
       return "Вам задали анонимный вопрос";
     case "room_invite":
-      return "приглашает вас в комнату";
+      return roomInviteIntent === "voop"
+        ? "зовёт вас отойти"
+        : "приглашает вас в комнату";
     default:
       return "— новое уведомление";
   }
@@ -32,11 +38,15 @@ export function notificationActionText(type: string): string {
 /** Типы уведомлений без имени актёра (анонимные). */
 const ANONYMOUS_NOTIF_TYPES = new Set<string>(["profile_canvas_draw", "question"]);
 
-export function notificationText(type: string, actorName: string) {
+export function notificationText(
+  type: string,
+  actorName: string,
+  roomInviteIntent?: CoreRoomInviteIntent,
+) {
   if (ANONYMOUS_NOTIF_TYPES.has(type)) {
-    return notificationActionText(type);
+    return notificationActionText(type, roomInviteIntent);
   }
-  const action = notificationActionText(type);
+  const action = notificationActionText(type, roomInviteIntent);
   return actorName ? `${actorName} ${action}` : action;
 }
 

@@ -47,7 +47,7 @@ export type VoiceSessionContextValue = {
   minimizePanel: () => void;
   toggleMicrophone: () => void;
   toggleOutput: () => void;
-  leaveRoom: () => void;
+  leaveRoom: () => Promise<void>;
 };
 
 const VoiceSessionContext = createContext<VoiceSessionContextValue | null>(null);
@@ -75,6 +75,7 @@ export function VoiceSessionProvider({
       const latestControl = controlRef.current;
       if (!latestControl || !autoConnectPendingRef.current) return;
       autoConnectPendingRef.current = false;
+      latestControl.open();
       latestControl.join();
       setInitialCoreCredentials(null);
     }, 0);
@@ -148,6 +149,7 @@ export function VoiceSessionProvider({
     autoConnectPendingRef.current = !existingControl;
     if (!existingControl) setState(IDLE_VOICE_CONTROL_STATE);
     setActiveSession(session);
+    existingControl?.open();
     existingControl?.join();
     return true;
   }, [activeSession?.chatId, state.inside]);
@@ -180,8 +182,8 @@ export function VoiceSessionProvider({
       toggleOutput: () => {
         if (state.inside) controlRef.current?.toggleOutput();
       },
-      leaveRoom: () => {
-        if (state.inside) controlRef.current?.leave();
+      leaveRoom: async () => {
+        if (state.inside) await controlRef.current?.leave();
       },
     }),
     [activeSession, joinRoom, minimizePanel, openCoreRoom, openRoom, state],
@@ -201,6 +203,7 @@ export function VoiceSessionProvider({
         chatName: call.chatName,
         chatType: call.chatType,
       });
+      existingControl?.open();
       existingControl?.join();
     },
   });

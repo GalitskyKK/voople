@@ -1,4 +1,4 @@
-import { AudioLines, MonitorUp, Plus, UsersRound } from "lucide-react";
+import { ArrowRight, AudioLines, GitFork, LogOut, MonitorUp, Plus, UsersRound } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -24,12 +24,20 @@ export function GroupNowRoomSection({
   currentUserRoomId,
   pending,
   onJoinRoom,
+  onLeaveCurrent,
+  leavePending = false,
+  onCreateSplit,
+  splitPending = false,
   onOpenProfile,
 }: {
   room: GroupNowRoom;
   currentUserRoomId: string | null;
   pending: boolean;
   onJoinRoom: (room: GroupNowRoom) => void;
+  onLeaveCurrent?: (room: GroupNowRoom) => void;
+  leavePending?: boolean;
+  onCreateSplit?: () => void;
+  splitPending?: boolean;
   onOpenProfile?: (user: GroupNowUser) => void;
 }) {
   const action = resolveGroupNowRoomAction(room.id, currentUserRoomId);
@@ -56,15 +64,16 @@ export function GroupNowRoomSection({
         >
           {room.name}
         </span>
-        <span className="voople-group-now-room__count flex h-7 shrink-0 items-center gap-1 rounded-md px-2 text-[10px]">
+        <span className="voople-group-now-room__count flex h-7 shrink-0 items-center gap-1 rounded-md px-2 text-xs leading-4">
           <UsersRound className="h-3 w-3" aria-hidden="true" />
           {room.participantCount}
         </span>
       </header>
 
       {empty ? (
-        <div className="relative z-[3] flex min-h-0 flex-1 items-end">
-          <p className="voople-group-now-room__empty text-[11px]">Пока пусто</p>
+        <div className="relative z-[3] flex min-h-0 flex-1 items-end justify-between gap-3">
+          <p className="voople-group-now-room__empty text-xs leading-4">Пока пусто</p>
+          {action !== "current" ? <RoomActionCue label={actionLabel} /> : null}
         </div>
       ) : (
         <div className="relative z-[3] flex min-h-0 flex-1 flex-col justify-between gap-3">
@@ -76,7 +85,7 @@ export function GroupNowRoomSection({
                 </span>
               ))}
               {overflowCount > 0 ? (
-                <span className="voople-group-now-room__overflow -ml-1.5 grid h-10 min-w-10 place-items-center rounded-full px-1 text-[9px] font-semibold">
+                <span className="voople-group-now-room__overflow -ml-1.5 grid h-10 min-w-10 place-items-center rounded-full px-1 text-xs font-semibold">
                   +{overflowCount}
                 </span>
               ) : null}
@@ -91,9 +100,12 @@ export function GroupNowRoomSection({
               {room.hasScreenShare ? <MonitorUp className="h-4 w-4" /> : <AudioLines className="h-4 w-4" />}
             </span>
           </div>
-          <p className={cn("truncate text-[12px] leading-4.5", action === "current" ? "voople-group-now-room__current-copy" : "text-[var(--app-muted)]")}>
-            {action === "current" ? `Вы здесь${elapsed ? ` · ${elapsed}` : ""}` : activity}
-          </p>
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <p className={cn("min-w-0 truncate text-xs leading-5", action === "current" ? "voople-group-now-room__current-copy" : "text-[var(--app-muted)]")}>
+              {action === "current" ? `Вы здесь${elapsed ? ` · ${elapsed}` : ""}` : activity}
+            </p>
+            {action !== "current" ? <RoomActionCue label={actionLabel} /> : null}
+          </div>
         </div>
       )}
     </>
@@ -117,6 +129,35 @@ export function GroupNowRoomSection({
         aria-busy={pending || undefined}
       >
         {body}
+        {action === "current" && (onCreateSplit || onLeaveCurrent) ? (
+          <div className="voople-group-now-room__current-actions" aria-label={`Действия разговора ${room.name}`}>
+            {onCreateSplit ? (
+              <button
+                type="button"
+                className="voople-group-now-room__current-action"
+                disabled={pending || splitPending}
+                aria-label="Отделиться во временную комнату"
+                onClick={onCreateSplit}
+              >
+                <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>{splitPending ? "Создаём…" : "Сплит"}</span>
+              </button>
+            ) : null}
+            {onCreateSplit && onLeaveCurrent ? <span className="voople-group-now-room__action-divider" aria-hidden="true" /> : null}
+            {onLeaveCurrent ? (
+              <button
+                type="button"
+                className="voople-group-now-room__current-action voople-group-now-room__current-action--leave"
+                disabled={pending || leavePending}
+                aria-label={`Выйти из разговора: ${room.name}`}
+                onClick={() => onLeaveCurrent(room)}
+              >
+                <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>{pending || leavePending ? "Выходим…" : "Выйти"}</span>
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </section>
     );
   }
@@ -127,12 +168,20 @@ export function GroupNowRoomSection({
       data-layout="room-section"
       data-room-kind={room.kind}
       className={className}
-      aria-labelledby={`group-now-room-${room.id}`}
       aria-label={`${actionLabel}: ${room.name}`}
       onClick={() => onJoinRoom(room)}
     >
       {body}
     </button>
+  );
+}
+
+function RoomActionCue({ label }: { label: string }) {
+  return (
+    <span className="voople-group-now-room__action-cue shrink-0 items-center gap-1 text-xs font-semibold" aria-hidden="true">
+      {label}
+      <ArrowRight className="h-3.5 w-3.5" />
+    </span>
   );
 }
 
@@ -150,7 +199,7 @@ export function GroupNowCreateCard({
       type="button"
       disabled={pending}
       onClick={onCreateRoom}
-      aria-label="Создать комнату и войти"
+      aria-label="Создать постоянную комнату"
       className={cn(
         "voople-group-now-create-tile group flex w-full flex-col items-center justify-center gap-3 p-5 text-center disabled:opacity-55 xl:p-6",
         className,
@@ -159,7 +208,10 @@ export function GroupNowCreateCard({
       <span className="voople-group-now-create-tile__plus grid h-9 w-9 place-items-center rounded-xl">
         <Plus className="h-4 w-4" aria-hidden="true" />
       </span>
-      <span className="text-[12px] font-medium tracking-[-0.01em]">{pending ? "Создаём…" : "Создать комнату"}</span>
+      <span>
+        <strong className="block text-sm font-semibold tracking-[-0.01em]">{pending ? "Создаём…" : "Комната"}</strong>
+        <small className="mt-1 block text-xs leading-4">останется в группе</small>
+      </span>
     </button>
   );
 }

@@ -24,6 +24,9 @@ type ReadyStateProps = {
   createPending?: boolean;
   createError?: string | null;
   onJoinRoom: (room: GroupNowRoom) => void;
+  onLeaveCurrent?: (room: GroupNowRoom) => void;
+  leavePending?: boolean;
+  onCreateSplit?: (user?: GroupNowUser) => void;
   onCreateRoom?: () => void;
   onOpenProfile?: (user: GroupNowUser) => void;
 };
@@ -50,34 +53,43 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
 
   const lobby = props.value.rooms.find((room) => room.kind === "lobby") ?? null;
   const otherRooms = props.value.rooms.filter((room) => room.kind !== "lobby");
-  const visibleRooms = lobby ? [lobby, ...otherRooms] : otherRooms;
   const surfaceError = props.actionError ?? props.createError;
   const onlineCount = props.value.visibleOnlineCount || props.value.onlineOutsideRooms.length;
 
   return (
-    <section className="voople-group-now min-h-full w-full min-w-0 px-5 py-6 text-[var(--foreground)] md:px-6 xl:px-7" aria-labelledby="group-now-voice-title">
+    <section className="voople-group-now min-h-full w-full min-w-0 px-5 py-6 text-[var(--foreground)] md:px-6 xl:px-7" aria-label="Голосовые комнаты группы">
       {surfaceError ? (
         <p className="mb-4 rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-red-300" role="alert">
           {surfaceError}
         </p>
       ) : null}
 
-      <section aria-labelledby="group-now-voice-title">
-        <header className="voople-group-now__section-header mb-3 flex items-center gap-2">
-          <h2 id="group-now-voice-title" className="text-[17px] font-semibold tracking-[-0.02em] text-[var(--foreground)]">Голос</h2>
-          <span className="voople-group-now__section-count rounded-md px-2.5 py-0.5 text-[10px] text-[var(--app-muted)]">
-            {formatRoomCount(visibleRooms.length)}
-          </span>
-        </header>
-
+      <section aria-label="Комнаты">
         <div className="voople-group-now__grid">
-          {visibleRooms.map((room) => (
+          {lobby ? (
+            <GroupNowRoomSection
+              room={lobby}
+              currentUserRoomId={props.value.currentUserRoomId}
+              pending={props.pendingRoomId === lobby.id}
+              onJoinRoom={props.onJoinRoom}
+              onLeaveCurrent={props.onLeaveCurrent}
+              leavePending={Boolean(props.leavePending)}
+              onCreateSplit={props.onCreateSplit}
+              splitPending={Boolean(props.createPending)}
+              onOpenProfile={props.onOpenProfile}
+            />
+          ) : null}
+          {otherRooms.map((room) => (
             <GroupNowRoomSection
               key={room.id}
               room={room}
               currentUserRoomId={props.value.currentUserRoomId}
               pending={props.pendingRoomId === room.id}
               onJoinRoom={props.onJoinRoom}
+              onLeaveCurrent={props.onLeaveCurrent}
+              leavePending={Boolean(props.leavePending)}
+              onCreateSplit={props.onCreateSplit}
+              splitPending={Boolean(props.createPending)}
               onOpenProfile={props.onOpenProfile}
             />
           ))}
@@ -90,7 +102,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
       <section className="voople-group-now__online mt-8" aria-labelledby="group-now-online-title">
         <header className="voople-group-now__section-header mb-3 flex items-center gap-2">
           <h3 id="group-now-online-title" className="text-[17px] font-semibold tracking-[-0.02em] text-[var(--foreground)]">Доступны</h3>
-          <span className="voople-group-now__section-count rounded-md px-2.5 py-0.5 text-[10px] text-[var(--app-muted)]">{onlineCount} онлайн</span>
+          <span className="voople-group-now__section-count rounded-md px-2.5 py-0.5 text-xs leading-4 text-[var(--app-muted)]">{onlineCount} онлайн</span>
         </header>
         {props.value.onlineOutsideRooms.length > 0 ? (
           <div className="voople-group-now__available flex flex-wrap gap-x-5 gap-y-3">
@@ -99,7 +111,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
             ))}
           </div>
         ) : (
-          <p className="text-[11px] text-[var(--app-muted)]">Сейчас все уже в разговорах или офлайн.</p>
+          <p className="text-xs leading-5 text-[var(--app-muted)]">Сейчас все уже в разговорах или офлайн.</p>
         )}
       </section>
     </section>
@@ -132,11 +144,4 @@ function GroupNowPassiveState(props: PassiveStateProps) {
       </div>
     </section>
   );
-}
-
-function formatRoomCount(count: number) {
-  const mod100 = count % 100;
-  const mod10 = count % 10;
-  const noun = mod100 >= 11 && mod100 <= 14 ? "комнат" : mod10 === 1 ? "комната" : mod10 >= 2 && mod10 <= 4 ? "комнаты" : "комнат";
-  return `${count} ${noun}`;
 }

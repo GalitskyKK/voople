@@ -41,23 +41,24 @@ dev-сборку: у него свои production-настройки.
 ## Что осталось
 
 Активный порядок соответствует `rework_plan/VOOPLE_IMPLEMENTATION_BRIEF.md`.
-Повседневный мессенджер — главный сценарий, Room — его live-слой, Group всегда
-открывается в Chat. Join сразу открывает Full Room в основной области, общий
+Повседневный мессенджер и голосовой слой образуют один сценарий; Group всегда
+открывается в `Войс`, а Chat доступен одним переключением. Join сразу открывает Full Room в основной области, общий
 sidebar остаётся доступным, а навигация в другой контекст переводит ту же
 сессию в Mini Room. Старые discovery, economy и secondary-social задачи не
 должны вытеснять эту цепочку.
 
 | Этап | Незакрытый объём |
 | --- | --- |
-| P0 — source of truth | Согласовать архитектуру, integration plan и delivery matrix с новым decision set. Не считать документ или shell завершённой функцией. |
-| P1 — повседневный messenger | Один sidebar, широкий Group header, bounded Live Shelf, section selector, плотная общая message stream и полные состояния. Сохранить поиск, media, replies, pins, edit/delete, voice и files. |
-| P2 — Full/Mini continuity | Join/create/switch без промежуточного product modal; Full Room в main content, persistent runtime, локальный switcher/dropdown и Mini при навигации. |
-| P3 — Group Chat drawer и screen share | Одна Conversation composition и store для main/drawer, полный Group/Section chat без LiveSession-фильтра, responsive drawer/overlay и contain для всех форматов демонстрации. |
-| P4 — guest acquisition acceptance | Довести существующие invite/guest/conversion контракты до реального первого разговора, ошибок, retry и честной аналитики без signup wall до первой разрешённой ценности. |
+| P0 — source of truth | Decision Memo, IA/UI spec, implementation brief и delivery matrix синхронизированы; продуктовые slices всё равно не считаются готовыми по документу или shell. |
+| P1 — повседневный messenger | Реализован общий sidebar/header, `Войс / Чат / Люди`, bounded Live Shelf, section selector и плотный stream; остаются authenticated responsive/accessibility/error-state gates. |
+| P2 — Full/Mini continuity | Реализованы main-area Full Room, persistent runtime, Switch и Mini при навигации; остаются реальные multi-client/reconnect/desktop acceptance gates. |
+| P3 — Group Chat drawer и screen share | Shared composition/store и responsive drawer присутствуют; остаются multi-stream production evidence и полный authenticated visual matrix. |
+| P4 — guest acquisition acceptance | Контракты invite/guest/conversion и guest funnel есть; остаются live email callback, abuse/expiry, DB concurrency и реальный первый разговор на production infrastructure. |
 | P5 — mobile/native и secondary | После core acceptance: нативный mobile parity, profiles/cosmetics/music/posts, Saved Messages, discovery и остальные сохранённые вторичные возможности. |
 
-Итого: после документального P0 остаются четыре обязательных продуктовых среза,
-затем общая приёмка и RC. P5 не входит в критерий готовности нового core.
+Итого: обязательные P1–P4 в основном существуют в коде, но ни один нельзя
+закрыть без общей authenticated, multi-client, DB и production-приёмки; затем
+нужны RC и controlled rollout. P5 не входит в критерий готовности нового core.
 Replay/transcript и экономика допустимы только после подтверждения повторного
 использования целыми компаниями.
 

@@ -84,7 +84,9 @@ export const chatRoomInvites = pgTable(
     roomSessionId: uuid("room_session_id").notNull(),
     inviterId: uuid("inviter_id").notNull().references(() => users.id, { onDelete: "cascade" }),
     inviteeId: uuid("invitee_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    intent: varchar("intent", { length: 20 }).$type<"join_room" | "voop">().notNull().default("join_room"),
     status: varchar("status", { length: 20 }).notNull().default("pending"),
+    targetRoomSessionId: uuid("target_room_session_id"),
     expiresAt: timestamp("expires_at").notNull(),
     respondedAt: timestamp("responded_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -93,10 +95,11 @@ export const chatRoomInvites = pgTable(
   (t) => ({
     inviteeStatusIdx: index("chat_room_invites_invitee_status_idx").on(t.inviteeId, t.status, t.createdAt),
     sessionIdx: index("chat_room_invites_session_idx").on(t.chatId, t.roomSessionId, t.createdAt),
-    sessionInviteeUnique: uniqueIndex("chat_room_invites_session_invitee_unique").on(
+    sessionInviteeIntentUnique: uniqueIndex("chat_room_invites_session_invitee_intent_unique").on(
       t.chatId,
       t.roomSessionId,
       t.inviteeId,
+      t.intent,
     ),
   }),
 );

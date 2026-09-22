@@ -50,6 +50,7 @@ export function DropdownMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const mounted = useIsClient();
   const [position, setPosition] = useState<MenuPosition | null>(null);
+  const [routeKind, setRouteKind] = useState<string | null>(null);
   const focusedOpenRef = useRef(false);
 
   const updatePosition = useCallback(() => {
@@ -57,6 +58,10 @@ export function DropdownMenu({
     if (!triggerEl && !anchorPoint) return;
 
     const rect = triggerEl?.getBoundingClientRect();
+    const nextRouteKind = triggerEl
+      ?.closest<HTMLElement>("[data-route-kind]")
+      ?.dataset.routeKind ?? null;
+    setRouteKind((current) => current === nextRouteKind ? current : nextRouteKind);
     const anchorWidth = rect?.width ?? 0;
     const anchorLeft = anchorPoint?.x ?? rect?.left ?? 0;
     const anchorRight = anchorPoint?.x ?? rect?.right ?? 0;
@@ -162,6 +167,7 @@ export function DropdownMenu({
           <div
             ref={menuRef}
             data-voople-dropdown-menu="true"
+            data-route-kind={routeKind ?? undefined}
             role={contentRole}
             aria-label={ariaLabel}
             onKeyDown={handleMenuKeyDown}

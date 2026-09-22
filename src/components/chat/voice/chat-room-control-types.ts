@@ -24,5 +24,5 @@ export type ChatRoomControlHandle = {
   join: () => void;
   toggleMicrophone: () => void;
   toggleOutput: () => void;
-  leave: () => void;
+  leave: () => Promise<void>;
 };

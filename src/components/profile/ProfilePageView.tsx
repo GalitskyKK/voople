@@ -15,6 +15,7 @@ type ProfilePageViewProps = {
   renderPost: (post: PostViewModel) => ReactNode;
   renderPinnedPost?: (post: PostViewModel) => ReactNode;
   renderQuestions?: () => ReactNode;
+  renderComposer?: () => ReactNode;
   renderStickyHeader?: (visible: boolean) => ReactNode;
   initialTab?: ProfileFeedTab;
   telemetryKey?: string;
@@ -27,6 +28,7 @@ export function ProfilePageView({
   renderPost,
   renderPinnedPost,
   renderQuestions,
+  renderComposer,
   renderStickyHeader,
   initialTab = "posts",
   telemetryKey,
@@ -67,6 +69,7 @@ export function ProfilePageView({
           className="voople-profile-page__posts voople-scroll min-w-0 space-y-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1"
         >
           <ProfileFeedTabs active={feedTab} onChange={setFeedTab} />
+          {feedTab === "posts" ? renderComposer?.() : null}
           {feedTab === "questions" ? (
             renderQuestions ? (
               renderQuestions()

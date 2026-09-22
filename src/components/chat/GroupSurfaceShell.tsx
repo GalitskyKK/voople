@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import type { ChatGroupMemberView } from "@/types/chat";
 
 import { GroupNowVoicePanel } from "./GroupNowVoicePanel";
 import { GroupPeoplePanel } from "./GroupPeoplePanel";
@@ -9,12 +10,15 @@ import { GroupSurfaceTabs, type GroupSurfaceTab } from "./GroupSurfaceTabs";
 export type GroupSurfaceConfig = {
   groupId: string;
   conversationId: string;
+  currentUserId?: string | null;
   groupName: string;
   initialTab?: GroupSurfaceTab;
   combineHeader?: boolean;
   canCreatePinned: boolean;
   onlineUserIds: ReadonlySet<string>;
   onOpenProfile?: (username: string) => void;
+  onVoop?: (member: ChatGroupMemberView) => void;
+  voopingUserId?: string | null;
 };
 
 export function GroupSurfaceShell({
@@ -26,7 +30,7 @@ export function GroupSurfaceShell({
   config: GroupSurfaceConfig;
   header: ReactNode;
 }) {
-  const [activeTab, setActiveTab] = useState<GroupSurfaceTab>(config.initialTab ?? "chat");
+  const [activeTab, setActiveTab] = useState<GroupSurfaceTab>(config.initialTab ?? "now");
 
   const openProfile = config.onOpenProfile
     ? (user: { username: string }) => config.onOpenProfile?.(user.username)
@@ -48,7 +52,16 @@ export function GroupSurfaceShell({
           <GroupNowVoicePanel enabled groupId={config.groupId} conversationId={config.conversationId} groupName={config.groupName} canCreatePinned={config.canCreatePinned} variant="surface" onOpenProfile={openProfile} />
         </div>
       ) : (
-        <GroupPeoplePanel enabled groupId={config.groupId} onlineUserIds={config.onlineUserIds} onOpenProfile={config.onOpenProfile} />
+        <GroupPeoplePanel
+          enabled
+          groupId={config.groupId}
+          conversationId={config.conversationId}
+          currentUserId={config.currentUserId}
+          onlineUserIds={config.onlineUserIds}
+          onOpenProfile={config.onOpenProfile}
+          onVoop={config.onVoop}
+          voopingUserId={config.voopingUserId}
+        />
       )}
     </div>
   );

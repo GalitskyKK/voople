@@ -32,6 +32,55 @@ async function exactCount(table: string, since?: string) {
   return count ?? 0;
 }
 
+function asNumber(value: unknown) {
+  const number = typeof value === "number" ? value : Number(value ?? 0);
+  return Number.isFinite(number) ? number : 0;
+}
+
+async function getGroupProductMetrics() {
+  const admin = getAdminClient();
+  const [weekly, activation, retention] = await Promise.all([
+    admin
+      .from("product_group_weekly_metrics")
+      .select("week, active_groups, recurring_voice_groups, social_voice_groups, rooms_created, room_joins, room_switches")
+      .order("week", { ascending: false })
+      .limit(8),
+    admin
+      .from("product_group_activation_metrics")
+      .select("cohort_week, groups_created, social_voice_within_24h")
+      .order("cohort_week", { ascending: false })
+      .limit(8),
+    admin
+      .from("product_group_retention_metrics")
+      .select("cohort_week, groups_created, retained_w1")
+      .order("cohort_week", { ascending: false })
+      .limit(8),
+  ]);
+  const failure = weekly.error ?? activation.error ?? retention.error;
+  if (failure) throw new Error(failure.message);
+  return {
+    weekly: (weekly.data ?? []).map((row) => ({
+      week: String(row.week),
+      activeGroups: asNumber(row.active_groups),
+      recurringVoiceGroups: asNumber(row.recurring_voice_groups),
+      socialVoiceGroups: asNumber(row.social_voice_groups),
+      roomsCreated: asNumber(row.rooms_created),
+      roomJoins: asNumber(row.room_joins),
+      roomSwitches: asNumber(row.room_switches),
+    })),
+    activation: (activation.data ?? []).map((row) => ({
+      cohortWeek: String(row.cohort_week),
+      groupsCreated: asNumber(row.groups_created),
+      socialVoiceWithin24h: asNumber(row.social_voice_within_24h),
+    })),
+    retention: (retention.data ?? []).map((row) => ({
+      cohortWeek: String(row.cohort_week),
+      groupsCreated: asNumber(row.groups_created),
+      retainedW1: asNumber(row.retained_w1),
+    })),
+  };
+}
+
 export async function getAdminOverviewRest() {
   const now = Date.now();
   const dayAgo = new Date(now - 24 * 60 * 60 * 1_000).toISOString();
@@ -47,6 +96,7 @@ export async function getAdminOverviewRest() {
     postsWeek,
     pendingReports,
     subscriptionsResult,
+    product,
   ] = await Promise.all([
     exactCount("users"),
     exactCount("users", dayAgo),
@@ -59,6 +109,7 @@ export async function getAdminOverviewRest() {
       .from("subscriptions")
       .select("*", { count: "exact", head: true })
       .gt("expires_at", new Date(now).toISOString()),
+    getGroupProductMetrics(),
   ]);
 
   if (pendingReports.error) throw new Error(pendingReports.error.message);
@@ -87,6 +138,7 @@ export async function getAdminOverviewRest() {
         ? "configured" as const
         : "missing" as const,
     },
+    product,
     checkedAt: new Date(now).toISOString(),
   };
 }

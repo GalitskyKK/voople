@@ -28,6 +28,7 @@ export function CoreRoomInvitePreviewView({ state, onRetry, actions, switchAccou
 }) {
   const invite = state.kind === "ready" ? state.invite : null;
   const inviter = invite?.inviter;
+  const isVoop = invite?.intent === "voop";
   return (
     <AppPageContent className="min-h-0 overflow-y-auto pb-8">
       <section className="mx-auto mt-6 max-w-xl rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] sm:mt-10">
@@ -40,8 +41,12 @@ export function CoreRoomInvitePreviewView({ state, onRetry, actions, switchAccou
             ) : undefined} />
           ) : <Radio className="h-6 w-6 shrink-0 text-[var(--app-muted)]" aria-hidden />}
           <div className="min-w-0 [overflow-wrap:anywhere]">
-            <h1 className="font-semibold">Приглашение в комнату</h1>
-            {inviter ? <p className="text-sm text-[var(--app-muted)]">{inviter.displayName} зовёт вас</p> : null}
+            <h1 className="font-semibold">{isVoop ? "Вуп" : "Приглашение в комнату"}</h1>
+            {inviter ? (
+              <p className="text-sm text-[var(--app-muted)]">
+                {inviter.displayName} {isVoop ? "зовёт отойти" : "зовёт вас"}
+              </p>
+            ) : null}
           </div>
         </header>
         <div className="p-4 sm:p-5">
@@ -79,7 +84,18 @@ export function CoreRoomInvitePreviewView({ state, onRetry, actions, switchAccou
             </div>
           ) : (
             <>
-              {state.invite.room ? (
+              {isVoop ? (
+                <div className="[overflow-wrap:anywhere]">
+                  <p className="text-sm text-[var(--app-muted)]">{state.invite.groupName}</p>
+                  <h2 className="mt-1 text-xl font-semibold">Отдельный разговор</h2>
+                  <p className="mt-2 text-sm text-[var(--app-muted)]">
+                    Сплит создастся только после принятия.
+                  </p>
+                  <div className="mt-3 text-xs text-[var(--app-muted)]">
+                    <span className="flex items-center gap-1"><Clock3 className="h-4 w-4" aria-hidden />До <time dateTime={state.invite.expiresAt}>{new Date(state.invite.expiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time></span>
+                  </div>
+                </div>
+              ) : state.invite.room ? (
                 <div className="[overflow-wrap:anywhere]">
                   <p className="text-sm text-[var(--app-muted)]">{state.invite.groupName}</p>
                   <h2 className="mt-1 text-xl font-semibold">{state.invite.room.name}</h2>

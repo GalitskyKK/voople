@@ -251,7 +251,13 @@ export const chatRouter = createTRPCRouter({
       await assertRateLimit(rateLimits.createGroupChat, ctx.user.id);
       try {
         const result = await createGroupChat(ctx.user.id, input.name, input.memberIds);
-        await recordServerProductEvent({ name: "group_created", actorId: ctx.user.id, route: "/trpc/chat.createGroup", properties: { count: input.memberIds.length + 1 } });
+        await recordServerProductEvent({
+          name: "group_created",
+          actorId: ctx.user.id,
+          route: "/trpc/chat.createGroup",
+          subject: { kind: "group", id: result },
+          properties: { count: input.memberIds.length + 1 },
+        });
         return result;
       } catch (error) {
         throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось создать группу" });

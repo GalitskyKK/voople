@@ -6,11 +6,11 @@ function source(path) {
   return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 }
 
-test("group surface defaults to chat and keeps the three product modes accessible", () => {
+test("group surface defaults to Voice and keeps the three product modes accessible", () => {
   const shell = source("src/components/chat/GroupSurfaceShell.tsx");
   const tabs = source("src/components/chat/GroupSurfaceTabs.tsx");
 
-  assert.match(shell, /useState<GroupSurfaceTab>\(config\.initialTab \?\? "chat"\)/);
+  assert.match(shell, /useState<GroupSurfaceTab>\(config\.initialTab \?\? "now"\)/);
   assert.match(shell, /activeTab === "chat"/);
   assert.match(shell, /voople-group-surface-header--combined/);
   assert.match(shell, /\{header\}/);
@@ -18,6 +18,7 @@ test("group surface defaults to chat and keeps the three product modes accessibl
   assert.match(shell, /activeTab === "now"/);
   assert.match(shell, /variant="surface"/);
   assert.match(shell, /<GroupPeoplePanel/);
+  assert.match(shell, /onVoop=\{config\.onVoop\}/);
   assert.match(tabs, /\["chat", "Чат"\]/);
   assert.match(tabs, /\["now", "Войс"\]/);
   assert.match(tabs, /\["people", "Люди"\]/);
@@ -54,7 +55,8 @@ test("live shelf is bounded, shows room rosters and preserves direct room entry"
   assert.doesNotMatch(shelf, /text-\[(?:9|10|11)px\]/);
   assert.doesNotMatch(roomCell, /text-\[(?:9|10|11)px\]/);
   assert.match(roomCell, /text-sm font-semibold leading-4/);
-  assert.match(roomCell, /text-xs leading-4 text-\[var\(--app-muted\)\]/);
+  assert.match(roomCell, /"min-w-0 truncate text-xs leading-4"/);
+  assert.match(roomCell, /"text-\[var\(--app-muted\)\]"/);
   assert.match(styles, /container-type: inline-size/);
   assert.match(styles, /@container \(max-width: 520px\)/);
   assert.match(panel, /props\.variant === "shelf"/);
@@ -74,35 +76,53 @@ test("desktop messenger keeps the conversation header stack compact", () => {
   assert.match(styles, /@media \(min-width: 1180px\)[\s\S]*?voople-group-surface-header--combined[\s\S]*?min-height: 4rem/);
 });
 
-test("chat stream lets metadata reach the canonical wide edge without stretching message copy", () => {
+test("chat stream uses the wider centered canvas without stretching message copy or metadata", () => {
   const frame = source("src/components/chat/ChatThreadFrameView.tsx");
   const bubble = source("src/components/chat/ChatMessageBubbleVisual.tsx");
 
-  assert.match(frame, /max-w-\[65rem\]/);
+  assert.match(frame, /mx-auto[\s\S]*?max-w-\[72rem\]/);
   assert.match(bubble, /voople-chat-bubble relative min-w-0 flex-1/);
   assert.match(bubble, /voople-chat-bubble__body flex max-w-\[44rem\]/);
+  assert.doesNotMatch(bubble, /ml-auto inline-flex items-center gap-0\.5 text-\[11px\]/);
+  assert.doesNotMatch(bubble, /float-right/);
 });
 
-test("full Group Now follows the flat live hierarchy from the canonical plan", () => {
+test("full Group Voice follows the approved glass card hierarchy", () => {
   const panel = source("src/components/chat/GroupNowPanelView.tsx");
   const room = source("src/components/chat/GroupNowRoomSection.tsx");
+  const styles = source("src/app/globals.css");
 
-  assert.match(panel, /voople-group-now__rooms/);
-  assert.match(panel, /max-w-\[960px\]/);
-  assert.match(panel, /mr-auto/);
-  assert.match(panel, /voople-group-now__create/);
   assert.match(panel, /voople-group-now__grid/);
+  assert.doesNotMatch(panel, />Голос</);
+  assert.doesNotMatch(panel, /formatRoomCount/);
+  assert.match(room, /voople-group-now-room__current-actions/);
+  assert.match(room, /Отделиться во временную комнату/);
+  assert.match(room, /"Сплит"/);
+  assert.match(panel, /<GroupNowCreateCard/);
+  assert.match(panel, /otherRooms\.map/);
   assert.match(room, /voople-group-now-room/);
+  assert.match(room, /voople-room-material/);
+  assert.match(room, /voople-group-now-room__action-cue/);
+  assert.match(room, /<button[\s\S]*?onClick=\{\(\) => onJoinRoom\(room\)\}/);
+  assert.match(room, /aria-label=\{`\$\{actionLabel\}: \$\{room\.name\}`\}/);
+  assert.doesNotMatch(room, />\s*(?:Зайти|Присоединиться|Перейти)\s*</);
+  assert.doesNotMatch(panel, /text-\[(?:9|10|11)px\]/);
+  assert.doesNotMatch(room, /text-\[(?:9|10|11)px\]/);
   assert.doesNotMatch(room, /padStart/);
-  const roomSectionClass = room.match(/data-layout="room-section"[\s\S]*?className=\{cn\(([\s\S]*?)\)\}/)?.[1] ?? "";
-  assert.doesNotMatch(roomSectionClass, /rounded-/);
+  assert.match(styles, /--voople-glass-fill:/);
+  assert.match(styles, /--voople-room-radius: 18px/);
+  assert.match(styles, /\.voople-room-material__reflection/);
 });
 
 test("people view uses real member data and exposes room, presence and role context", () => {
   const controller = source("src/components/chat/GroupPeoplePanel.tsx");
   const view = source("src/components/chat/GroupPeoplePanelView.tsx");
+  const voopAction = source("src/components/chat/GroupPeopleVoopAction.tsx");
 
   assert.match(controller, /trpc\.chat\.groupMembers\.useQuery/);
+  assert.match(controller, /useGroupNowRoomCreate/);
+  assert.match(controller, /split\.startSplit/);
+  assert.match(controller, /voopingUserId=\{voopingUserId \?\? split\.targetUserId\}/);
   assert.match(controller, /enabled/);
   assert.match(view, /member\.activeRoom/);
   assert.match(view, /onlineUserIds\.has/);
@@ -113,6 +133,10 @@ test("people view uses real member data and exposes room, presence and role cont
   assert.match(view, /title="Онлайн"/);
   assert.match(view, /title="Остальные"/);
   assert.match(view, /<GroupPeopleSection/);
+  assert.match(view, /GroupPeopleVoopAction/);
+  assert.match(voopAction, /voople-group-people-voop/);
+  assert.match(view, /member\.id === currentUserId \? undefined : onVoop/);
+  assert.match(voopAction, /отдельный разговор/);
 });
 
 test("web and desktop thread hosts enable the same group surface without replacing legacy features", () => {
@@ -148,13 +172,42 @@ test("messenger visual language is shared by web and desktop group threads", () 
   assert.match(identity, /voople-group-header-identity/);
   assert.match(identity, /voople-group-identity__name/);
   assert.match(identity, /voople-group-identity__meta/);
-  assert.match(sectionPicker, /voople-chat-sections__item--active/);
+  assert.match(sectionPicker, /voople-chat-sections__selector/);
   assert.match(sections, /ChatSectionPicker/);
   assert.match(sectionPicker, /Найти раздел/);
   assert.match(composer, /voople-chat-composer__surface/);
   assert.match(styles, /\.voople-chat-window__header--group/);
-  assert.match(styles, /\.voople-chat-sections__item--active::after/);
+  assert.match(styles, /\.voople-chat-sections__selector\[aria-expanded="true"\]/);
   assert.match(styles, /\.voople-chat-bubble__body,/);
+});
+
+test("the dark glass route owns inherited ink, viewport gutter and keyboard focus", () => {
+  const people = source("src/components/chat/GroupPeoplePanelView.tsx");
+  const styles = source("src/app/globals.css");
+
+  assert.match(people, /text-\[var\(--foreground\)\]/);
+  assert.match(styles, /\.voople-shell\[data-route-kind="messages"\][\s\S]*?color: var\(--foreground\);/);
+  assert.match(styles, /html:has\(body \.voople-shell\[data-route-kind="messages"\]\)/);
+  assert.match(styles, /button\.voople-room-material:focus-visible/);
+  assert.match(styles, /\.voople-group-now-create-tile:focus-visible/);
+  assert.match(styles, /\.voople-group-surface-tabs__tab:focus-visible/);
+});
+
+test("messenger dropdown portals retain the glass route scope", () => {
+  const dropdown = source("src/components/ui/DropdownMenu.tsx");
+  const picker = source("src/components/chat/ChatSectionPicker.tsx");
+  const creator = source("src/components/chat/SubchatCreatorView.tsx");
+  const composer = source("src/components/chat/ChatComposerFormView.tsx");
+  const styles = source("src/app/globals.css");
+
+  assert.match(dropdown, /closest<HTMLElement>\("\[data-route-kind\]"\)/);
+  assert.match(dropdown, /data-route-kind=\{routeKind \?\? undefined\}/);
+  assert.match(picker, /voople-chat-section-menu/);
+  assert.match(creator, /voople-subchat-creator/);
+  assert.doesNotMatch(composer, /text-\[(?:9|10|11)px\]/);
+  assert.match(styles, /\.voople-dropdown-menu\[data-route-kind="messages"\]/);
+  assert.match(styles, /\.voople-chat-section-menu\[data-route-kind="messages"\]/);
+  assert.match(styles, /\.voople-chat-composer__reply/);
 });
 
 test("group visual gate includes section selection and collapsed voice shelf at wide and mobile widths", () => {

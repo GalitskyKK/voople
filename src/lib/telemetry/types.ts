@@ -94,9 +94,11 @@ export const PRODUCT_EVENT_PROPERTY_KEYS = [
   "providerAvailable",
   "reason",
   "result",
+  "roomKind",
   "source",
   "state",
   "surface",
+  "transition",
   "verdict",
   "version",
 ] as const;

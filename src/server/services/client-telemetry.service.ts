@@ -18,11 +18,18 @@ function actorKey(userId: string) {
   return createHmac("sha256", secret).update(userId).digest("hex");
 }
 
+type AnalyticsSubjectKind = "group" | "room" | "invite";
+
+function subjectKey(kind: AnalyticsSubjectKind, id: string) {
+  return actorKey(`subject:${kind}:${id}`);
+}
+
 export async function recordServerProductEvent(input: {
   name: ProductEventName;
   actorId: string;
   route: string;
   dedupeId?: string;
+  subject?: { kind: AnalyticsSubjectKind; id: string };
   properties?: Record<string, string | number | boolean>;
 }) {
   try {
@@ -31,6 +38,10 @@ export async function recordServerProductEvent(input: {
       actorKey: actorKey(input.actorId),
       dedupeKey: input.dedupeId
         ? actorKey(`product:${input.name}:${input.dedupeId}`)
+        : undefined,
+      subjectKind: input.subject?.kind,
+      subjectKey: input.subject
+        ? subjectKey(input.subject.kind, input.subject.id)
         : undefined,
       route: telemetryRouteTemplate(input.route),
       properties: input.properties ?? {},

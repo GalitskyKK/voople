@@ -35,6 +35,98 @@ Chat + доступный live уже существуют у конкурент
 temporary create-and-join, Join автоматически раскрывал Full Room или `Вуп`
 трактовался как действие над комнатой.
 
+### Визуальное направление messenger/live — 20 сентября 2026
+
+`voople_ssm_redesign/last_try` — актуальный визуальный источник для
+Messenger, Group и Voice. Архитектура, информационная иерархия, состояния,
+доступность и voice-first механика остаются из canonical product sources, но
+материал и композиция этих поверхностей следуют glass-направлению референса.
+
+- Основа — тёмный navy/near-black canvas, сдержанная винная атмосфера и
+  холодный голубой rim/highlight. Glass используется как системный материал,
+  а не как случайный декоративный эффект.
+- Group hero, Room cards, People lists, composer и связанные панели сохраняют
+  крупные мягкие радиусы, полупрозрачный объём, тонкую границу и спокойный
+  specular. Hover не поднимает карточку и не меняет её материал целиком.
+- Web и desktop используют одну визуальную систему и один масштаб identity;
+  mobile уменьшает композицию и touch-safe перестраивает её, но не заменяет
+  плоской темой.
+- Glow, blur и gradients допустимы только там, где формируют этот материал и
+  иерархию. Неконтролируемый neon, случайные ambient blobs, слабый контраст и
+  декоративные эффекты без продуктовой функции по-прежнему запрещены.
+
+Этот блок имеет приоритет над более ранним запретом gradients/glass и
+ограничением радиусов 3–6 px в `VOOPLE_IA_UI_SPEC.md` для перечисленных
+messenger/live поверхностей. Остальные требования IA/UI specification, включая
+семантику, состояния, keyboard/focus, responsive и safe-area, сохраняются.
+
+### Group / Room / Invite consolidation — 21 сентября 2026
+
+Для пользовательской модели Group/live фиксируются три основные сущности:
+**Group, Room, Invite**. Это не удаляет DM, Section, Message и LiveSession из
+архитектуры; они остаются техническими и коммуникационными контрактами. Но новые
+core-сценарии нельзя оформлять как отдельные пользовательские объекты, если они
+укладываются в эти три понятия.
+
+- **Group** — стабильная компания с membership, identity, историей и group-owned
+  entitlements. В левой колонке находятся только такие группы.
+- **Room** — единый объект совместного действия: live-разговор, Split, guest
+  session и запланированный сбор. Планирование выражается lifecycle Room
+  (`planned → gathering → live → ended`), а не отдельной сущностью Rally/Event.
+- **Invite / «Позвать»** — единая пользовательская точка приглашения человека,
+  знакомой Group или внешней компании по cohort-link. Под капотом membership,
+  Room access и guest grants остаются разными server-authorized операциями.
+
+Group-to-group relation, affinity и recurring composition остаются скрытыми
+backend-сигналами. Они могут сортировать цели внутри `Позвать`, показывать
+минимальную разрешённую presence знакомой Group и выбирать relationship
+identity, но не создают отдельного раздела, графа или объектов в sidebar.
+
+**Поправка к recurring composition.** Повторяющийся состав внутри небольшой
+friend-group **не создаёт и не предлагает новую полноценную Group**. Это быстро
+засоряет sidebar, размывает identity исходной Group и обесценивает Split.
+Повторение превращается в **Frequent Room** — сохранённый состав/preset внутри
+исходной Group с коротким действием `Собрать`. Новая Group создаётся только
+вручную либо через явное сохранение реально самостоятельной внешней компании,
+например cohort гостей, которая живёт независимо от исходной Group.
+
+```text
+Group = стабильная компания
+Room / Split = временная подгруппа
+Frequent Room = повторяющийся состав внутри Group
+```
+
+Порядок Group views уточняется до `Войс / Чат / Люди`; обычное открытие Group
+ведёт в `Войс`, поскольку эта поверхность отвечает на основной вопрос «кто
+здесь и где разговаривает». Чат остаётся постоянным первым-class контекстом и
+доступен одним переключением; отсутствие live не должно создавать фальшивую
+активность или блокировать переход в Chat.
+
+В header действие `+ В группу` означает только постоянное membership. На Room
+действие `Позвать` открывает один contextual picker: доступные люди, затем
+знакомые Groups при наличии разрешённой истории, затем cohort-link. Progressive
+disclosure не показывает group-to-group complexity новому пользователю.
+
+Core social mechanics — Rooms, Split, Switch, Voop, guest/cohort link и
+group-to-group Room invite — не помещаются за paywall. Возможная экономика
+строится вокруг Group+ utility и group-owned/earned identity. Marketplace,
+relationship identity и automatic composition материалов — поздние слои после
+проверки повторного использования Group; они не расширяют текущий P0.
+
+**Group Economy.** Плательщик Group+ не получает административную власть, а
+уже оплаченный период не прекращается при его выходе из Group. Бесплатными
+остаются голос, Rooms, Split, Switch, Voop и гостевые приглашения. Group+ может
+расширять utility (качество трансляции, лимиты медиа/истории, presets, vanity
+URL и identity slots) и владение Group identity — materials, sounds, motion и
+marks, видимые в Room, sidebar и invite entry. Earned identity возникает из
+реальной общей истории без XP, streak и обязательного grind. На первом этапе —
+только прямые покупки без внутренней валюты; creator marketplace и совместная
+relationship identity откладываются до подтверждённого recurring Group usage.
+Принятый launch scope, ownership, Day-to-Month funnel, contributions boundary
+и обязательные Group-level метрики детализированы в
+[`docs/product-monetization.md`](../docs/product-monetization.md); этот документ
+не разрешает paywall social core и не делает поздние слои beta-обещаниями.
+
 ## 1. Рамка решения
 
 **Факт — материалы.** Рассмотрены core plan, addendum со всеми поздними поправками, integration plan, core architecture, delivery matrix, релевантные secondary social/UX положения, семь приложенных изображений и существующие компоненты. Срез кода: `53b7456`, ветка `feat/core-rework-live-layer`. Дата проверки внешних источников: 9 сентября 2026 года.
@@ -60,7 +152,7 @@ temporary create-and-join, Join автоматически раскрывал Fu
 `temporary Room` в таблице означает только Split/Voop conversation. Она не
 создаётся через обычную плитку `+ Комната`.
 
-**Факт — приоритеты.** Group по умолчанию открывает Chat. При активном live появляется Shelf. Group / Войс остаётся полноценным обзором нескольких разговоров (в ранних материалах и внутренних идентификаторах — `Сейчас` / `now`). Full/Mini Room представляют одну сессию; навигация не завершает её. Профили, cosmetics, music, posts, questions, Store сохраняются вторичными. Реальный двухколоночный профиль — исключение из упрощённых референсов.
+**Факт — приоритеты.** Согласно уточнению 21 сентября Group по умолчанию открывает `Войс`; Chat остаётся постоянным соседним контекстом, а при активном live дополнительно появляется bounded Shelf внутри Chat. Group / Войс остаётся полноценным обзором нескольких разговоров (внутренний id — `now`). Full/Mini Room представляют одну сессию; навигация не завершает её. Профили, cosmetics, music, posts, questions, Store сохраняются вторичными. Реальный двухколоночный профиль — исключение из упрощённых референсов.
 
 **Вывод.** Новый механизм должен либо заменить способ общения, либо помочь доставить существующую ценность конкретным людям. Эти задачи нельзя смешивать в одной оценке «насколько это core».
 
@@ -235,7 +327,7 @@ temporary create-and-join, Join автоматически раскрывал Fu
 | Transcript / mixed voice-text | Общение сохраняется; Airchat/Clubhouse/voice-note workflows близки | Feature; сначала доказать потребность, затем оценивать latency/cost |
 | Branches / mutable audiences / session messenger | Можно сделать фундаментом только сменив правила conversation и доступов | Reject для этого продукта: высокая когнитивная цена и конфликт постоянной истории |
 | Сбор / game night / LFG | Messenger сохраняется; Partiful, polls, LFG уже обслуживают задачу | Feature; частота и удержание не установлены |
-| Presence / Global Сейчас / ambient | Удаление ухудшает обнаружение, но оставляет коммуникацию | Infrastructure/feature; Group Сейчас уже достаточно для проверки |
+| Presence / Global Сейчас / ambient | Удаление ухудшает обнаружение, но оставляет коммуникацию | Infrastructure/feature; Group Войс уже достаточно для проверки |
 | Profile cards / cosmetics / photo widget | Удаление сохраняет разговоры; identity/private-photo аналоги существуют | Identity feature; считать отдельно от conversion в общение |
 | Anonymous questions / streaks / rewards | Изменяют стимулы активности, не коммуникационный фундамент | Reject как ближайшая ставка |
 | External message fragments / guest thread | Внешняя польза возможна, но остаётся shared-content feature; сложнее privacy | Не возвращать под названием нового контекста |

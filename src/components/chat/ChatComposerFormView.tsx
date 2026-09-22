@@ -45,7 +45,7 @@ export function ChatComposerFormView({
         </div>
       </form>
       {textLength >= 800 ? (
-        <span className="mt-1 block text-right text-[10px] tabular-nums text-[var(--app-muted)]">
+        <span className="mt-1 block text-right text-xs leading-4 tabular-nums text-[var(--app-muted)]">
           {textLength}/1000
         </span>
       ) : null}

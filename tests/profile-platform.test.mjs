@@ -35,6 +35,15 @@ test("desktop profile owns data only and keeps presentation in canonical views",
   assert.match(read("desktop/src/adapters/DesktopProfileAdapter.tsx"), /ProfileCardView/);
 });
 
+test("the owner profile restores the canonical desktop composer", () => {
+  const profile = read("src/components/profile/ProfilePage.tsx");
+  const view = read("src/components/profile/ProfilePageView.tsx");
+
+  assert.match(profile, /canPost = false/);
+  assert.match(profile, /<CreatePostBlock profile=\{profile\} canPost=\{canPost && isOwner\}/);
+  assert.match(view, /feedTab === "posts" \? renderComposer\?\.\(\) : null/);
+});
+
 test("desktop entry imports only the client-safe object storage module", () => {
   const source = read("desktop/src/main.tsx");
   assert.match(source, /@\/lib\/object-storage\/urls/);

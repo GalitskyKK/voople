@@ -26,9 +26,14 @@ test("messenger sidebar follows the rework information hierarchy", () => {
   assert.match(view, /title="Группы"/);
   assert.match(view, /title="Личные"/);
   assert.match(view, /href: "\/explore"/);
+  assert.match(view, /aria-expanded=\{expanded\}/);
+  assert.match(view, /label: "Новый диалог"/);
+  assert.match(view, /voople:messenger-sidebar:\$\{id\}:expanded/);
+  assert.match(view, /window\.localStorage\.setItem\(storageKey, String\(expanded\)\)/);
   assert.doesNotMatch(view, /Главная|События|Магазин/);
   assert.match(rows, /shape="square"/);
   assert.match(rows, /text-emerald-400/);
+  assert.match(rows, /roomCountLabel\(live\.roomCount\)/);
 });
 
 test("messenger identity microtype stays restrained and host-shared", () => {
@@ -80,5 +85,7 @@ test("messages shell geometry is dense and route-scoped", () => {
   );
   assert.match(css, /@media \(min-width: 1200px\)[\s\S]*--voople-sidebar-width: 216px/);
   assert.match(css, /border-radius: 4px/);
+  assert.match(css, /\.voople-messenger-sidebar__row--active \{[\s\S]*?background: color-mix/);
+  assert.doesNotMatch(css, /\.voople-messenger-sidebar__row--active \{[\s\S]{0,260}?linear-gradient/);
   assert.match(layout, /data-thread=/);
 });

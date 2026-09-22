@@ -12,6 +12,14 @@
 permanent/pinned Room. Более ранние требования ниже о `Зайти → Full` и
 `+ Комната → temporary` считаются историческими там, где они конфликтуют.
 
+**Актуализация 2026-09-21.** Group/live развивается через пользовательские
+Group, Room и Invite. Group по умолчанию открывает `Войс`; planned gathering
+остаётся Room, а человек/Group/cohort-link приглашаются из одного `Позвать`.
+Recurring subset сохраняется только как Frequent Room внутри исходной Group и
+никогда автоматически не создаёт новую Group/sidebar item. Этот блок имеет
+приоритет над конфликтующими местами brief ниже; реализация новых backend
+контрактов идёт отдельными проверяемыми slices, а не одной широкой миграцией.
+
 ## 1. Продуктовый контракт
 
 - Одна Group соответствует постоянной компании. Group Chat и необязательные Sections сохраняют историю.
@@ -19,7 +27,7 @@ permanent/pinned Room. Более ранние требования ниже о 
 - Лобби — постоянный общий разговор группы, визуально отдельно от дополнительных комнат; подробный контракт в §9 IA spec. Group остаётся общим хабом без новой Hub-сущности. Обычное открытие группы не подключает к звуку; явный общий voice action ведёт прямо в Лобби, конкретный Room Join — прямо к своей цели.
 - LiveSession — authoritative сессия. DM-call не получает фиктивную Group Room.
 - Message принадлежит ровно одному DM/root Group/Section. Room snapshot — metadata.
-- Обычный вход в Group → Chat. Live badge → Войс. Чат/Войс/Люди взаимоисключающие; внутренний id `now` не переименовывается.
+- Обычный вход в Group → Войс. Войс/Чат/Люди взаимоисключающие; внутренний id `now` не переименовывается.
 - Join/Switch → current state внутри Group / Войс. Explicit Expand → Full Room
   в main content area; global sidebar остаётся доступным.
 - Chat drawer → тот же выбранный Section Group Chat без implicit room/session filter.
@@ -58,7 +66,7 @@ auto-join по route/hover; client-only authorization.
 | Live Shelf | `GroupLiveShelfView` | Chips/скрытый horizontal scroll заменить room cells + avatars + overflow |
 | Sections | `ChatSectionsBarView` | Current dropdown + до двух pinned shortcuts; searchable list |
 | Stream | `ChatMessageBubble`, `ChatMessageBubbleVisual`, content/reactions/uploads | Refactor presentation в dense stream, сохраняя все действия и одну реализацию |
-| Сейчас/Люди | `GroupNowPanelView`, `GroupNowRoomSection`, `GroupPeoplePanelView` | Compact hierarchy; не повторять participant tree в switcher |
+| Войс/Люди | `GroupNowPanelView`, `GroupNowRoomSection`, `GroupPeoplePanelView` | Compact hierarchy; не повторять participant tree в switcher |
 | Full Room | `voice/VoiceRoomSheet` | Извлечь Main-area View из Sheet; invites/device menus — popovers, большие settings — main route; без modal chain |
 | Session runtime | `VoiceSessionProvider`, `useVoiceRoomRuntime`, server/media adapters | Сохранить владельца сессии; navigation не размонтирует provider |
 | Room chat panel | `voice/RoomMessagesPanel` | Удалить implicit `liveSessionId` filter и отдельный draft controller через переиспользование conversation surface |
@@ -72,7 +80,7 @@ auto-join по route/hover; client-only authorization.
 
 ### Slice 0 — согласовать source of truth
 
-При начале принятой реализации обновить core architecture и integration plan точечными ссылками на решения §3 IA spec. Убрать конфликтующие default Сейчас, modal default, room-filtered Chat и старую mobile primary navigation из активных инструкций. Сохранить историю решений; не объявлять старую работу ошибочной только из-за новой IA.
+При начале принятой реализации обновить core architecture и integration plan точечными ссылками на решения §3 IA spec. Убрать конфликтующие default Chat/last-used People, modal default, room-filtered Chat и старую mobile primary navigation из активных инструкций. Сохранить историю решений; не объявлять старую работу ошибочной только из-за новой IA.
 
 Delivery matrix: добавить строку нового IA slice со статусом «Не проверено/В работе» и ссылкой на spec. Наличие brief не закрывает feature. PRODUCT.md и старые boards могут содержать более раннюю live-first трактовку: синхронизировать их в рамках принятого изменения, не предоставлять им приоритет над core/addendum.
 
@@ -120,7 +128,7 @@ Presentation (`full/mini`, drawer, fullscreen, selected stream) не владе�
 
 | ID | Действие | Ожидаемый результат |
 | --- | --- | --- |
-| IA-01 | Открыть Group без live | Chat; нет пустого Shelf контейнера |
+| IA-01 | Открыть Group без live | Войс без фальшивой активности; Chat доступен одним переключением; пустого Shelf нет |
 | IA-02 | Появились 8 occupied rooms | Bounded Shelf + подписанный overflow; каждая доступна по имени и whole-card Switch |
 | IA-03 | Добавить/найти 30-й Section | Width toolbar не растёт; searchable picker; stable shortcuts |
 | IA-04 | Читать Game при unread в Мемах | Только viewed range Game считается прочитанным |

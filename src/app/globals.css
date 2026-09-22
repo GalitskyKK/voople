@@ -5289,9 +5289,16 @@ html[data-density="compact"] .shop-category {
    Reference-scale layout + restrained burgundy/ice glass.
    ========================================================================== */
 
-.voople-shell[data-route-kind="messages"] {
+:where(.voople-shell, .voople-dropdown-menu)[data-route-kind="messages"] {
   --voople-sidebar-width: 266px;
   --voople-room-radius: 18px;
+
+  /* The current glass messenger is intentionally a dark material. Keep its
+     ink local so selecting the global Light theme cannot leave dark text on
+     the dark glass canvas while the dedicated light-glass palette is built. */
+  --background: #090d14;
+  --foreground: #f3f5f8;
+  --theme-primary: #090d14;
 
   --voople-wine: #8e4058;
   --voople-wine-bright: #ad536b;
@@ -5333,6 +5340,28 @@ html[data-density="compact"] .shop-category {
     inset 0 1px 0 rgb(255 255 255 / 0.045),
     0 10px 26px rgb(0 0 0 / 0.16);
 
+  color-scheme: dark;
+  color: var(--foreground);
+  background: #090d14;
+}
+
+.voople-dropdown-menu[data-route-kind="messages"] {
+  border-color: rgb(225 235 246 / 0.075) !important;
+  background:
+    linear-gradient(142deg, rgb(142 64 88 / 0.10), transparent 42%, rgb(121 189 255 / 0.035)),
+    rgb(11 16 24 / 0.96) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.045),
+    0 18px 48px rgb(0 0 0 / 0.42) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  backdrop-filter: blur(18px) saturate(1.08);
+}
+
+/* Theme variables set on the route shell cannot recolor the root scrollbar
+   gutter because inherited `body` colors are resolved before that boundary.
+   Keep the whole viewport in the same material whenever Messenger is mounted. */
+html:has(body .voople-shell[data-route-kind="messages"]),
+body:has(> .voople-shell[data-route-kind="messages"]) {
   color-scheme: dark;
   background: #090d14;
 }
@@ -5384,12 +5413,9 @@ html[data-density="compact"] .shop-category {
 
 .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__search {
   height: 44px !important;
-  border: 1px solid rgb(255 255 255 / 0.052);
+  border: 1px solid var(--app-border);
   border-radius: 12px;
-  background:
-    linear-gradient(110deg, rgb(142 64 88 / 0.050), transparent 52%),
-    rgb(255 255 255 / 0.020);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.022);
+  background: color-mix(in srgb, var(--app-surface-soft) 84%, transparent);
 }
 
 .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__row {
@@ -5401,15 +5427,12 @@ html[data-density="compact"] .shop-category {
 }
 
 .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__row:hover:not(.voople-messenger-sidebar__row--active) {
-  background: linear-gradient(104deg, rgb(142 64 88 / 0.065), rgb(255 255 255 / 0.014) 58%, transparent);
+  background: var(--app-surface-soft);
 }
 
 .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__row--active {
-  border-color: rgb(121 189 255 / 0.12);
-  background:
-    linear-gradient(103deg, rgb(142 64 88 / 0.11) 0%, rgb(121 189 255 / 0.075) 100%),
-    rgb(255 255 255 / 0.014);
-  box-shadow: inset 2px 0 0 rgb(121 189 255 / 0.72);
+  border-color: color-mix(in srgb, var(--theme-accent) 26%, var(--app-border));
+  background: color-mix(in srgb, var(--app-accent-soft) 82%, transparent);
 }
 
 /* The scroll host owns the full-height atmosphere. This fixes the visual
@@ -5447,6 +5470,12 @@ html[data-density="compact"] .shop-category {
   backdrop-filter: blur(16px) saturate(1.05);
 }
 
+@media (min-width: 1180px) {
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-header--combined {
+    min-height: 176px;
+  }
+}
+
 .voople-group-header-identity {
   min-width: 0;
   padding: 0;
@@ -5463,6 +5492,35 @@ html[data-density="compact"] .shop-category {
     inset 0 1px 0 rgb(255 255 255 / 0.08),
     0 0 0 1px rgb(255 255 255 / 0.07),
     0 14px 32px rgb(0 0 0 / 0.24);
+}
+
+/* Desktop uses the shared GroupIdentity renderer while web Group Info wraps
+   the same avatar in `voople-group-header-avatar`. Keep both hosts on the
+   same glass hero scale. */
+.voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__avatar {
+  width: 116px;
+  height: 116px;
+  flex: none;
+  border-radius: 18px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 0 0 1px rgb(255 255 255 / 0.07),
+    0 14px 32px rgb(0 0 0 / 0.24);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__name {
+  color: #f6f4f7;
+  font-size: 30px;
+  font-weight: 720;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  text-transform: none;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__meta {
+  margin-top: 0.5rem;
+  font-size: 14px;
+  line-height: 1.3;
 }
 
 .voople-group-header-name {
@@ -5696,6 +5754,98 @@ button.voople-room-material:hover .voople-room-material__reflection {
   animation: voople-border-specular 4.8s cubic-bezier(0.20, 0.62, 0.18, 1) 1 both;
 }
 
+@media (min-width: 1180px) {
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-header--combined .voople-group-surface-tabs {
+    top: 50%;
+    bottom: auto;
+    min-height: 52px;
+    align-items: center;
+    padding-inline: 0;
+    transform: translate(-50%, -50%);
+    border-bottom: 0;
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-header--combined .voople-group-surface-tabs > [role="tablist"] {
+    flex: none;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Sections / composer
+   -------------------------------------------------------------------------- */
+
+.voople-shell[data-route-kind="messages"] .voople-chat-sections {
+  min-height: 40px;
+  border-bottom-color: rgb(255 255 255 / 0.038);
+  background: rgb(8 13 21 / 0.78);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-chat-sections__selector,
+.voople-shell[data-route-kind="messages"] .voople-chat-sections__favorite,
+.voople-shell[data-route-kind="messages"] .voople-chat-sections__create {
+  border-radius: 11px !important;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-chat-sections__selector {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-chat-sections__selector:hover,
+.voople-shell[data-route-kind="messages"] .voople-chat-sections__selector[aria-expanded="true"] {
+  background: rgb(255 255 255 / 0.035);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-chat-sections__create {
+  border: 1px solid transparent;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-chat-sections__create:hover {
+  border-color: rgb(121 189 255 / 0.09);
+  color: var(--voople-ice-strong);
+}
+
+.voople-chat-section-menu[data-route-kind="messages"] {
+  border-radius: 15px !important;
+}
+
+.voople-chat-section-menu[data-route-kind="messages"] .voople-subchat-creator {
+  border: 1px solid rgb(255 255 255 / 0.055);
+  border-radius: 12px;
+  background:
+    linear-gradient(112deg, rgb(142 64 88 / 0.065), transparent 50%),
+    rgb(255 255 255 / 0.024);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.025);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-chat-composer {
+  border-top-color: rgb(255 255 255 / 0.036);
+  background:
+    linear-gradient(102deg, rgb(82 28 48 / 0.085), transparent 46%),
+    rgb(8 13 21 / 0.76);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-chat-composer__reply,
+.voople-shell[data-route-kind="messages"] .voople-chat-composer__pending {
+  border-color: rgb(255 255 255 / 0.055);
+  background:
+    linear-gradient(108deg, rgb(142 64 88 / 0.055), transparent 52%),
+    rgb(255 255 255 / 0.022);
+}
+
+button.voople-room-material:focus-visible,
+.voople-group-now-create-tile:focus-visible,
+.voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab:focus-visible {
+  outline: 2px solid rgb(121 189 255 / 0.72);
+  outline-offset: -2px;
+}
+
 @keyframes voople-border-specular {
   0%   { background-position: 145% 0; opacity: 0; }
   10%  { opacity: 0.10; }
@@ -5733,6 +5883,11 @@ button.voople-room-material:hover .voople-room-material__reflection {
   border: 1px solid rgb(255 255 255 / 0.065);
   background: rgb(255 255 255 / 0.032);
   color: rgb(220 229 239 / 0.58);
+}
+
+.voople-group-people-voop:focus-visible {
+  outline: 2px solid rgb(121 189 255 / 0.72);
+  outline-offset: 2px;
 }
 
 .voople-group-now__grid {
@@ -5780,11 +5935,13 @@ button.voople-room-material:hover .voople-room-material__reflection {
 
 .voople-group-now-room--current,
 .voople-live-room-card--current {
-  border-color: rgb(121 189 255 / 0.18) !important;
-  background: var(--voople-glass-fill) !important;
+  border-color: rgb(137 200 255 / 0.42) !important;
+  background:
+    linear-gradient(112deg, rgb(121 189 255 / 0.085), transparent 42%),
+    var(--voople-glass-fill) !important;
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.055),
-    inset 0 0 0 1px rgb(121 189 255 / 0.018),
+    inset 3px 0 0 rgb(137 200 255 / 0.72),
+    inset 0 1px 0 rgb(255 255 255 / 0.085),
     0 11px 27px rgb(0 0 0 / 0.17) !important;
 }
 
@@ -5794,8 +5951,85 @@ button.voople-room-material:hover .voople-room-material__reflection {
   font-weight: 600;
 }
 
+.voople-group-now-room__current-actions {
+  position: absolute;
+  z-index: 6;
+  right: 20px;
+  bottom: 18px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 3px;
+  border: 1px solid color-mix(in srgb, var(--app-border) 72%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--app-surface-strong) 76%, transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.035);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.voople-group-now-room__current-action {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  gap: 5px;
+  border-radius: 7px;
+  padding: 4px 7px;
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 600;
+  transition: color 150ms ease, background 150ms ease;
+}
+
+.voople-group-now-room__current-action:hover,
+.voople-group-now-room__current-action:focus-visible {
+  background: color-mix(in srgb, var(--voople-ice) 9%, transparent);
+  color: var(--foreground);
+}
+
+.voople-group-now-room__current-action--leave:hover,
+.voople-group-now-room__current-action--leave:focus-visible {
+  background: rgb(176 72 82 / 0.10);
+  color: rgb(246 178 184);
+}
+
+.voople-group-now-room__current-action:focus-visible {
+  outline: 2px solid rgb(121 189 255 / 0.65);
+  outline-offset: 1px;
+}
+
+.voople-group-now-room__current-action:disabled {
+  cursor: wait;
+  opacity: 0.45;
+}
+
+.voople-group-now-room__action-divider {
+  width: 1px;
+  height: 16px;
+  background: color-mix(in srgb, var(--app-border) 82%, transparent);
+}
+
+.voople-group-now-room--current .voople-group-now-room__current-copy {
+  padding-right: 150px;
+}
+
 .voople-group-now-room--pending,
 .voople-live-room-card--pending { opacity: 0.64; }
+
+.voople-group-now-room__action-cue {
+  display: inline-flex;
+  color: rgb(193 224 255 / 0.70);
+  opacity: 0.42;
+  transform: translateX(-2px);
+  transition: color 150ms ease, opacity 150ms ease, transform 150ms ease;
+}
+
+button.voople-group-now-room:hover .voople-group-now-room__action-cue,
+button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
+  color: var(--voople-ice-strong);
+  opacity: 1;
+  transform: translateX(0);
+}
 
 .voople-group-now-room--empty {
   background:
@@ -5893,8 +6127,54 @@ button.voople-room-material:hover .voople-room-material__reflection {
   border-radius: 16px;
 }
 
+.voople-group-people-state {
+  margin-top: 1rem;
+  border-radius: 16px;
+}
+
 .voople-group-people-row { background: transparent; transition: background 140ms ease; }
 .voople-group-people-row:hover { background: linear-gradient(102deg, rgb(142 64 88 / 0.065), rgb(121 189 255 / 0.020) 100%); }
+
+.voople-group-people-voop {
+  display: inline-flex;
+  min-height: 40px;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 6px;
+  border: 1px solid rgb(121 189 255 / 0.09);
+  border-radius: 12px;
+  background:
+    linear-gradient(108deg, rgb(142 64 88 / 0.075), transparent 55%),
+    rgb(255 255 255 / 0.018);
+  color: rgb(226 237 248 / 0.78);
+  opacity: 0.68;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease, opacity 140ms ease;
+}
+
+.voople-group-people-row:hover .voople-group-people-voop,
+.voople-group-people-voop:focus-visible {
+  border-color: rgb(121 189 255 / 0.18);
+  color: var(--voople-ice-strong);
+  opacity: 1;
+}
+
+.voople-group-people-voop:disabled { cursor: wait; opacity: 0.48; }
+
+.voople-group-people-voop__signal {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 9px;
+  background: linear-gradient(145deg, rgb(121 189 255 / 0.105), rgb(142 64 88 / 0.095));
+  color: var(--voople-ice);
+}
+
+.voople-group-people-voop strong,
+.voople-group-people-voop small { display: block; white-space: nowrap; }
+.voople-group-people-voop strong { font-size: 12px; line-height: 1.1; }
+.voople-group-people-voop small { margin-top: 2px; color: var(--app-muted); font-size: 11px; line-height: 1.1; }
 
 .voople-shell[data-route-kind="messages"] .voople-chat-window__messages {
   touch-action: pan-y;
@@ -5921,6 +6201,9 @@ button.voople-room-material:hover .voople-room-material__reflection {
   .voople-shell[data-route-kind="messages"] .voople-panel-header,
   .voople-shell[data-route-kind="messages"] .voople-chat-window__header--group { min-height: 136px; padding: 18px 24px 16px; }
   .voople-group-header-avatar > * { width: 92px !important; height: 92px !important; }
+  .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__avatar { width: 92px; height: 92px; }
+  .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__name { font-size: 24px; }
+  .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__meta { font-size: 12px; }
   .voople-group-header-name { font-size: 24px; }
   .voople-group-header-meta { font-size: 12px !important; }
   .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs { min-height: 48px; padding-inline: 24px; }
@@ -5954,10 +6237,29 @@ button.voople-room-material:hover .voople-room-material__reflection {
 }
 
 @media (max-width: 620px) {
+  .voople-shell[data-route-kind="messages"] .voople-panel-header,
+  .voople-shell[data-route-kind="messages"] .voople-chat-window__header--group { min-height: 108px; padding: 14px 12px 12px; }
+  .voople-group-header-avatar > *,
+  .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__avatar { width: 68px !important; height: 68px !important; border-radius: 14px !important; }
+  .voople-group-header-name,
+  .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__name { font-size: 20px; }
+  .voople-group-header-members,
+  .voople-group-header-invite { display: none !important; }
   .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs { padding-inline: 12px; }
   .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs > [role="tablist"] { gap: 1.2rem; }
   .voople-group-now { padding: 18px 12px 28px !important; }
   .voople-group-now__grid { grid-template-columns: 1fr !important; }
+  .voople-group-now__section-header { align-items: center; }
+  .voople-group-now-room__current-actions { right: 14px; bottom: 14px; }
+  .voople-group-now-room__current-action { min-height: 36px; padding-inline: 9px; }
+  .voople-group-now-room--current .voople-group-now-room__current-copy { padding-right: 172px; }
+  .voople-group-people-voop small { display: none; }
+}
+
+@media (min-width: 1180px) and (max-width: 1280px) {
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-header--combined {
+    min-height: 136px;
+  }
 }
 
 @media (prefers-reduced-transparency: reduce) {

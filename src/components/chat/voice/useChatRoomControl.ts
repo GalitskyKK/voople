@@ -277,7 +277,7 @@ export function useChatRoomControl(
     join: () => void enterAndConnect(),
     toggleMicrophone: () => void mediaActions.toggleMicrophone(),
     toggleOutput: () => void toggleOutputWithMicrophone(),
-    leave: () => { if (inside) void leaveRoom(); },
+    leave: async () => { if (inside) await leaveRoom(); },
   }));
   const isDirect = chatType === "direct";
   const connectionLabel = getConnectionLabel(mediaStatus);

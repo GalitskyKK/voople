@@ -39,7 +39,8 @@ export function DesktopAppSidebarAdapter({
   navigate: (href: string) => void;
 }) {
   const { collapsed, setCollapsed } = useSidebarPreference();
-  const messengerShell = pathname.startsWith("/messages");
+  // Keep the same social rail across every authenticated desktop route.
+  const messengerShell = true;
 
   return (
     <AppSidebarVisual

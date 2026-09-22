@@ -71,6 +71,7 @@ export function MainShell({
   return (
     <AppShellFrame
       routeKind={routeLayout.routeKind}
+      navigationKind={authenticated ? "messenger" : "navigation"}
       sidebar={<DesktopSidebar authenticated={authenticated} />}
       overlay={authenticated ? <PlayerShell /> : undefined}
       fixedViewport={isMessagesRoute}

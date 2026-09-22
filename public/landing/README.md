@@ -1,16 +1,17 @@
-# Landing capture status
+# Product captures
 
-`now.png`, `room.png` and `chat.png` are temporary composition references. They
-may be used during layout work, but they are not release evidence and must not
-be presented as screenshots of the current production build.
+`chat.png`, `now.png`, `people.png`, `profile.png` and
+`profile-mobile.png` are deterministic captures of the current shared React
+components with non-personal fixture data. They are not redrawn reference
+mockups and are safe to use on the landing and in README.
 
-Before the public beta landing ships, replace them with reproducible captures
-from the authenticated production UI at the same data seed and viewport:
+Regenerate them after material UI changes:
 
-- Group `Войс` with Lobby, a second Room and one screen share;
-- active full Room after media connection;
-- Group Chat with normal messages and one Room-context marker.
+```bash
+node scripts/verify-core-rework-group-surface.mjs --capture-dir public/landing --capture-only
+node scripts/verify-profile-visual.mjs --capture-dir public/landing
+```
 
-Capture both 1440 px desktop and 390 px mobile, remove personal data, and keep
-the source frames unscaled. The landing may crop a real frame with CSS but must
-not reconstruct, redraw or AI-generate product UI inside the bitmap.
+The scripts check desktop/mobile overflow and browser runtime errors before
+writing the files. A release smoke test against production remains a separate
+gate.

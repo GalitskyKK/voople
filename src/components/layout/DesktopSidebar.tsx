@@ -19,7 +19,10 @@ export function DesktopSidebar({ authenticated }: { authenticated: boolean }) {
   const { collapsed, setCollapsed } = useSidebarPreference({
     forceExpanded: !authenticated,
   });
-  const messengerShell = authenticated && pathname.startsWith("/messages");
+  // The messenger rail is the authenticated application's stable social
+  // context. Keep it mounted while people inspect profiles, settings or
+  // discovery so navigation never swaps back to the legacy icon rail.
+  const messengerShell = authenticated;
 
   return (
     <AppSidebarVisual

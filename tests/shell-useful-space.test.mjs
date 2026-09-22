@@ -57,7 +57,7 @@ test("web and desktop share pinned compact state, account menu and item tooltips
   assert.match(mobileTopBar, /NotificationNavBadge/);
   assert.match(chatList, /href="\/notifications"/);
   assert.match(chatList, /NotificationNavBadge/);
-  assert.match(navigation, /\{ \.\.\.MAIN_NAV_ITEMS\[0\], label: "Сейчас" \}/);
+  assert.match(navigation, /\{ \.\.\.MAIN_NAV_ITEMS\[0\], label: "Войс" \}/);
   assert.doesNotMatch(
     navigation.match(/export const MOBILE_NAV_ITEMS = \[[\s\S]*?\] as const;/)?.[0] ?? "",
     /\/notifications/,

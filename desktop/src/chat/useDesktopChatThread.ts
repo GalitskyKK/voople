@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 
 import { buildOptimisticMessage } from "@/lib/chat/optimistic-message";
 import { parseComposerContent } from "@/lib/chat/message-content";
+import type { ChatReactionEmoji } from "@/lib/chat/reactions";
 import { reportProductEvent } from "@/lib/telemetry/client";
 import { trpc } from "@/lib/trpc/client";
 import type {
@@ -164,7 +165,9 @@ export function useDesktopChatThread(
     try {
       const result = await reaction.mutateAsync({
         messageId,
-        ...(value.emojiId ? { emojiId: value.emojiId } : { emoji: value.emoji }),
+        ...(value.emojiId
+          ? { emojiId: value.emojiId }
+          : { emoji: value.emoji as ChatReactionEmoji }),
       });
       utils.chat.observeMessages.setData({ chatId }, (current) => current ? {
         ...current,

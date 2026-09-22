@@ -6,14 +6,14 @@ function source(path) {
   return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 }
 
-test("messages routes replace the legacy primary nav with the shared messenger sidebar", () => {
+test("authenticated routes keep the shared messenger sidebar mounted", () => {
   const webSidebar = source("src/components/layout/DesktopSidebar.tsx");
   const desktopSidebar = source(
     "desktop/src/adapters/DesktopAppSidebarAdapter.tsx",
   );
 
   for (const implementation of [webSidebar, desktopSidebar]) {
-    assert.match(implementation, /pathname\.startsWith\("\/messages"\)/);
+    assert.match(implementation, /const messengerShell = (authenticated|true)/);
     assert.match(implementation, /primaryNavigation=/);
     assert.match(implementation, /MessengerSidebar/);
   }

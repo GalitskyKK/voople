@@ -7,6 +7,7 @@ type AppShellFrameProps = {
   overlay?: ReactNode;
   children: ReactNode;
   routeKind?: "standard" | "profile" | "messages";
+  navigationKind?: "navigation" | "messenger";
   fixedViewport?: boolean;
   columnClassName?: string;
   workspaceClassName?: string;
@@ -22,6 +23,7 @@ export function AppShellFrame({
   overlay,
   children,
   routeKind = "standard",
+  navigationKind = "navigation",
   fixedViewport = false,
   columnClassName,
   workspaceClassName,
@@ -30,6 +32,7 @@ export function AppShellFrame({
   return (
     <div
       data-route-kind={routeKind}
+      data-navigation-kind={navigationKind}
       className={cn(
         "voople-shell min-h-screen bg-background",
         fixedViewport && "h-dvh min-h-0 overflow-hidden",

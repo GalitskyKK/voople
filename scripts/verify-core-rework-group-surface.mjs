@@ -1,14 +1,20 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { createRequire } from "node:module";
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadCurrentVisualCss } from "./lib/load-current-visual-css.mjs";
 
 const repo = fileURLToPath(new URL("../", import.meta.url)).replaceAll("\\", "/").replace(/\/$/, "");
-const artifacts = await mkdtemp(path.join(os.tmpdir(), "voople-core-group-surface-"));
+const captureDirIndex = process.argv.indexOf("--capture-dir");
+const captureDirectory = captureDirIndex >= 0 ? process.argv[captureDirIndex + 1] : null;
+const captureOnly = process.argv.includes("--capture-only");
+const artifacts = captureDirectory
+  ? path.resolve(repo, captureDirectory)
+  : await mkdtemp(path.join(os.tmpdir(), "voople-core-group-surface-"));
+await mkdir(artifacts, { recursive: true });
 console.log(`Screenshots: ${artifacts}`);
 
 const require = createRequire(`${repo}/package.json`);
@@ -47,7 +53,11 @@ const entry = `import {useState} from 'react';import {createRoot} from 'react-do
   const common={parentChatId:null,topicsEnabled:false,topicsLayout:'tabs',topicIcon:null,groupVisibility:'private',joinPolicy:'invite_only',sectionAccessMode:'inherit',favoritePosition:1,groupBannerUrl:null,groupTag:null,boostCount:0,boostedByMe:false,viewerRole:'member',lastMessage:null,unreadCount:0,channels:[]};
   const chats=[{...common,id:'group-1',type:'group',name:'VOICEKK',groupIcon:'V',groupAvatarUrl:null,groupAccentColor:'#8b5cf6',memberCount:7,unreadCount:5,otherUser:null},{...common,id:'direct-1',type:'direct',name:null,groupIcon:null,groupAvatarUrl:null,groupAccentColor:null,memberCount:2,unreadCount:2,otherUser:{id:'astra',username:'astra',displayName:'Astra',hasVooplePlus:false,avatarUrl:null,avatarDecorationUrl:null,avatarRingId:null,lastSeenAt:null}}];
   const renderDestination=({href,label,className,active,children})=><button type="button" data-href={href} aria-label={label} aria-current={active?'page':undefined} className={className} onClick={()=>{if(href.includes('surface=now'))window.setGroupTab?.('now')}}>{children}</button>;
-  function GroupSurface(){const [tab,setTab]=useState('chat');window.setGroupTab=setTab;const message={id:'message-1',senderId:'nmggk',text:'Кто сегодня в голос?',createdAt:'2026-09-08T18:41:00Z',isMine:false,readAt:null,reactions:[],sender:{displayName:'nmggk',hasVooplePlus:false,avatarUrl:null},roomContext:{roomId:'drg',liveSessionId:'s2',roomName:'DRG: Deep Rock Galactic',roomKind:'pinned',capturedAt:'2026-09-08T18:41:00Z'}};return <div className="flex min-h-0 flex-1 flex-col"><div className="voople-group-surface-header voople-group-surface-header--combined"><header className="voople-panel-header voople-chat-window__header voople-chat-window__header--group flex items-center gap-3 border-b border-[var(--app-border)] px-4"><button className="voople-group-header-identity flex min-w-0 flex-1 items-center gap-3 text-left"><GroupIdentity chatName="VOICEKK" memberCount={7} groupIcon="V" groupAvatarUrl={null} groupAccentColor="#8b5cf6" groupTag={null}/></button><button className="h-8 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] px-3 text-xs font-semibold">Войти в Лобби</button></header><GroupSurfaceTabs activeTab={tab} onTabChange={setTab}/></div>{tab==='chat'?<><GroupLiveShelfView groupId="group-1" rooms={rooms} currentUserRoomId="drg" onJoinRoom={()=>{}}/><div className="flex min-h-0 flex-1 flex-col"><ChatSectionsBarView rootChat={{...chats[0],topicsEnabled:true,channels:[{...chats[0],id:'game',name:'Game',parentChatId:'group-1',topicIcon:null},{...chats[0],id:'memes',name:'Мемы',parentChatId:'group-1',topicIcon:null}]}} activeChatId="group-1" createAction={({open,onOpenChange})=><SubchatCreatorView open={open} onOpenChange={onOpenChange} createSubchat={async()=> 'created-section'} onCreated={()=>{}}/>} renderDestination={(chat,className,children)=><button key={chat.id} className={className}>{children}</button>}/><div className="flex min-h-0 flex-1 flex-col justify-end px-5 py-4"><ChatMessageBubbleVisual message={message} showSender groupPosition="only" senderAvatar={<ProfileAvatar displayName="nmggk" size="sm" shape="square"/>}/></div><ChatComposerFrame className="px-3"><div className={CHAT_COMPOSER_SURFACE_CLASS}><div className="h-8 px-2 py-1.5 text-sm text-[var(--app-muted)]">Сообщение VOICEKK…</div></div></ChatComposerFrame></div></>:tab==='now'?<GroupNowPanelView mode="ready" value={{groupId:'group-1',groupName:'VOICEKK',rooms,onlineOutsideRooms:[],visibleOnlineCount:7,currentUserRoomId:'drg'}} onJoinRoom={()=>{}} onLeaveCurrent={()=>{}} onCreateSplit={()=>{}} onCreateRoom={()=>{}}/>:<GroupPeoplePanelView members={members} onlineUserIds={new Set(users.slice(0,3).map(user=>user.id))} onRetry={()=>{}} onVoop={()=>{}}/>}</div>}
+  function GroupSurface(){const [tab,setTab]=useState('chat');window.setGroupTab=setTab;const messages=[
+    {id:'message-1',senderId:'biba',text:'Кто сегодня в голос?',createdAt:'2026-09-08T18:38:00Z',isMine:false,readAt:null,reactions:[],sender:{displayName:'Biba',hasVooplePlus:false,avatarUrl:null}},
+    {id:'message-2',senderId:'nmggk',text:'Я зайду после девяти. Можно сразу в DRG.',createdAt:'2026-09-08T18:41:00Z',isMine:true,readAt:'2026-09-08T18:42:00Z',reactions:[{emoji:'👍',count:2,reactedByMe:false}],sender:{displayName:'nmggk',hasVooplePlus:false,avatarUrl:null},roomContext:{roomId:'drg',liveSessionId:'s2',roomName:'DRG: Deep Rock Galactic',roomKind:'pinned',capturedAt:'2026-09-08T18:41:00Z'}},
+    {id:'message-3',senderId:'anya',text:'Ок, позовите меня через Вуп.',createdAt:'2026-09-08T18:43:00Z',isMine:false,readAt:null,reactions:[],sender:{displayName:'Anya',hasVooplePlus:false,avatarUrl:null}}
+  ];return <div className="flex min-h-0 flex-1 flex-col"><div className="voople-group-surface-header voople-group-surface-header--combined"><header className="voople-panel-header voople-chat-window__header voople-chat-window__header--group flex items-center gap-3 border-b border-[var(--app-border)] px-4"><button className="voople-group-header-identity flex min-w-0 flex-1 items-center gap-3 text-left"><GroupIdentity chatName="VOICEKK" memberCount={7} groupIcon="V" groupAvatarUrl={null} groupAccentColor="#8b5cf6" groupTag={null}/></button><button className="h-8 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] px-3 text-xs font-semibold">Войти в Лобби</button></header><GroupSurfaceTabs activeTab={tab} onTabChange={setTab}/></div>{tab==='chat'?<><GroupLiveShelfView groupId="group-1" rooms={rooms} currentUserRoomId="drg" onJoinRoom={()=>{}}/><div className="flex min-h-0 flex-1 flex-col"><ChatSectionsBarView rootChat={{...chats[0],topicsEnabled:true,channels:[{...chats[0],id:'game',name:'Game',parentChatId:'group-1',topicIcon:null},{...chats[0],id:'memes',name:'Мемы',parentChatId:'group-1',topicIcon:null}]}} activeChatId="group-1" createAction={({open,onOpenChange})=><SubchatCreatorView open={open} onOpenChange={onOpenChange} createSubchat={async()=> 'created-section'} onCreated={()=>{}}/>} renderDestination={(chat,className,children)=><button key={chat.id} className={className}>{children}</button>}/><div className="flex min-h-0 flex-1 flex-col justify-end gap-1 px-5 py-4">{messages.map((message)=><ChatMessageBubbleVisual key={message.id} message={message} showSender groupPosition="only" senderAvatar={<ProfileAvatar displayName={message.sender.displayName} size="sm" shape="square"/>}/>)}</div><ChatComposerFrame className="px-3"><div className={CHAT_COMPOSER_SURFACE_CLASS}><div className="h-8 px-2 py-1.5 text-sm text-[var(--app-muted)]">Сообщение VOICEKK…</div></div></ChatComposerFrame></div></>:tab==='now'?<GroupNowPanelView mode="ready" value={{groupId:'group-1',groupName:'VOICEKK',rooms,onlineOutsideRooms:[],visibleOnlineCount:7,currentUserRoomId:'drg'}} onJoinRoom={()=>{}} onLeaveCurrent={()=>{}} onCreateSplit={()=>{}} onCreateRoom={()=>{}}/>:<GroupPeoplePanelView members={members} onlineUserIds={new Set(users.slice(0,3).map(user=>user.id))} onRetry={()=>{}} onVoop={()=>{}}/>}</div>}
   function Demo(){const sidebar=<AppSidebarVisual pathname="/messages/group-1" collapsed={false} renderDestination={renderDestination} primaryNavigation={<MessengerSidebarView pathname="/messages/group-1" chats={chats} loading={false} onlineUserIds={new Set(['astra'])} liveByGroup={new Map([['group-1',{groupId:'group-1',participantCount:4,roomCount:2,hasScreenShare:true}]])} createGroupAction={<button type="button" aria-label="Создать группу" className="h-5 w-5 border border-[var(--app-border)] text-xs">+</button>} renderDestination={renderDestination} onRetry={()=>{}}/>} accountNavigation={<button type="button" className="flex w-full items-center gap-2 px-2 py-1 text-left"><ProfileAvatar displayName="Yozhik" size="sm" shape="square" isOnline/><span className="text-xs">Yozhik</span></button>}/>;return <AppShellFrame routeKind="messages" fixedViewport sidebar={sidebar}><MessagesLayoutView isThread list={<div/>} thread={<GroupSurface/>}/></AppShellFrame>}
   createRoot(document.getElementById('root')).render(<AppThemeProvider><Demo/></AppThemeProvider>);`;
 
@@ -80,8 +90,14 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
-  for (const { width, height, tab, theme, host, state = "default" } of [
-    ...["web", "desktop"].flatMap((host) => [
+  const visualCases = captureOnly
+    ? [
+        { width: 1440, height: 900, tab: "chat", theme: "void", host: "web", outputName: "chat.png" },
+        { width: 1440, height: 900, tab: "now", theme: "void", host: "web", outputName: "now.png" },
+        { width: 1440, height: 900, tab: "people", theme: "void", host: "web", outputName: "people.png" },
+      ]
+    : [
+      ...["web", "desktop"].flatMap((host) => [
       { width: 1280, height: 800, tab: "chat", theme: "void", host },
       { width: 1280, height: 800, tab: "chat", theme: "void", host, state: "sections" },
       { width: 1280, height: 800, tab: "chat", theme: "void", host, state: "create" },
@@ -94,8 +110,9 @@ try {
       { width: 390, height: 800, tab: "chat", theme: "light", host, state: "collapsed" },
       { width: 390, height: 800, tab: "now", theme: "light", host },
       { width: 390, height: 800, tab: "people", theme: "light", host },
-    ]),
-  ]) {
+      ]),
+    ];
+  for (const { width, height, tab, theme, host, state = "default", outputName } of visualCases) {
     const page = await browser.newPage({ viewport: { width, height } });
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
@@ -155,7 +172,7 @@ try {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);
     const stateSuffix = state === "default" ? "" : `-${state}`;
-    await page.screenshot({ path: path.join(artifacts, `group-${host}-${tab}-${width}-${theme}${stateSuffix}.png`) });
+    await page.screenshot({ path: path.join(artifacts, outputName ?? `group-${host}-${tab}-${width}-${theme}${stateSuffix}.png`) });
     console.log(`PASS ${host} ${tab}${stateSuffix} ${width}px ${theme}: no overflow or runtime errors`);
     await page.close();
   }

@@ -62,6 +62,7 @@ export function AppSidebarVisual({
     <aside
       data-nosnippet
       data-collapsed={collapsed ? "true" : "false"}
+      data-sidebar-kind={primaryNavigation ? "messenger" : "navigation"}
       className="voople-sidebar fixed left-0 top-0 hidden h-full shrink-0 flex-col lg:flex"
     >
       <div className="voople-sidebar__brand flex shrink-0 items-center justify-between gap-2 px-4 pb-7 pt-7">

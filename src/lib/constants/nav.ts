@@ -50,7 +50,7 @@ export const PROFILE_NAV_ITEM = {
 
 /** Mobile keeps four daily destinations; activity moves to the current surface header. */
 export const MOBILE_NAV_ITEMS = [
-  { ...MAIN_NAV_ITEMS[0], label: "Сейчас" },
+  { ...MAIN_NAV_ITEMS[0], label: "Войс" },
   MAIN_NAV_ITEMS[1],
   MAIN_NAV_ITEMS[2],
   PROFILE_NAV_ITEM,

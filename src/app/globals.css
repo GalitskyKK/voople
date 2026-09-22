@@ -1663,6 +1663,59 @@ button.voople-post-action:active {
   background: transparent;
 }
 
+@media (min-width: 1024px) {
+  .voople-shell[data-navigation-kind="messenger"] {
+    --voople-sidebar-width: 220px;
+  }
+
+  .voople-shell[data-navigation-kind="messenger"] .voople-sidebar {
+    width: var(--voople-sidebar-width);
+    min-width: var(--voople-sidebar-width);
+    border-right: 1px solid rgb(255 255 255 / 0.044);
+    background:
+      linear-gradient(112deg, rgb(94 34 55 / 0.13) 0%, rgb(36 20 31 / 0.06) 34%, transparent 62%),
+      color-mix(in srgb, var(--background) 94%, #071019);
+  }
+
+  .voople-shell[data-navigation-kind="messenger"] .voople-sidebar__brand {
+    padding: 1.15rem 1.15rem 1rem;
+  }
+
+  .voople-shell[data-navigation-kind="messenger"] .voople-sidebar__footer {
+    border-top: 1px solid rgb(255 255 255 / 0.04);
+    background: color-mix(in srgb, var(--background) 86%, transparent);
+    padding: 0.85rem 0.9rem;
+  }
+
+  .voople-shell[data-navigation-kind="messenger"] .voople-messenger-sidebar {
+    padding-inline: 0.75rem;
+  }
+
+  .voople-shell[data-navigation-kind="messenger"] .voople-messenger-sidebar__search {
+    height: 44px;
+    border: 1px solid var(--app-border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--app-surface-soft) 84%, transparent);
+  }
+
+  .voople-shell[data-navigation-kind="messenger"] .voople-messenger-sidebar__row {
+    min-height: 46px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    transform: none;
+    transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+  }
+
+  .voople-shell[data-navigation-kind="messenger"] .voople-messenger-sidebar__row:hover:not(.voople-messenger-sidebar__row--active) {
+    background: var(--app-surface-soft);
+  }
+
+  .voople-shell[data-navigation-kind="messenger"] .voople-messenger-sidebar__row--active {
+    border-color: color-mix(in srgb, var(--theme-accent) 26%, var(--app-border));
+    background: color-mix(in srgb, var(--app-accent-soft) 82%, transparent);
+  }
+}
+
 .voople-sidebar__label {
   min-width: 0;
   white-space: nowrap;
@@ -1672,6 +1725,98 @@ button.voople-post-action:active {
   display: flex;
   width: 100%;
   min-width: 0;
+}
+
+/* Authenticated pages keep one quiet social shell instead of changing visual
+   systems when the route leaves Messages. */
+.voople-shell[data-navigation-kind="messenger"] {
+  background:
+    linear-gradient(112deg, color-mix(in srgb, #8f4058 7%, transparent), transparent 34rem),
+    linear-gradient(252deg, color-mix(in srgb, #79bdff 4%, transparent), transparent 30rem),
+    var(--background);
+}
+
+.voople-shell[data-route-kind="profile"] .voople-shell__workspace {
+  max-width: 1180px;
+}
+
+.voople-shell[data-route-kind="profile"] .voople-profile-page {
+  align-items: flex-start;
+  gap: clamp(1.25rem, 2.4vw, 2rem);
+  padding-block: clamp(1rem, 2.5vw, 2rem);
+}
+
+.voople-shell[data-route-kind="profile"] .voople-profile-page__card {
+  border-radius: calc(var(--app-radius-xl) + 2px);
+}
+
+.voople-shell[data-route-kind="profile"] .voople-profile-card {
+  filter: drop-shadow(0 18px 42px rgb(0 0 0 / 0.16));
+}
+
+.voople-shell[data-route-kind="profile"] .voople-profile-page__posts {
+  width: 100%;
+  max-width: 44rem;
+  margin-inline: auto;
+  padding: 0 2px 2rem;
+}
+
+.voople-shell[data-route-kind="profile"] .voople-profile-feed-tabs {
+  top: 0;
+  min-height: 3rem;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-lg);
+  background: color-mix(in srgb, var(--app-surface) 86%, transparent);
+  padding: 0.25rem;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 5%, transparent);
+  backdrop-filter: blur(16px) saturate(1.04);
+}
+
+.voople-shell[data-route-kind="profile"] .voople-profile-feed-tabs button {
+  min-height: 2.45rem;
+  flex: 1;
+  border-radius: calc(var(--app-radius-lg) - 4px);
+  padding-block: 0.55rem;
+}
+
+.voople-shell[data-route-kind="profile"] .voople-profile-feed-tabs button[aria-current="page"] {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+.voople-shell[data-route-kind="profile"] .voople-profile-feed-tabs button[aria-current="page"] > span[aria-hidden] {
+  right: 28%;
+  bottom: 0.22rem;
+  left: 28%;
+  height: 1px;
+}
+
+.voople-shell[data-route-kind="profile"] .voople-post-card__surface,
+.voople-shell[data-route-kind="profile"] .voople-compose-block {
+  border: 1px solid var(--app-border);
+  background: color-mix(in srgb, var(--app-surface) 88%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 4%, transparent),
+    0 14px 36px rgb(0 0 0 / 0.08);
+  backdrop-filter: blur(14px) saturate(1.03);
+}
+
+@media (max-width: 1023px) {
+  .voople-shell[data-route-kind="profile"] .voople-profile-page__posts {
+    max-width: none;
+  }
+}
+
+@media (max-width: 639px) {
+  .voople-shell[data-route-kind="profile"] .voople-profile-page {
+    gap: 1rem;
+    padding-block: 0.75rem;
+  }
+
+  .voople-shell[data-route-kind="profile"] .voople-profile-feed-tabs {
+    border-radius: var(--app-radius-md);
+  }
 }
 
 .voople-tooltip-anchor {

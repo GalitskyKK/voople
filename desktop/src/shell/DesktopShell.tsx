@@ -346,6 +346,7 @@ export function DesktopShell({
   return (
     <AppShellFrame
       routeKind={routeLayout.routeKind}
+      navigationKind="messenger"
       fixedViewport
       sidebar={
         <DesktopAppSidebarAdapter

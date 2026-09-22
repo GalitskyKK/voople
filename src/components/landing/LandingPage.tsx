@@ -223,7 +223,7 @@ function AppShot({ src, alt, priority = false, position = "center" }: { src: str
   return (
     <figure className={styles.appShot} data-position={position}>
       <div className={styles.windowBar}><i /><i /><i /><span>Voople</span></div>
-      <Image src={src} alt={alt} width={1536} height={1024} priority={priority} sizes="(max-width: 760px) 100vw, 88vw" />
+      <Image src={src} alt={alt} width={1440} height={900} priority={priority} sizes="(max-width: 760px) 100vw, 88vw" />
     </figure>
   );
 }

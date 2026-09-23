@@ -765,6 +765,19 @@ authenticated web/desktop/360 px и проверки конкурирующег�
 Пять целевых source-тестов, architecture, lint (0 ошибок), web/desktop
 TypeScript и production build прошли; DB integration пропущен без тестовой БД.
 
+### Guest link session binding — 23 сентября 2026
+
+Гостевой preview теперь передаёт ID точной LiveSession ссылки, а клиент
+восстанавливает cookie-сессию только при совпадении с этой Room. Открытие другой
+ссылки в той же вкладке пересоздаёт клиентское состояние; занятость в preview
+считает участников только со свежим heartbeat. Даже при заполненном гостевом
+лимите прежний гость может восстановить свою сессию. Это закрывает смешение
+двух Room при переходе по ссылкам, но не заявляет полный end-to-end B без
+authenticated создания ссылки, anonymous браузера, медиа/TURN и проверок
+истечения/отзыва/гонки на двух клиентах.
+Семь целевых native tests, architecture, lint (0 ошибок), web/desktop
+TypeScript и production build прошли.
+
 Перед заявлением о полном выполнении каждого пункта должны быть приложены:
 
 1. ссылка на contract/service/authorization;

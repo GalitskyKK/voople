@@ -1,5 +1,12 @@
 import type { RoomGuestInviteUnavailableReason } from "@/types/room-guests";
 
+export function guestSessionMatchesInvite(
+  inviteSessionId: string | null,
+  guestSessionId: string,
+) {
+  return inviteSessionId !== null && inviteSessionId === guestSessionId;
+}
+
 const UNAVAILABLE_COPY: Record<RoomGuestInviteUnavailableReason, string> = {
   missing: "Ссылка не найдена или записана не полностью.",
   expired: "Срок действия ссылки истёк. Попросите участника комнаты создать новую.",

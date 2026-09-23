@@ -61,6 +61,7 @@ function unavailable(
   return {
     available: false,
     reason,
+    sessionId: null,
     groupName: null,
     roomName: null,
     participantCount: 0,
@@ -176,7 +177,8 @@ export async function previewRoomGuestInviteRest(
     admin.from("chats").select("id, name, type, parent_chat_id")
       .eq("id", session.conversation_id).maybeSingle(),
     admin.from("live_session_participants").select("user_id")
-      .eq("session_id", session.id).is("left_at", null),
+      .eq("session_id", session.id).is("left_at", null)
+      .gt("last_seen_at", new Date(Date.now() - 120_000).toISOString()),
     admin.from("live_session_guests").select("id, display_name")
       .eq("live_session_id", session.id).is("left_at", null)
       .is("converted_at", null)
@@ -213,6 +215,7 @@ export async function previewRoomGuestInviteRest(
   return {
     available: !full,
     reason: full ? "full" : "active",
+    sessionId: String(session.id),
     groupName: String(group.name || "Группа"),
     roomName: String(room.name),
     participantCount: members.length + guests.length,

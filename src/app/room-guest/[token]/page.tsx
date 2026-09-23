@@ -14,5 +14,5 @@ type RoomGuestRouteProps = {
 
 export default async function RoomGuestRoute({ params, searchParams }: RoomGuestRouteProps) {
   const [{ token }, query] = await Promise.all([params, searchParams]);
-  return <RoomGuestPage token={token} conversionRequested={query.convert === "1"} />;
+  return <RoomGuestPage key={token} token={token} conversionRequested={query.convert === "1"} />;
 }

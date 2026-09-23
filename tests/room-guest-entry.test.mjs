@@ -8,6 +8,7 @@ import {
 } from "../src/lib/chat/room-guest-invite-url.ts";
 import {
   RoomGuestResponseError,
+  guestSessionMatchesInvite,
   roomGuestMicrophoneError,
   roomGuestResponseJson,
   roomGuestUnavailableReasonFromError,
@@ -29,6 +30,23 @@ test("guest microphone failures expose a useful recovery reason", () => {
   assert.match(roomGuestMicrophoneError({ name: "NotAllowedError" }), /настройках браузера/);
   assert.match(roomGuestMicrophoneError({ name: "NotFoundError" }), /Микрофон не найден/);
   assert.equal(roomGuestMicrophoneError(new Error("device busy")), "device busy");
+});
+
+test("an existing guest cookie cannot restore a different Room link", async () => {
+  assert.equal(guestSessionMatchesInvite("room-session-a", "room-session-a"), true);
+  assert.equal(guestSessionMatchesInvite("room-session-b", "room-session-a"), false);
+  assert.equal(guestSessionMatchesInvite(null, "room-session-a"), false);
+
+  const [hook, route, data] = await Promise.all([
+    readFile(new URL("../src/hooks/useRoomGuestSession.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/room-guest/[token]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/server/data/room-guests-rest.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(hook, /guestSessionMatchesInvite\(expectedSessionId, snapshot\.guest\.sessionId\)/);
+  assert.match(hook, /connectSession\(preview\.participantCount, true, preview\.sessionId\)/);
+  assert.match(route, /<RoomGuestPage key=\{token\}/);
+  assert.match(data, /sessionId: String\(session\.id\)/);
+  assert.match(data, /\.gt\("last_seen_at", new Date\(Date\.now\(\) - 120_000\)/);
 });
 
 test("guest join failures keep a machine-readable unavailable reason", async () => {
@@ -126,7 +144,7 @@ test("guest UI joins muted, exposes recovery states and keeps guests out of prof
   assert.match(media, /publication\.setSubscribed\(false\)/);
   assert.match(hook, /setInterval\(heartbeat, 20_000\)/);
   assert.match(hook, /crypto\.randomUUID\(\)/);
-  assert.match(hook, /connectSession\(preview\.participantCount, true\)/);
+  assert.match(hook, /connectSession\(preview\.participantCount, true, preview\.sessionId\)/);
   assert.doesNotMatch(hook, /pagehide|keepalive: true/);
   assert.match(snapshot, /from\("live_session_guests"\)/);
   assert.match(snapshot, /last_seen_at/);

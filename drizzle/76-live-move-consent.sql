@@ -197,7 +197,9 @@ BEGIN
   -- The existing join RPC takes advisory lock namespace 911 per actor. Take
   -- all of them in UUID order before any row lock or move to avoid cycles.
   FOREACH v_user_id IN ARRAY v_ids LOOP
-    PERFORM pg_advisory_xact_lock(hashtextextended(v_user_id::text, 911));
+    IF NOT pg_try_advisory_xact_lock(hashtextextended(v_user_id::text, 911)) THEN
+      RAISE EXCEPTION 'LIVE_MOVE_BUSY';
+    END IF;
   END LOOP;
 
   SELECT session.* INTO v_source FROM public.live_sessions AS session
@@ -328,6 +330,7 @@ BEGIN
   WHERE request_id = p_request_id;
   RETURN jsonb_build_object(
     'id', v_request.id, 'groupId', v_request.group_chat_id,
+    'inviterId', v_request.inviter_id,
     'sourceSessionId', v_request.source_session_id,
     'mode', v_request.mode, 'status', v_request.status,
     'acceptedCount', v_accepted, 'selectedCount', v_total,

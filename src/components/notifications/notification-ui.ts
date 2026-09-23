@@ -29,6 +29,8 @@ export function notificationActionText(
     case "room_invite":
       return roomInviteIntent === "voop"
         ? "зовёт вас отойти"
+        : roomInviteIntent === "split"
+          ? "предлагает Сплит"
         : "приглашает вас в комнату";
     default:
       return "— новое уведомление";

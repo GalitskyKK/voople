@@ -9,6 +9,7 @@ import {
   createLiveMoveRest,
   getLiveMoveConsentRest,
   getLiveMoveStatusRest,
+  listMyLiveMoveIdsRest,
   respondLiveMoveRest,
 } from "@/server/data/live-move-rest";
 import { getGroupNow } from "@/server/services/group-now.service";
@@ -84,4 +85,9 @@ export async function liveMoveStatusForConsent(consentId: string, userId: string
   const consent = await getLiveMoveConsentRest(consentId, userId);
   if (!consent) throw new Error("Запрос больше недоступен");
   return liveMoveStatus(consent.requestId, userId);
+}
+
+export async function listMyLiveMoves(actorId: string) {
+  const ids = await listMyLiveMoveIdsRest(actorId);
+  return Promise.all(ids.map((id) => liveMoveStatus(id, actorId)));
 }

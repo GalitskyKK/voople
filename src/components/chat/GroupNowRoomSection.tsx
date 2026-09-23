@@ -68,7 +68,7 @@ export function GroupNowRoomSection({
             {room.name}
           </span>
           {room.kind === "temporary" ? (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[var(--app-border)] px-1.5 py-0.5 text-[10px] text-[var(--app-muted)]" title="Временная комната исчезнет после завершения разговора">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[var(--app-border)] px-1.5 py-0.5 text-xs text-[var(--app-muted)]" title="Временная комната исчезнет после завершения разговора">
               <GitFork className="h-2.5 w-2.5" aria-hidden="true" />
               Временная
             </span>

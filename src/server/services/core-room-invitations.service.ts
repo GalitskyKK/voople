@@ -21,6 +21,7 @@ import {
   joinGroupRoom,
 } from "@/server/services/group-room-mutations.service";
 import { getGroupNow } from "@/server/services/group-now.service";
+import { listLiveMoveInvitePreviews } from "@/server/services/live-move-preview.service";
 import { filterUserIdsByPrivacyFieldRest } from "@/server/data/privacy-rest";
 import { assertUsersCanInteractRest } from "@/server/data/user-blocks-rest";
 import type {
@@ -224,7 +225,11 @@ export async function cancelCoreRoomInvite(input: {
 }
 
 export async function listCoreRoomInvitePreviews(inviteIds: string[], userId: string) {
-  const previews = await listCoreRoomInvitePreviewsRest(inviteIds, userId);
+  const [legacyPreviews, movePreviews] = await Promise.all([
+    listCoreRoomInvitePreviewsRest(inviteIds, userId),
+    listLiveMoveInvitePreviews(inviteIds, userId),
+  ]);
+  const previews = new Map([...legacyPreviews, ...movePreviews]);
   const groupIds = [...new Set([...previews.values()].flatMap((preview) =>
     preview.groupId ? [preview.groupId] : [],
   ))];

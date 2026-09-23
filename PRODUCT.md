@@ -44,9 +44,10 @@ The default Group tab is **Войс**. Tabs are **Войс / Чат / Люди**
 - **Split:** chooses a subset of participants in the current active LiveSession.
   The initiator stays in the source Room while consent is pending. After all
   selected people accept, one temporary Room is created and the subset moves
-  together. Decline or timeout leaves everyone in place. The current beta
-  picker supports one selected person through the Voop consent path; multi-person
-  all-selected orchestration remains to be implemented.
+  together. Decline or timeout leaves everyone in place. The beta picker
+  selects 1..N current registered participants; guests are not selectable yet.
+  The server owns one persisted consent aggregate and moves everyone atomically
+  only after every selected person accepts.
 - **Voop:** the one-person shortcut for asking someone to step away. The
   temporary Room is created only after acceptance, and the request is bound
   to the inviter's active source LiveSession. Instant Voop requires an explicit

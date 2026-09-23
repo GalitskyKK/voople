@@ -89,10 +89,16 @@ export function GroupNowConnectedPanel({
       />
       <GroupNowSplitPicker
         candidates={create.splitCandidates}
-        pending={create.pending}
+        pending={create.liveMove.pending}
         onClose={create.closeSplitPicker}
-        onChoose={create.chooseSplitCandidate}
+        onSubmit={create.submitSplit}
       />
+      {create.liveMove.request && create.liveMove.status?.status === "pending" ? (
+        <div className="fixed bottom-20 right-4 z-[80] flex max-w-sm items-center gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm shadow-lg" role="status">
+          <span>Ждём {create.liveMove.status.selectedCount - create.liveMove.status.acceptedCount} из {create.liveMove.status.selectedCount}</span>
+          <button type="button" className="rounded-md px-2 py-1 text-[var(--theme-accent)] focus-visible:outline-2" disabled={create.liveMove.cancelPending} onClick={() => void create.liveMove.cancel()}>Отменить</button>
+        </div>
+      ) : null}
     </>
   );
 }

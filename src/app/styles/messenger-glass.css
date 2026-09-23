@@ -1016,6 +1016,10 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
 }
 
 /* Full Room belongs to the same Group material, without turning media into decoration. */
+.voople-room-material[data-room-kind="temporary"] {
+  border-style: dashed;
+}
+
 .voople-shell[data-route-kind="messages"] .voople-full-room__header,
 .voople-shell[data-route-kind="messages"] .voople-full-room__switcher,
 .voople-shell[data-route-kind="messages"] .voople-full-room__footer {

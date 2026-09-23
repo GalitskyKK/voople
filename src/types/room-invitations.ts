@@ -7,7 +7,7 @@ export type CoreRoomInviteStatus =
   | "expired"
   | "cancelled";
 
-export type CoreRoomInviteIntent = "join_room" | "voop";
+export type CoreRoomInviteIntent = "join_room" | "voop" | "split";
 
 export type CoreRoomInviteCandidate = {
   id: string;
@@ -26,6 +26,10 @@ export type CoreRoomInvitePreview = {
   id: string;
   intent: CoreRoomInviteIntent;
   status: CoreRoomInviteStatus;
+  requestId?: string;
+  requestStatus?: "pending" | "completed" | "declined" | "cancelled" | "expired";
+  acceptedCount?: number;
+  selectedCount?: number;
   expiresAt: string;
   groupId: string | null;
   groupName: string | null;

@@ -21,6 +21,7 @@ import type { CoreVoiceSessionDescriptor, CoreVoiceSessionLaunch, EnabledVoiceMe
 import type { ChatRoomControlHandle, VoiceControlState } from "../ChatRoomControl";
 import { cn } from "@/lib/utils";
 import { IncomingCallOverlay } from "./IncomingCallOverlay";
+import { LiveMoveHandoffBridge } from "./LiveMoveHandoffBridge";
 import { useIncomingVoiceCalls, type SubscribeToVoiceRooms } from "./useIncomingVoiceCalls";
 import { resolveVoiceConversationId } from "./voice-conversation-context";
 import { IDLE_VOICE_CONTROL_STATE } from "./voice-session-state";
@@ -218,6 +219,7 @@ export function VoiceSessionProvider({
           )}
         >
           {children}
+          <LiveMoveHandoffBridge />
           {activeSession ? (
             <Suspense fallback={null}>
               <ChatRoomControl

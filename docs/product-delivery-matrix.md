@@ -781,6 +781,20 @@ authenticated создания ссылки, anonymous браузера, мед�
 Семь целевых native tests, architecture, lint (0 ошибок), web/desktop
 TypeScript и production build прошли.
 
+### Split / Voop multi-consent checkpoint — 23 сентября 2026
+
+Миграция 76 вводит один request aggregate и N consent rows для Split и Voop.
+После последнего согласия одна SQL-транзакция повторно проверяет источник,
+heartbeat и членство каждого участника, создаёт ровно одну temporary Room и
+переносит весь выбранный состав. До этого Room не создаётся. Общий picker
+позволяет выбрать 1..N участников текущего разговора, кроме себя и гостей;
+уведомления используют существующий `room_invite`, а inviter и все принявшие
+получают status/media handoff после commit. Старые Voop tRPC endpoints
+делегируют новому оркестратору, не выполняют прежний многошаговый move.
+DB-интеграция без отдельной тестовой БД пропущена. Миграция 76 не применялась,
+web/desktop multi-client, реальный LiveKit handoff, 360 px и обе темы ещё не
+подтверждены; статус Room остаётся частичным.
+
 Перед заявлением о полном выполнении каждого пункта должны быть приложены:
 
 1. ссылка на contract/service/authorization;

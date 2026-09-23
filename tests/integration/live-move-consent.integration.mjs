@@ -121,6 +121,13 @@ test("Split and Voop consent finalize one atomic temporary Room", {
     const completed = await respond(cConsent, c, true);
     assert.equal(completed.status, "completed");
     assert.equal(await roomCount(), 1);
+    for (const participant of [a, b, c]) {
+      const status = await rpc("status_live_move", `'${split.id}', '${participant}'`);
+      assert.equal(status.status, "completed");
+      assert.equal(status.targetRoomId, completed.targetRoomId);
+      assert.equal(status.targetSessionId, completed.targetSessionId);
+    }
+    await assert.rejects(rpc("status_live_move", `'${split.id}', '${d}'`), /LIVE_MOVE_FORBIDDEN/);
     const moved = await q(`SELECT user_id FROM "${schema}".live_session_participants WHERE session_id = '${completed.targetSessionId}' AND left_at IS NULL ORDER BY user_id`);
     assert.deepEqual(moved.map((row) => row.user_id).sort(), [a, b, c].sort());
     const [other] = await q(`SELECT session_id FROM "${schema}".live_session_participants WHERE user_id = '${d}' AND left_at IS NULL`);
@@ -150,6 +157,16 @@ test("Split and Voop consent finalize one atomic temporary Room", {
       assert.equal((await respond(await consent(race.id, c), c, true)).status, "cancelled");
       assert.equal(await roomCount(), 1);
     }
+    const switchedSource = await sourceSession();
+    const switched = await request(switchedSource, [b, c]);
+    await respond(await consent(switched.id, b), b, true);
+    const alternateSession = crypto.randomUUID();
+    await q(`INSERT INTO "${schema}".live_sessions (id, conversation_id, room_id, kind, status, started_by)
+      VALUES ('${alternateSession}', '${group}', '${lobby}', 'group_room', 'active', '${c}')`);
+    await q(`UPDATE "${schema}".live_session_participants SET session_id = '${alternateSession}'
+      WHERE session_id = '${switchedSource}' AND user_id = '${b}'`);
+    assert.equal((await respond(await consent(switched.id, c), c, true)).status, "cancelled");
+    assert.equal(await roomCount(), 1);
     const endedSource = await sourceSession();
     const ended = await request(endedSource, [b]);
     await q(`UPDATE "${schema}".live_sessions SET status = 'ended', ended_at = now() WHERE id = '${endedSource}'`);

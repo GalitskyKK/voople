@@ -4,62 +4,24 @@ import test from "node:test";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Voop is stored separately and creates no Split before acceptance", async () => {
-  const [migration, manifest, data, service, hook] = await Promise.all([
-    read("drizzle/72-deferred-voop.sql"),
-    read("scripts/migration-manifest.mjs"),
-    read("src/server/data/core-room-invitations-rest.ts"),
-    read("src/server/services/core-room-invitations.service.ts"),
-    read("src/hooks/useGroupNowRoomCreate.ts"),
-  ]);
-
-  assert.match(manifest, /"72-deferred-voop\.sql"/);
-  assert.match(migration, /intent varchar\(20\) NOT NULL DEFAULT 'join_room'/);
-  assert.match(migration, /target_room_session_id uuid/);
-  assert.match(migration, /UNIQUE \(chat_id, room_session_id, invitee_id, intent\)/);
-  assert.match(data, /onConflict: "chat_id,room_session_id,invitee_id,intent"/);
-  assert.match(service, /sendCoreVoopRequest[\s\S]+intent: "voop"/);
-  const sendBody = service.slice(
-    service.indexOf("export async function sendCoreVoopRequest"),
-    service.indexOf("export async function acceptCoreVoopRequest"),
-  );
-  assert.doesNotMatch(sendBody, /createAndJoinGroupRoom|joinGroupRoom/);
-  assert.match(sendBody, /context\.participantIds\.includes\(input\.inviteeId\)/);
-  assert.match(data, /\.gt\("last_seen_at", new Date\(Date\.now\(\) - 120_000\)\.toISOString\(\)\)/);
-  assert.match(hook, /coreSendVoop\.useMutation/);
-  assert.match(hook, /coreVoopStatus\.useQuery/);
-});
-
-test("accepting Voop moves both participants and publishes the target session", async () => {
-  const [service, router, actions, people] = await Promise.all([
-    read("src/server/services/core-room-invitations.service.ts"),
+test("Voop is one-person consent using the same atomic Split aggregate", async () => {
+  const [router, move, migration, actions, bridge] = await Promise.all([
     read("src/server/trpc/routers/chat-core-rework.ts"),
+    read("src/hooks/useGroupLiveMove.ts"),
+    read("drizzle/76-live-move-consent.sql"),
     read("src/components/notifications/RoomInviteNotificationActions.tsx"),
-    read("src/components/chat/GroupPeoplePanel.tsx"),
+    read("src/components/chat/voice/LiveMoveHandoffBridge.tsx"),
   ]);
-
-  const acceptBody = service.slice(
-    service.indexOf("export async function acceptCoreVoopRequest"),
-    service.indexOf("export async function getCoreVoopStatus"),
-  );
-  assert.match(acceptBody, /createAndJoinGroupRoom/);
-  assert.match(acceptBody, /context\.participantIds\.includes\(input\.userId\)/);
-  assert.match(acceptBody, /joinGroupRoom\(\{[\s\S]+userId: request\.inviterId[\s\S]+allowCrossContext: true/);
-  assert.ok(
-    acceptBody.indexOf("joinGroupRoom({") < acceptBody.lastIndexOf("markCoreVoopAcceptedRest({"),
-  );
-  assert.match(router, /coreAcceptVoop:[\s\S]+createGroupRoomMediaToken/);
-  assert.match(router, /transition: "voop"/);
-  assert.match(actions, /coreAcceptVoop\.useMutation/);
-  assert.match(actions, /invite\.intent === "voop"/);
-  assert.match(people, /onVoop=\{currentSessionId/);
-});
-
-test("Voop status waits for the accepted Room read model instead of failing early", async () => {
-  const hook = await read("src/hooks/useGroupNowRoomCreate.ts");
-
-  assert.match(hook, /status\.status === "accepted" && !room\) return/);
-  assert.match(hook, /refetchInterval: voopRequestId \? 1_500 : false/);
-  assert.match(hook, /joinMutation\.mutateAsync/);
-  assert.match(hook, /mediaHandoff\.connect/);
+  const send = router.slice(router.indexOf("coreSendVoop:"), router.indexOf("coreVoopStatus:"));
+  const accept = router.slice(router.indexOf("coreAcceptVoop:"), router.indexOf("coreRespondRoomInvite:"));
+  assert.match(send, /requestLiveMove\(/);
+  assert.match(send, /mode: "voop"/);
+  assert.doesNotMatch(send, /sendCoreVoopRequest\(/);
+  assert.match(accept, /respondLiveMove\(/);
+  assert.doesNotMatch(accept, /acceptCoreVoopRequest\(/);
+  assert.match(move, /send\("voop", \[user\]\)/);
+  assert.match(migration, /CREATE OR REPLACE FUNCTION public\.respond_live_move/);
+  assert.match(actions, /coreRespondLiveMove\.useMutation/);
+  assert.match(bridge, /coreMyLiveMoves\.useQuery/);
+  assert.match(bridge, /coreRoomMediaToken\.useMutation/);
 });

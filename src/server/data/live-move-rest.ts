@@ -23,6 +23,7 @@ const responseSchema = z.object({
 const statusSchema = z.object({
   id: z.string().uuid(),
   groupId: z.string().uuid(),
+  inviterId: z.string().uuid(),
   sourceSessionId: z.string().uuid(),
   mode: z.enum(["split", "voop"]),
   status: z.enum(["pending", "completed", "declined", "cancelled", "expired"]),
@@ -103,4 +104,24 @@ export async function getLiveMoveConsentsForPreviewRest(consentIds: string[], ac
   return (data ?? []).map((row) => ({
     id: String(row.id), requestId: String(row.request_id), status: String(row.status),
   }));
+}
+
+export async function listMyLiveMoveIdsRest(actorId: string) {
+  const admin = getAdminClient();
+  const since = new Date(Date.now() - 30 * 60_000).toISOString();
+  const [sent, accepted] = await Promise.all([
+    admin.from("live_move_requests").select("id")
+      .eq("inviter_id", actorId).gte("created_at", since)
+      .in("status", ["pending", "completed"]).order("created_at", { ascending: false }).limit(10),
+    admin.from("live_move_consents").select("request_id")
+      .eq("user_id", actorId).eq("status", "accepted")
+      .gte("responded_at", since)
+      .order("responded_at", { ascending: false }).limit(10),
+  ]);
+  if (sent.error) throw new Error(sent.error.message);
+  if (accepted.error) throw new Error(accepted.error.message);
+  return [...new Set([
+    ...(sent.data ?? []).map((row) => String(row.id)),
+    ...(accepted.data ?? []).map((row) => String(row.request_id)),
+  ])].slice(0, 20);
 }

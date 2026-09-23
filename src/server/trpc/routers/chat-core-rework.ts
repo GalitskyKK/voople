@@ -27,6 +27,12 @@ import {
 } from "@/server/services/chat.service";
 import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
 import {
+  cancelLiveMove,
+  liveMoveStatus,
+  requestLiveMove,
+  respondLiveMove,
+} from "@/server/services/live-move.service";
+import {
   assertServerFeatureAvailable,
   getServerFeatureAccess,
   ProductFeatureUnavailableError,
@@ -65,6 +71,57 @@ function toRoomError(error: unknown, fallback: string): TRPCError {
 }
 
 export const chatCoreReworkProcedures = {
+  coreRequestLiveMove: protectedProcedure
+    .input(z.strictObject({
+      groupId: z.string().uuid(),
+      mode: z.enum(["split", "voop"]),
+      inviteeIds: z.array(z.string().uuid()).min(1).max(8),
+      expectedSourceSessionId: z.string().uuid().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
+      try {
+        return await requestLiveMove({ ...input, inviterId: ctx.user.id });
+      } catch (error) {
+        throw toRoomError(error, "Не удалось отправить запрос на Сплит");
+      }
+    }),
+
+  coreRespondLiveMove: protectedProcedure
+    .input(z.strictObject({ consentId: z.string().uuid(), accept: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
+      try {
+        return await respondLiveMove(input.consentId, ctx.user.id, input.accept);
+      } catch (error) {
+        throw toRoomError(error, "Не удалось ответить на запрос");
+      }
+    }),
+
+  coreCancelLiveMove: protectedProcedure
+    .input(z.strictObject({ requestId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      try {
+        return await cancelLiveMove(input.requestId, ctx.user.id);
+      } catch (error) {
+        throw toRoomError(error, "Не удалось отменить запрос");
+      }
+    }),
+
+  coreLiveMoveStatus: protectedProcedure
+    .input(z.strictObject({ requestId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      try {
+        return await liveMoveStatus(input.requestId, ctx.user.id);
+      } catch (error) {
+        throw toRoomError(error, "Не удалось проверить запрос");
+      }
+    }),
+
   coreRoomAvailability: protectedProcedure.query(({ ctx }) => ({
     enabled: getServerFeatureAccess("multi_room_groups", ctx.user.id).enabled,
   })),

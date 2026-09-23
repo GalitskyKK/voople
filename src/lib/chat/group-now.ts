@@ -192,3 +192,12 @@ export function buildGroupNowView(input: BuildGroupNowViewInput): GroupNowView {
     currentUserRoomId: currentUserRoom?.id ?? null,
   };
 }
+
+export function resolveCurrentLiveSessionId(view: GroupNowView): string | null {
+  const room = view.rooms.find((candidate) =>
+    candidate.id === view.currentUserRoomId
+    && candidate.joinTarget.kind === "room"
+    && candidate.participants.some((participant) => participant.isMe),
+  );
+  return room?.liveSessionId ?? null;
+}

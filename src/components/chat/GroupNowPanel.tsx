@@ -14,6 +14,7 @@ export function GroupNowPanel({
   variant = "surface",
   onJoinRoom,
   onLeaveCurrent,
+  onExpandCurrent,
   leavePending = false,
   onCreateSplit,
   onCreateRoom,
@@ -27,6 +28,7 @@ export function GroupNowPanel({
   variant?: "surface" | "shelf";
   onJoinRoom: (room: GroupNowRoom) => void | Promise<void>;
   onLeaveCurrent?: (room: GroupNowRoom) => void | Promise<void>;
+  onExpandCurrent?: (room: GroupNowRoom) => void;
   leavePending?: boolean;
   onCreateSplit?: (user?: GroupNowUser) => void;
   onCreateRoom?: () => void;
@@ -110,6 +112,7 @@ export function GroupNowPanel({
       actionError={actionError}
       onJoinRoom={(room) => void joinRoom(room)}
       onLeaveCurrent={onLeaveCurrent ? (room) => void leaveRoom(room) : undefined}
+      onExpandCurrent={onExpandCurrent}
       leavePending={leavePending}
       onCreateSplit={onCreateSplit}
       onCreateRoom={onCreateRoom}

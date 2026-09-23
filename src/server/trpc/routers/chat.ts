@@ -62,11 +62,11 @@ export const chatRouter = createTRPCRouter({
     }),
 
   createInvite: protectedProcedure
-    .input(z.object({ chatId: z.string().uuid() }))
+    .input(z.object({ chatId: z.string().uuid(), lifetime: z.enum(["24h", "7d", "permanent"]).optional() }))
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.createChatInvite, ctx.user.id);
       try {
-        return await createChatInvite(input.chatId, ctx.user.id);
+        return await createChatInvite(input.chatId, ctx.user.id, input.lifetime);
       } catch (error) {
         throw new TRPCError({
           code: "BAD_REQUEST",

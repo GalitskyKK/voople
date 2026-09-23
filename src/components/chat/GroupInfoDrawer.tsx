@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc/client";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 
 import { GroupInfoDrawerView, type GroupInfoDrawerTab } from "./GroupInfoDrawerView";
+import { GroupInviteCopyNotice, useGroupInviteQuickCopy } from "./useGroupInviteQuickCopy";
 import { GroupRoomAction } from "./GroupRoomAction";
 
 export function GroupInfoDrawer({ chatId, chatName, memberCount, groupIcon, groupAvatarUrl, groupBannerUrl, groupAccentColor, groupTag, canManage }: {
@@ -27,6 +28,11 @@ export function GroupInfoDrawer({ chatId, chatName, memberCount, groupIcon, grou
   const community = trpc.chat.groupCommunity.useQuery({ chatId }, { enabled: open });
   const utils = trpc.useUtils();
   const setProfileTag = trpc.chat.setGroupProfileTag.useMutation({ onSuccess: async () => { await Promise.all([utils.chat.groupCommunity.invalidate({ chatId }), utils.profile.getByUsername.invalidate()]); } });
+  const createInvite = trpc.chat.createInvite.useMutation();
+  const invite = useGroupInviteQuickCopy({
+    groupId: chatId,
+    createInvite: () => createInvite.mutateAsync({ chatId, lifetime: "7d" }),
+  });
 
   // Header needs member/voice state even when the drawer itself is closed.
   const members = trpc.chat.groupMembers.useQuery({ chatId }, { staleTime: 10_000, refetchInterval: 20_000, refetchOnWindowFocus: false });
@@ -38,7 +44,7 @@ export function GroupInfoDrawer({ chatId, chatName, memberCount, groupIcon, grou
   const topicNames = (discovery.data?.topicSlugs ?? []).map((slug) => catalog.data?.categories.flatMap((category) => category.interests).find((interest) => interest.slug === slug)?.name ?? slug);
   const navigate = (href: string) => { setOpen(false); router.push(href); };
 
-  return (
+  return <>
     <GroupInfoDrawerView
       open={open}
       tab={tab}
@@ -65,10 +71,11 @@ export function GroupInfoDrawer({ chatId, chatName, memberCount, groupIcon, grou
       onOpenChange={setOpen}
       onTabChange={setTab}
       onManage={() => navigate(`/messages/${chatId}/settings`)}
-      onInvite={() => navigate(`/messages/${chatId}/settings`)}
+      onInvite={() => { setOpen(false); void invite.copy(); }}
       onOpenSection={(sectionId) => navigate(`/messages/${sectionId}`)}
       onOpenProfile={(username) => navigate(`/${username}`)}
       onToggleGroupTag={() => setProfileTag.mutate({ chatId: community.data?.tagEquippedByMe ? null : chatId })}
     />
-  );
+    <GroupInviteCopyNotice notice={invite.notice} />
+  </>;
 }

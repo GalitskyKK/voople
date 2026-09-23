@@ -6,6 +6,7 @@ import {
   isCrossContextRoomJoinError,
   roomJoinErrorMessage,
 } from "@/lib/chat/group-room-join";
+import { resolveCurrentLiveSessionId } from "@/lib/chat/group-now";
 import { trpc } from "@/lib/trpc/client";
 import type { GroupNowRoom, GroupNowRoomTarget, GroupNowUser } from "@/types/group-now";
 import type { GroupRoomCreateAndJoinResult } from "@/types/group-room-mutations";
@@ -78,6 +79,7 @@ export function useGroupNowRoomCreate({
   ) => void | Promise<void>;
 }) {
   const createMutation = trpc.chat.coreCreateAndJoinRoom.useMutation();
+  const utils = trpc.useUtils();
   const sendVoopMutation = trpc.chat.coreSendVoop.useMutation();
   const cancelVoopMutation = trpc.chat.coreCancelRoomInvite.useMutation();
   const joinMutation = trpc.chat.coreJoinRoom.useMutation();
@@ -241,25 +243,27 @@ export function useGroupNowRoomCreate({
     setError(null);
     setTargetUserId(user?.id ?? null);
     setOpen(false);
-    if (!user) {
-      void submit(DEFAULT_SPLIT_DRAFT);
-      return;
-    }
-    if (!currentSessionId) {
-      setError("Сначала войдите в голосовую комнату, чтобы позвать человека отойти");
-      setTargetUserId(null);
-      return;
-    }
     void (async () => {
       try {
+        const now = await utils.client.chat.coreGroupNow.query({ groupId });
+        const liveSessionId = resolveCurrentLiveSessionId(now);
+        if (!liveSessionId) {
+          setError("Сначала войдите в голосовую комнату, чтобы разделиться");
+          setTargetUserId(null);
+          return;
+        }
+        if (!user) {
+          await submit(DEFAULT_SPLIT_DRAFT);
+          return;
+        }
         const request = await sendVoopMutation.mutateAsync({
-          sessionId: currentSessionId,
+          sessionId: liveSessionId,
           inviteeId: user.id,
         });
         handledVoopRef.current = null;
         storeVoopRequest(groupId, {
           inviteId: request.id,
-          sourceSessionId: currentSessionId,
+          sourceSessionId: liveSessionId,
           targetUserId: user.id,
         });
         setVoopRequestId(request.id);
@@ -268,7 +272,7 @@ export function useGroupNowRoomCreate({
         setTargetUserId(null);
       }
     })();
-  }, [cancelVoopMutation, currentSessionId, groupId, pending, sendVoopMutation, submit, targetUserId, voopRequestId]);
+  }, [cancelVoopMutation, groupId, pending, sendVoopMutation, submit, targetUserId, utils.client.chat.coreGroupNow, voopRequestId]);
 
   const showRoom = useCallback(() => {
     if (pending) return;

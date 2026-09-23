@@ -1,4 +1,4 @@
-import { ArrowRight, AudioLines, GitFork, LogOut, MonitorUp, Plus, UsersRound } from "lucide-react";
+import { ArrowRight, AudioLines, Expand, GitFork, LogOut, MonitorUp, Plus, UsersRound } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -25,6 +25,7 @@ export function GroupNowRoomSection({
   pending,
   onJoinRoom,
   onLeaveCurrent,
+  onExpandCurrent,
   leavePending = false,
   onCreateSplit,
   splitPending = false,
@@ -35,6 +36,7 @@ export function GroupNowRoomSection({
   pending: boolean;
   onJoinRoom: (room: GroupNowRoom) => void;
   onLeaveCurrent?: (room: GroupNowRoom) => void;
+  onExpandCurrent?: (room: GroupNowRoom) => void;
   leavePending?: boolean;
   onCreateSplit?: () => void;
   splitPending?: boolean;
@@ -129,8 +131,14 @@ export function GroupNowRoomSection({
         aria-busy={pending || undefined}
       >
         {body}
-        {action === "current" && (onCreateSplit || onLeaveCurrent) ? (
+        {action === "current" && (onExpandCurrent || onCreateSplit || onLeaveCurrent) ? (
           <div className="voople-group-now-room__current-actions" aria-label={`Действия разговора ${room.name}`}>
+            {onExpandCurrent ? (
+              <button type="button" className="voople-group-now-room__current-action" onClick={() => onExpandCurrent(room)} aria-label={`Открыть комнату ${room.name}`}>
+                <Expand className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Открыть</span>
+              </button>
+            ) : null}
             {onCreateSplit ? (
               <button
                 type="button"

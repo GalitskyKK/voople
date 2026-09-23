@@ -17,7 +17,9 @@ export function GroupNowConnectedPanel({
   variant = "surface",
   onJoined,
   onOpenLegacy,
+  currentSessionId,
   onLeaveCurrent,
+  onExpandCurrent,
   leavePending = false,
   canCreatePinned = false,
   onOpenProfile,
@@ -32,7 +34,9 @@ export function GroupNowConnectedPanel({
     credentials: EnabledVoiceMediaCredentials,
   ) => void | Promise<void>;
   onOpenLegacy?: (room: GroupNowRoom) => void | Promise<void>;
+  currentSessionId?: string | null;
   onLeaveCurrent?: (room: GroupNowRoom) => void | Promise<void>;
+  onExpandCurrent?: () => void;
   leavePending?: boolean;
   canCreatePinned?: boolean;
   onOpenProfile?: (user: GroupNowUser) => void;
@@ -43,7 +47,7 @@ export function GroupNowConnectedPanel({
       ? (target) => onOpenLegacy(target.room)
       : undefined,
   });
-  const create = useGroupNowRoomCreate({ groupId, onJoined });
+  const create = useGroupNowRoomCreate({ groupId, currentSessionId, onJoined });
 
   return (
     <>
@@ -54,6 +58,10 @@ export function GroupNowConnectedPanel({
         variant={variant}
         onJoinRoom={(room) => join.requestJoin({ groupId, room })}
         onLeaveCurrent={onLeaveCurrent}
+        onExpandCurrent={(room) => {
+          if (currentSessionId === room.liveSessionId) onExpandCurrent?.();
+          else join.requestJoin({ groupId, room });
+        }}
         leavePending={leavePending}
         onCreateSplit={create.startSplit}
         onCreateRoom={canCreatePinned ? create.showRoom : undefined}

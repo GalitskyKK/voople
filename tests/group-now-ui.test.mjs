@@ -53,6 +53,7 @@ test("Group Now presentation resolves current, switch and live activity", () => 
   }), "Biba показывает экран");
   assert.equal(formatGroupNowElapsed(null), null);
   assert.equal(formatGroupNowElapsed("2026-08-31T12:00:00.000Z", Date.parse("2026-08-31T12:24:00.000Z")), "24 мин");
+  assert.equal(formatGroupNowElapsed("2026-08-31T12:00:00", Date.parse("2026-08-31T12:24:00.000Z")), "24 мин");
 });
 
 test("shared Group Now view keeps accessible voice actions for both hosts", async () => {
@@ -75,6 +76,7 @@ test("shared Group Now view keeps accessible voice actions for both hosts", asyn
   assert.match(viewSource, /room\.kind === "lobby"/);
   assert.doesNotMatch(viewSource, />Голос</);
   assert.match(roomSource, /Отделиться во временную комнату/);
+  assert.match(roomSource, /Открыть комнату \$\{room\.name\}/);
   assert.match(roomSource, /voople-group-now-room__current-actions/);
   assert.match(viewSource, /GroupNowCreateCard/);
   assert.match(roomSource, /pending \? "Создаём…" : "Комната"/);

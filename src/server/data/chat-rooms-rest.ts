@@ -88,7 +88,7 @@ async function getMembership(chatId: string, userId: string) {
   return getChatMembershipRest(chatId, userId);
 }
 
-export async function createChatInviteRest(chatId: string, userId: string) {
+export async function createChatInviteRest(chatId: string, userId: string, lifetime: "24h" | "7d" | "permanent" = "permanent") {
   const membership = await getMembership(chatId, userId);
   if (membership.type !== "group") {
     throw new Error("Ссылки-приглашения доступны только для групп");
@@ -102,18 +102,19 @@ export async function createChatInviteRest(chatId: string, userId: string) {
 
   const token = randomBytes(32).toString("base64url");
   const tokenHash = hashInviteToken(token);
+  const expiresAt = lifetime === "permanent" ? null : new Date(Date.now() + (lifetime === "7d" ? 7 : 1) * 24 * 60 * 60 * 1000).toISOString();
   const admin = getAdminClient();
 
   const { error } = await admin.from("chat_invites").insert({
     chat_id: chatId,
     created_by: userId,
     token_hash: tokenHash,
-    expires_at: null,
+    expires_at: expiresAt,
     max_uses: null,
   });
   if (error) throw new Error(error.message);
 
-  return { token, expiresAt: null };
+  return { token, expiresAt };
 }
 
 export async function revokeChatInviteRest(chatId: string, userId: string, token: string) {

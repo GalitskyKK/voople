@@ -25,6 +25,7 @@ type ReadyStateProps = {
   createError?: string | null;
   onJoinRoom: (room: GroupNowRoom) => void;
   onLeaveCurrent?: (room: GroupNowRoom) => void;
+  onExpandCurrent?: (room: GroupNowRoom) => void;
   leavePending?: boolean;
   onCreateSplit?: (user?: GroupNowUser) => void;
   onCreateRoom?: () => void;
@@ -47,6 +48,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
         currentUserRoomId={props.value.currentUserRoomId}
         pendingRoomId={props.pendingRoomId}
         onJoinRoom={props.onJoinRoom}
+        onExpandCurrent={props.onExpandCurrent}
       />
     );
   }
@@ -73,6 +75,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
               pending={props.pendingRoomId === lobby.id}
               onJoinRoom={props.onJoinRoom}
               onLeaveCurrent={props.onLeaveCurrent}
+              onExpandCurrent={props.onExpandCurrent}
               leavePending={Boolean(props.leavePending)}
               onCreateSplit={props.onCreateSplit}
               splitPending={Boolean(props.createPending)}
@@ -87,6 +90,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
               pending={props.pendingRoomId === room.id}
               onJoinRoom={props.onJoinRoom}
               onLeaveCurrent={props.onLeaveCurrent}
+              onExpandCurrent={props.onExpandCurrent}
               leavePending={Boolean(props.leavePending)}
               onCreateSplit={props.onCreateSplit}
               splitPending={Boolean(props.createPending)}

@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 function source(path) {
-  return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+  const content = readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+  return path === "src/app/globals.css"
+    ? `${content}\n${readFileSync(new URL("../src/app/styles/messenger-glass.css", import.meta.url), "utf8")}`
+    : content;
 }
 
 test("group surface defaults to Voice and keeps the three product modes accessible", () => {
@@ -52,6 +55,8 @@ test("live shelf is bounded, shows room rosters and preserves direct room entry"
   assert.match(roomCell, /room\.participants\.slice\(0, 3\)/);
   assert.match(roomCell, /ProfileAvatarVisual/);
   assert.match(roomCell, /onJoinRoom\(room\)/);
+  assert.match(roomCell, /onExpandCurrent\?\.\(room\)/);
+  assert.match(source("src/app/styles/messenger-glass.css"), /flex: 0 1 360px !important/);
   assert.doesNotMatch(shelf, /text-\[(?:9|10|11)px\]/);
   assert.doesNotMatch(roomCell, /text-\[(?:9|10|11)px\]/);
   assert.match(roomCell, /text-sm font-semibold leading-4/);

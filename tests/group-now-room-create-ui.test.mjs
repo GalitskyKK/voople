@@ -20,9 +20,11 @@ test("Split is atomic while permanent Room creation stays deliberate", async () 
   assert.match(hook, /DEFAULT_SPLIT_DRAFT/);
   assert.match(hook, /kind: "temporary"/);
   assert.match(hook, /name: "Сплит"/);
-  assert.match(hook, /void submit\(DEFAULT_SPLIT_DRAFT\)/);
+  assert.match(hook, /await submit\(DEFAULT_SPLIT_DRAFT\)/);
+  assert.match(hook, /utils\.client\.chat\.coreGroupNow\.query\(\{ groupId \}\)/);
+  assert.match(hook, /resolveCurrentLiveSessionId\(now\)/);
   assert.match(hook, /coreSendVoop\.useMutation/);
-  assert.match(hook, /sessionId: currentSessionId/);
+  assert.match(hook, /sessionId: liveSessionId/);
   assert.match(hook, /inviteeId: user\.id/);
   assert.doesNotMatch(hook, /coreSendRoomInvite\.useMutation/);
   assert.match(hook, /const showRoom = useCallback/);

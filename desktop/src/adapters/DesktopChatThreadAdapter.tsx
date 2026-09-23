@@ -7,6 +7,7 @@ import { ChatThreadFrameView } from "@/components/chat/ChatThreadFrameView";
 import { ChatWindowHeaderVisual } from "@/components/chat/ChatWindowHeaderVisual";
 import { ChatPeerPresence } from "@/components/chat/ChatPeerPresence";
 import { GroupInfoDrawerView } from "@/components/chat/GroupInfoDrawerView";
+import { GroupInviteCopyNotice, useGroupInviteQuickCopy } from "@/components/chat/useGroupInviteQuickCopy";
 import { GroupRoomAction } from "@/components/chat/GroupRoomAction";
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
@@ -75,6 +76,14 @@ export function DesktopChatThreadAdapter({
   const [pendingFavoriteId, setPendingFavoriteId] = useState<string | null>(null);
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const online = useBrowserOnline();
+  const invite = useGroupInviteQuickCopy({
+    groupId: chatId,
+    baseUrl: config.apiUrl,
+    createInvite: async () => {
+      const client = createDesktopTrpcClient(config, () => session.access_token);
+      return await client.mutation("chat.createInvite", { chatId, lifetime: "7d" }) as { token: string; expiresAt: string | null };
+    },
+  });
   const groupPanel = useDesktopGroupPanel({
     chatId,
     config,
@@ -189,7 +198,7 @@ export function DesktopChatThreadAdapter({
             }}
             onInvite={() => {
               groupPanel.setOpen(false);
-              onOpenGroupSettings(chatId);
+              void invite.copy();
             }}
             onOpenSection={(sectionId) => {
               groupPanel.setOpen(false);
@@ -405,10 +414,10 @@ export function DesktopChatThreadAdapter({
         onEdit={editMessage}
         customEmojis={data.chat.type === "group" ? groupEmojis : []}
       />}
-      overlays={<ChatMediaLightbox
-        url={lightboxUrl}
-        onClose={() => setLightboxUrl(null)}
-      />}
+      overlays={<>
+        <ChatMediaLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+        {isGroup && !isSubchat ? <GroupInviteCopyNotice notice={invite.notice} /> : null}
+      </>}
     />
   );
 }

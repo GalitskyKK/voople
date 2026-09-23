@@ -15,12 +15,13 @@ type ShelfPreferenceListener = () => void;
 const shelfPreferenceMemory = new Map<string, boolean>();
 const shelfPreferenceListeners = new Map<string, Set<ShelfPreferenceListener>>();
 
-export function GroupLiveShelfView({ groupId, rooms, currentUserRoomId, pendingRoomId, onJoinRoom }: {
+export function GroupLiveShelfView({ groupId, rooms, currentUserRoomId, pendingRoomId, onJoinRoom, onExpandCurrent }: {
   groupId: string;
   rooms: GroupNowRoom[];
   currentUserRoomId: string | null;
   pendingRoomId?: string | null;
   onJoinRoom: (room: GroupNowRoom) => void;
+  onExpandCurrent?: (room: GroupNowRoom) => void;
 }) {
   const [openOverflow, setOpenOverflow] = useState<string | null>(null);
   const preferenceKey = shelfPreferenceKey(groupId);
@@ -62,7 +63,7 @@ export function GroupLiveShelfView({ groupId, rooms, currentUserRoomId, pendingR
           return (
             <div key={layout} className={`voople-group-live-shelf__layout voople-group-live-shelf__layout--${layout} min-w-0 items-stretch gap-2`}>
               {visibleRooms.map((room) => (
-                <GroupLiveShelfRoomCell key={room.id} room={room} currentUserRoomId={currentUserRoomId} pending={pendingRoomId === room.id} onJoinRoom={onJoinRoom} />
+                <GroupLiveShelfRoomCell key={room.id} room={room} currentUserRoomId={currentUserRoomId} pending={pendingRoomId === room.id} onJoinRoom={onJoinRoom} onExpandCurrent={onExpandCurrent} />
               ))}
               {overflowRooms.length > 0 ? (
                 <DropdownMenu

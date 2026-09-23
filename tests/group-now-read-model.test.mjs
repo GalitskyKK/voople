@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { buildGroupNowView } from "../src/lib/chat/group-now.ts";
+import { buildGroupNowView, resolveCurrentLiveSessionId } from "../src/lib/chat/group-now.ts";
 
 const user = (id) => ({
   id,
@@ -47,6 +47,23 @@ test("Group Now keeps Lobby first and derives active media state", () => {
   assert.equal(result.currentUserRoomId, "drg");
   assert.deepEqual(result.onlineOutsideRooms.map((entry) => entry.id), ["bob"]);
   assert.equal(result.visibleOnlineCount, 2);
+  assert.equal(resolveCurrentLiveSessionId(result), "session");
+});
+
+test("Split resolves the current Lobby LiveSession, not merely a selected room", () => {
+  const result = buildGroupNowView({
+    groupId: "group",
+    groupName: "VOICEKK",
+    viewerId: "alice",
+    rooms: [lobby],
+    sessions: [{ id: "lobby-session", roomId: "lobby", status: "active", startedAt: "2026-08-31T12:00:00", startedBy: "alice" }],
+    participants: [{ sessionId: "lobby-session", user: user("alice"), micMuted: true, cameraEnabled: false, screenSharing: false }],
+    legacyPresence: [],
+    onlineUsers: [],
+  });
+  assert.equal(result.currentUserRoomId, "lobby");
+  assert.equal(resolveCurrentLiveSessionId(result), "lobby-session");
+  assert.equal(resolveCurrentLiveSessionId({ ...result, currentUserRoomId: null }), null);
 });
 
 test("new LiveSession wins over duplicate legacy presence", () => {
@@ -110,6 +127,7 @@ test("server read model owns membership and presence privacy", () => {
   const data = readFileSync("src/server/data/group-now-rest.ts", "utf8");
 
   assert.match(service, /assertChatMemberRest/);
+  assert.match(data, /\.gt\("last_seen_at", new Date\(Date\.now\(\) - 120_000\)\.toISOString\(\)\)/);
   assert.match(service, /membership\.parentChatId/);
   assert.match(service, /filterUserIdsByPrivacyFieldRest/);
   assert.match(service, /"roomsScope"/);

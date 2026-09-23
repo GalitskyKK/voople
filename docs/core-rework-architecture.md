@@ -133,9 +133,15 @@ session.
 
 Temporary Rooms enter `grace` when their last participant leaves and are
 archived only by the bounded grace-expiry operation. Lobby and pinned Rooms
-remain durable while their empty LiveSession ends. During the compatibility
-window, the legacy entry path rejects users who already have a new active
-LiveSession, and the new switch transaction accounts for legacy presence. The
+remain durable while their empty LiveSession ends. GroupNow hides temporary
+Rooms without a fresh active/connecting participant or guest; visibility does
+not depend on physical archive timing.
+The service-role-only bounded expiry RPC runs from the authorized cron route
+once per minute, with at most 100 sessions per call. `CRON_SECRET` must be
+configured on the deployment for that route to execute maintenance. During
+the compatibility window, the legacy entry path rejects users who already
+have a new active LiveSession, and the new switch transaction accounts for
+legacy presence. The
 contract stays internal until real database concurrency, old-client and
 two-client media gates pass.
 

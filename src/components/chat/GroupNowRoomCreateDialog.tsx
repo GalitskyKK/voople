@@ -22,7 +22,7 @@ export function GroupNowRoomCreateDialog(props: GroupNowRoomCreateDialogProps) {
 
 function RoomCreateSession({ open, confirmation, pending, error, onClose, onBack, onConfirm, onSubmit }: GroupNowRoomCreateDialogProps) {
   const [name, setName] = useState("");
-  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const trimmedName = name.trim(); if (!trimmedName || pending) return; onSubmit({ kind: "pinned", name: trimmedName }); };
+  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const trimmedName = name.trim(); if (!trimmedName || pending) return; onSubmit({ name: trimmedName }); };
 
   return (
     <Sheet open={open} onClose={onClose} closeOnEscape={!pending} ariaLabel={confirmation ? "Подтверждение создания комнаты" : "Новая комната"} className="voople-room-create-dialog max-w-md">

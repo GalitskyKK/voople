@@ -86,6 +86,28 @@ test("Room duration uses only a fresh LiveSession and retains its start through 
   assert.equal(stale.currentUserRoomId, null);
 });
 
+test("temporary Room disappears on last leave while grace and orphan rows may remain in storage", () => {
+  const temporary = { id: "split", kind: "temporary", name: "Сплит", createdAt: "2026-09-23T12:00:00Z" };
+  const pinned = { id: "pinned", kind: "pinned", name: "Постоянная", createdAt: "2026-09-23T12:00:00Z" };
+  const base = {
+    groupId: "group", groupName: "DRG", viewerId: "alice",
+    rooms: [lobby, pinned, temporary], legacyPresence: [], onlineUsers: [],
+  };
+  const activeSession = { id: "live", roomId: "split", status: "active", startedAt: "2026-09-23T12:00:00Z", startedBy: "alice" };
+  const present = [{ sessionId: "live", user: user("alice"), micMuted: true, cameraEnabled: false, screenSharing: false }];
+  const live = buildGroupNowView({ ...base, sessions: [activeSession], participants: present });
+  assert.deepEqual(live.rooms.map((room) => room.id), ["lobby", "split", "pinned"]);
+  assert.equal(live.currentUserRoomId, "split");
+
+  const grace = buildGroupNowView({ ...base, sessions: [{ ...activeSession, status: "grace" }], participants: [] });
+  assert.deepEqual(grace.rooms.map((room) => room.id), ["lobby", "pinned"]);
+  assert.equal(grace.currentUserRoomId, null);
+  const orphan = buildGroupNowView({ ...base, sessions: [], participants: [] });
+  assert.deepEqual(orphan.rooms.map((room) => room.id), ["lobby", "pinned"]);
+  const stale = buildGroupNowView({ ...base, sessions: [activeSession], participants: [] });
+  assert.deepEqual(stale.rooms.map((room) => room.id), ["lobby", "pinned"]);
+});
+
 test("new LiveSession wins over duplicate legacy presence", () => {
   const result = buildGroupNowView({
     groupId: "group",

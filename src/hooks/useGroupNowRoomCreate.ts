@@ -15,16 +15,10 @@ import type { EnabledVoiceMediaCredentials } from "@/types/voice";
 import { useGroupNowMediaHandoff } from "./useGroupNowMediaHandoff";
 
 export type GroupNowRoomCreateDraft = {
-  kind: "temporary" | "pinned";
   name: string;
 };
 
 type PendingCreation = GroupNowRoomCreateDraft & { requestId: string };
-
-const DEFAULT_SPLIT_DRAFT: GroupNowRoomCreateDraft = {
-  kind: "temporary",
-  name: "Сплит",
-};
 const EMPTY_INVITE_ID = "00000000-0000-4000-8000-000000000000";
 
 type StoredVoopRequest = {
@@ -92,6 +86,7 @@ export function useGroupNowRoomCreate({
   const [retryCreation, setRetryCreation] = useState<PendingCreation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [targetUserId, setTargetUserId] = useState<string | null>(null);
+  const [splitCandidates, setSplitCandidates] = useState<GroupNowUser[] | null>(null);
   const [voopRequestId, setVoopRequestId] = useState<string | null>(null);
   const handledVoopRef = useRef<string | null>(null);
   const voopStatus = trpc.chat.coreVoopStatus.useQuery(
@@ -177,7 +172,6 @@ export function useGroupNowRoomCreate({
   ) => {
     const result = await createMutation.mutateAsync({
       groupId,
-      kind: draft.kind,
       name: draft.name,
       requestId: draft.requestId,
       micMuted: true,
@@ -201,7 +195,6 @@ export function useGroupNowRoomCreate({
   const submit = useCallback(async (draft: GroupNowRoomCreateDraft) => {
     if (pending) return;
     const pendingCreation = retryCreation
-      && retryCreation.kind === draft.kind
       && retryCreation.name === draft.name
       ? retryCreation
       : { ...draft, requestId: crypto.randomUUID() };
@@ -279,16 +272,27 @@ export function useGroupNowRoomCreate({
     void (async () => {
       try {
         const now = await utils.client.chat.coreGroupNow.query({ groupId });
-        if (!resolveCurrentLiveSessionId(now)) {
+        const current = now.rooms.find((room) => room.id === now.currentUserRoomId);
+        if (!current?.liveSessionId || !resolveCurrentLiveSessionId(now)) {
           setError("Сначала войдите в голосовую комнату, чтобы разделиться");
           return;
         }
-        await submit(DEFAULT_SPLIT_DRAFT);
+        const candidates = current.participants.filter((person) => !person.isMe && !person.guest);
+        if (!candidates.length) {
+          setError("В текущем разговоре пока не с кем разделиться");
+          return;
+        }
+        setSplitCandidates(candidates);
       } catch (cause) {
         setError(roomJoinErrorMessage(cause));
       }
     })();
-  }, [groupId, pending, submit, utils.client.chat.coreGroupNow]);
+  }, [groupId, pending, utils.client.chat.coreGroupNow]);
+
+  const chooseSplitCandidate = useCallback((user: GroupNowUser) => {
+    setSplitCandidates(null);
+    startVoop(user);
+  }, [startVoop]);
 
   const showRoom = useCallback(() => {
     if (pending) return;
@@ -330,6 +334,9 @@ export function useGroupNowRoomCreate({
     showRoom,
     startSplit,
     startVoop,
+    splitCandidates,
+    chooseSplitCandidate,
+    closeSplitPicker: () => setSplitCandidates(null),
     submit,
     targetUserId,
   };

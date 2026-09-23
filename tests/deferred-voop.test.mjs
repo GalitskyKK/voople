@@ -24,6 +24,8 @@ test("Voop is stored separately and creates no Split before acceptance", async (
     service.indexOf("export async function acceptCoreVoopRequest"),
   );
   assert.doesNotMatch(sendBody, /createAndJoinGroupRoom|joinGroupRoom/);
+  assert.match(sendBody, /context\.participantIds\.includes\(input\.inviteeId\)/);
+  assert.match(data, /\.gt\("last_seen_at", new Date\(Date\.now\(\) - 120_000\)\.toISOString\(\)\)/);
   assert.match(hook, /coreSendVoop\.useMutation/);
   assert.match(hook, /coreVoopStatus\.useQuery/);
 });
@@ -41,6 +43,7 @@ test("accepting Voop moves both participants and publishes the target session", 
     service.indexOf("export async function getCoreVoopStatus"),
   );
   assert.match(acceptBody, /createAndJoinGroupRoom/);
+  assert.match(acceptBody, /context\.participantIds\.includes\(input\.userId\)/);
   assert.match(acceptBody, /joinGroupRoom\(\{[\s\S]+userId: request\.inviterId[\s\S]+allowCrossContext: true/);
   assert.ok(
     acceptBody.indexOf("joinGroupRoom({") < acceptBody.lastIndexOf("markCoreVoopAcceptedRest({"),

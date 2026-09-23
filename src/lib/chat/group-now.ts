@@ -87,7 +87,9 @@ export function buildGroupNowView(input: BuildGroupNowViewInput): GroupNowView {
     }
   }
   const selectedSessionIds = new Set(
-    [...latestSessionByRoom.values()].map((session) => session.id),
+    [...latestSessionByRoom.values()]
+      .filter((session) => session.status === "active" || session.status === "connecting")
+      .map((session) => session.id),
   );
 
   const participantsBySession = new Map<string, GroupNowParticipant[]>();
@@ -101,13 +103,15 @@ export function buildGroupNowView(input: BuildGroupNowViewInput): GroupNowView {
     placedUserIds.add(participant.user.id);
   }
 
-  const rooms: GroupNowRoom[] = input.rooms.map((room) => {
+  const rooms: GroupNowRoom[] = input.rooms.map((room): GroupNowRoom => {
     const session = latestSessionByRoom.get(room.id);
     const participants = session
       ? participantsBySession.get(session.id) ?? []
       : [];
     // A non-ended DB row without fresh participants is not a current call.
-    const activeSession = participants.length > 0 ? session : undefined;
+    const activeSession = participants.length > 0 && session?.status !== "grace"
+      ? session
+      : undefined;
     return {
       id: room.id,
       kind: room.kind,
@@ -123,7 +127,7 @@ export function buildGroupNowView(input: BuildGroupNowViewInput): GroupNowView {
       hasScreenShare: participants.some((participant) => participant.screenSharing),
       participants,
     };
-  });
+  }).filter((room) => room.kind !== "temporary" || room.liveSessionId !== null);
 
   const roomById = new Map(rooms.map((room) => [room.id, room]));
   for (const legacy of input.legacyPresence) {

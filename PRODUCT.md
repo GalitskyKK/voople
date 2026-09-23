@@ -41,12 +41,20 @@ The default Group tab is **Войс**. Tabs are **Войс / Чат / Люди**
 - **Join / Switch:** clicking another Room joins or switches directly. It does
   not automatically open Full Room. The current Room has an explicit Expand
   action; clicking it may also expand.
-- **Split:** requires an actual active LiveSession. It creates a temporary Room
-  and atomically moves the initiator. Server authorization and source-session
-  freshness are mandatory; a client check is only an interaction aid.
-- **Voop:** asks a specific person to step away. The temporary Room is created
-  only after acceptance, and the request is bound to the inviter's active
-  source LiveSession.
+- **Split:** chooses a subset of participants in the current active LiveSession.
+  The initiator stays in the source Room while consent is pending. After all
+  selected people accept, one temporary Room is created and the subset moves
+  together. Decline or timeout leaves everyone in place. The current beta
+  picker supports one selected person through the Voop consent path; multi-person
+  all-selected orchestration remains to be implemented.
+- **Voop:** the one-person shortcut for asking someone to step away. The
+  temporary Room is created only after acceptance, and the request is bound
+  to the inviter's active source LiveSession. Instant Voop requires an explicit
+  future server-checked Group/friend opt-in; default is approval required.
+- Ordinary **+ Комната** always creates a persistent pinned Room. Temporary
+  Rooms belong only to consented Split/Voop. An empty temporary Room is hidden
+  from ordinary Войс immediately, retained in backend grace for reconnect,
+  then archived by bounded maintenance.
 
 Navigating to Chat, People, Profile, Search, DM or another Group does not end
 the active LiveSession. Full Room and Mini Room are presentations of that same

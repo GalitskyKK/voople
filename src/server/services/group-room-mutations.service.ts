@@ -35,14 +35,13 @@ function requireRoomAdmin(role: "owner" | "admin" | "member") {
 export async function createGroupRoom(input: {
   groupId: string;
   userId: string;
-  kind: "temporary" | "pinned";
   name: string;
 }) {
   const membership = await requireRootGroup(input.groupId, input.userId);
-  if (input.kind === "pinned") requireRoomAdmin(membership.role);
+  requireRoomAdmin(membership.role);
   const name = input.name.trim();
   if (!name || name.length > 80) throw new Error("Название комнаты должно содержать от 1 до 80 символов");
-  return createGroupRoomRest({ ...input, name });
+  return createGroupRoomRest({ ...input, kind: "pinned", name });
 }
 
 export async function createAndJoinGroupRoom(input: {

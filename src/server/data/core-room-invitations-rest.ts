@@ -69,7 +69,8 @@ export async function getCoreRoomInviteSessionRest(
       .from("live_session_participants")
       .select("user_id")
       .eq("session_id", sessionId)
-      .is("left_at", null),
+      .is("left_at", null)
+      .gt("last_seen_at", new Date(Date.now() - 120_000).toISOString()),
   ]);
   if (sessionResult.error) throw new Error(sessionResult.error.message);
   if (!sessionResult.data?.room_id) throw new Error("Сессия комнаты завершена");

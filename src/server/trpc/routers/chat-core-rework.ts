@@ -81,9 +81,8 @@ export const chatCoreReworkProcedures = {
     }),
 
   coreCreateRoom: protectedProcedure
-    .input(z.object({
+    .input(z.strictObject({
       groupId: z.string().uuid(),
-      kind: roomKindSchema,
       name: z.string().trim().min(1).max(80),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -105,9 +104,8 @@ export const chatCoreReworkProcedures = {
     }),
 
   coreCreateAndJoinRoom: protectedProcedure
-    .input(z.object({
+    .input(z.strictObject({
       groupId: z.string().uuid(),
-      kind: roomKindSchema,
       name: z.string().trim().min(1).max(80),
       requestId: z.string().uuid(),
       micMuted: z.boolean().default(true),
@@ -121,7 +119,7 @@ export const chatCoreReworkProcedures = {
         const result = await createAndJoinGroupRoom({
           groupId: input.groupId,
           userId: ctx.user.id,
-          kind: input.kind,
+          kind: "pinned",
           name: input.name,
           requestId: input.requestId,
           micMuted: input.micMuted,

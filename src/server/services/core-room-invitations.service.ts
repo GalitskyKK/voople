@@ -106,6 +106,9 @@ export async function sendCoreVoopRequest(input: {
     requireRootGroupMember(context.groupId, input.inviterId),
     requireRootGroupMember(context.groupId, input.inviteeId),
   ]);
+  if (!context.participantIds.includes(input.inviteeId)) {
+    throw new Error("Вуп доступен только участнику текущего разговора");
+  }
   await assertUsersCanInteractRest(input.inviterId, input.inviteeId);
   const allowedIds = await filterUserIdsByPrivacyFieldRest(
     [input.inviteeId],
@@ -160,6 +163,9 @@ export async function acceptCoreVoopRequest(input: {
     request.inviterId,
   );
   if (context.groupId !== request.groupId) throw new Error("Вуп больше недоступен");
+  if (!context.participantIds.includes(input.userId)) {
+    throw new Error("Вы больше не в исходном разговоре");
+  }
   await requireRootGroupMember(request.groupId, input.userId);
   const result = await createAndJoinGroupRoom({
     groupId: request.groupId,

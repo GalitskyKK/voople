@@ -58,13 +58,21 @@ export function GroupNowRoomSection({
       <span className="voople-room-material__reflection" aria-hidden="true" />
 
       <header className="relative z-[3] flex items-center justify-between gap-2">
-        <span
-          id={`group-now-room-${room.id}`}
-          role="heading"
-          aria-level={3}
-          className="voople-group-now-room__name min-w-0 truncate font-semibold text-[var(--foreground)]"
-        >
-          {room.name}
+        <span className="flex min-w-0 items-center gap-2">
+          <span
+            id={`group-now-room-${room.id}`}
+            role="heading"
+            aria-level={3}
+            className="voople-group-now-room__name min-w-0 truncate font-semibold text-[var(--foreground)]"
+          >
+            {room.name}
+          </span>
+          {room.kind === "temporary" ? (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[var(--app-border)] px-1.5 py-0.5 text-[10px] text-[var(--app-muted)]" title="Временная комната исчезнет после завершения разговора">
+              <GitFork className="h-2.5 w-2.5" aria-hidden="true" />
+              Временная
+            </span>
+          ) : null}
         </span>
         <span className="voople-group-now-room__count flex h-7 shrink-0 items-center gap-1 rounded-md px-2 text-xs leading-4">
           <UsersRound className="h-3 w-3" aria-hidden="true" />

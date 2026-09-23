@@ -8,6 +8,7 @@ import type { EnabledVoiceMediaCredentials } from "@/types/voice";
 
 import { GroupNowPanel } from "./GroupNowPanel";
 import { GroupNowRoomCreateDialog } from "./GroupNowRoomCreateDialog";
+import { GroupNowSplitPicker } from "./GroupNowSplitPicker";
 import { GroupNowRoomSwitchDialog } from "./GroupNowRoomSwitchDialog";
 
 export function GroupNowConnectedPanel({
@@ -85,6 +86,12 @@ export function GroupNowConnectedPanel({
         onBack={create.close}
         onConfirm={() => void create.confirm()}
         onSubmit={(draft) => void create.submit(draft)}
+      />
+      <GroupNowSplitPicker
+        candidates={create.splitCandidates}
+        pending={create.pending}
+        onClose={create.closeSplitPicker}
+        onChoose={create.chooseSplitCandidate}
       />
     </>
   );

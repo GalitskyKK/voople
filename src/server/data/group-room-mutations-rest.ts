@@ -202,10 +202,10 @@ export async function heartbeatGroupRoomRest(input: {
   return { ok: true as const };
 }
 
-export async function expireGroupRoomGraceRest(before?: string) {
+export async function expireGroupRoomGraceRest(limit = 100) {
   const { data, error } = await getAdminClient().rpc(
-    "expire_group_room_grace",
-    before ? { p_before: before } : {},
+    "expire_group_room_grace_bounded",
+    { p_limit: limit },
   );
   if (error) throwRoomMutationError(error.message);
   const expired = z.number().int().nonnegative().parse(data);

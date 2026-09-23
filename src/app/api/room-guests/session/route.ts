@@ -13,6 +13,7 @@ import {
   heartbeatRoomGuest,
   leaveRoomGuest,
   resumeRoomGuestSession,
+  roomGuestUnavailableReason,
 } from "@/server/services/room-guests.service";
 import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
 
@@ -40,7 +41,8 @@ export async function GET(request: Request) {
     return noStore(await resumeRoomGuestSession(token));
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
-    const ended = message.includes("сессия недоступна") || message.includes("Комната уже закрыта");
+    const ended = roomGuestUnavailableReason(error) !== null
+      || message.includes("сессия недоступна") || message.includes("Комната уже закрыта");
     return noStore(
       { error: ended ? "Гостевая сессия завершена" : "Не удалось восстановить гостевую сессию" },
       { status: ended ? 410 : 503 },

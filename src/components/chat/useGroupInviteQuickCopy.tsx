@@ -34,7 +34,7 @@ export function useGroupInviteQuickCopy({ groupId, baseUrl, createInvite }: {
       }
       const origin = new URL(baseUrl ?? window.location.origin).origin;
       await navigator.clipboard.writeText(`${origin}/invite/${invite.token}`);
-      setNotice({ message: "Ссылка в группу скопирована · действует 7 дней", error: false });
+      setNotice({ message: "Ссылка скопирована · действует 7 дней", error: false });
     } catch (cause) {
       setNotice({ message: cause instanceof Error ? cause.message : "Не удалось скопировать ссылку", error: true });
     } finally {

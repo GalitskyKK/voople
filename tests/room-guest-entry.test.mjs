@@ -105,10 +105,16 @@ test("guest transport keeps credentials out of browser JavaScript and restricts 
   assert.match(inviteRoute, /\{ error: message, reason \}/);
   assert.match(data, /class RoomGuestUnavailableError extends Error/);
   assert.match(service, /error instanceof RoomGuestUnavailableError/);
+  assert.match(data, /\.select\("id, invite_id, live_session_id, display_name, access_expires_at/);
+  assert.match(data, /invite\.live_session_id !== data\.live_session_id/);
+  assert.match(data, /if \(invite\.revoked_at\)/);
+  assert.match(data, /new Date\(invite\.expires_at\)\.getTime\(\) <= Date\.now\(\)/);
+  assert.match(data, /heartbeatRoomGuestRest[\s\S]*?await resolveRoomGuestRest\(accessToken\)/);
   assert.doesNotMatch(inviteRoute, /accessToken: result\.accessToken/);
   assert.match(sessionRoute, /Cache-Control": "private, no-store"/);
   assert.match(sessionRoute, /roomGuestCookieOptions/);
   assert.match(sessionRoute, /resumeRoomGuestSession/);
+  assert.match(sessionRoute, /roomGuestUnavailableReason\(error\) !== null/);
   assert.match(sessionRoute, /status: ended \? 410 : 503/);
   assert.match(media, /const identity = `guest:\$\{input\.guestId\}`/);
   assert.match(media, /canPublishData: false/);
@@ -153,4 +159,23 @@ test("guest UI joins muted, exposes recovery states and keeps guests out of prof
   assert.match(snapshot, /last_seen_at/);
   assert.match(groupNow, /id: `guest:\$\{guest\.guestId\}`/);
   assert.match(participant, /!onOpenProfile \|\| user\.guest/);
+});
+
+test("guest credentials cannot become Group credentials or cross the invited LiveSession", async () => {
+  const [trpc, router, data, guestRoute, sessionRoute] = await Promise.all([
+    readFile(new URL("../src/server/trpc/init.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/server/trpc/routers/chat-core-rework.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/server/data/room-guests-rest.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/api/room-guests/invites/[token]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/api/room-guests/session/route.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(trpc, /protectedProcedure = t\.procedure\.use[\s\S]*?getVerifiedUser\(\)[\s\S]*?UNAUTHORIZED/);
+  assert.match(router, /coreGroupNow: protectedProcedure/);
+  assert.match(router, /coreRoomInviteCandidates: protectedProcedure/);
+  assert.match(data, /\.eq\("token_hash", tokenHash\(token\)\)/);
+  assert.match(data, /\.eq\("id", invite\.live_session_id\)/);
+  assert.match(data, /invite\.live_session_id !== data\.live_session_id/);
+  assert.match(guestRoute, /roomGuestCookieOptions\(\)/);
+  assert.doesNotMatch(guestRoute, /chat_members|supabase\.auth\.signIn/);
+  assert.match(sessionRoute, /roomGuestUnavailableReason\(error\) !== null/);
 });

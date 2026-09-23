@@ -12,6 +12,8 @@ test("group membership invite copies a shared link directly on web and desktop",
 
   assert.match(header, /canManage \? <button[^\n]+onClick=\{onInvite\}/);
   assert.match(header, /label="Пригласить в группу"/);
+  assert.match(header, />Пригласить<\/button>/);
+  assert.doesNotMatch(header, />В группу<\/button>/);
   assert.match(header, /label=\{canManage \? "Настройки группы"/);
   assert.match(header, /voople-group-header-tag/);
   assert.match(web, /onInvite=\{\(\) => \{ setOpen\(false\); void invite\.copy\(\); \}\}/);
@@ -20,7 +22,7 @@ test("group membership invite copies a shared link directly on web and desktop",
   assert.match(desktop, /"chat\.createInvite", \{ chatId, lifetime: "7d" \}/);
   assert.match(quickInvite, /navigator\.clipboard\.writeText/);
   assert.match(quickInvite, /cache\.current/);
-  assert.match(quickInvite, /Ссылка в группу скопирована/);
+  assert.match(quickInvite, /Ссылка скопирована · действует 7 дней/);
   assert.doesNotMatch(web, /GroupInviteQuickSheet/);
   assert.doesNotMatch(desktop, /GroupInviteQuickSheet/);
 });

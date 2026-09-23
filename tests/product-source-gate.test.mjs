@@ -20,6 +20,7 @@ const coreArchitecturePath = new URL(
 );
 const matrixPath = new URL("../docs/product-delivery-matrix.md", import.meta.url);
 const agentsPath = new URL("../AGENTS.md", import.meta.url);
+const productPath = new URL("../PRODUCT.md", import.meta.url);
 
 const p0Requirements = [
   "Group visibility",
@@ -34,14 +35,15 @@ const p0Requirements = [
   "Room CTA",
 ];
 
-test("canonical product sources and every P0 result remain release-tracked", async () => {
-  const [corePlan, coreAddendum, finalPlan, coreArchitecture, matrix, agents] = await Promise.all([
+test("PRODUCT.md owns the current contract while historical plans and P0 results remain tracked", async () => {
+  const [corePlan, coreAddendum, finalPlan, coreArchitecture, matrix, agents, product] = await Promise.all([
     readFile(coreReworkPlanPath, "utf8"),
     readFile(coreReworkAddendumPath, "utf8"),
     readFile(finalPlanPath, "utf8"),
     readFile(coreArchitecturePath, "utf8"),
     readFile(matrixPath, "utf8"),
     readFile(agentsPath, "utf8"),
+    readFile(productPath, "utf8"),
   ]);
 
   assert.match(corePlan, /## 29\. Порядок реализации/);
@@ -54,7 +56,20 @@ test("canonical product sources and every P0 result remain release-tracked", asy
   assert.match(matrix, /## P0 — core social/);
   assert.match(matrix, /## Cross-platform architecture gate/);
   assert.match(agents, /## Product source gate/);
-  assert.match(agents, /VOOPLE_CORE_REWORK_PLAN\.md/);
+  assert.match(agents, /`PRODUCT\.md` is the single canonical source for current product behaviour/);
+  assert.match(agents, /`DESIGN_SYSTEM\.md` owns presentation/);
+  assert.match(agents, /domain ADRs own their/);
+  assert.match(agents, /`rework_plan\/`.*historical\/reference/);
+  assert.match(coreArchitecture, /Current\s+product behaviour is owned by `PRODUCT\.md`/);
+  for (const heading of ["Core entities", "Group navigation", "Core voice actions", "Guests and invitations", "Search and discovery", "Beta profile", "Group Economy"]) {
+    assert.ok(product.includes(`## ${heading}`), `PRODUCT.md is missing ${heading}`);
+  }
+  assert.match(product, /default Group tab is \*\*Войс\*\*/);
+  assert.match(product, /\*\*Войс \/ Чат \/ Люди\*\*/);
+  assert.match(product, /without mandatory signup/);
+  assert.match(product, /Server authorization and source-session\s+freshness are mandatory/);
+  assert.doesNotMatch(product, /Opening a Group defaults to Chat/);
+  assert.doesNotMatch(product, /canonical product sources remain the authority/);
 
   for (const requirement of p0Requirements) {
     assert.ok(matrix.includes(requirement), `delivery matrix is missing P0: ${requirement}`);

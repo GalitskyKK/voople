@@ -106,6 +106,8 @@ export function buildGroupNowView(input: BuildGroupNowViewInput): GroupNowView {
     const participants = session
       ? participantsBySession.get(session.id) ?? []
       : [];
+    // A non-ended DB row without fresh participants is not a current call.
+    const activeSession = participants.length > 0 ? session : undefined;
     return {
       id: room.id,
       kind: room.kind,
@@ -113,10 +115,10 @@ export function buildGroupNowView(input: BuildGroupNowViewInput): GroupNowView {
       canManage: room.canManage,
       canPin: room.canPin,
       joinTarget: { kind: "room", roomId: room.id },
-      state: session?.status ?? "idle",
-      liveSessionId: session?.id ?? null,
-      startedAt: session?.startedAt ?? null,
-      startedBy: session?.startedBy ?? null,
+      state: activeSession?.status ?? "idle",
+      liveSessionId: activeSession?.id ?? null,
+      startedAt: activeSession?.startedAt ?? null,
+      startedBy: activeSession?.startedBy ?? null,
       participantCount: participants.length,
       hasScreenShare: participants.some((participant) => participant.screenSharing),
       participants,

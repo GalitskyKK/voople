@@ -42,6 +42,7 @@
 !/docs/core-rework-architecture.md
 !/docs/rework-integration-plan.md
 !/docs/product-metrics.md
+!/docs/product-monetization.md
 !/docs/readme-assets/
 !/docs/readme-assets/.gitkeep
 !/docs/readme-assets/*.webp
@@ -67,6 +68,7 @@
 !/drizzle/65-chat-read-cursors.sql
 !/drizzle/68-guest-funnel-analytics.sql
 !/drizzle/71-product-group-metrics.sql
+!/drizzle/73-core-room-source-invariant.sql
 !/drizzle/72-deferred-voop.sql
 # Local release checkouts are separate Git worktrees, not project sources.
 /.worktrees/

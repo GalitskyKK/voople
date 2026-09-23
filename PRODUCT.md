@@ -1,101 +1,103 @@
-# Product
+# Voople — current product contract
 
-<!-- impeccable:product-schema 1 -->
+Updated: 2026-09-23.
 
-## Platform
+This is the single canonical source for current product behaviour and beta
+scope. Older rework and social plans are historical references. Technical
+invariants live in `ARCHITECTURE.md` and `docs/core-rework-architecture.md`;
+presentation lives in `DESIGN_SYSTEM.md`.
 
-adaptive
+## Product
 
-## Users
+Voople is a private live space for persistent friend groups. The recurring
+use case is: open a Group, see its current voice state, join or start a
+conversation with little coordination, and return to the same Group later.
 
-Voople is for people and small communities that want to stay socially present
-through chat, voice rooms, shared media, mood and profile identity without
-turning every interaction into a public post. The initial product work targets
-connected groups that already communicate elsewhere and need a credible reason
-to move a live conversation into Voople.
+## Core entities
 
-## Product Purpose
+- **Group** is a stable friend company with membership, identity, a Group
+  Conversation and Rooms. Frequent subsets do not automatically become Groups.
+- **Room** is a live placement inside a Group. Lobby is permanent; pinned Rooms
+  persist; Split and Voop may create temporary Rooms.
+- **LiveSession** is one concrete voice, video and screen-share lifecycle.
+  A Room can exist without one; a user has at most one active LiveSession.
+- **Conversation** owns persistent Group or DM message history. Rooms do not
+  create a second message history; Room context may be attached to messages.
+- **Invite** admits a Group member, an exact Room guest or an allowed external
+  cohort according to its explicit scope.
 
-Voople combines messaging, live Rooms and expressive profiles in one social
-space. The core loop is: see what your people are doing, join or start a
-conversation with little friction, then retain useful context in messages and
-the profile instead of losing it when the live moment ends.
+## Group navigation
 
-## Positioning
+The default Group tab is **Войс**. Tabs are **Войс / Чат / Люди**.
 
-The product is organized around live social context rather than a server list
-or a broadcast-only feed: people, Rooms, messages, mood, music and profile
-identity are parts of the same relationship graph.
+- Войс shows Lobby, active and pinned Rooms, screen-share state, planned Rooms
+  where available and members who can join.
+- Чат is the persistent Group Conversation. Optional legacy text Sections stay
+  supported but are not the primary Group model.
+- Люди shows membership, privacy-permitted presence and relevant actions.
 
-## Operating Context
+## Core voice actions
 
-- Web is the public entry and discovery surface, including safe invite previews
-  and guest entry.
-- Desktop is the primary rich communication client and owns native media,
-  screen sharing, deep links and update behavior.
-- Mobile web must remain usable at 360 px. Native Android and iOS clients are a
-  planned platform layer over shared contracts, not separate product forks.
-- A Room guest enters one exact live conversation and does not become a Group
-  member automatically.
+- **Join / Switch:** clicking another Room joins or switches directly. It does
+  not automatically open Full Room. The current Room has an explicit Expand
+  action; clicking it may also expand.
+- **Split:** requires an actual active LiveSession. It creates a temporary Room
+  and atomically moves the initiator. Server authorization and source-session
+  freshness are mandatory; a client check is only an interaction aid.
+- **Voop:** asks a specific person to step away. The temporary Room is created
+  only after acceptance, and the request is bound to the inviter's active
+  source LiveSession.
 
-## Capabilities and Constraints
+Navigating to Chat, People, Profile, Search, DM or another Group does not end
+the active LiveSession. Full Room and Mini Room are presentations of that same
+runtime. Mini appears only after the user explicitly minimizes Full.
 
-- The target social model is `People -> Conversation -> Room`; Group is a
-  durable conversation type, not the root navigation metaphor.
-- Lobby is a Room and can coexist with temporary and pinned Rooms.
-- Messages belong to a DM, Group Chat or section. Room context is an attached
-  snapshot, not a second message-history lifecycle.
-- Server state is authoritative for membership, authorization, active Rooms and
-  media credentials. Public links use short-lived opaque secrets stored only as
-  hashes.
-- Guest access is limited to the exact live Room. Permanent membership, full
-  history, direct messages, notifications and durable identity require an
-  account.
-- Product analytics must not contain message content, private media identifiers,
-  auth tokens or raw invite secrets.
-- UI must support Void and Light themes, keyboard access, reduced motion and
-  responsive widths of 360, 390, 1024 and 1440 px.
-- The canonical product sources remain the authority for behavior and design:
-  `rework_plan/VOOPLE_PRODUCT_DECISION_MEMO.md`,
-  `rework_plan/VOOPLE_IA_UI_SPEC.md` and
-  `rework_plan/VOOPLE_IMPLEMENTATION_BRIEF.md` lead the current messenger/live
-  implementation. Earlier project, social/UX, reference and core-rework plans
-  remain supplementary where they do not conflict with that decision set.
+## Guests and invitations
 
-## Brand Commitments
+- A Group membership link adds someone to the persistent Group after account
+  entry. The default generated link may expire; advanced controls live in
+  Group Settings.
+- A Room guest link grants access only to its exact allowed Room/LiveSession.
+  The guest can receive voice value without mandatory signup and does not gain
+  Group membership, Group history or unrelated presence.
+- One Room guest link may admit several people from an external friend chat.
+  Saving or creating their own Group is optional after useful participation.
 
-The product name is Voople. Existing logo assets, Voople terminology and theme
-tokens are preserved. Reference products may supply interaction patterns and
-information hierarchy, but Voople must not literally imitate their branding or
-cosmetic system. Product copy should be direct, conversational and specific.
+## Search and discovery
 
-## Evidence on Hand
+Search remains in beta for **People** and **Public Groups**. A private Group is
+invite-only; an unlisted Group needs a direct link or exact slug; a public
+Group can appear in search. Feed, Posts, Questions, hashtags, trending and
+the old broad social discovery are preserved in code/data but deferred from
+beta navigation. Deferred exposure does not authorize deletion.
 
-The repository contains working web and Tauri desktop clients, production UI
-screenshots, two design reference boards, a product specification, a staged
-core-rework plan, a delivery matrix and automated architecture, unit, browser
-and release gates. Market demand and migration willingness are not yet proven;
-the validation programme remains a P0 product task and future UI must not invent
-customers, testimonials or adoption claims.
+## Beta profile
 
-## Product Principles
+The profile is an identity and contact surface: avatar, banner, name,
+username, bio, privacy-permitted presence, common Groups, message/Voop and
+owned cosmetics or badges. Status/music may appear only where enabled.
+Posts, feed tabs, Questions, follower metrics and profile-view metrics are
+deferred, with their data and API preserved.
 
-1. The useful social action is visible and reachable before secondary chrome.
-2. Live participation is low-friction, but access boundaries are explicit and
-   enforced on the server.
-3. Web, desktop and future mobile clients share product and data contracts while
-   respecting platform-native interaction details.
-4. New architecture ships in additive, reversible slices with compatibility for
-   supported clients.
-5. Visual fidelity includes loading, empty, offline, error, reconnect and narrow
-   viewport states; a static shell is not a completed feature.
-6. Opening a Group defaults to Chat. Joining Lobby or a Room is one explicit
-   action and opens Full Room in the main content area; navigating elsewhere
-   preserves the same live session as Mini Room instead of opening another
-   product window.
+## Group Economy
 
-## Accessibility & Inclusion
+The social core stays free, including basic Groups and Rooms, ordinary voice
+and screen share, Split, Switch, Voop and invitations. Personal Voople+,
+Group+, Group+ Day, shared contributions, permanent assets and earned Group
+identity are secondary or future layers. They cannot gate the core loop.
+Promotional acquisition is specified in `docs/product-monetization.md`; no
+fingerprinting or reward engine is part of the current beta slice.
 
-Interactive controls require semantic elements, accessible names, keyboard and
-visible-focus behavior. Motion must respect reduced-motion preferences, layouts
-must remain usable at 360 px, and meaning cannot rely on color alone.
+## Beta evidence and quality
+
+Primary evidence is a second useful session by the same Group, weekly
+recurring voice Groups, W1 Group retention, invite-to-media conversion and
+reliable Split / Switch / Voop. Product analytics must exclude message
+content, private media identifiers, auth tokens and raw invite secrets.
+
+Web handles public entry and guest preview; desktop is the rich communication
+client. Both share product and server contracts. Mobile web remains usable at
+360 px. Server state is authoritative for membership, Room placement,
+LiveSession eligibility and media credentials. Void and Light, keyboard
+access, reduced motion and loading/empty/error/reconnect states are part of
+beta quality, not separate features.

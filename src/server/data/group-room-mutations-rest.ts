@@ -54,6 +54,9 @@ function throwRoomMutationError(message: string) {
   if (message.includes("ROOM_IDEMPOTENCY_CONFLICT")) {
     throw new Error("Запрос создания комнаты уже использован");
   }
+  if (message.includes("ROOM_SOURCE_INACTIVE")) {
+    throw new Error("Исходный разговор завершён или вы больше не в нём");
+  }
   if (message.includes("ROOM_NAME_INVALID")) {
     throw new Error("Название комнаты должно содержать от 1 до 80 символов");
   }

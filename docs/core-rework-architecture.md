@@ -1,10 +1,9 @@
 # Core rework architecture
 
-Status: accepted foundation for the staged core rework. The current product and
-interface contract is owned by `rework_plan/VOOPLE_PRODUCT_DECISION_MEMO.md`,
-`rework_plan/VOOPLE_IA_UI_SPEC.md` and
-`rework_plan/VOOPLE_IMPLEMENTATION_BRIEF.md`. This document retains the data,
-authorization and rollout invariants that support that contract.
+Status: accepted technical foundation for the staged core rework. Current
+product behaviour is owned by `PRODUCT.md`; older `rework_plan/` documents are
+historical references. This document retains data, authorization and rollout
+invariants that support the current product contract.
 
 ## Aggregate model
 

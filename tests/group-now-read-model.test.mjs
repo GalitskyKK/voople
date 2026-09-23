@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { buildGroupNowView, resolveCurrentLiveSessionId } from "../src/lib/chat/group-now.ts";
+import { formatGroupNowElapsed } from "../src/lib/chat/group-now-presentation.ts";
 
 const user = (id) => ({
   id,
@@ -64,6 +65,25 @@ test("Split resolves the current Lobby LiveSession, not merely a selected room",
   assert.equal(result.currentUserRoomId, "lobby");
   assert.equal(resolveCurrentLiveSessionId(result), "lobby-session");
   assert.equal(resolveCurrentLiveSessionId({ ...result, currentUserRoomId: null }), null);
+});
+
+test("Room duration uses only a fresh LiveSession and retains its start through reconnect", () => {
+  const now = Date.parse("2026-09-23T12:24:00Z");
+  const base = {
+    groupId: "group", groupName: "VOICEKK", viewerId: "alice", rooms: [lobby],
+    legacyPresence: [], onlineUsers: [],
+    participants: [{ sessionId: "live", user: user("alice"), micMuted: true, cameraEnabled: false, screenSharing: false }],
+  };
+  const fresh = buildGroupNowView({ ...base, sessions: [{ id: "live", roomId: "lobby", status: "active", startedAt: "2026-09-23T12:24:00", startedBy: "alice" }] });
+  assert.equal(formatGroupNowElapsed(fresh.rooms[0].startedAt, now), "только что");
+  const ongoing = buildGroupNowView({ ...base, sessions: [{ id: "live", roomId: "lobby", status: "active", startedAt: "2026-09-23T12:00:00", startedBy: "alice" }] });
+  assert.equal(formatGroupNowElapsed(ongoing.rooms[0].startedAt, now), "24 мин");
+  const afterReconnect = buildGroupNowView({ ...base, sessions: [{ id: "live", roomId: "lobby", status: "active", startedAt: "2026-09-23T12:00:00", startedBy: "alice" }] });
+  assert.equal(afterReconnect.rooms[0].startedAt, ongoing.rooms[0].startedAt);
+  const stale = buildGroupNowView({ ...base, participants: [], sessions: [{ id: "live", roomId: "lobby", status: "active", startedAt: "2026-09-17T07:24:00", startedBy: "alice" }] });
+  assert.equal(stale.rooms[0].startedAt, null);
+  assert.equal(stale.rooms[0].liveSessionId, null);
+  assert.equal(stale.currentUserRoomId, null);
 });
 
 test("new LiveSession wins over duplicate legacy presence", () => {

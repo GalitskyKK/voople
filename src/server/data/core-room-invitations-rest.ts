@@ -14,7 +14,7 @@ import type {
   CoreRoomInviteStatus,
 } from "@/types/room-invitations";
 
-const ACTIVE_SESSION_STATES = ["connecting", "active", "grace"];
+const ACTIVE_SESSION_STATES = ["connecting", "active"];
 const INVITE_TTL_MS = 15 * 60_000;
 
 type InviteSessionContext = {
@@ -63,6 +63,7 @@ export async function getCoreRoomInviteSessionRest(
       .eq("session_id", sessionId)
       .eq("user_id", actorId)
       .is("left_at", null)
+      .gt("last_seen_at", new Date(Date.now() - 120_000).toISOString())
       .maybeSingle(),
     admin
       .from("live_session_participants")

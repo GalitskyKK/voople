@@ -223,8 +223,8 @@ export function useGroupNowRoomCreate({
     }
   }, [finishCreate, pending, retryCreation]);
 
-  const startSplit = useCallback((user?: GroupNowUser) => {
-    if (user && voopRequestId && targetUserId === user.id) {
+  const startVoop = useCallback((user: GroupNowUser) => {
+    if (voopRequestId && targetUserId === user.id) {
       void (async () => {
         try {
           await cancelVoopMutation.mutateAsync({ inviteId: voopRequestId });
@@ -241,7 +241,7 @@ export function useGroupNowRoomCreate({
     if (pending) return;
     setConfirmation(null);
     setError(null);
-    setTargetUserId(user?.id ?? null);
+    setTargetUserId(user.id);
     setOpen(false);
     void (async () => {
       try {
@@ -250,10 +250,6 @@ export function useGroupNowRoomCreate({
         if (!liveSessionId) {
           setError("Сначала войдите в голосовую комнату, чтобы разделиться");
           setTargetUserId(null);
-          return;
-        }
-        if (!user) {
-          await submit(DEFAULT_SPLIT_DRAFT);
           return;
         }
         const request = await sendVoopMutation.mutateAsync({
@@ -272,7 +268,27 @@ export function useGroupNowRoomCreate({
         setTargetUserId(null);
       }
     })();
-  }, [cancelVoopMutation, groupId, pending, sendVoopMutation, submit, targetUserId, utils.client.chat.coreGroupNow, voopRequestId]);
+  }, [cancelVoopMutation, groupId, pending, sendVoopMutation, targetUserId, utils.client.chat.coreGroupNow, voopRequestId]);
+
+  const startSplit = useCallback(() => {
+    if (pending) return;
+    setConfirmation(null);
+    setError(null);
+    setTargetUserId(null);
+    setOpen(false);
+    void (async () => {
+      try {
+        const now = await utils.client.chat.coreGroupNow.query({ groupId });
+        if (!resolveCurrentLiveSessionId(now)) {
+          setError("Сначала войдите в голосовую комнату, чтобы разделиться");
+          return;
+        }
+        await submit(DEFAULT_SPLIT_DRAFT);
+      } catch (cause) {
+        setError(roomJoinErrorMessage(cause));
+      }
+    })();
+  }, [groupId, pending, submit, utils.client.chat.coreGroupNow]);
 
   const showRoom = useCallback(() => {
     if (pending) return;
@@ -313,6 +329,7 @@ export function useGroupNowRoomCreate({
     pending,
     showRoom,
     startSplit,
+    startVoop,
     submit,
     targetUserId,
   };

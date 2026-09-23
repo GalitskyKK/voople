@@ -145,7 +145,7 @@ export function GroupNowRoomSection({
                 className="voople-group-now-room__current-action"
                 disabled={pending || splitPending}
                 aria-label="Отделиться во временную комнату"
-                onClick={onCreateSplit}
+                onClick={() => onCreateSplit?.()}
               >
                 <GitFork className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>{splitPending ? "Создаём…" : "Сплит"}</span>

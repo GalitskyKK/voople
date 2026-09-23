@@ -30,7 +30,7 @@ export function GroupNowPanel({
   onLeaveCurrent?: (room: GroupNowRoom) => void | Promise<void>;
   onExpandCurrent?: (room: GroupNowRoom) => void;
   leavePending?: boolean;
-  onCreateSplit?: (user?: GroupNowUser) => void;
+  onCreateSplit?: () => void;
   onCreateRoom?: () => void;
   createPending?: boolean;
   createError?: string | null;

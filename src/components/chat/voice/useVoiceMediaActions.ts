@@ -10,7 +10,7 @@ import { reportProductEvent } from "@/lib/telemetry/client";
 import {
   getAudioCaptureOptions,
   getMicrophoneMuted,
-  VOICE_PUBLISH_OPTIONS,
+  setMicrophoneEnabledAndConfirm,
   type MediaStatus,
   type ScreenShareQuality,
 } from "./voice-room-config";
@@ -69,10 +69,7 @@ export function useVoiceMediaActions({
     if (actionRef.current) return;
     const room = roomRef.current;
     if (!room || mediaStatus !== "connected") {
-      setMicMuted((muted) => {
-        desiredMicMutedRef.current = !muted;
-        return !muted;
-      });
+      setMicMuted(getMicrophoneMuted(room));
       return;
     }
 
@@ -81,24 +78,20 @@ export function useVoiceMediaActions({
     setError(null);
     const targetEnabled = getMicrophoneMuted(room);
     try {
-      await room.localParticipant.setMicrophoneEnabled(
+      const actualMuted = await setMicrophoneEnabledAndConfirm(
+        room,
         targetEnabled,
         getAudioCaptureOptions(preferencesRef.current),
-        VOICE_PUBLISH_OPTIONS,
       );
+      desiredMicMutedRef.current = actualMuted;
+      setMicMuted(actualMuted);
+      void sendHeartbeat();
       const processorError = await syncVoiceTrackProcessor(room, {
         rnnoiseEnabled: preferencesRef.current.enhancedNoiseSuppression,
         microphoneGain: preferencesRef.current.microphoneGain,
       });
       if (processorError) setError(processorError);
-      const actualMuted = getMicrophoneMuted(room);
-      desiredMicMutedRef.current = actualMuted;
-      setMicMuted(actualMuted);
-      if (actualMuted === targetEnabled) {
-        throw new Error("Медиасервер не подтвердил изменение микрофона");
-      }
       void playVoiceRoomSound(actualMuted ? "mute" : "unmute");
-      void sendHeartbeat();
       await refreshDevices();
     } catch (cause) {
       const actualMuted = getMicrophoneMuted(room);

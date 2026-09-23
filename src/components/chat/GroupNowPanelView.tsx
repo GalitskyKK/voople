@@ -27,7 +27,7 @@ type ReadyStateProps = {
   onLeaveCurrent?: (room: GroupNowRoom) => void;
   onExpandCurrent?: (room: GroupNowRoom) => void;
   leavePending?: boolean;
-  onCreateSplit?: (user?: GroupNowUser) => void;
+  onCreateSplit?: () => void;
   onCreateRoom?: () => void;
   onOpenProfile?: (user: GroupNowUser) => void;
 };

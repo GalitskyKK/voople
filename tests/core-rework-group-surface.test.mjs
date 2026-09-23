@@ -126,7 +126,7 @@ test("people view uses real member data and exposes room, presence and role cont
 
   assert.match(controller, /trpc\.chat\.groupMembers\.useQuery/);
   assert.match(controller, /useGroupNowRoomCreate/);
-  assert.match(controller, /split\.startSplit/);
+  assert.match(controller, /split\.startVoop/);
   assert.match(controller, /voopingUserId=\{voopingUserId \?\? split\.targetUserId\}/);
   assert.match(controller, /enabled/);
   assert.match(view, /member\.activeRoom/);

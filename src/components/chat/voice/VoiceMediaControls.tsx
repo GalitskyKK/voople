@@ -47,7 +47,7 @@ export function VoiceMediaControls({
       <IconButton
         label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
         tooltipClassName="shrink-0"
-        disabled={sessionPending || mediaActionPending}
+        disabled={sessionPending || !connected || mediaActionPending}
         onClick={() => void onMicToggle()}
         className={cn(
           controlClass,

@@ -21,11 +21,19 @@ test("Split is atomic while permanent Room creation stays deliberate", async () 
   assert.match(hook, /kind: "temporary"/);
   assert.match(hook, /name: "Сплит"/);
   assert.match(hook, /await submit\(DEFAULT_SPLIT_DRAFT\)/);
+  assert.match(hook, /const startSplit = useCallback\(\(\) =>/);
+  assert.match(hook, /const startVoop = useCallback\(\(user: GroupNowUser\) =>/);
+  const splitFlow = hook.slice(hook.indexOf("const startSplit ="), hook.indexOf("const showRoom ="));
+  assert.match(splitFlow, /resolveCurrentLiveSessionId\(now\)/);
+  assert.match(splitFlow, /submit\(DEFAULT_SPLIT_DRAFT\)/);
+  assert.doesNotMatch(splitFlow, /sendVoopMutation|inviteeId|user\.id/);
   assert.match(hook, /utils\.client\.chat\.coreGroupNow\.query\(\{ groupId \}\)/);
   assert.match(hook, /resolveCurrentLiveSessionId\(now\)/);
   assert.match(hook, /coreSendVoop\.useMutation/);
   assert.match(hook, /sessionId: liveSessionId/);
-  assert.match(hook, /inviteeId: user\.id/);
+  const voopFlow = hook.slice(hook.indexOf("const startVoop ="), hook.indexOf("const startSplit ="));
+  assert.match(voopFlow, /inviteeId: user\.id/);
+  assert.match(voopFlow, /sendVoopMutation\.mutateAsync/);
   assert.doesNotMatch(hook, /coreSendRoomInvite\.useMutation/);
   assert.match(hook, /const showRoom = useCallback/);
   assert.match(hook, /setOpen\(true\)/);
@@ -47,5 +55,5 @@ test("Split is atomic while permanent Room creation stays deliberate", async () 
   assert.match(connected, /onBack=\{create\.close\}/);
   assert.match(room, /onCreateSplit\?: \(\) => void/);
   assert.match(room, /Отделиться во временную комнату/);
-  assert.match(room, /onClick=\{onCreateSplit\}/);
+  assert.match(room, /onClick=\{\(\) => onCreateSplit\?\.\(\)\}/);
 });

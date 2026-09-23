@@ -162,6 +162,23 @@ export function getMicrophoneMuted(room: Room | null) {
   return !publication || publication.isMuted;
 }
 
+export async function setMicrophoneEnabledAndConfirm(
+  room: Room,
+  enabled: boolean,
+  captureOptions: AudioCaptureOptions,
+) {
+  await room.localParticipant.setMicrophoneEnabled(
+    enabled,
+    captureOptions,
+    VOICE_PUBLISH_OPTIONS,
+  );
+  const publication = room.localParticipant.getTrackPublication(Track.Source.Microphone);
+  if (enabled ? !publication || publication.isMuted : Boolean(publication && !publication.isMuted)) {
+    throw new Error("Микрофон не подтвердил изменение. Проверьте устройство и повторите.");
+  }
+  return getMicrophoneMuted(room);
+}
+
 export function getConnectionLabel(status: MediaStatus) {
   switch (status) {
     case "connected":

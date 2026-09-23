@@ -60,7 +60,7 @@ export function GroupPeoplePanel({
       onOpenProfile={onOpenProfile}
       currentUserId={currentUserId}
       onVoop={currentSessionId
-        ? onVoop ?? ((member) => split.startSplit({
+        ? onVoop ?? ((member) => split.startVoop({
             id: member.id,
             username: member.username,
             displayName: member.displayName,

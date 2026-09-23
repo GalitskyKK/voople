@@ -47,7 +47,7 @@ export function useChatRoomControl(
   ref: ForwardedRef<ChatRoomControlHandle>,
 ) {
   const [open, setOpen] = useState(initialOpen);
-  const [micMuted, setMicMuted] = useState(false);
+  const [micMuted, setMicMuted] = useState(Boolean(coreSession));
   const [mediaStatus, setMediaStatus] = useState<MediaStatus>("idle");
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [audioBlocked, setAudioBlocked] = useState(false);
@@ -58,7 +58,7 @@ export function useChatRoomControl(
   const [roomSwitchError, setRoomSwitchError] = useState<string | null>(null);
   const liveRoomRef = useRef<Room | null>(null);
   const screenShareQualityRef = useRef<"standard" | "plus">("standard");
-  const desiredMicMutedRef = useRef(false);
+  const desiredMicMutedRef = useRef(Boolean(coreSession));
   const { preferences, preferencesRef, persistPreferences } = useVoicePreferences();
 
   const devices = useVoiceDeviceSettings({

@@ -11,6 +11,7 @@ import {
   getAudioCaptureOptions,
   getMicrophoneMuted,
   reconnectPolicy,
+  setMicrophoneEnabledAndConfirm,
   VOICE_PUBLISH_OPTIONS,
   type LiveKitEndpoint,
   type MediaStatus,
@@ -242,10 +243,10 @@ export function useVoiceMediaConnection({
 
             if (!desiredMicMutedRef.current) {
               try {
-                await room.localParticipant.setMicrophoneEnabled(
+                await setMicrophoneEnabledAndConfirm(
+                  room,
                   true,
                   getAudioCaptureOptions(preferencesRef.current),
-                  VOICE_PUBLISH_OPTIONS,
                 );
 
                 if (!isCurrentRoom()) return;

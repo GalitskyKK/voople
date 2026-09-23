@@ -751,6 +751,20 @@ TURN/ICE маршрут из российских сетей.
 
 Миграция 73 усиливает существующий атомарный `create_and_join_group_room`: до создания временной Room проверяет свежего активного участника исходной LiveSession в ожидаемой Group. Для Voop исходная session выводится из server-owned invite, не из произвольного аргумента клиента; повтор того же request ID сохраняет прежнюю идемпотентность. Отправка Voop также проверяет heartbeat участника. Group Now получает `startedAt` только от LiveSession с актуальными участниками; UTC и сохранение начального времени при обычном reconnect покрыты fixtures. `PRODUCT.md` очищен от противоречивого старого default Chat, продуктовый source gate переведён на него. В `docs/product-monetization.md` записаны только концепт квалифицированной Group+ Day и будущий anti-abuse, без reward engine. Нативные unit-тесты 307/307, architecture, lint (0 ошибок), web/desktop TypeScript проходят; отдельный DB-интеграционный тест добавлен, но локально пропущен без `VOOPLE_TEST_DATABASE_URL`. Миграция не применялась к production; двухклиентный Split/Voop и duration на реальном heartbeat ещё не подтверждены. Статус Room и beta gate остаётся частичным.
 
+### Room management presence gate — 23 сентября 2026
+
+Существующее меню и RPC управления Room сохранены. Автор pinned Room по-прежнему
+может её переименовать, но больше не видит недоступное ему архивирование; автор
+temporary Room и owner/admin сохраняют разрешённое действие. Миграция 74
+проверяет занятость Room по актуальному heartbeat участника и гостя, блокирует
+архивирование активной гостевой сессии и позволяет убрать комнату, если в ней
+остались только stale записи. Lobby остаётся защищённым на сервере. Статус
+пункта A частичный до выполнения DB integration на изолированной БД,
+authenticated web/desktop/360 px и проверки конкурирующего guest join/archive;
+миграция не применялась к production.
+Пять целевых source-тестов, architecture, lint (0 ошибок), web/desktop
+TypeScript и production build прошли; DB integration пропущен без тестовой БД.
+
 Перед заявлением о полном выполнении каждого пункта должны быть приложены:
 
 1. ссылка на contract/service/authorization;

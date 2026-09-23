@@ -142,10 +142,12 @@ export function VoiceRoomActionsMenu({
               {room.kind === "pinned" ? "Открепить" : "Закрепить"}
             </button>
           ) : null}
-          <button type="button" role="menuitem" className={`${itemClass} voople-room-actions__danger`} onClick={() => setMode("archive")}>
-            <Archive className="h-4 w-4" aria-hidden="true" />
-            Архивировать
-          </button>
+          {room.canPin || room.kind === "temporary" ? (
+            <button type="button" role="menuitem" className={`${itemClass} voople-room-actions__danger`} onClick={() => setMode("archive")}>
+              <Archive className="h-4 w-4" aria-hidden="true" />
+              Архивировать
+            </button>
+          ) : null}
           {errorMessage ? <p className="px-2.5 py-2 text-xs text-red-400" role="alert">{errorMessage}</p> : null}
         </>
       )}

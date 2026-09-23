@@ -31,6 +31,7 @@ export const REQUIRED_MIGRATIONS = Object.freeze([
   "71-product-group-metrics.sql",
   "72-deferred-voop.sql",
   "73-core-room-source-invariant.sql",
+  "74-group-room-archive-presence.sql",
 ]);
 
 // The ledger must exist before the feature migrations are replayed so every
@@ -68,4 +69,5 @@ export const RELEASE_APPLY_ORDER = Object.freeze([
   "71-product-group-metrics.sql",
   "72-deferred-voop.sql",
   "73-core-room-source-invariant.sql",
+  "74-group-room-archive-presence.sql",
 ]);

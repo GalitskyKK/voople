@@ -70,6 +70,7 @@
 !/drizzle/71-product-group-metrics.sql
 !/drizzle/73-core-room-source-invariant.sql
 !/drizzle/72-deferred-voop.sql
+!/drizzle/74-group-room-archive-presence.sql
 # Local release checkouts are separate Git worktrees, not project sources.
 /.worktrees/
 # Local toolchain experiment for the feature-gated Windows process-audio build.

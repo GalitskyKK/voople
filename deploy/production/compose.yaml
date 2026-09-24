@@ -6,6 +6,7 @@ services:
     restart: unless-stopped
     env_file:
       - app.env
+      - cron.env
     environment:
       HOSTNAME: 0.0.0.0
       NODE_ENV: production

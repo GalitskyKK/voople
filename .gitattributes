@@ -1,0 +1,3 @@
+# Unix host deployment scripts and units must remain LF on Windows checkouts.
+deploy/production/bin/* text eol=lf
+deploy/production/systemd/* text eol=lf

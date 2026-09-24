@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+
+# Keep the bearer token out of the curl process arguments and journal output.
+case "${CRON_SECRET:-}" in
+  ""|*[!A-Za-z0-9_-]*)
+    echo "CRON_SECRET must be a non-empty URL-safe token" >&2
+    exit 2
+    ;;
+esac
+
+printf 'header = "Authorization: Bearer %s"\n' "$CRON_SECRET" |
+  /usr/bin/curl --config - --fail --silent --show-error \
+    --connect-timeout 3 --max-time 20 \
+    http://127.0.0.1:3000/api/cron/expire-group-room-grace

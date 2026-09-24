@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Voople room grace maintenance every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+Persistent=true
+AccuracySec=1s
+Unit=voople-room-maintenance.service
+
+[Install]
+WantedBy=timers.target

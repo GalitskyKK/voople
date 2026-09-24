@@ -1,28 +1,27 @@
 import type { Session } from "@supabase/supabase-js";
 
 import { ProfilePageView } from "@/components/profile/ProfilePageView";
-import { ProfileQuestions } from "@/components/profile/ProfileQuestions";
+import { ProfileCommonGroups } from "@/components/profile/ProfileCommonGroups";
 import { ProfileBadgesView } from "@/components/profile/ProfileBadgesView";
 import { ProfileCardView } from "@/components/profile/ProfileCardView";
 import { ProfileEditSheet } from "@/components/profile/ProfileEditSheet";
 import { ProfileRelationshipActions } from "@/components/profile/ProfileRelationshipActions";
-import { ProfileReactions } from "@/components/profile/ProfileReactions";
 import { ProfileStatusSection } from "@/components/profile/ProfileStatusSection";
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { ProfileFlipCard } from "@/components/profile/canvas/ProfileFlipCard";
 import { AppPageContent } from "@/components/layout/AppPageContent";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
+import { PROFILE_STATUS_VISIBLE } from "@/lib/product/profile-beta-surface";
+import { ProfileLoadingView } from "@/components/profile/ProfileLoadingView";
 
 import type { DesktopConfig } from "../config";
 import { useDesktopProfile } from "../profile/useDesktopProfile";
-import { DesktopPostCardAdapter } from "./DesktopPostCardAdapter";
 import { DesktopProfileShareAdapter } from "./DesktopProfileShareAdapter";
 
 export function DesktopProfileAdapter({
   config,
   session,
   username,
-  renderDestination,
   navigate,
 }: {
   config: DesktopConfig;
@@ -43,7 +42,7 @@ export function DesktopProfileAdapter({
         className="py-4 lg:py-6"
         aria-label="Загрузка профиля"
       >
-        <div className="feed-skeleton h-80 rounded-2xl" />
+        <ProfileLoadingView />
       </AppPageContent>
     );
   }
@@ -65,8 +64,7 @@ export function DesktopProfileAdapter({
     <AppPageContent>
       <ProfilePageView
         telemetryKey={data.profile.id}
-        posts={data.posts}
-        pinnedPost={data.pinnedPost}
+        context={<ProfileCommonGroups userId={data.profile.id} isOwner={data.isOwner} onNavigate={navigate} />}
         card={
           <ProfileFlipCard
             profile={data.profile}
@@ -107,21 +105,14 @@ export function DesktopProfileAdapter({
                     />
                   )
                 }
-                status={
+                status={PROFILE_STATUS_VISIBLE ? (
                   <ProfileStatusSection
                     username={data.profile.username}
                     initialStatus={data.profile.status}
                     isOwner={data.isOwner}
                     onPublished={reload}
                   />
-                }
-                reactions={
-                  <ProfileReactions
-                    profileUserId={data.profile.id}
-                    canReact={!data.isOwner}
-                    realtimeEnabled={false}
-                  />
-                }
+                ) : undefined}
                 shareAction={
                   data.isOwner ? (
                     <DesktopProfileShareAdapter
@@ -147,49 +138,6 @@ export function DesktopProfileAdapter({
             }
           />
         }
-        renderPost={(post) => (
-          <DesktopPostCardAdapter
-            key={post.id}
-            post={post}
-            config={config}
-            session={session}
-            renderDestination={renderDestination}
-            ownerProfile={
-              data.isOwner
-                ? {
-                    isPinned: false,
-                    onChanged: reload,
-                  }
-                : undefined
-            }
-          />
-        )}
-        renderPinnedPost={(post) => (
-          <DesktopPostCardAdapter
-            key={`pinned:${post.id}`}
-            post={post}
-            config={config}
-            session={session}
-            renderDestination={renderDestination}
-            ownerProfile={
-              data.isOwner
-                ? {
-                    isPinned: true,
-                    onChanged: reload,
-                  }
-                : undefined
-            }
-          />
-        )}
-        renderQuestions={() => (
-          <ProfileQuestions
-            profileUserId={data.profile.id}
-            username={data.profile.username}
-            isOwner={data.isOwner}
-            canAsk={!data.isOwner}
-            canReact
-          />
-        )}
       />
     </AppPageContent>
   );

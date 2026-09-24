@@ -1,11 +1,12 @@
 "use client";
 
 import { createPortal } from "react-dom";
-import { ExternalLink, MessageCircle, Pin, UserMinus, UserPlus } from "lucide-react";
+import { ExternalLink, MessageCircle, Pin } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { MiniProfileCardView } from "@/components/profile/MiniProfileCardView";
+import { ProfileFriendAction } from "@/components/profile/ProfileFriendAction";
 import { useIsClient } from "@/hooks/useIsClient";
 import { trpc } from "@/lib/trpc/client";
 import type { PostAuthorView } from "@/types/domain";
@@ -22,22 +23,19 @@ export function MiniProfilePopover({ author, children, renderDestination }: { au
   const closeTimerRef = useRef<number | null>(null);
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ left: 12, top: 12 });
-  const profile = trpc.profile.getByUsername.useQuery(
+  const profile = trpc.profile.getBetaByUsername.useQuery(
     { username: author.username },
     { enabled: open, staleTime: 30_000 },
   );
   const me = trpc.user.me.useQuery(undefined, { enabled: open, staleTime: 60_000, retry: false });
   const utils = trpc.useUtils();
   const canFollow = Boolean(me.data?.username && me.data.username !== author.username);
-  const followState = trpc.profile.getFollowState.useQuery(
-    { username: author.username },
-    { enabled: open && canFollow, staleTime: 30_000 },
+  const friendState = trpc.social.friendState.useQuery(
+    { userId: profile.data?.id ?? author.id ?? "00000000-0000-0000-0000-000000000000" },
+    { enabled: open && canFollow && Boolean(profile.data?.id ?? author.id), staleTime: 30_000 },
   );
-  const toggleFollow = trpc.profile.toggleFollow.useMutation({
-    onSuccess: () => void utils.profile.getFollowState.invalidate({ username: author.username }),
-  });
   const pinnedContacts = trpc.social.myPinnedContacts.useQuery(undefined, {
-    enabled: open && canFollow,
+    enabled: open && canFollow && friendState.data?.state === "friends",
     staleTime: 30_000,
   });
   const togglePin = trpc.social.togglePinnedContact.useMutation({
@@ -155,16 +153,12 @@ export function MiniProfilePopover({ author, children, renderDestination }: { au
                     </button>
                   ) : null}
                   {renderDestination({ href: `/${author.username}`, label: `Открыть профиль ${displayName}`, active: false, className: "inline-flex h-8 items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--foreground)_14%,transparent)] bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] px-3 text-xs font-medium hover:border-[var(--theme-accent)]", children: <><ExternalLink className="h-3.5 w-3.5" />Профиль</> })}
-                  {canFollow && value.id ? (
+                  {canFollow && value.id && friendState.data?.state === "friends" ? (
                     <button type="button" disabled={togglePin.isPending} onClick={() => togglePin.mutate({ userId: value.id })} className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-[color-mix(in_srgb,var(--foreground)_14%,transparent)] bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] hover:border-[var(--theme-accent)] disabled:opacity-55" aria-label={pinned ? `Открепить ${displayName}` : `Закрепить ${displayName}`} aria-pressed={pinned}>
                       <Pin className={`h-3.5 w-3.5 ${pinned ? "fill-current text-[var(--theme-accent)]" : ""}`} />
                     </button>
                   ) : null}
-                  {canFollow ? (
-                    <button type="button" disabled={followState.isLoading || toggleFollow.isPending} onClick={() => toggleFollow.mutate({ username: author.username })} className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-[var(--theme-accent)] px-3 text-xs font-semibold text-white disabled:opacity-55" aria-pressed={followState.data?.following ?? false}>
-                      {followState.data?.following ? <UserMinus className="h-3.5 w-3.5" /> : <UserPlus className="h-3.5 w-3.5" />}{followState.data?.following ? "Отписаться" : "Подписаться"}
-                    </button>
-                  ) : null}
+                  {canFollow && value.id ? <ProfileFriendAction userId={value.id} /> : null}
                 </>
               }
             />

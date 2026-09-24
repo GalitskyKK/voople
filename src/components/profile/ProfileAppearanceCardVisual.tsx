@@ -10,6 +10,7 @@ import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { displayNamePresentation } from "@/lib/customization/display-name-style";
 import { getMoodColor, getMoodEmoji, getMoodLabel } from "@/lib/constants/mood";
+import { PROFILE_STATUS_VISIBLE } from "@/lib/product/profile-beta-surface";
 import { cn } from "@/lib/utils";
 import type { ProfileCustomizationView, ProfileStatus, ProfileViewModel } from "@/types/domain";
 
@@ -120,7 +121,7 @@ export function ProfileAppearanceCardVisual({
             <h3 className={cn("relative z-20 mt-3 truncate text-xl font-bold", name.className)} style={name.style}>{profile.displayName}</h3>
             <p className="relative z-20 text-xs text-white/55">@{profile.username}</p>
             {badges}
-            {profile.status.moodValue != null && profile.status.moodValue > 0 ? (
+            {PROFILE_STATUS_VISIBLE && profile.status.moodValue != null && profile.status.moodValue > 0 ? (
               <div className="relative z-20 mt-3">
                 <div className="mb-1.5 flex items-center justify-between gap-2 text-xs">
                   <span className="min-w-0 truncate font-medium text-white/78"><span className="mr-1.5" aria-hidden>{getMoodEmoji(profile.status.moodValue)}</span>{getMoodLabel(profile.status.moodValue)}</span>
@@ -128,18 +129,13 @@ export function ProfileAppearanceCardVisual({
                 <MoodLevelMeter value={profile.status.moodValue} color={getMoodColor(profile.status.moodValue)} light />
               </div>
             ) : null}
-            {profile.status.thought ? <p className="relative z-20 mt-3 line-clamp-2 border-l border-white/18 pl-3 text-sm leading-5 text-white/78">{profile.status.thought}</p> : null}
-            {profile.status.trackTitle || profile.status.trackArtist ? (
+            {PROFILE_STATUS_VISIBLE && profile.status.thought ? <p className="relative z-20 mt-3 line-clamp-2 border-l border-white/18 pl-3 text-sm leading-5 text-white/78">{profile.status.thought}</p> : null}
+            {PROFILE_STATUS_VISIBLE && (profile.status.trackTitle || profile.status.trackArtist) ? (
               <div className="relative z-20 mt-3 flex min-w-0 items-center gap-2 border-t border-white/10 pt-2.5 text-xs text-white/70">
                 <Music2 className="h-3.5 w-3.5 shrink-0 text-[var(--theme-accent)]" />
                 <span className="truncate">{[profile.status.trackArtist, profile.status.trackTitle].filter(Boolean).join(" — ")}</span>
               </div>
             ) : null}
-            {profile.stats ? <div className="relative z-20 mt-4 grid grid-cols-3 gap-2 border-t border-white/10 pt-3 text-center">
-              <div><b className="block text-sm">{profile.stats.posts}</b><span className="text-[9px] uppercase tracking-wide text-white/45">постов</span></div>
-              <div><b className="block text-sm">{profile.stats.followers}</b><span className="text-[9px] uppercase tracking-wide text-white/45">читателей</span></div>
-              <div><b className="block text-sm">{profile.stats.views}</b><span className="text-[9px] uppercase tracking-wide text-white/45">просмотров</span></div>
-            </div> : null}
           </div>
         </div>
         <ProfileCardFrameOverlay frame={customization.assets.frame} />

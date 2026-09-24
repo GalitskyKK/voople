@@ -52,6 +52,8 @@ The default Group tab is **Войс**. Tabs are **Войс / Чат / Люди**
   temporary Room is created only after acceptance, and the request is bound
   to the inviter's active source LiveSession. Instant Voop requires an explicit
   future server-checked Group/friend opt-in; default is approval required.
+  Server authorization and source-session freshness are mandatory for both
+  Split and Voop; client checks only improve feedback.
 - Ordinary **+ Комната** always creates a persistent pinned Room. Temporary
   Rooms belong only to consented Split/Voop. An empty temporary Room is hidden
   from ordinary Войс immediately, retained in backend grace for reconnect,
@@ -83,10 +85,22 @@ beta navigation. Deferred exposure does not authorize deletion.
 ## Beta profile
 
 The profile is an identity and contact surface: avatar, banner, name,
-username, bio, privacy-permitted presence, common Groups, message/Voop and
-owned cosmetics or badges. Status/music may appear only where enabled.
-Posts, feed tabs, Questions, follower metrics and profile-view metrics are
-deferred, with their data and API preserved.
+username, bio, privacy-permitted presence, Group tag, common Groups,
+Message, Friend and Block, plus owned cosmetics or badges. Voop may appear
+only with server-confirmed live eligibility; there is no generic profile Voop
+button. Status/music may appear only where enabled and permitted.
+
+Friend means one accepted, bidirectional friendship. A request is a separate
+pending/accepted/declined/cancelled lifecycle; reciprocal requests do not
+implicitly accept. Block ends friendship and pending requests; unblock does
+not restore them. Legacy directed Follow and its backend remain preserved for
+deferred social use, but Follow is not the primary beta relationship model.
+
+Posts, feed tabs, composer, pinned posts, Questions, follower/following and
+post metrics, and profile-view metrics are deferred, with their data and API
+preserved. Beta web and desktop Profile do not load these feed payloads or
+subscribe to their realtime events. Common Groups show only Groups already
+joined by the viewer; blocked pairs reveal no common Groups.
 
 ## Group Economy
 

@@ -113,7 +113,7 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
             <div className="pr-10">
               <h2 className="text-xl font-semibold">Добавить участников</h2>
               <p className="mt-1 text-sm leading-6 text-[var(--app-muted)]">
-                Здесь показаны взаимные подписки. Другим людям отправьте ссылку:
+                Здесь показаны друзья. Другим людям отправьте ссылку:
                 они войдут только после своего подтверждения.
               </p>
             </div>
@@ -125,7 +125,7 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
               onQueryChange={state.setQuery}
               onToggleUser={state.toggleContact}
               renderAvatar={props.renderAvatar}
-              emptyLabel="Нет взаимных подписок, которых ещё нет в группе"
+              emptyLabel="Нет друзей, которых ещё нет в группе"
             />
             <Button
               type="button"

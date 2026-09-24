@@ -13,12 +13,11 @@ import { getPostSelect, mapPostRowsWithReposts } from "@/server/data/post-hydrat
 import { getProfileGroupTagRest } from "@/server/data/profile-group-tag-rest"
 import type { PostViewModel, ProfileViewModel } from "@/types/domain"
 
+const BETA_PROFILE_STATS = { posts: 0, followers: 0, following: 0, views: 0 } as const
+
 async function countExact(table: string, column: string, value: string) {
-  const admin = getAdminClient()
-  const { count, error } = await admin
-    .from(table)
-    .select("*", { count: "exact", head: true })
-    .eq(column, value)
+  const { count, error } = await getAdminClient().from(table)
+    .select("*", { count: "exact", head: true }).eq(column, value)
   if (error) throw new Error(error.message)
   return count ?? 0
 }
@@ -28,7 +27,7 @@ async function loadStats(userId: string) {
     countExact("posts", "author_id", userId),
     countExact("follows", "following_id", userId),
     countExact("follows", "follower_id", userId),
-    countExact("profile_views", "profile_user_id", userId)
+    countExact("profile_views", "profile_user_id", userId),
   ])
   return { posts, followers, following, views }
 }
@@ -110,23 +109,11 @@ export async function getProfilePageDataRest(username: string, viewerId?: string
   const user = await fetchUserRowByUsername(username)
   if (!user) return null
 
-  const userRow = user
-  const author = mapUserToAuthor(userRow)
-
-  const [stats, postRows, canvasStrokes] = await Promise.all([
-    loadStats(user.id),
-    fetchPostsByAuthorId(user.id),
-    listProfileCanvasStrokesRest(user.id)
-  ])
-
-  const profile = await hydrateProfileRest(userRow, stats, viewerId)
+  const canvasStrokes = await listProfileCanvasStrokesRest(user.id)
+  const profile = await hydrateProfileRest(user, BETA_PROFILE_STATS, viewerId)
 
   return {
     profile,
-    posts: await mapPostRowsWithReposts(postRows, {
-      viewerId,
-      authorById: new Map([[user.id, author]])
-    }),
     canvasStrokes
   }
 }
@@ -134,8 +121,13 @@ export async function getProfilePageDataRest(username: string, viewerId?: string
 export async function getProfileByUsernameRest(username: string, viewerId?: string | null): Promise<ProfileViewModel | null> {
   const user = await fetchUserRowByUsername(username)
   if (!user) return null
-  const stats = await loadStats(user.id)
-  return hydrateProfileRest(user, stats, viewerId)
+  return hydrateProfileRest(user, await loadStats(user.id), viewerId)
+}
+
+export async function getBetaProfileByUsernameRest(username: string, viewerId?: string | null): Promise<ProfileViewModel | null> {
+  const user = await fetchUserRowByUsername(username)
+  if (!user) return null
+  return hydrateProfileRest(user, BETA_PROFILE_STATS, viewerId)
 }
 
 export async function getPostsByUsernameRest(

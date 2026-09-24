@@ -27,7 +27,7 @@ const FILTERS: Array<{ id: NotificationFilter; label: string }> = [
   { id: "all", label: "Все" },
   { id: "mentions", label: "Упоминания" },
   { id: "reactions", label: "Реакции" },
-  { id: "follows", label: "Подписки" },
+  { id: "follows", label: "Друзья" },
   { id: "groups", label: "Группы" },
 ];
 
@@ -35,7 +35,7 @@ function matchesFilter(item: NotificationView, filter: NotificationFilter) {
   if (filter === "all") return true;
   if (filter === "mentions") return item.type === "mention" || item.type === "reply";
   if (filter === "reactions") return ["like", "profile_reaction", "repost"].includes(item.type);
-  if (filter === "follows") return item.type === "follow";
+  if (filter === "follows") return ["friend_request", "friend_accept"].includes(item.type);
   return item.type.startsWith("group_") || item.type.startsWith("room_");
 }
 

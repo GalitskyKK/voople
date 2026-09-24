@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { RichText } from "@/components/ui/RichText";
 import { getMoodEmoji, getMoodLabel } from "@/lib/constants/mood";
+import { PROFILE_STATUS_VISIBLE } from "@/lib/product/profile-beta-surface";
 import { cn } from "@/lib/utils";
 import type { ProfileViewModel } from "@/types/domain";
 import { ProfileAvatar } from "./ProfileAvatar";
@@ -10,7 +11,6 @@ import { ProfileBanner } from "./ProfileBanner";
 import { ProfileCardIdentityVisual } from "./ProfileCardIdentityVisual";
 import { ProfileCardVisual } from "./ProfileCardVisual";
 import { ProfileMeta } from "./ProfileMeta";
-import { ProfileStats } from "./ProfileStats";
 
 type MiniProfileCardViewProps = {
   profile: ProfileViewModel;
@@ -103,7 +103,7 @@ export function MiniProfileCardView({
             </div>
           ) : null}
 
-          {status.moodValue || status.thought || status.trackTitle || status.trackArtist ? (
+          {PROFILE_STATUS_VISIBLE && (status.moodValue || status.thought || status.trackTitle || status.trackArtist) ? (
             <div className="mt-3 space-y-2 rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] p-3 text-xs">
               {status.moodValue ? (
                 <p>
@@ -125,7 +125,6 @@ export function MiniProfileCardView({
 
           {actions ? <div className="mt-3 flex flex-wrap gap-2">{actions}</div> : null}
           <div className="mt-3"><ProfileMeta createdAt={profile.createdAt} subscriptionStartedAt={profile.subscriptionStartedAt} /></div>
-          <ProfileStats {...profile.stats} className="mt-3" />
         </div>
       }
     />

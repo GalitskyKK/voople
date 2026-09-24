@@ -82,6 +82,7 @@ export function useProfileEditorController({
   const refresh = useCallback(async () => {
     await Promise.all([
       utils.profile.getByUsername.invalidate({ username: profile.username }),
+      utils.profile.getBetaByUsername.invalidate({ username: profile.username }),
       utils.shop.overview.invalidate(),
       utils.customization.getEquipped.invalidate(),
     ]);
@@ -341,6 +342,7 @@ export function useProfileEditorController({
       if (session !== editorSession.current) return;
       setMessage(tag ? `Тег ${tag.tag} используется в профиле` : "Тег сообщества снят");
       await utils.profile.getByUsername.invalidate({ username: profile.username });
+      await utils.profile.getBetaByUsername.invalidate({ username: profile.username });
       onUpdated?.();
     } catch (error) {
       if (session !== editorSession.current) return;
@@ -350,7 +352,7 @@ export function useProfileEditorController({
       tagBusyRef.current = false;
       setTagBusy(false);
     }
-  }, [onUpdated, profile.username, selectedGroupTag, setGroupTagMutation, utils.profile.getByUsername]);
+  }, [onUpdated, profile.username, selectedGroupTag, setGroupTagMutation, utils.profile.getByUsername, utils.profile.getBetaByUsername]);
 
   return {
     open, discardOpen, panel, editing, draft, avatarUrl, previewCustomization,

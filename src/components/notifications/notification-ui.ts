@@ -16,6 +16,10 @@ export function notificationActionText(
       return "оценил(а) ваш пост";
     case "follow":
       return "подписался(ась) на вас";
+    case "friend_request":
+      return "отправил(а) запрос в друзья";
+    case "friend_accept":
+      return "принял(а) ваш запрос в друзья";
     case "reply":
       return "прокомментировал(а) ваш пост";
     case "repost":
@@ -65,7 +69,7 @@ export function notificationHref(notification: NotificationView) {
   }
 
   if (
-    (notification.type === "follow" || notification.type === "profile_reaction") &&
+    (["follow", "friend_request", "friend_accept", "profile_reaction"].includes(notification.type)) &&
     notification.actor
   ) {
     return `/${notification.actor.username}`;
@@ -87,6 +91,8 @@ export function notificationHref(notification: NotificationView) {
 export function notificationIcon(type: string): LucideIcon {
   switch (type) {
     case "follow":
+    case "friend_request":
+    case "friend_accept":
       return UserPlus;
     case "reply":
       return MessageCircle;

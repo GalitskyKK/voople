@@ -12,7 +12,6 @@ import { profileCardThemeStyle } from "@/components/profile/profile-card-style";
 import { ProfileCardVideoSections } from "@/components/profile/ProfileCardVideoSections";
 import { ProfileGroupTagVisual } from "@/components/profile/ProfileGroupTagVisual";
 import { ProfileMeta } from "@/components/profile/ProfileMeta";
-import { ProfileStats } from "@/components/profile/ProfileStats";
 import { displayNamePresentation } from "@/lib/customization/display-name-style";
 import { cn } from "@/lib/utils";
 import type { ProfileCustomizationView, ProfileViewModel } from "@/types/domain";
@@ -88,7 +87,6 @@ export function ProfileEditorPreview(props: Props) {
         <button type="button" className="mt-5 block min-h-12 w-full text-left text-sm text-[color-mix(in_srgb,var(--foreground)_72%,transparent)] hover:underline" onClick={() => onEditingChange("bio")}>{bio || "Нажмите, чтобы рассказать о себе"}</button>
       )}
       <div className="mt-5 border-t border-[color-mix(in_srgb,var(--foreground)_10%,transparent)] pt-4"><ProfileMeta createdAt={profile.createdAt} subscriptionStartedAt={profile.subscriptionStartedAt} /></div>
-      <div className="mt-5"><ProfileStats {...profile.stats} /></div>
     </div>
   );
   const body = <div className="profile-card__body" style={themeStyle}><ProfileCardFrameDivider frame={customization.assets.frame} />{identity}{details}</div>;

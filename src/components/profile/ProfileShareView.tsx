@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
+import { PROFILE_POSTS_VISIBLE } from "@/lib/product/profile-beta-surface";
 import { cn } from "@/lib/utils";
 import {
   APPEARANCE_SCENES,
@@ -62,7 +63,7 @@ export function ProfileShareView({
             Поделиться образом
           </h2>
           <p className="mt-1 text-sm text-[var(--app-muted)]">
-            Опубликуйте живой образ в ленте или отправьте ссылку на профиль.
+            Отправьте ссылку на профиль.
           </p>
         </div>
         <div className="mt-5 grid gap-5 md:grid-cols-[minmax(0,1fr)_17rem]">
@@ -94,7 +95,7 @@ export function ProfileShareView({
               ))}
             </div>
 
-            <label className="mt-4 block">
+            {PROFILE_POSTS_VISIBLE ? <label className="mt-4 block">
               <span className="text-xs font-medium text-[var(--app-muted)]">
                 Подпись к посту
               </span>
@@ -106,10 +107,10 @@ export function ProfileShareView({
                 placeholder="Например: обновил свой образ"
                 className="voople-input mt-1.5 w-full resize-none text-sm"
               />
-            </label>
+            </label> : null}
 
             <div className="mt-4 space-y-2 md:mt-auto">
-              <Button
+              {PROFILE_POSTS_VISIBLE ? <Button
                 type="button"
                 className="w-full"
                 disabled={publishing || published}
@@ -123,7 +124,7 @@ export function ProfileShareView({
                   <Send className="h-4 w-4" />
                 )}
                 {published ? "Опубликовано" : "Опубликовать в ленте"}
-              </Button>
+              </Button> : null}
               <Button
                 type="button"
                 variant="secondary"

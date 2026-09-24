@@ -1,5 +1,5 @@
-import { BrandedLoadingView } from "@/components/brand/BrandedLoadingView";
+import { ProfileLoadingView } from "@/components/profile/ProfileLoadingView";
 
 export default function ProfileLoading() {
-  return <BrandedLoadingView />;
+  return <ProfileLoadingView />;
 }

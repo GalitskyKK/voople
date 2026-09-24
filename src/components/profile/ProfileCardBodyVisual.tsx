@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 
 import type { ProfileViewModel } from "@/types/domain";
 import { ProfileMeta } from "./ProfileMeta";
-import { ProfileStats } from "./ProfileStats";
 import { ProfilePresenceLabel } from "./ProfilePresenceLabel";
 import { RichText } from "@/components/ui/RichText";
 
@@ -58,7 +57,6 @@ export function ProfileCardBodyVisual({
       <div className="mt-3 space-y-2">
         {reactions}
         {shareAction}
-        <ProfileStats {...profile.stats} />
       </div>
     </div>
   );

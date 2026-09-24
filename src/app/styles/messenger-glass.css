@@ -871,6 +871,12 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
 .voople-group-people-row { background: transparent; transition: background 140ms ease; }
 .voople-group-people-row:hover { background: linear-gradient(102deg, rgb(142 64 88 / 0.065), rgb(121 189 255 / 0.020) 100%); }
 
+.voople-chat-message-menu [role="menuitem"]:focus-visible,
+.voople-chat-message-menu [role="group"] button:focus-visible {
+  outline: 2px solid var(--theme-accent);
+  outline-offset: -2px;
+}
+
 .voople-group-people-voop {
   display: inline-flex;
   min-height: 40px;

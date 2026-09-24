@@ -1,11 +1,7 @@
 import type { Session } from "@supabase/supabase-js";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import type {
-  ExploreSearchResult,
-  HashtagSearchHit,
-  ExploreHighlights,
-} from "@/types/search";
+import type { ExploreSearchResult } from "@/types/search";
 import type { PublicGroupSearchHit } from "@/types/chat";
 
 import { createDesktopTrpcClient } from "../api/trpc";
@@ -32,24 +28,11 @@ function parseExploreResult(value: unknown): ExploreSearchResult {
   return result as ExploreSearchResult;
 }
 
-function parseTrending(value: unknown): HashtagSearchHit[] {
-  if (!Array.isArray(value)) {
-    throw new Error("Сервер вернул некорректный список трендов");
-  }
-  return value as HashtagSearchHit[];
-}
-
 function parseCommunities(value: unknown): PublicGroupSearchHit[] {
   if (!Array.isArray(value)) throw new Error("Сервер вернул некорректный список сообществ");
   return value as PublicGroupSearchHit[];
 }
 
-function parseHighlights(value: unknown): ExploreHighlights {
-  if (!value || typeof value !== "object") throw new Error("Сервер вернул некорректные рекомендации");
-  const result = value as Partial<ExploreHighlights>;
-  if (!Array.isArray(result.users) || !Array.isArray(result.posts) || !Array.isArray(result.communities)) throw new Error("Сервер вернул некорректные рекомендации");
-  return result as ExploreHighlights;
-}
 
 export function useDesktopExplore(
   config: DesktopConfig,
@@ -57,14 +40,9 @@ export function useDesktopExplore(
   query: string,
 ) {
   const [result, setResult] = useState<ExploreSearchResult>();
-  const [trending, setTrending] = useState<HashtagSearchHit[]>([]);
   const [communities, setCommunities] = useState<PublicGroupSearchHit[]>([]);
-  const [highlights, setHighlights] = useState<ExploreHighlights>();
   const [searching, setSearching] = useState(false);
-  const [trendingLoading, setTrendingLoading] = useState(true);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [trendingError, setTrendingError] = useState<string | null>(null);
-  const [highlightsError, setHighlightsError] = useState<string | null>(null);
   const requestId = useRef(0);
   const client = useMemo(
     () => createDesktopTrpcClient(config, () => session.access_token),
@@ -81,30 +59,6 @@ export function useDesktopExplore(
         setCommunities([]);
         setSearchError(null);
         setSearching(false);
-        setTrendingLoading(true);
-        setTrendingError(null);
-        setHighlightsError(null);
-        try {
-          const [value, highlightsValue] = await Promise.all([
-            client.query("search.trendingHashtags", { limit: 10 }),
-            client.query("search.highlights"),
-          ]);
-          if (currentRequest === requestId.current) {
-            setTrending(parseTrending(value));
-            setHighlights(parseHighlights(highlightsValue));
-          }
-        } catch (error: unknown) {
-          if (currentRequest === requestId.current) {
-            setTrendingError(
-              error instanceof Error
-                ? error.message
-                : "Не удалось загрузить тренды",
-            );
-            setHighlightsError(error instanceof Error ? error.message : "Не удалось загрузить рекомендации");
-          }
-        } finally {
-          if (currentRequest === requestId.current) setTrendingLoading(false);
-        }
         return;
       }
 
@@ -143,10 +97,5 @@ export function useDesktopExplore(
     communities,
     searchError,
     searching,
-    trending,
-    trendingError,
-    trendingLoading,
-    highlights,
-    highlightsError,
   };
 }

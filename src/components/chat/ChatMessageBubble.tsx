@@ -6,6 +6,7 @@ import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { useIsLgViewport } from "@/hooks/useIsLgViewport";
 import { useSwipeToReply } from "@/hooks/useSwipeToReply";
 import { messageHasMusicForPlaylist } from "@/lib/chat/playlist-from-message";
+import type { ContextMenuAnchor } from "@/lib/layout/context-menu-position";
 import type { ChatReactionEmoji } from "@/lib/chat/reactions";
 import type { ChatMessageView } from "@/types/chat";
 
@@ -49,6 +50,8 @@ export function ChatMessageBubble({
 }: ChatMessageBubbleProps) {
   const isLg = useIsLgViewport();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [contextAnchor, setContextAnchor] = useState<ContextMenuAnchor | null>(null);
+  const [restoreFocusElement, setRestoreFocusElement] = useState<HTMLElement | null>(null);
   const { isMine, attachment } = message;
   const canSaveToPlaylist = Boolean(
     viewerId && onAddToPlaylist && messageHasMusicForPlaylist(message),
@@ -89,15 +92,26 @@ export function ChatMessageBubble({
         onToggleReaction(message, { emoji: "❤️" });
       }}
       onContextMenu={(event) => {
-        if (!hasMenu) return
-        event.preventDefault()
+        if (!hasMenu) return;
+        event.preventDefault();
         if (selectionMode) {
           onSelect?.(message);
           return;
         }
-        setMenuOpen(true)
+        setRestoreFocusElement(event.currentTarget.querySelector<HTMLElement>(".voople-chat-bubble") ?? event.currentTarget);
+        setContextAnchor({ kind: "point", x: event.clientX, y: event.clientY });
+        setMenuOpen(true);
       }}
       onKeyDown={(event) => {
+        if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
+          if (!hasMenu || selectionMode) return;
+          event.preventDefault();
+          const rect = event.currentTarget.getBoundingClientRect();
+          setRestoreFocusElement(event.currentTarget);
+          setContextAnchor({ kind: "rect", left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom });
+          setMenuOpen(true);
+          return;
+        }
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault()
           if (selectionMode) onSelect?.(message);
@@ -129,6 +143,9 @@ export function ChatMessageBubble({
               message={message}
               open={menuOpen}
               onOpenChange={setMenuOpen}
+              contextAnchor={contextAnchor}
+              restoreFocusElement={restoreFocusElement}
+              onTriggerOpen={() => { setContextAnchor(null); setRestoreFocusElement(null); }}
               onReply={onReply}
               onDelete={onDelete}
               onEdit={onEdit}
@@ -138,7 +155,7 @@ export function ChatMessageBubble({
               onToggleReaction={(target, emoji: ChatReactionEmoji) => onToggleReaction?.(target, { emoji })}
               onSelect={onSelect}
               showOnHover={isLg}
-              showTrigger={isLg}
+              showTrigger
             />
           </div>
         ) : null

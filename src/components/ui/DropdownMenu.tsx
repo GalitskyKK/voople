@@ -15,6 +15,7 @@ import {
 import { createPortal } from "react-dom";
 
 import { useIsClient } from "@/hooks/useIsClient";
+import { resolveContextMenuPosition, type ContextMenuAnchor } from "@/lib/layout/context-menu-position";
 import { cn } from "@/lib/utils";
 
 type DropdownMenuProps = {
@@ -23,6 +24,8 @@ type DropdownMenuProps = {
   trigger?: React.ReactNode;
   children: React.ReactNode;
   anchorPoint?: { x: number; y: number } | null;
+  contextAnchor?: ContextMenuAnchor | null;
+  restoreFocusElement?: HTMLElement | null;
   align?: "start" | "end";
   side?: "bottom" | "left" | "right" | "inward";
   contentRole?: "menu" | "dialog";
@@ -39,6 +42,8 @@ export function DropdownMenu({
   trigger,
   children,
   anchorPoint = null,
+  contextAnchor = null,
+  restoreFocusElement = null,
   align = "end",
   side = "bottom",
   contentRole = "menu",
@@ -55,10 +60,11 @@ export function DropdownMenu({
 
   const updatePosition = useCallback(() => {
     const triggerEl = triggerRef.current;
-    if (!triggerEl && !anchorPoint) return;
+    if (!triggerEl && !anchorPoint && !contextAnchor) return;
 
     const rect = triggerEl?.getBoundingClientRect();
-    const nextRouteKind = triggerEl
+    const anchorEl = restoreFocusElement ?? (anchorPoint ? document.elementFromPoint(anchorPoint.x, anchorPoint.y) : null);
+    const nextRouteKind = (anchorEl ?? triggerEl)
       ?.closest<HTMLElement>("[data-route-kind]")
       ?.dataset.routeKind ?? null;
     setRouteKind((current) => current === nextRouteKind ? current : nextRouteKind);
@@ -69,6 +75,14 @@ export function DropdownMenu({
     const anchorBottom = anchorPoint?.y ?? rect?.bottom ?? 0;
     const menuWidth = menuRef.current?.offsetWidth ?? Math.max(200, anchorWidth);
     const menuHeight = menuRef.current?.offsetHeight ?? 160;
+    if (contextAnchor) {
+      const resolved = resolveContextMenuPosition({
+        anchor: contextAnchor, menuWidth, menuHeight,
+        viewportWidth: window.innerWidth, viewportHeight: window.innerHeight,
+      });
+      setPosition({ ...resolved, minWidth: Math.min(menuWidth, Math.max(0, window.innerWidth - 16)) });
+      return;
+    }
     const gap = 4;
 
     const resolvedSide = side === "inward"
@@ -92,7 +106,7 @@ export function DropdownMenu({
     left = Math.max(8, Math.min(left, window.innerWidth - menuWidth - 8));
 
     setPosition({ top, left, minWidth: menuWidth });
-  }, [align, anchorPoint, side]);
+  }, [align, anchorPoint, contextAnchor, restoreFocusElement, side]);
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -114,9 +128,11 @@ export function DropdownMenu({
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      event.preventDefault();
       onOpenChange(false);
       requestAnimationFrame(() => {
-        triggerRef.current
+        if (restoreFocusElement?.isConnected) restoreFocusElement.focus();
+        else triggerRef.current
           ?.querySelector<HTMLElement>('button, [href], input, [tabindex]:not([tabindex="-1"])')
           ?.focus();
       });
@@ -133,7 +149,7 @@ export function DropdownMenu({
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [onOpenChange, open, updatePosition]);
+  }, [onOpenChange, open, restoreFocusElement, updatePosition]);
 
   useEffect(() => {
     if (!open) {
@@ -172,7 +188,7 @@ export function DropdownMenu({
             aria-label={ariaLabel}
             onKeyDown={handleMenuKeyDown}
             className={cn(
-              "voople-dropdown-menu fixed z-[110] overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] py-1 text-[var(--foreground)] shadow-[var(--app-shadow-md)]",
+              "voople-dropdown-menu fixed z-[110] max-h-[calc(100vh-16px)] max-w-[calc(100vw-16px)] overflow-y-auto rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] py-1 text-[var(--foreground)] shadow-[var(--app-shadow-md)]",
               menuClassName,
             )}
             style={{

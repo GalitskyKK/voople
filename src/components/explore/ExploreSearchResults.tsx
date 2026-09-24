@@ -17,6 +17,7 @@ export function ExploreSearchResults({
   result,
   communities,
   scope,
+  betaOnly = false,
   renderDestination,
   renderAvatar,
   badgeUrl,
@@ -24,6 +25,7 @@ export function ExploreSearchResults({
   result: ExploreSearchResult;
   communities: PublicGroupSearchHit[];
   scope: "all" | "people" | "posts" | "communities";
+  betaOnly?: boolean;
   renderDestination: NavigationDestinationRenderer;
   renderAvatar: ExploreAvatarRenderer;
   badgeUrl?: string;
@@ -33,7 +35,7 @@ export function ExploreSearchResults({
 
   return (
     <div className="space-y-6">
-      {scope === "all" && result.hashtags.length > 0 && (
+      {!betaOnly && scope === "all" && result.hashtags.length > 0 && (
         <ResultSection title="Хэштеги" icon={<Hash />}>
           <ul className="space-y-2">
             {result.hashtags.map((item) => (
@@ -107,7 +109,7 @@ export function ExploreSearchResults({
           </ul>
         </ResultSection>
       )}
-      {(scope === "all" || scope === "posts") && result.posts.length > 0 && (
+      {!betaOnly && (scope === "all" || scope === "posts") && result.posts.length > 0 && (
         <ResultSection title="Посты" icon={<FileText />}>
           <ul className="space-y-2">
             {result.posts.map((post) => (
@@ -147,7 +149,7 @@ export function ExploreSearchResults({
         </ResultSection>
       )}
       {(scope === "all" || scope === "communities") && communities.length > 0 && (
-        <ResultSection title="Сообщества" icon={<UsersRound />}>
+        <ResultSection title="Группы" icon={<UsersRound />}>
           <ul className="space-y-2">
             {communities.map((group) => (
               <li key={group.id}>

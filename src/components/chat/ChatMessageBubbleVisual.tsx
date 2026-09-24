@@ -90,7 +90,7 @@ export function ChatMessageBubbleVisual({
         className,
       )}
       onClick={selectionActive ? onClick : undefined}
-      onContextMenu={selectionActive ? onContextMenu : undefined}
+      onContextMenu={onContextMenu}
       onKeyDown={selectionActive ? onKeyDown : undefined}
       role={selectionActive ? "button" : undefined}
       tabIndex={selectionActive ? 0 : undefined}
@@ -122,7 +122,6 @@ export function ChatMessageBubbleVisual({
         style={swipeOffset > 0 ? { transform: `translateX(${swipeOffset}px)` } : undefined}
         onClick={selectionActive ? undefined : onClick}
         onDoubleClick={selectionActive ? undefined : onDoubleClick}
-        onContextMenu={selectionActive ? undefined : onContextMenu}
         onKeyDown={selectionActive ? undefined : onKeyDown}
         onPointerDown={selectionActive ? undefined : onPointerDown}
         onPointerMove={selectionActive ? undefined : onPointerMove}

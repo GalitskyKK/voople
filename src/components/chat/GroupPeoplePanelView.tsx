@@ -1,6 +1,7 @@
 import { Radio, UsersRound } from "lucide-react";
 import { GroupAvatar } from "@/components/chat/GroupAvatar";
 import type { ChatGroupMemberView } from "@/types/chat";
+import { canVoopGroupMember, groupPeopleSections } from "@/lib/chat/group-people";
 import { GroupPeopleVoopAction } from "./GroupPeopleVoopAction";
 import { GroupPeopleErrorState, GroupPeopleLoadingState } from "./GroupPeoplePanelState";
 
@@ -13,6 +14,7 @@ type GroupPeoplePanelViewProps = {
   onRetry: () => void;
   onOpenProfile?: (username: string) => void;
   currentUserId?: string | null;
+  currentParticipantIds: ReadonlySet<string>;
   onVoop?: (member: ChatGroupMemberView) => void;
   voopingUserId?: string | null;
 };
@@ -31,6 +33,7 @@ export function GroupPeoplePanelView({
   onRetry,
   onOpenProfile,
   currentUserId,
+  currentParticipantIds,
   onVoop,
   voopingUserId,
 }: GroupPeoplePanelViewProps) {
@@ -42,68 +45,48 @@ export function GroupPeoplePanelView({
     return <GroupPeopleErrorState message={error} onRetry={onRetry} />;
   }
 
-  const sorted = [...(members ?? [])].sort((left, right) => {
-    const leftRank = left.activeRoom ? 0 : onlineUserIds.has(left.id) ? 1 : 2;
-    const rightRank = right.activeRoom ? 0 : onlineUserIds.has(right.id) ? 1 : 2;
-    return leftRank - rightRank || left.displayName.localeCompare(right.displayName, "ru");
-  });
-  const liveCount = sorted.filter((member) => member.activeRoom).length;
-  const onlineCount = sorted.filter((member) => onlineUserIds.has(member.id)).length;
-  const liveMembers = sorted.filter((member) => member.activeRoom);
-  const onlineMembers = sorted.filter(
-    (member) => !member.activeRoom && onlineUserIds.has(member.id),
-  );
-  const offlineMembers = sorted.filter(
-    (member) => !member.activeRoom && !onlineUserIds.has(member.id),
-  );
+  const sections = groupPeopleSections(members ?? [], onlineUserIds);
 
   return (
-    <section className="voople-group-people voople-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6" aria-labelledby="group-people-title">
-      <div className="mr-auto w-full max-w-[760px]">
+    <section className="voople-group-people voople-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6" aria-label="Участники группы">
+      <div className="mr-auto w-full max-w-[960px]">
         {actionError ? (
           <p className="mb-3 rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-red-300" role="alert">
             {actionError}
           </p>
         ) : null}
-        <header className="flex items-end justify-between gap-4 border-b border-[var(--app-border)] pb-3">
-          <div>
-            <h2 id="group-people-title" className="text-xl font-semibold tracking-[-0.02em] text-[var(--foreground)]">Люди</h2>
-            <p className="mt-1 text-xs text-[var(--app-muted)]">{liveCount} в разговоре · {onlineCount} в сети</p>
-          </div>
-          <span className="font-mono text-xs leading-4 text-[var(--app-muted)]">{sorted.length} всего</span>
-        </header>
-
-        <div className="space-y-5 pt-4">
+        <div className="space-y-6">
           <GroupPeopleSection
-            title="В разговоре"
-            members={liveMembers}
+            title="В голосе"
+            members={sections.live}
             onlineUserIds={onlineUserIds}
             onOpenProfile={onOpenProfile}
             currentUserId={currentUserId}
+            currentParticipantIds={currentParticipantIds}
             onVoop={onVoop}
             voopingUserId={voopingUserId}
           />
           <GroupPeopleSection
-            title="Онлайн"
-            members={onlineMembers}
+            title="Доступны"
+            members={sections.available}
             onlineUserIds={onlineUserIds}
             onOpenProfile={onOpenProfile}
             currentUserId={currentUserId}
-            onVoop={onVoop}
+            currentParticipantIds={currentParticipantIds}
             voopingUserId={voopingUserId}
           />
           <GroupPeopleSection
-            title="Остальные"
-            members={offlineMembers}
+            title="Не в сети"
+            members={sections.offline}
             onlineUserIds={onlineUserIds}
             onOpenProfile={onOpenProfile}
             currentUserId={currentUserId}
-            onVoop={onVoop}
+            currentParticipantIds={currentParticipantIds}
             voopingUserId={voopingUserId}
           />
         </div>
 
-        {!sorted.length ? (
+        {!members?.length ? (
           <div className="flex min-h-48 flex-col items-center justify-center text-center" role="status">
             <UsersRound className="h-5 w-5 text-[var(--app-muted)]" aria-hidden="true" />
             <p className="mt-3 text-sm font-medium">Участников пока нет</p>
@@ -120,6 +103,7 @@ function GroupPeopleSection({
   onlineUserIds,
   onOpenProfile,
   currentUserId,
+  currentParticipantIds,
   onVoop,
   voopingUserId,
 }: {
@@ -128,24 +112,24 @@ function GroupPeopleSection({
   onlineUserIds: ReadonlySet<string>;
   onOpenProfile?: (username: string) => void;
   currentUserId?: string | null;
+  currentParticipantIds: ReadonlySet<string>;
   onVoop?: (member: ChatGroupMemberView) => void;
   voopingUserId?: string | null;
 }) {
-  if (!members.length) return null;
   return (
     <section aria-label={`${title}: ${members.length}`}>
       <h3 className="flex items-center gap-2 px-1 text-xs font-semibold text-[var(--app-muted)]">
         {title}
         <span className="font-mono text-xs font-normal">{members.length}</span>
       </h3>
-      <div className="voople-group-people-list mt-1 divide-y divide-[var(--app-border)]">
+      <div className="voople-group-people-list mt-2 grid grid-cols-1 gap-px sm:grid-cols-2">
         {members.map((member) => (
           <GroupPeopleRow
             key={member.id}
             member={member}
             online={onlineUserIds.has(member.id)}
             onOpenProfile={onOpenProfile}
-            onVoop={member.id === currentUserId ? undefined : onVoop}
+            onVoop={onVoop && canVoopGroupMember(member, currentUserId, currentParticipantIds) ? onVoop : undefined}
             vooping={voopingUserId === member.id}
             voopBusy={Boolean(voopingUserId)}
           />
@@ -204,15 +188,9 @@ function GroupPeopleRow({
         <span className="mt-0.5 block truncate text-xs text-[var(--app-muted)]">
           @{member.username} · {roleLabels[member.role]}
         </span>
-      </span>
-      <span
-        className={
-          member.activeRoom
-            ? "max-w-48 truncate text-right text-xs text-emerald-400"
-            : "max-w-32 truncate text-right text-xs text-[var(--app-muted)]"
-        }
-      >
-        {status}
+        <span className={member.activeRoom ? "mt-0.5 block truncate text-xs text-emerald-400" : "mt-0.5 block text-xs text-[var(--app-muted)]"}>
+          {status}
+        </span>
       </span>
     </>
   );

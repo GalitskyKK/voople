@@ -133,14 +133,14 @@ test("people view uses real member data and exposes room, presence and role cont
   assert.match(view, /onlineUserIds\.has/);
   assert.match(view, /roleLabels\[member\.role\]/);
   assert.match(view, /shape="square"/);
-  assert.match(view, /max-w-\[760px\]/);
-  assert.match(view, /title="В разговоре"/);
-  assert.match(view, /title="Онлайн"/);
-  assert.match(view, /title="Остальные"/);
+  assert.match(view, /max-w-\[960px\]/);
+  assert.match(view, /title="В голосе"/);
+  assert.match(view, /title="Доступны"/);
+  assert.match(view, /title="Не в сети"/);
   assert.match(view, /<GroupPeopleSection/);
   assert.match(view, /GroupPeopleVoopAction/);
   assert.match(voopAction, /voople-group-people-voop/);
-  assert.match(view, /member\.id === currentUserId \? undefined : onVoop/);
+  assert.match(view, /canVoopGroupMember\(member, currentUserId, currentParticipantIds\)/);
   assert.match(voopAction, /отдельный разговор/);
 });
 

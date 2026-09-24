@@ -16,13 +16,6 @@ export function UserSearch({ initialQuery = "" }: { initialQuery?: string }) {
       staleTime: 10_000,
     },
   );
-  const trending = trpc.search.trendingHashtags.useQuery(
-    { limit: 10 },
-    {
-      enabled: debouncedQuery.length === 0,
-      staleTime: 60_000,
-    },
-  );
   const communities = trpc.chat.publicGroups.useQuery(
     { q: debouncedQuery },
     {
@@ -31,10 +24,6 @@ export function UserSearch({ initialQuery = "" }: { initialQuery?: string }) {
       retry: false,
     },
   );
-  const highlights = trpc.search.highlights.useQuery(undefined, {
-    enabled: debouncedQuery.length === 0,
-    staleTime: 60_000,
-  });
 
   return (
     <ExploreView
@@ -45,12 +34,6 @@ export function UserSearch({ initialQuery = "" }: { initialQuery?: string }) {
       communities={communities.data ?? []}
       searching={search.isFetching}
       searchError={search.error?.message}
-      trending={trending.data ?? []}
-      trendingLoading={trending.isLoading}
-      trendingError={trending.error?.message}
-      highlights={highlights.data}
-      highlightsLoading={highlights.isLoading}
-      highlightsError={highlights.error?.message}
       renderDestination={({ href, label, className, children }) => (
         <Link href={href} aria-label={label} className={className}>
           {children}

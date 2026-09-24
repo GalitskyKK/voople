@@ -1,6 +1,7 @@
 "use client";
 
 import { trpc } from "@/lib/trpc/client";
+import { currentSessionParticipantIds } from "@/lib/chat/group-people";
 import { useGroupNowRoomCreate } from "@/hooks/useGroupNowRoomCreate";
 import { useGroupNowVoiceLauncher } from "@/hooks/useGroupNowVoiceLauncher";
 import type { ChatGroupMemberView } from "@/types/chat";
@@ -46,6 +47,11 @@ export function GroupPeoplePanel({
     { chatId: groupId },
     { enabled, retry: false, staleTime: 10_000 },
   );
+  const now = trpc.chat.coreGroupNow.useQuery(
+    { groupId },
+    { enabled: enabled && Boolean(currentSessionId), retry: false, refetchInterval: enabled && currentSessionId ? 15_000 : false },
+  );
+  const currentParticipantIds = currentSessionParticipantIds(now.data, currentSessionId);
 
   if (!enabled) return null;
 
@@ -59,6 +65,7 @@ export function GroupPeoplePanel({
       onRetry={() => void query.refetch()}
       onOpenProfile={onOpenProfile}
       currentUserId={currentUserId}
+      currentParticipantIds={currentParticipantIds}
       onVoop={currentSessionId
         ? onVoop ?? ((member) => split.startVoop({
             id: member.id,

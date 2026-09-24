@@ -16,6 +16,8 @@ import { getSupabase } from "./supabase";
 
 type AuthState = {
   bootstrapError: AuthSessionBootstrapReason | null;
+  deviceTrustPending: boolean;
+  setDeviceTrustPending: (pending: boolean) => void;
   loading: boolean;
   retry: () => void;
   session: Session | null;
@@ -32,7 +34,8 @@ export function AuthProvider({
 }) {
   const supabase = useMemo(() => getSupabase(config), [config]);
   const [attempt, setAttempt] = useState(0);
-  const [state, setState] = useState<Omit<AuthState, "retry">>({
+  const [deviceTrustPending, setDeviceTrustPending] = useState(false);
+  const [state, setState] = useState<Omit<AuthState, "retry" | "deviceTrustPending" | "setDeviceTrustPending">>({
     bootstrapError: null,
     loading: true,
     session: null,
@@ -89,7 +92,7 @@ export function AuthProvider({
     return () => window.removeEventListener("online", retry);
   }, [retry, state.bootstrapError]);
 
-  const value = useMemo(() => ({ ...state, retry }), [retry, state]);
+  const value = useMemo(() => ({ ...state, retry, deviceTrustPending, setDeviceTrustPending }), [retry, state, deviceTrustPending]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

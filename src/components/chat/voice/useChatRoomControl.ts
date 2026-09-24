@@ -127,7 +127,7 @@ export function useChatRoomControl(
   const { setConnectMedia: setRecoveryConnectMedia } = recovery;
   const mediaActions = useVoiceMediaActions({
     roomRef: liveRoomRef,
-    preferencesRef,
+    preferencesRef, persistPreferences,
     desiredMicMutedRef,
     screenShareQualityRef,
     mediaStatus,
@@ -185,7 +185,7 @@ export function useChatRoomControl(
   });
   const mediaConnection = useVoiceMediaConnection({
     roomRef: liveRoomRef,
-    preferencesRef,
+    preferencesRef, persistPreferences,
     desiredMicMutedRef,
     screenShareQualityRef,
     getCredentials: server.mediaToken.get,

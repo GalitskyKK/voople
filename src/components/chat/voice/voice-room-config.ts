@@ -12,6 +12,7 @@ import {
 
 import type { VoicePreferences } from "@/lib/livekit/voice-preferences";
 import { traceVoiceMic } from "../../../lib/livekit/voice-mic-debug.ts";
+import { canRetryWithDefaultMicrophone } from "../../../lib/livekit/microphone-device.ts";
 import type { ChatRoomView } from "@/types/chat";
 
 export type MediaStatus =
@@ -192,6 +193,32 @@ export async function setMicrophoneEnabledAndConfirm(
     throw new Error("Микрофон не подтвердил изменение. Проверьте устройство и повторите.");
   }
   return getMicrophoneMuted(room);
+}
+
+export async function setMicrophoneEnabledWithFallback(
+  room: Room,
+  enabled: boolean,
+  preferences: VoicePreferences,
+): Promise<{ muted: boolean; usedDefault: boolean }> {
+  try {
+    return {
+      muted: await setMicrophoneEnabledAndConfirm(room, enabled, getAudioCaptureOptions(preferences)),
+      usedDefault: false,
+    };
+  } catch (error) {
+    if (!enabled || !canRetryWithDefaultMicrophone(error, preferences.inputDeviceId)) throw error;
+    traceVoiceMic("livekit.device-fallback", {
+      errorName: error instanceof Error ? error.name : "unknown",
+      errorConstraint: error instanceof Error && "constraint" in error
+        ? String(error.constraint) : null,
+    });
+    const muted = await setMicrophoneEnabledAndConfirm(
+      room,
+      true,
+      getAudioCaptureOptions({ ...preferences, inputDeviceId: "default" }),
+    );
+    return { muted, usedDefault: true };
+  }
 }
 
 export function getConnectionLabel(status: MediaStatus) {

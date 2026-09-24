@@ -12,7 +12,7 @@ import {
   getAudioCaptureOptions,
   getMicrophoneMuted,
   reconnectPolicy,
-  setMicrophoneEnabledAndConfirm,
+  setMicrophoneEnabledWithFallback,
   VOICE_PUBLISH_OPTIONS,
   type LiveKitEndpoint,
   type MediaStatus,
@@ -28,6 +28,7 @@ import {
 export function useVoiceMediaConnection({
   roomRef,
   preferencesRef,
+  persistPreferences,
   desiredMicMutedRef,
   screenShareQualityRef,
   getCredentials,
@@ -46,6 +47,7 @@ export function useVoiceMediaConnection({
 }: {
   roomRef: MutableRefObject<Room | null>
   preferencesRef: MutableRefObject<VoicePreferences>
+  persistPreferences: (patch: Partial<VoicePreferences>) => VoicePreferences
   desiredMicMutedRef: MutableRefObject<boolean>
   screenShareQualityRef: MutableRefObject<ScreenShareQuality>
   getCredentials: () => Promise<VoiceMediaCredentials>
@@ -250,11 +252,10 @@ export function useVoiceMediaConnection({
             if (!desiredMicMutedRef.current) {
               traceVoiceMic("connection.restore", { roomState: room.state, desiredMuted: false });
               try {
-                await setMicrophoneEnabledAndConfirm(
-                  room,
-                  true,
-                  getAudioCaptureOptions(preferencesRef.current),
+                const { usedDefault } = await setMicrophoneEnabledWithFallback(
+                  room, true, preferencesRef.current,
                 );
+                if (usedDefault) persistPreferences({ inputDeviceId: "default" });
 
                 if (!isCurrentRoom()) return;
 
@@ -275,6 +276,13 @@ export function useVoiceMediaConnection({
                 }
               } catch (cause) {
                 if (!isCurrentRoom()) return;
+
+                traceVoiceMic("connection.restore-error", {
+                  errorName: cause instanceof Error ? cause.name : "unknown",
+                  errorMessage: cause instanceof Error ? cause.message : String(cause),
+                  errorConstraint: cause instanceof Error && "constraint" in cause
+                    ? String(cause.constraint) : null,
+                });
 
                 setMediaError(
                   cause instanceof Error && cause.message.includes("timed out")

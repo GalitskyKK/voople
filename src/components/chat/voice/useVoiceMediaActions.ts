@@ -9,9 +9,8 @@ import type { VoicePreferences } from "@/lib/livekit/voice-preferences";
 import { reportProductEvent } from "@/lib/telemetry/client";
 
 import {
-  getAudioCaptureOptions,
   getMicrophoneMuted,
-  setMicrophoneEnabledAndConfirm,
+  setMicrophoneEnabledWithFallback,
   type MediaStatus,
   type ScreenShareQuality,
 } from "./voice-room-config";
@@ -27,6 +26,7 @@ type DesktopScreenShareToggle = (
 export function useVoiceMediaActions({
   roomRef,
   preferencesRef,
+  persistPreferences,
   desiredMicMutedRef,
   screenShareQualityRef,
   mediaStatus,
@@ -44,6 +44,7 @@ export function useVoiceMediaActions({
 }: {
   roomRef: MutableRefObject<Room | null>;
   preferencesRef: MutableRefObject<VoicePreferences>;
+  persistPreferences: (patch: Partial<VoicePreferences>) => VoicePreferences;
   desiredMicMutedRef: MutableRefObject<boolean>;
   screenShareQualityRef: MutableRefObject<ScreenShareQuality>;
   mediaStatus: MediaStatus;
@@ -90,11 +91,10 @@ export function useVoiceMediaActions({
     const targetEnabled = getMicrophoneMuted(room);
     traceVoiceMic("action.target", { targetEnabled });
     try {
-      const actualMuted = await setMicrophoneEnabledAndConfirm(
-        room,
-        targetEnabled,
-        getAudioCaptureOptions(preferencesRef.current),
+      const { muted: actualMuted, usedDefault } = await setMicrophoneEnabledWithFallback(
+        room, targetEnabled, preferencesRef.current,
       );
+      if (usedDefault) persistPreferences({ inputDeviceId: "default" });
       desiredMicMutedRef.current = actualMuted;
       setMicMuted(actualMuted);
       traceVoiceMic("action.confirmed", {
@@ -122,6 +122,8 @@ export function useVoiceMediaActions({
       traceVoiceMic("action.error", {
         errorName: cause instanceof Error ? cause.name : "unknown",
         errorMessage: cause instanceof Error ? cause.message : String(cause),
+        errorConstraint: cause instanceof Error && cause.name === "OverconstrainedError"
+          && "constraint" in cause ? String(cause.constraint) : null,
         roomState: room.state,
       });
       const actualMuted = getMicrophoneMuted(room);
@@ -130,7 +132,7 @@ export function useVoiceMediaActions({
       setError(
         cause instanceof Error && cause.message.includes("timed out")
           ? "Сервер не подтвердил публикацию микрофона. Переподключитесь или включите совместимый режим."
-          : cause instanceof Error
+          : cause instanceof Error && cause.message
             ? cause.message
             : "Не удалось изменить состояние микрофона.",
       );

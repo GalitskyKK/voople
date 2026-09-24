@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { Camera, CameraOff, Loader2, Mic, MicOff, MonitorUp, Volume2, VolumeX } from "lucide-react";
 
 import { IconButton } from "@/components/ui/IconButton";
@@ -43,9 +42,6 @@ export function VoiceMediaControls({
   onCameraToggle,
 }: VoiceMediaControlsProps) {
   const connected = mediaStatus === "connected";
-  useEffect(() => {
-    traceVoiceMic("control.state", { mediaStatus, micMuted, sessionPending, mediaActionPending });
-  }, [mediaActionPending, mediaStatus, micMuted, sessionPending]);
 
   return (
     <div className="flex flex-wrap items-center justify-center gap-2">

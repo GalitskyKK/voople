@@ -102,6 +102,18 @@ try {
     throw new Error("get_or_create_direct_chat is missing the atomic connection privacy gate; apply 57-direct-chat-privacy-enforcement.sql");
   }
 
+  const [{ requestsTable, friendshipsTable, sendRequest, respondRequest, blockCleanup }] = await sql`
+    select
+      to_regclass('public.friend_requests')::text as "requestsTable",
+      to_regclass('public.friendships')::text as "friendshipsTable",
+      to_regprocedure('public.send_friend_request(uuid,uuid)')::text as "sendRequest",
+      to_regprocedure('public.respond_friend_request(uuid,uuid,boolean)')::text as "respondRequest",
+      to_regprocedure('public.friend_block_cleanup()')::text as "blockCleanup"
+  `;
+  if (!requestsTable || !friendshipsTable || !sendRequest || !respondRequest || !blockCleanup) {
+    throw new Error("Friendship schema or RPCs are unavailable; apply 77-friendships.sql");
+  }
+
   console.log(`Migration readiness passed (${REQUIRED_MIGRATIONS.length} required migrations).`);
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));

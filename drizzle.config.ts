@@ -28,6 +28,7 @@ export default defineConfig({
     "./src/server/db/post-schema.ts",
     "./src/server/db/chat-room-schema.ts",
     "./src/server/db/chat-section-favorites-schema.ts",
+    "./src/server/db/friend-schema.ts",
   ],
   out: "./drizzle",
   dialect: "postgresql",

@@ -1,6 +1,7 @@
 import { getAdminClient } from "@/lib/supabase/admin";
 import { messageMentionsUsername } from "@/lib/social/home-attention";
 import { filterUserIdsByPrivacyFieldRest } from "@/server/data/privacy-rest";
+import { listFriendIdsRest } from "@/server/data/friends-rest";
 import {
   toProfileCustomizationView,
   type CustomizationRow,
@@ -219,9 +220,8 @@ export async function getRelationshipScoresRest(
   const candidateIds = candidates.map((candidate) => candidate.userId);
   const chatIds = candidates.flatMap((candidate) => candidate.chatId ? [candidate.chatId] : []);
   const admin = getAdminClient();
-  const [outgoing, incoming, viewerInterests, candidateInterests, viewerGroups, directMessages] = await Promise.all([
-    admin.from("follows").select("following_id").eq("follower_id", userId).in("following_id", candidateIds),
-    admin.from("follows").select("follower_id").eq("following_id", userId).in("follower_id", candidateIds),
+    const [friendIds, viewerInterests, candidateInterests, viewerGroups, directMessages] = await Promise.all([
+      listFriendIdsRest(userId),
     admin.from("user_interests").select("interest_slug").eq("user_id", userId),
     admin.from("user_interests").select("user_id, interest_slug").in("user_id", candidateIds),
     admin.from("chat_members").select("chat_id, chats!inner(type)").eq("user_id", userId).eq("chats.type", "group"),
@@ -229,12 +229,11 @@ export async function getRelationshipScoresRest(
       ? admin.from("messages").select("chat_id, sender_id, created_at").in("chat_id", chatIds).order("created_at", { ascending: false }).limit(500)
       : Promise.resolve({ data: [], error: null }),
   ]);
-  const failure = [outgoing, incoming, viewerInterests, candidateInterests, viewerGroups, directMessages].find((value) => value.error)?.error;
+    const failure = [viewerInterests, candidateInterests, viewerGroups, directMessages].find((value) => value.error)?.error;
   if (failure) throw new Error(failure.message);
 
-  const outgoingIds = new Set((outgoing.data ?? []).map((row) => String(row.following_id)));
-  const incomingIds = new Set((incoming.data ?? []).map((row) => String(row.follower_id)));
-  for (const candidateId of candidateIds) if (outgoingIds.has(candidateId) && incomingIds.has(candidateId)) scores.set(candidateId, (scores.get(candidateId) ?? 0) + 15);
+    const friends = new Set(friendIds);
+    for (const candidateId of candidateIds) if (friends.has(candidateId)) scores.set(candidateId, (scores.get(candidateId) ?? 0) + 15);
 
   const ownInterests = new Set((viewerInterests.data ?? []).map((row) => String(row.interest_slug)));
   const sharedInterestUsers = new Set((candidateInterests.data ?? []).filter((row) => ownInterests.has(String(row.interest_slug))).map((row) => String(row.user_id)));

@@ -47,6 +47,7 @@
 !/docs/readme-assets/.gitkeep
 !/docs/readme-assets/*.webp
 /drizzle/*
+!/drizzle/77-friendships.sql
 !/drizzle/38-group-emojis.sql
 !/drizzle/39-structured-chat-content.sql
 !/drizzle/43-group-sounds.sql

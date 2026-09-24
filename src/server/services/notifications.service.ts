@@ -11,7 +11,9 @@ export type NotifType =
   | "profile_reaction"
   | "profile_canvas_draw"
   | "question"
-  | "room_invite";
+  | "room_invite"
+  | "friend_request"
+  | "friend_accept";
 
 /** Типы уведомлений, в которых автор скрыт от получателя (анонимность). */
 const ANONYMOUS_NOTIF_TYPES = new Set<string>(["profile_canvas_draw", "question"]);

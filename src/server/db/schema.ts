@@ -13,7 +13,7 @@ export const itemTypeEnum = pgEnum("item_type", [
 export const chatTypeEnum = pgEnum("chat_type", ["direct", "group"]);
 export const notifTypeEnum = pgEnum("notif_type", [
   "like", "card_reaction", "follow", "reply", "repost", "match",
-  "mystery_drop", "profile_canvas_draw", "question", "room_invite",
+  "mystery_drop", "profile_canvas_draw", "question", "room_invite", "friend_request", "friend_accept",
 ]);
 export const acquiredViaEnum = pgEnum("acquired_via", [
   "purchase", "earned", "gifted", "seasonal_reward",

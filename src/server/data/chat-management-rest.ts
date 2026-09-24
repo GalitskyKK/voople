@@ -11,40 +11,13 @@ import {
 import type { UserSearchHit } from "@/types/search";
 import { filterUserIdsByPrivacyFieldRest } from "@/server/data/privacy-rest";
 import { assertCanOpenDirectChatRest } from "@/server/data/chat-direct-privacy-rest";
+import { listFriendIdsRest } from "@/server/data/friends-rest";
 
 const USER_CARD_SELECT =
   "id, username, display_name, bio, subscriptions (started_at, expires_at), profile_customization (avatar_type, avatar_data, animated_avatar_id)";
 
-async function getFollowContactIds(userId: string) {
-  const admin = getAdminClient();
-  const [followingResult, followerResult] = await Promise.all([
-    admin
-      .from("follows")
-      .select("following_id")
-      .eq("follower_id", userId)
-      .limit(1_000),
-    admin
-      .from("follows")
-      .select("follower_id")
-      .eq("following_id", userId)
-      .limit(1_000),
-  ]);
-
-  if (followingResult.error) throw new Error(followingResult.error.message);
-  if (followerResult.error) throw new Error(followerResult.error.message);
-
-  const followerIds = new Set(
-    (followerResult.data ?? []).map((row) => row.follower_id as string),
-  );
-  const followingIds = new Set(
-    (followingResult.data ?? []).map((row) => row.following_id as string),
-  );
-  return { followerIds, followingIds };
-}
-
-async function getMutualContactIds(userId: string) {
-  const { followerIds, followingIds } = await getFollowContactIds(userId);
-  return new Set([...followingIds].filter((id) => followerIds.has(id)));
+async function getFriendContactIds(userId: string) {
+  return new Set(await listFriendIdsRest(userId));
 }
 
 async function loadContactCards(contactIds: string[], query: string) {
@@ -69,12 +42,12 @@ async function loadContactCards(contactIds: string[], query: string) {
   return (data ?? []).map((row) => mapUserSearchRow(row as UserSearchRow));
 }
 
-async function assertMutualContacts(userId: string, contactIds: string[]) {
+async function assertFriendContacts(userId: string, contactIds: string[]) {
   if (contactIds.length === 0) return;
-  const mutualIds = await getMutualContactIds(userId);
-  if (contactIds.some((id) => !mutualIds.has(id))) {
+  const friendIds = await getFriendContactIds(userId);
+  if (contactIds.some((id) => !friendIds.has(id))) {
     throw new Error(
-      "Напрямую можно добавить только пользователей с взаимной подпиской. Остальным отправьте ссылку-приглашение.",
+      "Напрямую можно добавить только друзей. Остальным отправьте ссылку-приглашение.",
     );
   }
 }
@@ -84,7 +57,7 @@ export async function listGroupContactsRest(
   query = "",
   chatId?: string,
 ): Promise<UserSearchHit[]> {
-  const mutualIds = await getMutualContactIds(userId);
+  const mutualIds = await getFriendContactIds(userId);
   const excludedIds = new Set<string>([userId]);
 
   if (chatId) {
@@ -115,8 +88,7 @@ export async function listGroupContactsRest(
 }
 
 export async function listChatContactsRest(userId: string, query = "") {
-  const { followerIds, followingIds } = await getFollowContactIds(userId);
-  return loadContactCards([...new Set([...followerIds, ...followingIds])], query);
+  return loadContactCards(await listFriendIdsRest(userId), query);
 }
 
 export async function addGroupMembersRest(
@@ -151,7 +123,7 @@ export async function addGroupMembersRest(
     throw new Error("В группе может быть до 20 участников");
   }
 
-  await assertMutualContacts(userId, newIds);
+  await assertFriendContacts(userId, newIds);
   const allowedIds = await filterUserIdsByPrivacyFieldRest(
     newIds,
     userId,
@@ -381,7 +353,7 @@ export async function createGroupChatRest(ownerId: string, name: string, memberI
   if (cleanName.length < 2 || cleanName.length > 50) throw new Error("Название — от 2 до 50 символов");
   if (uniqueMemberIds.length > 19) throw new Error("В группе может быть до 20 участников");
 
-  await assertMutualContacts(ownerId, uniqueMemberIds);
+  await assertFriendContacts(ownerId, uniqueMemberIds);
   const allowedIds = await filterUserIdsByPrivacyFieldRest(
     uniqueMemberIds,
     ownerId,

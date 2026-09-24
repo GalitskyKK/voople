@@ -64,7 +64,7 @@ export function MainShell({
   );
 
   useEffect(() => {
-    if (roomSurfacePathRef.current !== pathname) minimizeVoicePanel?.();
+    if (roomSurfacePathRef.current !== pathname) minimizeVoicePanel?.(false);
     roomSurfacePathRef.current = pathname;
   }, [minimizeVoicePanel, pathname]);
 

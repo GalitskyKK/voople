@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import {
   ChevronDown,
   Mic,
@@ -20,17 +20,12 @@ import { reportProductEvent } from "@/lib/telemetry/client";
 import { VoiceCompactSessionDock } from "./VoiceCompactSessionDock";
 import { VoiceDockResizeHandles } from "./VoiceDockResizeHandles";
 import { VoiceMinimalSessionDock } from "./VoiceMinimalSessionDock";
-import type { VoiceDockMode, VoiceSessionDockProps } from "./voice-session-dock-types";
+import type { VoiceSessionDockProps } from "./voice-session-dock-types";
 import { useVoiceDockGeometry } from "./useVoiceDockGeometry";
-const DOCK_MODE_KEY = "voople:voice-dock-mode:v1";
-
-function initialDockMode(): VoiceDockMode {
-  if (typeof window === "undefined") return "mini";
-  const stored = window.localStorage.getItem(DOCK_MODE_KEY);
-  return stored === "compact" || stored === "minimal" ? stored : "mini";
-}
 
 export function VoiceSessionDock({
+  mode,
+  onModeChange,
   chatName,
   participantCount,
   activeSpeakerName,
@@ -52,17 +47,12 @@ export function VoiceSessionDock({
 }: VoiceSessionDockProps) {
   const dockRef = useRef<HTMLDivElement | null>(null);
   const geometry = useVoiceDockGeometry(dockRef);
-  const [mode, setMode] = useState<VoiceDockMode>(initialDockMode);
   const weakConnection =
     connectionQuality === ConnectionQuality.Poor ||
     connectionQuality === ConnectionQuality.Lost;
 
-  useEffect(() => {
-    window.localStorage.setItem(DOCK_MODE_KEY, mode);
-  }, [mode]);
-
-  const changeMode = (next: VoiceDockMode) => {
-    setMode(next);
+  const changeMode = (next: typeof mode) => {
+    onModeChange(next);
     reportProductEvent(next === "minimal" ? "room_minimized" : next === "compact" ? "room_compacted" : "room_expanded", { state: next });
   };
   const openFullRoomFromCompact = () => {

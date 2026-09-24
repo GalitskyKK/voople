@@ -71,7 +71,7 @@ export function VoiceRoomFooter({
             <Loader2 className="h-4 w-4 animate-spin" />
             Выходим…
           </Button>
-        ) : session.phase === "error" || session.phase === "post-leave" ? (
+        ) : session.phase === "error" ? (
           null
         ) : session.inside && connected ? (
           <IconButton

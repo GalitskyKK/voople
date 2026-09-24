@@ -16,7 +16,6 @@ import type {
 import { VoiceRoomEmptyState } from "./VoiceRoomEmptyState";
 import {
   VoiceRoomErrorState,
-  VoiceRoomPostLeaveState,
   VoiceRoomTransitionState,
 } from "./VoiceRoomSessionStates";
 import { resolveVoiceRoomErrorTitle } from "./voice-room-surface";
@@ -29,7 +28,6 @@ export function VoiceRoomContent({
   session,
   errorMessage,
   onInvite,
-  onClose,
 }: {
   identity: VoiceRoomIdentityModel;
   stage: VoiceRoomStageModel;
@@ -37,7 +35,6 @@ export function VoiceRoomContent({
   session: VoiceRoomSessionModel;
   errorMessage: string | null;
   onInvite?: () => void;
-  onClose: () => void;
 }) {
   const sessionPhase = session.phase;
   const directCallState =
@@ -63,16 +60,6 @@ export function VoiceRoomContent({
         retryLabel={session.retryLabel}
         retryPending={session.retryPending}
         onRetry={session.onRetry}
-      />
-    );
-  }
-  if (sessionPhase === "post-leave") {
-    return (
-      <VoiceRoomPostLeaveState
-        connectLabel={identity.active ? "Вернуться в комнату" : session.connectLabel}
-        connectDisabled={session.connectDisabled}
-        onConnect={session.onConnect}
-        onClose={onClose}
       />
     );
   }

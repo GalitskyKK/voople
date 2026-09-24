@@ -2,10 +2,13 @@ import type { ReactNode } from "react";
 import type { ConnectionQuality } from "livekit-client";
 
 import type { MediaStatus } from "./voice-room-config";
+import type { VoiceDockMode } from "@/lib/livekit/voice-dock-presentation";
 
-export type VoiceDockMode = "mini" | "compact" | "minimal";
+export type { VoiceDockMode } from "@/lib/livekit/voice-dock-presentation";
 
 export type VoiceSessionDockProps = {
+  mode: VoiceDockMode;
+  onModeChange: (mode: VoiceDockMode) => void;
   chatName: string;
   participantCount: number;
   activeSpeakerName: string | null;

@@ -14,6 +14,7 @@ import {
   Volume2,
   Wifi,
   WifiOff,
+  X,
 } from "lucide-react";
 import { ConnectionQuality } from "livekit-client";
 
@@ -41,7 +42,10 @@ type VoiceRoomHeaderProps = {
   access: VoiceRoomAccessModel;
   fullscreen: boolean;
   fullscreenPending: boolean;
-  onMinimize: () => void;
+  leavePending: boolean;
+  canMinimizeToMini: boolean;
+  onMinimizeToMini: () => void;
+  onCloseToCompact: () => void;
   onOpenSoundboard: () => void;
   onToggleRoomMessages: () => void;
   onOpenSettings: () => void;
@@ -60,7 +64,10 @@ export function VoiceRoomHeader({
   access,
   fullscreen,
   fullscreenPending,
-  onMinimize,
+  leavePending,
+  canMinimizeToMini,
+  onMinimizeToMini,
+  onCloseToCompact,
   onOpenSoundboard,
   onToggleRoomMessages,
   onOpenSettings,
@@ -106,8 +113,11 @@ export function VoiceRoomHeader({
       </div>
 
       <div className="voople-full-room__header-actions flex shrink-0 items-center gap-1">
-        <HeaderButton label="Свернуть комнату" onClick={onMinimize}>
+        <HeaderButton label="Свернуть в мини" disabled={leavePending || !canMinimizeToMini} onClick={onMinimizeToMini}>
           <Minus className="h-4 w-4" />
+        </HeaderButton>
+        <HeaderButton label="Закрыть окно комнаты" disabled={leavePending} onClick={onCloseToCompact}>
+          <X className="h-4 w-4" />
         </HeaderButton>
         {!identity.isDirect && identity.active && hasRoomMessages ? (
           <HeaderButton

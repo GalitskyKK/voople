@@ -18,7 +18,6 @@ const read = (path) => readFileSync(path, "utf8");
 test("room surface phase keeps explicit transitions ahead of stale server state", () => {
   assert.equal(resolveVoiceRoomSurfacePhase({ transition: "connecting", loading: false, inside: false, mediaStatus: "idle", hasError: false }), "connecting");
   assert.equal(resolveVoiceRoomSurfacePhase({ transition: "leaving", loading: false, inside: true, mediaStatus: "connected", hasError: false }), "leaving");
-  assert.equal(resolveVoiceRoomSurfacePhase({ transition: "post-leave", loading: false, inside: false, mediaStatus: "idle", hasError: false }), "post-leave");
   assert.equal(resolveVoiceRoomSurfacePhase({ transition: null, loading: true, inside: false, mediaStatus: "idle", hasError: false }), "loading");
   assert.equal(resolveVoiceRoomSurfacePhase({ transition: null, loading: false, inside: true, mediaStatus: "reconnecting", hasError: false }), "reconnecting");
   assert.equal(resolveVoiceRoomSurfacePhase({ transition: null, loading: false, inside: true, mediaStatus: "connected", hasError: true }), "inside");
@@ -41,13 +40,12 @@ test("prejoin, connecting and active room reuse one stable main-area geometry", 
   assert.match(content, /sessionPhase === "connecting"/);
   assert.match(content, /sessionPhase === "leaving"/);
   assert.match(content, /sessionPhase === "loading"/);
-  assert.match(content, /sessionPhase === "post-leave"/);
   assert.match(content, /sessionPhase === "preview" && identity\.active/);
-  assert.ok(content.indexOf('sessionPhase === "post-leave"') < content.indexOf("if (directCallState)"));
+  assert.doesNotMatch(content, /VoiceRoomPostLeaveState/);
   assert.match(surfaceSession, /setTransition\("connecting"\)/);
   assert.match(surfaceSession, /setTransition\("leaving"\)/);
-  assert.match(surfaceSession, /setTransition\("post-leave"\)/);
-  assert.match(surfaceSession, /await server\.room\.refetch\(\)/);
+  assert.match(surfaceSession, /runConfirmedVoiceLeave\(server\.leave\.run, server\.room\.refetch\)/);
+  assert.doesNotMatch(surfaceSession, /setTransition\("post-leave"\)/);
   assert.match(control, /server\.room\.error\?\.message/);
 });
 
@@ -80,15 +78,20 @@ test("full Room replaces main content and minimizes without ending its session",
   assert.match(surface, /createPortal\(/);
   assert.match(surface, /data-voople-room-surface="full"/);
   assert.doesNotMatch(surface, /<Sheet\s+open=\{open\}/);
-  assert.match(header, /label="Свернуть комнату"/);
+  assert.match(header, /label="Свернуть в мини"/);
+  assert.match(header, /label="Закрыть окно комнаты"/);
   assert.match(view, /dock && !sheet\.overlay\.open/);
-  assert.match(control, /minimize: closeRoom/);
+  assert.match(control, /minimize: minimizePanel/);
   assert.doesNotMatch(control, /minimize:[\s\S]{0,120}leaveRoom/);
-  assert.match(provider, /minimizePanel: \(\) => void/);
-  assert.match(provider, /controlRef\.current\?\.minimize\(\)/);
-  assert.match(provider, /latestControl\.open\(\);\s+latestControl\.join\(\)/);
-  assert.match(webShell, /minimizeVoicePanel\?\.\(\)/);
-  assert.match(desktopShell, /minimizeVoicePanel\(\)/);
+  assert.match(provider, /minimizePanel: \(showDock\?: boolean\) => void/);
+  assert.match(provider, /controlRef\.current\?\.minimize\(showDock\)/);
+  assert.match(webShell, /minimizeVoicePanel\?\.\(false\)/);
+  assert.match(desktopShell, /minimizeVoicePanel\(false\)/);
+  assert.match(provider, /latestControl\.join\(\)/);
+  assert.doesNotMatch(provider, /latestControl\.open\(\);\s+latestControl\.join\(\)/);
+  assert.match(control, /dock: inside && dockVisible \?/);
+  assert.match(control, /preview: dockMode === "mini" && !open \?/);
+  assert.match(control, /overlay: \{[\s\S]*onCloseToMini:[\s\S]*onCloseToCompact:/);
 });
 
 test("full room uses one shared reference-aligned visual frame", () => {
@@ -226,7 +229,7 @@ test("room recovery is bounded, actionable and restores dialog focus", async () 
   );
   assert.equal(await waitForVoiceMediaConnection(Promise.resolve("connected"), 50), "connected");
   assert.match(states, /retryLabel/);
-  assert.match(states, /Вы вышли из комнаты/);
+  assert.doesNotMatch(states, /Вы вышли из комнаты/);
   assert.match(surfaceSession, /setFailedOperation\("leave"\)/);
   const control = read("src/components/chat/voice/useChatRoomControl.ts");
   assert.match(control, /failedSessionOperation === "leave"/);

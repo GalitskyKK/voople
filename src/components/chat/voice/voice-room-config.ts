@@ -11,6 +11,7 @@ import {
 } from "livekit-client";
 
 import type { VoicePreferences } from "@/lib/livekit/voice-preferences";
+import { traceVoiceMic } from "../../../lib/livekit/voice-mic-debug.ts";
 import type { ChatRoomView } from "@/types/chat";
 
 export type MediaStatus =
@@ -167,12 +168,26 @@ export async function setMicrophoneEnabledAndConfirm(
   enabled: boolean,
   captureOptions: AudioCaptureOptions,
 ) {
-  await room.localParticipant.setMicrophoneEnabled(
+  const before = room.localParticipant.getTrackPublication(Track.Source.Microphone);
+  traceVoiceMic("livekit.before", {
+    enabled,
+    roomState: room.state,
+    publicationMuted: before?.isMuted ?? null,
+    trackState: before?.track?.mediaStreamTrack.readyState ?? null,
+  });
+  const result = await room.localParticipant.setMicrophoneEnabled(
     enabled,
     captureOptions,
     VOICE_PUBLISH_OPTIONS,
   );
   const publication = room.localParticipant.getTrackPublication(Track.Source.Microphone);
+  traceVoiceMic("livekit.after", {
+    resultPresent: Boolean(result),
+    resultMuted: result?.isMuted ?? null,
+    publicationPresent: Boolean(publication),
+    publicationMuted: publication?.isMuted ?? null,
+    trackState: publication?.track?.mediaStreamTrack.readyState ?? null,
+  });
   if (enabled ? !publication || publication.isMuted : Boolean(publication && !publication.isMuted)) {
     throw new Error("Микрофон не подтвердил изменение. Проверьте устройство и повторите.");
   }

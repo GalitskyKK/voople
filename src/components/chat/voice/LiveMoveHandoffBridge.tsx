@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { trpc } from "@/lib/trpc/client";
+import { isLiveMoveSchemaUnavailable } from "@/lib/chat/live-move-readiness";
 
 import { useVoiceSession } from "./VoiceSessionProvider";
 
@@ -19,7 +20,12 @@ export function LiveMoveHandoffBridge() {
   const moves = trpc.chat.coreMyLiveMoves.useQuery(undefined, {
     enabled: Boolean(session),
     retry: false,
-    refetchInterval: session ? 1_500 : false,
+    refetchInterval: (query) => {
+      if (!session || isLiveMoveSchemaUnavailable(query.state.error)) return false;
+      return query.state.error ? 30_000 : 1_500;
+    },
+    refetchOnWindowFocus: (query) => !isLiveMoveSchemaUnavailable(query.state.error),
+    refetchOnReconnect: (query) => !isLiveMoveSchemaUnavailable(query.state.error),
   });
 
   useEffect(() => {
@@ -51,9 +57,12 @@ export function LiveMoveHandoffBridge() {
     })();
   }, [mediaToken, moves.data, sourceSessionId, voice]);
 
-  return error ? (
+  const message = isLiveMoveSchemaUnavailable(moves.error)
+    ? "Сплит и вуп временно недоступны: сервер ожидает обновления базы данных."
+    : error ? `Сплит выполнен, но голос не подключился: ${error}` : null;
+  return message ? (
     <p className="fixed bottom-20 right-4 z-[90] max-w-sm rounded-xl border border-red-500/25 bg-[var(--app-surface)] px-3 py-2 text-sm text-red-300" role="alert">
-      Сплит выполнен, но голос не подключился: {error}
+      {message}
     </p>
   ) : null;
 }

@@ -73,3 +73,25 @@ test("core Room starts muted; UI and heartbeat follow LiveKit, not optimistic st
   assert.match(connection, /if \(!desiredMicMutedRef\.current\)/);
   assert.match(controls, /disabled=\{sessionPending \|\| !connected \|\| mediaActionPending\}/);
 });
+
+test("development microphone trace covers callback, LiveKit result, processor and heartbeat without credentials", async () => {
+  const [debug, controls, action, config, connection, heartbeat] = await Promise.all([
+    readFile(new URL("../src/lib/livekit/voice-mic-debug.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/VoiceMediaControls.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/useVoiceMediaActions.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/voice-room-config.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/useVoiceMediaConnection.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/useVoiceHeartbeat.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(debug, /process\.env\.NODE_ENV !== "development"/);
+  assert.match(controls, /traceVoiceMic\("control\.click"/);
+  assert.match(action, /traceVoiceMic\("action\.begin"/);
+  assert.match(action, /traceVoiceMic\("action\.processor"/);
+  assert.match(action, /traceVoiceMic\("action\.error"/);
+  assert.match(config, /traceVoiceMic\("livekit\.after"/);
+  assert.match(connection, /traceVoiceMic\("connection\.remute"/);
+  assert.match(heartbeat, /traceVoiceMic\("heartbeat\.send"/);
+  for (const source of [debug, controls, action, config, connection, heartbeat]) {
+    assert.doesNotMatch(source, /traceVoiceMic\([^;]*(token|credential|mediaUrl)/i);
+  }
+});

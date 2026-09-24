@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 
 import { ConnectionQuality, ConnectionState, Room } from "livekit-client";
 
 import { syncVoiceTrackProcessor } from "@/lib/livekit/rnnoise-track-processor";
+import { traceVoiceMic } from "@/lib/livekit/voice-mic-debug";
 import type { VoicePreferences } from "@/lib/livekit/voice-preferences";
 import type { VoiceMediaCredentials } from "@/types/voice";
 
@@ -215,6 +216,11 @@ export function useVoiceMediaConnection({
           }
 
           setMicMuted(getMicrophoneMuted(room));
+          traceVoiceMic("connection.connected", {
+            roomState: room.state,
+            desiredMuted: desiredMicMutedRef.current,
+            actualMuted: getMicrophoneMuted(room),
+          });
 
           const isCurrentRoom = () => isCurrent() && roomRef.current === room;
 
@@ -242,6 +248,7 @@ export function useVoiceMediaConnection({
             if (!isCurrentRoom()) return;
 
             if (!desiredMicMutedRef.current) {
+              traceVoiceMic("connection.restore", { roomState: room.state, desiredMuted: false });
               try {
                 await setMicrophoneEnabledAndConfirm(
                   room,
@@ -252,6 +259,7 @@ export function useVoiceMediaConnection({
                 if (!isCurrentRoom()) return;
 
                 if (desiredMicMutedRef.current) {
+                  traceVoiceMic("connection.remute", { reason: "desired state changed during restore" });
                   await room.localParticipant.setMicrophoneEnabled(false).catch(() => undefined);
                 } else {
                   const processorError = await syncVoiceTrackProcessor(room, {
@@ -281,6 +289,11 @@ export function useVoiceMediaConnection({
             if (!isCurrentRoom()) return;
 
             setMicMuted(getMicrophoneMuted(room));
+            traceVoiceMic("connection.settled", {
+              roomState: room.state,
+              desiredMuted: desiredMicMutedRef.current,
+              actualMuted: getMicrophoneMuted(room),
+            });
 
             await refreshDevices().catch(() => undefined);
 

@@ -1,6 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { LIVE_MOVE_SCHEMA_UNAVAILABLE } from "@/lib/chat/live-move-readiness";
+
 import { assertRateLimit } from "@/lib/ratelimit-guard";
 import { rateLimits } from "@/lib/ratelimit";
 import { getCoreRoomInviteSessionRest } from "@/server/data/core-room-invitations-rest";
@@ -127,6 +129,9 @@ export const chatCoreReworkProcedures = {
     try {
       return await listMyLiveMoves(ctx.user.id);
     } catch (error) {
+      if (error instanceof Error && error.message === LIVE_MOVE_SCHEMA_UNAVAILABLE) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: LIVE_MOVE_SCHEMA_UNAVAILABLE });
+      }
       throw toRoomError(error, "Не удалось проверить переходы между комнатами");
     }
   }),

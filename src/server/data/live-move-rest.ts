@@ -2,6 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 
+import { LIVE_MOVE_SCHEMA_UNAVAILABLE } from "@/lib/chat/live-move-readiness";
 import { getAdminClient } from "@/lib/supabase/admin";
 
 const requestSchema = z.object({
@@ -118,6 +119,9 @@ export async function listMyLiveMoveIdsRest(actorId: string) {
       .gte("responded_at", since)
       .order("responded_at", { ascending: false }).limit(10),
   ]);
+  if (sent.error?.code === "PGRST205" || accepted.error?.code === "PGRST205") {
+    throw new Error(LIVE_MOVE_SCHEMA_UNAVAILABLE);
+  }
   if (sent.error) throw new Error(sent.error.message);
   if (accepted.error) throw new Error(accepted.error.message);
   return [...new Set([

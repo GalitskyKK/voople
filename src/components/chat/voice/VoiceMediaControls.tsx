@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import { Camera, CameraOff, Loader2, Mic, MicOff, MonitorUp, Volume2, VolumeX } from "lucide-react";
 
 import { IconButton } from "@/components/ui/IconButton";
+import { traceVoiceMic } from "@/lib/livekit/voice-mic-debug";
 import { cn } from "@/lib/utils";
 import type { MediaStatus } from "./voice-room-config";
 
@@ -41,6 +43,9 @@ export function VoiceMediaControls({
   onCameraToggle,
 }: VoiceMediaControlsProps) {
   const connected = mediaStatus === "connected";
+  useEffect(() => {
+    traceVoiceMic("control.state", { mediaStatus, micMuted, sessionPending, mediaActionPending });
+  }, [mediaActionPending, mediaStatus, micMuted, sessionPending]);
 
   return (
     <div className="flex flex-wrap items-center justify-center gap-2">
@@ -48,7 +53,10 @@ export function VoiceMediaControls({
         label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
         tooltipClassName="shrink-0"
         disabled={sessionPending || !connected || mediaActionPending}
-        onClick={() => void onMicToggle()}
+        onClick={() => {
+          traceVoiceMic("control.click", { mediaStatus, micMuted, sessionPending, mediaActionPending });
+          void onMicToggle();
+        }}
         className={cn(
           controlClass,
           micMuted

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import type { ChatListItem } from "@/types/chat";
 import type { MessengerGroupLiveState } from "@/types/messenger-live";
 import { SavedMessagesShortcut } from "@/components/chat/SavedMessagesShortcut";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 import type { NavigationDestinationRenderer } from "./AppNavigationVisual";
 import { MessengerDirectRow, MessengerGroupRow } from "./MessengerSidebarRows";
@@ -125,4 +126,18 @@ function SidebarSection({ id, title, action, children }: { id: string; title: st
 }
 function SidebarEmpty({ icon, label }: { icon: ReactNode; label: string }) { return <p className="flex items-center gap-2 px-2 py-2 text-[11px] text-[var(--app-muted)]">{icon}{label}</p>; }
 function SidebarError({ onRetry }: { onRetry: () => void }) { return <div className="px-2 py-4 text-xs text-[var(--app-muted)]" role="alert"><p>Не удалось загрузить переписки.</p><button type="button" onClick={onRetry} className="mt-2 text-[var(--theme-accent)] hover:underline">Повторить</button></div>; }
-function SidebarSkeleton() { return <div className="space-y-2 px-2" aria-label="Загружаем переписки">{[0,1,2].map((item) => <div key={item} className="h-9 animate-pulse rounded-lg bg-[var(--app-surface-soft)]" />)}</div>; }
+function SidebarSkeleton() {
+  return (
+    <div className="space-y-2 px-2" role="status" aria-label="Загружаем переписки" aria-busy="true">
+      {[0, 1, 2].map((item) => (
+        <div key={item} className="flex min-h-11 items-center gap-2 rounded-[var(--material-control-radius)] px-2">
+          <Skeleton shape="avatar" className="h-8 w-8 shrink-0" />
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <Skeleton className="h-2.5 w-3/5" />
+            <Skeleton className="h-2 w-2/5" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

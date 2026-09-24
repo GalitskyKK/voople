@@ -31,10 +31,35 @@ replace it with page-specific initials, mascots or generated symbols.
 Components consume semantic tokens, never reference-specific colours. The
 dependency direction is:
 
-`primitive palette -> semantic tokens -> component tokens`
+`primitive palette -> semantic material tokens -> component primitives -> route overrides`
 
 The canonical tokens live in `src/app/globals.css`; Tauri imports the same
 global stylesheet and only supplies native window fonts and chrome.
+
+### Material hierarchy (beta)
+
+Void and Light each have complete material values in `globals.css`. App theme
+selection supplies the base `--background` / `--foreground` palette; Light
+supplies genuinely light fills, borders, shadows, focus and loading colours.
+Messenger may retain restrained ice/wine accents and its own layout, but must
+not force `color-scheme: dark` or redefine a second canvas palette. Profile
+Card customization is an independent identity surface, not a generic panel.
+
+| Layer | Tokens / primitives | Purpose |
+| --- | --- | --- |
+| Primitive | `--background`, `--foreground`, `--app-*`, brand and state colours | Theme inputs. |
+| Canvas | `--material-canvas-app`, `--material-canvas-workspace`, `--material-canvas-sidebar` | Shell, work area and navigation. |
+| Material | `--material-panel-fill`, `--material-raised-fill`, `--material-control-fill`, `--material-overlay-fill`, `--material-inset-fill`, `--material-interactive-fill` | Select by elevation and interaction, not route. |
+| Shared properties | `--material-border`, `--material-border-hover`, `--material-highlight`, `--material-shadow`, `--material-shadow-hover`, `--material-overlay-shadow`, `--material-blur`, `--material-saturation`, `--material-radius`, `--material-control-radius`, `--material-focus-ring`, `--material-secondary-text`, `--material-skeleton-*` | Consistent edge, shape, focus and loading. Blur is optional. |
+| Component | `Card` panel/raised/inset/row, secondary `Button`, `Skeleton` avatar/text/room/row; `.voople-material-control`, `.voople-material-row` | Small reusable presentation vocabulary. |
+| Route override | `messenger-glass.css` | Layout and restrained accents; shared surfaces resolve through material tokens. |
+
+Room cards may have a subtle specular edge. Long lists and loading rows use
+low-cost fills without nested backdrop filters. The current Room uses an
+accent border and interactive fill, not a separate card palette. Use
+`--material-focus-ring` for keyboard focus and shape-matched skeletons for
+pending content. Reduced motion stops loading animation; reduced transparency
+removes optional blur.
 
 ### Brand palette
 

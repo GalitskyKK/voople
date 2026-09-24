@@ -1,4 +1,4 @@
-const skeleton = "rounded-[var(--app-radius-sm)] bg-[var(--app-surface-soft)]";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 export function ProfileLoadingView() {
   return (
@@ -8,28 +8,29 @@ export function ProfileLoadingView() {
       aria-label="Загружаем профиль"
       aria-busy="true"
     >
-      <div className="voople-profile-page__card w-full shrink-0 overflow-hidden rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-surface)] lg:w-[320px]">
-        <div className="h-36 bg-[var(--app-surface-soft)]" />
+      <div className="voople-profile-page__card w-full shrink-0 overflow-hidden rounded-[var(--material-radius)] bg-[var(--material-panel-fill)] lg:w-[320px]">
+        <Skeleton shape="room" className="h-36 w-full !rounded-none" />
         <div className="space-y-4 px-5 pb-6">
-          <div className="-mt-9 h-[72px] w-[72px] rounded-[var(--app-radius-lg)] border-4 border-[var(--app-surface)] bg-[var(--app-border-strong)]" />
-          <div className="space-y-2" aria-hidden="true">
-            <div className={`${skeleton} h-5 w-2/3`} />
-            <div className={`${skeleton} h-3 w-2/5`} />
+          <Skeleton shape="avatar" className="-mt-9 h-[72px] w-[72px] border-4 border-[var(--material-panel-fill)]" />
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-2/3" />
+            <Skeleton className="h-3 w-2/5" />
           </div>
-          <div className="grid grid-cols-3 gap-3 border-y border-[var(--app-border)] py-4" aria-hidden="true">
-            {[0, 1, 2].map((item) => <div key={item} className={`${skeleton} h-8`} />)}
-          </div>
-          <div className={`${skeleton} h-4 w-4/5`} aria-hidden="true" />
-          <div className={`${skeleton} h-4 w-3/5`} aria-hidden="true" />
+          <Skeleton className="h-4 w-4/5" />
+          <Skeleton className="h-4 w-3/5" />
         </div>
       </div>
-      <div className="voople-profile-page__posts min-w-0 flex-1 space-y-4" aria-hidden="true">
-        <div className="border-b border-[var(--app-border)] pb-3"><div className={`${skeleton} h-5 w-24`} /></div>
-        <div className="rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-surface)] p-5">
-          <div className={`${skeleton} h-4 w-2/5`} />
-          <div className={`${skeleton} mt-5 h-4 w-full`} />
-          <div className={`${skeleton} mt-2 h-4 w-4/5`} />
-        </div>
+      <div className="voople-profile-page__context min-w-0 flex-1 space-y-4" aria-hidden="true">
+        <Skeleton className="h-5 w-36" />
+        {[0, 1].map((item) => (
+          <div key={item} className="voople-material-row flex min-h-16 items-center gap-3 px-4">
+            <Skeleton shape="avatar" className="h-10 w-10" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-3 w-32 max-w-full" />
+              <Skeleton className="h-2.5 w-20" />
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );

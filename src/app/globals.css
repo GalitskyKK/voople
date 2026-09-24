@@ -2,6 +2,7 @@
 @source "../";
 
 :root {
+  color-scheme: dark;
   --voople-sidebar-width: 72px;
   --voople-brand-50: #f5f3ff;
   --voople-brand-100: #ebe7ff;
@@ -55,6 +56,30 @@
   --app-radius-md: 0.875rem;
   --app-radius-lg: 1rem;
   --app-radius-xl: 1.25rem;
+  /* Primitive palette -> semantic material -> component/route composition. */
+  --material-canvas-app: var(--background);
+  --material-canvas-workspace: #0b111a;
+  --material-canvas-sidebar: #0c121b;
+  --material-panel-fill: #151b25;
+  --material-raised-fill: #1b2530;
+  --material-control-fill: #202934;
+  --material-overlay-fill: #202a36;
+  --material-inset-fill: #111821;
+  --material-interactive-fill: #1d2a38;
+  --material-border: rgb(219 232 246 / 0.10);
+  --material-border-hover: rgb(219 232 246 / 0.20);
+  --material-highlight: rgb(245 249 255 / 0.055);
+  --material-shadow: 0 10px 26px rgb(0 0 0 / 0.17);
+  --material-shadow-hover: 0 14px 30px rgb(0 0 0 / 0.22);
+  --material-overlay-shadow: 0 18px 48px rgb(0 0 0 / 0.35);
+  --material-blur: 12px;
+  --material-saturation: 1.04;
+  --material-radius: 16px;
+  --material-control-radius: 10px;
+  --material-focus-ring: #a8d5ff;
+  --material-secondary-text: #aebdcb;
+  --material-skeleton-base: #24303c;
+  --material-skeleton-highlight: #344557;
   --voople-scrollbar-size: 8px;
   --voople-scrollbar-thumb: color-mix(in srgb, var(--foreground) 14%, transparent);
   --voople-scrollbar-thumb-hover: color-mix(in srgb, var(--foreground) 24%, transparent);
@@ -72,6 +97,28 @@
   --color-success: var(--voople-success);
   --color-danger: var(--voople-danger);
   --font-voople-pixel: var(--font-geist-pixel-square, var(--font-geist-sans));
+}
+
+html[data-app-theme="light"] {
+  color-scheme: light;
+  --material-canvas-workspace: #f3f6fa;
+  --material-canvas-sidebar: #eaf0f6;
+  --material-panel-fill: #ffffff;
+  --material-raised-fill: #f7faff;
+  --material-control-fill: #edf3f9;
+  --material-overlay-fill: #ffffff;
+  --material-inset-fill: #edf2f8;
+  --material-interactive-fill: #e6f0fb;
+  --material-border: rgb(39 65 92 / 0.13);
+  --material-border-hover: rgb(39 65 92 / 0.25);
+  --material-highlight: rgb(255 255 255 / 0.72);
+  --material-shadow: 0 8px 24px rgb(41 61 84 / 0.08);
+  --material-shadow-hover: 0 12px 28px rgb(41 61 84 / 0.13);
+  --material-overlay-shadow: 0 18px 42px rgb(41 61 84 / 0.17);
+  --material-focus-ring: #315d9a;
+  --material-secondary-text: #52647a;
+  --material-skeleton-base: #dfe7f0;
+  --material-skeleton-highlight: #f2f7fb;
 }
 
 @theme inline {
@@ -135,7 +182,7 @@ body {
   }
 
   :focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--theme-accent) 70%, white);
+    outline: 2px solid var(--material-focus-ring);
     outline-offset: 2px;
   }
 
@@ -182,9 +229,7 @@ body {
 
   .voople-branded-loading--fullscreen {
     min-height: 100%;
-    background:
-      radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--theme-accent) 13%, transparent), transparent 17rem),
-      var(--app-bg);
+    background: var(--material-canvas-app);
   }
 
   .voople-branded-loading--compact {
@@ -202,21 +247,14 @@ body {
   }
 
   .voople-branded-loading__mark::before {
-    position: absolute;
-    z-index: -1;
-    inset: -0.65rem;
-    border: 1px solid color-mix(in srgb, var(--theme-accent) 24%, transparent);
-    border-radius: 1.25rem;
-    background: color-mix(in srgb, var(--theme-accent) 9%, transparent);
-    content: "";
-    animation: voople-loading-halo 1.8s ease-out infinite;
+    content: none;
   }
 
   .voople-branded-loading__label {
     margin-top: 1.15rem;
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--app-text-secondary);
+    color: var(--material-secondary-text);
   }
 
   .voople-branded-loading__dots {
@@ -339,9 +377,49 @@ body {
   }
 
   .voople-panel {
-    border-radius: var(--app-radius-xl);
-    background: var(--app-surface);
-    box-shadow: var(--app-shadow-sm);
+    border-radius: var(--material-radius);
+    background: var(--material-panel-fill);
+    box-shadow: var(--material-shadow);
+  }
+
+  .voople-panel--raised { background: var(--material-raised-fill); }
+
+  .voople-material-control {
+    border: 1px solid var(--material-border);
+    border-radius: var(--material-control-radius);
+    background: var(--material-control-fill);
+    color: var(--foreground);
+    transition: border-color var(--voople-motion-fast), background var(--voople-motion-fast);
+  }
+
+  .voople-material-control:hover:not(:disabled) {
+    border-color: var(--material-border-hover);
+    background: var(--material-interactive-fill);
+  }
+
+  .voople-material-row {
+    border-radius: var(--material-control-radius);
+    background: var(--material-panel-fill);
+    box-shadow: none;
+  }
+
+  .voople-material-row:hover { background: var(--material-interactive-fill); }
+
+  .voople-skeleton {
+    display: block;
+    background: var(--material-skeleton-base);
+    background-image: linear-gradient(100deg, transparent 25%, var(--material-skeleton-highlight) 50%, transparent 75%);
+    background-size: 200% 100%;
+    animation: voople-skeleton-shimmer 1.8s linear infinite;
+  }
+
+  .voople-skeleton--avatar { border-radius: 50%; }
+  .voople-skeleton--text { border-radius: 999px; }
+  .voople-skeleton--room { border-radius: var(--material-radius); }
+  .voople-skeleton--row { border-radius: var(--material-control-radius); }
+
+  @keyframes voople-skeleton-shimmer {
+    to { background-position: -200% 0; }
   }
 
   .voople-sidebar {
@@ -393,8 +471,8 @@ body {
 
   .voople-panel--inset {
     border-radius: var(--app-radius-lg);
-    border: 1px solid var(--app-border);
-    background: var(--app-surface-soft);
+    border: 1px solid var(--material-border);
+    background: var(--material-inset-fill);
     box-shadow: none;
   }
 
@@ -528,18 +606,13 @@ body {
   50% { transform: translateY(-0.2rem) scale(1); }
 }
 
-@keyframes voople-loading-halo {
-  0% { opacity: 0.35; transform: scale(0.9); }
-  55% { opacity: 0.75; }
-  100% { opacity: 0; transform: scale(1.25); }
-}
-
 @keyframes voople-loading-dot {
   0%, 65%, 100% { opacity: 0.28; transform: translateY(0); }
   35% { opacity: 1; transform: translateY(-0.2rem); }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .voople-skeleton { animation: none; background-image: none; }
   .voople-branded-loading__mark,
   .voople-branded-loading__mark::before,
   .voople-branded-loading__dots i {

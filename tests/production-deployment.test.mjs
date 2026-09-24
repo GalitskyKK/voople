@@ -14,10 +14,34 @@ test("production image is standalone, non-root and health checked", async () => 
 
   assert.match(nextConfig, /output:\s*"standalone"/);
   assert.match(dockerfile, /FROM node:22-bookworm-slim AS runner/);
+  assert.match(dockerfile, /groupadd --system --gid 1001 nodejs/);
+  assert.match(dockerfile, /useradd --system --uid 1001 --gid nodejs nextjs/);
   assert.match(dockerfile, /USER nextjs/);
+  assert.match(dockerfile, /RUN mkdir -p \/app\/\.next\/cache\s*\\\s*&& chown -R nextjs:nodejs \/app\/\.next\s+USER nextjs/);
   assert.match(dockerfile, /\.next\/standalone/);
   assert.match(dockerfile, /HEALTHCHECK[\s\S]*\/api\/health/);
   assert.match(route, /Cache-Control["']:\s*"no-store"/);
+});
+
+test("production cache init owns the shared volume before non-root web starts", async () => {
+  const compose = await read("deploy/production/compose.yaml");
+  const init = compose.match(/^  prepare-next-cache:\n([\s\S]*?)(?=^  web:)/m)?.[1];
+  const web = compose.match(/^  web:\n([\s\S]*?)(?=^volumes:)/m)?.[1];
+
+  assert.ok(init);
+  assert.ok(web);
+  const images = [...compose.matchAll(/^    image: (.+)$/gm)].map((match) => match[1]);
+  assert.equal(images.length, 2);
+  assert.equal(images[0], images[1]);
+  assert.match(init, /user: "0:0"/);
+  assert.match(init, /entrypoint: \["\/bin\/sh", "-ec"\]/);
+  assert.match(init, /command: \["mkdir -p \/app\/\.next\/cache && chown -R 1001:1001 \/app\/\.next\/cache"\]/);
+  assert.match(init, /volumes:\s*\n\s*- next-cache:\/app\/\.next\/cache/);
+  assert.match(init, /network_mode: none/);
+  assert.match(web, /depends_on:\s*\n\s*prepare-next-cache:\s*\n\s*condition: service_completed_successfully/);
+  assert.match(web, /volumes:\s*\n\s*- next-cache:\/app\/\.next\/cache/);
+  assert.doesNotMatch(web, /^\s*user:\s*["']?0/m);
+  assert.doesNotMatch(compose, /chmod\s+777/);
 });
 
 test("production compose binds only localhost for system Caddy and bounds container logs", async () => {

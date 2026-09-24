@@ -61,6 +61,12 @@ result. HTTP errors, connection failures and timeouts make the service fail.
 The oneshot service cannot overlap itself; it is bounded to 30 seconds, while
 the timer runs once a minute.
 
+The `prepare-next-cache` one-shot service runs before `web` and gives the
+existing `next-cache` volume to UID/GID `1001:1001`. The web process remains
+non-root. Check that the init service exited 0 and that `/app/.next/cache` is
+writable as `nextjs` after a release; the web health route alone does not
+exercise Next.js image optimization.
+
 Useful checks on the host:
 
 ```bash

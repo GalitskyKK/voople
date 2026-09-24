@@ -1,8 +1,24 @@
 name: voople-production
 
 services:
+  prepare-next-cache:
+    image: ${VOOPLE_IMAGE:?Set VOOPLE_IMAGE in deploy/production/.env}
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-ec"]
+    command: ["mkdir -p /app/.next/cache && chown -R 1001:1001 /app/.next/cache"]
+    network_mode: none
+    read_only: true
+    restart: "no"
+    volumes:
+      - next-cache:/app/.next/cache
+    security_opt:
+      - no-new-privileges:true
+
   web:
     image: ${VOOPLE_IMAGE:?Set VOOPLE_IMAGE in deploy/production/.env}
+    depends_on:
+      prepare-next-cache:
+        condition: service_completed_successfully
     restart: unless-stopped
     env_file:
       - app.env

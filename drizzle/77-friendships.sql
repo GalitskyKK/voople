@@ -74,6 +74,10 @@ RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = public, pg_t
 DECLARE v_first uuid; v_second uuid;
 BEGIN
   IF TG_TABLE_NAME = 'friend_requests' THEN
+    IF TG_OP = 'UPDATE' AND (
+      NEW.requester_id IS DISTINCT FROM OLD.requester_id
+      OR NEW.addressee_id IS DISTINCT FROM OLD.addressee_id
+    ) THEN RAISE EXCEPTION 'FRIEND_REQUEST_PAIR_IMMUTABLE'; END IF;
     IF TG_OP = 'UPDATE' AND NEW.status <> 'pending' THEN RETURN NEW; END IF;
     v_first := NEW.requester_id; v_second := NEW.addressee_id;
   ELSE
@@ -169,6 +173,7 @@ BEGIN
   IF NOT FOUND OR v_request.addressee_id <> p_addressee_id THEN RAISE EXCEPTION 'FRIEND_REQUEST_FORBIDDEN'; END IF;
   PERFORM pg_advisory_xact_lock(hashtextextended(v_request.user_low_id::text || v_request.user_high_id::text, 918));
   SELECT * INTO v_request FROM public.friend_requests WHERE id = p_request_id FOR UPDATE;
+  IF NOT FOUND OR v_request.addressee_id <> p_addressee_id THEN RAISE EXCEPTION 'FRIEND_REQUEST_FORBIDDEN'; END IF;
   IF v_request.status <> 'pending' THEN
     RETURN jsonb_build_object('state', v_request.status);
   END IF;
@@ -200,6 +205,7 @@ BEGIN
   IF NOT FOUND OR v_request.requester_id <> p_requester_id THEN RAISE EXCEPTION 'FRIEND_REQUEST_FORBIDDEN'; END IF;
   PERFORM pg_advisory_xact_lock(hashtextextended(v_request.user_low_id::text || v_request.user_high_id::text, 918));
   SELECT * INTO v_request FROM public.friend_requests WHERE id = p_request_id FOR UPDATE;
+  IF NOT FOUND OR v_request.requester_id <> p_requester_id THEN RAISE EXCEPTION 'FRIEND_REQUEST_FORBIDDEN'; END IF;
   IF v_request.status = 'pending' THEN
     UPDATE public.friend_requests SET status = 'cancelled', responded_at = now(), updated_at = now()
     WHERE id = p_request_id;

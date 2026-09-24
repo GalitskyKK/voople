@@ -67,6 +67,10 @@ test("friend request, privacy, block and contact invariants hold in PostgreSQL",
     await assert.rejects(respond(c, requestId, true), /FRIEND_REQUEST_FORBIDDEN/);
     assert.equal((await respond(b, requestId, true)).state, "friends");
     assert.equal((await respond(b, requestId, true)).state, "accepted");
+    await assert.rejects(
+      q(`UPDATE "${schema}".friend_requests SET addressee_id = '${c}' WHERE id = '${requestId}'`),
+      /FRIEND_REQUEST_PAIR_IMMUTABLE/,
+    );
     assert.equal(await count("friendships", `user_low_id = '${a}' AND user_high_id = '${b}'`), 1);
     assert.equal((await send(b, a)).state, "friends");
     assert.equal(await count("notifications", `type = 'friend_accept'`), 1);
@@ -74,6 +78,7 @@ test("friend request, privacy, block and contact invariants hold in PostgreSQL",
     await remove(b, a);
     await remove(b, a);
     assert.equal(await count("friendships", `user_low_id = '${a}' AND user_high_id = '${b}'`), 0);
+    assert.equal((await call("privacy_scope_allows", `'${b}', '${a}', 'contacts'`)), false);
 
     const raced = await Promise.all([send(a, c), send(c, a)]);
     assert.equal(raced[0].requestId, raced[1].requestId);

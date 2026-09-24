@@ -13,6 +13,7 @@ test("migration 77 is release-required and maintains a separate friendship lifec
   assert.match(migration, /friend_requests_one_pending_pair/);
   assert.match(migration, /PRIMARY KEY \(user_low_id, user_high_id\)/);
   assert.match(migration, /pg_advisory_xact_lock/);
+  assert.match(migration, /FRIEND_REQUEST_PAIR_IMMUTABLE/);
   assert.match(migration, /privacy_scope_allows\(p_addressee_id, p_requester_id/);
   assert.match(migration, /CREATE TRIGGER user_blocks_friend_cleanup/);
   assert.match(migration, /CREATE OR REPLACE FUNCTION public\.respond_friend_request/);

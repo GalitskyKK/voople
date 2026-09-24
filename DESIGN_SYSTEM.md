@@ -50,23 +50,25 @@ Card customization is an independent identity surface, not a generic panel.
 | Primitive | `--background`, `--foreground`, `--app-*`, brand and state colours | Theme inputs. |
 | Canvas | `--material-canvas-app`, `--material-canvas-workspace`, `--material-canvas-sidebar`, `--material-ambient-wash` | Shell, work area and navigation; restrained wine/ice light sits behind translucent surfaces. |
 | Material | `--material-panel-fill`, `--material-raised-fill`, `--material-control-fill`, `--material-overlay-fill`, `--material-inset-fill`, `--material-interactive-fill`, `--material-glass-body`, `--material-glass-active-body` | Select by elevation and interaction, not route. Room glass has thin ordinary/active bodies. |
-| Refraction | `--material-refraction-field`, `--material-active-caustic`, `--material-glass-scrim`, `--material-glass-active-scrim` | A static clipped light field and local contrast layer inside Room glass; no JS geometry or animated filter. |
+| Optical glass | `--material-glass-edge`, `--material-glass-active-edge`, `--material-glass-scrim` | One-pixel optical rim, restrained active edge and a low-contrast content scrim. No colour field inside Room cards. |
 | Shared properties | `--material-border`, `--material-border-hover`, `--material-highlight`, `--material-specular`, `--material-accent-glow`, `--material-shadow`, `--material-shadow-hover`, `--material-overlay-shadow`, `--material-blur`, `--material-saturation`, `--material-radius`, `--material-control-radius`, `--material-focus-ring`, `--material-secondary-text`, `--material-skeleton-*` | Consistent edge, shape, focus and loading. Blur is optional. |
 | Component | `Card` panel/raised/inset/row, secondary `Button`, `Skeleton` avatar/text/room/row; `.voople-material-control`, `.voople-material-row` | Small reusable presentation vocabulary. |
 | Route override | `messenger-glass.css` | Layout and restrained accents; shared surfaces resolve through material tokens. |
 
 Void panel, raised and control fills are translucent over a dark canvas with a
 stationary ambient wash; Light uses separate frosted-white values. Room glass
-adds a clipped, enlarged and blurred copy of that colour family beneath a
-local contrast scrim. The active Room uses the same stack with a slightly
-brighter body, ice caustic, thin edge and restrained bloom; the create tile
-uses only a faint version. This is a static optical cue, not a second Room
-palette or a moving effect. Real backdrop blur is reserved for large surfaces;
+uses a translucent neutral body with a single backdrop blur. A masked,
+one-pixel optical rim is brighter on the upper/left edge and fades toward the
+lower/right edge; a faint bottom scrim protects content legibility. The active
+Room keeps nearly the same body and gains a brighter ice rim and soft bloom;
+the create tile has a faint fill and dashed edge without blur. Refraction
+through rich media is deferred and is not simulated with gradients in Room
+cards. Real backdrop blur is reserved for large surfaces;
 rows, chips and counters use fills without nested filters. Use
 `--material-focus-ring` for keyboard focus and shape-matched skeletons for
-pending content. At narrow widths blur and the pseudo-layer filter are
-disabled while the material hierarchy remains. Reduced motion stops loading
-animation; reduced transparency removes blur/refraction and substitutes opaque
+pending content. At narrow widths blur is disabled while the optical edge and
+material hierarchy remain. Reduced motion stops animated specular; reduced
+transparency removes blur and substitutes opaque
 fills in both themes.
 
 ### Brand palette

@@ -41,25 +41,26 @@ test("Group Voice glass uses shared translucent materials with an opaque accessi
   assert.match(globals, /--material-accent-glow:/);
   assert.match(globals, /prefers-reduced-transparency: reduce[\s\S]*--material-panel-fill: #1c2430/);
   assert.match(globals, /prefers-reduced-transparency: reduce[\s\S]*html\[data-app-theme="light"\][\s\S]*--material-panel-fill: #ffffff/);
-  assert.match(messenger, /\.voople-room-material::before\s*\{[\s\S]*-webkit-backdrop-filter: blur\(var\(--material-blur\)\)/);
-  assert.match(messenger, /\.voople-group-now-room--current,[\s\S]*var\(--material-accent-glow\)/);
+  assert.match(messenger, /\.voople-room-material\s*\{[^}]*-webkit-backdrop-filter: blur\(var\(--material-blur\)\)/);
+  assert.match(messenger, /\.voople-group-now-room--current,[\s\S]*0 12px 28px/);
   assert.match(messenger, /@media \(max-width: 900px\)[\s\S]*backdrop-filter: none !important/);
 });
 
-test("Room refraction stays inside the semantic material stack and has cheap fallbacks", () => {
+test("Room glass uses an optical rim, not an internal refraction field", () => {
   const globals = read("src/app/globals.css");
   const messenger = read("src/app/styles/messenger-glass.css");
-  for (const token of ["glass-body", "glass-active-body", "refraction-field", "active-caustic", "glass-scrim", "glass-active-scrim"]) {
+  for (const token of ["glass-body", "glass-active-body", "glass-edge", "glass-active-edge", "glass-scrim"]) {
     assert.match(globals, new RegExp(`--material-${token}:`));
   }
-  assert.match(messenger, /\.voople-room-material::before\s*\{[\s\S]*background: var\(--material-refraction-field\)/);
-  assert.match(messenger, /\.voople-room-material::after\s*\{[\s\S]*background: var\(--material-glass-scrim\)/);
-  assert.match(messenger, /\.voople-group-now-room--current::before,[\s\S]*var\(--material-active-caustic\)/);
-  assert.match(messenger, /\.voople-group-now-create-tile::before\s*\{[\s\S]*opacity: 0\.22/);
-  assert.match(messenger, /@media \(max-width: 900px\)[\s\S]*\.voople-room-material::before,[\s\S]*filter: none/);
-  assert.match(messenger, /@media \(max-width: 900px\)[\s\S]*\.voople-room-material::before,[\s\S]*backdrop-filter: none/);
-  assert.match(messenger, /@media \(prefers-reduced-transparency: reduce\)[\s\S]*\.voople-room-material::before,[\s\S]*display: none/);
-  assert.match(globals, /prefers-reduced-transparency: reduce[\s\S]*--material-refraction-field: none/);
+  assert.doesNotMatch(globals, /--material-refraction-field:|--material-active-caustic:/);
+  assert.match(messenger, /\.voople-room-material::before\s*\{[^}]*background: var\(--material-glass-edge\)/);
+  assert.match(messenger, /\.voople-room-material::before\s*\{[^}]*mask-composite: exclude/);
+  assert.match(messenger, /\.voople-room-material::after\s*\{[^}]*background: var\(--material-glass-scrim\)/);
+  assert.match(messenger, /\.voople-group-now-room--current::before,[^{]*\{[^}]*var\(--material-glass-active-edge\)/);
+  assert.doesNotMatch(messenger, /\.voople-group-now-create-tile::before/);
+  assert.match(messenger, /@media \(max-width: 900px\)[\s\S]*backdrop-filter: none !important/);
+  assert.match(messenger, /@media \(prefers-reduced-transparency: reduce\)[\s\S]*backdrop-filter: none !important/);
+  assert.match(globals, /prefers-reduced-transparency: reduce[\s\S]*--material-glass-body: #26303f/);
 });
 
 test("canonical loading shapes are reused by list and Room states", () => {

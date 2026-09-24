@@ -364,25 +364,27 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
   overflow: hidden;
   border-radius: var(--voople-room-radius) !important;
   background: var(--material-glass-body) !important;
+  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+  box-shadow: var(--material-shadow), inset 0 1px 0 rgb(255 255 255 / 0.05), inset 0 -12px 22px rgb(0 0 0 / 0.07) !important;
   transform: none !important;
   transition: border-color 150ms ease, background 150ms ease, box-shadow 170ms ease, opacity 150ms ease !important;
 }
 
-/* A clipped, enlarged copy of the ambient light is deliberately local: it
-   bends across the Room without tracking scroll position or repainting every
-   frame. The glass body stays thin; the following scrim carries legibility. */
+/* A one-pixel masked optical rim: light is concentrated along the upper/left
+   edge, not painted into the Room body. The Room itself owns the only blur. */
 .voople-room-material::before {
   position: absolute;
-  z-index: 0;
-  inset: -9%;
+  z-index: 2;
+  inset: 0;
+  padding: 1px;
   pointer-events: none;
-  background: var(--material-refraction-field);
-  background-size: 128% 124%;
-  background-position: 48% 52%;
-  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation)) brightness(1.08);
-  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation)) brightness(1.08);
-  opacity: 0.92;
-  transform: translate3d(-1.5%, 1%, 0) scale(1.06);
+  border-radius: inherit;
+  background: var(--material-glass-edge);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
   content: "";
 }
 
@@ -393,7 +395,7 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
   pointer-events: none;
   border-radius: inherit;
   background: var(--material-glass-scrim);
-  box-shadow: inset 1px 1px 0 var(--material-highlight), inset -1px -1px 0 rgb(0 0 0 / 0.13);
+  box-shadow: inset 1px 1px 0 rgb(255 255 255 / 0.035), inset -1px -1px 0 rgb(0 0 0 / 0.08);
   content: "";
 }
 
@@ -432,8 +434,8 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
       transparent 66%,
       transparent 100%);
   background-size: 260% 100%;
-  background-position: 145% 0;
-  opacity: 0;
+  background-position: 48% 0;
+  opacity: 0.22;
   filter:
     drop-shadow(0 0 2px rgb(239 248 255 / 0.22))
     drop-shadow(0 1px 4px rgb(124 194 255 / 0.10));
@@ -443,7 +445,7 @@ button.voople-room-material:hover {
   transform: none !important;
   border-color: var(--voople-glass-border-hover) !important;
   background: var(--material-glass-body) !important;
-  box-shadow: var(--material-shadow-hover) !important;
+  box-shadow: var(--material-shadow-hover), inset 0 1px 0 rgb(255 255 255 / 0.07) !important;
 }
 
 button.voople-room-material:hover .voople-room-material__reflection {
@@ -622,27 +624,20 @@ button.voople-room-material:focus-visible,
 
 .voople-group-now-room--current,
 .voople-live-room-card--current {
-  border-color: color-mix(in srgb, var(--voople-ice) 62%, var(--material-border)) !important;
+  border-color: color-mix(in srgb, var(--voople-ice) 35%, var(--material-border)) !important;
   background: var(--material-glass-active-body) !important;
-  box-shadow: var(--material-shadow), var(--material-accent-glow) !important;
+  box-shadow: var(--material-shadow), 0 12px 28px rgb(83 164 237 / 0.11), inset 0 1px 0 rgb(255 255 255 / 0.07) !important;
 }
 
+button.voople-group-now-room--current:hover,
 button.voople-live-room-card--current:hover {
   background: var(--material-glass-active-body) !important;
-  box-shadow: var(--material-shadow-hover), var(--material-accent-glow) !important;
+  box-shadow: var(--material-shadow-hover), 0 12px 28px rgb(83 164 237 / 0.13), inset 0 1px 0 rgb(255 255 255 / 0.08) !important;
 }
 
 .voople-group-now-room--current::before,
 .voople-live-room-card--current::before {
-  background: var(--material-active-caustic), var(--material-refraction-field);
-  opacity: 1;
-  transform: translate3d(-2%, 0, 0) scale(1.08);
-}
-
-.voople-group-now-room--current::after,
-.voople-live-room-card--current::after {
-  background: var(--material-glass-active-scrim);
-  box-shadow: inset 1px 1px 0 var(--material-highlight), inset -1px -1px 0 rgb(0 0 0 / 0.10);
+  background: var(--material-glass-active-edge);
 }
 
 .voople-group-now-room--current .voople-room-material__highlight,
@@ -733,7 +728,7 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
 }
 
 .voople-group-now-room--empty {
-  background: var(--material-raised-fill) !important;
+  background: var(--material-glass-body) !important;
 }
 
 .voople-group-now-create-tile {
@@ -742,23 +737,11 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
   overflow: hidden;
   border: 1px dashed var(--material-border) !important;
   border-radius: var(--voople-room-radius) !important;
-  background: var(--material-inset-fill) !important;
+  background: color-mix(in srgb, var(--material-glass-body) 55%, transparent) !important;
   color: var(--material-secondary-text) !important;
   box-shadow: none !important;
   transform: none !important;
   transition: border-color 150ms ease, background 150ms ease, color 150ms ease !important;
-}
-
-.voople-group-now-create-tile::before {
-  position: absolute;
-  z-index: 0;
-  inset: -9%;
-  pointer-events: none;
-  background: var(--material-refraction-field);
-  filter: blur(8px);
-  opacity: 0.22;
-  transform: scale(1.05);
-  content: "";
 }
 
 .voople-group-now-create-tile > * { position: relative; z-index: 1; }
@@ -941,17 +924,6 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
   .voople-group-now-room--current,
   .voople-live-room-card--current { background: var(--material-glass-active-body) !important; }
 
-  .voople-room-material::before,
-  .voople-group-now-create-tile::before {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    filter: none;
-    opacity: 0.42;
-    transform: none;
-  }
-
-  .voople-group-now-room--current::before,
-  .voople-live-room-card--current::before { opacity: 0.64; }
 }
 
 @media (max-width: 620px) {
@@ -981,8 +953,6 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .voople-room-material::before,
-  .voople-group-now-create-tile::before { display: none; }
   .voople-room-material,
   .voople-dropdown-menu[data-route-kind="messages"],
   .voople-shell[data-route-kind="messages"] .voople-sidebar,

@@ -11,6 +11,7 @@ const repo = fileURLToPath(new URL("../", import.meta.url)).replaceAll("\\", "/"
 const captureDirIndex = process.argv.indexOf("--capture-dir");
 const captureDirectory = captureDirIndex >= 0 ? process.argv[captureDirIndex + 1] : null;
 const captureOnly = process.argv.includes("--capture-only");
+const visualReconciliation = process.argv.includes("--visual-reconciliation");
 const artifacts = captureDirectory
   ? path.resolve(repo, captureDirectory)
   : await mkdtemp(path.join(os.tmpdir(), "voople-core-group-surface-"));
@@ -90,7 +91,14 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
-  const visualCases = captureOnly
+  const visualCases = visualReconciliation
+    ? [
+        { width: 1440, height: 900, tab: "now", theme: "void", host: "web", outputName: "group-voice-wide-void.png" },
+        { width: 1100, height: 800, tab: "now", theme: "void", host: "web", outputName: "group-voice-compact-void.png" },
+        { width: 390, height: 844, tab: "now", theme: "void", host: "web", outputName: "group-voice-mobile-void.png" },
+        { width: 390, height: 844, tab: "now", theme: "light", host: "web", outputName: "group-voice-mobile-light.png" },
+      ]
+    : captureOnly
     ? [
         { width: 1440, height: 900, tab: "chat", theme: "void", host: "web", outputName: "chat.png" },
         { width: 1440, height: 900, tab: "now", theme: "void", host: "web", outputName: "now.png" },
@@ -123,7 +131,7 @@ try {
     await page.goto(`http://127.0.0.1:${server.address().port}?host=${host}`);
     await page.evaluate(() => document.fonts.ready);
     await page.waitForFunction(() => typeof window.setGroupTab === "function");
-    if (tab === "now" && width >= 1024) {
+    if (tab === "now" && width >= 1024 && !visualReconciliation) {
       await page.getByRole("button", { name: /Голосовые комнаты группы VOICEKK/ }).click();
     } else {
       await page.evaluate((value) => window.setGroupTab(value), tab);

@@ -48,18 +48,22 @@ Card customization is an independent identity surface, not a generic panel.
 | Layer | Tokens / primitives | Purpose |
 | --- | --- | --- |
 | Primitive | `--background`, `--foreground`, `--app-*`, brand and state colours | Theme inputs. |
-| Canvas | `--material-canvas-app`, `--material-canvas-workspace`, `--material-canvas-sidebar` | Shell, work area and navigation. |
+| Canvas | `--material-canvas-app`, `--material-canvas-workspace`, `--material-canvas-sidebar`, `--material-ambient-wash` | Shell, work area and navigation; restrained wine/ice light sits behind translucent surfaces. |
 | Material | `--material-panel-fill`, `--material-raised-fill`, `--material-control-fill`, `--material-overlay-fill`, `--material-inset-fill`, `--material-interactive-fill` | Select by elevation and interaction, not route. |
-| Shared properties | `--material-border`, `--material-border-hover`, `--material-highlight`, `--material-shadow`, `--material-shadow-hover`, `--material-overlay-shadow`, `--material-blur`, `--material-saturation`, `--material-radius`, `--material-control-radius`, `--material-focus-ring`, `--material-secondary-text`, `--material-skeleton-*` | Consistent edge, shape, focus and loading. Blur is optional. |
+| Shared properties | `--material-border`, `--material-border-hover`, `--material-highlight`, `--material-specular`, `--material-accent-glow`, `--material-shadow`, `--material-shadow-hover`, `--material-overlay-shadow`, `--material-blur`, `--material-saturation`, `--material-radius`, `--material-control-radius`, `--material-focus-ring`, `--material-secondary-text`, `--material-skeleton-*` | Consistent edge, shape, focus and loading. Blur is optional. |
 | Component | `Card` panel/raised/inset/row, secondary `Button`, `Skeleton` avatar/text/room/row; `.voople-material-control`, `.voople-material-row` | Small reusable presentation vocabulary. |
 | Route override | `messenger-glass.css` | Layout and restrained accents; shared surfaces resolve through material tokens. |
 
-Room cards may have a subtle specular edge. Long lists and loading rows use
-low-cost fills without nested backdrop filters. The current Room uses an
-accent border and interactive fill, not a separate card palette. Use
-`--material-focus-ring` for keyboard focus and shape-matched skeletons for
-pending content. Reduced motion stops loading animation; reduced transparency
-removes optional blur.
+Void panel, raised and control fills are translucent over a dark canvas with a
+stationary ambient wash; Light uses separate frosted-white values. Room cards
+may have a subtle specular edge. The current Room uses the shared interactive
+fill with an ice edge and restrained accent glow, not a separate card palette.
+Real backdrop blur is reserved for large surfaces; rows, chips and counters use
+fills without nested filters. Use `--material-focus-ring` for keyboard focus
+and shape-matched skeletons for pending content. At narrow widths blur can be
+disabled while the material hierarchy remains. Reduced motion stops loading
+animation; reduced transparency removes blur and substitutes opaque fills in
+both themes.
 
 ### Brand palette
 

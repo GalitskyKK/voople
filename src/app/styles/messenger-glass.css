@@ -25,7 +25,7 @@
   --voople-glass-border-hover: var(--material-border-hover);
   --voople-glass-shadow: var(--material-shadow);
   color: var(--foreground);
-  background: var(--material-canvas-app);
+  background: var(--material-ambient-wash), var(--material-canvas-app);
 }
 
 html[data-app-theme="light"] :where(.voople-shell, .voople-dropdown-menu)[data-route-kind="messages"] {
@@ -40,6 +40,8 @@ html[data-app-theme="light"] :where(.voople-shell, .voople-dropdown-menu)[data-r
   border-color: var(--material-border) !important;
   background: var(--material-overlay-fill) !important;
   box-shadow: var(--material-overlay-shadow) !important;
+  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
 }
 
 /* Theme variables set on the route shell cannot recolor the root scrollbar
@@ -63,7 +65,7 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
   overflow: hidden;
   border: 1px solid var(--material-border);
   border-radius: var(--material-radius);
-  background: var(--material-canvas-workspace);
+  background: var(--material-ambient-wash), var(--material-canvas-workspace);
   box-shadow: var(--material-shadow);
 }
 
@@ -72,6 +74,9 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
   min-width: var(--voople-sidebar-width) !important;
   border-right: 1px solid var(--material-border);
   background: var(--material-canvas-sidebar);
+  box-shadow: inset -1px 0 0 var(--material-highlight);
+  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
 }
 
 .voople-shell[data-route-kind="messages"] .voople-sidebar__brand {
@@ -81,7 +86,7 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 .voople-shell[data-route-kind="messages"] .voople-sidebar__footer {
   padding: 0.85rem 0.9rem;
   border-top: 1px solid var(--material-border);
-  background: var(--material-canvas-sidebar);
+  background: transparent;
 }
 
 .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar {
@@ -116,7 +121,7 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
    cutoff where GroupNowPanelView ended after its content. */
 .voople-shell[data-route-kind="messages"] .voople-scroll:has(> .voople-group-now),
 .voople-shell[data-route-kind="messages"] .voople-scroll:has(> .voople-group-people) {
-  background: var(--material-canvas-workspace);
+  background: transparent;
 }
 
 .voople-shell[data-route-kind="messages"] .voople-group-now,
@@ -136,6 +141,8 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
   border-bottom: 1px solid var(--material-border);
   background: var(--material-panel-fill);
   box-shadow: inset 0 1px 0 var(--material-highlight);
+  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
 }
 
 @media (min-width: 1180px) {
@@ -301,6 +308,7 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
   padding-inline: 38px;
   border-bottom: 1px solid var(--material-border);
   background: var(--material-panel-fill);
+  box-shadow: inset 0 1px 0 var(--material-highlight);
 }
 
 .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs > [role="tablist"] {
@@ -345,6 +353,12 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
   box-shadow: var(--voople-glass-shadow) !important;
 }
 
+.voople-room-material,
+.voople-chat-composer__surface {
+  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+}
+
 .voople-room-material {
   position: relative;
   isolation: isolate;
@@ -360,10 +374,8 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
-  background:
-    radial-gradient(82% 76% at 50% 52%, rgb(0 0 0 / 0.12), transparent 76%);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.032);
+  background: radial-gradient(82% 76% at 50% 52%, rgb(0 0 0 / 0.10), transparent 76%);
+  box-shadow: inset 0 1px 0 var(--material-highlight);
   content: "";
 }
 
@@ -375,8 +387,8 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
   left: 26px;
   height: 1px;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.050), transparent);
-  opacity: 0.18;
+  background: var(--material-specular);
+  opacity: 0.65;
 }
 
 /* Top-edge specular: a soft optical glint travelling along the rim only.
@@ -489,7 +501,7 @@ button.voople-room-material:hover .voople-room-material__reflection {
 
 .voople-shell[data-route-kind="messages"] .voople-chat-composer {
   border-top-color: var(--material-border);
-  background: var(--material-canvas-workspace);
+  background: transparent;
 }
 
 .voople-shell[data-route-kind="messages"] .voople-chat-composer__reply,
@@ -594,7 +606,7 @@ button.voople-room-material:focus-visible,
 .voople-live-room-card--current {
   border-color: var(--voople-ice) !important;
   background: var(--material-interactive-fill) !important;
-  box-shadow: var(--material-shadow) !important;
+  box-shadow: var(--material-shadow), var(--material-accent-glow) !important;
 }
 
 .voople-group-now-room__current-copy,
@@ -696,9 +708,9 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
 }
 
 .voople-group-now-create-tile__plus {
-  border: 1px solid rgb(196 213 231 / 0.09);
-  background: rgb(255 255 255 / 0.018);
-  color: rgb(121 189 255 / 0.72);
+  border: 1px solid var(--material-border);
+  background: var(--material-control-fill);
+  color: var(--voople-ice);
 }
 
 .voople-group-now-create-tile:hover {
@@ -820,7 +832,7 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
 
 .voople-shell[data-route-kind="messages"] .voople-chat-window__messages {
   touch-action: pan-y;
-  background: var(--material-canvas-workspace) !important;
+  background: transparent !important;
 }
 
 .voople-shell[data-route-kind="messages"] .voople-chat-composer__surface {
@@ -853,6 +865,8 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
   .voople-group-header-members { display: none; }
 
   .voople-room-material,
+  .voople-dropdown-menu[data-route-kind="messages"],
+  .voople-shell[data-route-kind="messages"] .voople-sidebar,
   .voople-group-people-list,
   .voople-chat-composer__surface,
   .voople-group-header-invite,
@@ -897,6 +911,8 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
 
 @media (prefers-reduced-transparency: reduce) {
   .voople-room-material,
+  .voople-dropdown-menu[data-route-kind="messages"],
+  .voople-shell[data-route-kind="messages"] .voople-sidebar,
   .voople-group-people-list,
   .voople-chat-composer__surface,
   .voople-group-header-invite,

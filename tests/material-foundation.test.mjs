@@ -30,6 +30,22 @@ test("Messenger consumes material surfaces without forcing dark mode", () => {
   assert.doesNotMatch(css, /--voople-glass-fill:\s*linear-gradient/);
 });
 
+test("Group Voice glass uses shared translucent materials with an opaque accessibility fallback", () => {
+  const globals = read("src/app/globals.css");
+  const messenger = read("src/app/styles/messenger-glass.css");
+  for (const token of ["panel-fill", "raised-fill", "control-fill", "overlay-fill", "inset-fill", "interactive-fill"]) {
+    assert.match(globals, new RegExp(`--material-${token}: rgb\\([^;]+ / 0\\.`));
+  }
+  assert.match(globals, /--material-ambient-wash: radial-gradient/);
+  assert.match(globals, /--material-specular: linear-gradient/);
+  assert.match(globals, /--material-accent-glow:/);
+  assert.match(globals, /prefers-reduced-transparency: reduce[\s\S]*--material-panel-fill: #1c2430/);
+  assert.match(globals, /prefers-reduced-transparency: reduce[\s\S]*html\[data-app-theme="light"\][\s\S]*--material-panel-fill: #ffffff/);
+  assert.match(messenger, /\.voople-room-material,\s*\.voople-chat-composer__surface\s*\{\s*-webkit-backdrop-filter:/);
+  assert.match(messenger, /\.voople-group-now-room--current,[\s\S]*var\(--material-accent-glow\)/);
+  assert.match(messenger, /@media \(max-width: 900px\)[\s\S]*backdrop-filter: none !important/);
+});
+
 test("canonical loading shapes are reused by list and Room states", () => {
   const skeleton = read("src/components/ui/Skeleton.tsx");
   assert.match(skeleton, /"avatar" \| "text" \| "room" \| "row"/);

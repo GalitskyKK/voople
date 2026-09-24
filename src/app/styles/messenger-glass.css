@@ -353,7 +353,6 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
   box-shadow: var(--voople-glass-shadow) !important;
 }
 
-.voople-room-material,
 .voople-chat-composer__surface {
   -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
   backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
@@ -364,18 +363,37 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
   isolation: isolate;
   overflow: hidden;
   border-radius: var(--voople-room-radius) !important;
+  background: var(--material-glass-body) !important;
   transform: none !important;
   transition: border-color 150ms ease, background 150ms ease, box-shadow 170ms ease, opacity 150ms ease !important;
 }
 
-.voople-room-material::after {
+/* A clipped, enlarged copy of the ambient light is deliberately local: it
+   bends across the Room without tracking scroll position or repainting every
+   frame. The glass body stays thin; the following scrim carries legibility. */
+.voople-room-material::before {
   position: absolute;
   z-index: 0;
+  inset: -9%;
+  pointer-events: none;
+  background: var(--material-refraction-field);
+  background-size: 128% 124%;
+  background-position: 48% 52%;
+  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation)) brightness(1.08);
+  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation)) brightness(1.08);
+  opacity: 0.92;
+  transform: translate3d(-1.5%, 1%, 0) scale(1.06);
+  content: "";
+}
+
+.voople-room-material::after {
+  position: absolute;
+  z-index: 1;
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
-  background: radial-gradient(82% 76% at 50% 52%, rgb(0 0 0 / 0.10), transparent 76%);
-  box-shadow: inset 0 1px 0 var(--material-highlight);
+  background: var(--material-glass-scrim);
+  box-shadow: inset 1px 1px 0 var(--material-highlight), inset -1px -1px 0 rgb(0 0 0 / 0.13);
   content: "";
 }
 
@@ -424,7 +442,7 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 button.voople-room-material:hover {
   transform: none !important;
   border-color: var(--voople-glass-border-hover) !important;
-  background: var(--voople-glass-fill) !important;
+  background: var(--material-glass-body) !important;
   box-shadow: var(--material-shadow-hover) !important;
 }
 
@@ -604,10 +622,31 @@ button.voople-room-material:focus-visible,
 
 .voople-group-now-room--current,
 .voople-live-room-card--current {
-  border-color: var(--voople-ice) !important;
-  background: var(--material-interactive-fill) !important;
+  border-color: color-mix(in srgb, var(--voople-ice) 62%, var(--material-border)) !important;
+  background: var(--material-glass-active-body) !important;
   box-shadow: var(--material-shadow), var(--material-accent-glow) !important;
 }
+
+button.voople-live-room-card--current:hover {
+  background: var(--material-glass-active-body) !important;
+  box-shadow: var(--material-shadow-hover), var(--material-accent-glow) !important;
+}
+
+.voople-group-now-room--current::before,
+.voople-live-room-card--current::before {
+  background: var(--material-active-caustic), var(--material-refraction-field);
+  opacity: 1;
+  transform: translate3d(-2%, 0, 0) scale(1.08);
+}
+
+.voople-group-now-room--current::after,
+.voople-live-room-card--current::after {
+  background: var(--material-glass-active-scrim);
+  box-shadow: inset 1px 1px 0 var(--material-highlight), inset -1px -1px 0 rgb(0 0 0 / 0.10);
+}
+
+.voople-group-now-room--current .voople-room-material__highlight,
+.voople-live-room-card--current .voople-room-material__highlight { opacity: 1; }
 
 .voople-group-now-room__current-copy,
 .voople-live-room-card__current {
@@ -698,6 +737,9 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
 }
 
 .voople-group-now-create-tile {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   border: 1px dashed var(--material-border) !important;
   border-radius: var(--voople-room-radius) !important;
   background: var(--material-inset-fill) !important;
@@ -706,6 +748,20 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
   transform: none !important;
   transition: border-color 150ms ease, background 150ms ease, color 150ms ease !important;
 }
+
+.voople-group-now-create-tile::before {
+  position: absolute;
+  z-index: 0;
+  inset: -9%;
+  pointer-events: none;
+  background: var(--material-refraction-field);
+  filter: blur(8px);
+  opacity: 0.22;
+  transform: scale(1.05);
+  content: "";
+}
+
+.voople-group-now-create-tile > * { position: relative; z-index: 1; }
 
 .voople-group-now-create-tile__plus {
   border: 1px solid var(--material-border);
@@ -879,8 +935,23 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
   }
 
   .voople-room-material {
-    background: var(--material-raised-fill) !important;
+    background: var(--material-glass-body) !important;
   }
+
+  .voople-group-now-room--current,
+  .voople-live-room-card--current { background: var(--material-glass-active-body) !important; }
+
+  .voople-room-material::before,
+  .voople-group-now-create-tile::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    filter: none;
+    opacity: 0.42;
+    transform: none;
+  }
+
+  .voople-group-now-room--current::before,
+  .voople-live-room-card--current::before { opacity: 0.64; }
 }
 
 @media (max-width: 620px) {
@@ -910,6 +981,8 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
 }
 
 @media (prefers-reduced-transparency: reduce) {
+  .voople-room-material::before,
+  .voople-group-now-create-tile::before { display: none; }
   .voople-room-material,
   .voople-dropdown-menu[data-route-kind="messages"],
   .voople-shell[data-route-kind="messages"] .voople-sidebar,

@@ -38,6 +38,7 @@ function UploadControl({
 }
 
 export function GroupIdentityPerksEditor({
+  mode,
   community,
   pending,
   tag,
@@ -49,6 +50,7 @@ export function GroupIdentityPerksEditor({
   onRemoveAvatar,
   onRemoveBanner,
 }: {
+  mode: "identity" | "appearance";
   community: GroupCommunityView;
   pending: PendingKind;
   tag: string;
@@ -62,7 +64,7 @@ export function GroupIdentityPerksEditor({
 }) {
   return (
     <div className="space-y-3">
-      {uploadAvatar ? (
+      {mode === "identity" && uploadAvatar ? (
         <div>
           <div className="flex items-center gap-2">
             <UploadControl label="Выбрать аватар" pending={pending} kind="avatar" onFile={onAvatarFile} />
@@ -75,12 +77,12 @@ export function GroupIdentityPerksEditor({
           <p className="mt-1 text-[11px] text-[var(--app-muted)]">
             {community.animatedIconEnabled
               ? "Поддерживаются статичные и анимированные изображения."
-              : "Статичная иконка доступна всем, а анимация включается Boost-перком."}
+              : "Статичная иконка доступна всем. Анимация сейчас недоступна для этой группы."}
           </p>
         </div>
       ) : null}
 
-      <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-2.5">
+      {mode === "appearance" ? <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-2.5">
         <div
           className="h-20 rounded-lg border border-[var(--app-border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-accent)_25%,var(--app-surface)),var(--app-surface))] bg-cover bg-center"
           style={community.bannerUrl ? { backgroundImage: `url("${community.bannerUrl}")` } : undefined}
@@ -98,12 +100,12 @@ export function GroupIdentityPerksEditor({
         </div>
         <p className="mt-1 text-[11px] text-[var(--app-muted)]">
           {community.animatedBannerEnabled
-            ? "Статичные и анимированные баннеры доступны: perk активен."
-            : "Статичный баннер доступен всем группам, а анимация — как Boost-перк."}
+            ? "Статичные и анимированные баннеры доступны."
+            : "Статичный баннер доступен всем группам. Анимация сейчас недоступна."}
         </p>
-      </div>
+      </div> : null}
 
-      <label className="block text-xs font-medium">
+      {mode === "identity" ? <label className="block text-xs font-medium">
         Тег группы
         <input
           value={tag}
@@ -117,7 +119,7 @@ export function GroupIdentityPerksEditor({
         <span className="mt-1 block font-normal text-[11px] text-[var(--app-muted)]">
           2–5 букв или цифр. Базовый тег доступен всем группам.
         </span>
-      </label>
+      </label> : null}
     </div>
   );
 }

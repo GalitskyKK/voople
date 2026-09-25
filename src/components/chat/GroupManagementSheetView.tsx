@@ -18,12 +18,10 @@ import type { GroupDiscoveryProfileView, InterestCatalogView } from "@/types/soc
 
 import { GroupChatMemberPicker } from "./GroupChatMemberPicker";
 import { GroupAuditLog } from "./GroupAuditLog";
-import { GroupBoostPanel } from "./GroupBoostPanel";
 import { GroupCommunityPanel } from "./GroupCommunityPanel";
 import { GroupEmojiManager } from "./GroupEmojiManager";
 import { GroupInviteLinkPanel } from "./GroupInviteLinkPanel";
 import { GroupMembersList } from "./GroupMembersList";
-import { GroupRolesOverview } from "./GroupRolesOverview";
 import { GroupTopicsSettings } from "./GroupTopicsSettings";
 import { GroupVisibilitySettings } from "./GroupVisibilitySettings";
 import { GroupAvatar } from "./GroupAvatar";
@@ -142,9 +140,8 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
             <div className={isPage ? "flex items-center gap-3" : "flex items-center gap-3 pr-10"}>
               <GroupAvatar name={groupName} avatarUrl={props.groupAvatarUrl} icon={props.groupIcon} accentColor={props.groupAccentColor} size="lg" />
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-(--theme-accent)">Настройки сообщества</p>
-                <h2 className="mt-1 truncate text-xl font-semibold">{groupName}</h2>
-                <p className="mt-1 text-sm text-[var(--app-muted)]">{state.members.length} из 20 участников</p>
+                <h2 className="truncate text-xl font-semibold">Настройки группы</h2>
+                <p className="mt-1 truncate text-sm text-[var(--app-muted)]">{groupName} · {state.members.length} из 20 участников</p>
               </div>
             </div>
 
@@ -153,17 +150,12 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
               <div className="min-w-0">
             {section === "main" ? (
               <>
-                <section className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
-                  <h3 className="font-semibold">Основное</h3>
-                  <p className="mt-1 text-sm leading-6 text-[var(--app-muted)]">Название, доступность и базовые параметры сообщества. Внешний вид настраивается отдельно, чтобы изменения было проще проверить перед сохранением.</p>
-                </section>
                 <GroupNameEditor value={groupName} canManage={props.canManage} save={props.updateName} onChanged={(name) => { setGroupName(name); props.onMembersChanged?.(); }} />
-                <GroupVisibilitySettings value={props.groupVisibility} joinPolicy={props.joinPolicy} canManage={props.canManage} onChange={props.updateVisibility} />
-                <GroupDiscoverySettingsPanel canManage={props.canManage} loadCatalog={props.loadInterestCatalog} load={props.loadDiscoveryProfile} save={props.updateDiscoveryProfile} />
+                <GroupCommunityPanel mode="identity" canManage={props.canManage} groupName={groupName} load={props.loadCommunity} save={props.updateCustomization} uploadAvatar={props.uploadAvatar} onChanged={props.onMembersChanged} />
               </>
             ) : null}
 
-            {section === "members" && props.canManage ? (
+            {section === "people" && props.canManage ? (
               <Button
                 type="button"
                 variant="secondary"
@@ -176,9 +168,9 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
               </Button>
             ) : null}
 
-            {section === "members" && state.loading ? (
+            {section === "people" && state.loading ? (
               <div className="mt-4 h-24 animate-pulse rounded-2xl bg-[var(--app-surface-soft)]" />
-            ) : section === "members" ? (
+            ) : section === "people" ? (
               <GroupMembersList
                 members={state.members}
                 renderAvatar={props.renderAvatar}
@@ -192,12 +184,9 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
               />
             ) : null}
 
-            {section === "roles" ? <GroupRolesOverview members={state.members} /> : null}
-
-            {section === "sections" ? <GroupTopicsSettings enabled={props.topicsEnabled} canManage={props.canManage} onChange={props.updateTopics} /> : null}
-
             {section === "appearance" ? (
               <GroupCommunityPanel
+                mode="appearance"
                 canManage={props.canManage}
                 groupName={groupName}
                 load={props.loadCommunity}
@@ -208,11 +197,9 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
               />
             ) : null}
 
-            {section === "members" && props.canManage ? (
-              <GroupJoinRequestsPanel load={props.loadJoinRequests} resolve={props.resolveJoinRequest} />
-            ) : null}
-
-            {section === "media" ? <>
+            {section === "advanced" && props.canManage ? <>
+              <GroupTopicsSettings enabled={props.topicsEnabled} canManage={props.canManage} onChange={props.updateTopics} />
+              {props.groupVisibility === "public" ? <GroupDiscoverySettingsPanel canManage={props.canManage} loadCatalog={props.loadInterestCatalog} load={props.loadDiscoveryProfile} save={props.updateDiscoveryProfile} /> : null}
               <GroupEmojiManager
                 canManage={props.canManage}
                 load={props.loadEmojis}
@@ -227,11 +214,10 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
                 remove={props.deleteSound}
                 upload={props.uploadSound}
               />
+              {props.canManage ? <GroupAuditLog load={props.loadAudit} /> : null}
             </> : null}
 
-            {section === "boosts" ? <GroupBoostPanel load={props.loadCommunity} setBoost={props.setBoost} setPerk={props.setPerk} onChanged={props.onMembersChanged} /> : null}
-
-            {section === "links" && props.canManage ? (
+            {section === "access" && props.canManage ? (
               <div className="mt-4">
                 <GroupInviteLinkPanel
                   inviteBaseUrl={props.inviteBaseUrl}
@@ -247,11 +233,15 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
               </div>
             ) : null}
 
-            {section === "audit" && props.canManage ? (
-              <GroupAuditLog load={props.loadAudit} />
+            {section === "access" && props.canManage ? (
+              <GroupVisibilitySettings value={props.groupVisibility} joinPolicy={props.joinPolicy} canManage={props.canManage} onChange={props.updateVisibility} />
             ) : null}
 
-            {section === "roles" ? <div className="mt-5 border-t border-[var(--app-border)] pt-4">
+            {section === "access" && props.canManage ? (
+              <GroupJoinRequestsPanel load={props.loadJoinRequests} resolve={props.resolveJoinRequest} />
+            ) : null}
+
+            {section === "advanced" ? <div className="mt-5 border-t border-[var(--app-border)] pt-4">
               {props.viewerRole === "owner" ? (
                 <Button
                   type="button"
@@ -296,7 +286,7 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
       <div className="voople-scroll min-h-0 flex-1 overflow-y-auto bg-[var(--app-canvas)] px-4 py-5 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <button type="button" onClick={props.onBack} className="mb-5 inline-flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]">
-            <ArrowLeft className="h-4 w-4" /> Вернуться в чат
+            <ArrowLeft className="h-4 w-4" /> Вернуться в группу
           </button>
           {body}
         </div>

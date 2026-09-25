@@ -154,7 +154,6 @@ export function DesktopChatThreadAdapter({
         {isGroup && !isSubchat ? (
           <GroupInfoDrawerView
             open={groupPanel.open}
-            tab={groupPanel.tab}
             chatName={title}
             memberCount={data.chat.memberCount}
             groupIcon={data.chat.groupIcon}
@@ -167,13 +166,10 @@ export function DesktopChatThreadAdapter({
             canManage={data.chat.viewerRole !== "member"}
             description={groupPanel.community?.description}
             members={groupPanel.members}
-            onlineUserIds={onlineUserIds}
-            roomParticipantIds={groupPanel.roomParticipantIds}
-            infoLoading={groupPanel.loading && groupPanel.tab === "info"}
-            membersLoading={groupPanel.loading && groupPanel.tab === "members"}
+            now={groupPanel.now}
+            infoLoading={groupPanel.loading}
+            membersLoading={groupPanel.loading}
             error={groupPanel.error}
-            topics={groupPanel.topicNames}
-            sections={rootChat?.channels.map((section) => ({ id: section.id, name: section.name || "Раздел" })) ?? []}
             roomAction={(
               <GroupRoomAction
                 groupId={chatId}
@@ -188,10 +184,6 @@ export function DesktopChatThreadAdapter({
               groupPanel.setOpen(open);
               if (open) groupPanel.load();
             }}
-            onTabChange={(tab) => {
-              groupPanel.setTab(tab);
-              groupPanel.load();
-            }}
             onManage={() => {
               groupPanel.setOpen(false);
               onOpenGroupSettings(chatId);
@@ -199,10 +191,6 @@ export function DesktopChatThreadAdapter({
             onInvite={() => {
               groupPanel.setOpen(false);
               void invite.copy();
-            }}
-            onOpenSection={(sectionId) => {
-              groupPanel.setOpen(false);
-              onNavigateChat(sectionId);
             }}
             onOpenProfile={(username) => {
               groupPanel.setOpen(false);

@@ -12,6 +12,7 @@ const captureDirIndex = process.argv.indexOf("--capture-dir");
 const captureDirectory = captureDirIndex >= 0 ? process.argv[captureDirIndex + 1] : null;
 const captureOnly = process.argv.includes("--capture-only");
 const visualReconciliation = process.argv.includes("--visual-reconciliation");
+const groupPeopleSmoke = process.argv.includes("--group-people-smoke");
 const artifacts = captureDirectory
   ? path.resolve(repo, captureDirectory)
   : await mkdtemp(path.join(os.tmpdir(), "voople-core-group-surface-"));
@@ -44,7 +45,8 @@ const entry = `import {useState} from 'react';import {createRoot} from 'react-do
     {id:'kk',username:'kk',displayName:'kk',avatarUrl:null,isMe:false,micMuted:false,cameraEnabled:false,screenSharing:false},
     {id:'anya',username:'anya',displayName:'Anya',avatarUrl:null,isMe:false,micMuted:true,cameraEnabled:false,screenSharing:false},
     {id:'nmggk',username:'nmggk',displayName:'nmggk',avatarUrl:null,isMe:true,micMuted:false,cameraEnabled:false,screenSharing:true},
-    {id:'test',username:'test',displayName:'Test',avatarUrl:null,isMe:false,micMuted:null,cameraEnabled:null,screenSharing:null}
+    {id:'test',username:'test',displayName:'Test',avatarUrl:null,isMe:false,micMuted:null,cameraEnabled:null,screenSharing:null},
+    {id:'offline',username:'offline',displayName:'Offline',avatarUrl:null,isMe:false,micMuted:null,cameraEnabled:null,screenSharing:null}
   ];
   const rooms=[
     {id:'lobby',kind:'lobby',name:'Лобби',joinTarget:{kind:'room',roomId:'lobby'},state:'active',liveSessionId:'s1',startedAt:'2026-09-06T10:00:00Z',startedBy:'biba',participantCount:3,hasScreenShare:false,participants:users.slice(0,3)},
@@ -58,7 +60,7 @@ const entry = `import {useState} from 'react';import {createRoot} from 'react-do
     {id:'message-1',senderId:'biba',text:'Кто сегодня в голос?',createdAt:'2026-09-08T18:38:00Z',isMine:false,readAt:null,reactions:[],sender:{displayName:'Biba',hasVooplePlus:false,avatarUrl:null}},
     {id:'message-2',senderId:'nmggk',text:'Я зайду после девяти. Можно сразу в DRG.',createdAt:'2026-09-08T18:41:00Z',isMine:true,readAt:'2026-09-08T18:42:00Z',reactions:[{emoji:'👍',count:2,reactedByMe:false}],sender:{displayName:'nmggk',hasVooplePlus:false,avatarUrl:null},roomContext:{roomId:'drg',liveSessionId:'s2',roomName:'DRG: Deep Rock Galactic',roomKind:'pinned',capturedAt:'2026-09-08T18:41:00Z'}},
     {id:'message-3',senderId:'anya',text:'Ок, позовите меня через Вуп.',createdAt:'2026-09-08T18:43:00Z',isMine:false,readAt:null,reactions:[],sender:{displayName:'Anya',hasVooplePlus:false,avatarUrl:null}}
-  ];return <div className="flex min-h-0 flex-1 flex-col"><div className="voople-group-surface-header voople-group-surface-header--combined"><header className="voople-panel-header voople-chat-window__header voople-chat-window__header--group flex items-center gap-3 border-b border-[var(--app-border)] px-4"><button className="voople-group-header-identity flex min-w-0 flex-1 items-center gap-3 text-left"><GroupIdentity chatName="VOICEKK" memberCount={7} groupIcon="V" groupAvatarUrl={null} groupAccentColor="#8b5cf6" groupTag={null}/></button><button className="h-8 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] px-3 text-xs font-semibold">Войти в Лобби</button></header><GroupSurfaceTabs activeTab={tab} onTabChange={setTab}/></div>{tab==='chat'?<><GroupLiveShelfView groupId="group-1" rooms={rooms} currentUserRoomId="drg" onJoinRoom={()=>{}}/><div className="flex min-h-0 flex-1 flex-col"><ChatSectionsBarView rootChat={{...chats[0],topicsEnabled:true,channels:[{...chats[0],id:'game',name:'Game',parentChatId:'group-1',topicIcon:null},{...chats[0],id:'memes',name:'Мемы',parentChatId:'group-1',topicIcon:null}]}} activeChatId="group-1" createAction={({open,onOpenChange})=><SubchatCreatorView open={open} onOpenChange={onOpenChange} createSubchat={async()=> 'created-section'} onCreated={()=>{}}/>} renderDestination={(chat,className,children)=><button key={chat.id} className={className}>{children}</button>}/><div className="flex min-h-0 flex-1 flex-col justify-end gap-1 px-5 py-4">{messages.map((message)=><ChatMessageBubbleVisual key={message.id} message={message} showSender groupPosition="only" senderAvatar={<ProfileAvatar displayName={message.sender.displayName} size="sm" shape="square"/>}/>)}</div><ChatComposerFrame className="px-3"><div className={CHAT_COMPOSER_SURFACE_CLASS}><div className="h-8 px-2 py-1.5 text-sm text-[var(--app-muted)]">Сообщение VOICEKK…</div></div></ChatComposerFrame></div></>:tab==='now'?<GroupNowPanelView mode="ready" value={{groupId:'group-1',groupName:'VOICEKK',rooms,onlineOutsideRooms:[],visibleOnlineCount:7,currentUserRoomId:'drg'}} onJoinRoom={()=>{}} onLeaveCurrent={()=>{}} onCreateSplit={()=>{}} onCreateRoom={()=>{}}/>:<GroupPeoplePanelView members={members} onlineUserIds={new Set(users.slice(0,3).map(user=>user.id))} onRetry={()=>{}} onVoop={()=>{}}/>}</div>}
+  ];return <div className="flex min-h-0 flex-1 flex-col"><div className="voople-group-surface-header voople-group-surface-header--combined"><header className="voople-panel-header voople-chat-window__header voople-chat-window__header--group flex items-center gap-3 border-b border-[var(--app-border)] px-4"><button className="voople-group-header-identity flex min-w-0 flex-1 items-center gap-3 text-left"><GroupIdentity chatName="VOICEKK" memberCount={7} groupIcon="V" groupAvatarUrl={null} groupAccentColor="#8b5cf6" groupTag={null}/></button><button className="h-8 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] px-3 text-xs font-semibold">Войти в Лобби</button></header><GroupSurfaceTabs activeTab={tab} onTabChange={setTab}/></div>{tab==='chat'?<><GroupLiveShelfView groupId="group-1" rooms={rooms} currentUserRoomId="drg" onJoinRoom={()=>{}}/><div className="flex min-h-0 flex-1 flex-col"><ChatSectionsBarView rootChat={{...chats[0],topicsEnabled:true,channels:[{...chats[0],id:'game',name:'Game',parentChatId:'group-1',topicIcon:null},{...chats[0],id:'memes',name:'Мемы',parentChatId:'group-1',topicIcon:null}]}} activeChatId="group-1" createAction={({open,onOpenChange})=><SubchatCreatorView open={open} onOpenChange={onOpenChange} createSubchat={async()=> 'created-section'} onCreated={()=>{}}/>} renderDestination={(chat,className,children)=><button key={chat.id} className={className}>{children}</button>}/><div className="flex min-h-0 flex-1 flex-col justify-end gap-1 px-5 py-4">{messages.map((message)=><ChatMessageBubbleVisual key={message.id} message={message} showSender groupPosition="only" senderAvatar={<ProfileAvatar displayName={message.sender.displayName} size="sm" shape="square"/>}/>)}</div><ChatComposerFrame className="px-3"><div className={CHAT_COMPOSER_SURFACE_CLASS}><div className="h-8 px-2 py-1.5 text-sm text-[var(--app-muted)]">Сообщение VOICEKK…</div></div></ChatComposerFrame></div></>:tab==='now'?<GroupNowPanelView mode="ready" value={{groupId:'group-1',groupName:'VOICEKK',rooms,onlineOutsideRooms:[],visibleOnlineCount:7,currentUserRoomId:'drg'}} onJoinRoom={()=>{}} onLeaveCurrent={()=>{}} onCreateSplit={()=>{}} onCreateRoom={()=>{}}/>:<GroupPeoplePanelView members={members} now={{groupId:'group-1',groupName:'VOICEKK',rooms,onlineOutsideRooms:[users[4]],visibleOnlineCount:5,currentUserRoomId:'drg'}} onlineUserIds={new Set(users.slice(0,4).map(user=>user.id))} currentParticipantIds={new Set(['nmggk'])} currentUserId="nmggk" onRetry={()=>{}} onVoop={()=>{}}/>}</div>}
   function Demo(){const sidebar=<AppSidebarVisual pathname="/messages/group-1" collapsed={false} renderDestination={renderDestination} primaryNavigation={<MessengerSidebarView pathname="/messages/group-1" chats={chats} loading={false} onlineUserIds={new Set(['astra'])} liveByGroup={new Map([['group-1',{groupId:'group-1',participantCount:4,roomCount:2,hasScreenShare:true}]])} createGroupAction={<button type="button" aria-label="Создать группу" className="h-5 w-5 border border-[var(--app-border)] text-xs">+</button>} renderDestination={renderDestination} onRetry={()=>{}}/>} accountNavigation={<button type="button" className="flex w-full items-center gap-2 px-2 py-1 text-left"><ProfileAvatar displayName="Yozhik" size="sm" shape="square" isOnline/><span className="text-xs">Yozhik</span></button>}/>;return <AppShellFrame routeKind="messages" fixedViewport sidebar={sidebar}><MessagesLayoutView isThread list={<div/>} thread={<GroupSurface/>}/></AppShellFrame>}
   createRoot(document.getElementById('root')).render(<AppThemeProvider><Demo/></AppThemeProvider>);`;
 
@@ -71,6 +73,10 @@ const cssByHost = {
   web: await loadCurrentVisualCss(repo, { host: "web" }),
   desktop: await loadCurrentVisualCss(repo, { host: "desktop" }),
 };
+const messengerCss = await readFile(path.join(repo, "src/app/styles/messenger-glass.css"), "utf8");
+for (const host of Object.keys(cssByHost)) {
+  if (!cssByHost[host].includes(".voople-group-surface-header")) cssByHost[host] += `\n${messengerCss}`;
+}
 const logo = await readFile(path.join(repo, "public/favicon/android-chrome-192x192.png"));
 const geistSans = await readFile(path.join(repo, "node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2"));
 const geistMono = await readFile(path.join(repo, "node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2"));
@@ -91,7 +97,12 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
-  const visualCases = visualReconciliation
+  const visualCases = groupPeopleSmoke
+    ? [1440, 1100, 390, 360].flatMap((width) => ["void", "light"].map((theme) => ({
+        width, height: width <= 390 ? 844 : 900, tab: "people", theme, host: "web",
+        outputName: `group-people-${width}-${theme}.png`,
+      })))
+    : visualReconciliation
     ? [
         { width: 1440, height: 900, tab: "now", theme: "void", host: "web", outputName: "group-voice-wide-void.png" },
         { width: 1100, height: 800, tab: "now", theme: "void", host: "web", outputName: "group-voice-compact-void.png" },
@@ -172,10 +183,10 @@ try {
       await page.getByRole("button", { name: "Создать постоянную комнату" }).waitFor();
     }
     if (tab === "people") {
-      await page.getByLabel("В разговоре: 2").waitFor();
-      await page.getByLabel("Онлайн: 2").waitFor();
-      await page.getByLabel("Остальные: 1").waitFor();
-      await page.getByRole("button", { name: /Вуп: позвать/ }).first().waitFor();
+      await page.getByLabel("В голосе: 4").waitFor();
+      await page.getByLabel("Доступны: 1").waitFor();
+      await page.getByLabel("Не в сети: 1").waitFor();
+      await page.getByRole("button", { name: /Вуп: позвать/ }).count().then((count) => assert.equal(count, 0));
     }
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);

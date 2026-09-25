@@ -6,6 +6,7 @@ import type { ChatGroupMemberView } from "@/types/chat";
 import { GroupNowVoicePanel } from "./GroupNowVoicePanel";
 import { GroupPeoplePanel } from "./GroupPeoplePanel";
 import { GroupSurfaceTabs, type GroupSurfaceTab } from "./GroupSurfaceTabs";
+import { GroupSurfaceNavigationContext } from "./GroupSurfaceNavigationContext";
 
 export type GroupSurfaceConfig = {
   groupId: string;
@@ -37,6 +38,7 @@ export function GroupSurfaceShell({
     : undefined;
 
   return (
+    <GroupSurfaceNavigationContext.Provider value={setActiveTab}>
     <div className="flex min-h-0 flex-1 flex-col">
       <div className={config.combineHeader ? "voople-group-surface-header voople-group-surface-header--combined" : "voople-group-surface-header"}>
         {header}
@@ -64,5 +66,6 @@ export function GroupSurfaceShell({
         />
       )}
     </div>
+    </GroupSurfaceNavigationContext.Provider>
   );
 }

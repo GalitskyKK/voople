@@ -1,38 +1,20 @@
-import {
-  FileClock,
-  FolderKanban,
-  Gauge,
-  Image,
-  Link2,
-  Settings2,
-  ShieldCheck,
-  SmilePlus,
-  UsersRound,
-} from "lucide-react";
+import { Image, Link2, Settings2, SlidersHorizontal, UsersRound } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 export type GroupSettingsSection =
   | "main"
-  | "members"
-  | "roles"
-  | "sections"
+  | "people"
+  | "access"
   | "appearance"
-  | "media"
-  | "boosts"
-  | "links"
-  | "audit";
+  | "advanced";
 
 const SECTIONS = [
   ["main", "Основное", Settings2],
-  ["members", "Участники", UsersRound],
-  ["roles", "Роли и доступ", ShieldCheck],
-  ["sections", "Разделы", FolderKanban],
+  ["people", "Люди", UsersRound],
+  ["access", "Приглашения и доступ", Link2],
   ["appearance", "Оформление", Image],
-  ["media", "Эмодзи и звуки", SmilePlus],
-  ["boosts", "Бусты", Gauge],
-  ["links", "Ссылки", Link2],
-  ["audit", "Журнал", FileClock],
+  ["advanced", "Дополнительно", SlidersHorizontal],
 ] as const;
 
 export function GroupSettingsNavigation({
@@ -50,7 +32,7 @@ export function GroupSettingsNavigation({
 }) {
   const visibleSections = canManage
     ? SECTIONS
-    : SECTIONS.filter(([id]) => id === "main" || id === "members" || id === "boosts");
+    : SECTIONS.filter(([id]) => id === "main" || id === "people" || id === "advanced");
   return (
     <nav
       className={cn(
@@ -67,7 +49,7 @@ export function GroupSettingsNavigation({
           onClick={() => onChange(id)}
           aria-current={section === id ? "page" : undefined}
           className={cn(
-            "flex min-w-24 flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs transition",
+            "flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs transition",
             layout === "sidebar" && "lg:min-w-0 lg:flex-none lg:justify-start lg:text-sm",
             section === id
               ? "bg-[var(--app-surface)] text-[var(--foreground)] shadow-[var(--app-shadow-sm)]"

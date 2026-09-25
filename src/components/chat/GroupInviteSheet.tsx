@@ -46,6 +46,11 @@ export function GroupInviteSheet({
 }) {
   const router = useRouter();
   const utils = trpc.useUtils();
+  const refreshGroup = useCallback(() => Promise.all([
+    utils.chat.groupSettingsSummary.invalidate({ chatId }),
+    utils.chat.list.invalidate(),
+    utils.chat.observeMessages.invalidate({ chatId }),
+  ]), [chatId, utils]);
   const createInvite = trpc.chat.createInvite.useMutation();
   const revokeInvite = trpc.chat.revokeInvite.useMutation();
   const addMembers = trpc.chat.addGroupMembers.useMutation();
@@ -133,25 +138,18 @@ export function GroupInviteSheet({
       revokeInvite={(token) => revokeInvite.mutateAsync({ chatId, token })}
       updateTopics={async (enabled, layout) => {
         await setTopics.mutateAsync({ chatId, enabled, layout });
-        await Promise.all([
-          utils.chat.observeMessages.invalidate({ chatId }),
-          utils.chat.list.invalidate(),
-        ]);
+        await refreshGroup();
       }}
       updateVisibility={async (visibility, nextJoinPolicy) => {
         await setVisibility.mutateAsync({ chatId, visibility, joinPolicy: nextJoinPolicy });
-        await Promise.all([
-          utils.chat.observeMessages.invalidate({ chatId }),
-          utils.chat.list.invalidate(),
-        ]);
+        await refreshGroup();
       }}
       loadJoinRequests={loadJoinRequests}
       resolveJoinRequest={async (requestId, approve) => {
         const result = await resolveJoinRequestMutation.mutateAsync({ requestId, approve });
         await Promise.all([
           utils.chat.groupJoinRequests.invalidate({ chatId }),
-          utils.chat.observeMessages.invalidate({ chatId }),
-          utils.chat.list.invalidate(),
+          refreshGroup(),
         ]);
         return result;
       }}
@@ -160,10 +158,7 @@ export function GroupInviteSheet({
       updateDiscoveryProfile={(value) => setDiscoveryProfile.mutateAsync({ chatId, ...value })}
       updateName={async (name) => {
         const result = await setGroupName.mutateAsync({ chatId, name });
-        await Promise.all([
-          utils.chat.observeMessages.invalidate({ chatId }),
-          utils.chat.list.invalidate(),
-        ]);
+        await refreshGroup();
         return result;
       }}
       loadCommunity={loadCommunity}
@@ -210,8 +205,7 @@ export function GroupInviteSheet({
         router.replace("/messages");
       }}
       onMembersChanged={() => {
-        void utils.chat.observeMessages.invalidate({ chatId });
-        void utils.chat.list.invalidate();
+        void refreshGroup();
       }}
       renderAvatar={(user) => (
         <ProfileAvatar

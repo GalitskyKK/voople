@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { createServer } from "node:http";
-import { mkdtemp, readdir, readFile } from "node:fs/promises";
+import { mkdtemp, readFile } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
+import { loadCurrentVisualCss } from "./lib/load-current-visual-css.mjs";
 const repo = fileURLToPath(new URL("../", import.meta.url)).replaceAll("\\", "/").replace(/\/$/, "");
 const artifacts = await mkdtemp(path.join(os.tmpdir(), "voople-invite-preview-"));
 console.log(`Screenshots: ${artifacts}`);
@@ -16,7 +17,9 @@ const mocks = {
     const invalidate=async()=>{};
     export const trpc={useUtils:()=>({notifications:{list:{invalidate},unreadCount:{invalidate}},chat:{coreRoomInvitePreview:{invalidate}}}),chat:{
       coreRoomInvitePreview:{useQuery:(input,options)=>{window.queryOptions=options;const [query,setQuery]=useState({isPending:true,fetchStatus:'fetching'});window.setPreview=setQuery;return {...query,refetch:()=>{window.retries++;return Promise.resolve()}}}},
-      coreRespondRoomInvite:{useMutation:({onSuccess})=>{const [data,setData]=useState();const run=async(input)=>{const result={status:input.response};setData(result);await onSuccess(result);return result};return {data,isPending:false,error:null,mutate:run,mutateAsync:run}}}}};`,
+      coreRespondRoomInvite:{useMutation:({onSuccess})=>{const [data,setData]=useState();const run=async(input)=>{const result={status:input.response};setData(result);await onSuccess(result);return result};return {data,isPending:false,error:null,mutate:run,mutateAsync:run}}},
+      coreAcceptVoop:{useMutation:()=>({data:null,isPending:false,error:null,mutateAsync:async()=>{throw Error('Unexpected Voop accept')}})},
+      coreRespondLiveMove:{useMutation:()=>({isPending:false,error:null,mutateAsync:async()=>{throw Error('Unexpected move response')}})}}};`,
   "@/hooks/useGroupNowRoomJoin": `export const useGroupNowRoomJoin=()=>({pending:false,requestJoin:async()=>{window.joins++},confirmationTarget:null,cancelSwitch(){},confirmSwitch(){}});`,
   "@/components/chat/voice/VoiceSessionProvider": `export const useVoiceSession=()=>({openCoreRoom(){}});`,
 };
@@ -28,9 +31,8 @@ const entry = `import {StrictMode} from 'react';import {createRoot} from 'react-
   const switchAccount=async()=>{window.switches++;if(window.switchShouldFail)throw new Error('private sign-out details');await new Promise(resolve=>{window.resolveSwitch=resolve})};
   createRoot(document.getElementById('root')).render(<StrictMode><AppThemeProvider><ThemeControl/><CoreRoomInvitePreview inviteId="10000000-0000-4000-8000-000000000001" onSwitchAccount={switchAccount}/></AppThemeProvider></StrictMode>);`;
 const bundle=await build({stdin:{contents:entry,resolveDir:repo,loader:'tsx'},bundle:true,write:false,format:'iife',jsx:'automatic',alias:{'@':`${repo}/src`},define:{'process.env.NODE_ENV':'"development"'},plugins:[{name:'isolated-transports',setup(builder){builder.onResolve({filter:/.*/},args=>mocks[args.path]?{path:args.path,namespace:'mock'}:undefined);builder.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:mocks[args.path],loader:'tsx',resolveDir:repo}));}}]});
-const cssRoot=path.join(repo,'desktop/dist/assets');
-const cssFiles=(await readdir(cssRoot,{recursive:true})).filter(file=>file.endsWith('.css'));
-const css=(await Promise.all(cssFiles.map(file=>readFile(path.join(cssRoot,file),'utf8')))).join('\n');
+const baseCss=await loadCurrentVisualCss(repo,{host:'web'});
+const css=baseCss.includes('.voople-group-surface-header')?baseCss:`${baseCss}\n${await readFile(path.join(repo,'src/app/styles/messenger-glass.css'),'utf8')}`;
 const server=createServer((req,res)=>{if(req.url==='/app.js'){res.setHeader('Content-Type','text/javascript');res.end(bundle.outputFiles[0].text)}else if(req.url==='/style.css'){res.setHeader('Content-Type','text/css');res.end(css)}else{res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><html><head><link rel="stylesheet" href="/style.css"></head><body><main id="root"></main><script src="/app.js"></script></body></html>')}});
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 let browser;
@@ -48,7 +50,11 @@ try{
     const set=async(value)=>page.evaluate(value=>window.setPreview(value),value);
     await set({data:invite,isPending:false,fetchStatus:'idle'});
     const join=page.getByRole('button',{name:/^Зайти в /});
-    await join.waitFor();await join.click();assert.equal(await page.evaluate(()=>window.joins),1);
+    try { await join.waitFor({ timeout: 5000 }); } catch (cause) {
+      console.error("Invite preview render:", await page.locator("body").innerText(), errors);
+      throw cause;
+    }
+    await join.click();assert.equal(await page.evaluate(()=>window.joins),1);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
     const box=await join.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=width);
     await page.screenshot({path:path.join(artifacts, `invite-${width}-${theme}.png`)});

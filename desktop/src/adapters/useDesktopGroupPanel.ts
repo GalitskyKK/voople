@@ -1,9 +1,8 @@
 import type { Session } from "@supabase/supabase-js";
 import { useEffect, useRef, useState } from "react";
 
-import type { GroupInfoDrawerTab } from "@/components/chat/GroupInfoDrawerView";
 import type { ChatGroupMemberView, GroupCommunityView } from "@/types/chat";
-import type { GroupDiscoveryProfileView, InterestCatalogView } from "@/types/social";
+import type { GroupNowView } from "@/types/group-now";
 
 import type { DesktopConfig } from "../config";
 import { createDesktopTrpcClient } from "../api/trpc";
@@ -20,11 +19,9 @@ export function useDesktopGroupPanel({
   session: Session;
 }) {
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<GroupInfoDrawerTab>("info");
   const [community, setCommunity] = useState<GroupCommunityView | null>(null);
   const [members, setMembers] = useState<ChatGroupMemberView[]>([]);
-  const [roomParticipantIds, setRoomParticipantIds] = useState<ReadonlySet<string>>(() => new Set());
-  const [topicNames, setTopicNames] = useState<string[]>([]);
+  const [now, setNow] = useState<GroupNowView | undefined>();
   const [loading, setLoading] = useState(false);
   const [tagPending, setTagPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +30,18 @@ export function useDesktopGroupPanel({
   useEffect(() => () => {
     requestIdRef.current += 1;
   }, [chatId]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    let active = true;
+    const client = createDesktopTrpcClient(config, () => session.access_token);
+    const refresh = () => { void client.query("chat.coreGroupNow", { groupId: chatId }).then((value) => {
+      if (active) setNow(value as GroupNowView);
+    }).catch(() => undefined); };
+    refresh();
+    const timer = window.setInterval(refresh, 20_000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [chatId, config, enabled, session.access_token]);
 
   const load = () => {
     if (!enabled) return;
@@ -43,20 +52,10 @@ export function useDesktopGroupPanel({
     const request = Promise.all([
       client.query("chat.groupCommunity", { chatId }),
       client.query("chat.groupMembers", { chatId }),
-      client.query("chat.room", { chatId }),
-      client.query("social.groupDiscoveryProfile", { chatId }),
-      client.query("social.interestCatalog"),
-    ]).then(([communityValue, membersValue, roomValue, discoveryValue, catalogValue]) => {
+    ]).then(([communityValue, membersValue]) => {
       if (requestId !== requestIdRef.current) return;
       setCommunity(communityValue as GroupCommunityView);
       setMembers(membersValue as ChatGroupMemberView[]);
-      const room = roomValue as { participants?: Array<{ id: string }> };
-      setRoomParticipantIds(new Set(room.participants?.map((participant) => participant.id) ?? []));
-      const discovery = discoveryValue as GroupDiscoveryProfileView;
-      const catalog = catalogValue as InterestCatalogView;
-      const interests = catalog.categories.flatMap((category) => category.interests);
-      setTopicNames(discovery.topicSlugs.map((slug) =>
-        interests.find((interest) => interest.slug === slug)?.name ?? slug));
     });
     void request
       .catch((cause) => {
@@ -95,13 +94,10 @@ export function useDesktopGroupPanel({
     load,
     loading,
     members,
+    now,
     open,
-    roomParticipantIds,
     setOpen,
-    setTab,
-    tab,
     tagPending,
     toggleProfileTag,
-    topicNames,
   };
 }

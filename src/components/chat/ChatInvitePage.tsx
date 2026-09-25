@@ -2,17 +2,20 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, MessageCircle, UsersRound } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { Loader2, Radio, UsersRound } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { trpc } from "@/lib/trpc/client";
 import { reportProductEvent } from "@/lib/telemetry/client";
+import { authEntryHref } from "@/lib/auth/continuation";
+import { createClient } from "@/lib/supabase/client";
 import { GroupAvatar } from "./GroupAvatar";
 
 export function ChatInvitePage({ token }: { token: string }) {
   const router = useRouter();
   const openedReported = useRef(false);
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const preview = trpc.chat.invitePreview.useQuery({ token }, { retry: false });
   const accept = trpc.chat.acceptInvite.useMutation({
     onSuccess: ({ chatId }) => {
@@ -21,6 +24,14 @@ export function ChatInvitePage({ token }: { token: string }) {
       router.refresh();
     },
   });
+
+  useEffect(() => {
+    let active = true;
+    void createClient().auth.getUser().then(({ data }) => {
+      if (active) setAuthenticated(Boolean(data.user));
+    }).catch(() => { if (active) setAuthenticated(false); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (!preview.data || openedReported.current) return;
@@ -42,15 +53,11 @@ export function ChatInvitePage({ token }: { token: string }) {
   return (
     <main id="main-content" className="grid min-h-dvh place-items-center px-4 py-10">
       <section
-        className="voople-panel relative w-full max-w-md overflow-hidden p-6 text-center"
-        style={preview.data?.groupAccentColor ? {
-          "--group-accent": preview.data.groupAccentColor,
-          background: `linear-gradient(145deg, color-mix(in srgb, ${preview.data.groupAccentColor} 18%, var(--app-surface)), var(--app-surface) 55%)`,
-        } as React.CSSProperties : undefined}
+        className="voople-panel relative w-full max-w-md overflow-hidden p-6 text-center sm:p-7"
       >
         {preview.data?.groupBannerUrl ? (
           <div
-            className="absolute inset-x-0 top-0 h-28 bg-cover bg-center opacity-65 [mask-image:linear-gradient(to_bottom,black,transparent)]"
+            className="absolute inset-x-0 top-0 h-28 bg-cover bg-center opacity-50 [mask-image:linear-gradient(to_bottom,black,transparent)]"
             style={{ backgroundImage: `url("${preview.data.groupBannerUrl}")` }}
             aria-hidden="true"
           />
@@ -63,19 +70,21 @@ export function ChatInvitePage({ token }: { token: string }) {
               icon={preview.data.groupIcon}
               accentColor={preview.data.groupAccentColor}
               size="lg"
-              className="mx-auto border-4 border-[var(--app-surface)]"
+              className="mx-auto border-4 border-[var(--material-panel-fill)]"
             />
           ) : (
             <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[var(--app-accent-soft)] text-(--theme-accent)">
-              <MessageCircle className="h-7 w-7" />
+              <UsersRound className="h-7 w-7" />
             </span>
           )}
 
         {preview.isLoading ? (
           <div className="mx-auto mt-5 h-20 w-full animate-pulse rounded-2xl bg-[var(--app-surface-soft)]" />
+        ) : preview.error ? (
+          <><h1 className="mt-5 text-xl font-semibold">Не удалось проверить приглашение</h1><p className="mt-2 text-sm text-[var(--app-muted)]">Попробуйте загрузить его ещё раз.</p><Button type="button" variant="secondary" className="mt-5" onClick={() => void preview.refetch()}>Повторить</Button></>
         ) : preview.data?.available ? (
           <>
-            <p className="mt-5 text-sm text-[var(--app-muted)]">Вас приглашают в беседу</p>
+            <p className="mt-5 text-sm text-[var(--app-muted)]">Вас приглашают в группу</p>
             <h1 className="mt-1 flex items-center justify-center gap-2 text-2xl font-semibold">
               {preview.data.chatName}
               {preview.data.groupTag ? (
@@ -84,42 +93,37 @@ export function ChatInvitePage({ token }: { token: string }) {
                 </span>
               ) : null}
             </h1>
-            <p className="mt-2 text-sm text-[var(--app-muted)]">
-              Уже {preview.data.memberCount} участников. Голосовая комната подключается отдельно —
-              вступление в чат не включает микрофон.
-            </p>
-            {preview.data.onlineCount > 0 || preview.data.roomParticipantCount > 0 ? (
-              <div className="mt-3 flex flex-wrap justify-center gap-2 text-xs">
-                {preview.data.onlineCount > 0 ? <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-emerald-300">● {preview.data.onlineCount} онлайн</span> : null}
-                {preview.data.roomParticipantCount > 0 ? <span className="rounded-full border border-[color-mix(in_srgb,var(--theme-accent)_40%,transparent)] bg-[var(--app-accent-soft)] px-2.5 py-1 text-[var(--theme-accent)]">🎙 {preview.data.roomParticipantCount} разговаривают</span> : null}
+            <p className="mt-2 text-sm text-[var(--app-muted)]">{preview.data.memberCount} участников · {preview.data.onlineCount} онлайн · {preview.data.roomParticipantCount} в голосе</p>
+            {authenticated === false ? (
+              <div className="mt-6 grid gap-2 sm:grid-cols-2">
+                <Link href={authEntryHref("/login", `/invite/${token}`)} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--theme-accent)] px-4 text-sm font-semibold text-white">Войти</Link>
+                <Link href={authEntryHref("/register", `/invite/${token}`)} className="voople-material-control inline-flex min-h-11 items-center justify-center px-4 text-sm font-medium">Создать профиль</Link>
               </div>
-            ) : null}
-            <Button
+            ) : authenticated === null ? <p className="mt-6 text-xs text-[var(--app-muted)]" role="status">Проверяем вход…</p> : <Button
               type="button"
               className="mt-6 w-full"
               disabled={accept.isPending}
               onClick={() => accept.mutate({ token })}
             >
               {accept.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UsersRound className="h-4 w-4" />}
-              Вступить в беседу
-            </Button>
+              Вступить в группу
+            </Button>}
+            <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-[var(--app-muted)]"><Radio className="h-3.5 w-3.5" aria-hidden="true" />Микрофон не включится автоматически.</p>
             {accept.error ? (
               <>
                 <p className="mt-3 text-sm text-red-400">
-                  {accept.error.data?.code === "UNAUTHORIZED"
-                    ? "Войдите или создайте профиль, чтобы принять приглашение."
-                    : accept.error.message}
+                  {accept.error.data?.code === "UNAUTHORIZED" ? "Войдите, чтобы принять приглашение." : accept.error.message}
                 </p>
                 {accept.error.data?.code === "UNAUTHORIZED" ? (
                   <div className="mt-3 flex items-center justify-center gap-4 text-sm">
                     <Link
-                      href={`/login?redirect=${encodeURIComponent(`/invite/${token}`)}`}
+                      href={authEntryHref("/login", `/invite/${token}`)}
                       className="voople-link"
                     >
                       Войти
                     </Link>
                     <Link
-                      href={`/register?redirect=${encodeURIComponent(`/invite/${token}`)}`}
+                      href={authEntryHref("/register", `/invite/${token}`)}
                       className="voople-link"
                     >
                       Создать профиль
@@ -133,8 +137,8 @@ export function ChatInvitePage({ token }: { token: string }) {
           <>
             <h1 className="mt-5 text-xl font-semibold">Приглашение недоступно</h1>
             <p className="mt-2 text-sm text-[var(--app-muted)]">{unavailableText}</p>
-            <Link href="/feed" className="voople-link mt-5 inline-block text-sm">
-              Перейти в ленту
+            <Link href={authenticated ? "/messages" : authEntryHref("/login", "/messages")} className="voople-link mt-5 inline-block text-sm">
+              {authenticated ? "К группам" : "Войти"}
             </Link>
           </>
         )}

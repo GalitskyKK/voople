@@ -16,6 +16,7 @@ import {
   getSectionAccess,
   getMessageNotification,
   getChatRoom,
+  getGroupSettingsSummary,
   heartbeatChatRoom,
   leaveChatRoom,
   leaveGroup,
@@ -404,6 +405,15 @@ export const chatRouter = createTRPCRouter({
               ? error.message
               : "Не удалось создать раздел",
         });
+      }
+    }),
+  groupSettingsSummary: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        return await getGroupSettingsSummary(input.chatId, ctx.user.id);
+      } catch (error) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось загрузить настройки группы" });
       }
     }),
   toggleSectionFavorite: protectedProcedure

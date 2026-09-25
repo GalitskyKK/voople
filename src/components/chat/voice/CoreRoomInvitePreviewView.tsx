@@ -31,8 +31,8 @@ export function CoreRoomInvitePreviewView({ state, onRetry, actions, switchAccou
   const isVoop = invite?.intent === "voop";
   return (
     <AppPageContent className="min-h-0 overflow-y-auto pb-8">
-      <section className="mx-auto mt-6 max-w-xl rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] sm:mt-10">
-        <header className="flex items-center gap-3 border-b border-[var(--app-border)] p-4 sm:p-5">
+      <section className="voople-panel mx-auto mt-6 max-w-xl overflow-hidden sm:mt-10">
+        <header className="flex items-center gap-3 border-b border-[var(--material-border)] p-5 sm:p-6">
           {inviter ? (
             <ProfileAvatarVisual size="sm" displayName={inviter.displayName} avatarImage={inviter.avatarUrl ? (
               // Shared host-neutral avatar; both renderers supply the same protected preview.
@@ -49,7 +49,7 @@ export function CoreRoomInvitePreviewView({ state, onRetry, actions, switchAccou
             ) : null}
           </div>
         </header>
-        <div className="p-4 sm:p-5">
+        <div className="p-5 sm:p-6">
           {state.kind !== "ready" ? (
             <div role={state.kind === "error" ? "alert" : "status"}>
               <h2 className="flex items-center gap-2 font-medium">
@@ -89,7 +89,7 @@ export function CoreRoomInvitePreviewView({ state, onRetry, actions, switchAccou
                   <p className="text-sm text-[var(--app-muted)]">{state.invite.groupName}</p>
                   <h2 className="mt-1 text-xl font-semibold">Отдельный разговор</h2>
                   <p className="mt-2 text-sm text-[var(--app-muted)]">
-                    Сплит создастся только после принятия.
+                    Временная комната появится только после вашего согласия.
                   </p>
                   <div className="mt-3 text-xs text-[var(--app-muted)]">
                     <span className="flex items-center gap-1"><Clock3 className="h-4 w-4" aria-hidden />До <time dateTime={state.invite.expiresAt}>{new Date(state.invite.expiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time></span>

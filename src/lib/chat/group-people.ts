@@ -17,18 +17,32 @@ export function canVoopGroupMember(
   currentUserId: string | null | undefined,
   currentParticipantIds: ReadonlySet<string>,
 ): boolean {
-  return member.id !== currentUserId && Boolean(member.activeRoom) && currentParticipantIds.has(member.id);
+  return member.id !== currentUserId && currentParticipantIds.has(member.id);
 }
 
 export function groupPeopleSections(
   members: ChatGroupMemberView[],
   onlineUserIds: ReadonlySet<string>,
+  now?: GroupNowView,
 ) {
   const byName = (a: ChatGroupMemberView, b: ChatGroupMemberView) =>
     a.displayName.localeCompare(b.displayName, "ru");
+  const byId = new Map(members.map((member) => [member.id, member]));
+  const liveRooms = (now?.rooms ?? []).flatMap((room) => {
+    if (room.state !== "active" && room.state !== "connecting") return [];
+    const participants = room.participants
+      .filter((person) => !person.guest)
+      .map((person) => byId.get(person.id))
+      .filter((member): member is ChatGroupMemberView => Boolean(member))
+      .sort(byName);
+    return participants.length ? [{ id: room.id, name: room.name, members: participants }] : [];
+  });
+  const liveIds = new Set(liveRooms.flatMap((room) => room.members.map((member) => member.id)));
+  const onlineIds = new Set([...onlineUserIds, ...(now?.onlineOutsideRooms.map((person) => person.id) ?? [])]);
   return {
-    live: members.filter((member) => Boolean(member.activeRoom)).sort(byName),
-    available: members.filter((member) => !member.activeRoom && onlineUserIds.has(member.id)).sort(byName),
-    offline: members.filter((member) => !member.activeRoom && !onlineUserIds.has(member.id)).sort(byName),
+    liveRooms,
+    live: liveRooms.flatMap((room) => room.members),
+    available: members.filter((member) => !liveIds.has(member.id) && onlineIds.has(member.id)).sort(byName),
+    offline: members.filter((member) => !liveIds.has(member.id) && !onlineIds.has(member.id)).sort(byName),
   };
 }

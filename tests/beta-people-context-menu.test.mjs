@@ -24,12 +24,18 @@ test("Voop is offered only to another member of the viewer's current active sess
 });
 
 test("People sections count voice, available and offline members independently", () => {
+  const now = { rooms: [
+    { id: "lobby", name: "Лобби", liveSessionId: "live-1", state: "active", participants: [{ id: "voice" }] },
+    { id: "stale", name: "Старая", liveSessionId: null, state: "grace", participants: [{ id: "offline" }] },
+  ], onlineOutsideRooms: [] };
   const sections = groupPeopleSections(
     [member("offline"), member("available"), member("voice", room)],
     new Set(["available", "voice"]),
+    now,
   );
   assert.deepEqual([sections.live.length, sections.available.length, sections.offline.length], [1, 1, 1]);
   assert.deepEqual(sections.live.map((person) => person.id), ["voice"]);
+  assert.deepEqual(sections.liveRooms.map((item) => item.name), ["Лобби"]);
 });
 
 const menu = (anchor, viewportWidth = 800, viewportHeight = 600) =>

@@ -95,7 +95,7 @@ test("chat stream uses the wider centered canvas without stretching message copy
 test("full Group Voice follows the approved glass card hierarchy", () => {
   const panel = source("src/components/chat/GroupNowPanelView.tsx");
   const room = source("src/components/chat/GroupNowRoomSection.tsx");
-  const styles = source("src/app/globals.css");
+  const styles = source("src/app/globals.css") + source("src/app/styles/messenger-glass.css");
 
   assert.match(panel, /voople-group-now__grid/);
   assert.doesNotMatch(panel, />Голос</);
@@ -115,13 +115,14 @@ test("full Group Voice follows the approved glass card hierarchy", () => {
   assert.doesNotMatch(room, /text-\[(?:9|10|11)px\]/);
   assert.doesNotMatch(room, /padStart/);
   assert.match(styles, /--voople-glass-fill:/);
-  assert.match(styles, /--voople-room-radius: 18px/);
+  assert.match(styles, /--voople-room-radius: var\(--material-radius\)/);
   assert.match(styles, /\.voople-room-material__reflection/);
 });
 
 test("people view uses real member data and exposes room, presence and role context", () => {
   const controller = source("src/components/chat/GroupPeoplePanel.tsx");
   const view = source("src/components/chat/GroupPeoplePanelView.tsx");
+  const section = source("src/components/chat/GroupPeopleSection.tsx");
   const voopAction = source("src/components/chat/GroupPeopleVoopAction.tsx");
 
   assert.match(controller, /trpc\.chat\.groupMembers\.useQuery/);
@@ -129,18 +130,19 @@ test("people view uses real member data and exposes room, presence and role cont
   assert.match(controller, /split\.startVoop/);
   assert.match(controller, /voopingUserId=\{voopingUserId \?\? split\.targetUserId\}/);
   assert.match(controller, /enabled/);
-  assert.match(view, /member\.activeRoom/);
-  assert.match(view, /onlineUserIds\.has/);
-  assert.match(view, /roleLabels\[member\.role\]/);
-  assert.match(view, /shape="square"/);
+  assert.match(controller, /trpc\.chat\.coreGroupNow\.useQuery/);
+  assert.match(view, /groupPeopleSections\(members \?\? \[\], onlineUserIds, now\)/);
+  assert.match(section, /onlineUserIds\.has/);
+  assert.match(section, /roleLabels\[member\.role\]/);
+  assert.match(section, /shape="square"/);
   assert.match(view, /max-w-\[960px\]/);
-  assert.match(view, /title="В голосе"/);
+  assert.match(view, /В голосе: \$\{sections\.live\.length\}/);
   assert.match(view, /title="Доступны"/);
   assert.match(view, /title="Не в сети"/);
   assert.match(view, /<GroupPeopleSection/);
-  assert.match(view, /GroupPeopleVoopAction/);
+  assert.match(section, /GroupPeopleVoopAction/);
   assert.match(voopAction, /voople-group-people-voop/);
-  assert.match(view, /canVoopGroupMember\(member, currentUserId, currentParticipantIds\)/);
+  assert.match(section, /canVoopGroupMember\(member, currentUserId, currentParticipantIds\)/);
   assert.match(voopAction, /отдельный разговор/);
 });
 

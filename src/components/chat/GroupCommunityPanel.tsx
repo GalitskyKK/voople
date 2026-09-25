@@ -15,6 +15,7 @@ import { GroupRoleStylesEditor } from "./GroupRoleStylesEditor";
 const DEFAULT_ACCENT = "#8b7bd8";
 
 type Props = {
+  mode?: "identity" | "appearance";
   canManage: boolean;
   groupName: string;
   load: () => Promise<GroupCommunityView>;
@@ -25,6 +26,7 @@ type Props = {
 };
 
 export function GroupCommunityPanel({
+  mode = "appearance",
   canManage,
   groupName,
   load,
@@ -137,10 +139,10 @@ export function GroupCommunityPanel({
         <GroupAvatar name={groupName} avatarUrl={community.avatarUrl} icon={icon} accentColor={community.effectiveAccentColor} size="md" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 id="group-community-title" className="text-sm font-medium">Оформление сообщества</h3>
+            <h3 id="group-community-title" className="text-sm font-medium">{mode === "identity" ? "Описание и профиль группы" : "Оформление группы"}</h3>
           </div>
           <p className="mt-0.5 text-xs leading-5 text-[var(--app-muted)]">
-            Баннер, аватар, описание и визуальные особенности группы.
+            {mode === "identity" ? "Аватар, описание и адрес группы." : "Баннер, цвет и дополнительные визуальные настройки."}
           </p>
         </div>
       </div>
@@ -149,6 +151,7 @@ export function GroupCommunityPanel({
         <div className="mt-4 grid gap-5 xl:grid-cols-[minmax(0,1fr)_18rem]">
           <div className="space-y-3">
           <GroupIdentityPerksEditor
+            mode={mode}
             community={community}
             pending={pending}
             tag={tag}
@@ -160,20 +163,20 @@ export function GroupCommunityPanel({
             onRemoveAvatar={() => void persist("avatar", { avatarKey: null })}
             onRemoveBanner={() => void persist("banner", { bannerKey: null })}
           />
-          <label className="block text-xs font-medium">Иконка<input value={icon} onChange={(event) => setIcon(event.target.value.slice(0, 16))} className="voople-input mt-1 w-full" placeholder="Например, 🎮" /></label>
-          <label className="block text-xs font-medium">Публичный адрес
+          {mode === "appearance" ? <label className="block text-xs font-medium">Иконка<input value={icon} onChange={(event) => setIcon(event.target.value.slice(0, 16))} className="voople-input mt-1 w-full" placeholder="Например, 🎮" /></label> : null}
+          {mode === "identity" ? <label className="block text-xs font-medium">Публичный адрес
             <div className="voople-input mt-1 flex items-center gap-1 focus-within:ring-2 focus-within:ring-[var(--theme-accent)]"><span className="text-[var(--app-muted)]">@</span><input value={publicSlug} onChange={(event) => setPublicSlug(event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 32))} className="min-w-0 flex-1 bg-transparent outline-none" placeholder="my_group" minLength={5} maxLength={32} aria-label="Публичный адрес группы" /></div>
             <span className="mt-1 block font-normal text-[11px] text-[var(--app-muted)]">Используется в глобальном поиске открытых групп.</span>
-          </label>
-          <label className="block text-xs font-medium">Красивый адрес приглашения
+          </label> : null}
+          {mode === "appearance" ? <label className="block text-xs font-medium">Красивый адрес приглашения
             <div className="voople-input mt-1 flex items-center gap-1 focus-within:ring-2 focus-within:ring-[var(--theme-accent)]"><span className="text-[var(--app-muted)]">/invite/</span><input value={vanityInviteSlug} disabled={!community.boostUnlocksVanityInvite} onChange={(event) => setVanityInviteSlug(event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 32))} className="min-w-0 flex-1 bg-transparent outline-none disabled:opacity-50" placeholder="my_group" minLength={5} maxLength={32} aria-label="Постоянная ссылка-приглашение" /></div>
-            <span className="mt-1 block font-normal text-[11px] text-[var(--app-muted)]">{community.boostUnlocksVanityInvite ? "Короткий vanity-адрес активен, пока доступен perk." : "Обычная постоянная ссылка доступна всем. Запоминающийся адрес — Boost-перк."}</span>
-          </label>
-          <GroupRoleStylesEditor enabled={community.boostUnlocksRoleStyles} value={roleColors} onChange={setRoleColors} />
-          <label className="block text-xs font-medium">Описание<textarea value={description} onChange={(event) => setDescription(event.target.value.slice(0, 160))} className="voople-input mt-1 min-h-20 w-full resize-none" placeholder="О чём эта группа" /></label>
-          <label className="flex items-center justify-between gap-3 text-xs font-medium">Цвет группы<input type="color" value={accentColor} disabled={!community.boostUnlocksAccent} onChange={(event) => setAccentColor(event.target.value)} className="h-9 w-14 rounded-lg border border-[var(--app-border)] bg-transparent p-1 disabled:opacity-40" aria-label="Цвет группы" /></label>
+            <span className="mt-1 block font-normal text-[11px] text-[var(--app-muted)]">{community.boostUnlocksVanityInvite ? "Короткий адрес доступен этой группе." : "Обычная постоянная ссылка доступна всем. Короткий адрес сейчас недоступен."}</span>
+          </label> : null}
+          {mode === "appearance" ? <GroupRoleStylesEditor enabled={community.boostUnlocksRoleStyles} value={roleColors} onChange={setRoleColors} /> : null}
+          {mode === "identity" ? <label className="block text-xs font-medium">Описание<textarea value={description} onChange={(event) => setDescription(event.target.value.slice(0, 160))} className="voople-input mt-1 min-h-20 w-full resize-none" placeholder="О чём эта группа" /></label> : null}
+          {mode === "appearance" ? <label className="flex items-center justify-between gap-3 text-xs font-medium">Цвет группы<input type="color" value={accentColor} disabled={!community.boostUnlocksAccent} onChange={(event) => setAccentColor(event.target.value)} className="h-9 w-14 rounded-lg border border-[var(--app-border)] bg-transparent p-1 disabled:opacity-40" aria-label="Цвет группы" /></label> : null}
           <Button type="button" variant="secondary" className="w-full" disabled={Boolean(pending)} onClick={() => void persist("save")}>
-            {pending === "save" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Сохранить оформление
+            {pending === "save" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Сохранить
           </Button>
           </div>
           <GroupCommunityPreviewCard

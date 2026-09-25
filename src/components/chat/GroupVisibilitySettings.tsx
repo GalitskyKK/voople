@@ -9,7 +9,7 @@ import type { GroupJoinPolicy, GroupVisibility } from "@/types/chat";
 const VISIBILITY_OPTIONS = [
   { id: "private", label: "Закрытая", description: "Только приглашения", icon: LockKeyhole },
   { id: "unlisted", label: "По ссылке", description: "Не видна в поиске", icon: Link2 },
-  { id: "public", label: "Открытая", description: "Видна в рекомендациях", icon: Globe2 },
+  { id: "public", label: "Открытая", description: "Видна в поиске", icon: Globe2 },
 ] as const;
 
 const JOIN_OPTIONS = [

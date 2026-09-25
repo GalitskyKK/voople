@@ -49,7 +49,7 @@ export function GroupPeoplePanel({
   );
   const now = trpc.chat.coreGroupNow.useQuery(
     { groupId },
-    { enabled: enabled && Boolean(currentSessionId), retry: false, refetchInterval: enabled && currentSessionId ? 15_000 : false },
+    { enabled, retry: false, refetchInterval: enabled ? 15_000 : false },
   );
   const currentParticipantIds = currentSessionParticipantIds(now.data, currentSessionId);
 
@@ -58,11 +58,12 @@ export function GroupPeoplePanel({
   return (
     <GroupPeoplePanelView
       members={query.data}
+      now={now.data}
       onlineUserIds={onlineUserIds}
-      loading={query.isLoading}
-      error={query.error?.message}
+      loading={query.isLoading || now.isLoading}
+      error={query.error?.message ?? now.error?.message}
       actionError={split.error}
-      onRetry={() => void query.refetch()}
+      onRetry={() => { void query.refetch(); void now.refetch(); }}
       onOpenProfile={onOpenProfile}
       currentUserId={currentUserId}
       currentParticipantIds={currentParticipantIds}

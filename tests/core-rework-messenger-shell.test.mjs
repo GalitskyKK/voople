@@ -25,7 +25,7 @@ test("messenger sidebar follows the rework information hierarchy", () => {
 
   assert.match(view, /title="Группы"/);
   assert.match(view, /title="Личные"/);
-  assert.match(view, /href: "\/explore"/);
+  assert.match(view, /href: "\/search"/);
   assert.match(view, /aria-expanded=\{expanded\}/);
   assert.match(view, /label: "Новый диалог"/);
   assert.match(view, /voople:messenger-sidebar:\$\{id\}:expanded/);

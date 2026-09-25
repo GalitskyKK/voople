@@ -5,8 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { Download, LogIn, UserPlus } from "lucide-react";
 
 import { NotificationNavBadge } from "@/components/notifications/NotificationNavBadge";
-import { GlobalPlayer } from "@/components/player/GlobalPlayer";
-import { SidebarHighlights } from "./SidebarHighlights";
 import { AppSidebarVisual } from "./AppNavigationVisual";
 import { AppAccountMenu } from "./AppAccountMenu";
 import { MessengerSidebar } from "./MessengerSidebar";
@@ -61,14 +59,6 @@ export function DesktopSidebar({ authenticated }: { authenticated: boolean }) {
               </Link>
             )}
           />
-        ) : undefined
-      }
-      navAfter={
-        authenticated ? (
-          <>
-            <SidebarHighlights />
-            <GlobalPlayer variant="desktop" />
-          </>
         ) : undefined
       }
       footerAfter={!authenticated ? (

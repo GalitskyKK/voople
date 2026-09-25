@@ -1,14 +1,8 @@
-import { Bell, CircleHelp, Home, MessageCircle, Search, ShoppingBag, Sparkles, UserRound } from "lucide-react";
+import { AudioLines, Bell, CircleHelp, Home, MessageCircle, Search, ShoppingBag, UserRound } from "lucide-react";
 
 import { COPY } from "./copy";
 
 export const MAIN_NAV_ITEMS = [
-  {
-    href: "/feed",
-    label: COPY.feed,
-    icon: Home,
-    match: (p: string) => p === "/feed" || p.startsWith("/feed/"),
-  },
   {
     href: "/messages",
     label: COPY.messages,
@@ -16,22 +10,16 @@ export const MAIN_NAV_ITEMS = [
     match: (p: string) => p.startsWith("/messages"),
   },
   {
-    href: "/explore",
+    href: "/search",
     label: COPY.search,
     icon: Search,
-    match: (p: string) => p.startsWith("/explore"),
+    match: (p: string) => p.startsWith("/search"),
   },
   {
     href: "/notifications",
     label: COPY.notifications,
     icon: Bell,
     match: (p: string) => p.startsWith("/notifications"),
-  },
-  {
-    href: "/events",
-    label: "События",
-    icon: Sparkles,
-    match: (p: string) => p.startsWith("/events"),
   },
   {
     href: "/shop",
@@ -50,15 +38,16 @@ export const PROFILE_NAV_ITEM = {
 
 /** Mobile keeps four daily destinations; activity moves to the current surface header. */
 export const MOBILE_NAV_ITEMS = [
-  { ...MAIN_NAV_ITEMS[0], label: "Войс" },
+  { ...MAIN_NAV_ITEMS[0], label: "Войс", icon: AudioLines },
   MAIN_NAV_ITEMS[1],
   MAIN_NAV_ITEMS[2],
   PROFILE_NAV_ITEM,
 ] as const;
 
-export const PUBLIC_NAV_ITEMS = MAIN_NAV_ITEMS.filter(
-  (item) => item.href === "/feed" || item.href === "/explore",
-);
+export const PUBLIC_NAV_ITEMS = [
+  { href: "/feed", label: COPY.feed, icon: Home, match: (p: string) => p === "/feed" || p.startsWith("/feed/") },
+  MAIN_NAV_ITEMS[1],
+] as const;
 
 export const PUBLIC_MOBILE_NAV_ITEMS = PUBLIC_NAV_ITEMS;
 

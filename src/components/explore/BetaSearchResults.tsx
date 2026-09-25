@@ -9,7 +9,6 @@ import type { NavigationDestinationRenderer } from "@/components/layout/AppNavig
 import { ProfileFriendAction } from "@/components/profile/ProfileFriendAction";
 import { ProfileMessageAction } from "@/components/profile/ProfileMessageAction";
 import { trpc } from "@/lib/trpc/client";
-import type { PostAuthorView } from "@/types/domain";
 import type { PublicGroupSearchHit } from "@/types/chat";
 import type { BetaSearchPerson } from "@/types/search";
 
@@ -20,7 +19,7 @@ export function BetaSearchResults({ people, groups, scope, renderDestination, re
   groups: PublicGroupSearchHit[];
   scope: "all" | "people" | "groups";
   renderDestination: NavigationDestinationRenderer;
-  renderAvatar: (props: { author: PostAuthorView }) => ReactNode;
+  renderAvatar: (person: BetaSearchPerson) => ReactNode;
   onNavigate: (href: string) => void;
 }) {
   const [requestedIds, setRequestedIds] = useState<Set<string>>(new Set());
@@ -35,7 +34,7 @@ export function BetaSearchResults({ people, groups, scope, renderDestination, re
     {(scope === "all" || scope === "people") && people.length > 0 ? <section aria-labelledby="search-people-title">
       <h2 id="search-people-title" className="mb-2 text-sm font-semibold">Люди</h2>
       <ul className="space-y-2">{people.map((person) => <li key={person.id} className={`${rowClass} flex-wrap`}>
-        {renderAvatar({ author: { username: person.username, displayName: person.displayName, avatarUrl: person.avatarUrl ?? undefined, hasVooplePlus: person.hasVooplePlus } })}
+        {renderAvatar(person)}
         <div className="min-w-0 flex-1">
           {renderDestination({ href: `/${person.username}`, label: `Профиль ${person.displayName}`, active: false,
             className: "block min-w-0 rounded-md font-semibold text-[var(--foreground)] hover:underline focus-visible:outline-2 focus-visible:outline-[var(--material-focus-ring)]",

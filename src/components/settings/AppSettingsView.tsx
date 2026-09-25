@@ -33,7 +33,7 @@ export function AppSettingsView({
   desktopNotificationSettings,
   accountSecuritySettings,
   accountDataSettings,
-  socialSettings,
+  privacySettings,
   subscriptionActive,
 }: {
   renderDestination: SettingsDestinationRenderer;
@@ -43,7 +43,7 @@ export function AppSettingsView({
   desktopNotificationSettings?: ReactNode;
   accountSecuritySettings?: ReactNode;
   accountDataSettings?: ReactNode;
-  socialSettings?: ReactNode;
+  privacySettings?: ReactNode;
   subscriptionActive?: boolean;
 }) {
   const { preferences, updatePreferences, resetPreferences } = useAppPreferences();
@@ -142,7 +142,7 @@ export function AppSettingsView({
       {desktopWindowSettings}
       </> : null}
 
-      {activeSection === "privacy" ? socialSettings : null}
+      {activeSection === "privacy" ? privacySettings : null}
 
       {activeSection === "advanced" ? <section id="hotkeys" className="settings-section">
         <div className="settings-section__header">
@@ -156,6 +156,7 @@ export function AppSettingsView({
           hotkeys={preferences.hotkeys}
           onChange={(hotkeys) => updatePreferences({ hotkeys })}
           runtimeStatus={hotkeyRuntimeStatus}
+          hiddenActions={["newPost"]}
         />
       </section> : null}
 

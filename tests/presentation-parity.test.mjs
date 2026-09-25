@@ -106,12 +106,13 @@ test("search title, query and scopes share one sticky stack", () => {
   const explore = read("src/components/explore/ExploreView.tsx");
   const stickyStack = read("src/components/layout/SectionStickyHeaderStack.tsx");
 
-  const stackStart = explore.indexOf("<SectionStickyHeaderStack>");
+  const stackStart = explore.indexOf("<SectionStickyHeaderStack");
   const stackEnd = explore.indexOf("</SectionStickyHeaderStack>");
   assert.ok(stackStart > 0);
   assert.ok(stackEnd > stackStart);
   const contents = explore.slice(stackStart, stackEnd);
-  assert.match(contents, /SectionPageHeader/);
+  assert.doesNotMatch(contents, /SectionPageHeader|SectionHeaderGlow/);
+  assert.match(contents, /<h1 className="sr-only">Поиск<\/h1>/);
   assert.match(contents, /type="search"/);
   assert.match(contents, /aria-label="Раздел поиска"/);
   assert.match(stickyStack, /sticky top-\[var\(--voople-sticky-offset\)\]/);

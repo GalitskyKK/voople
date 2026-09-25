@@ -12,7 +12,7 @@ import { DesktopWindowSettings } from "./DesktopWindowSettings";
 import { DesktopAccountSecuritySettings } from "./DesktopAccountSecuritySettings";
 import { DesktopAccountDataSettings } from "./DesktopAccountDataSettings";
 import { DesktopNotificationSettings } from "./DesktopNotificationSettings";
-import { DesktopInterestSettings } from "./DesktopInterestSettings";
+import { DesktopPrivacySettings } from "./DesktopPrivacySettings";
 import { createDesktopTrpcClient } from "../api/trpc";
 
 export function DesktopSettings({
@@ -75,7 +75,7 @@ export function DesktopSettings({
       desktopWindowSettings={<DesktopWindowSettings />}
       desktopCallNotifications
       desktopNotificationSettings={<DesktopNotificationSettings />}
-      socialSettings={<DesktopInterestSettings config={config} session={session} />}
+      privacySettings={<DesktopPrivacySettings config={config} session={session} />}
       subscriptionActive={subscriptionActive}
       accountSecuritySettings={
         <DesktopAccountSecuritySettings config={config} session={session} />

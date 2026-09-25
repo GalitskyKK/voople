@@ -89,7 +89,7 @@ export function DesktopMessagesAdapter({
             <button
               type="button"
               className="voople-link mt-3 inline-flex text-sm font-medium"
-              onClick={() => navigate("/explore")}
+              onClick={() => navigate("/search")}
             >
               Найти людей
             </button>
@@ -157,7 +157,7 @@ export function DesktopMessagesAdapter({
             </span>
           )}
           renderGlobalSearchAction={(query) => (
-            <button type="button" className="voople-link mt-3 font-medium" onClick={() => navigate("/explore")}>
+            <button type="button" className="voople-link mt-3 font-medium" onClick={() => navigate("/search")}>
               Искать «{query}» во всём Voople →
             </button>
           )}

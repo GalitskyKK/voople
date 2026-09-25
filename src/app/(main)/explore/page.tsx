@@ -1,10 +1,11 @@
-import { UserSearch } from "@/components/explore/UserSearch";
+import { redirect } from "next/navigation";
 
 export default async function ExplorePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string | string[] }>;
 }) {
   const { q } = await searchParams;
-  return <UserSearch initialQuery={q?.slice(0, 100) ?? ""} />;
+  const query = typeof q === "string" ? q.slice(0, 100) : "";
+  redirect(query ? `/search?q=${encodeURIComponent(query)}` : "/search");
 }

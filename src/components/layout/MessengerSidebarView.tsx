@@ -35,10 +35,10 @@ export function MessengerSidebarView({ pathname, chats, loading, error, onlineUs
     <nav className="voople-messenger-sidebar flex min-h-0 flex-1 flex-col px-3 pb-3" aria-label="Группы и личные сообщения">
       <div className="voople-messenger-sidebar__search-wrap shrink-0 pb-3">
         {renderDestination({
-          href: "/explore",
+          href: "/search",
           label: "Поиск",
-          active: pathname === "/explore",
-          className: cn("voople-messenger-sidebar__search flex h-10 items-center gap-2.5 rounded-[var(--app-radius-md)] px-2.5 text-xs font-medium transition-colors", pathname === "/explore" ? "bg-[var(--app-accent-soft)] text-[var(--foreground)]" : "text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"),
+          active: pathname === "/search",
+          className: cn("voople-messenger-sidebar__search flex h-10 items-center gap-2.5 rounded-[var(--app-radius-md)] px-2.5 text-xs font-medium transition-colors", pathname === "/search" ? "bg-[var(--app-accent-soft)] text-[var(--foreground)]" : "text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"),
           children: <><Search className="h-4 w-4 shrink-0" aria-hidden="true" /><span className="min-w-0 flex-1 truncate text-left">Поиск</span><kbd className="voople-messenger-sidebar__kbd hidden text-[10px] sm:inline">Ctrl K</kbd></>,
         })}
       </div>
@@ -53,7 +53,7 @@ export function MessengerSidebarView({ pathname, chats, loading, error, onlineUs
               id="directs"
               title="Личные"
               action={renderDestination({
-                href: "/explore",
+                href: "/search",
                 label: "Новый диалог",
                 active: false,
                 className: "grid h-6 w-6 place-items-center rounded-md text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]",

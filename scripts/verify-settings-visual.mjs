@@ -21,7 +21,7 @@ const entry = `import {createRoot} from 'react-dom/client';
   import {AppSettingsView} from '@/components/settings/AppSettingsView';
   import {AppShellFrame} from '@/components/layout/AppShellFrame';
   const renderDestination=({href,className,children})=><a href={href} className={className}>{children}</a>;
-  function Demo(){return <AppShellFrame routeKind="standard" navigationKind="messenger" sidebar={<aside className="flex h-full flex-col border-r border-[var(--app-border)] p-4 text-sm">VOOPLE</aside>}><main className="voople-scroll h-full overflow-y-auto px-4 sm:px-6"><AppSettingsView renderDestination={renderDestination} socialSettings={<section className="settings-section"><h2>Приватность и активность</h2></section>} subscriptionActive={false}/></main></AppShellFrame>}
+  function Demo(){return <AppShellFrame routeKind="standard" navigationKind="messenger" sidebar={<aside className="flex h-full flex-col border-r border-[var(--app-border)] p-4 text-sm">VOOPLE</aside>}><main className="voople-scroll h-full overflow-y-auto px-4 sm:px-6"><AppSettingsView renderDestination={renderDestination} privacySettings={<section className="settings-section"><h2>Приватность и активность</h2></section>} subscriptionActive={false}/></main></AppShellFrame>}
   createRoot(document.getElementById('root')).render(<TRPCReactProvider><AppThemeProvider><AppPreferencesProvider><Demo/></AppPreferencesProvider></AppThemeProvider></TRPCReactProvider>);`;
 const bundle = await build({
   stdin: { contents: entry, resolveDir: repo, loader: "tsx" },

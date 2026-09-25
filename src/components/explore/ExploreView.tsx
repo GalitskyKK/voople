@@ -1,15 +1,12 @@
 import { Search } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { SectionFrame } from "@/components/layout/SectionFrame";
-import { SectionPageHeader } from "@/components/layout/SectionPageHeader";
 import { SectionStickyHeaderStack } from "@/components/layout/SectionStickyHeaderStack";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { COPY } from "@/lib/constants/copy";
-import type { BetaSearchResult } from "@/types/search";
+import type { BetaSearchPerson, BetaSearchResult } from "@/types/search";
 import type { PublicGroupSearchHit } from "@/types/chat";
-import type { ExploreAvatarRenderer } from "./ExploreSearchResults";
 import { BetaSearchResults } from "./BetaSearchResults";
 
 type ExploreViewProps = {
@@ -21,8 +18,7 @@ type ExploreViewProps = {
   searching: boolean;
   searchError?: string | null;
   renderDestination: NavigationDestinationRenderer;
-  renderAvatar: ExploreAvatarRenderer;
-  badgeUrl?: string;
+  renderAvatar: (person: BetaSearchPerson) => ReactNode;
   onNavigate: (href: string) => void;
 };
 
@@ -50,18 +46,18 @@ export function ExploreView({
   const isEmpty = hasQuery && !searching && Boolean(result) && scopedResultCount === 0;
 
   return (
-    <SectionFrame size="wide" className="py-4 lg:py-6">
-      <SectionStickyHeaderStack>
-        <SectionPageHeader title={COPY.search} density="compact" />
+    <SectionFrame size="wide" className="py-3 lg:py-5">
+      <SectionStickyHeaderStack className="space-y-2">
+        <h1 className="sr-only">Поиск</h1>
         <label className="relative block">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]" />
-          <span className="sr-only">Поиск</span>
+          <span className="sr-only">Поиск людей и публичных групп</span>
           <input
             type="search"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder="Люди и публичные группы"
-            className="voople-input min-w-0 flex-1 py-2.5 pl-10 pr-3 text-sm"
+            className="voople-input min-h-11 w-full min-w-0 py-2.5 pl-10 pr-3 text-sm"
           />
         </label>
 
@@ -72,7 +68,7 @@ export function ExploreView({
         </div>
       </SectionStickyHeaderStack>
 
-      <div className="voople-user-search space-y-6 pb-4 pt-2">
+      <div className="voople-user-search space-y-5 pb-4 pt-1">
 
         {!hasQuery ? <p className="text-sm text-[var(--app-muted)]">Найдите человека или публичную группу по имени.</p> : null}
         {hasQuery && debouncedQuery.length < 2 && (

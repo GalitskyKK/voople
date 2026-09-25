@@ -42,16 +42,11 @@ export function UserSearch({ initialQuery = "" }: { initialQuery?: string }) {
           {children}
         </Link>
       )}
-      renderAvatar={({ author }) => (
+      renderAvatar={(person) => (
         <ProfileAvatar
-          displayName={author.displayName}
+          displayName={person.displayName}
           size="sm"
-          animatedAvatarUrl={
-            author.avatarUrl ??
-            author.customization?.assets.animatedAvatarUrl
-          }
-          decorationUrl={author.customization?.assets.avatarDecorationUrl}
-          ringId={author.customization?.avatarRingId}
+          animatedAvatarUrl={person.avatarUrl}
         />
       )}
     />

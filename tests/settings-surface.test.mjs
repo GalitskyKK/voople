@@ -27,7 +27,7 @@ test("settings surfaces use existing theme tokens and visible keyboard focus", (
 test("beta settings keep account and device sections while deferring old social controls", () => {
   const nav = read("src/components/settings/SettingsNavigation.tsx");
   const privacy = read("src/components/social/UserPrivacySettingsPanel.tsx");
-  const web = read("src/components/settings/WebInterestSettings.tsx");
+  const web = read("src/components/settings/WebPrivacySettings.tsx");
   for (const label of ["Аккаунт", "Профиль", "Приватность", "Уведомления", "Голос и видео", "Внешний вид", "Безопасность", "Дополнительно"]) {
     assert.ok(nav.includes(label));
   }

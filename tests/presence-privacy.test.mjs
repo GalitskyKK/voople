@@ -14,8 +14,8 @@ test("online presence is filtered by the server instead of a global client chann
 });
 
 test("web and desktop compose the same privacy settings view", () => {
-  const web = read("src/components/settings/WebInterestSettings.tsx");
-  const desktop = read("desktop/src/settings/DesktopInterestSettings.tsx");
+  const web = read("src/components/settings/WebPrivacySettings.tsx");
+  const desktop = read("desktop/src/settings/DesktopPrivacySettings.tsx");
   assert.match(web, /UserPrivacySettingsPanel/);
   assert.match(desktop, /UserPrivacySettingsPanel/);
 });

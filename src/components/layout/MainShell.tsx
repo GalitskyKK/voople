@@ -54,9 +54,7 @@ export function MainShell({
     isMessagesRoute && !isLg && isMessagesThreadPath(pathname);
   const hideMobileTopBar = isMessagesRoute && !isLg;
   const hideMobileBottomNav = isMobileMessagesThread;
-  const showFab =
-    !pathname.startsWith("/messages") &&
-    (pathname === "/feed" || pathname === "/me" || isProfileRoute);
+  const showFab = pathname === "/feed";
 
   useEffect(
     () => registerInternalNavigationAdapter((href) => router.push(href)),

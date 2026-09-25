@@ -107,7 +107,7 @@ export const FEATURE_AVAILABILITY = Object.freeze({
     exposure: "secondary",
     platforms: CURRENT_PLATFORMS,
     channels: ["internal", "beta"],
-    fallbackHref: "/explore",
+    fallbackHref: "/search",
   },
   feed_recommendations: {
     exposure: "secondary",

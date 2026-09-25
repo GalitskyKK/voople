@@ -5,9 +5,7 @@ import { ExploreView } from "@/components/explore/ExploreView";
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { AppPageContent } from "@/components/layout/AppPageContent";
 import { useDebouncedSearchQuery } from "@/hooks/useDebouncedSearchQuery";
-import { resolveRingStyle } from "@/lib/customization/rings";
-import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
-import type { PostAuthorView } from "@/types/domain";
+import type { BetaSearchPerson } from "@/types/search";
 
 import type { DesktopConfig } from "../config";
 import { useDesktopExplore } from "../explore/useDesktopExplore";
@@ -38,44 +36,26 @@ export function DesktopExploreAdapter({
         searchError={explore.searchError}
         renderDestination={renderDestination}
         onNavigate={navigate}
-        badgeUrl={vooplusBadgeUrl(config.assetsCdnUrl)}
-        renderAvatar={({ author }) => (
-          <DesktopExploreAvatar author={author} />
+        renderAvatar={(person) => (
+          <DesktopExploreAvatar person={person} />
         )}
       />
     </AppPageContent>
   );
 }
 
-function DesktopExploreAvatar({ author }: { author: PostAuthorView }) {
-  const customization = author.customization;
-  const avatarUrl =
-    author.avatarUrl ?? customization?.assets.animatedAvatarUrl;
-  const decorationUrl = customization?.assets.avatarDecorationUrl;
-  const ringStyle = customization?.avatarRingId
-    ? resolveRingStyle(customization.avatarRingId)
-    : undefined;
+function DesktopExploreAvatar({ person }: { person: BetaSearchPerson }) {
 
   return (
     <ProfileAvatarVisual
-      displayName={author.displayName}
+      displayName={person.displayName}
       size="sm"
-      ringClassName={ringStyle?.className}
       avatarImage={
-        avatarUrl ? (
+        person.avatarUrl ? (
           <img
-            src={avatarUrl}
+            src={person.avatarUrl}
             alt=""
             className="h-full w-full object-cover"
-          />
-        ) : undefined
-      }
-      decorationImage={
-        decorationUrl ? (
-          <img
-            src={decorationUrl}
-            alt=""
-            className="h-full w-full max-w-none object-contain object-center"
           />
         ) : undefined
       }

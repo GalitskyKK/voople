@@ -24,13 +24,16 @@ export function HotkeySettings({
   hotkeys,
   onChange,
   runtimeStatus,
+  hiddenActions = [],
 }: {
   hotkeys: HotkeyBinding[];
   onChange: (value: HotkeyBinding[]) => void;
   runtimeStatus?: HotkeyRuntimeStatus;
+  hiddenActions?: readonly HotkeyAction[];
 }) {
   const [capturing, setCapturing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const visibleHotkeys = hotkeys.filter((binding) => !hiddenActions.includes(binding.action));
 
   const updateBinding = (id: string, patch: Partial<HotkeyBinding>) => {
     onChange(hotkeys.map((binding) => (
@@ -61,7 +64,7 @@ export function HotkeySettings({
       return;
     }
 
-    const conflict = hotkeys.find(
+    const conflict = visibleHotkeys.find(
       (item) => item.id !== binding.id && item.shortcut === shortcut,
     );
     if (conflict) {
@@ -138,7 +141,7 @@ export function HotkeySettings({
       </div>
 
       <div className="settings-hotkey-list">
-        {hotkeys.map((binding) => {
+        {visibleHotkeys.map((binding) => {
           const active = capturing === binding.id;
           const definition = HOTKEY_ACTIONS.find(({ id }) => id === binding.action);
           return (
@@ -153,7 +156,7 @@ export function HotkeySettings({
                 >
                   {ACTION_GROUPS.map((group) => (
                     <optgroup label={group} key={group}>
-                      {HOTKEY_ACTIONS.filter((action) => action.group === group).map(
+                      {HOTKEY_ACTIONS.filter((action) => action.group === group && !hiddenActions.includes(action.id)).map(
                         (action) => (
                           <option value={action.id} key={action.id}>
                             {action.label}

@@ -114,6 +114,7 @@ const RESERVED_PROFILE_SLUGS = new Set([
   "messages",
   "notifications",
   "post",
+  "search",
   "room-invites",
   "settings",
   "shop",
@@ -170,14 +171,14 @@ export function DesktopShell({
   onPendingPathPreserved: (path: string) => void;
   session: Session;
 }) {
-  const [pathname, setPathname] = useState(initialPathname ?? "/feed");
+  const [pathname, setPathname] = useState(initialPathname === "/explore" ? "/search" : initialPathname ?? "/messages");
   const [syncError, setSyncError] = useState<string | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
   const [feedVersion, setFeedVersion] = useState(0);
   const [feedTab, setFeedTab] = useState<FeedTabId>("overview");
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const previousPathnameRef = useRef("/feed");
-  const roomSurfacePathRef = useRef(initialPathname ?? "/feed");
+  const previousPathnameRef = useRef("/messages");
+  const roomSurfacePathRef = useRef(initialPathname ?? "/messages");
   const [viewerSummary, setViewerSummary] = useState<{
     username: string;
     displayName: string;
@@ -250,9 +251,10 @@ export function DesktopShell({
         void getSupabase(config).auth.signOut();
         return;
       }
+      const destination = href === "/explore" ? "/search" : href;
       setPathname((current) => {
-        if (current !== href) previousPathnameRef.current = current;
-        return href;
+        if (current !== destination) previousPathnameRef.current = current;
+        return destination;
       });
     },
     [config],
@@ -277,12 +279,13 @@ export function DesktopShell({
   const hotkeyActions = useMemo(
     () => ({
       newPost: () => {
+        if (pathname !== "/feed") return;
         revealMainWindow();
         setComposerOpen(true);
       },
       search: () => {
         revealMainWindow();
-        navigate("/explore");
+        navigate("/search");
       },
       messages: () => {
         revealMainWindow();
@@ -300,9 +303,9 @@ export function DesktopShell({
       },
       leaveVoiceRoom: voiceSession.leaveRoom,
     }),
-    [navigate, revealMainWindow, voiceSession],
+    [navigate, pathname, revealMainWindow, voiceSession],
   );
-  useDesktopHotkeys(preferences.hotkeys, hotkeyActions, pathname === "/settings");
+  useDesktopHotkeys(preferences.hotkeys.filter(({ action }) => action !== "newPost"), hotkeyActions, pathname === "/settings");
 
   const renderDestination = useCallback<NavigationDestinationRenderer>(
     ({ href, label, className, active, children, onNavigate }) => (
@@ -386,7 +389,7 @@ export function DesktopShell({
               navigate={navigate}
               tab={feedTab}
             />
-          ) : pathname === "/explore" ? (
+          ) : pathname === "/search" ? (
             <DesktopExplore
               config={config}
               session={session}
@@ -469,7 +472,7 @@ export function DesktopShell({
         </Suspense>
       </div>
 
-      {(pathname === "/feed" || pathname === "/me") && (
+      {pathname === "/feed" && (
         <button
           type="button"
           className="desktop-create-fab"

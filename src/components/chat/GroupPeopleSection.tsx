@@ -58,7 +58,7 @@ function GroupPeopleRow({ member, variant, online, onOpenProfile, onVoop, voopin
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
           <strong className="truncate text-sm font-semibold text-[var(--foreground)]">{member.displayName}</strong>
-          {variant === "live" ? <Radio className="h-3 w-3 shrink-0 text-[var(--voople-ice)]" aria-label="В голосе" /> : online ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" aria-label="В сети" /> : null}
+          {variant === "live" ? <Radio className="h-3 w-3 shrink-0 text-[var(--voople-ice)]" aria-label="В голосе" /> : online ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--material-presence)]" aria-label="В сети" /> : null}
         </span>
         <span className="block truncate text-xs text-[var(--app-muted)]">@{member.username}{variant !== "offline" && member.role !== "member" ? ` · ${roleLabels[member.role]}` : ""}</span>
       </span>

@@ -20,7 +20,7 @@ export function Button({
         "active:scale-[0.98] motion-reduce:active:scale-100",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--material-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)]",
         variant === "primary" &&
-          "bg-[var(--theme-accent)] text-[var(--foreground)] shadow-[var(--app-shadow-sm)] hover:brightness-110 hover:shadow-[var(--app-shadow-md)]",
+          "border border-[color-mix(in_srgb,var(--material-ice)_24%,var(--material-border))] bg-[var(--material-interactive-fill)] font-semibold text-[var(--foreground)] shadow-[var(--app-shadow-sm)] hover:border-[var(--material-ice)] hover:bg-[var(--material-control-fill)]",
         variant === "secondary" &&
           "voople-material-control text-[var(--foreground)]",
         variant === "ghost" &&

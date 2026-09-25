@@ -62,7 +62,7 @@ export function MessengerGroupRow({
         href: `/messages/${chat.id}?surface=now`,
         label: `Голосовые комнаты группы ${title}: ${live.participantCount} в голосе`,
         active: false,
-        className: "absolute right-1 top-1/2 flex min-h-8 min-w-8 -translate-y-1/2 flex-col items-center justify-center rounded-lg text-emerald-400 transition hover:bg-emerald-500/10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-emerald-400",
+        className: "absolute right-1 top-1/2 flex min-h-8 min-w-8 -translate-y-1/2 flex-col items-center justify-center rounded-lg text-[var(--material-ice)] transition hover:bg-[var(--material-ice-soft)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--material-focus-ring)]",
         children: (
           <>
             {live.hasScreenShare ? <MonitorUp className="h-3.5 w-3.5" aria-hidden="true" /> : <Radio className="h-3.5 w-3.5" aria-hidden="true" />}
@@ -135,7 +135,7 @@ function SidebarRowCopy({
       <span
         className={cn(
           "block truncate text-xs leading-4",
-          online ? "text-emerald-400" : "text-[var(--app-muted)]",
+          online ? "text-[var(--material-presence)]" : "text-[var(--app-muted)]",
         )}
       >
         {subtitle}

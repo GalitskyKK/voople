@@ -153,17 +153,17 @@ export function VooplePlusPanel({
       </div>
 
       {activeDiscount && (
-        <p className="mt-2 text-sm text-emerald-300/90">{activeDiscount.message}</p>
+        <p className="mt-2 text-sm text-[var(--material-ice)]">{activeDiscount.message}</p>
       )}
       {promoMessage && <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]">{promoMessage}</p>}
 
       {statusLoading ? (
         <p className="mt-4 text-sm text-[color-mix(in_srgb,var(--foreground)_45%,transparent)]">Проверяем подписку…</p>
       ) : active && status?.expiresAt ? (
-        <p className="mt-4 rounded-xl bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+        <p className="mt-4 rounded-xl bg-[var(--material-control-fill)] px-3 py-2 text-sm text-[var(--foreground)]">
           Подписка активна до {formatDate(status.expiresAt)}.
           {status.startedAt ? (
-            <span className="block text-emerald-200/70">С {formatDate(status.startedAt)}</span>
+            <span className="block text-[var(--material-secondary-text)]">С {formatDate(status.startedAt)}</span>
           ) : null}
         </p>
       ) : null}

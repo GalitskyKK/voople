@@ -37,7 +37,7 @@ export function GroupLiveShelfView({ groupId, rooms, currentUserRoomId, pendingR
     return (
       <section className="voople-group-live-shelf voople-group-live-shelf--collapsed shrink-0 px-4 py-1.5">
         <button type="button" onClick={toggleCollapsed} aria-expanded="false" aria-label="Развернуть активные разговоры" className="voople-group-live-shelf__collapsed-button flex min-h-9 w-full items-center gap-2 rounded-lg px-2 text-left">
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
+          <Radio className="h-3.5 w-3.5 shrink-0 text-[var(--material-ice)]" aria-hidden="true" />
           <span className="shrink-0 text-xs font-semibold leading-4 text-[var(--foreground)]">Сейчас</span>
           <span className="min-w-0 truncate text-xs leading-4 text-[var(--app-muted)]">{formatCollapsedRooms(activeRooms)}</span>
           <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 text-[var(--app-muted)]" aria-hidden="true" />
@@ -81,7 +81,7 @@ export function GroupLiveShelfView({ groupId, rooms, currentUserRoomId, pendingR
                     const action = resolveGroupNowRoomAction(room.id, currentUserRoomId);
                     return (
                       <button key={room.id} type="button" role="menuitem" disabled={pendingRoomId === room.id || action === "current"} onClick={() => { setOpenOverflow(null); if (action !== "current") onJoinRoom(room); }} className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm transition-colors hover:bg-[var(--app-surface-soft)] focus-visible:bg-[var(--app-surface-soft)] focus-visible:outline-none disabled:opacity-60">
-                        {room.hasScreenShare ? <MonitorUp className="h-4 w-4 shrink-0 text-[var(--voople-ice)]" aria-hidden="true" /> : <Radio className="h-4 w-4 shrink-0 text-emerald-400" aria-hidden="true" />}
+                        {room.hasScreenShare ? <MonitorUp className="h-4 w-4 shrink-0 text-[var(--voople-ice)]" aria-hidden="true" /> : <Radio className="h-4 w-4 shrink-0 text-[var(--material-ice)]" aria-hidden="true" />}
                         <span className="min-w-0 flex-1 truncate font-medium">{room.name}</span>
                         <span className="text-xs text-[var(--app-muted)]">{action === "current" ? "вы" : room.participantCount}</span>
                       </button>

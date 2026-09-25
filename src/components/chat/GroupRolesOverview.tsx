@@ -15,7 +15,7 @@ const ROLES = [
     label: "Администратор",
     description: "Участники, разделы, оформление, emoji, sounds и ссылки",
     icon: ShieldCheck,
-    tone: "text-violet-400 bg-violet-400/10",
+    tone: "text-[var(--material-ice)] bg-[var(--material-ice-soft)]",
   },
   {
     id: "member",
@@ -68,7 +68,7 @@ export function GroupRolesOverview({ members }: { members: ChatGroupMemberView[]
             {PERMISSIONS.map(([label, owner, admin, member]) => (
               <tr key={label} className="border-t border-[var(--app-border)]">
                 <th className="px-3 py-2.5 font-medium">{label}</th>
-                {[owner, admin, member].map((allowed, index) => <td key={`${label}-${index}`} className="px-3 py-2.5 text-center">{allowed ? <Check className="mx-auto h-4 w-4 text-emerald-500" aria-label="Разрешено" /> : <X className="mx-auto h-4 w-4 text-[var(--app-muted)]" aria-label="Недоступно" />}</td>)}
+                {[owner, admin, member].map((allowed, index) => <td key={`${label}-${index}`} className="px-3 py-2.5 text-center">{allowed ? <Check className="mx-auto h-4 w-4 text-[var(--material-ice)]" aria-label="Разрешено" /> : <X className="mx-auto h-4 w-4 text-[var(--app-muted)]" aria-label="Недоступно" />}</td>)}
               </tr>
             ))}
           </tbody>

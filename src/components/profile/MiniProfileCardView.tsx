@@ -71,7 +71,7 @@ export function MiniProfileCardView({
             <span
               className={cn(
                 "h-2 w-2 rounded-full",
-                online ? "bg-emerald-400" : "bg-[var(--app-muted)]",
+                online ? "bg-[var(--material-presence)]" : "bg-[var(--app-muted)]",
               )}
               aria-hidden
             />

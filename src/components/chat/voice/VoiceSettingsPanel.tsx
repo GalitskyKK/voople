@@ -183,7 +183,7 @@ export function VoiceSettingsPanel({
             </button>
             <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-[var(--app-surface)]">
               <div
-                className="h-full rounded-full bg-emerald-400 transition-[width] duration-75"
+                className="h-full rounded-full bg-[var(--material-ice)] transition-[width] duration-75"
                 style={{ width: `${micTestLevel}%` }}
               />
             </div>

@@ -62,7 +62,7 @@ export function DonationPanel({ onDonate, pending, message }: DonationPanelProps
   return (
     <section className="voople-panel border border-[color-mix(in_srgb,var(--theme-accent)_18%,transparent)] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--theme-accent)_12%,var(--app-surface)),var(--app-surface))] p-4">
       <div className="mb-3 flex items-center gap-2">
-        <Heart className="h-4 w-4 text-pink-300" aria-hidden />
+        <Heart className="h-4 w-4 text-[var(--material-secondary-text)]" aria-hidden />
         <h2 className="text-sm font-semibold text-[var(--foreground)]">Поддержать Вупл.</h2>
       </div>
       <div className="flex flex-wrap gap-2">

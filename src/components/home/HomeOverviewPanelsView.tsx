@@ -40,7 +40,7 @@ function DestinationItem({ item, renderDestination, compact = false, showPresenc
         isOnline={online}
       />
       <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{item.title}</span><span className="mt-0.5 block truncate text-xs text-[var(--app-muted)]">{showPresence && online ? "Сейчас в сети" : item.subtitle}</span></span>
-      {item.unreadCount ? <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--theme-accent)] px-1.5 py-0.5 text-[10px] font-bold text-white" aria-label={`Непрочитанных: ${item.unreadCount}`}>{item.unreadCount > 99 ? "99+" : item.unreadCount}</span> : null}
+      {item.unreadCount ? <span className="inline-flex min-w-5 items-center justify-center rounded-full border border-[var(--material-border-hover)] bg-[var(--material-control-fill)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--material-ice)]" aria-label={`Непрочитанных: ${item.unreadCount}`}>{item.unreadCount > 99 ? "99+" : item.unreadCount}</span> : null}
       <ArrowRight className="h-4 w-4 shrink-0 text-[var(--app-muted)] opacity-0 transition group-hover:opacity-100" />
     </>,
   });

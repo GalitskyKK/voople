@@ -86,7 +86,7 @@ export function OnboardingFlow({
 
           {step === 2 ? (
             <div className="mx-auto flex max-w-md flex-col items-center py-12 text-center">
-              <span className="grid h-16 w-16 place-items-center rounded-full bg-emerald-400/15 text-emerald-400"><Check className="h-8 w-8" /></span>
+              <span className="grid h-16 w-16 place-items-center rounded-full bg-[var(--material-ice-soft)] text-[var(--material-ice)]"><Check className="h-8 w-8" /></span>
               <h1 className="mt-6 text-3xl font-bold tracking-[-.04em]">Профиль готов</h1>
               <p className="mt-3 max-w-sm text-sm leading-6 text-[var(--app-muted)]">Дальше можно записать первый кружок, выбрать оформление и найти друзей.</p>
               {!redirectAfter ? <div className="mt-6 grid w-full grid-cols-3 gap-2" role="radiogroup" aria-label="Куда перейти после настройки">

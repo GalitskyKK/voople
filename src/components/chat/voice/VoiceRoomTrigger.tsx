@@ -36,9 +36,9 @@ export function VoiceRoomTrigger({
       className={cn(
         "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-xs font-medium transition",
         mediaStatus === "connected"
-          ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/15"
+          ? "border-[var(--material-ice)] bg-[var(--material-ice-soft)] text-[var(--material-ice)] hover:bg-[var(--material-interactive-fill)]"
           : mediaStatus === "reconnecting"
-            ? "border-amber-500/35 bg-amber-500/10 text-amber-300"
+            ? "border-[var(--material-border-hover)] bg-[var(--material-control-fill)] text-[var(--material-secondary-text)]"
             : active
               ? "border-[var(--theme-accent)]/35 bg-[var(--app-accent-soft)] text-(--theme-accent)"
               : "border-[var(--app-border)] text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]",

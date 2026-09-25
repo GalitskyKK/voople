@@ -175,7 +175,7 @@ export function GlobalPlayer({ variant }: GlobalPlayerProps) {
                   touchMobilePlayer();
                   togglePlay();
                 }}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--theme-accent)] text-[var(--foreground)]"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--material-border-hover)] bg-[var(--material-control-fill)] text-[var(--material-ice)]"
                 aria-label={isPlaying ? "Пауза" : "Воспроизвести"}
               >
                 {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 translate-x-px" />}
@@ -253,7 +253,7 @@ export function GlobalPlayer({ variant }: GlobalPlayerProps) {
           <button
             type="button"
             onClick={togglePlay}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--theme-accent)] text-[var(--foreground)] shadow-[var(--app-shadow-sm)]"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--material-border-hover)] bg-[var(--material-control-fill)] text-[var(--material-ice)] shadow-[var(--app-shadow-sm)]"
             aria-label={isPlaying ? "Пауза" : "Воспроизвести"}
           >
             {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5 translate-x-px" />}

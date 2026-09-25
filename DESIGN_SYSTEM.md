@@ -9,14 +9,17 @@ look and behave.
 
 Voople has one identity with two presentation modes:
 
-- **Product UI is calm and soft.** Dense tools such as chat, rooms, settings and
-  profiles use quiet surfaces, restrained elevation and predictable geometry.
+- **Authenticated beta uses cold material.** Void, Chrome, Matte Stage,
+  Frosted Object and Signal Frost define hierarchy. Ice is a small light
+  signal; wine is a faint ambient reflection. Neither is a panel fill.
 - **Public pages are editorial.** The landing page may use larger type, more
   whitespace, hairline dividers and scroll-led storytelling, while retaining
-  the same typeface, purple brand colour and interaction language.
-- **Purple means Voople or a primary action.** Success, danger, presence and
-  media state use their own semantic colours. Decorative gradients must not
-  compete with primary actions.
+  the same typeface and interaction language. Its purple brand assets do not
+  define authenticated controls.
+- **State uses form and intensity.** Presence is a quiet cold point; live voice
+  adds a radio/waveform pictogram and ice signal. Danger keeps muted red for
+  safety. Primary actions rely on density, contrast and edge, not a purple or
+  saturated blue fill.
 - **Familiar patterns, Voople language.** Proven interaction patterns may be
   reused, but layouts, terminology and visual assets must not imitate another
   product literally.
@@ -31,7 +34,7 @@ replace it with page-specific initials, mascots or generated symbols.
 Components consume semantic tokens, never reference-specific colours. The
 dependency direction is:
 
-`primitive palette -> Chrome / Stage / Glass / Signal tokens -> component primitives -> route composition`
+`primitive palette -> Chrome / Stage / Frost / Signal tokens -> component primitives -> route composition`
 
 The canonical tokens live in `src/app/globals.css`; Tauri imports the same
 global stylesheet and only supplies native window fonts and chrome.
@@ -41,8 +44,8 @@ global stylesheet and only supplies native window fonts and chrome.
 Void and Light each have complete material values in `globals.css`. App theme
 selection supplies the base `--background` / `--foreground` palette; Light
 supplies genuinely light fills, borders, shadows, focus and loading colours.
-Messenger may retain restrained ice/wine accents and its own layout, but must
-not force `color-scheme: dark` or redefine a second canvas palette. Profile
+Messenger owns composition but must not redefine a second canvas palette or
+force `color-scheme: dark`. Profile
 Card customization is an independent identity surface, not a generic panel.
 
 | Layer | Tokens / primitives | Purpose |
@@ -50,10 +53,10 @@ Card customization is an independent identity surface, not a generic panel.
 | Primitive | `--background`, `--foreground`, `--app-*`, brand and state colours | Theme inputs. |
 | Chrome | `--material-chrome`, `--material-canvas-sidebar` | One mostly opaque, unblurred shell shared by sidebar and contextual headers. Separation is spatial, not a border between them. |
 | Matte Stage | `--material-stage`, `--material-stage-depth`, `--material-ambient-wash`, `.voople-stage` | Inset working plane for content, with low wine/ice illumination and no backdrop blur. Stage has no repeated texture tile; visible grid artefacts are unacceptable. |
-| Glass | `--material-panel-fill`, `--material-raised-fill`, `--material-control-fill`, `--material-overlay-fill`, `--material-inset-fill`, `--material-interactive-fill`, `--material-glass-body`, `.voople-glass-object`, `.voople-overlay-surface` | Independent objects and overlays above Stage. Use one blur at the object boundary; list rows and controls use fills without blur. |
-| Signal Glass | `--material-glass-active-body`, `.voople-signal-glass` | Current/live objects keep a neutral body and gain an ice edge and restrained bloom. |
+| Frosted Object | `--material-panel-fill`, `--material-raised-fill`, `--material-control-fill`, `--material-overlay-fill`, `--material-inset-fill`, `--material-interactive-fill`, `--material-glass-body`, `.voople-glass-object`, `.voople-overlay-surface` | Independent Rooms, composers, mini voice and overlays above Stage. Use one blur at the object boundary; rows and controls use fills without blur. |
+| Signal Frost | `--material-glass-active-body`, `.voople-signal-glass` | Current/live objects keep a neutral body and gain an ice edge and restrained bloom. |
 | Optical glass | `--material-glass-edge`, `--material-glass-active-edge`, `--material-glass-scrim` | One-pixel optical rim, restrained active edge and a low-contrast content scrim. No colour field inside Room cards. |
-| Shared properties | `--material-border`, `--material-border-hover`, `--material-highlight`, `--material-specular`, `--material-accent-glow`, `--material-shadow`, `--material-shadow-hover`, `--material-overlay-shadow`, `--material-blur`, `--material-saturation`, `--material-radius`, `--material-control-radius`, `--material-focus-ring`, `--material-secondary-text`, `--material-skeleton-*` | Consistent edge, shape, focus and loading. Blur is optional. |
+| Shared properties | `--material-ice`, `--material-ice-soft`, `--material-wine`, `--material-presence`, `--material-border`, `--material-border-hover`, `--material-highlight`, `--material-specular`, `--material-accent-glow`, `--material-shadow`, `--material-shadow-hover`, `--material-overlay-shadow`, `--material-blur`, `--material-saturation`, `--material-radius`, `--material-control-radius`, `--material-focus-ring`, `--material-secondary-text`, `--material-skeleton-*` | Consistent light, edge, shape, focus, presence and loading. Blur is optional. |
 | Component | `Card` panel/raised/inset/row, secondary `Button`, `Skeleton` avatar/text/room/row; `.voople-material-control`, `.voople-material-row` | Small reusable presentation vocabulary. |
 | Route override | `messenger-glass.css` | Layout and restrained accents; shared surfaces resolve through material tokens. |
 
@@ -73,7 +76,13 @@ material hierarchy remain. Reduced motion stops animated specular; reduced
 transparency removes blur and substitutes opaque
 fills in both themes.
 
-### Brand palette
+### Legacy/public brand palette
+
+The `--voople-brand-*` purple family is retained for public/marketing assets,
+logo artwork and user-selected identity content. It is **not** the canonical
+authenticated application palette, focus colour, selected state or default
+primary action. Void and Light app themes use cold ice accents; a custom
+Profile Card may display the user's own colours without recolouring the shell.
 
 | Token | Value | Use |
 | --- | --- | --- |
@@ -84,9 +93,11 @@ fills in both themes.
 | `--voople-brand-600` | `#6656c5` | primary hover/pressed |
 | `--voople-brand-800` | `#3c315b` | deep branded surface |
 
-Use semantic aliases (`--theme-accent`, `--app-accent-soft`,
-`--color-success`, `--color-danger`) in components. Do not use a raw palette
-value when a semantic alias exists.
+Authenticated components use semantic material aliases. `--theme-accent` is a
+compatibility alias and resolves to ice in the default Void and Light themes;
+do not use `--voople-brand-*` in generic authenticated controls. `groupAccentColor`
+belongs to Group identity (avatar, tag, explicit preview), not tabs, Room body,
+focus, Settings, composer or primary controls.
 
 ### Surfaces and content
 

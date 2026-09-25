@@ -12,7 +12,7 @@ export function ProfileCommonGroups({ userId, isOwner, onNavigate }: {
   const query = trpc.profile.commonGroups.useQuery({ userId }, { enabled: authenticated });
   if (!authenticated) return null;
   return (
-    <section className="min-w-0 rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-surface)] p-4" aria-label={isOwner ? "Ваши группы" : "Общие группы"}>
+    <section className="voople-profile-common-groups min-w-0 px-1 py-2" aria-label={isOwner ? "Ваши группы" : "Общие группы"}>
       <h2 className="text-sm font-semibold text-[var(--foreground)]">{isOwner ? "Ваши группы" : "Общие группы"} · {query.data?.count ?? 0}</h2>
       {query.isLoading ? <p className="mt-3 text-sm text-[var(--app-muted)]">Загрузка…</p> : null}
       {query.error ? <p role="alert" className="mt-3 text-sm text-red-400">Не удалось загрузить общие группы</p> : null}

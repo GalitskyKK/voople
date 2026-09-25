@@ -8,7 +8,6 @@ import { ChatWindowHeaderVisual } from "@/components/chat/ChatWindowHeaderVisual
 import { ChatPeerPresence } from "@/components/chat/ChatPeerPresence";
 import { GroupInfoDrawerView } from "@/components/chat/GroupInfoDrawerView";
 import { GroupInviteCopyNotice, useGroupInviteQuickCopy } from "@/components/chat/useGroupInviteQuickCopy";
-import { GroupRoomAction } from "@/components/chat/GroupRoomAction";
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { ChatMediaLightbox } from "@/components/chat/ChatMediaLightbox";
@@ -170,16 +169,6 @@ export function DesktopChatThreadAdapter({
             infoLoading={groupPanel.loading}
             membersLoading={groupPanel.loading}
             error={groupPanel.error}
-            roomAction={(
-              <GroupRoomAction
-                groupId={chatId}
-                groupName={title}
-                canCreatePinned={data.chat.viewerRole !== "member"}
-                display="label"
-                onBeforeOpen={() => groupPanel.setOpen(false)}
-                onOpenProfile={onNavigateProfile}
-              />
-            )}
             onOpenChange={(open) => {
               groupPanel.setOpen(open);
               if (open) groupPanel.load();

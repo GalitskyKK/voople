@@ -67,7 +67,7 @@ export function ShopItemCard({
 
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
           {item.isFree ? (
-            <span className="rounded-full bg-emerald-500/15 px-2 py-1 text-emerald-200">Сейчас бесплатно</span>
+            <span className="rounded-full border border-[var(--material-border)] bg-[var(--material-control-fill)] px-2 py-1 text-[var(--foreground)]">Сейчас бесплатно</span>
           ) : (
             <>
               <span className="rounded-full bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] px-2 py-1 text-[color-mix(in_srgb,var(--foreground)_70%,transparent)]">

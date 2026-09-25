@@ -65,6 +65,8 @@ const entry = `import {useState} from 'react';import {createRoot} from 'react-do
   createRoot(document.getElementById('root')).render(<AppThemeProvider><Demo/></AppThemeProvider>);`;
 
 const stagedEntry = entry
+  .replace("import {GroupIdentity} from '@/components/chat/GroupManagementTrigger';", "import {GroupIdentity} from '@/components/chat/GroupManagementTrigger';import {GroupInfoDrawerView} from '@/components/chat/GroupInfoDrawerView';")
+  .replace('<button className="voople-group-header-identity flex min-w-0 flex-1 items-center gap-3 text-left"><GroupIdentity chatName="VOICEKK" memberCount={7} groupIcon="V" groupAvatarUrl={null} groupAccentColor="#8b5cf6" groupTag={null}/></button><button className="h-8 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] px-3 text-xs font-semibold">Войти в Лобби</button>', '<GroupInfoDrawerView open={false} chatName="VOICEKK" memberCount={7} groupIcon="V" groupAvatarUrl={null} groupBannerUrl={null} groupAccentColor="#8b5cf6" groupTag="KK" canManage={true} members={members} now={{groupId:"group-1",groupName:"VOICEKK",rooms,onlineOutsideRooms:[],visibleOnlineCount:7,currentUserRoomId:"drg"}} onOpenChange={()=>{}} onManage={()=>{}} onInvite={()=>{}} onOpenProfile={()=>{}}/>')
   .replace('onTabChange={setTab}/></div>{tab===', 'onTabChange={setTab}/></div><div className="voople-stage flex min-h-0 flex-1 flex-col">{tab===')
   .replace('onVoop={()=>{}}/>}</div>}', 'onVoop={()=>{}}/>}</div></div>}');
 const bundle = await build({

@@ -139,7 +139,7 @@ export function VoiceParticipantCard({
           <MicOff className="h-4 w-4" aria-label="Микрофон выключен" />
         </span>
       ) : (
-        <span className="absolute right-3 top-3 z-10 rounded-full bg-[var(--theme-accent)] p-1.5 text-white">
+        <span className="absolute right-3 top-3 z-10 rounded-full border border-[var(--material-border-hover)] bg-[var(--material-control-fill)] p-1.5 text-[var(--material-ice)]">
           <Mic className="h-4 w-4" aria-label="Микрофон включён" />
         </span>
       )}

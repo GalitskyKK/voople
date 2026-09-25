@@ -1,15 +1,14 @@
 /* ==========================================================================
-   Messages / Groups — unified glass system
-   Reference-scale layout + restrained burgundy/ice glass.
+   Messages / Groups — Chrome, Stage and Frost composition.
    ========================================================================== */
 
 :where(.voople-shell, .voople-dropdown-menu)[data-route-kind="messages"] {
   --voople-room-radius: var(--material-radius);
-  --voople-ice: #79bdff;
-  --voople-ice-strong: #c1e0ff;
-  --voople-ice-soft: rgb(121 189 255 / 0.12);
-  --voople-wine-soft: rgb(142 64 88 / 0.12);
-  --voople-wine-wash: rgb(94 34 55 / 0.12);
+  --voople-ice: var(--material-ice);
+  --voople-ice-strong: var(--material-ice);
+  --voople-ice-soft: var(--material-ice-soft);
+  --voople-wine-soft: rgb(142 64 88 / 0.06);
+  --voople-wine-wash: rgb(94 34 55 / 0.05);
   --app-accent-soft: var(--material-interactive-fill);
   --app-surface: var(--material-panel-fill);
   --app-surface-soft: var(--material-inset-fill);
@@ -26,9 +25,9 @@
 }
 
 html[data-app-theme="light"] :where(.voople-shell, .voople-dropdown-menu)[data-route-kind="messages"] {
-  --voople-ice: #315f92;
-  --voople-ice-strong: #244d79;
-  --voople-ice-soft: rgb(49 95 146 / 0.10);
+  --voople-ice: var(--material-ice);
+  --voople-ice-strong: var(--material-ice);
+  --voople-ice-soft: var(--material-ice-soft);
   --voople-wine-soft: rgb(142 64 88 / 0.055);
   --voople-wine-wash: rgb(142 64 88 / 0.045);
 }
@@ -74,17 +73,17 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 }
 
 .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__search {
-  height: 44px !important;
+  height: 44px;
   border: 1px solid var(--app-border);
   border-radius: var(--material-control-radius);
   background: var(--material-control-fill);
 }
 
 .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__row {
-  min-height: 46px !important;
+  min-height: 46px;
   border: 1px solid transparent;
   border-radius: 10px;
-  transform: none !important;
+  transform: none;
   transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
 }
 
@@ -93,21 +92,21 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 }
 
 .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__row--active {
-  border-color: color-mix(in srgb, var(--theme-accent) 26%, var(--app-border));
-  background: color-mix(in srgb, var(--app-accent-soft) 82%, transparent);
+  border-color: color-mix(in srgb, var(--material-ice) 18%, var(--app-border));
+  background: var(--material-interactive-fill);
 }
 
 /* The scroll host owns the full-height atmosphere. This fixes the visual
    cutoff where GroupNowPanelView ended after its content. */
-.voople-shell[data-route-kind="messages"] .voople-scroll:has(> .voople-group-now),
+/*.voople-shell[data-route-kind="messages"] .voople-scroll:has(> .voople-group-now),
 .voople-shell[data-route-kind="messages"] .voople-scroll:has(> .voople-group-people) {
   background: transparent;
-}
+}*/
 
 .voople-shell[data-route-kind="messages"] .voople-group-now,
 .voople-shell[data-route-kind="messages"] .voople-group-people {
   min-height: 100%;
-  background: transparent !important;
+  background: transparent;
 }
 
 /* --------------------------------------------------------------------------
@@ -115,13 +114,13 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
    -------------------------------------------------------------------------- */
 
 .voople-shell[data-route-kind="messages"] .voople-panel-header {
-  min-height: 64px;
-  padding: 8px 24px;
+  min-height: 62px;
+  padding: 4px 24px;
   background: var(--material-chrome);
 }
 
 .voople-shell[data-route-kind="messages"] .voople-chat-window__header--group {
-  min-height: 72px;
+  min-height: 62px;
 }
 
 .voople-shell[data-route-kind="messages"] .voople-group-surface-header {
@@ -138,8 +137,8 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 .voople-group-header-identity:hover { background: transparent; }
 
 .voople-chat-window__header--group .voople-group-header-avatar > * {
-  width: 64px;
-  height: 64px;
+  width: 54px;
+  height: 54px;
   border-radius: 14px;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.08),
@@ -151,8 +150,8 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
    the same avatar in `voople-group-header-avatar`. Keep both hosts on the
    same glass hero scale. */
 .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__avatar {
-  width: 64px;
-  height: 64px;
+  width: 54px;
+  height: 54px;
   flex: none;
   border-radius: 14px;
   box-shadow:
@@ -230,7 +229,7 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 }
 
 .voople-group-header-member:first-child { margin-left: 0; }
-.voople-group-header-member > * { width: 100% !important; height: 100% !important; border-radius: inherit !important; }
+.voople-group-header-member > * { width: 100%; height: 100%; border-radius: inherit; }
 
 .voople-group-header-overflow {
   display: grid;
@@ -266,7 +265,7 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 .voople-group-header-invite {
   padding-inline: 14px;
   color: var(--voople-ice-strong);
-  font-size: 14px !important;
+  font-size: 14px;
 }
 
 .voople-group-header-more { width: 40px; }
@@ -283,7 +282,7 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
    -------------------------------------------------------------------------- */
 
 .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs {
-  min-height: 40px;
+  min-height: 38px;
   padding-inline: 24px;
   background: var(--material-chrome);
 }
@@ -295,7 +294,7 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 
 .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab {
   min-width: 52px;
-  height: 40px;
+  height: 38px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -430,7 +429,7 @@ button.voople-room-material:hover .voople-room-material__reflection {
 .voople-shell[data-route-kind="messages"] .voople-chat-sections__selector,
 .voople-shell[data-route-kind="messages"] .voople-chat-sections__favorite,
 .voople-shell[data-route-kind="messages"] .voople-chat-sections__create {
-  border-radius: 11px !important;
+  border-radius: 11px;
 }
 
 .voople-shell[data-route-kind="messages"] .voople-chat-sections__selector {
@@ -454,7 +453,7 @@ button.voople-room-material:hover .voople-room-material__reflection {
 }
 
 .voople-chat-section-menu[data-route-kind="messages"] {
-  border-radius: 15px !important;
+  border-radius: 15px;
 }
 
 .voople-chat-section-menu[data-route-kind="messages"] .voople-subchat-creator {
@@ -893,7 +892,7 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  button.voople-room-material:hover .voople-room-material__reflection { animation: none !important; opacity: 0.18; background-position: 48% 0; }
+  button.voople-room-material:hover .voople-room-material__reflection { animation: none; opacity: 0.18; background-position: 48% 0; }
 }
 
 /* Full Room belongs to the same Group material, without turning media into decoration. */

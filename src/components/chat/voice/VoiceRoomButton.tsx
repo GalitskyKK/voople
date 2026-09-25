@@ -44,7 +44,7 @@ export function VoiceRoomButton({ display = "icon", ...props }: VoiceSessionDesc
         "inline-flex h-9 shrink-0 items-center justify-center rounded-xl border text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-45",
         display === "icon" ? "w-9" : "gap-2 px-3",
         isCurrent && state.mediaStatus === "connected"
-          ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-500"
+          ? "border-[var(--material-ice)] bg-[var(--material-ice-soft)] text-[var(--material-ice)]"
           : active
             ? "border-[color-mix(in_srgb,var(--theme-accent)_40%,var(--app-border))] bg-[var(--app-accent-soft)] text-(--theme-accent)"
             : "border-[var(--app-border)] text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]",

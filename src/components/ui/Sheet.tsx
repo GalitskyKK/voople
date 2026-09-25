@@ -7,7 +7,7 @@ import { X } from "lucide-react";
 import { useIsClient } from "@/hooks/useIsClient";
 import { cn } from "@/lib/utils";
 
-type SheetPlacement = "center" | "bottom" | "right";
+type SheetPlacement = "center" | "bottom" | "right" | "context";
 
 export function Sheet({
   open,
@@ -31,6 +31,7 @@ export function Sheet({
   const mounted = useIsClient();
   const isBottom = placement === "bottom";
   const isRight = placement === "right";
+  const isContext = placement === "context";
   const returnFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -65,14 +66,14 @@ export function Sheet({
     };
 
     const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    if (!isContext) document.body.style.overflow = "hidden";
     document.addEventListener("keydown", onKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      if (!isContext) document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [closeOnEscape, open, onClose]);
+  }, [closeOnEscape, isContext, open, onClose]);
 
   if (!open || !mounted) return null;
 
@@ -85,7 +86,9 @@ export function Sheet({
         desktopOverlayRoot
           ? "absolute inset-0 z-[100] flex justify-center"
           : "fixed inset-0 z-[100] flex justify-center",
-        isBottom
+        isContext
+          ? "items-end lg:items-start lg:justify-end lg:p-4 lg:pt-18"
+          : isBottom
           ? "items-end"
           : isRight
             ? "items-stretch justify-end"
@@ -96,17 +99,19 @@ export function Sheet({
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/65"
+        className={isContext ? "absolute inset-0 bg-black/45 lg:bg-transparent" : "absolute inset-0 bg-black/65"}
         onClick={onClose}
         aria-label="Закрыть"
       />
       <div
         role="dialog"
-        aria-modal="true"
+        aria-modal={isContext ? undefined : "true"}
         aria-label={ariaLabel}
         className={cn(
           "voople-overlay-surface relative z-[101] voople-scroll max-h-[min(90dvh,720px)] w-full max-w-lg overflow-y-auto p-4 pt-5",
-          isBottom
+          isContext
+            ? "max-h-[min(85dvh,680px)] rounded-t-2xl pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:max-h-[calc(100dvh-5.5rem)] lg:max-w-[350px] lg:rounded-2xl lg:pb-5"
+            : isBottom
             ? "rounded-t-2xl pb-6"
             : isRight
               ? "h-dvh max-h-none max-w-sm rounded-none border-y-0 border-r-0 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))]"

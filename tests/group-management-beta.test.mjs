@@ -46,6 +46,9 @@ test("Group Info is summary-only and reaches canonical People tab", () => {
   const surface = read("src/components/chat/GroupSurfaceShell.tsx");
   assert.match(view, /preview = \[\.\.\.\(members \?\? \[\]\)\][\s\S]*?slice\(0, 5\)/);
   assert.match(view, /Все люди/);
+  assert.match(view, /placement="context"/);
+  assert.match(view, /memberCount} участников · \{onlineCount} онлайн · \{roomCount} в голосе/);
+  assert.doesNotMatch(view, /Активные комнаты|roomAction/);
   assert.doesNotMatch(view, /Фильтр участников|onTabChange|MemberFilter/);
   assert.match(controller, /selectGroupTab\?\.\("people"\)/);
   assert.match(surface, /GroupSurfaceNavigationContext\.Provider value=\{setActiveTab\}/);

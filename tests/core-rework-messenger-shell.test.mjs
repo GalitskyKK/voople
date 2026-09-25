@@ -36,7 +36,8 @@ test("messenger sidebar follows the rework information hierarchy", () => {
   );
   assert.doesNotMatch(view, /Главная|События|Магазин/);
   assert.match(rows, /shape="square"/);
-  assert.match(rows, /text-emerald-400/);
+  assert.match(rows, /text-\[var\(--material-ice\)\]/);
+  assert.doesNotMatch(rows, /text-emerald-400/);
   assert.match(rows, /roomCountLabel\(live\.roomCount\)/);
 });
 
@@ -61,6 +62,21 @@ test("messenger identity microtype stays restrained and host-shared", () => {
   assert.match(styles, /\.voople-wordmark,[\s\S]*?\.voople-avatar-token__glyph,[\s\S]*?\.voople-counter/);
   assert.match(styles, /\.voople-wordmark \{[\s\S]*?font-family: var\(--font-geist-sans\)/);
   assert.match(desktopStyles, /Geist Pixel Square Voople/);
+});
+
+test("default authenticated themes use ice signals and neutral primary controls", () => {
+  const themes = source("src/lib/app-themes.ts");
+  const button = source("src/components/ui/Button.tsx");
+  const avatar = source("src/components/profile/ProfileAvatarVisual.tsx");
+  const styles = source("src/app/globals.css");
+
+  assert.match(themes, /id: "void"[\s\S]*?accent: "#9DCBEC"/);
+  assert.match(themes, /id: "light"[\s\S]*?accent: "#315F87"/);
+  assert.match(styles, /--material-presence: #a9bccb/);
+  assert.match(button, /variant === "primary"[\s\S]*?--material-interactive-fill/);
+  assert.doesNotMatch(button, /bg-\[var\(--theme-accent\)\]/);
+  assert.match(avatar, /bg-\[var\(--material-presence\)\]/);
+  assert.doesNotMatch(avatar, /emerald/);
 });
 
 test("web and desktop share chat data and presentation without duplicate desktop polling", () => {

@@ -25,6 +25,8 @@ type VoiceMediaControlsProps = {
 
 const controlClass =
   "grid h-11 w-11 place-items-center rounded-full border transition duration-200 disabled:opacity-45";
+const liveControlClass =
+  "border-[var(--material-border-hover)] bg-[var(--material-control-fill)] text-[var(--material-ice)] shadow-[inset_0_1px_0_var(--material-highlight)] hover:bg-[var(--material-interactive-fill)]";
 
 export function VoiceMediaControls({
   mediaStatus,
@@ -47,6 +49,7 @@ export function VoiceMediaControls({
     <div className="flex flex-wrap items-center justify-center gap-2">
       <IconButton
         label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
+        aria-pressed={!micMuted}
         tooltipClassName="shrink-0"
         disabled={sessionPending || !connected || mediaActionPending}
         onClick={() => {
@@ -57,7 +60,7 @@ export function VoiceMediaControls({
           controlClass,
           micMuted
             ? "border-red-500/25 bg-red-500/10"
-            : "border-[var(--theme-accent)] bg-[var(--theme-accent)] text-white shadow-[0_0_0_4px_color-mix(in_srgb,var(--theme-accent)_14%,transparent)] hover:brightness-110",
+            : liveControlClass,
         )}
       >
         {mediaActionPending ? (
@@ -71,6 +74,7 @@ export function VoiceMediaControls({
 
       <IconButton
         label={outputMuted ? "Включить звук собеседников" : "Выключить звук собеседников"}
+        aria-pressed={!outputMuted}
         tooltipClassName="shrink-0"
         disabled={sessionPending || !connected}
         onClick={onOutputToggle}
@@ -86,13 +90,14 @@ export function VoiceMediaControls({
 
       <IconButton
         label={cameraEnabled ? "Выключить камеру" : "Включить камеру"}
+        aria-pressed={cameraEnabled}
         tooltipClassName="shrink-0"
         disabled={sessionPending || !connected || cameraPending}
         onClick={() => void onCameraToggle()}
         className={cn(
           controlClass,
           cameraEnabled
-            ? "border-[var(--theme-accent)] bg-[var(--theme-accent)] text-white"
+            ? liveControlClass
             : "border-[var(--app-border)] bg-[var(--app-surface-soft)]",
         )}
       >
@@ -107,13 +112,14 @@ export function VoiceMediaControls({
 
       <IconButton
         label={screenSharing ? "Остановить демонстрацию" : "Показать экран"}
+        aria-pressed={screenSharing}
         tooltipClassName="shrink-0"
         disabled={sessionPending || !connected || screenSharePending}
         onClick={() => void onScreenShareToggle()}
         className={cn(
           controlClass,
           screenSharing
-            ? "border-[var(--theme-accent)] bg-[var(--theme-accent)] text-white"
+            ? liveControlClass
             : "border-[var(--app-border)] bg-[var(--app-surface-soft)]",
         )}
       >

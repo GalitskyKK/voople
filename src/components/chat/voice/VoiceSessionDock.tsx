@@ -133,8 +133,8 @@ export function VoiceSessionDock({
             className={cn(
               "grid h-9 w-9 shrink-0 place-items-center rounded-[var(--app-radius-sm)]",
               mediaStatus === "connected"
-                ? "bg-emerald-500/12 text-emerald-500"
-                : "bg-amber-500/12 text-amber-500",
+                ? "bg-[var(--material-ice-soft)] text-[var(--material-ice)]"
+                : "bg-[var(--material-control-fill)] text-[var(--material-secondary-text)]",
             )}
           >
             {weakConnection ? <WifiOff className="h-4 w-4" /> : <Wifi className="h-4 w-4" />}
@@ -157,7 +157,7 @@ export function VoiceSessionDock({
             "grid h-10 w-10 shrink-0 place-items-center rounded-[var(--app-radius-sm)] border transition disabled:opacity-50",
             micMuted
               ? "border-red-500/25 bg-red-500/10 text-red-500"
-              : "border-[var(--theme-accent)] bg-[var(--theme-accent)] text-white",
+              : "border-[var(--material-border-hover)] bg-[var(--material-control-fill)] text-[var(--material-ice)]",
           )}
         >
           {micMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}

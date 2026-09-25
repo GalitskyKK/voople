@@ -68,7 +68,7 @@ export function AuthGateProvider({
           <div className="grid gap-2 sm:grid-cols-2">
             <Link
               href={`/login?redirect=${redirect}`}
-              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[var(--app-radius-md)] bg-[var(--theme-accent)] px-4 text-sm font-medium text-white shadow-[var(--app-shadow-sm)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--theme-accent)"
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[var(--app-radius-md)] border border-[var(--material-border-hover)] bg-[var(--material-control-fill)] px-4 text-sm font-medium text-[var(--foreground)] shadow-[var(--app-shadow-sm)] transition hover:bg-[var(--material-interactive-fill)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--theme-accent)"
             >
                 <LogIn className="h-4 w-4" />
                 Войти

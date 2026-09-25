@@ -7,7 +7,6 @@ import { trpc } from "@/lib/trpc/client";
 
 import { GroupInfoDrawerView } from "./GroupInfoDrawerView";
 import { GroupInviteCopyNotice, useGroupInviteQuickCopy } from "./useGroupInviteQuickCopy";
-import { GroupRoomAction } from "./GroupRoomAction";
 import { useGroupSurfaceNavigation } from "./GroupSurfaceNavigationContext";
 
 export function GroupInfoDrawer({ chatId, chatName, memberCount, groupIcon, groupAvatarUrl, groupBannerUrl, groupAccentColor, groupTag, canManage }: {
@@ -57,7 +56,6 @@ export function GroupInfoDrawer({ chatId, chatName, memberCount, groupIcon, grou
       infoLoading={community.isLoading}
       membersLoading={members.isLoading}
       error={community.error?.message ?? members.error?.message ?? now.error?.message}
-      roomAction={<GroupRoomAction groupId={chatId} groupName={chatName} canCreatePinned={canManage} display="label" onBeforeOpen={() => setOpen(false)} onOpenProfile={(username) => navigate(`/${username}`)} />}
       onOpenChange={setOpen}
       onManage={() => navigate(`/messages/${chatId}/settings`)}
       onInvite={() => { setOpen(false); void invite.copy(); }}

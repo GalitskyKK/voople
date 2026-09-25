@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { createRequire } from "node:module";
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { loadCurrentVisualCss } from "./lib/load-current-visual-css.mjs";
+import { visualMessengerSidebarFixture } from "./lib/visual-messenger-sidebar.mjs";
 
 const repo = fileURLToPath(new URL("../", import.meta.url)).replaceAll("\\", "/").replace(/\/$/, "");
 const artifacts = await mkdtemp(path.join(os.tmpdir(), "voople-settings-visual-"));
@@ -21,7 +22,8 @@ const entry = `import {createRoot} from 'react-dom/client';
   import {AppSettingsView} from '@/components/settings/AppSettingsView';
   import {AppShellFrame} from '@/components/layout/AppShellFrame';
   const renderDestination=({href,className,children})=><a href={href} className={className}>{children}</a>;
-  function Demo(){return <AppShellFrame routeKind="standard" navigationKind="messenger" sidebar={<aside className="voople-sidebar fixed inset-y-0 left-0 hidden flex-col p-4 text-sm lg:flex">VOOPLE</aside>}><main className="voople-stage voople-scroll h-full overflow-y-auto px-4 sm:px-6"><AppSettingsView renderDestination={renderDestination} privacySettings={<section className="settings-section"><h2>Приватность и активность</h2></section>} subscriptionActive={false}/></main></AppShellFrame>}
+  ${visualMessengerSidebarFixture}
+  function Demo(){return <AppShellFrame routeKind="standard" navigationKind="messenger" sidebar={fixtureSidebar('/settings')}><main className="voople-stage voople-scroll h-full overflow-y-auto px-4 sm:px-6"><AppSettingsView renderDestination={renderDestination} privacySettings={<section className="settings-section"><h2>Приватность и активность</h2></section>} subscriptionActive={false}/></main></AppShellFrame>}
   createRoot(document.getElementById('root')).render(<TRPCReactProvider><AppThemeProvider><AppPreferencesProvider><Demo/></AppPreferencesProvider></AppThemeProvider></TRPCReactProvider>);`;
 const bundle = await build({
   stdin: { contents: entry, resolveDir: repo, loader: "tsx" },
@@ -33,7 +35,9 @@ const bundle = await build({
   define: { "process.env": '{"NODE_ENV":"development"}' },
 });
 const css = await loadCurrentVisualCss(repo, { host: "web" });
+const brandIcon = await readFile(path.join(repo, "public/favicon/android-chrome-192x192.png"));
 const server = createServer((request, response) => {
+  if (request.url === "/favicon/android-chrome-192x192.png") { response.setHeader("Content-Type", "image/png"); response.end(brandIcon); return; }
   if (request.url === "/app.js") { response.setHeader("Content-Type", "text/javascript"); response.end(bundle.outputFiles[0].text); return; }
   if (request.url === "/style.css") { response.setHeader("Content-Type", "text/css"); response.end(css); return; }
   response.setHeader("Content-Type", "text/html; charset=utf-8");
@@ -70,7 +74,7 @@ try {
     if (theme === "light") {
       await page.evaluate(() => { localStorage.setItem("voople:app-theme", "light"); });
       await page.reload();
-      await page.waitForFunction(() => document.documentElement.style.getPropertyValue("--foreground") === "#191921");
+      await page.waitForFunction(() => document.documentElement.style.getPropertyValue("--foreground") === "#1B2938");
       await page.getByRole("button", { name: "Внешний вид" }).click();
     }
     assert.deepEqual(errors, []);

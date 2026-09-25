@@ -85,7 +85,7 @@ export function VoiceMiniStage({
         </span>
         <span className="flex items-center gap-2">
           {activeParticipant && activeSpeakerIds.has(activeParticipant.id) ? (
-            <Mic className="h-3.5 w-3.5 text-emerald-400" aria-label="Говорит сейчас" />
+            <Mic className="h-3.5 w-3.5 text-[var(--material-ice)]" aria-label="Говорит сейчас" />
           ) : null}
         </span>
       </div>

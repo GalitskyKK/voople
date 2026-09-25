@@ -56,7 +56,7 @@ test("live shelf is bounded, shows room rosters and preserves direct room entry"
   assert.match(roomCell, /ProfileAvatarVisual/);
   assert.match(roomCell, /onJoinRoom\(room\)/);
   assert.match(roomCell, /onExpandCurrent\?\.\(room\)/);
-  assert.match(source("src/app/styles/messenger-glass.css"), /flex: 0 1 360px !important/);
+  assert.match(source("src/app/styles/messenger-glass.css"), /flex: 0 1 360px;/);
   assert.doesNotMatch(shelf, /text-\[(?:9|10|11)px\]/);
   assert.doesNotMatch(roomCell, /text-\[(?:9|10|11)px\]/);
   assert.match(roomCell, /text-sm font-semibold leading-4/);
@@ -76,9 +76,9 @@ test("desktop messenger keeps the conversation header stack compact", () => {
 
   assert.match(tabs, /min-h-10/);
   assert.doesNotMatch(frame, /"--theme-accent": accentColor/);
-  assert.match(styles, /\.voople-panel-header \{[\s\S]*?min-height: 64px;/);
-  assert.match(styles, /\.voople-chat-window__header--group \{[\s\S]*?min-height: 72px;/);
-  assert.match(styles, /\.voople-group-surface-tabs \{[\s\S]*?min-height: 40px;/);
+  assert.match(styles, /\.voople-panel-header \{[\s\S]*?min-height: 62px;/);
+  assert.match(styles, /\.voople-chat-window__header--group \{[\s\S]*?min-height: 62px;/);
+  assert.match(styles, /\.voople-group-surface-tabs \{[\s\S]*?min-height: 38px;/);
   assert.match(styles, /\.voople-group-surface-header \{[\s\S]*?background: var\(--material-chrome\)/);
   assert.doesNotMatch(globals, /\.voople-group-now-room \{[\s\S]{0,400}?linear-gradient/);
 });

@@ -44,7 +44,7 @@ export function VoiceCompactSessionDock({
         onClick={onOpen}
         className="flex min-w-0 flex-1 items-center gap-2 rounded-[var(--app-radius-sm)] px-2 py-1 text-left transition hover:bg-[var(--app-surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--theme-accent)]"
       >
-        <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", connected ? "bg-emerald-500" : "bg-amber-500")} />
+        <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", connected ? "bg-[var(--material-ice)]" : "bg-[var(--material-presence)] opacity-50")} />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-xs font-semibold">{chatName}</span>
           <span className="flex min-w-0 items-center gap-1.5 text-[10px] text-[var(--app-muted)]">
@@ -67,7 +67,7 @@ export function VoiceCompactSessionDock({
         label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
         onClick={onToggleMic}
         disabled={mediaActionPending || !connected}
-        className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-[var(--app-radius-sm)]", micMuted ? "bg-red-500/10 text-red-500" : "bg-[var(--theme-accent)] text-white")}
+        className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-[var(--app-radius-sm)]", micMuted ? "bg-red-500/10 text-red-500" : "voople-material-control text-[var(--material-ice)]")}
       >
         {micMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
       </IconButton>

@@ -31,7 +31,7 @@ export function CanvasSaveStatusBar({ status, className }: CanvasSaveStatusBarPr
     <div
       className={cn(
         "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium backdrop-blur-sm",
-        status === "saved" && "bg-emerald-500/20 text-emerald-100",
+        status === "saved" && "bg-[var(--material-control-fill)] text-[var(--material-ice)]",
         status === "saving" && "bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)] text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]",
         status === "error" && "bg-red-500/20 text-red-100",
         status === "idle" && "bg-black/40 text-[color-mix(in_srgb,var(--foreground)_60%,transparent)]",

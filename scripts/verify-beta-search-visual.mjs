@@ -7,6 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { loadCurrentVisualCss } from "./lib/load-current-visual-css.mjs";
+import { visualMessengerSidebarFixture } from "./lib/visual-messenger-sidebar.mjs";
 
 const repo = fileURLToPath(new URL("../", import.meta.url)).replaceAll("\\", "/").replace(/\/$/, "");
 const artifacts = await mkdtemp(path.join(os.tmpdir(), "voople-beta-search-visual-"));
@@ -25,7 +26,8 @@ const entry = `import {createRoot} from 'react-dom/client';
   const groups=[{id:'group-1',name:'DRG',description:'Компания друзей',publicSlug:'drg',icon:null,avatarUrl:null,tag:'DRG',memberCount:8,joined:false,joinPolicy:'open',joinRequestPending:false}];
   const renderDestination=({href,className,children,label})=><a href={href} aria-label={label} className={className}>{children}</a>;
   const renderAvatar=(person)=><span aria-hidden="true" className="grid size-10 shrink-0 place-items-center rounded-full border border-[var(--material-border)] bg-[var(--material-raised-fill)] text-sm">{person.displayName[0]}</span>;
-  function Demo(){return <AppShellFrame routeKind="standard" navigationKind="messenger" mainClassName="h-full min-h-0 overflow-hidden" sidebar={<aside className="voople-sidebar fixed inset-y-0 left-0 hidden flex-col p-4 text-sm lg:flex">VOOPLE</aside>}><AppTopBar authenticated/><main className="voople-stage voople-scroll h-full overflow-y-auto px-4 sm:px-6"><ExploreView query="drg" debouncedQuery="drg" onQueryChange={()=>{}} result={{people}} communities={groups} searching={false} renderDestination={renderDestination} renderAvatar={renderAvatar} onNavigate={()=>{}}/></main><AppBottomNavigationVisual pathname="/search" renderDestination={renderDestination}/></AppShellFrame>}
+  ${visualMessengerSidebarFixture}
+  function Demo(){return <AppShellFrame routeKind="standard" navigationKind="messenger" mainClassName="h-full min-h-0 overflow-hidden" sidebar={fixtureSidebar('/search')}><AppTopBar authenticated/><main className="voople-stage voople-scroll h-full overflow-y-auto px-4 sm:px-6"><ExploreView query="drg" debouncedQuery="drg" onQueryChange={()=>{}} result={{people}} communities={groups} searching={false} renderDestination={renderDestination} renderAvatar={renderAvatar} onNavigate={()=>{}}/></main><AppBottomNavigationVisual pathname="/search" renderDestination={renderDestination}/></AppShellFrame>}
   createRoot(document.getElementById('root')).render(<TRPCReactProvider><AppThemeProvider><Demo/></AppThemeProvider></TRPCReactProvider>);`;
 const bundle = await build({
   stdin: { contents: entry, resolveDir: repo, loader: "tsx" },
@@ -92,7 +94,7 @@ try {
     if (theme === "light") await page.evaluate(() => { localStorage.setItem("voople:app-theme", "light"); });
     if (theme === "light") {
       await page.reload();
-      await page.waitForFunction(() => document.documentElement.style.getPropertyValue("--foreground") === "#191921");
+      await page.waitForFunction(() => document.documentElement.style.getPropertyValue("--foreground") === "#1B2938");
     }
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     const bounds = await page.getByRole("heading", { name: "Поиск", exact: true }).boundingBox();

@@ -11,7 +11,7 @@ export function ScreenShareStatusBanner({
 }) {
   return (
     <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2 text-xs text-[var(--app-muted)]" role="status">
-      <span className={cn("h-2 w-2 rounded-full", hasAudio ? "bg-emerald-400" : "bg-amber-400")} />
+      <span className={cn("h-2 w-2 rounded-full", hasAudio ? "bg-[var(--material-ice)]" : "bg-[var(--material-presence)] opacity-50")} />
       <span className="min-w-0 flex-1">
         {hasAudio ? "Экран и звук передаются" : "Экран передаётся без звука"}
       </span>

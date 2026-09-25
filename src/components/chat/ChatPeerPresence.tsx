@@ -9,7 +9,7 @@ export function ChatPeerPresence({
   lastSeenAt?: string | null;
   username: string;
 }) {
-  if (isOnline) return <span className="text-emerald-500">в сети</span>;
+  if (isOnline) return <span className="text-[var(--material-presence)]">в сети</span>;
   if (lastSeenAt) {
     return (
       <span>

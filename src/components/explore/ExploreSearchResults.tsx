@@ -161,7 +161,7 @@ export function ExploreSearchResults({
                   children: <>
                     <GroupAvatar name={group.name} avatarUrl={group.avatarUrl} icon={group.icon} accentColor={null} />
                     <div className="min-w-0 flex-1"><p className="truncate font-medium">{group.name}</p><p className="truncate text-sm text-[var(--app-muted)]">{group.memberCount} участников{group.publicSlug ? ` · @${group.publicSlug}` : ""}</p></div>
-                    {group.joined ? <span className="rounded-full bg-emerald-500/10 px-2 py-1 text-[10px] font-medium text-emerald-500">Вы участник</span> : null}
+                    {group.joined ? <span className="rounded-full border border-[var(--material-border)] bg-[var(--material-control-fill)] px-2 py-1 text-[10px] font-medium text-[var(--foreground)]">Вы участник</span> : null}
                   </>,
                 })}
               </li>

@@ -104,7 +104,7 @@ export function VoiceRoomHeader({
               {weakConnection ? (
                 <WifiOff className="h-3.5 w-3.5 text-amber-400" />
               ) : (
-                <Wifi className="h-3.5 w-3.5 text-emerald-400" />
+                <Wifi className="h-3.5 w-3.5 text-[var(--material-ice)]" />
               )}
               {getQualityLabel(connection.quality)}
             </span>

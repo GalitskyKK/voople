@@ -120,7 +120,7 @@ export function IncomingCallOverlay({
             type="button"
             disabled={declinePending}
             onClick={onAnswer}
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 font-medium text-white transition hover:bg-emerald-400 disabled:opacity-50"
+            className="voople-material-control inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-4 font-medium transition hover:border-[var(--material-ice)] disabled:opacity-50"
           >
             <Phone className="h-5 w-5" />
             Ответить

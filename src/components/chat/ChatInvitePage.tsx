@@ -96,7 +96,7 @@ export function ChatInvitePage({ token }: { token: string }) {
             <p className="mt-2 text-sm text-[var(--app-muted)]">{preview.data.memberCount} участников · {preview.data.onlineCount} онлайн · {preview.data.roomParticipantCount} в голосе</p>
             {authenticated === false ? (
               <div className="mt-6 grid gap-2 sm:grid-cols-2">
-                <Link href={authEntryHref("/login", `/invite/${token}`)} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--theme-accent)] px-4 text-sm font-semibold text-white">Войти</Link>
+                <Link href={authEntryHref("/login", `/invite/${token}`)} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[var(--material-border-hover)] bg-[var(--material-control-fill)] px-4 text-sm font-semibold text-[var(--foreground)]">Войти</Link>
                 <Link href={authEntryHref("/register", `/invite/${token}`)} className="voople-material-control inline-flex min-h-11 items-center justify-center px-4 text-sm font-medium">Создать профиль</Link>
               </div>
             ) : authenticated === null ? <p className="mt-6 text-xs text-[var(--app-muted)]" role="status">Проверяем вход…</p> : <Button

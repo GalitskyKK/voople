@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { KeyRound, Keyboard, RotateCcw, Scale, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { KeyRound, Keyboard, RotateCcw, Scale, ShieldCheck, SlidersHorizontal, UserRound, Settings2 } from "lucide-react";
 
 import { SectionPageHeader } from "@/components/layout/SectionPageHeader";
 import { Button } from "@/components/ui/Button";
@@ -10,6 +10,7 @@ import { AppearanceSettings } from "@/components/settings/AppearanceSettings";
 import { ChatAppearanceSettings } from "@/components/settings/ChatAppearanceSettings";
 import { HotkeySettings, type HotkeyRuntimeStatus } from "@/components/settings/HotkeySettings";
 import { NotificationSettings } from "@/components/settings/NotificationSettings";
+import { PersonalVoiceSettings } from "@/components/settings/PersonalVoiceSettings";
 import {
   SettingsNavigation,
   type SettingsSectionId,
@@ -31,6 +32,7 @@ export function AppSettingsView({
   desktopCallNotifications = false,
   desktopNotificationSettings,
   accountSecuritySettings,
+  accountDataSettings,
   socialSettings,
   subscriptionActive,
 }: {
@@ -40,11 +42,13 @@ export function AppSettingsView({
   desktopCallNotifications?: boolean;
   desktopNotificationSettings?: ReactNode;
   accountSecuritySettings?: ReactNode;
+  accountDataSettings?: ReactNode;
   socialSettings?: ReactNode;
   subscriptionActive?: boolean;
 }) {
   const { preferences, updatePreferences, resetPreferences } = useAppPreferences();
-  const [activeSection, setActiveSection] = useState<SettingsSectionId>("appearance");
+  const [activeSection, setActiveSection] = useState<SettingsSectionId>("account");
+  const showsDevicePreferences = ["appearance", "advanced"].includes(activeSection);
   const unlockedThemeIds: AppThemeId[] = subscriptionActive
     ? APP_THEMES.filter((theme) => theme.paid).map((theme) => theme.id)
     : [];
@@ -54,10 +58,21 @@ export function AppSettingsView({
       <SectionPageHeader
         title="Настройки"
         sticky
+        variant="plain"
+        density="compact"
         action={
-          <Button type="button" size="sm" variant="ghost" onClick={resetPreferences}>
-          <RotateCcw className="h-4 w-4" /> Сбросить
-          </Button>
+          showsDevicePreferences ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={resetPreferences}
+              aria-label="Сбросить настройки этого устройства"
+              title="Сбросить настройки этого устройства"
+            >
+              <RotateCcw className="h-4 w-4" /> Сбросить
+            </Button>
+          ) : undefined
         }
       />
 
@@ -68,26 +83,25 @@ export function AppSettingsView({
         />
         <div className="min-w-0 space-y-5">
 
+      {activeSection === "account" ? <div className="space-y-4">
+        <div className="settings-section__header"><Settings2 className="h-5 w-5" /><div><h2>Аккаунт</h2><p>Данные и управление аккаунтом.</p></div></div>
+        {accountDataSettings}
+      </div> : null}
+
+      {activeSection === "profile" ? <section className="settings-section">
+        <div className="settings-section__header"><UserRound className="h-5 w-5" /><div><h2>Профиль</h2><p>Имя, @username, аватар и оформление находятся в редакторе профиля.</p></div></div>
+        {renderDestination({ href: "/me", className: "inline-flex min-h-10 items-center rounded-[var(--material-control-radius)] border border-[var(--material-border)] bg-[var(--material-control-fill)] px-4 text-sm font-medium hover:bg-[var(--material-interactive-fill)]", children: "Открыть профиль" })}
+      </section> : null}
+
       {activeSection === "appearance" ? (
-        <AppearanceSettings
+        <><AppearanceSettings
           unlockedThemeIds={unlockedThemeIds}
           subscriptionAction={subscriptionActive === false ? renderDestination({
             href: "/shop?tab=plus",
             className: "settings-subscription-link",
             children: "Открыть набор тем Вупл+",
           }) : undefined}
-        />
-      ) : null}
-
-      {activeSection === "messages" ? (
-        <ChatAppearanceSettings
-          hasSubscription={Boolean(subscriptionActive)}
-          subscriptionAction={subscriptionActive === false ? renderDestination({
-            href: "/shop?tab=plus",
-            className: "settings-subscription-link",
-            children: "Открыть с Вупл+",
-          }) : undefined}
-        />
+        /><ChatAppearanceSettings hasSubscription={Boolean(subscriptionActive)} /></>
       ) : null}
 
       {activeSection === "notifications" ? <NotificationSettings
@@ -95,7 +109,9 @@ export function AppSettingsView({
         desktopControls={desktopNotificationSettings}
       /> : null}
 
-      {activeSection === "interface" ? <>
+      {activeSection === "voice" ? <PersonalVoiceSettings /> : null}
+
+      {activeSection === "advanced" ? <>
       <section id="interface" className="settings-section">
         <div className="settings-section__header">
           <SlidersHorizontal className="h-5 w-5" />
@@ -128,7 +144,7 @@ export function AppSettingsView({
 
       {activeSection === "privacy" ? socialSettings : null}
 
-      {activeSection === "hotkeys" ? <section id="hotkeys" className="settings-section">
+      {activeSection === "advanced" ? <section id="hotkeys" className="settings-section">
         <div className="settings-section__header">
           <Keyboard className="h-5 w-5" />
           <div>
@@ -143,7 +159,7 @@ export function AppSettingsView({
         />
       </section> : null}
 
-      {activeSection === "security" ? <section id="security" className="settings-section">
+      {activeSection === "security" ? <div id="security" className="space-y-4">
         <div className="settings-section__header">
           <ShieldCheck className="h-5 w-5" />
           <div>
@@ -158,9 +174,9 @@ export function AppSettingsView({
             <p className="mt-1 text-sm text-[var(--app-muted)]">Вупл. отправляет одноразовый шестизначный код. Никому его не сообщайте.</p>
           </div>
         </div>}
-      </section> : null}
+      </div> : null}
 
-      {activeSection === "legal" ? <section id="legal" className="settings-section">
+      {activeSection === "advanced" ? <section id="legal" className="settings-section">
         <div className="settings-section__header">
           <Scale className="h-5 w-5" />
           <div>

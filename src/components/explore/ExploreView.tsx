@@ -5,25 +5,25 @@ import type { NavigationDestinationRenderer } from "@/components/layout/AppNavig
 import { SectionFrame } from "@/components/layout/SectionFrame";
 import { SectionPageHeader } from "@/components/layout/SectionPageHeader";
 import { SectionStickyHeaderStack } from "@/components/layout/SectionStickyHeaderStack";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { COPY } from "@/lib/constants/copy";
-import type { ExploreSearchResult } from "@/types/search";
+import type { BetaSearchResult } from "@/types/search";
 import type { PublicGroupSearchHit } from "@/types/chat";
-import {
-  ExploreSearchResults,
-  type ExploreAvatarRenderer,
-} from "./ExploreSearchResults";
+import type { ExploreAvatarRenderer } from "./ExploreSearchResults";
+import { BetaSearchResults } from "./BetaSearchResults";
 
 type ExploreViewProps = {
   query: string;
   debouncedQuery: string;
   onQueryChange: (value: string) => void;
-  result?: ExploreSearchResult;
+  result?: BetaSearchResult;
   communities: PublicGroupSearchHit[];
   searching: boolean;
   searchError?: string | null;
   renderDestination: NavigationDestinationRenderer;
   renderAvatar: ExploreAvatarRenderer;
   badgeUrl?: string;
+  onNavigate: (href: string) => void;
 };
 
 export function ExploreView({
@@ -36,16 +36,16 @@ export function ExploreView({
   searchError,
   renderDestination,
   renderAvatar,
-  badgeUrl,
+  onNavigate,
 }: ExploreViewProps) {
-  const [scope, setScope] = useState<"all" | "people" | "communities">("all");
+  const [scope, setScope] = useState<"all" | "people" | "groups">("all");
   const hasQuery = debouncedQuery.length >= 1;
   const scopedResultCount = result
     ? scope === "people"
-      ? result.users.length
-      : scope === "communities"
+      ? result.people.length
+      : scope === "groups"
           ? communities.length
-          : result.users.length + communities.length
+          : result.people.length + communities.length
     : 0;
   const isEmpty = hasQuery && !searching && Boolean(result) && scopedResultCount === 0;
 
@@ -65,9 +65,9 @@ export function ExploreView({
           />
         </label>
 
-        <div className="voople-scroll flex gap-1 overflow-x-auto rounded-2xl bg-[var(--app-surface-soft)] p-1" aria-label="Раздел поиска">
-          {([ ["all", "Все"], ["people", "Люди"], ["communities", "Группы"] ] as const).map(([id, label]) => (
-            <button key={id} type="button" onClick={() => setScope(id)} aria-pressed={scope === id} className={scope === id ? "min-w-24 flex-1 rounded-xl bg-[var(--app-surface)] px-3 py-2 text-sm font-medium shadow-[var(--app-shadow-sm)]" : "min-w-24 flex-1 rounded-xl px-3 py-2 text-sm text-[var(--app-muted)] hover:text-[var(--foreground)]"}>{label}</button>
+        <div className="voople-scroll flex gap-1 overflow-x-auto rounded-[var(--material-control-radius)] bg-[var(--material-inset-fill)] p-1" aria-label="Раздел поиска">
+          {([ ["all", "Все"], ["people", "Люди"], ["groups", "Группы"] ] as const).map(([id, label]) => (
+            <button key={id} type="button" onClick={() => setScope(id)} aria-pressed={scope === id} className={scope === id ? "min-h-10 min-w-24 flex-1 rounded-[var(--material-control-radius)] bg-[var(--material-control-fill)] px-3 text-sm font-medium" : "min-h-10 min-w-24 flex-1 rounded-[var(--material-control-radius)] px-3 text-sm text-[var(--material-secondary-text)] hover:text-[var(--foreground)]"}>{label}</button>
           ))}
         </div>
       </SectionStickyHeaderStack>
@@ -81,10 +81,10 @@ export function ExploreView({
           </p>
         )}
         {searching && hasQuery && (
-          <div
-            className="h-24 animate-pulse rounded-xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]"
-            aria-label="Выполняется поиск"
-          />
+          <div className="space-y-2" aria-label="Выполняется поиск" aria-busy="true">
+            <Skeleton shape="row" className="block h-16 w-full" />
+            <Skeleton shape="row" className="block h-16 w-full" />
+          </div>
         )}
         {searchError && (
           <p className="text-sm text-red-400" role="alert">
@@ -97,14 +97,13 @@ export function ExploreView({
           </p>
         )}
         {result && hasQuery && !searching && (
-          <ExploreSearchResults
-            result={result}
-            communities={communities}
+          <BetaSearchResults
+            people={result.people}
+            groups={communities}
             scope={scope}
-            betaOnly
             renderDestination={renderDestination}
             renderAvatar={renderAvatar}
-            badgeUrl={badgeUrl}
+            onNavigate={onNavigate}
           />
         )}
       </div>

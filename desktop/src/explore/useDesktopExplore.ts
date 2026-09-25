@@ -1,31 +1,23 @@
 import type { Session } from "@supabase/supabase-js";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import type { ExploreSearchResult } from "@/types/search";
+import type { BetaSearchResult } from "@/types/search";
 import type { PublicGroupSearchHit } from "@/types/chat";
 
 import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
 
-const EMPTY_RESULT: ExploreSearchResult = {
-  users: [],
-  hashtags: [],
-  posts: [],
-};
+const EMPTY_RESULT: BetaSearchResult = { people: [] };
 
-function parseExploreResult(value: unknown): ExploreSearchResult {
+function parseExploreResult(value: unknown): BetaSearchResult {
   if (!value || typeof value !== "object") {
     throw new Error("Сервер вернул некорректный результат поиска");
   }
-  const result = value as Partial<ExploreSearchResult>;
-  if (
-    !Array.isArray(result.users) ||
-    !Array.isArray(result.hashtags) ||
-    !Array.isArray(result.posts)
-  ) {
+  const result = value as Partial<BetaSearchResult>;
+  if (!Array.isArray(result.people)) {
     throw new Error("Сервер вернул некорректный результат поиска");
   }
-  return result as ExploreSearchResult;
+  return result as BetaSearchResult;
 }
 
 function parseCommunities(value: unknown): PublicGroupSearchHit[] {
@@ -39,7 +31,7 @@ export function useDesktopExplore(
   session: Session,
   query: string,
 ) {
-  const [result, setResult] = useState<ExploreSearchResult>();
+  const [result, setResult] = useState<BetaSearchResult>();
   const [communities, setCommunities] = useState<PublicGroupSearchHit[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -67,7 +59,7 @@ export function useDesktopExplore(
       setResult(undefined);
       try {
         const [value, communityValue] = await Promise.all([
-          client.query("search.explore", { q: query }),
+          client.query("search.beta", { q: query }),
           query.length >= 2 ? client.query("chat.publicGroups", { q: query }) : Promise.resolve([]),
         ]);
         if (currentRequest === requestId.current) {

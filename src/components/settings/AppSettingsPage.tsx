@@ -7,6 +7,7 @@ import {
   type SettingsDestinationRenderer,
 } from "@/components/settings/AppSettingsView";
 import { WebAccountSecuritySettings } from "@/components/settings/WebAccountSecuritySettings";
+import { WebAccountDataSettings } from "@/components/settings/WebAccountDataSettings";
 import { WebInterestSettings } from "@/components/settings/WebInterestSettings";
 import { trpc } from "@/lib/trpc/client";
 
@@ -26,6 +27,7 @@ export function AppSettingsPage() {
     <AppSettingsView
       renderDestination={renderDestination}
       accountSecuritySettings={<WebAccountSecuritySettings />}
+      accountDataSettings={<WebAccountDataSettings />}
       socialSettings={<WebInterestSettings />}
       subscriptionActive={subscription.data?.active}
     />

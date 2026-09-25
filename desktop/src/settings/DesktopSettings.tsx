@@ -10,6 +10,7 @@ import type { DesktopConfig } from "../config";
 import { useGlobalHotkeyStatus } from "../hotkeys/global-hotkey-status";
 import { DesktopWindowSettings } from "./DesktopWindowSettings";
 import { DesktopAccountSecuritySettings } from "./DesktopAccountSecuritySettings";
+import { DesktopAccountDataSettings } from "./DesktopAccountDataSettings";
 import { DesktopNotificationSettings } from "./DesktopNotificationSettings";
 import { DesktopInterestSettings } from "./DesktopInterestSettings";
 import { createDesktopTrpcClient } from "../api/trpc";
@@ -79,6 +80,7 @@ export function DesktopSettings({
       accountSecuritySettings={
         <DesktopAccountSecuritySettings config={config} session={session} />
       }
+      accountDataSettings={<DesktopAccountDataSettings config={config} session={session} />}
     />
     </AppPageContent>
   );

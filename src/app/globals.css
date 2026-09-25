@@ -3034,12 +3034,11 @@ html[data-density="compact"] .shop-category {
 .settings-section {
   display: grid;
   gap: 1rem;
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius-xl);
-  background: color-mix(in srgb, var(--app-surface) 88%, transparent);
+  border: 1px solid var(--material-border);
+  border-radius: var(--material-radius);
+  background: var(--material-panel-fill);
   padding: clamp(1rem, 3vw, 1.35rem);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 4%, transparent);
-  backdrop-filter: blur(14px) saturate(1.03);
+  box-shadow: inset 0 1px 0 var(--material-highlight);
 }
 
 .settings-layout {
@@ -3061,6 +3060,7 @@ html[data-density="compact"] .shop-category {
 
 .settings-nav button {
   flex: none;
+  min-height: 40px;
   border: 0;
   border-radius: 0.7rem;
   padding: 0.55rem 0.75rem;
@@ -3076,7 +3076,7 @@ html[data-density="compact"] .shop-category {
 .settings-nav button:hover,
 .settings-nav button:focus-visible,
 .settings-nav button.settings-nav__active {
-  background: var(--app-surface-soft);
+  background: var(--material-interactive-fill);
   color: var(--foreground);
 }
 
@@ -3096,12 +3096,11 @@ html[data-density="compact"] .shop-category {
     top: 1rem;
     flex-direction: column;
     overflow: visible;
-    border: 1px solid var(--app-border);
-    border-radius: var(--app-radius-lg);
-    background: color-mix(in srgb, var(--app-surface) 88%, transparent);
+    border: 1px solid var(--material-border);
+    border-radius: var(--material-radius);
+    background: var(--material-panel-fill);
     padding: 0.45rem;
-    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 4%, transparent);
-    backdrop-filter: blur(14px) saturate(1.03);
+    box-shadow: inset 0 1px 0 var(--material-highlight);
   }
 }
 

@@ -28,6 +28,14 @@ export type ExploreSearchResult = {
   posts: PostViewModel[];
 };
 
+export type BetaSearchPerson = UserSearchHit & {
+  online: boolean;
+  commonGroups: { count: number; groups: Array<{ id: string; name: string }> };
+  canMessage: boolean;
+};
+
+export type BetaSearchResult = { people: BetaSearchPerson[] };
+
 export type ExploreHighlights = {
   users: UserSearchHit[];
   posts: PostViewModel[];

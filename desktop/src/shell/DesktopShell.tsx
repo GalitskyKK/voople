@@ -391,6 +391,7 @@ export function DesktopShell({
               config={config}
               session={session}
               renderDestination={renderDestination}
+              navigate={navigate}
             />
           ) : hashtag ? (
             <DesktopHashtagFeedAdapter

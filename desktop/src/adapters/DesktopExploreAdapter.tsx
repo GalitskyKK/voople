@@ -16,10 +16,12 @@ export function DesktopExploreAdapter({
   config,
   session,
   renderDestination,
+  navigate,
 }: {
   config: DesktopConfig;
   session: Session;
   renderDestination: NavigationDestinationRenderer;
+  navigate: (href: string) => void;
 }) {
   const { query, setQuery, debouncedQuery } = useDebouncedSearchQuery();
   const explore = useDesktopExplore(config, session, debouncedQuery);
@@ -35,6 +37,7 @@ export function DesktopExploreAdapter({
         searching={explore.searching}
         searchError={explore.searchError}
         renderDestination={renderDestination}
+        onNavigate={navigate}
         badgeUrl={vooplusBadgeUrl(config.assetsCdnUrl)}
         renderAvatar={({ author }) => (
           <DesktopExploreAvatar author={author} />

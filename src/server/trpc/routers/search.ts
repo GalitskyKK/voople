@@ -1,11 +1,14 @@
 import { TRPCError } from "@trpc/server"
 import { z } from "zod"
 
-import { getExploreHighlights, getTrendingHashtags, searchExplore } from "@/server/services/search.service"
+import { getExploreHighlights, getTrendingHashtags, searchBetaPeople, searchExplore } from "@/server/services/search.service"
 
-import { createTRPCRouter, optionalAuthProcedure, publicProcedure } from "../init"
+import { createTRPCRouter, optionalAuthProcedure, protectedProcedure, publicProcedure } from "../init"
 
 export const searchRouter = createTRPCRouter({
+  beta: protectedProcedure
+    .input(z.object({ q: z.string().trim().min(1).max(50) }))
+    .query(({ ctx, input }) => searchBetaPeople(input.q, ctx.user.id)),
   highlights: optionalAuthProcedure.query(async ({ ctx }) => {
     try {
       return await getExploreHighlights(ctx.user?.id)

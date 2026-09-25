@@ -15,7 +15,7 @@ export function AppPanelHeader({
   return (
     <header
       className={cn(
-        "voople-panel-header relative shrink-0 border-b border-[var(--app-border)] px-4",
+        "voople-panel-header relative shrink-0 px-4",
         className,
       )}
       style={style}

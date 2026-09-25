@@ -71,14 +71,16 @@ test("live shelf is bounded, shows room rosters and preserves direct room entry"
 test("desktop messenger keeps the conversation header stack compact", () => {
   const frame = source("src/components/chat/ChatThreadFrameView.tsx");
   const tabs = source("src/components/chat/GroupSurfaceTabs.tsx");
-  const styles = source("src/app/globals.css");
+  const styles = source("src/app/styles/messenger-glass.css");
+  const globals = source("src/app/globals.css");
 
   assert.match(tabs, /min-h-10/);
   assert.doesNotMatch(frame, /"--theme-accent": accentColor/);
-  assert.match(styles, /\.voople-panel-header \{[\s\S]*?min-height: 3\.5rem;/);
-  assert.match(styles, /\.voople-chat-window__header--group \{[\s\S]*?min-height: 3\.5rem;/);
-  assert.match(styles, /\.voople-group-surface-tabs \{[\s\S]*?min-height: 2\.25rem;/);
-  assert.match(styles, /@media \(min-width: 1180px\)[\s\S]*?voople-group-surface-header--combined[\s\S]*?min-height: 4rem/);
+  assert.match(styles, /\.voople-panel-header \{[\s\S]*?min-height: 64px;/);
+  assert.match(styles, /\.voople-chat-window__header--group \{[\s\S]*?min-height: 72px;/);
+  assert.match(styles, /\.voople-group-surface-tabs \{[\s\S]*?min-height: 40px;/);
+  assert.match(styles, /\.voople-group-surface-header \{[\s\S]*?background: var\(--material-chrome\)/);
+  assert.doesNotMatch(globals, /\.voople-group-now-room \{[\s\S]{0,400}?linear-gradient/);
 });
 
 test("chat stream uses the wider centered canvas without stretching message copy or metadata", () => {
@@ -190,7 +192,7 @@ test("messenger visual language is shared by web and desktop group threads", () 
 
 test("the dark glass route owns inherited ink, viewport gutter and keyboard focus", () => {
   const people = source("src/components/chat/GroupPeoplePanelView.tsx");
-  const styles = source("src/app/globals.css");
+  const styles = source("src/app/styles/messenger-glass.css");
 
   assert.match(people, /text-\[var\(--foreground\)\]/);
   assert.match(styles, /\.voople-shell\[data-route-kind="messages"\][\s\S]*?color: var\(--foreground\);/);

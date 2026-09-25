@@ -33,7 +33,7 @@ export function VoiceMinimalSessionDock({
       label={`Развернуть разговор ${chatName}. ${participantLabel}${activityLabel ? `. ${activityLabel}` : ""}. ${mediaLabels.join(", ")}`}
       onClick={() => onModeChange("compact")}
       className={cn(
-        "voople-voice-dock--minimal fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] right-3 z-[70] flex h-12 max-w-[min(15rem,calc(100vw-1.5rem))] items-center gap-2 rounded-[var(--app-radius-sm)] border bg-[var(--app-surface)] px-3 shadow-[0_8px_24px_rgb(0_0_0/0.2)] transition lg:bottom-4",
+        "voople-signal-glass voople-voice-dock--minimal fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] right-3 z-[70] flex h-12 max-w-[min(15rem,calc(100vw-1.5rem))] items-center gap-2 rounded-[var(--app-radius-sm)] px-3 transition lg:bottom-4",
         mediaStatus === "connected" ? "border-emerald-500/40" : "border-amber-500/40",
       )}
     >

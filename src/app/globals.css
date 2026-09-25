@@ -57,10 +57,14 @@
   --app-radius-lg: 1rem;
   --app-radius-xl: 1.25rem;
   /* Primitive palette -> semantic material -> component/route composition. */
-  --material-canvas-app: #090c12;
-  --material-canvas-workspace: #0c121b;
-  --material-canvas-sidebar: rgb(12 16 24 / 0.82);
-  --material-ambient-wash: linear-gradient(108deg, rgb(93 43 67 / 0.26), transparent 43%, rgb(47 95 127 / 0.22) 86%, transparent), radial-gradient(85% 65% at 48% 19%, rgb(76 86 113 / 0.18), transparent 82%);
+  --material-canvas-app: #0b0e15;
+  --material-chrome: #0e121a;
+  --material-stage: #121923;
+  --material-canvas-workspace: var(--material-stage);
+  --material-canvas-sidebar: var(--material-chrome);
+  --material-ambient-wash: radial-gradient(105% 85% at 4% 0%, rgb(94 44 65 / 0.11), transparent 76%), radial-gradient(95% 85% at 100% 25%, rgb(70 121 157 / 0.12), transparent 78%);
+  --material-stage-depth: inset 0 1px 1px rgb(255 255 255 / 0.025), 0 10px 32px rgb(0 0 0 / 0.12);
+  --material-stage-grain: none;
   --material-panel-fill: rgb(29 35 48 / 0.48);
   --material-raised-fill: rgb(38 47 62 / 0.44);
   --material-glass-body: rgb(26 34 44 / 0.18);
@@ -109,10 +113,14 @@
 
 html[data-app-theme="light"] {
   color-scheme: light;
-  --material-canvas-app: #e8eef5;
-  --material-canvas-workspace: #eef3f9;
-  --material-canvas-sidebar: rgb(237 243 249 / 0.82);
-  --material-ambient-wash: radial-gradient(65% 55% at 12% 0%, rgb(217 225 243 / 0.55), transparent 78%), radial-gradient(60% 70% at 95% 100%, rgb(198 226 245 / 0.36), transparent 78%);
+  --material-canvas-app: #e9eef4;
+  --material-chrome: #e9eef4;
+  --material-stage: #f3f6fa;
+  --material-canvas-workspace: var(--material-stage);
+  --material-canvas-sidebar: var(--material-chrome);
+  --material-ambient-wash: radial-gradient(95% 85% at 4% 0%, rgb(204 211 229 / 0.18), transparent 76%), radial-gradient(90% 85% at 100% 25%, rgb(194 219 238 / 0.14), transparent 78%);
+  --material-stage-depth: inset 0 1px 1px rgb(255 255 255 / 0.7), 0 9px 26px rgb(52 72 92 / 0.07);
+  --material-stage-grain: none;
   --material-panel-fill: rgb(255 255 255 / 0.69);
   --material-raised-fill: rgb(255 255 255 / 0.77);
   --material-glass-body: rgb(255 255 255 / 0.42);
@@ -140,8 +148,9 @@ html[data-app-theme="light"] {
 
 @media (prefers-reduced-transparency: reduce) {
   :root {
-    --material-canvas-sidebar: #0c1018;
+    --material-canvas-sidebar: var(--material-chrome);
     --material-ambient-wash: none;
+    --material-stage-grain: none;
     --material-panel-fill: #1c2430;
     --material-raised-fill: #26303f;
     --material-glass-body: #26303f;
@@ -154,7 +163,7 @@ html[data-app-theme="light"] {
   }
 
   html[data-app-theme="light"] {
-    --material-canvas-sidebar: #edf3f9;
+    --material-canvas-sidebar: var(--material-chrome);
     --material-panel-fill: #ffffff;
     --material-raised-fill: #f7faff;
     --material-glass-body: #f7faff;
@@ -164,6 +173,15 @@ html[data-app-theme="light"] {
     --material-overlay-fill: #ffffff;
     --material-inset-fill: #e1eaf3;
     --material-interactive-fill: #e0eefb;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (max-width: 900px) {
+  .voople-overlay-surface,
+  .voople-signal-glass,
+  .voople-glass-object {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
@@ -430,6 +448,18 @@ body {
 
   .voople-panel--raised { background: var(--material-raised-fill); }
 
+  /* Matte working plane: no backdrop-filter. Ambient light and a barely
+     visible static texture supply information beneath selective glass. */
+  .voople-stage {
+    min-width: 0;
+    margin: 8px;
+    border-radius: 22px;
+    background-color: var(--material-stage);
+    background-image: var(--material-stage-grain), radial-gradient(100% 70% at 50% 0%, color-mix(in srgb, var(--group-accent, transparent) 4%, transparent), transparent), var(--material-ambient-wash);
+    background-size: auto;
+    box-shadow: var(--material-stage-depth);
+  }
+
   .voople-material-control {
     border: 1px solid var(--material-border);
     border-radius: var(--material-control-radius);
@@ -450,6 +480,30 @@ body {
   }
 
   .voople-material-row:hover { background: var(--material-interactive-fill); }
+
+  .voople-overlay-surface {
+    border: 1px solid var(--material-border);
+    background: var(--material-overlay-fill);
+    box-shadow: var(--material-overlay-shadow), inset 0 1px 0 var(--material-highlight);
+    -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+    backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+  }
+
+  .voople-glass-object {
+    border: 1px solid var(--material-border);
+    background: var(--material-raised-fill);
+    box-shadow: var(--material-shadow), inset 0 1px 0 var(--material-highlight);
+    -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+    backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+  }
+
+  .voople-signal-glass {
+    border: 1px solid color-mix(in srgb, var(--voople-ice) 38%, var(--material-border));
+    background: var(--material-glass-active-body);
+    box-shadow: var(--material-shadow), 0 12px 28px rgb(83 164 237 / 0.10), inset 0 1px 0 var(--material-highlight);
+    -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+    backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+  }
 
   .voople-skeleton {
     display: block;
@@ -1632,11 +1686,9 @@ button.voople-post-action:active {
   grid-template-columns: minmax(180px, 1fr) auto minmax(120px, 1fr);
   align-items: center;
   gap: 1rem;
-  border: 1px solid var(--app-border);
-  border-radius: 1rem;
-  background: var(--app-surface);
+  border-bottom: 1px solid var(--material-border);
+  background: var(--material-stage);
   padding: 0.625rem 0.75rem;
-  backdrop-filter: blur(18px);
   overflow: hidden;
 }
 
@@ -1772,14 +1824,16 @@ button.voople-post-action:active {
 }
 
 .voople-shell {
-  background:
-    radial-gradient(circle at 8% 8%, color-mix(in srgb, var(--theme-accent) 8%, transparent), transparent 28rem),
-    color-mix(in srgb, var(--background) 92%, var(--app-surface));
+  background: var(--material-chrome);
+}
+
+.voople-invite-stage {
+  background: var(--material-ambient-wash), var(--material-stage);
 }
 
 .voople-sidebar {
   width: var(--voople-sidebar-width);
-  background: transparent;
+  background: var(--material-chrome);
 }
 
 @media (min-width: 1024px) {
@@ -1790,10 +1844,7 @@ button.voople-post-action:active {
   .voople-shell[data-navigation-kind="messenger"] .voople-sidebar {
     width: var(--voople-sidebar-width);
     min-width: var(--voople-sidebar-width);
-    border-right: 1px solid rgb(255 255 255 / 0.044);
-    background:
-      linear-gradient(112deg, rgb(94 34 55 / 0.13) 0%, rgb(36 20 31 / 0.06) 34%, transparent 62%),
-      color-mix(in srgb, var(--background) 94%, #071019);
+    background: var(--material-chrome);
   }
 
   .voople-shell[data-navigation-kind="messenger"] .voople-sidebar__brand {
@@ -1941,12 +1992,12 @@ button.voople-post-action:active {
   z-index: 120;
   max-width: min(18rem, calc(100vw - 1rem));
   pointer-events: none;
-  border: 1px solid var(--app-border);
+  border: 1px solid var(--material-border);
   border-radius: 0.5rem;
-  background: color-mix(in srgb, var(--app-surface) 96%, transparent);
+  background: var(--material-overlay-fill);
   padding: 0.4rem 0.6rem;
   color: var(--foreground);
-  box-shadow: var(--app-shadow-md);
+  box-shadow: var(--material-overlay-shadow);
   font-size: 0.75rem;
   font-weight: 600;
   line-height: 1rem;
@@ -2018,111 +2069,27 @@ button.voople-post-action:active {
   /* feed + profile scroll area */
 }
 
-@media (min-width: 1024px) {
-  :root {
-    --voople-sticky-offset: 0px;
-  }
+.voople-shell[data-navigation-kind="messenger"]:not([data-route-kind="messages"]) .voople-shell__scroll {
+  min-width: 0;
+  margin: 8px;
+  border-radius: 22px;
+  background: var(--material-stage-grain), var(--material-ambient-wash), var(--material-stage);
+  background-size: auto;
+  box-shadow: var(--material-stage-depth);
+}
 
-  .voople-shell[data-route-kind="messages"] {
-    --voople-sidebar-width: 200px;
-    --voople-wine: #8a4452;
-    --voople-ice: #6a8aa3;
-    --theme-accent: var(--voople-wine);
-    --app-accent-soft: color-mix(in srgb, var(--voople-wine) 18%, transparent);
-    --app-radius-sm: 8px;
-    --app-radius-md: 12px;
-    --app-radius-lg: 16px;
-    --app-radius-xl: 20px;
-    background:
-      radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--voople-wine) 16%, transparent), transparent 28rem),
-      radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--voople-ice) 12%, transparent), transparent 24rem),
-      color-mix(in srgb, var(--background) 94%, var(--app-surface));
-    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-    letter-spacing: -0.01em;
-  }
-
-  .voople-shell[data-route-kind="messages"] .voople-sidebar {
-    border-right: 1px solid var(--app-border);
-    background: color-mix(in srgb, var(--background) 88%, var(--app-surface));
-  }
-
-  .voople-shell[data-route-kind="messages"] .voople-sidebar__brand {
-    padding: 1rem 0.75rem 0.875rem;
-  }
-
-  .voople-shell[data-route-kind="messages"] .voople-sidebar__footer {
-    padding: 0.625rem;
-  }
-
-  .voople-shell[data-route-kind="messages"] .voople-shell__column {
-    padding: 0;
-  }
-
-  .voople-shell[data-route-kind="messages"] .voople-shell__workspace {
-    border-width: 0;
+@media (max-width: 900px) {
+  .voople-stage,
+  .voople-shell[data-navigation-kind="messenger"]:not([data-route-kind="messages"]) .voople-shell__scroll {
+    margin: 0;
     border-radius: 0;
     box-shadow: none;
   }
+}
 
-  .voople-shell[data-route-kind="messages"] .voople-panel-header {
-    min-height: 3.5rem;
-    background: var(--app-surface);
-    backdrop-filter: none;
-    padding-block: 0.5rem;
-  }
-
-  .voople-shell[data-route-kind="messages"]
-    .voople-panel-header
-    > span[aria-hidden="true"] {
-    display: none;
-  }
-
-  .voople-shell[data-route-kind="messages"] .voople-chat-window__header--group {
-    min-height: 3.5rem;
-    padding-block: 0.5rem;
-  }
-
-  .voople-shell[data-route-kind="messages"] .voople-group-header-identity {
-    align-self: stretch;
-    padding-inline: 0.375rem;
-  }
-
-  .voople-shell[data-route-kind="messages"] .voople-group-identity__avatar {
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: 0.75rem;
-  }
-
-  .voople-shell[data-route-kind="messages"] .voople-group-identity__name {
-    font-size: 1.125rem;
-    line-height: 1;
-    letter-spacing: 0.055em;
-    text-transform: uppercase;
-  }
-
-  .voople-shell[data-route-kind="messages"] .voople-group-identity__meta {
-    margin-top: 0.125rem;
-    color: var(--app-muted);
-    font-size: 0.75rem;
-    letter-spacing: 0.01em;
-  }
-
-  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs {
-    min-height: 2.25rem;
-    padding-inline: 1rem;
-  }
-
-  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab {
-    min-width: 5.5rem;
-    padding-inline: 1rem;
-    font-size: 0.75rem;
-    letter-spacing: 0.11em;
-  }
-
-  .voople-shell[data-route-kind="messages"]
-    .voople-group-surface-tabs
-    > [role="tablist"] {
-    justify-content: center;
+@media (min-width: 1024px) {
+  :root {
+    --voople-sticky-offset: 0px;
   }
 
   .voople-shell[data-route-kind="messages"] .voople-chat-sections {
@@ -2214,10 +2181,7 @@ button.voople-post-action:active {
 
   .voople-shell__workspace {
     overflow: hidden;
-    border: 1px solid var(--app-border);
-    border-radius: 1.125rem;
-    background: var(--background);
-    box-shadow: 0 12px 36px rgb(0 0 0 / 0.18);
+    background: var(--material-chrome);
   }
 
   .voople-shell__main {
@@ -2283,17 +2247,13 @@ button.voople-post-action:active {
 
 .voople-chat-window__messages {
   touch-action: pan-y;
-  background-color: var(--chat-wallpaper-color, color-mix(in srgb, var(--app-surface) 90%, var(--background)));
-  background-image: var(--chat-wallpaper-image, none);
-  background-size: var(--chat-wallpaper-size, auto);
-  background-attachment: local;
+  background: transparent;
 }
 
 .voople-chat-window__header {
   position: relative;
   z-index: 5;
-  background: color-mix(in srgb, var(--app-surface) 92%, transparent);
-  backdrop-filter: blur(18px);
+  background: var(--material-chrome);
 }
 
 .voople-group-surface-tabs__tab[aria-selected="true"]::after {
@@ -2304,83 +2264,6 @@ button.voople-post-action:active {
   height: 2px;
   background: var(--theme-accent);
   content: "";
-}
-
-.voople-group-now__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(10.75rem, 1fr));
-  gap: 0.75rem;
-  align-items: stretch;
-}
-
-.voople-group-now__lobby {
-  grid-column: 1 / -1;
-}
-
-.voople-group-now-room {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--voople-ice, var(--theme-accent)) 26%, var(--app-border));
-  border-radius: var(--app-radius-lg);
-  background:
-    linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--voople-ice, var(--theme-accent)) 14%, transparent),
-      color-mix(in srgb, var(--background) 42%, transparent) 48%,
-      color-mix(in srgb, var(--voople-wine, var(--theme-accent)) 8%, transparent)
-    );
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
-  backdrop-filter: blur(18px);
-  color: inherit;
-}
-
-.voople-group-now-room:hover {
-  border-color: color-mix(in srgb, var(--voople-ice, var(--theme-accent)) 46%, var(--app-border));
-}
-
-.voople-group-now-room:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--voople-wine, var(--theme-accent)) 70%, white);
-  outline-offset: 2px;
-}
-
-.voople-group-now-room--current {
-  border-color: color-mix(in srgb, var(--voople-ice, var(--theme-accent)) 58%, var(--app-border));
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--foreground) 12%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--voople-ice, var(--theme-accent)) 28%, transparent),
-    0 16px 36px color-mix(in srgb, var(--voople-ice, var(--theme-accent)) 16%, transparent);
-}
-
-.voople-group-now-room--create {
-  border-style: dashed;
-  background: color-mix(in srgb, var(--voople-wine, var(--theme-accent)) 8%, transparent);
-}
-
-.voople-group-now-room--create:hover {
-  border-color: var(--voople-wine, var(--theme-accent));
-  background: var(--app-accent-soft);
-}
-
-@media (min-width: 720px) {
-  .voople-group-now__lobby {
-    grid-column: span 2;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .voople-group-now-room {
-    backdrop-filter: none;
-    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 10%, transparent);
-  }
-}
-
-html[data-app-theme="light"] .voople-group-now-room {
-  background:
-    linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--voople-ice, var(--theme-accent)) 18%, white),
-      color-mix(in srgb, white 62%, transparent)
-    );
 }
 
 .voople-group-live-shelf {
@@ -2407,42 +2290,6 @@ html[data-app-theme="light"] .voople-group-now-room {
 .voople-counter {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
-}
-
-@media (min-width: 1180px) {
-  .voople-group-surface-header--combined {
-    position: relative;
-    min-height: 4rem;
-  }
-
-  .voople-group-surface-header--combined .voople-chat-window__header--group {
-    min-height: 4rem;
-    padding-block: 0.5rem;
-    padding-inline: 1rem;
-  }
-
-  .voople-group-surface-header--combined .voople-chat-window__header--group > [aria-hidden="true"] {
-    display: none;
-  }
-
-  .voople-group-surface-header--combined .voople-group-surface-tabs {
-    position: absolute;
-    z-index: 6;
-    top: 0;
-    bottom: 0;
-    left: 50%;
-    min-height: 4rem;
-    padding-inline: 0;
-    transform: translateX(-50%);
-    border-bottom: 0;
-    background: transparent;
-  }
-}
-
-@media (min-width: 1200px) {
-  .voople-shell[data-route-kind="messages"] {
-    --voople-sidebar-width: 216px;
-  }
 }
 
 .voople-group-live-shelf__layout {
@@ -2885,15 +2732,12 @@ html[data-app-theme="light"] .voople-group-now-room {
 
 .voople-sticky-section-stack {
   isolation: isolate;
-  background: var(--background);
-  box-shadow: 0 1rem 1.25rem -1.25rem rgb(0 0 0 / 0.68);
+  background: var(--material-stage);
 }
 
 .voople-sticky-section-header {
   isolation: isolate;
-  background: var(--app-surface);
-  box-shadow: var(--app-shadow-sm);
-  backdrop-filter: blur(18px);
+  background: var(--material-stage);
 }
 
 .voople-status-publish-banner {
@@ -3034,11 +2878,8 @@ html[data-density="compact"] .shop-category {
 .settings-section {
   display: grid;
   gap: 1rem;
-  border: 1px solid var(--material-border);
-  border-radius: var(--material-radius);
-  background: var(--material-panel-fill);
-  padding: clamp(1rem, 3vw, 1.35rem);
-  box-shadow: inset 0 1px 0 var(--material-highlight);
+  padding-block: 0.25rem 1.5rem;
+  border-bottom: 1px solid var(--material-border);
 }
 
 .settings-layout {
@@ -3096,11 +2937,7 @@ html[data-density="compact"] .shop-category {
     top: 1rem;
     flex-direction: column;
     overflow: visible;
-    border: 1px solid var(--material-border);
-    border-radius: var(--material-radius);
-    background: var(--material-panel-fill);
-    padding: 0.45rem;
-    box-shadow: inset 0 1px 0 var(--material-highlight);
+    padding: 0;
   }
 }
 
@@ -5058,9 +4895,7 @@ html[data-density="compact"] .shop-category {
 }
 
 .settings-rows {
-  overflow: hidden;
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius-lg);
+  min-width: 0;
 }
 
 .settings-row {
@@ -5069,8 +4904,8 @@ html[data-density="compact"] .shop-category {
   align-items: center;
   justify-content: space-between;
   gap: 1.25rem;
-  background: var(--app-surface-soft);
-  padding: 0.9rem 1rem;
+  background: transparent;
+  padding: 0.9rem 0;
 }
 
 .settings-row + .settings-row {

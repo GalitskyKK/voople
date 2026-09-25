@@ -83,7 +83,7 @@ export function VoiceSessionDock({
     <div
       ref={dockRef}
       className={cn(
-        "voople-voice-dock fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] left-1/2 z-[70] flex touch-none select-none flex-col gap-2 overflow-hidden rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface)] p-2 shadow-[0_12px_36px_rgb(0_0_0/0.24)] lg:bottom-4",
+        "voople-signal-glass voople-voice-dock fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] left-1/2 z-[70] flex touch-none select-none flex-col gap-2 overflow-hidden rounded-[var(--app-radius-sm)] p-2 lg:bottom-4",
         geometry.gestureActive ? "cursor-grabbing" : "cursor-grab",
       )}
       style={geometry.style}

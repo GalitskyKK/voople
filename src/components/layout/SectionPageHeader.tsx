@@ -33,7 +33,7 @@ export function SectionPageHeader({
               "relative overflow-hidden rounded-[var(--app-radius-xl)] border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[var(--app-shadow-sm)]",
               density === "compact" ? "px-4 py-3" : "px-5 py-5 sm:px-7",
             )
-          : "border-b border-[var(--app-border)] px-4 py-4 lg:px-6",
+          : "px-0 py-3",
         sticky &&
           "voople-sticky-section-header sticky top-[var(--voople-sticky-offset)] z-30",
         className,

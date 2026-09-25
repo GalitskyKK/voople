@@ -15,7 +15,7 @@ export function AppTopBar({ authenticated }: { authenticated: boolean }) {
   const hideShop = pathname.startsWith("/shop");
 
   return (
-    <header data-nosnippet className="voople-topbar sticky top-0 z-20 flex h-12 items-center justify-between border-b border-[var(--app-border)] bg-[color-mix(in_srgb,var(--background)_92%,transparent)] px-4 backdrop-blur-md lg:hidden">
+    <header data-nosnippet className="voople-topbar sticky top-0 z-20 flex h-12 items-center justify-between bg-[var(--material-chrome)] px-4 lg:hidden">
       <Link href={authenticated ? "/messages" : "/feed"} className="inline-flex items-center gap-2 text-sm font-semibold tracking-[-0.02em] text-[var(--foreground)]">
         <VoopleMark className="h-7 w-7" />
         <span className="voople-wordmark">{COPY.wordmark}</span>

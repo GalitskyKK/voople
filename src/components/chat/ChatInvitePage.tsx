@@ -51,9 +51,9 @@ export function ChatInvitePage({ token }: { token: string }) {
           : "Ссылка не найдена или больше не действует.";
 
   return (
-    <main id="main-content" className="grid min-h-dvh place-items-center px-4 py-10">
+    <main id="main-content" className="voople-invite-stage grid min-h-dvh place-items-center px-4 py-10">
       <section
-        className="voople-panel relative w-full max-w-md overflow-hidden p-6 text-center sm:p-7"
+        className="voople-glass-object relative w-full max-w-md overflow-hidden rounded-2xl p-6 text-center sm:p-7"
       >
         {preview.data?.groupBannerUrl ? (
           <div

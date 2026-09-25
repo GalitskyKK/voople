@@ -96,7 +96,7 @@ export function Sheet({
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/65"
         onClick={onClose}
         aria-label="Закрыть"
       />
@@ -105,7 +105,7 @@ export function Sheet({
         aria-modal="true"
         aria-label={ariaLabel}
         className={cn(
-          "relative z-[101] voople-scroll max-h-[min(90dvh,720px)] w-full max-w-lg overflow-y-auto border border-[var(--app-border)] bg-[var(--background)] p-4 pt-5 shadow-[var(--app-shadow-md)]",
+          "voople-overlay-surface relative z-[101] voople-scroll max-h-[min(90dvh,720px)] w-full max-w-lg overflow-y-auto p-4 pt-5",
           isBottom
             ? "rounded-t-2xl pb-6"
             : isRight

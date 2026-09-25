@@ -22,7 +22,7 @@ export function GroupSurfaceTabs({
   onTabChange: (tab: GroupSurfaceTab) => void;
 }) {
   return (
-    <div className="voople-group-surface-tabs flex min-h-10 shrink-0 items-stretch border-b border-[var(--app-border)] px-6">
+    <div className="voople-group-surface-tabs flex min-h-10 shrink-0 items-stretch px-6">
       <div className="flex min-w-0 flex-1 items-stretch" role="tablist" aria-label="Раздел группы">
         {tabs.map(([id, label]) => (
           <button

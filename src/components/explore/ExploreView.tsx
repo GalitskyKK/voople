@@ -61,7 +61,7 @@ export function ExploreView({
           />
         </label>
 
-        <div className="voople-scroll flex gap-1 overflow-x-auto rounded-[var(--material-control-radius)] bg-[var(--material-inset-fill)] p-1" aria-label="Раздел поиска">
+        <div className="voople-scroll flex gap-1 overflow-x-auto p-1" aria-label="Раздел поиска">
           {([ ["all", "Все"], ["people", "Люди"], ["groups", "Группы"] ] as const).map(([id, label]) => (
             <button key={id} type="button" onClick={() => setScope(id)} aria-pressed={scope === id} className={scope === id ? "min-h-10 min-w-24 flex-1 rounded-[var(--material-control-radius)] bg-[var(--material-control-fill)] px-3 text-sm font-medium" : "min-h-10 min-w-24 flex-1 rounded-[var(--material-control-radius)] px-3 text-sm text-[var(--material-secondary-text)] hover:text-[var(--foreground)]"}>{label}</button>
           ))}

@@ -12,7 +12,7 @@ import { trpc } from "@/lib/trpc/client";
 import type { PublicGroupSearchHit } from "@/types/chat";
 import type { BetaSearchPerson } from "@/types/search";
 
-const rowClass = "flex min-w-0 items-center gap-3 rounded-[var(--material-control-radius)] border border-[var(--material-border)] bg-[var(--material-control-fill)] p-3";
+const rowClass = "flex min-w-0 items-center gap-3 rounded-[var(--material-control-radius)] p-3 transition-colors hover:bg-[var(--material-control-fill)]";
 
 export function BetaSearchResults({ people, groups, scope, renderDestination, renderAvatar, onNavigate }: {
   people: BetaSearchPerson[];
@@ -33,7 +33,7 @@ export function BetaSearchResults({ people, groups, scope, renderDestination, re
   return <div className="space-y-6">
     {(scope === "all" || scope === "people") && people.length > 0 ? <section aria-labelledby="search-people-title">
       <h2 id="search-people-title" className="mb-2 text-sm font-semibold">Люди</h2>
-      <ul className="space-y-2">{people.map((person) => <li key={person.id} className={`${rowClass} flex-wrap`}>
+      <ul className="divide-y divide-[var(--material-border)]">{people.map((person) => <li key={person.id} className={`${rowClass} flex-wrap`}>
         {renderAvatar(person)}
         <div className="min-w-0 flex-1">
           {renderDestination({ href: `/${person.username}`, label: `Профиль ${person.displayName}`, active: false,
@@ -53,7 +53,7 @@ export function BetaSearchResults({ people, groups, scope, renderDestination, re
     </section> : null}
     {(scope === "all" || scope === "groups") && groups.length > 0 ? <section aria-labelledby="search-groups-title">
       <h2 id="search-groups-title" className="mb-2 text-sm font-semibold">Публичные группы</h2>
-      <ul className="space-y-2">{groups.map((group) => {
+      <ul className="divide-y divide-[var(--material-border)]">{groups.map((group) => {
         const pending = group.joinRequestPending || requestedIds.has(group.id);
         return <li key={group.id} className={rowClass}>
           <GroupAvatar name={group.name} avatarUrl={group.avatarUrl} icon={group.icon} accentColor={null} size="md" />

@@ -188,7 +188,7 @@ export function DropdownMenu({
             aria-label={ariaLabel}
             onKeyDown={handleMenuKeyDown}
             className={cn(
-              "voople-dropdown-menu fixed z-[110] max-h-[calc(100vh-16px)] max-w-[calc(100vw-16px)] overflow-y-auto rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] py-1 text-[var(--foreground)] shadow-[var(--app-shadow-md)]",
+              "voople-overlay-surface voople-dropdown-menu fixed z-[110] max-h-[calc(100vh-16px)] max-w-[calc(100vw-16px)] overflow-y-auto rounded-xl py-1 text-[var(--foreground)]",
               menuClassName,
             )}
             style={{

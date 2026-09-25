@@ -31,7 +31,7 @@ export function CoreRoomInvitePreviewView({ state, onRetry, actions, switchAccou
   const isVoop = invite?.intent === "voop";
   return (
     <AppPageContent className="min-h-0 overflow-y-auto pb-8">
-      <section className="voople-panel mx-auto mt-6 max-w-xl overflow-hidden sm:mt-10">
+      <section className="voople-glass-object mx-auto mt-6 max-w-xl overflow-hidden rounded-2xl sm:mt-10">
         <header className="flex items-center gap-3 border-b border-[var(--material-border)] p-5 sm:p-6">
           {inviter ? (
             <ProfileAvatarVisual size="sm" displayName={inviter.displayName} avatarImage={inviter.avatarUrl ? (

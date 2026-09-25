@@ -30,6 +30,10 @@ test("messenger sidebar follows the rework information hierarchy", () => {
   assert.match(view, /label: "Новый диалог"/);
   assert.match(view, /voople:messenger-sidebar:\$\{id\}:expanded/);
   assert.match(view, /window\.localStorage\.setItem\(storageKey, String\(expanded\)\)/);
+  assert.ok(
+    view.indexOf("voople-messenger-sidebar__search-wrap") < view.indexOf('data-voople-scroll=""'),
+    "search belongs below the brand and before the scrollable conversation list",
+  );
   assert.doesNotMatch(view, /Главная|События|Магазин/);
   assert.match(rows, /shape="square"/);
   assert.match(rows, /text-emerald-400/);
@@ -43,7 +47,7 @@ test("messenger identity microtype stays restrained and host-shared", () => {
   const profileAvatar = source("src/components/profile/ProfileAvatarVisual.tsx");
   const groupAvatar = source("src/components/chat/GroupAvatar.tsx");
   const badge = source("src/components/chat/ChatUnreadBadge.tsx");
-  const styles = source("src/app/globals.css");
+  const styles = source("src/app/globals.css") + source("src/app/styles/messenger-glass.css");
   const desktopStyles = source("desktop/src/styles.css");
 
   assert.match(layout, /GeistPixelSquare/);
@@ -55,6 +59,7 @@ test("messenger identity microtype stays restrained and host-shared", () => {
   assert.match(badge, /voople-counter/);
   assert.match(styles, /--font-voople-pixel/);
   assert.match(styles, /\.voople-wordmark,[\s\S]*?\.voople-avatar-token__glyph,[\s\S]*?\.voople-counter/);
+  assert.match(styles, /\.voople-wordmark \{[\s\S]*?font-family: var\(--font-geist-sans\)/);
   assert.match(desktopStyles, /Geist Pixel Square Voople/);
 });
 
@@ -76,15 +81,15 @@ test("web and desktop share chat data and presentation without duplicate desktop
 });
 
 test("messages shell geometry is dense and route-scoped", () => {
-  const css = source("src/app/globals.css");
+  const css = source("src/app/globals.css") + source("src/app/styles/messenger-glass.css");
   const layout = source("src/components/chat/MessagesLayoutView.tsx");
 
   assert.match(
     css,
-    /\.voople-shell\[data-route-kind="messages"\][\s\S]*--voople-sidebar-width: 200px/,
+    /\.voople-shell\[data-navigation-kind="messenger"\][\s\S]*--voople-sidebar-width: 220px/,
   );
-  assert.match(css, /@media \(min-width: 1200px\)[\s\S]*--voople-sidebar-width: 216px/);
-  assert.match(css, /border-radius: 4px/);
+  assert.doesNotMatch(css, /--voople-sidebar-width: (?:200|216|266)px/);
+  assert.match(css, /\.voople-stage \{[\s\S]*?background-color: var\(--material-stage\)/);
   assert.match(css, /\.voople-messenger-sidebar__row--active \{[\s\S]*?background: color-mix/);
   assert.doesNotMatch(css, /\.voople-messenger-sidebar__row--active \{[\s\S]{0,260}?linear-gradient/);
   assert.match(layout, /data-thread=/);

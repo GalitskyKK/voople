@@ -31,7 +31,7 @@ replace it with page-specific initials, mascots or generated symbols.
 Components consume semantic tokens, never reference-specific colours. The
 dependency direction is:
 
-`primitive palette -> semantic material tokens -> component primitives -> route overrides`
+`primitive palette -> Chrome / Stage / Glass / Signal tokens -> component primitives -> route composition`
 
 The canonical tokens live in `src/app/globals.css`; Tauri imports the same
 global stylesheet and only supplies native window fonts and chrome.
@@ -48,15 +48,17 @@ Card customization is an independent identity surface, not a generic panel.
 | Layer | Tokens / primitives | Purpose |
 | --- | --- | --- |
 | Primitive | `--background`, `--foreground`, `--app-*`, brand and state colours | Theme inputs. |
-| Canvas | `--material-canvas-app`, `--material-canvas-workspace`, `--material-canvas-sidebar`, `--material-ambient-wash` | Shell, work area and navigation; restrained wine/ice light sits behind translucent surfaces. |
-| Material | `--material-panel-fill`, `--material-raised-fill`, `--material-control-fill`, `--material-overlay-fill`, `--material-inset-fill`, `--material-interactive-fill`, `--material-glass-body`, `--material-glass-active-body` | Select by elevation and interaction, not route. Room glass has thin ordinary/active bodies. |
+| Chrome | `--material-chrome`, `--material-canvas-sidebar` | One mostly opaque, unblurred shell shared by sidebar and contextual headers. Separation is spatial, not a border between them. |
+| Matte Stage | `--material-stage`, `--material-stage-depth`, `--material-ambient-wash`, `.voople-stage` | Inset working plane for content, with low wine/ice illumination and no backdrop blur. Stage has no repeated texture tile; visible grid artefacts are unacceptable. |
+| Glass | `--material-panel-fill`, `--material-raised-fill`, `--material-control-fill`, `--material-overlay-fill`, `--material-inset-fill`, `--material-interactive-fill`, `--material-glass-body`, `.voople-glass-object`, `.voople-overlay-surface` | Independent objects and overlays above Stage. Use one blur at the object boundary; list rows and controls use fills without blur. |
+| Signal Glass | `--material-glass-active-body`, `.voople-signal-glass` | Current/live objects keep a neutral body and gain an ice edge and restrained bloom. |
 | Optical glass | `--material-glass-edge`, `--material-glass-active-edge`, `--material-glass-scrim` | One-pixel optical rim, restrained active edge and a low-contrast content scrim. No colour field inside Room cards. |
 | Shared properties | `--material-border`, `--material-border-hover`, `--material-highlight`, `--material-specular`, `--material-accent-glow`, `--material-shadow`, `--material-shadow-hover`, `--material-overlay-shadow`, `--material-blur`, `--material-saturation`, `--material-radius`, `--material-control-radius`, `--material-focus-ring`, `--material-secondary-text`, `--material-skeleton-*` | Consistent edge, shape, focus and loading. Blur is optional. |
 | Component | `Card` panel/raised/inset/row, secondary `Button`, `Skeleton` avatar/text/room/row; `.voople-material-control`, `.voople-material-row` | Small reusable presentation vocabulary. |
 | Route override | `messenger-glass.css` | Layout and restrained accents; shared surfaces resolve through material tokens. |
 
-Void panel, raised and control fills are translucent over a dark canvas with a
-stationary ambient wash; Light uses separate frosted-white values. Room glass
+Void Glass fills are translucent over Matte Stage; Light uses separate
+frosted-white values. Chrome and Stage remain opaque and unblurred. Room glass
 uses a translucent neutral body with a single backdrop blur. A masked,
 one-pixel optical rim is brighter on the upper/left edge and fades toward the
 lower/right edge; a faint bottom scrim protects content legibility. The active
@@ -142,7 +144,9 @@ all-caps text. Headlines should wrap by meaning, not by arbitrary `<br>` tags.
 
 ## Shared UI contract
 
-- Authenticated pages use the canonical app shell and shared page header.
+- Authenticated pages use the canonical app shell; compact contextual headers
+  share Chrome with navigation. Ordinary page headings sit directly on Stage,
+  without an enclosing header card or generic decorative glow.
 - Web and Tauri render domain views from `src/components`; native folders only
   adapt navigation, authentication transport, updater and window controls.
 - Profile visuals use the canonical avatar/card/customization components.

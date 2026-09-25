@@ -20,7 +20,7 @@ export function VoiceRoomTransitionState({
       aria-live="polite"
       aria-busy={pending}
     >
-      <div className="voople-full-room__state-panel flex min-h-72 w-full flex-col items-center justify-center rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-6 py-10 text-center">
+      <div className="voople-full-room__state-panel flex min-h-72 w-full flex-col items-center justify-center px-6 py-10 text-center">
         {pending ? (
           <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-accent)] motion-reduce:animate-none" />
         ) : null}
@@ -49,7 +49,7 @@ export function VoiceRoomErrorState({
   return (
     <div className="voople-room-surface voople-room-surface__state voople-full-room__content flex min-h-0 flex-1 items-center justify-center p-3 sm:p-4">
       <div
-        className="voople-full-room__state-panel flex min-h-72 w-full flex-col items-center justify-center rounded-[var(--app-radius-sm)] border border-red-500/30 bg-red-500/5 px-6 py-10 text-center"
+        className="voople-full-room__state-panel flex min-h-72 w-full flex-col items-center justify-center px-6 py-10 text-center"
         role="alert"
       >
         <h3 className="text-xl font-semibold">{title}</h3>

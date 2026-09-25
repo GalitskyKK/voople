@@ -36,8 +36,8 @@ export function GroupSettingsNavigation({
   return (
     <nav
       className={cn(
-        "voople-scroll flex gap-1 overflow-x-auto rounded-2xl bg-[var(--app-surface-soft)] p-1",
-        layout === "sidebar" && "lg:flex-col lg:overflow-visible lg:bg-transparent lg:p-0",
+        "voople-scroll flex gap-1 overflow-x-auto p-1",
+        layout === "sidebar" && "lg:flex-col lg:overflow-visible lg:p-0",
         className,
       )}
       aria-label="Настройки группы"
@@ -52,7 +52,7 @@ export function GroupSettingsNavigation({
             "flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs transition",
             layout === "sidebar" && "lg:min-w-0 lg:flex-none lg:justify-start lg:text-sm",
             section === id
-              ? "bg-[var(--app-surface)] text-[var(--foreground)] shadow-[var(--app-shadow-sm)]"
+              ? "bg-[var(--material-interactive-fill)] text-[var(--foreground)]"
               : "text-[var(--app-muted)] hover:text-[var(--foreground)]",
           )}
         >

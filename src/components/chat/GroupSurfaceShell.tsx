@@ -45,16 +45,17 @@ export function GroupSurfaceShell({
         <GroupSurfaceTabs activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
       {activeTab === "chat" ? (
-        <>
+        <div className="voople-stage flex min-h-0 flex-1 flex-col">
           <GroupNowVoicePanel enabled groupId={config.groupId} conversationId={config.conversationId} groupName={config.groupName} canCreatePinned={config.canCreatePinned} variant="shelf" onOpenProfile={openProfile} />
           {chatContent}
-        </>
+        </div>
       ) : activeTab === "now" ? (
-        <div className="voople-scroll min-h-0 flex-1 overflow-y-auto">
+        <div className="voople-stage voople-scroll min-h-0 flex-1 overflow-y-auto">
           <GroupNowVoicePanel enabled groupId={config.groupId} conversationId={config.conversationId} groupName={config.groupName} canCreatePinned={config.canCreatePinned} variant="surface" onOpenProfile={openProfile} />
         </div>
       ) : (
-        <GroupPeoplePanel
+        <div className="voople-stage flex min-h-0 flex-1 flex-col">
+          <GroupPeoplePanel
           enabled
           groupId={config.groupId}
           conversationId={config.conversationId}
@@ -63,7 +64,8 @@ export function GroupSurfaceShell({
           onOpenProfile={config.onOpenProfile}
           onVoop={config.onVoop}
           voopingUserId={config.voopingUserId}
-        />
+          />
+        </div>
       )}
     </div>
     </GroupSurfaceNavigationContext.Provider>

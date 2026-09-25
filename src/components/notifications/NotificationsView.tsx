@@ -69,13 +69,14 @@ export function NotificationsView({
       <SectionPageHeader
         title={COPY.notifications}
         density="compact"
+        variant="plain"
         sticky
       />
 
       <div className="grid items-start gap-5 xl:grid-cols-[14rem_minmax(0,1fr)]">
-      <div className="voople-scroll -mt-2 flex gap-1 overflow-x-auto rounded-2xl bg-[var(--app-surface-soft)] p-1 xl:sticky xl:top-24 xl:mt-0 xl:flex-col xl:overflow-visible" aria-label="Категория уведомлений">
+      <div className="voople-scroll flex gap-1 overflow-x-auto p-1 xl:sticky xl:top-24 xl:flex-col xl:overflow-visible" aria-label="Категория уведомлений">
         {FILTERS.map(({ id, label }) => (
-          <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)} className={cn("min-w-24 flex-1 rounded-xl px-3 py-2 text-xs font-medium transition xl:w-full xl:flex-none xl:text-left", filter === id ? "bg-[var(--app-surface)] text-[var(--foreground)] shadow-[var(--app-shadow-sm)]" : "text-[var(--app-muted)] hover:text-[var(--foreground)]")}>{label}</button>
+          <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)} className={cn("min-h-10 min-w-24 flex-1 rounded-xl px-3 py-2 text-xs font-medium transition xl:w-full xl:flex-none xl:text-left", filter === id ? "bg-[var(--material-interactive-fill)] text-[var(--foreground)]" : "text-[var(--app-muted)] hover:bg-[var(--material-control-fill)] hover:text-[var(--foreground)]")}>{label}</button>
         ))}
       </div>
 
@@ -120,20 +121,20 @@ export function NotificationsView({
           )}
 
           {visibleItems.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[var(--app-border)] px-4 py-10 text-center text-sm text-[var(--app-muted)]">
+            <div className="px-4 py-10 text-center text-sm text-[var(--app-muted)]">
               {filter === "all" ? "Пока здесь ничего нет" : "В этой категории уведомлений нет"}
             </div>
           ) : (
-            <ul className="space-y-2">
+            <ul className="divide-y divide-[var(--material-border)]">
               {visibleItems.map((notification) => {
                 const actor = notification.actor;
                 const Icon = notificationIcon(notification.type);
                 const href = notificationHref(notification);
                 const className = cn(
-                  "flex w-full items-start gap-3 rounded-xl border px-3 py-3 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]",
+                  "flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-[var(--material-control-fill)]",
                   notification.read
-                    ? "border-[color-mix(in_srgb,var(--foreground)_5%,transparent)] bg-[color-mix(in_srgb,var(--foreground)_2%,transparent)]"
-                    : "border-[color-mix(in_srgb,var(--theme-accent)_30%,transparent)] bg-[var(--app-accent-soft)]",
+                    ? "bg-transparent"
+                    : "bg-[var(--app-accent-soft)]",
                 );
                 const content = (
                   <>

@@ -14,9 +14,11 @@ export async function loadCurrentVisualCss(repo, { host = "web" } = {}) {
   const postcss = require("postcss");
   const tailwindcss = require("@tailwindcss/postcss");
   const globalsPath = path.join(repo, "src/app/globals.css");
+  const messengerPath = path.join(repo, "src/app/styles/messenger-glass.css");
   const desktopPath = path.join(repo, "desktop/src/styles.css");
-  const [globals, desktop] = await Promise.all([
+  const [globals, messenger, desktop] = await Promise.all([
     readFile(globalsPath, "utf8"),
+    readFile(messengerPath, "utf8"),
     readFile(desktopPath, "utf8"),
   ]);
   const compiled = await postcss([
@@ -35,5 +37,5 @@ body { font-family: var(--font-geist-sans), system-ui, sans-serif; }
     .replaceAll("../../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2", "/fonts/geist-mono.woff2")
     .replaceAll("../../node_modules/geist/dist/fonts/geist-pixel/GeistPixel-Square.woff2", "/fonts/geist-pixel-square.woff2");
 
-  return `${compiled.css}\n${fontPrelude}\n${host === "desktop" ? desktopCss : ""}`;
+  return `${compiled.css}\n${messenger}\n${fontPrelude}\n${host === "desktop" ? desktopCss : ""}`;
 }

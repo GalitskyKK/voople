@@ -4,14 +4,12 @@
    ========================================================================== */
 
 :where(.voople-shell, .voople-dropdown-menu)[data-route-kind="messages"] {
-  --voople-sidebar-width: 266px;
   --voople-room-radius: var(--material-radius);
   --voople-ice: #79bdff;
   --voople-ice-strong: #c1e0ff;
   --voople-ice-soft: rgb(121 189 255 / 0.12);
   --voople-wine-soft: rgb(142 64 88 / 0.12);
   --voople-wine-wash: rgb(94 34 55 / 0.12);
-  --theme-accent: var(--voople-ice);
   --app-accent-soft: var(--material-interactive-fill);
   --app-surface: var(--material-panel-fill);
   --app-surface-soft: var(--material-inset-fill);
@@ -25,7 +23,6 @@
   --voople-glass-border-hover: var(--material-border-hover);
   --voople-glass-shadow: var(--material-shadow);
   color: var(--foreground);
-  background: var(--material-ambient-wash), var(--material-canvas-app);
 }
 
 html[data-app-theme="light"] :where(.voople-shell, .voople-dropdown-menu)[data-route-kind="messages"] {
@@ -34,14 +31,6 @@ html[data-app-theme="light"] :where(.voople-shell, .voople-dropdown-menu)[data-r
   --voople-ice-soft: rgb(49 95 146 / 0.10);
   --voople-wine-soft: rgb(142 64 88 / 0.055);
   --voople-wine-wash: rgb(142 64 88 / 0.045);
-}
-
-.voople-dropdown-menu[data-route-kind="messages"] {
-  border-color: var(--material-border) !important;
-  background: var(--material-overlay-fill) !important;
-  box-shadow: var(--material-overlay-shadow) !important;
-  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
-  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
 }
 
 /* Theme variables set on the route shell cannot recolor the root scrollbar
@@ -63,20 +52,11 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 .voople-shell[data-route-kind="messages"] .voople-shell__workspace {
   min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--material-border);
-  border-radius: var(--material-radius);
-  background: var(--material-ambient-wash), var(--material-canvas-workspace);
-  box-shadow: var(--material-shadow);
+  background: var(--material-chrome);
 }
 
 .voople-shell[data-route-kind="messages"] .voople-sidebar {
-  width: var(--voople-sidebar-width) !important;
-  min-width: var(--voople-sidebar-width) !important;
-  border-right: 1px solid var(--material-border);
-  background: var(--material-canvas-sidebar);
-  box-shadow: inset -1px 0 0 var(--material-highlight);
-  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
-  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+  background: var(--material-chrome);
 }
 
 .voople-shell[data-route-kind="messages"] .voople-sidebar__brand {
@@ -134,21 +114,19 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
    Group header: reference scale
    -------------------------------------------------------------------------- */
 
-.voople-shell[data-route-kind="messages"] .voople-panel-header,
-.voople-shell[data-route-kind="messages"] .voople-chat-window__header--group {
-  min-height: 176px;
-  padding: 24px 38px 20px;
-  border-bottom: 1px solid var(--material-border);
-  background: var(--material-panel-fill);
-  box-shadow: inset 0 1px 0 var(--material-highlight);
-  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
-  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+.voople-shell[data-route-kind="messages"] .voople-panel-header {
+  min-height: 64px;
+  padding: 8px 24px;
+  background: var(--material-chrome);
 }
 
-@media (min-width: 1180px) {
-  .voople-shell[data-route-kind="messages"] .voople-group-surface-header--combined {
-    min-height: 176px;
-  }
+.voople-shell[data-route-kind="messages"] .voople-chat-window__header--group {
+  min-height: 72px;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-group-surface-header {
+  flex: none;
+  background: var(--material-chrome);
 }
 
 .voople-group-header-identity {
@@ -159,10 +137,10 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 
 .voople-group-header-identity:hover { background: transparent; }
 
-.voople-group-header-avatar > * {
-  width: 116px !important;
-  height: 116px !important;
-  border-radius: 18px !important;
+.voople-chat-window__header--group .voople-group-header-avatar > * {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.08),
     0 0 0 1px rgb(255 255 255 / 0.07),
@@ -173,10 +151,10 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
    the same avatar in `voople-group-header-avatar`. Keep both hosts on the
    same glass hero scale. */
 .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__avatar {
-  width: 116px;
-  height: 116px;
+  width: 64px;
+  height: 64px;
   flex: none;
-  border-radius: 18px;
+  border-radius: 14px;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.08),
     0 0 0 1px rgb(255 255 255 / 0.07),
@@ -185,7 +163,7 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 
 .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__name {
   color: var(--foreground);
-  font-size: 30px;
+  font-size: 22px;
   font-weight: 720;
   letter-spacing: -0.035em;
   line-height: 1;
@@ -193,14 +171,14 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 }
 
 .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__meta {
-  margin-top: 0.5rem;
-  font-size: 14px;
+  margin-top: 2px;
+  font-size: 12px;
   line-height: 1.3;
 }
 
 .voople-group-header-name {
   color: var(--foreground);
-  font-size: 30px;
+  font-size: 22px;
   font-weight: 720;
   letter-spacing: -0.035em;
   line-height: 1;
@@ -222,8 +200,9 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 }
 
 .voople-group-header-meta {
-  font-size: 14px !important;
-  line-height: 1.3;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.2;
 }
 
 .voople-group-header-ring {
@@ -241,11 +220,11 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 .voople-group-header-member {
   position: relative;
   z-index: 1;
-  width: 42px;
-  height: 42px;
+  width: 32px;
+  height: 32px;
   margin-left: -8px;
   overflow: hidden;
-  border: 2px solid var(--material-canvas-workspace);
+  border: 2px solid var(--material-chrome);
   border-radius: 999px;
   box-shadow: 0 0 0 1px rgb(255 255 255 / 0.07);
 }
@@ -255,8 +234,8 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 
 .voople-group-header-overflow {
   display: grid;
-  min-width: 42px;
-  height: 42px;
+  min-width: 32px;
+  height: 32px;
   margin-left: -6px;
   place-items: center;
   border: 1px solid var(--material-border);
@@ -269,13 +248,13 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
   box-shadow: inset 0 1px 0 var(--material-highlight);
 }
 
-.voople-group-header-actions { gap: 12px !important; }
+.voople-group-header-actions { gap: 8px; }
 
 .voople-group-header-invite,
 .voople-group-header-more {
   position: relative;
   overflow: hidden;
-  height: 54px !important;
+  height: 40px;
   border: 1px solid var(--material-border);
   border-radius: var(--material-control-radius);
   background: var(--material-control-fill);
@@ -285,12 +264,12 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 }
 
 .voople-group-header-invite {
-  padding-inline: 20px !important;
+  padding-inline: 14px;
   color: var(--voople-ice-strong);
   font-size: 14px !important;
 }
 
-.voople-group-header-more { width: 54px !important; }
+.voople-group-header-more { width: 40px; }
 
 .voople-group-header-invite:hover,
 .voople-group-header-more:hover {
@@ -304,26 +283,24 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
    -------------------------------------------------------------------------- */
 
 .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs {
-  min-height: 52px;
-  padding-inline: 38px;
-  border-bottom: 1px solid var(--material-border);
-  background: var(--material-panel-fill);
-  box-shadow: inset 0 1px 0 var(--material-highlight);
+  min-height: 40px;
+  padding-inline: 24px;
+  background: var(--material-chrome);
 }
 
 .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs > [role="tablist"] {
   justify-content: flex-start;
-  gap: 3.2rem;
+  gap: 2.5rem;
 }
 
 .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab {
   min-width: 52px;
-  height: 50px;
+  height: 40px;
   padding: 0;
-  border: 0 !important;
-  background: transparent !important;
+  border: 0;
+  background: transparent;
   color: var(--material-secondary-text);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.015em;
   outline: 0;
@@ -345,30 +322,18 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
    Room glass: static panel, border-only sheen on hover
    -------------------------------------------------------------------------- */
 
-.voople-room-material,
-.voople-group-people-list,
-.voople-chat-composer__surface {
-  border: 1px solid var(--voople-glass-border) !important;
-  background: var(--voople-glass-fill) !important;
-  box-shadow: var(--voople-glass-shadow) !important;
-}
-
-.voople-chat-composer__surface {
-  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
-  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
-}
-
 .voople-room-material {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  border-radius: var(--voople-room-radius) !important;
-  background: var(--material-glass-body) !important;
+  border: 1px solid var(--voople-glass-border);
+  border-radius: var(--voople-room-radius);
+  background: var(--material-glass-body);
   -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
   backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
-  box-shadow: var(--material-shadow), inset 0 1px 0 rgb(255 255 255 / 0.05), inset 0 -12px 22px rgb(0 0 0 / 0.07) !important;
-  transform: none !important;
-  transition: border-color 150ms ease, background 150ms ease, box-shadow 170ms ease, opacity 150ms ease !important;
+  box-shadow: var(--material-shadow), inset 0 1px 0 rgb(255 255 255 / 0.05), inset 0 -12px 22px rgb(0 0 0 / 0.07);
+  transform: none;
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 170ms ease, opacity 150ms ease;
 }
 
 /* A one-pixel masked optical rim: light is concentrated along the upper/left
@@ -442,35 +407,14 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 }
 
 button.voople-room-material:hover {
-  transform: none !important;
-  border-color: var(--voople-glass-border-hover) !important;
-  background: var(--material-glass-body) !important;
-  box-shadow: var(--material-shadow-hover), inset 0 1px 0 rgb(255 255 255 / 0.07) !important;
+  transform: none;
+  border-color: var(--voople-glass-border-hover);
+  background: var(--material-glass-body);
+  box-shadow: var(--material-shadow-hover), inset 0 1px 0 rgb(255 255 255 / 0.07);
 }
 
 button.voople-room-material:hover .voople-room-material__reflection {
   animation: voople-border-specular 4.8s cubic-bezier(0.20, 0.62, 0.18, 1) 1 both;
-}
-
-@media (min-width: 1180px) {
-  .voople-shell[data-route-kind="messages"] .voople-group-surface-header--combined .voople-group-surface-tabs {
-    top: 50%;
-    bottom: auto;
-    min-height: 52px;
-    align-items: center;
-    padding-inline: 0;
-    transform: translate(-50%, -50%);
-    border-bottom: 0;
-    background: transparent;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-
-  .voople-shell[data-route-kind="messages"] .voople-group-surface-header--combined .voople-group-surface-tabs > [role="tablist"] {
-    flex: none;
-    align-items: center;
-    justify-content: center;
-  }
 }
 
 /* --------------------------------------------------------------------------
@@ -479,8 +423,8 @@ button.voople-room-material:hover .voople-room-material__reflection {
 
 .voople-shell[data-route-kind="messages"] .voople-chat-sections {
   min-height: 40px;
-  border-bottom-color: var(--material-border);
-  background: var(--material-panel-fill);
+  border-bottom-color: transparent;
+  background: transparent;
 }
 
 .voople-shell[data-route-kind="messages"] .voople-chat-sections__selector,
@@ -553,9 +497,9 @@ button.voople-room-material:focus-visible,
 
 .voople-group-now {
   width: 100%;
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 32px 38px 42px !important;
+  max-width: none;
+  margin: 0;
+  padding: 32px 38px 42px;
 }
 
 .voople-group-now__section-header {
@@ -565,7 +509,7 @@ button.voople-room-material:focus-visible,
 
 .voople-group-now__section-header h2,
 .voople-group-now__section-header h3 {
-  font-size: 20px !important;
+  font-size: 20px;
   line-height: 1.2;
 }
 
@@ -582,21 +526,21 @@ button.voople-room-material:focus-visible,
 }
 
 .voople-group-now__grid {
-  display: grid !important;
+  display: grid;
   width: 100%;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 20px !important;
-  justify-content: stretch !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  justify-content: stretch;
   align-items: stretch;
 }
 
 .voople-group-now-room,
 .voople-group-now-create-tile {
-  min-height: 170px !important;
+  min-height: 170px;
 }
 
 .voople-group-now-room__name {
-  font-size: 18px !important;
+  font-size: 18px;
   letter-spacing: -0.018em;
 }
 
@@ -624,15 +568,15 @@ button.voople-room-material:focus-visible,
 
 .voople-group-now-room--current,
 .voople-live-room-card--current {
-  border-color: color-mix(in srgb, var(--voople-ice) 35%, var(--material-border)) !important;
-  background: var(--material-glass-active-body) !important;
-  box-shadow: var(--material-shadow), 0 12px 28px rgb(83 164 237 / 0.11), inset 0 1px 0 rgb(255 255 255 / 0.07) !important;
+  border-color: color-mix(in srgb, var(--voople-ice) 35%, var(--material-border));
+  background: var(--material-glass-active-body);
+  box-shadow: var(--material-shadow), 0 12px 28px rgb(83 164 237 / 0.11), inset 0 1px 0 rgb(255 255 255 / 0.07);
 }
 
 button.voople-group-now-room--current:hover,
 button.voople-live-room-card--current:hover {
-  background: var(--material-glass-active-body) !important;
-  box-shadow: var(--material-shadow-hover), 0 12px 28px rgb(83 164 237 / 0.13), inset 0 1px 0 rgb(255 255 255 / 0.08) !important;
+  background: var(--material-glass-active-body);
+  box-shadow: var(--material-shadow-hover), 0 12px 28px rgb(83 164 237 / 0.13), inset 0 1px 0 rgb(255 255 255 / 0.08);
 }
 
 .voople-group-now-room--current::before,
@@ -645,15 +589,14 @@ button.voople-live-room-card--current:hover {
 
 .voople-group-now-room__current-copy,
 .voople-live-room-card__current {
-  color: var(--voople-ice-strong) !important;
+  color: var(--voople-ice-strong);
   font-weight: 600;
 }
 
 .voople-group-now-room__current-actions {
-  position: absolute;
+  position: relative;
   z-index: 6;
-  right: 20px;
-  bottom: 18px;
+  align-self: flex-end;
   display: inline-flex;
   align-items: center;
   min-height: 32px;
@@ -706,7 +649,7 @@ button.voople-live-room-card--current:hover {
 }
 
 .voople-group-now-room--current .voople-group-now-room__current-copy {
-  padding-right: 220px;
+  padding-right: 0;
 }
 
 .voople-group-now-room--pending,
@@ -728,20 +671,20 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
 }
 
 .voople-group-now-room--empty {
-  background: var(--material-glass-body) !important;
+  background: var(--material-glass-body);
 }
 
 .voople-group-now-create-tile {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  border: 1px dashed var(--material-border) !important;
-  border-radius: var(--voople-room-radius) !important;
-  background: color-mix(in srgb, var(--material-glass-body) 55%, transparent) !important;
-  color: var(--material-secondary-text) !important;
-  box-shadow: none !important;
-  transform: none !important;
-  transition: border-color 150ms ease, background 150ms ease, color 150ms ease !important;
+  border: 1px dashed var(--material-border);
+  border-radius: var(--voople-room-radius);
+  background: color-mix(in srgb, var(--material-glass-body) 55%, transparent);
+  color: var(--material-secondary-text);
+  box-shadow: none;
+  transform: none;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
 }
 
 .voople-group-now-create-tile > * { position: relative; z-index: 1; }
@@ -753,31 +696,31 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
 }
 
 .voople-group-now-create-tile:hover {
-  transform: none !important;
-  border-color: var(--material-border-hover) !important;
-  background: var(--material-interactive-fill) !important;
-  color: var(--foreground) !important;
+  transform: none;
+  border-color: var(--material-border-hover);
+  background: var(--material-interactive-fill);
+  color: var(--foreground);
 }
 
-.voople-group-now__online { margin-top: 42px !important; }
+.voople-group-now__online { margin-top: 42px; }
 .voople-group-now__available { min-height: 48px; gap: 1rem 1.45rem; }
 
 .voople-group-now-participant--room {
-  width: 52px !important;
-  height: 52px !important;
+  width: 52px;
+  height: 52px;
 }
 
 .voople-group-now-participant--room > *:first-child {
-  width: 52px !important;
-  height: 52px !important;
-  border: 2px solid rgb(12 18 27 / 0.94) !important;
-  border-radius: 999px !important;
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 4px 12px rgb(0 0 0 / 0.19) !important;
+  width: 52px;
+  height: 52px;
+  border: 2px solid rgb(12 18 27 / 0.94);
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 4px 12px rgb(0 0 0 / 0.19);
 }
 
 .voople-group-now-participant--me > *:first-child {
-  border-color: rgb(121 189 255 / 0.72) !important;
-  box-shadow: 0 0 0 1px rgb(121 189 255 / 0.10), 0 0 12px rgb(121 189 255 / 0.05) !important;
+  border-color: rgb(121 189 255 / 0.72);
+  box-shadow: 0 0 0 1px rgb(121 189 255 / 0.10), 0 0 12px rgb(121 189 255 / 0.05);
 }
 
 /* --------------------------------------------------------------------------
@@ -787,34 +730,34 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
 .voople-group-live-shelf {
   container-type: inline-size;
   padding: 12px 20px;
-  border-bottom: 1px solid var(--material-border);
-  background: var(--material-panel-fill);
+  border-bottom: 0;
+  background: transparent;
 }
 
 .voople-group-live-shelf__layout { display: none; }
 .voople-group-live-shelf__layout--wide { display: flex; }
 .voople-live-room-card {
-  flex: 0 1 360px !important;
-  min-height: 112px !important;
+  flex: 0 1 360px;
+  min-height: 112px;
 }
 
 @container (max-width: 520px) {
-  .voople-live-room-card { flex-basis: 100% !important; }
+  .voople-live-room-card { flex-basis: 100%; }
 }
 
 .voople-group-people-control {
   min-height: 44px;
-  border: 1px solid var(--material-border) !important;
-  background: var(--material-control-fill) !important;
+  border: 1px solid var(--material-border);
+  background: var(--material-control-fill);
   box-shadow: inset 0 1px 0 var(--material-highlight);
 }
 
 .voople-group-people-list {
   overflow: hidden;
-  border: 0 !important;
+  border: 0;
   border-radius: var(--material-radius);
-  background: transparent !important;
-  box-shadow: none !important;
+  background: transparent;
+  box-shadow: none;
 }
 
 .voople-group-people-state {
@@ -871,12 +814,7 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
 
 .voople-shell[data-route-kind="messages"] .voople-chat-window__messages {
   touch-action: pan-y;
-  background: transparent !important;
-}
-
-.voople-shell[data-route-kind="messages"] .voople-chat-composer__surface {
-  border-radius: var(--material-radius) !important;
-  background: var(--material-raised-fill) !important;
+  background: transparent;
 }
 
 /* --------------------------------------------------------------------------
@@ -884,72 +822,59 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
    -------------------------------------------------------------------------- */
 
 @media (max-width: 1280px) {
-  .voople-shell[data-route-kind="messages"] { --voople-sidebar-width: 220px; }
-  .voople-shell[data-route-kind="messages"] .voople-panel-header,
-  .voople-shell[data-route-kind="messages"] .voople-chat-window__header--group { min-height: 136px; padding: 18px 24px 16px; }
-  .voople-group-header-avatar > * { width: 92px !important; height: 92px !important; }
-  .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__avatar { width: 92px; height: 92px; }
-  .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__name { font-size: 24px; }
+  .voople-shell[data-route-kind="messages"] .voople-chat-window__header--group { min-height: 64px; }
+  .voople-chat-window__header--group .voople-group-header-avatar > * { width: 56px; height: 56px; }
+  .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__avatar { width: 56px; height: 56px; }
+  .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__name { font-size: 20px; }
   .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__meta { font-size: 12px; }
-  .voople-group-header-name { font-size: 24px; }
-  .voople-group-header-meta { font-size: 12px !important; }
-  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs { min-height: 48px; padding-inline: 24px; }
-  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab { height: 46px; font-size: 14px; }
-  .voople-group-now { padding: 26px 24px 34px !important; }
-  .voople-group-now__grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .voople-group-header-name { font-size: 20px; }
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs { min-height: 36px; }
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab { height: 36px; font-size: 13px; }
+  .voople-group-now { padding: 26px 24px 34px; }
+  .voople-group-now__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 900px) {
-  .voople-shell[data-route-kind="messages"] { --voople-sidebar-width: 184px; }
   .voople-group-header-members { display: none; }
 
   .voople-room-material,
   .voople-dropdown-menu[data-route-kind="messages"],
-  .voople-shell[data-route-kind="messages"] .voople-sidebar,
   .voople-group-people-list,
   .voople-chat-composer__surface,
   .voople-group-header-invite,
   .voople-group-header-more,
-  .voople-shell[data-route-kind="messages"] .voople-panel-header,
-  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs,
   .voople-group-people-control {
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 
   .voople-room-material {
-    background: var(--material-glass-body) !important;
+    background: var(--material-glass-body);
   }
 
   .voople-group-now-room--current,
-  .voople-live-room-card--current { background: var(--material-glass-active-body) !important; }
+  .voople-live-room-card--current { background: var(--material-glass-active-body); }
 
 }
 
 @media (max-width: 620px) {
-  .voople-shell[data-route-kind="messages"] .voople-panel-header,
-  .voople-shell[data-route-kind="messages"] .voople-chat-window__header--group { min-height: 108px; padding: 14px 12px 12px; }
-  .voople-group-header-avatar > *,
-  .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__avatar { width: 68px !important; height: 68px !important; border-radius: 14px !important; }
+  .voople-shell[data-route-kind="messages"] .voople-panel-header { padding-inline: 12px; }
+  .voople-shell[data-route-kind="messages"] .voople-chat-window__header--group { min-height: 64px; }
+  .voople-chat-window__header--group .voople-group-header-avatar > *,
+  .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__avatar { width: 52px; height: 52px; border-radius: 12px; }
   .voople-group-header-name,
   .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__name { font-size: 20px; }
   .voople-group-header-members,
-  .voople-group-header-invite { display: none !important; }
-  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs { padding-inline: 12px; }
+  .voople-group-header-invite { display: none; }
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs { min-height: 40px; padding-inline: 12px; }
   .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs > [role="tablist"] { gap: 1.2rem; }
-  .voople-group-now { padding: 18px 12px 28px !important; }
-  .voople-group-now__grid { grid-template-columns: 1fr !important; }
+  .voople-group-now { padding: 18px 12px 28px; }
+  .voople-group-now__grid { grid-template-columns: 1fr; }
   .voople-group-now__section-header { align-items: center; }
-  .voople-group-now-room__current-actions { right: 14px; bottom: 14px; }
+  .voople-group-now-room__current-actions { position: relative; right: auto; bottom: auto; align-self: flex-end; margin-top: -4px; }
   .voople-group-now-room__current-action { min-height: 36px; padding-inline: 9px; }
-  .voople-group-now-room--current .voople-group-now-room__current-copy { padding-right: 220px; }
+  .voople-group-now-room--current .voople-group-now-room__current-copy { padding-right: 0; }
   .voople-group-people-voop small { display: none; }
-}
-
-@media (min-width: 1180px) and (max-width: 1280px) {
-  .voople-shell[data-route-kind="messages"] .voople-group-surface-header--combined {
-    min-height: 136px;
-  }
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -962,8 +887,8 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
   .voople-group-header-more,
   .voople-shell[data-route-kind="messages"] .voople-panel-header,
   .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs {
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
@@ -977,23 +902,42 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
 }
 
 .voople-shell[data-route-kind="messages"] .voople-full-room__header,
-.voople-shell[data-route-kind="messages"] .voople-full-room__switcher,
 .voople-shell[data-route-kind="messages"] .voople-full-room__footer {
-  background: var(--material-panel-fill);
+  background: var(--material-chrome);
 }
 
 .voople-shell[data-route-kind="messages"] .voople-full-room__content {
-  background: var(--material-canvas-workspace);
+  margin: 8px;
+  border-radius: 22px;
+  background: var(--material-ambient-wash), var(--material-stage);
+  box-shadow: var(--material-stage-depth);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-full-room__switcher {
+  background: var(--material-overlay-fill);
 }
 
 .voople-shell[data-route-kind="messages"] .voople-full-room__switcher-room--current,
 .voople-shell[data-route-kind="messages"] .voople-full-room__participant,
 .voople-shell[data-route-kind="messages"] .voople-full-room__solo,
-.voople-shell[data-route-kind="messages"] .voople-full-room__empty,
-.voople-shell[data-route-kind="messages"] .voople-full-room__state-panel {
+.voople-shell[data-route-kind="messages"] .voople-full-room__empty {
   border-color: var(--voople-glass-border-hover);
   background: var(--material-raised-fill);
   box-shadow: var(--voople-glass-shadow);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-full-room__state-panel {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (max-width: 900px) {
+  .voople-shell[data-route-kind="messages"] .voople-full-room__content {
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
 }
 
 .voople-shell[data-route-kind="messages"] .voople-full-room__media {

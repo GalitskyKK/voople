@@ -283,7 +283,7 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
 
   if (isPage) {
     return (
-      <div className="voople-scroll min-h-0 flex-1 overflow-y-auto bg-[var(--app-canvas)] px-4 py-5 sm:px-6 lg:px-8">
+      <div className="voople-stage voople-scroll min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <button type="button" onClick={props.onBack} className="mb-5 inline-flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]">
             <ArrowLeft className="h-4 w-4" /> Вернуться в группу

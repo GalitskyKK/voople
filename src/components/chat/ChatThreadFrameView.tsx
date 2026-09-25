@@ -103,7 +103,7 @@ export function ChatThreadFrameView({
       ) : (
         <>
           {header}
-          {chatContent}
+          <div className="voople-stage flex min-h-0 flex-1 flex-col">{chatContent}</div>
         </>
       )}
       {overlays}

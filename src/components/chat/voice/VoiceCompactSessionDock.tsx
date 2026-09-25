@@ -35,7 +35,7 @@ export function VoiceCompactSessionDock({
 
   return (
     <div
-      className="voople-voice-dock--compact fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] left-1/2 z-[70] flex h-[52px] w-[min(480px,calc(100vw-1rem))] -translate-x-1/2 items-center gap-1 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface)] p-1.5 shadow-[0_10px_30px_rgb(0_0_0/0.22)] lg:bottom-4"
+      className="voople-signal-glass voople-voice-dock--compact fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] left-1/2 z-[70] flex h-[52px] w-[min(480px,calc(100vw-1rem))] -translate-x-1/2 items-center gap-1 rounded-[var(--app-radius-sm)] p-1.5 lg:bottom-4"
       role="region"
       aria-label="Компактный голосовой разговор"
     >

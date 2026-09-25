@@ -134,7 +134,7 @@ export function GroupCommunityPanel({
   if (!community) return error ? <p className="mt-4 text-sm text-red-400">{error}</p> : null;
 
   return (
-    <section className="mt-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4" aria-labelledby="group-community-title">
+    <section className="mt-5 pb-5" aria-labelledby="group-community-title">
       <div className="flex items-start gap-3">
         <GroupAvatar name={groupName} avatarUrl={community.avatarUrl} icon={icon} accentColor={community.effectiveAccentColor} size="md" />
         <div className="min-w-0 flex-1">

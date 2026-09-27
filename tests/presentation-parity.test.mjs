@@ -129,7 +129,7 @@ test("authenticated sticky chrome uses one offset without masking strips", () =>
   assert.match(sectionHeader, /top-\[var\(--voople-sticky-offset\)\]/);
   assert.match(shop, /voople-sticky-section-header/);
   assert.match(desktopShell, /data-voople-scroll=""/);
-  assert.match(globals, /\.voople-sticky-section-stack[\s\S]*background: var\(--background\)/);
+  assert.match(globals, /\.voople-sticky-section-stack \{[^}]*background: var\(--material-stage\)/);
   assert.doesNotMatch(globals, /0 -4rem 0 var\(--background\)/);
   assert.doesNotMatch(feedHeader, /linear-gradient|sticky top-0/);
 });

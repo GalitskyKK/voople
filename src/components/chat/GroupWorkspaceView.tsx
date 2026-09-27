@@ -1,7 +1,7 @@
 "use client";
 
 import { UsersRound, X } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useGroupWorkspaceMode } from "@/hooks/useGroupWorkspaceMode";
 import { GroupSurfaceTabs, type GroupSurfaceTab } from "./GroupSurfaceTabs";
 
@@ -18,7 +18,10 @@ export function GroupWorkspaceView({ header, live, chat, renderPeople, combineHe
   const [peopleOpen, setPeopleOpen] = useState(false);
   const peopleTrigger = useRef<HTMLButtonElement>(null);
   const peopleClose = useRef<HTMLButtonElement>(null);
-  const { ref, mode } = useGroupWorkspaceMode();
+  const onModeChange = useCallback((_next: string, previous: string) => {
+    if (previous === "medium") setPeopleOpen(false);
+  }, []);
+  const { ref, mode } = useGroupWorkspaceMode(onModeChange);
   const desktop = mode !== "compact";
 
   useEffect(() => {

@@ -20,7 +20,7 @@ test("web and desktop share settings presentation and device-only reset scope", 
 test("settings surfaces use existing theme tokens and visible keyboard focus", () => {
   const css = read("src/app/globals.css");
 
-  assert.match(css, /\.settings-section \{[^}]*var\(--material-panel-fill\)/);
+  assert.match(css, /\.settings-section \{[^}]*var\(--material-border\)/);
   assert.match(css, /\.settings-nav button:focus-visible \{[\s\S]*?var\(--theme-accent\)/);
 });
 

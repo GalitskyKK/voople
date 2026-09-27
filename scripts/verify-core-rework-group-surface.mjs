@@ -127,6 +127,16 @@ try {
       await page.keyboard.press('Escape');
       assert.equal(await page.getByRole('complementary',{name:'Участники группы'}).count(),0);
       assert.equal(await trigger.evaluate(el=>el===document.activeElement),true);
+      for (const widthAfterLeavingMedium of [1440,390]) {
+        await trigger.click();
+        await page.getByRole('complementary',{name:'Участники группы'}).waitFor();
+        await page.setViewportSize({width:widthAfterLeavingMedium,height:900});
+        await page.locator(`.voople-group-surface[data-mode="${widthAfterLeavingMedium===1440?'wide':'compact'}"]`).waitFor();
+        await page.setViewportSize({width:1100,height:900});
+        await page.locator('.voople-group-surface[data-mode="medium"]').waitFor();
+        assert.equal(await page.getByRole('complementary',{name:'Участники группы'}).count(),0);
+        assert.equal(await trigger.getAttribute('aria-expanded'),'false');
+      }
     }
     const person=room.first().getByRole('button',{name:'Действия участника Biba',exact:true});
     await person.click();

@@ -314,7 +314,8 @@ export function useChatRoomControl(
     dock: inside && dockVisible ? {
       mode: dockMode,
       onModeChange: dockPresentation.changeMode,
-      chatName, participantCount, durationLabel, mediaStatus, connectionLabel,
+      chatName: currentCoreRoom && server.directory?.groupName ? `${server.directory.groupName} / ${currentCoreRoom.name}` : chatName,
+      participantCount, durationLabel, mediaStatus, connectionLabel, errorMessage,
       activeSpeakerName: resolveVoiceDockActiveSpeaker(participants, activeSpeakerIds),
       connectionQuality, micMuted, outputMuted: output.outputMuted,
       cameraEnabled: video.cameraEnabled,
@@ -324,6 +325,10 @@ export function useChatRoomControl(
       onOpen: openRoom,
       onToggleMic: () => void mediaActions.toggleMicrophone(),
       onToggleOutput: () => void toggleOutputWithMicrophone(),
+      onToggleCamera: () => void mediaActions.toggleCamera(),
+      onToggleScreenShare: () => void mediaActions.toggleScreenShare(),
+      cameraPending: mediaActions.cameraPending,
+      screenSharePending: mediaActions.screenSharePending,
       onLeave: () => void leaveRoom(),
       preview: dockMode === "mini" && !open ? {
         screenContainerRef: video.bindScreenContainer,

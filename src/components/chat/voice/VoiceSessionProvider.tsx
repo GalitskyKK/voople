@@ -26,11 +26,14 @@ import { LiveMoveHandoffBridge } from "./LiveMoveHandoffBridge";
 import { useIncomingVoiceCalls, type SubscribeToVoiceRooms } from "./useIncomingVoiceCalls";
 import { resolveVoiceConversationId } from "./voice-conversation-context";
 import { IDLE_VOICE_CONTROL_STATE } from "./voice-session-state";
+import { useVoiceParticipantSnapshot } from "./useVoiceParticipantSnapshot";
 const ChatRoomControl = lazy(() =>
   import("../ChatRoomControl").then((module) => ({
     default: module.ChatRoomControl,
   })),
 );
+
+import type { VoiceSessionParticipants } from "@/types/voice-session-participants";
 
 export type VoiceSessionDescriptor = {
   chatId: string;
@@ -42,6 +45,7 @@ export type VoiceSessionDescriptor = {
 export type VoiceSessionContextValue = {
   activeSession: VoiceSessionDescriptor | null;
   state: VoiceControlState;
+  participantDetails: VoiceSessionParticipants | null;
   openRoom: (session: VoiceSessionDescriptor) => void;
   joinRoom: (session: VoiceSessionDescriptor) => boolean;
   openCoreRoom: (launch: CoreVoiceSessionLaunch) => void;
@@ -66,6 +70,7 @@ export function VoiceSessionProvider({
   const activeSessionRef = useRef(activeSession);
   useEffect(() => { activeSessionRef.current = activeSession; }, [activeSession]);
   const [state, setState] = useState<VoiceControlState>(IDLE_VOICE_CONTROL_STATE);
+  const { participantDetails, handleParticipantsChange } = useVoiceParticipantSnapshot();
   const controlRef = useRef<ChatRoomControlHandle>(null);
   const autoConnectPendingRef = useRef(false);
   const [initialCoreCredentials, setInitialCoreCredentials] = useState<EnabledVoiceMediaCredentials | null>(null);
@@ -182,6 +187,7 @@ export function VoiceSessionProvider({
     () => ({
       activeSession,
       state,
+      participantDetails: state.inside && participantDetails?.sessionId === activeSession?.coreSession?.join.sessionId ? participantDetails : null,
       openRoom,
       joinRoom,
       openCoreRoom,
@@ -197,7 +203,7 @@ export function VoiceSessionProvider({
         if (state.inside) await controlRef.current?.leave();
       },
     }),
-    [activeSession, joinRoom, minimizePanel, openCoreRoom, openRoom, state],
+    [activeSession, joinRoom, minimizePanel, openCoreRoom, openRoom, state, participantDetails],
   );
   const incoming = useIncomingVoiceCalls({
     busy: state.inside,
@@ -239,6 +245,7 @@ export function VoiceSessionProvider({
                 onCoreRoomSwitch={roomSwitch.requestJoin}
                 renderTrigger={false}
                 onStateChange={handleStateChange}
+                onParticipantsChange={handleParticipantsChange}
                 onLeaveConfirmed={handleLeaveConfirmed}
               />
             </Suspense>

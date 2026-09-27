@@ -46,7 +46,6 @@ export function GroupSurfaceShell({
       </div>
       {activeTab === "chat" ? (
         <div className="voople-stage flex min-h-0 flex-1 flex-col">
-          <GroupNowVoicePanel enabled groupId={config.groupId} conversationId={config.conversationId} groupName={config.groupName} canCreatePinned={config.canCreatePinned} variant="shelf" onOpenProfile={openProfile} />
           {chatContent}
         </div>
       ) : activeTab === "now" ? (

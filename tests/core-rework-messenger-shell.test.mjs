@@ -110,3 +110,15 @@ test("messages shell geometry is dense and route-scoped", () => {
   assert.doesNotMatch(css, /\.voople-messenger-sidebar__row--active \{[\s\S]{0,260}?linear-gradient/);
   assert.match(layout, /data-thread=/);
 });
+
+test("web and desktop share the sidebar session root and one Compact media dock", () => {
+  const nav = source("src/components/layout/AppNavigationVisual.tsx");
+  const dock = source("src/components/chat/voice/VoiceSessionDock.tsx");
+  const compact = source("src/components/chat/voice/VoiceCompactSessionDock.tsx");
+  for (const host of ["src/components/layout/DesktopSidebar.tsx", "desktop/src/adapters/DesktopAppSidebarAdapter.tsx"])
+    assert.match(source(host), /<AppSidebarVisual/);
+  assert.ok(nav.indexOf('id="voople-sidebar-session-root"') < nav.indexOf('className="voople-sidebar__footer'));
+  assert.match(dock, /createPortal\(compact, sidebarRoot\)/);
+  for (const action of ["onToggleMic", "onToggleOutput", "onToggleCamera", "onToggleScreenShare", "onLeave"]) assert.match(compact, new RegExp(action));
+  assert.doesNotMatch(compact, /onModeChange\("mini"\)|emerald|purple/);
+});

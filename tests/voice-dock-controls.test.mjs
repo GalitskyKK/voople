@@ -89,7 +89,7 @@ test("remote participant context menu controls the existing persisted LiveKit vo
   assert.match(output, /participant\.trackPublications\.values\(\)/);
 });
 
-test("compact room summary keeps participant, speaker and active capture state visible", () => {
+test("compact room summary exposes session identity and active media controls", () => {
   const participants = [
     { id: "me", displayName: "Вы" },
     { id: "biba", displayName: "Biba" },
@@ -108,8 +108,9 @@ test("compact room summary keeps participant, speaker and active capture state v
   const compact = read("src/components/chat/voice/VoiceCompactSessionDock.tsx");
   const minimal = read("src/components/chat/voice/VoiceMinimalSessionDock.tsx");
   const dock = read("src/components/chat/voice/VoiceSessionDock.tsx");
-  assert.match(compact, /activeSpeakerName/);
-  assert.match(compact, /VoiceDockMediaIndicators/);
+  assert.match(compact, /participantCount/);
+  assert.match(compact, /aria-pressed=\{cameraEnabled\}/);
+  assert.match(compact, /aria-pressed=\{screenSharing\}/);
   assert.match(minimal, /participantLabel/);
   assert.match(minimal, /VoiceDockMediaIndicators/);
   assert.match(dock, /reportProductEvent\("room_expanded", \{ state: "full" \}\)/);

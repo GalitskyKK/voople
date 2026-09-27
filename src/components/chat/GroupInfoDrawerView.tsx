@@ -42,7 +42,6 @@ export function GroupInfoDrawerView({ open, chatName, memberCount, groupIcon, gr
   const onlineCount = now?.visibleOnlineCount ?? 0;
   const activeIds = new Set(activeRooms.flatMap((room) => room.participants.map((person) => person.id)));
   const preview = [...(members ?? [])].sort((left, right) => Number(activeIds.has(right.id)) - Number(activeIds.has(left.id))).slice(0, 5);
-  const overflow = Math.max(0, memberCount - preview.length);
 
   return (
     <>
@@ -55,10 +54,6 @@ export function GroupInfoDrawerView({ open, chatName, memberCount, groupIcon, gr
       </button>
 
       <div className="voople-group-header-actions ml-auto flex shrink-0 items-center gap-2">
-        <div className="voople-group-header-members hidden shrink-0 items-center md:flex" aria-label="Участники группы">
-          {preview.map((member) => <button key={member.id} type="button" onClick={() => onOpenProfile(member.username)} className="voople-group-header-member" aria-label={member.displayName}><GroupAvatar name={member.displayName} avatarUrl={member.avatarUrl ?? null} icon={null} accentColor={member.roleColor} size="sm" shape="square" /></button>)}
-          {overflow > 0 ? <span className="voople-group-header-overflow">+{overflow}</span> : null}
-        </div>
         {canManage ? <button type="button" onClick={onInvite} className="voople-group-header-invite hidden h-12 shrink-0 items-center gap-2.5 px-5 text-sm font-semibold sm:inline-flex"><UserPlus className="h-3.5 w-3.5" aria-hidden="true" />Пригласить</button> : null}
         {canManage ? <IconButton label="Пригласить в группу" tooltipSide="bottom" onClick={onInvite} className="voople-group-header-more inline-flex h-12 w-12 shrink-0 items-center justify-center sm:hidden"><UserPlus className="h-5 w-5" /></IconButton> : null}
         <IconButton label={canManage ? "Настройки группы" : "Информация о группе"} tooltipSide="bottom" onClick={canManage ? onManage : () => onOpenChange(true)} className="voople-group-header-more inline-flex h-12 w-12 shrink-0 items-center justify-center">{canManage ? <Settings2 className="h-5 w-5" /> : <MoreHorizontal className="h-5 w-5" />}</IconButton>

@@ -26,6 +26,11 @@ export type VoiceSessionDockProps = {
   onOpen: () => void;
   onToggleMic: () => void;
   onToggleOutput: () => void;
+  onToggleCamera: () => void;
+  onToggleScreenShare: () => void;
+  cameraPending: boolean;
+  screenSharePending: boolean;
+  errorMessage?: string | null;
   onLeave: () => void;
 };
 

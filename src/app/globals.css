@@ -59,10 +59,12 @@
   /* Primitive palette -> semantic material -> component/route composition. */
   --material-canvas-app: #0b0e15;
   --material-chrome: #0e1218;
-  --material-stage: #11171e;
+  --material-stage: #171e26;
+  --material-current-fill: #1e2731;
+  --material-row-hover: rgb(213 227 240 / 0.045);
   --material-canvas-workspace: var(--material-stage);
   --material-canvas-sidebar: var(--material-chrome);
-  --material-ambient-wash: radial-gradient(105% 85% at 4% 0%, rgb(94 44 65 / 0.045), transparent 76%), radial-gradient(95% 85% at 100% 25%, rgb(70 121 157 / 0.055), transparent 78%);
+  --material-ambient-wash: linear-gradient(120deg, rgb(128 145 160 / 0.018), transparent);
   --material-stage-depth: inset 0 1px 1px rgb(255 255 255 / 0.018), 0 8px 24px rgb(0 0 0 / 0.08);
   --material-stage-grain: linear-gradient(115deg, rgb(255 255 255 / 0.006), transparent 46%, rgb(0 0 0 / 0.006));
   --material-panel-fill: rgb(29 35 48 / 0.48);
@@ -73,7 +75,7 @@
   --material-glass-active-edge: conic-gradient(from 135deg at 50% 50%, rgb(19 32 44 / 0.20), rgb(114 187 230 / 0.43) 26%, rgb(235 249 255 / 0.86) 43%, rgb(105 180 230 / 0.53) 54%, rgb(29 56 76 / 0.16) 78%, rgb(19 32 44 / 0.20));
   --material-glass-scrim: linear-gradient(0deg, rgb(6 12 21 / 0.13), transparent 62%);
   --material-control-fill: rgb(62 77 96 / 0.28);
-  --material-overlay-fill: rgb(31 40 54 / 0.88);
+  --material-overlay-fill: #1f2836;
   --material-inset-fill: rgb(11 17 27 / 0.48);
   --material-interactive-fill: rgb(54 79 106 / 0.48);
   --material-border: rgb(219 232 246 / 0.14);
@@ -120,9 +122,11 @@ html[data-app-theme="light"] {
   --material-canvas-app: #e9eef4;
   --material-chrome: #e9eef4;
   --material-stage: #f3f6fa;
+  --material-current-fill: #e8eef4;
+  --material-row-hover: rgb(35 57 78 / 0.045);
   --material-canvas-workspace: var(--material-stage);
   --material-canvas-sidebar: var(--material-chrome);
-  --material-ambient-wash: radial-gradient(95% 85% at 4% 0%, rgb(204 211 229 / 0.18), transparent 76%), radial-gradient(90% 85% at 100% 25%, rgb(194 219 238 / 0.14), transparent 78%);
+  --material-ambient-wash: linear-gradient(120deg, rgb(128 145 160 / 0.018), transparent);
   --material-stage-depth: inset 0 1px 1px rgb(255 255 255 / 0.7), 0 9px 26px rgb(52 72 92 / 0.07);
   --material-stage-grain: none;
   --material-panel-fill: rgb(255 255 255 / 0.69);
@@ -133,7 +137,7 @@ html[data-app-theme="light"] {
   --material-glass-active-edge: conic-gradient(from 135deg at 50% 50%, rgb(44 67 87 / 0.12), rgb(165 213 247 / 0.78) 35%, rgb(255 255 255 / 0.96) 48%, rgb(62 123 175 / 0.36) 77%, rgb(44 67 87 / 0.12));
   --material-glass-scrim: linear-gradient(0deg, rgb(255 255 255 / 0.12), transparent 62%);
   --material-control-fill: rgb(245 249 253 / 0.76);
-  --material-overlay-fill: rgb(255 255 255 / 0.94);
+  --material-overlay-fill: #ffffff;
   --material-inset-fill: rgb(216 228 240 / 0.38);
   --material-interactive-fill: rgb(210 228 247 / 0.68);
   --material-border: rgb(39 65 92 / 0.13);
@@ -477,7 +481,7 @@ body {
     margin: 8px;
     border-radius: 22px;
     background-color: var(--material-stage);
-    background-image: var(--material-stage-grain), radial-gradient(100% 70% at 50% 0%, color-mix(in srgb, var(--group-accent, transparent) 2%, transparent), transparent), var(--material-ambient-wash);
+    background-image: var(--material-stage-grain), var(--material-ambient-wash);
     background-size: auto;
     box-shadow: var(--material-stage-depth);
   }
@@ -2141,19 +2145,6 @@ button.voople-post-action:active {
     .voople-chat-bubble:hover
     .voople-chat-bubble__body {
     box-shadow: none;
-  }
-
-  .voople-shell[data-route-kind="messages"] .voople-group-now__title,
-  .voople-shell[data-route-kind="messages"] .voople-group-now-room__name {
-    letter-spacing: 0.075em;
-  }
-
-  .voople-shell[data-route-kind="messages"] .voople-group-now-room__name {
-    font-size: 1.0625rem;
-  }
-
-  .voople-shell[data-route-kind="messages"] .voople-group-now__online {
-    color: var(--material-ice);
   }
 
   .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__row,

@@ -1,5 +1,7 @@
 "use client";
 
+import { createPortal } from "react-dom";
+import { useVoiceSidebarRoot } from "./useVoiceSidebarRoot";
 import { useRef } from "react";
 import {
   ChevronDown,
@@ -43,8 +45,10 @@ export function VoiceSessionDock({
   onOpen,
   onToggleMic,
   onToggleOutput,
+  onToggleCamera, onToggleScreenShare, cameraPending, screenSharePending, errorMessage,
   onLeave,
 }: VoiceSessionDockProps) {
+  const sidebarRoot = useVoiceSidebarRoot();
   const dockRef = useRef<HTMLDivElement | null>(null);
   const geometry = useVoiceDockGeometry(dockRef);
   const weakConnection =
@@ -70,13 +74,13 @@ export function VoiceSessionDock({
   }
 
   if (mode === "compact") {
-    return (
-      <VoiceCompactSessionDock
-        {...{ chatName, participantCount, activeSpeakerName, durationLabel, mediaStatus, connectionLabel, micMuted, cameraEnabled, screenSharing, mediaActionPending, leavePending, onToggleMic, onLeave }}
-        onOpen={openFullRoomFromCompact}
-        onModeChange={changeMode}
-      />
-    );
+    const compact = <VoiceCompactSessionDock
+      {...{ chatName, participantCount, activeSpeakerName, durationLabel, mediaStatus, connectionLabel,
+        micMuted, outputMuted, cameraEnabled, screenSharing, mediaActionPending, leavePending,
+        onToggleMic, onToggleOutput, onToggleCamera, onToggleScreenShare, cameraPending, screenSharePending,
+        onLeave, errorMessage }}
+      onOpen={openFullRoomFromCompact} inSidebar={Boolean(sidebarRoot)} />;
+    return sidebarRoot ? createPortal(compact, sidebarRoot) : compact;
   }
 
   return (

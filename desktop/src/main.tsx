@@ -16,6 +16,7 @@ import {
 import { getDesktopConfig } from "./config";
 import { DesktopErrorBoundary } from "./telemetry/DesktopErrorBoundary";
 import "../../src/app/globals.css";
+import "../../src/app/styles/messenger-glass.css";
 import "./styles.css";
 
 const root = document.getElementById("root");

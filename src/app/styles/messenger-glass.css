@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Messages / Groups — Chrome, Stage and Frost composition.
+   Messages / Groups — opaque Chrome, matte Stage and quiet Room sections.
    ========================================================================== */
 
 :where(.voople-shell, .voople-dropdown-menu)[data-route-kind="messages"] {
@@ -96,12 +96,6 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
   background: var(--material-interactive-fill);
 }
 
-/* The scroll host owns the full-height atmosphere. This fixes the visual
-   cutoff where GroupNowPanelView ended after its content. */
-/*.voople-shell[data-route-kind="messages"] .voople-scroll:has(> .voople-group-now),
-.voople-shell[data-route-kind="messages"] .voople-scroll:has(> .voople-group-people) {
-  background: transparent;
-}*/
 
 .voople-shell[data-route-kind="messages"] .voople-group-now,
 .voople-shell[data-route-kind="messages"] .voople-group-people {
@@ -110,7 +104,7 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 }
 
 /* --------------------------------------------------------------------------
-   Group header: reference scale
+   Group header: current context
    -------------------------------------------------------------------------- */
 
 .voople-shell[data-route-kind="messages"] .voople-panel-header {
@@ -148,7 +142,7 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 
 /* Desktop uses the shared GroupIdentity renderer while web Group Info wraps
    the same avatar in `voople-group-header-avatar`. Keep both hosts on the
-   same glass hero scale. */
+   same context identity scale. */
 .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__avatar {
   width: 54px;
   height: 54px;
@@ -211,42 +205,6 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
   border-radius: 999px;
 }
 
-.voople-group-header-members {
-  margin-left: auto;
-  padding-left: 18px;
-}
-
-.voople-group-header-member {
-  position: relative;
-  z-index: 1;
-  width: 32px;
-  height: 32px;
-  margin-left: -8px;
-  overflow: hidden;
-  border: 2px solid var(--material-chrome);
-  border-radius: 999px;
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.07);
-}
-
-.voople-group-header-member:first-child { margin-left: 0; }
-.voople-group-header-member > * { width: 100%; height: 100%; border-radius: inherit; }
-
-.voople-group-header-overflow {
-  display: grid;
-  min-width: 32px;
-  height: 32px;
-  margin-left: -6px;
-  place-items: center;
-  border: 1px solid var(--material-border);
-  border-radius: 999px;
-  background: var(--material-control-fill);
-  padding-inline: 7px;
-  color: var(--app-muted);
-  font-size: 12px;
-  font-weight: 650;
-  box-shadow: inset 0 1px 0 var(--material-highlight);
-}
-
 .voople-group-header-actions { gap: 8px; }
 
 .voople-group-header-invite,
@@ -264,7 +222,7 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 
 .voople-group-header-invite {
   padding-inline: 14px;
-  color: var(--voople-ice-strong);
+  color: var(--foreground);
   font-size: 14px;
 }
 
@@ -318,7 +276,7 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 }
 
 /* --------------------------------------------------------------------------
-   Room glass: static panel, border-only sheen on hover
+   Deferred Live Shelf material; canonical Group Voice does not use this primitive
    -------------------------------------------------------------------------- */
 
 .voople-room-material {
@@ -474,7 +432,7 @@ button.voople-room-material:hover .voople-room-material__reflection {
 }
 
 button.voople-room-material:focus-visible,
-.voople-group-now-create-tile:focus-visible,
+.voople-group-now-room__header:focus-visible,
 .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab:focus-visible {
   outline: 2px solid var(--material-focus-ring);
   outline-offset: -2px;
@@ -490,237 +448,33 @@ button.voople-room-material:focus-visible,
   100% { background-position: -45% 0; opacity: 0; }
 }
 
-/* --------------------------------------------------------------------------
-   Voice surface: dimensions follow the reference
-   -------------------------------------------------------------------------- */
-
-.voople-group-now {
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 32px 38px 42px;
-}
-
-.voople-group-now__section-header {
-  min-height: 28px;
-  margin-bottom: 18px;
-}
-
+/* Voice is an ordered list of Room sections with complete inline rosters. */
+.voople-group-now { width: 100%; max-width: 960px; margin: 0 auto; padding: 20px 28px 32px; }
+.voople-group-now__section-header { min-height: 40px; margin-bottom: 8px; }
 .voople-group-now__section-header h2,
-.voople-group-now__section-header h3 {
-  font-size: 20px;
-  line-height: 1.2;
-}
-
-.voople-group-now__section-count,
-.voople-group-live-shelf__count {
-  border: 1px solid var(--material-border);
-  background: var(--material-control-fill);
-  color: var(--material-secondary-text);
-}
-
-.voople-group-people-voop:focus-visible {
-  outline: 2px solid var(--material-focus-ring);
-  outline-offset: 2px;
-}
-
-.voople-group-now__grid {
-  display: grid;
-  width: 100%;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
-  justify-content: stretch;
-  align-items: stretch;
-}
-
-.voople-group-now-room,
-.voople-group-now-create-tile {
-  min-height: 170px;
-}
-
-.voople-group-now-room__name {
-  font-size: 18px;
-  letter-spacing: -0.018em;
-}
-
-.voople-group-now-room__count,
-.voople-live-room-card__count,
-.voople-group-now-room__activity-icon,
-.voople-live-room-card__activity {
-  border: 1px solid var(--material-border);
-  background: var(--material-control-fill);
-  color: var(--material-secondary-text);
-  box-shadow: inset 0 1px 0 var(--material-highlight);
-}
-
-.voople-group-now-room__activity-icon--screen,
-.voople-live-room-card__activity--screen { color: var(--voople-ice); }
-
-.voople-group-now-room__overflow,
-.voople-live-room-card__overflow {
-  border: 1px solid var(--material-border);
-  background: var(--material-control-fill);
-  color: var(--material-secondary-text);
-}
-
-.voople-group-now-room__empty { color: var(--material-secondary-text); }
-
-.voople-group-now-room--current,
-.voople-live-room-card--current {
-  border-color: color-mix(in srgb, var(--voople-ice) 35%, var(--material-border));
-  background: var(--material-glass-active-body);
-  box-shadow: var(--material-shadow), 0 12px 28px rgb(83 164 237 / 0.11), inset 0 1px 0 rgb(255 255 255 / 0.07);
-}
-
-button.voople-group-now-room--current:hover,
-button.voople-live-room-card--current:hover {
-  background: var(--material-glass-active-body);
-  box-shadow: var(--material-shadow-hover), 0 12px 28px rgb(83 164 237 / 0.13), inset 0 1px 0 rgb(255 255 255 / 0.08);
-}
-
-.voople-group-now-room--current::before,
-.voople-live-room-card--current::before {
-  background: var(--material-glass-active-edge);
-}
-
-.voople-group-now-room--current .voople-room-material__highlight,
-.voople-live-room-card--current .voople-room-material__highlight { opacity: 1; }
-
-.voople-group-now-room__current-copy,
-.voople-live-room-card__current {
-  color: var(--voople-ice-strong);
-  font-weight: 600;
-}
-
-.voople-group-now-room__current-actions {
-  position: relative;
-  z-index: 6;
-  align-self: flex-end;
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  padding: 3px;
-  border: 1px solid color-mix(in srgb, var(--app-border) 72%, transparent);
-  border-radius: 10px;
-  background: var(--material-control-fill);
-  box-shadow: inset 0 1px 0 var(--material-highlight);
-}
-
-.voople-group-now-room__current-action {
-  display: inline-flex;
-  min-height: 26px;
-  align-items: center;
-  gap: 5px;
-  border-radius: 7px;
-  padding: 4px 7px;
-  color: var(--app-muted);
-  font-size: 12px;
-  font-weight: 600;
-  transition: color 150ms ease, background 150ms ease;
-}
-
-.voople-group-now-room__current-action:hover,
-.voople-group-now-room__current-action:focus-visible {
-  background: color-mix(in srgb, var(--voople-ice) 9%, transparent);
-  color: var(--foreground);
-}
-
-.voople-group-now-room__current-action--leave:hover,
-.voople-group-now-room__current-action--leave:focus-visible {
-  background: rgb(176 72 82 / 0.10);
-  color: rgb(246 178 184);
-}
-
-.voople-group-now-room__current-action:focus-visible {
-  outline: 2px solid var(--material-focus-ring);
-  outline-offset: 1px;
-}
-
-.voople-group-now-room__current-action:disabled {
-  cursor: wait;
-  opacity: 0.45;
-}
-
-.voople-group-now-room__action-divider {
-  width: 1px;
-  height: 16px;
-  background: color-mix(in srgb, var(--app-border) 82%, transparent);
-}
-
-.voople-group-now-room--current .voople-group-now-room__current-copy {
-  padding-right: 0;
-}
-
-.voople-group-now-room--pending,
-.voople-live-room-card--pending { opacity: 0.64; }
-
-.voople-group-now-room__action-cue {
-  display: inline-flex;
-  color: var(--voople-ice-strong);
-  opacity: 0.42;
-  transform: translateX(-2px);
-  transition: color 150ms ease, opacity 150ms ease, transform 150ms ease;
-}
-
-button.voople-group-now-room:hover .voople-group-now-room__action-cue,
-button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
-  color: var(--voople-ice-strong);
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.voople-group-now-room--empty {
-  background: var(--material-glass-body);
-}
-
-.voople-group-now-create-tile {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  border: 1px dashed var(--material-border);
-  border-radius: var(--voople-room-radius);
-  background: color-mix(in srgb, var(--material-glass-body) 55%, transparent);
-  color: var(--material-secondary-text);
-  box-shadow: none;
-  transform: none;
-  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
-}
-
-.voople-group-now-create-tile > * { position: relative; z-index: 1; }
-
-.voople-group-now-create-tile__plus {
-  border: 1px solid var(--material-border);
-  background: var(--material-control-fill);
-  color: var(--voople-ice);
-}
-
-.voople-group-now-create-tile:hover {
-  transform: none;
-  border-color: var(--material-border-hover);
-  background: var(--material-interactive-fill);
-  color: var(--foreground);
-}
-
-.voople-group-now__online { margin-top: 42px; }
-.voople-group-now__available { min-height: 48px; gap: 1rem 1.45rem; }
-
-.voople-group-now-participant--room {
-  width: 52px;
-  height: 52px;
-}
-
-.voople-group-now-participant--room > *:first-child {
-  width: 52px;
-  height: 52px;
-  border: 2px solid rgb(12 18 27 / 0.94);
-  border-radius: 999px;
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 4px 12px rgb(0 0 0 / 0.19);
-}
-
-.voople-group-now-participant--me > *:first-child {
-  border-color: rgb(121 189 255 / 0.72);
-  box-shadow: 0 0 0 1px rgb(121 189 255 / 0.10), 0 0 12px rgb(121 189 255 / 0.05);
-}
+.voople-group-now__section-header h3 { font-size: 15px; line-height: 1.4; }
+.voople-group-now__section-count { color: var(--material-secondary-text); }
+.voople-group-now__rooms { display: flex; flex-direction: column; gap: 8px; }
+.voople-group-now-room { min-width: 0; border-bottom: 1px solid var(--material-border); border-radius: 8px; }
+.voople-group-now-room--current { background: var(--material-current-fill); }
+.voople-group-now-room__header { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; min-height: 48px; padding: 8px 12px; border-radius: 8px; text-align: left; }
+.voople-group-now-room--current .voople-group-now-room__header { box-shadow: inset 2px 0 var(--material-ice); }
+.voople-group-now-room__header:hover,
+.voople-group-now-participant:hover { background: var(--material-row-hover); }
+.voople-group-now-room__name { font-size: 14px; font-weight: 650; letter-spacing: 0; }
+.voople-group-now-room__action-cue { display: inline-flex; align-items: center; gap: 4px; color: var(--app-muted); opacity: 0; }
+.voople-group-now-room__header:hover .voople-group-now-room__action-cue,
+.voople-group-now-room__header:focus-visible .voople-group-now-room__action-cue { opacity: 1; }
+.voople-group-now__participants { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 4px 12px; padding: 4px 8px 12px; }
+.voople-group-now-participant { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 44px; border-radius: 6px; padding: 4px; text-align: left; }
+.voople-group-now__create,
+.voople-group-now-room__split { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 8px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--foreground); }
+.voople-group-now__create:hover,
+.voople-group-now-room__split:hover { background: var(--material-row-hover); }
+.voople-group-now button:focus-visible { outline: 2px solid var(--material-focus-ring); outline-offset: -2px; }
+.voople-group-now button:disabled { opacity: .55; cursor: wait; }
+.voople-group-now__online { margin-top: 24px; }
+.voople-group-now__available { padding-inline: 8px; }
 
 /* --------------------------------------------------------------------------
    Live shelf / people / chat
@@ -829,12 +583,12 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
   .voople-group-header-name { font-size: 20px; }
   .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs { min-height: 36px; }
   .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab { height: 36px; font-size: 13px; }
-  .voople-group-now { padding: 26px 24px 34px; }
-  .voople-group-now__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .voople-group-now { max-width: 780px; padding: 26px 24px 34px; }
 }
 
 @media (max-width: 900px) {
-  .voople-group-header-members { display: none; }
+  .voople-group-now__participants { grid-template-columns: minmax(0, 1fr); }
+  .voople-group-now__create, .voople-group-now-room__split { min-height: 44px; }
 
   .voople-room-material,
   .voople-dropdown-menu[data-route-kind="messages"],
@@ -851,7 +605,6 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
     background: var(--material-glass-body);
   }
 
-  .voople-group-now-room--current,
   .voople-live-room-card--current { background: var(--material-glass-active-body); }
 
 }
@@ -863,16 +616,12 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
   .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__avatar { width: 52px; height: 52px; border-radius: 12px; }
   .voople-group-header-name,
   .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__name { font-size: 20px; }
-  .voople-group-header-members,
   .voople-group-header-invite { display: none; }
+  .voople-group-header-more { width: 44px; height: 44px; }
   .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs { min-height: 40px; padding-inline: 12px; }
   .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs > [role="tablist"] { gap: 1.2rem; }
   .voople-group-now { padding: 18px 12px 28px; }
-  .voople-group-now__grid { grid-template-columns: 1fr; }
   .voople-group-now__section-header { align-items: center; }
-  .voople-group-now-room__current-actions { position: relative; right: auto; bottom: auto; align-self: flex-end; margin-top: -4px; }
-  .voople-group-now-room__current-action { min-height: 36px; padding-inline: 9px; }
-  .voople-group-now-room--current .voople-group-now-room__current-copy { padding-right: 0; }
   .voople-group-people-voop small { display: none; }
 }
 
@@ -941,4 +690,32 @@ button.voople-group-now-room:focus-visible .voople-group-now-room__action-cue {
 
 .voople-shell[data-route-kind="messages"] .voople-full-room__media {
   border-color: var(--voople-glass-border-hover);
+}
+
+/* One Compact dock, portalled into the shared sidebar on desktop. */
+.voople-sidebar__session:empty { display: none; }
+.voople-voice-dock--compact {
+  position: fixed; bottom: calc(env(safe-area-inset-bottom) + 5.25rem); left: 8px; right: 8px;
+  z-index: 70; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px;
+  padding: 6px; border: 1px solid var(--material-border); border-radius: 10px;
+  background: var(--material-overlay-fill); color: var(--foreground);
+}
+.voople-voice-compact__identity { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 44px; padding: 4px 8px; text-align: left; border-radius: 6px; }
+.voople-voice-compact__controls, .voople-voice-compact__media { display: flex; justify-content: space-around; gap: 4px; }
+.voople-voice-compact__control { display: grid; place-items: center; min-width: 44px; min-height: 44px; border-radius: 6px; color: var(--app-muted); }
+.voople-voice-compact__control[aria-pressed="true"] { color: var(--material-ice); background: var(--material-row-hover); }
+.voople-voice-compact__control:hover, .voople-voice-compact__identity:hover { background: var(--material-row-hover); }
+.voople-voice-compact__control:focus-visible, .voople-voice-compact__identity:focus-visible { outline: 2px solid var(--material-focus-ring); outline-offset: -2px; }
+.voople-voice-compact__control:disabled { opacity: .45; }
+.voople-voice-compact__leave { color: var(--voople-danger); }
+.voople-voice-dock--sidebar { position: static; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0 10px 8px; border: 0; border-top: 1px solid var(--material-border); border-radius: 0; background: transparent; padding: 8px 0 0; }
+.voople-voice-dock--sidebar .voople-voice-compact__identity { grid-column: 1 / -1; }
+.voople-voice-dock--sidebar .voople-voice-compact__controls,
+.voople-voice-dock--sidebar .voople-voice-compact__media { display: contents; }
+.voople-voice-dock--sidebar .voople-voice-compact__control { min-width: 32px; min-height: 36px; }
+.voople-voice-dock--sidebar .voople-voice-compact__leave-slot { grid-column: 5; grid-row: 2; }
+@media (max-width: 1023px) {
+  html:has(.voople-voice-dock--compact) .voople-shell[data-navigation-kind="messenger"] .voople-shell__column {
+    padding-bottom: calc(var(--voople-compact-height, 104px) + 5.75rem + env(safe-area-inset-bottom));
+  }
 }

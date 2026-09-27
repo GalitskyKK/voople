@@ -1,5 +1,8 @@
 "use client";
 
+import type { ReactNode } from "react";
+import type { VoiceSessionParticipants } from "@/types/voice-session-participants";
+
 import { useEffect, useState } from "react";
 
 import { trpc } from "@/lib/trpc/client";
@@ -21,6 +24,7 @@ export function GroupNowPanel({
   createPending = false,
   createError = null,
   onOpenProfile,
+  sessionDetails, onVoop, splitPending, moveStatus,
 }: {
   enabled?: boolean;
   groupId: string;
@@ -34,6 +38,10 @@ export function GroupNowPanel({
   onCreateRoom?: () => void;
   createPending?: boolean;
   createError?: string | null;
+  onVoop?: (user: GroupNowUser) => void;
+  splitPending?: boolean;
+  moveStatus?: ReactNode;
+  sessionDetails?: VoiceSessionParticipants | null;
   onOpenProfile?: (user: GroupNowUser) => void;
 }) {
   const [online, setOnline] = useState(true);
@@ -119,6 +127,7 @@ export function GroupNowPanel({
       createPending={createPending}
       createError={createError}
       onOpenProfile={onOpenProfile}
+      sessionDetails={sessionDetails} onVoop={onVoop} splitPending={splitPending} moveStatus={moveStatus}
     />
   );
 }

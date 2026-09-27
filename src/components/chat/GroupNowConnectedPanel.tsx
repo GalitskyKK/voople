@@ -1,5 +1,7 @@
 "use client";
 
+import type { VoiceSessionParticipants } from "@/types/voice-session-participants";
+
 import { useGroupNowRoomCreate } from "@/hooks/useGroupNowRoomCreate";
 import { useGroupNowRoomJoin } from "@/hooks/useGroupNowRoomJoin";
 import type { GroupNowRoom, GroupNowUser } from "@/types/group-now";
@@ -24,6 +26,7 @@ export function GroupNowConnectedPanel({
   leavePending = false,
   canCreatePinned = false,
   onOpenProfile,
+  sessionDetails,
 }: {
   enabled?: boolean;
   groupId: string;
@@ -40,6 +43,7 @@ export function GroupNowConnectedPanel({
   onExpandCurrent?: () => void;
   leavePending?: boolean;
   canCreatePinned?: boolean;
+  sessionDetails?: VoiceSessionParticipants | null;
   onOpenProfile?: (user: GroupNowUser) => void;
 }) {
   const join = useGroupNowRoomJoin({
@@ -69,6 +73,13 @@ export function GroupNowConnectedPanel({
         createPending={create.pending}
         createError={create.error}
         onOpenProfile={onOpenProfile}
+        sessionDetails={sessionDetails} onVoop={create.startVoop} splitPending={create.liveMove.pending}
+        moveStatus={create.liveMove.request && create.liveMove.status?.status === "pending" ? (
+        <div className="flex flex-wrap items-center gap-3 px-3 py-2 text-sm" role="status">
+          <span>Ждём {create.liveMove.status.selectedCount - create.liveMove.status.acceptedCount} из {create.liveMove.status.selectedCount}</span>
+          <button type="button" className="min-h-11 rounded-md px-2 text-[var(--material-ice)] focus-visible:outline-2" disabled={create.liveMove.cancelPending} onClick={() => void create.liveMove.cancel()}>Отменить</button>
+        </div>
+      ) : null}
       />
       <GroupNowRoomSwitchDialog
         room={join.confirmationTarget?.room ?? null}
@@ -93,12 +104,7 @@ export function GroupNowConnectedPanel({
         onClose={create.closeSplitPicker}
         onSubmit={create.submitSplit}
       />
-      {create.liveMove.request && create.liveMove.status?.status === "pending" ? (
-        <div className="fixed bottom-20 right-4 z-[80] flex max-w-sm items-center gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm shadow-lg" role="status">
-          <span>Ждём {create.liveMove.status.selectedCount - create.liveMove.status.acceptedCount} из {create.liveMove.status.selectedCount}</span>
-          <button type="button" className="rounded-md px-2 py-1 text-[var(--theme-accent)] focus-visible:outline-2" disabled={create.liveMove.cancelPending} onClick={() => void create.liveMove.cancel()}>Отменить</button>
-        </div>
-      ) : null}
+
     </>
   );
 }

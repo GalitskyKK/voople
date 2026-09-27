@@ -24,43 +24,27 @@ test("Messenger consumes material surfaces without forcing dark mode", () => {
   const css = read("src/app/styles/messenger-glass.css");
   assert.doesNotMatch(css, /color-scheme:\s*dark/);
   assert.match(css, /html\[data-app-theme="light"\] :where\(\.voople-shell/);
-  for (const token of ["canvas-workspace", "canvas-sidebar", "panel-fill", "raised-fill", "control-fill", "overlay-fill"]) {
+  for (const token of ["stage", "chrome", "panel-fill", "raised-fill", "control-fill", "overlay-fill"]) {
     assert.match(css, new RegExp(`var\\(--material-${token}\\)`));
   }
   assert.doesNotMatch(css, /--voople-glass-fill:\s*linear-gradient/);
 });
 
-test("Group Voice glass uses shared translucent materials with an opaque accessibility fallback", () => {
+test("Group Voice uses opaque matte current state without optical Room decoration", () => {
   const globals = read("src/app/globals.css");
   const messenger = read("src/app/styles/messenger-glass.css");
-  for (const token of ["panel-fill", "raised-fill", "control-fill", "overlay-fill", "inset-fill", "interactive-fill"]) {
-    assert.match(globals, new RegExp(`--material-${token}: rgb\\([^;]+ / 0\\.`));
-  }
-  assert.match(globals, /--material-ambient-wash: radial-gradient/);
-  assert.match(globals, /--material-specular: linear-gradient/);
-  assert.match(globals, /--material-accent-glow:/);
-  assert.match(globals, /prefers-reduced-transparency: reduce[\s\S]*--material-panel-fill: #1c2430/);
-  assert.match(globals, /prefers-reduced-transparency: reduce[\s\S]*html\[data-app-theme="light"\][\s\S]*--material-panel-fill: #ffffff/);
-  assert.match(messenger, /\.voople-room-material\s*\{[^}]*-webkit-backdrop-filter: blur\(var\(--material-blur\)\)/);
-  assert.match(messenger, /\.voople-group-now-room--current,[\s\S]*0 12px 28px/);
-  assert.match(messenger, /@media \(max-width: 900px\)[\s\S]*backdrop-filter: none !important/);
-});
-
-test("Room glass uses an optical rim, not an internal refraction field", () => {
-  const globals = read("src/app/globals.css");
-  const messenger = read("src/app/styles/messenger-glass.css");
-  for (const token of ["glass-body", "glass-active-body", "glass-edge", "glass-active-edge", "glass-scrim"]) {
+  const room = read("src/components/chat/GroupNowRoomSection.tsx");
+  for (const token of ["current-fill", "row-hover", "stage", "chrome"]) {
     assert.match(globals, new RegExp(`--material-${token}:`));
   }
-  assert.doesNotMatch(globals, /--material-refraction-field:|--material-active-caustic:/);
-  assert.match(messenger, /\.voople-room-material::before\s*\{[^}]*background: var\(--material-glass-edge\)/);
-  assert.match(messenger, /\.voople-room-material::before\s*\{[^}]*mask-composite: exclude/);
-  assert.match(messenger, /\.voople-room-material::after\s*\{[^}]*background: var\(--material-glass-scrim\)/);
-  assert.match(messenger, /\.voople-group-now-room--current::before,[^{]*\{[^}]*var\(--material-glass-active-edge\)/);
-  assert.doesNotMatch(messenger, /\.voople-group-now-create-tile::before/);
-  assert.match(messenger, /@media \(max-width: 900px\)[\s\S]*backdrop-filter: none !important/);
-  assert.match(messenger, /@media \(prefers-reduced-transparency: reduce\)[\s\S]*backdrop-filter: none !important/);
-  assert.match(globals, /prefers-reduced-transparency: reduce[\s\S]*--material-glass-body: #26303f/);
+  assert.match(messenger, /\.voople-group-now-room--current \{ background: var\(--material-current-fill\)/);
+  assert.match(messenger, /box-shadow: inset 2px 0 var\(--material-ice\)/);
+  assert.doesNotMatch(room, /voople-room-material|highlight|reflection/);
+  assert.doesNotMatch(messenger, /!important|voople-group-now__grid|voople-group-now-create-tile/);
+  assert.match(globals, /--material-overlay-fill: #1f2836/);
+  assert.match(globals, /--material-overlay-fill: #ffffff/);
+  assert.match(globals, /prefers-reduced-transparency: reduce/);
+  assert.match(messenger, /prefers-reduced-motion: reduce/);
 });
 
 test("canonical loading shapes are reused by list and Room states", () => {

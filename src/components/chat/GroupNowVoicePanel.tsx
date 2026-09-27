@@ -61,6 +61,7 @@ export function GroupNowVoicePanel({
       variant={variant}
       canCreatePinned={canCreatePinned}
       onOpenLegacy={openLegacy}
+      sessionDetails={launcher.voice.participantDetails}
       currentSessionId={launcher.voice.activeSession?.coreSession?.join.sessionId}
       onLeaveCurrent={leaveCurrentRoom}
       onExpandCurrent={launcher.voice.openPanel}

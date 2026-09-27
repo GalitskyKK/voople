@@ -158,7 +158,7 @@ test("guest UI joins muted, exposes recovery states and keeps guests out of prof
   assert.match(snapshot, /from\("live_session_guests"\)/);
   assert.match(snapshot, /last_seen_at/);
   assert.match(groupNow, /id: `guest:\$\{guest\.guestId\}`/);
-  assert.match(participant, /!onOpenProfile \|\| user\.guest/);
+  assert.match(participant, /!user\.guest && onOpenProfile/);
 });
 
 test("guest credentials cannot become Group credentials or cross the invited LiveSession", async () => {

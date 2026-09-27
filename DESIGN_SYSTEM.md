@@ -54,6 +54,7 @@ Card customization is an independent identity surface, not a generic panel.
 | Chrome | `--material-chrome`, `--material-canvas-sidebar` | Mostly opaque cold graphite/navy sidebar and contextual header. No blur or glow. |
 | Matte Stage | `--material-stage`, `.voople-stage` | Working surface slightly lighter than Chrome. Quiet tonal variation only; no nebula, aurora or gradient artwork. |
 | Quiet Row / Room Section | `--material-row-hover`, `.voople-group-now-room` | Nearly flat Rooms, People, Search, Notifications and Settings. Small luminance change on hover/focus. No glass cards. |
+| Divider | `--material-divider` | Quieter than control borders; separates columns and Room sections without creating cards. |
 | Current Signal | `--material-current-fill`, `--material-ice` | Quiet raised matte surface, thin Ice marker and explicit current label. No cyan body, bright outline or bloom. |
 | Overlay / Floating | `--material-overlay-fill`, `.voople-overlay-surface` | Elevated opaque menus, popovers, dialogs, sheets, composers and Mini Room. Restrained Frost is optional; never nest glass. |
 | Identity | Canonical avatar, Profile Card, Group artwork and cosmetics | Primary expressive and colourful layer. Preserve paid themes and custom identity. |
@@ -81,10 +82,11 @@ screen sharing. Split is a small current-session action. Leave belongs in the
 persistent session dock.
 
 Render every participant without slicing, +N, collapse controls or horizontal
-scrolling. Use roughly 168–190px minimum columns, normally four on wide desktop,
-two or three on compact desktop, one below 900px. Items are quiet 40–44px rows
-with 30–32px avatars, names and secondary username/guest labels. A 20- or
-50-person Room grows vertically within the scrolling Stage.
+scrolling. The full-width compact/mobile Voice surface uses roughly 168–190px
+minimum columns; the desktop Live column uses one dense participant row per
+line. Items are quiet 40–44px rows with 28–32px avatars and names. Secondary
+username/guest labels may hide in the narrow Live column. A 20- or 50-person
+Room grows vertically within its own scrolling region.
 
 Participant actions are independent of Room entry. Current-session click/tap,
 right-click, ContextMenu and Shift+F10 expose the shared person menu with
@@ -100,10 +102,19 @@ areas and reserves content space; mic/output/leave remain visible with 44px
 targets. Mini remains floating after explicit minimization of Full Room. Full,
 Mini and Compact share one lifecycle and preserve media track parking.
 
-Canonical Chat has no Room-card shelf or roster. Group header contains Group
-identity, membership/online/voice counts, Invite and Settings, with **Войс /
-Чат / Люди** below; no participant avatar stack. People keeps its existing
+Canonical Chat has no Room-card shelf or roster. The Group header spans the
+workspace and contains Group identity, membership/online/voice counts, Invite
+and Settings, without a participant avatar stack. A wide desktop Group has one
+matte Stage with Live / Chat / People columns and quiet dividers. At medium
+desktop width, Live and Chat remain side by side while People opens in an
+on-demand right panel. Below the desktop composition threshold, **Войс / Чат /
+Люди** tabs show one surface at a time. Direct Chat has no Live or People
+columns. Live, Chat timeline and People scroll independently; Chat remains the
+dominant column and its composer stays pinned. People keeps its existing
 Room / available / offline grouping. Custom Profile Cards stay expressive.
+The shared desktop Stage has a restrained 16px radius; columns have no separate
+card boundaries. Current Room gains only a small luminance lift, 2px Ice marker
+and optional inner highlight, with no outer glow.
 
 Loading uses Room-list skeletons. Error/offline states preserve the call.
 Keyboard focus is visible; Escape closes menus and restores focus. Both Void

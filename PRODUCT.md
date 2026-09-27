@@ -28,7 +28,10 @@ conversation with little coordination, and return to the same Group later.
 
 ## Group navigation
 
-The default Group tab is **Войс**. Tabs are **Войс / Чат / Люди**.
+The default Group tab is **Войс** on compact windows and mobile; tabs are
+**Войс / Чат / Люди**. On wide desktop, one Group workspace shows Live Rooms,
+the persistent Group Conversation and People together. Medium desktop shows
+Live and Chat together, with People available as an on-demand side panel.
 
 - Войс shows Lobby, active and pinned Rooms, screen-share state, planned Rooms
   where available and members who can join.

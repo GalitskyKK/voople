@@ -11,17 +11,27 @@ function source(path) {
 
 test("group surface defaults to Voice and keeps the three product modes accessible", () => {
   const shell = source("src/components/chat/GroupSurfaceShell.tsx");
+  const workspace = source("src/components/chat/GroupWorkspaceView.tsx");
+  const mode = source("src/hooks/useGroupWorkspaceMode.ts");
   const tabs = source("src/components/chat/GroupSurfaceTabs.tsx");
 
   assert.match(shell, /useState<GroupSurfaceTab>\(config\.initialTab \?\? "now"\)/);
-  assert.match(shell, /activeTab === "chat"/);
-  assert.match(shell, /voople-group-surface-header--combined/);
-  assert.match(shell, /\{header\}/);
+  assert.match(shell, /<GroupWorkspaceView/);
   assert.doesNotMatch(shell, /variant="shelf"/);
-  assert.match(shell, /activeTab === "now"/);
   assert.match(shell, /variant="surface"/);
   assert.match(shell, /<GroupPeoplePanel/);
   assert.match(shell, /onVoop=\{config\.onVoop\}/);
+  assert.match(workspace, /voople-group-surface-header--combined/);
+  assert.match(workspace, /!desktop \? <GroupSurfaceTabs/);
+  assert.match(workspace, /desktop \|\| activeTab === "now"/);
+  assert.match(workspace, /desktop \|\| activeTab === "chat"/);
+  assert.match(workspace, /mode === "wide" \|\| activeTab === "people"/);
+  assert.match(workspace, /mode === "medium" && peopleOpen/);
+  assert.match(workspace, /event\.key !== "Escape"/);
+  assert.match(workspace, /peopleTrigger\.current\?\.focus\(\)/);
+  assert.match(mode, /ResizeObserver/);
+  assert.match(mode, /width >= 1120/);
+  assert.match(mode, /width >= 800/);
   assert.match(tabs, /\["chat", "Чат"\]/);
   assert.match(tabs, /\["now", "Войс"\]/);
   assert.match(tabs, /\["people", "Люди"\]/);
@@ -145,7 +155,9 @@ test("people view uses real member data and exposes room, presence and role cont
   assert.match(controller, /trpc\.chat\.groupMembers\.useQuery/);
   assert.match(controller, /useGroupNowRoomCreate/);
   assert.match(controller, /split\.startVoop/);
-  assert.match(controller, /voopingUserId=\{voopingUserId \?\? split\.targetUserId\}/);
+  assert.match(controller, /voopingUserId=\{props\.voopingUserId \?\? split\.targetUserId\}/);
+  assert.match(controller, /allowVoop === false[\s\S]*?onVoop=\{undefined\}/);
+  assert.match(controller, /!nowRefreshedElsewhere \? 15_000 : false/);
   assert.match(controller, /enabled/);
   assert.match(controller, /trpc\.chat\.coreGroupNow\.useQuery/);
   assert.match(view, /groupPeopleSections\(members \?\? \[\], onlineUserIds, now\)/);

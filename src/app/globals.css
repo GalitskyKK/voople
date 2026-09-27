@@ -57,10 +57,10 @@
   --app-radius-lg: 1rem;
   --app-radius-xl: 1.25rem;
   /* Primitive palette -> semantic material -> component/route composition. */
-  --material-canvas-app: #0b0e15;
-  --material-chrome: #0e1218;
-  --material-stage: #171e26;
-  --material-current-fill: #1e2731;
+  --material-canvas-app: #090c11;
+  --material-chrome: #0d1117;
+  --material-stage: #141a21;
+  --material-current-fill: #192129;
   --material-row-hover: rgb(213 227 240 / 0.045);
   --material-canvas-workspace: var(--material-stage);
   --material-canvas-sidebar: var(--material-chrome);
@@ -74,11 +74,12 @@
   --material-glass-edge: conic-gradient(from 135deg at 50% 50%, rgb(9 15 25 / 0.13), rgb(165 196 219 / 0.13) 27%, rgb(236 246 255 / 0.55) 43%, rgb(116 164 195 / 0.23) 54%, rgb(28 38 52 / 0.11) 78%, rgb(9 15 25 / 0.13));
   --material-glass-active-edge: conic-gradient(from 135deg at 50% 50%, rgb(19 32 44 / 0.20), rgb(114 187 230 / 0.43) 26%, rgb(235 249 255 / 0.86) 43%, rgb(105 180 230 / 0.53) 54%, rgb(29 56 76 / 0.16) 78%, rgb(19 32 44 / 0.20));
   --material-glass-scrim: linear-gradient(0deg, rgb(6 12 21 / 0.13), transparent 62%);
-  --material-control-fill: rgb(62 77 96 / 0.28);
+  --material-control-fill: rgb(62 77 96 / 0.34);
   --material-overlay-fill: #1f2836;
   --material-inset-fill: rgb(11 17 27 / 0.48);
   --material-interactive-fill: rgb(54 79 106 / 0.48);
   --material-border: rgb(219 232 246 / 0.14);
+  --material-divider: rgb(219 232 246 / 0.075);
   --material-border-hover: rgb(219 232 246 / 0.28);
   --material-highlight: rgb(245 249 255 / 0.095);
   --material-specular: linear-gradient(90deg, transparent 2%, rgb(153 86 115 / 0.12) 17%, rgb(241 248 255 / 0.36) 46%, rgb(126 194 247 / 0.20) 74%, transparent 98%);
@@ -141,6 +142,7 @@ html[data-app-theme="light"] {
   --material-inset-fill: rgb(216 228 240 / 0.38);
   --material-interactive-fill: rgb(210 228 247 / 0.68);
   --material-border: rgb(39 65 92 / 0.13);
+  --material-divider: rgb(39 65 92 / 0.09);
   --material-border-hover: rgb(39 65 92 / 0.25);
   --material-highlight: rgb(255 255 255 / 0.72);
   --material-specular: linear-gradient(90deg, transparent 3%, rgb(255 255 255 / 0.90) 48%, transparent 97%);

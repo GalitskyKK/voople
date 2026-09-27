@@ -55,7 +55,8 @@ let browser;
 try {
   browser = await chromium.launch({ headless: true });
   const visualCases = ["web", "desktop"].flatMap(host => [
-    {width:1440,theme:"void",host,count:8}, {width:1100,theme:"void",host,count:8},
+    {width:1440,theme:"void",host,count:8}, {width:1440,theme:"light",host,count:8},
+    {width:1280,theme:"void",host,count:8}, {width:1100,theme:"void",host,count:8},
     {width:390,theme:"void",host,count:8}, {width:390,theme:"light",host,count:8},
     {width:360,theme:"light",host,count:8}, {width:1440,theme:"void",host,count:20},
     {width:390,theme:"light",host,count:20},
@@ -69,6 +70,25 @@ try {
     await page.goto(`http://127.0.0.1:${server.address().port}?host=${host}&count=${count}`);
     await page.evaluate(()=>document.fonts.ready);
     await page.getByRole("button",{name:"Открыть текущую комнату Лобби"}).waitFor();
+    const expectedMode=width>=1360?"wide":width>=1040?"medium":"compact";
+    await page.locator(`.voople-group-surface[data-mode="${expectedMode}"]`).waitFor();
+    assert.equal(await page.locator('.voople-group-workspace__live').count(),1);
+    assert.equal(await page.locator('.voople-group-now').count(),1);
+    assert.equal(await page.locator('.voople-group-workspace__chat').count(),expectedMode==="compact"?0:1);
+    assert.equal(await page.locator('.voople-group-workspace__people').count(),expectedMode==="wide"?1:0);
+    assert.equal(await page.locator('[role="tablist"][aria-label="Раздел группы"]').count(),expectedMode==="compact"?1:0);
+    if(expectedMode!=="compact"){
+      assert.equal(await page.getByRole('textbox',{name:'Сообщение группе'}).isVisible(),true);
+      const chatWidth=await page.locator('.voople-group-workspace__chat').evaluate(el=>el.getBoundingClientRect().width);
+      assert.ok(chatWidth>=520,`Chat remains readable: ${chatWidth}px`);
+      assert.equal(await page.locator('.voople-group-workspace__live').evaluate(el=>getComputedStyle(el).overflowY),'auto');
+      assert.equal(await page.locator('.voople-chat-window__messages').evaluate(el=>getComputedStyle(el).overflowY),'auto');
+      const shadow=await page.locator('.voople-group-now-room--current').evaluate(el=>getComputedStyle(el).boxShadow);
+      assert.ok(shadow==="none"||shadow.includes("inset"),`Current Room has no outer shadow: ${shadow}`);
+    }
+    if(expectedMode==="wide"){
+      assert.equal(await page.locator('.voople-group-people').evaluate(el=>getComputedStyle(el).overflowY),'auto');
+    }
     const room=page.locator('[data-layout="room-section"]');
     assert.deepEqual(await room.evaluateAll(nodes=>nodes.map(n=>n.dataset.roomKind)),["lobby","pinned","pinned","temporary"]);
     assert.equal(await room.first().locator('[data-participant-id]').count(),count);
@@ -90,11 +110,24 @@ try {
       assert.ok(stage.y+stage.height<=dock.y,'Stage stays above mobile dock');
       for(const box of await page.locator('.voople-voice-compact__control').evaluateAll(nodes=>nodes.map(n=>({w:n.getBoundingClientRect().width,h:n.getBoundingClientRect().height}))))assert.ok(box.w>=44&&box.h>=44);
     }
-    await page.locator('.voople-group-now__available [data-participant-id]').last().scrollIntoViewIfNeeded();
+    await (expectedMode==="compact"
+      ? page.locator('.voople-group-now__available [data-participant-id]').last()
+      : room.first().locator('[data-participant-id]').last()).scrollIntoViewIfNeeded();
     assert.equal(await page.locator('.voople-stage').evaluate(el=>el.scrollWidth<=el.clientWidth),true);
-    await page.locator('.voople-stage').evaluate(el=>{el.scrollTop=0});
-    const file=path.join(artifacts,`group-${host}-voice-${width}-${theme}-${count}.png`);
+    await page.locator('.voople-group-workspace__live').evaluate(el=>{el.scrollTop=0});
+    const file=path.join(artifacts,`group-${host}-workspace-${width}-${theme}-${count}.png`);
     await page.screenshot({path:file});
+    if(expectedMode==="medium" && count===8 && width===1100){
+      const trigger=page.getByRole('button',{name:'Показать участников группы'});
+      await trigger.click();
+      await page.getByRole('complementary',{name:'Участники группы'}).waitFor();
+      assert.equal(await page.locator('.voople-group-workspace__people').count(),0);
+      assert.equal(await page.locator('.voople-group-workspace__people-drawer .voople-group-people').evaluate(el=>getComputedStyle(el).overflowY),'auto');
+      await page.screenshot({path:path.join(artifacts,`group-${host}-people-drawer-1100-void.png`)});
+      await page.keyboard.press('Escape');
+      assert.equal(await page.getByRole('complementary',{name:'Участники группы'}).count(),0);
+      assert.equal(await trigger.evaluate(el=>el===document.activeElement),true);
+    }
     const person=room.first().getByRole('button',{name:'Действия участника Biba',exact:true});
     await person.click();
     await page.getByRole('slider').fill('150');
@@ -122,11 +155,28 @@ try {
     await page.evaluate(()=>{window.fixture.setPending(null);window.fixture.setError('Пробное отключение: текущий разговор сохранён')});
     await page.getByRole('alert').waitFor();
     assert.equal(await room.first().getByText('Вы здесь').count(),1);
-    await page.getByRole('tab',{name:'Чат',exact:true}).click();
+    if(expectedMode==="compact"){
+      await page.getByRole('tab',{name:'Чат',exact:true}).click();
+      assert.equal(await page.locator('.voople-group-workspace__live').count(),0);
+      assert.equal(await page.locator('.voople-group-workspace__chat').count(),1);
+      await page.getByRole('tab',{name:'Люди',exact:true}).click();
+      assert.equal(await page.locator('.voople-group-workspace__chat').count(),0);
+      assert.equal(await page.locator('.voople-group-workspace__people').count(),1);
+    }
     assert.equal(await page.locator('.voople-group-live-shelf').count(),0);
     assert.equal(await page.locator('.voople-voice-dock--compact').count(),1);
-    await page.getByRole('tab',{name:'Люди',exact:true}).click();
     await page.getByRole('region',{name:'Компактный голосовой разговор'}).waitFor();
+    if(host==="web" && width===1440 && theme==="void" && count===8){
+      await page.setViewportSize({width:390,height:900});
+      await page.locator('.voople-group-surface[data-mode="compact"]').waitFor();
+      await page.getByRole('tab',{name:'Чат',exact:true}).click();
+      assert.equal(await page.locator('.voople-group-workspace__chat').count(),1);
+      assert.equal(await page.locator('.voople-group-workspace__live').count(),0);
+      await page.setViewportSize({width:1440,height:900});
+      await page.locator('.voople-group-surface[data-mode="wide"]').waitFor();
+      assert.equal(await page.locator('.voople-group-workspace__chat').count(),1);
+      assert.equal(await page.locator('.voople-group-workspace__live').count(),1);
+    }
     assert.deepEqual(errors,[]);
     console.log(`PASS ${host} ${width}px ${theme} ${count} people: roster, privacy, volume, keyboard, pending, dock, overflow`);
     await page.close();

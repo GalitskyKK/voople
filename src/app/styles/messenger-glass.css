@@ -714,6 +714,59 @@ button.voople-room-material:focus-visible,
 .voople-voice-dock--sidebar .voople-voice-compact__media { display: contents; }
 .voople-voice-dock--sidebar .voople-voice-compact__control { min-width: 32px; min-height: 36px; }
 .voople-voice-dock--sidebar .voople-voice-compact__leave-slot { grid-column: 5; grid-row: 2; }
+
+/* One Group Stage: Room map, conversation and member directory share the plane. */
+.voople-group-surface { min-width: 0; }
+.voople-group-surface-header--desktop { display: flex; align-items: center; }
+.voople-group-surface-header--desktop > .voople-panel-header { flex: 1; min-width: 0; }
+.voople-group-surface__people-action {
+  display: inline-flex; align-items: center; gap: 7px; min-height: 40px;
+  margin-right: 20px; padding: 0 12px; border-radius: 8px;
+  background: var(--material-control-fill); color: var(--foreground);
+  font-size: 13px; font-weight: 600;
+}
+.voople-group-surface__people-action:hover,
+.voople-group-surface__people-action[aria-expanded="true"] { background: var(--material-interactive-fill); }
+.voople-group-surface__people-action:focus-visible,
+.voople-group-workspace__drawer-header button:focus-visible { outline: 2px solid var(--material-focus-ring); outline-offset: 2px; }
+.voople-group-workspace { position: relative; display: flex; min-width: 0; overflow: hidden; }
+.voople-group-workspace--desktop {
+  display: grid; grid-template-columns: minmax(260px, 280px) minmax(0, 1fr);
+  border-radius: 16px; box-shadow: none;
+}
+.voople-group-surface[data-mode="wide"] .voople-group-workspace {
+  grid-template-columns: minmax(260px, 280px) minmax(0, 1fr) 240px;
+}
+.voople-group-workspace__live,
+.voople-group-workspace__chat,
+.voople-group-workspace__people { min-width: 0; min-height: 0; }
+.voople-group-workspace__live { flex: 1; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; }
+.voople-group-workspace__chat, .voople-group-workspace__people { display: flex; flex: 1; flex-direction: column; overflow: hidden; }
+.voople-group-workspace--desktop .voople-group-workspace__chat,
+.voople-group-workspace--desktop .voople-group-workspace__people { border-left: 1px solid var(--material-divider); }
+.voople-group-workspace--desktop .voople-group-now { max-width: none; padding: 16px 10px 24px; }
+.voople-group-workspace--desktop .voople-group-now__participants { grid-template-columns: minmax(0, 1fr); gap: 1px; padding: 2px 5px 10px; }
+.voople-group-workspace--desktop .voople-group-now-participant { min-height: 40px; }
+.voople-group-workspace--desktop .voople-group-now-participant > span:nth-child(2) > span:last-child { display: none; }
+.voople-group-workspace--desktop .voople-group-now-room { border-bottom-color: var(--material-divider); }
+.voople-group-workspace--desktop .voople-group-now-room--current { box-shadow: inset 0 1px rgb(255 255 255 / 0.03); }
+.voople-group-workspace--desktop .voople-group-now__online { display: none; }
+.voople-group-workspace__people .voople-group-people,
+.voople-group-workspace__people-drawer .voople-group-people { padding: 16px 10px 24px; }
+.voople-group-workspace__people .voople-group-people-row,
+.voople-group-workspace__people-drawer .voople-group-people-row { background: transparent; }
+.voople-group-workspace__people .voople-group-people-row:hover,
+.voople-group-workspace__people-drawer .voople-group-people-row:hover { background: var(--material-row-hover); }
+.voople-group-workspace__people-drawer {
+  position: absolute; z-index: 8; top: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column; width: min(320px, 45%);
+  border-left: 1px solid var(--material-border);
+  background: var(--material-stage); box-shadow: -12px 0 30px rgb(0 0 0 / 0.16);
+}
+.voople-group-workspace__drawer-header { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 4px 14px; border-bottom: 1px solid var(--material-divider); font-size: 14px; }
+.voople-group-workspace__drawer-header button { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 8px; }
+.voople-group-workspace__drawer-header button:hover { background: var(--material-row-hover); }
+
 @media (max-width: 1023px) {
   html:has(.voople-voice-dock--compact) .voople-shell[data-navigation-kind="messenger"] .voople-shell__column {
     padding-bottom: calc(var(--voople-compact-height, 104px) + 5.75rem + env(safe-area-inset-bottom));

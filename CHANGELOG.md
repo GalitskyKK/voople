@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.44] - 2026-09-28
+
+### Voople Desktop 0.1.44 beta
+
+- Guest Room links now open without requiring an account while private Group and message surfaces remain protected.
+- Group navigation is cleaner: Group identity stays above Rooms and lightweight Group actions share the web/desktop top chrome.
+- Speaking activity is shown on participant avatars instead of microphone controls, making it clearer who is talking.
+- Clarified Group invites versus direct Room guest links and refreshed beta Group/Room presentation.
+
 ## [0.1.43] - 2026-09-28
 
 ### Voople Desktop 0.1.43 beta

@@ -135,6 +135,14 @@ try {
       assert.equal(await compactControls.getByRole('button',{name:label,exact:true}).isVisible(),true,`${label} is directly visible`);
     }
     assert.equal(await page.locator('.voople-voice-compact__controls button').count(),5);
+    if (count===8 && theme==='void' && (width===390 || width===1440)) {
+      await compactControls.getByRole('button',{name:'Включить микрофон'}).click();
+      const speakingMic=compactControls.getByRole('button',{name:/Микрофон активен — вы говорите/});
+      await speakingMic.waitFor();
+      assert.match(await speakingMic.getAttribute('class'),/voople-mic-speaking/);
+      await page.screenshot({path:path.join(artifacts,`group-${host}-speaking-${width}.png`)});
+      await speakingMic.click();
+    }
     await (expectedMode==="compact"
       ? page.locator('.voople-group-now__available [data-participant-id]').last()
       : room.first().locator('[data-participant-id]').last()).scrollIntoViewIfNeeded();

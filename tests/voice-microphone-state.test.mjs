@@ -167,10 +167,10 @@ test("local speaking indication uses LiveKit active-speaker events and never lig
     "../src/components/chat/voice/VoiceCompactSessionDock.tsx",
     "../src/components/chat/voice/VoiceMediaControls.tsx",
     "../src/hooks/useRoomGuestMedia.ts",
-    "../src/components/chat/RoomGuestPage.tsx",
+    "../src/components/chat/RoomGuestMicButton.tsx",
     "../src/app/styles/messenger-glass.css",
   ];
-  const [events, control, compact, full, guestMedia, guestPage, styles] = await Promise.all(
+  const [events, control, compact, full, guestMedia, guestButton, styles] = await Promise.all(
     paths.map((path) => readFile(new URL(path, import.meta.url), "utf8")),
   );
   assert.match(events, /ids\.has\(liveRoom\.localParticipant\.identity\)/);
@@ -178,7 +178,7 @@ test("local speaking indication uses LiveKit active-speaker events and never lig
   assert.match(guestMedia, /RoomEvent\.ActiveSpeakersChanged/);
   assert.match(guestMedia, /speaker\.isLocal/);
   assert.match(guestMedia, /status === "connected" && !micMuted && localSpeaking/);
-  for (const surface of [compact, full, guestPage]) {
+  for (const surface of [compact, full, guestButton]) {
     assert.match(surface, /voople-mic-speaking/);
     assert.match(surface, /Микрофон активен — вы говорите/);
   }

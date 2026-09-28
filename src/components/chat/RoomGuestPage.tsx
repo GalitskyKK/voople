@@ -1,9 +1,10 @@
 "use client";
-import { Headphones, LoaderCircle, LogOut, Mic, MicOff, MonitorPlay, UserPlus, UsersRound, WifiOff } from "lucide-react";
+import { Headphones, LoaderCircle, LogOut, MonitorPlay, UserPlus, UsersRound, WifiOff } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { VoopleMark } from "@/components/brand/VoopleMark";
 import { RoomGuestConversionPanel } from "@/components/chat/RoomGuestConversionPanel";
+import { RoomGuestMicButton } from "@/components/chat/RoomGuestMicButton";
 import { RoomGuestUnavailableState } from "@/components/chat/RoomGuestUnavailableState";
 import { Button } from "@/components/ui/Button";
 import { useBrowserOnline } from "@/hooks/useBrowserOnline";
@@ -151,17 +152,8 @@ export function RoomGuestPage({
                 </div>
               ) : null}
               <footer className="flex flex-wrap items-center justify-center gap-3 border-t border-[var(--app-border)] px-5 py-4">
-                <Button
-                  variant={guest.micMuted ? "secondary" : "primary"}
-                  aria-pressed={!guest.micMuted}
-                  aria-label={guest.micMuted ? "Включить микрофон" : guest.localSpeaking ? "Микрофон активен — вы говорите. Выключить микрофон" : "Выключить микрофон"}
-                  className={guest.localSpeaking ? "voople-mic-speaking" : undefined}
-                  disabled={!online || guest.mediaStatus !== "connected"}
-                  onClick={() => void guest.toggleMicrophone()}
-                >
-                  {guest.micMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                  {guest.micMuted ? "Включить микрофон" : "Выключить микрофон"}
-                </Button>
+                <RoomGuestMicButton muted={guest.micMuted} speaking={guest.localSpeaking}
+                  disabled={!online || guest.mediaStatus !== "connected"} onToggle={() => void guest.toggleMicrophone()} />
                 <Button variant="secondary" onClick={() => void guest.leave()}>
                   <LogOut className="h-4 w-4" /> Выйти
                 </Button>

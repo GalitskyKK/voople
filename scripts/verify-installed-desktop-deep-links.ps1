@@ -36,6 +36,10 @@ public static class VoopleWindowState {
 $installedExecutable = $null
 $uninstaller = $null
 $webViewData = Join-Path $env:RUNNER_TEMP "voople-installed-deep-link-smoke"
+$webViewBrowserArgumentsKey = "Registry::HKEY_CURRENT_USER\\Software\\Policies\\Microsoft\\Edge\\WebView2\\AdditionalBrowserArguments"
+$webViewUserDataFolderKey = "Registry::HKEY_CURRENT_USER\\Software\\Policies\\Microsoft\\Edge\\WebView2\\UserDataFolder"
+$webViewPolicyValueName = $null
+$webViewPolicyInstalled = $false
 $coldPath = "/room-invites/10000000-0000-4000-8000-000000000001"
 $warmPath = "/room-invites/20000000-0000-4000-8000-000000000002"
 $coldUri = "voople://room-invites/10000000-0000-4000-8000-000000000001"
@@ -112,7 +116,30 @@ try {
   $portProbe.Start()
   $debugPort = ([Net.IPEndPoint]$portProbe.LocalEndpoint).Port
   $portProbe.Stop()
-  $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=$debugPort --remote-allow-origins=http://127.0.0.1:$debugPort"
+  $webViewArguments = "--remote-debugging-port=$debugPort --remote-allow-origins=http://127.0.0.1:$debugPort"
+  $webViewPolicyValueName = [IO.Path]::GetFileName($installedExecutable)
+  $webViewOverrides = @(
+    @{ Key = $webViewBrowserArgumentsKey; Value = $webViewArguments },
+    @{ Key = $webViewUserDataFolderKey; Value = $webViewData }
+  )
+  foreach ($entry in $webViewOverrides) {
+    New-Item -Path $entry.Key -Force | Out-Null
+    $existing = (Get-Item -LiteralPath $entry.Key).GetValue($webViewPolicyValueName)
+    if ($null -ne $existing) {
+      throw "Refusing to replace an existing WebView2 override for $webViewPolicyValueName under $($entry.Key)."
+    }
+  }
+  foreach ($entry in $webViewOverrides) {
+    New-ItemProperty `
+      -LiteralPath $entry.Key `
+      -Name $webViewPolicyValueName `
+      -Value $entry.Value `
+      -PropertyType String | Out-Null
+  }
+  $webViewPolicyInstalled = $true
+
+  # Environment overrides still cover direct launches/local reproduction.
+  $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = $webViewArguments
   $env:WEBVIEW2_USER_DATA_FOLDER = $webViewData
 
   Open-VoopleProtocol $coldUri
@@ -160,6 +187,16 @@ try {
   }
   Remove-Item Env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -ErrorAction SilentlyContinue
   Remove-Item Env:WEBVIEW2_USER_DATA_FOLDER -ErrorAction SilentlyContinue
+  if ($webViewPolicyInstalled -and -not [string]::IsNullOrWhiteSpace($webViewPolicyValueName)) {
+    Remove-ItemProperty `
+      -LiteralPath $webViewBrowserArgumentsKey `
+      -Name $webViewPolicyValueName `
+      -ErrorAction SilentlyContinue
+    Remove-ItemProperty `
+      -LiteralPath $webViewUserDataFolderKey `
+      -Name $webViewPolicyValueName `
+      -ErrorAction SilentlyContinue
+  }
 }
 
 if (Test-Path -LiteralPath $protocolKey) {

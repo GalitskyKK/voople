@@ -174,7 +174,7 @@ test("desktop RC is installed before Room protocol evidence can be promoted", ()
   assert.match(workflow, /installedDeepLinkSmoke -ne \$true/);
   assert.match(installedSmoke, /Start-Process -FilePath \$installer -ArgumentList "\/S"/);
   assert.match(installedSmoke, /HKEY_CURRENT_USER\\Software\\Classes\\voople/);
-  assert.match(installedSmoke, /Open-VoopleProtocol \$coldUri/);
+  assert.match(installedSmoke, /Start-InstalledVoople \$coldUri/);
   assert.match(installedSmoke, /Open-VoopleProtocol \$warmUri/);
   assert.match(installedSmoke, /Open-VoopleProtocol \$invalidUri/);
   assert.match(installedSmoke, /VoopleWindowState.*IsIconic/s);

@@ -24,8 +24,8 @@ export function MessagesLayoutView({
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
         <aside
           className={cn(
-            "flex min-h-0 w-full flex-col lg:w-[clamp(17.5rem,24vw,20rem)] lg:shrink-0",
-            isThread ? "hidden lg:flex" : "flex flex-1 lg:flex-none",
+            "min-h-0 w-full flex-col lg:hidden",
+            isThread ? "hidden" : "flex flex-1",
           )}
         >
           {list}

@@ -1,26 +1,32 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("public release surface", () => {
-  test("landing exposes the primary value and conversion actions", async ({ page }) => {
+  test("landing exposes the beta value and conversion actions", async ({ page }) => {
     await page.goto("/");
 
+    await expect(page.getByRole("heading", { name: "VOOPLE", exact: true })).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: /Позвал своих/i }),
+      page.getByText("Место для своих: группы, общий чат и голосовые комнаты.", { exact: true }),
     ).toBeVisible();
-    await expect(page.getByRole("link", { name: /Открыть в браузере/i }).first()).toHaveAttribute(
+    await expect(page.getByRole("link", { name: "Войти" }).first()).toHaveAttribute(
       "href",
-      "/feed",
+      "/login",
     );
-    await expect(page.getByRole("link", { name: /Скачать для Windows/i }).first()).toBeVisible();
-    await expect(page.getByRole("link", { name: /Сначала посмотреть/i })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Скачать" })).toHaveAttribute(
+      "href",
+      "/download/desktop",
+    );
+    await expect(
+      page.getByText("Гостем можно войти по ссылке-приглашению.", { exact: true }),
+    ).toBeVisible();
   });
 
   test("landing remains readable without horizontal overflow on mobile", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { name: /Позвал своих/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Открыть в браузере/i }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "VOOPLE", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Скачать" })).toBeVisible();
 
     const viewport = await page.evaluate(() => {
       const clientWidth = document.documentElement.clientWidth;
@@ -63,18 +69,13 @@ test.describe("public release surface", () => {
     await expect(page.getByText("662510924150")).toBeVisible();
   });
 
-  test("product story keeps the demo visible while scenes change", async ({ page }) => {
+  test("landing stays intentionally minimal without the retired product story", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/");
-    const frame = page.locator(".landing-product-frame");
 
-    await page.locator('[data-story-id="messages"]').scrollIntoViewIfNeeded();
-    await expect(frame).toHaveAttribute("data-scene", "messages");
-    await expect(frame).toBeInViewport({ ratio: 0.85 });
-
-    await page.locator('[data-story-id="rooms"]').scrollIntoViewIfNeeded();
-    await expect(frame).toHaveAttribute("data-scene", "rooms");
-    await expect(frame).toBeInViewport({ ratio: 0.85 });
+    await expect(page.getByRole("heading", { name: "VOOPLE", exact: true })).toBeVisible();
+    await expect(page.locator(".landing-product-frame")).toHaveCount(0);
+    await expect(page.locator("[data-story-id]")).toHaveCount(0);
   });
 
   test("protected messenger redirects an anonymous visitor to login", async ({ page }) => {
@@ -99,7 +100,10 @@ test.describe("public release surface", () => {
     expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth);
 
     await page.goto("/onboarding?username=test_user");
-    await expect(page).toHaveURL(/\/login$/);
+    await expect(page).toHaveURL(/\/login\?/);
+    expect(new URL(page.url()).searchParams.get("redirect")).toBe(
+      "/onboarding?username=test_user",
+    );
   });
 
   test("public app shell keeps its responsive geometry at every release width", async ({ page }) => {

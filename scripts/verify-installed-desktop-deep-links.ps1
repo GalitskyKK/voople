@@ -36,8 +36,8 @@ public static class VoopleWindowState {
 $installedExecutable = $null
 $uninstaller = $null
 $webViewData = Join-Path $env:RUNNER_TEMP "voople-installed-deep-link-smoke"
-$webViewBrowserArgumentsKey = "Registry::HKEY_CURRENT_USER\\Software\\Policies\\Microsoft\\Edge\\WebView2\\AdditionalBrowserArguments"
-$webViewUserDataFolderKey = "Registry::HKEY_CURRENT_USER\\Software\\Policies\\Microsoft\\Edge\\WebView2\\UserDataFolder"
+$webViewBrowserArgumentsKey = "HKCU:\Software\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments"
+$webViewUserDataFolderKey = "HKCU:\Software\Policies\Microsoft\Edge\WebView2\UserDataFolder"
 $webViewPolicyValueName = $null
 $webViewPolicyInstalled = $false
 $coldPath = "/room-invites/10000000-0000-4000-8000-000000000001"

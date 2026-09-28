@@ -198,7 +198,7 @@ export function ChatWindow({ chatId, initialGroupTab = "now" }: ChatWindowProps)
         <ChatConversationState mode="error" variant="inline" message={error.message} onRetry={() => void refetch()} />
       ) : null}
       composer={
-        <div className="px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:px-4 lg:pb-3">
+        <div className={isGroup ? "px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:px-3 lg:pb-2" : "px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:px-4 lg:pb-3"}>
         <ChatComposer
           chatId={chatId}
           placeholder={`Сообщение ${chatTitle}…`}

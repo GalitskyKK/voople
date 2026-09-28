@@ -111,11 +111,11 @@ export function ChatComposerInputView({
         className="min-h-10 min-w-0 flex-1 resize-none overflow-y-auto border-0 bg-transparent px-2 py-2.5 text-sm outline-none placeholder:text-[var(--app-muted)] disabled:opacity-50"
       />
 
-      <div className="relative">
-        <IconButton label="Эмодзи" className={cn(CHAT_COMPOSER_ICON_BUTTON_CLASS, emojiOpen && "bg-[var(--app-surface-soft)] text-[var(--foreground)]")} onClick={() => setEmojiOpen((current) => !current)} aria-expanded={emojiOpen}>
+      <div className="relative flex h-10 shrink-0 items-center">
+        <IconButton label="Эмодзи" className={cn(CHAT_COMPOSER_ICON_BUTTON_CLASS, "grid h-10 w-10 place-items-center", emojiOpen && "bg-[var(--app-surface-soft)] text-[var(--foreground)]")} onClick={() => setEmojiOpen((current) => !current)} aria-expanded={emojiOpen}>
           <Smile className="h-5 w-5" />
         </IconButton>
-        <ChatEmojiPicker open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={(emoji) => onTextChange(`${text}${emoji}`.slice(0, 1000))} customEmojis={customEmojis} className="absolute bottom-12 right-0 z-30 w-72" />
+        <ChatEmojiPicker open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={(emoji) => onTextChange(`${text}${emoji}`.slice(0, 1000))} customEmojis={customEmojis} className="absolute bottom-[calc(100%+0.75rem)] right-0 z-[90] w-[min(18rem,calc(100vw-1.5rem))]" />
       </div>
 
       {!editing && !text.trim() && !hasAttachment ? (

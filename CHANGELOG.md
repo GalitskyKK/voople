@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.43] - 2026-09-28
+
+### Voople Desktop 0.1.43 beta
+
+- Rebuilt Groups and Rooms for the closed beta, with clearer navigation between chat and live sessions.
+- Improved the compact voice dock, Full Room, and room controls.
+- Added participant profile previews in Groups.
+- Improved the chat composer, emoji picker, and message scrolling.
+- Improved desktop room behavior and screen sharing.
+
 ## [0.1.42] - 2026-08-30
 
 ### Voople Desktop 0.1.42

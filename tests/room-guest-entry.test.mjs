@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { isPublicPath } from "../src/lib/auth/public-paths.ts";
 
 import {
   isRoomGuestInviteToken,
@@ -15,6 +16,17 @@ import {
 } from "../src/lib/chat/room-guest-client.ts";
 
 const token = "a".repeat(43);
+
+test("anonymous Room guest entry bypasses login while private Group routes remain protected", async () => {
+  const proxy = await readFile(new URL("../src/proxy.ts", import.meta.url), "utf8");
+  assert.match(proxy, /const publicPath = isPublicPath\(pathname\)/);
+  assert.match(proxy, /!hasVerifiedSession && !publicPath/);
+  assert.equal(isPublicPath(`/room-guest/${token}`), true);
+  assert.equal(isPublicPath("/room-guest"), true);
+  assert.equal(isPublicPath("/room-guest-other/token"), false);
+  assert.equal(isPublicPath("/messages"), false);
+  assert.equal(isPublicPath("/messages/private-group"), false);
+});
 
 test("Room guest links accept only opaque 256-bit base64url tokens and trusted origins", () => {
   assert.equal(isRoomGuestInviteToken(token), true);

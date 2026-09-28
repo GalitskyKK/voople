@@ -160,6 +160,40 @@ test("core Room starts muted; UI and heartbeat follow LiveKit, not optimistic st
   assert.match(controls, /disabled=\{sessionPending \|\| !connected \|\| mediaActionPending\}/);
 });
 
+test("local speaking indication uses LiveKit active-speaker events and never lights while muted", async () => {
+  const paths = [
+    "../src/components/chat/voice/useVoiceRoomEventConfigurator.ts",
+    "../src/components/chat/voice/useChatRoomControl.ts",
+    "../src/components/chat/voice/VoiceCompactSessionDock.tsx",
+    "../src/components/chat/voice/VoiceMediaControls.tsx",
+    "../src/hooks/useRoomGuestMedia.ts",
+    "../src/components/chat/RoomGuestMicButton.tsx",
+    "../src/app/styles/messenger-glass.css",
+  ];
+  const [events, control, compact, full, guestMedia, guestButton, styles] = await Promise.all(
+    paths.map((path) => readFile(new URL(path, import.meta.url), "utf8")),
+  );
+  assert.match(events, /ids\.has\(liveRoom\.localParticipant\.identity\)/);
+  assert.match(control, /!micMuted && mediaStatus === "connected" && localSpeakerDetected/);
+  assert.match(guestMedia, /RoomEvent\.ActiveSpeakersChanged/);
+  assert.match(guestMedia, /speaker\.isLocal/);
+  assert.match(guestMedia, /status === "connected" && !micMuted && localSpeaking/);
+  for (const surface of [compact, full, guestButton]) {
+    assert.doesNotMatch(surface, /voople-mic-speaking|Микрофон активен — вы говорите/);
+    assert.match(surface, /Выключить микрофон/);
+  }
+  const [card, roster, identity, solo, mini] = await Promise.all([
+    readFile(new URL("../src/components/chat/voice/VoiceParticipantCard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/GroupNowParticipant.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/RoomGuestIdentity.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/VoiceRoomEmptyState.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/VoiceMiniStage.tsx", import.meta.url), "utf8"),
+  ]);
+  for (const surface of [card, roster, identity, solo, mini]) assert.match(surface, /voople-avatar-speaking/);
+  assert.match(styles, /voople-avatar-speaking/);
+  assert.match(styles, /prefers-reduced-motion: reduce/);
+});
+
 test("development microphone trace covers callback, LiveKit result, processor and heartbeat without credentials", async () => {
   const [debug, controls, action, config, connection, heartbeat] = await Promise.all([
     readFile(new URL("../src/lib/livekit/voice-mic-debug.ts", import.meta.url), "utf8"),

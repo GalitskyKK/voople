@@ -36,6 +36,7 @@ export function VoiceSessionDock({
   connectionLabel,
   connectionQuality,
   micMuted,
+  localSpeaking,
   outputMuted,
   cameraEnabled,
   screenSharing,
@@ -67,7 +68,7 @@ export function VoiceSessionDock({
   if (mode === "minimal") {
     return (
       <VoiceMinimalSessionDock
-        {...{ chatName, participantCount, activeSpeakerName, durationLabel, mediaStatus, connectionLabel, micMuted, cameraEnabled, screenSharing, mediaActionPending, leavePending, onOpen, onToggleMic, onLeave }}
+      {...{ chatName, participantCount, activeSpeakerName, durationLabel, mediaStatus, connectionLabel, micMuted, localSpeaking, cameraEnabled, screenSharing, mediaActionPending, leavePending, onOpen, onToggleMic, onLeave }}
         onModeChange={changeMode}
       />
     );
@@ -76,7 +77,7 @@ export function VoiceSessionDock({
   if (mode === "compact") {
     const compact = <VoiceCompactSessionDock
       {...{ chatName, participantCount, activeSpeakerName, durationLabel, mediaStatus, connectionLabel,
-        micMuted, outputMuted, cameraEnabled, screenSharing, mediaActionPending, leavePending,
+        micMuted, localSpeaking, outputMuted, cameraEnabled, screenSharing, mediaActionPending, leavePending,
         onToggleMic, onToggleOutput, onToggleCamera, onToggleScreenShare, cameraPending, screenSharePending,
         onLeave, errorMessage }}
       onOpen={openFullRoomFromCompact} inSidebar={Boolean(sidebarRoot)} />;

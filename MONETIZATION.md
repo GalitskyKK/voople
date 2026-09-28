@@ -1,11 +1,17 @@
 # Monetization strategy
 
+> Historical strategy and implementation background. The accepted future product
+> direction is [`docs/product-monetization.md`](docs/product-monetization.md),
+> under current behavior in `PRODUCT.md`. Prices and offers below are legacy,
+> including the 199 ₽ Voople+ offer and 1/3/6/12/24 boost model. They do not
+> define the next Group Grade or charge contract.
+
 Voople monetizes identity and the shared experience of a small circle. Core
 messaging, safe calls and basic profiles remain useful without payment. Paid
 features must either make the user visibly recognizable or fund a measurable
 increase in storage/media/voice cost.
 
-## Current offer
+## Legacy offer
 
 - Voople+: 199 ₽ for 30 days or 1,990 ₽ for 365 days. The annual plan saves
   398 ₽ compared with twelve monthly purchases.

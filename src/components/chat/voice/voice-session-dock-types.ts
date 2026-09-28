@@ -17,6 +17,7 @@ export type VoiceSessionDockProps = {
   connectionLabel: string | null;
   connectionQuality: ConnectionQuality;
   micMuted: boolean;
+  localSpeaking: boolean;
   outputMuted: boolean;
   cameraEnabled: boolean;
   screenSharing: boolean;

@@ -81,11 +81,12 @@ test("room and primary messaging icon controls share one tooltip vocabulary", ()
   const composer = read("src/components/chat/ChatComposerInputView.tsx");
   const recorder = read("src/components/chat/ChatVoiceRecorder.tsx");
   const groupHeader = read("src/components/chat/GroupInfoDrawerView.tsx");
+  const groupTopChrome = read("src/components/chat/GroupTopChrome.tsx");
   const roomButton = read("src/components/chat/voice/VoiceRoomButton.tsx");
   const roomTrigger = read("src/components/chat/voice/VoiceRoomTrigger.tsx");
   const sectionCreator = read("src/components/chat/SubchatCreatorView.tsx");
 
-  for (const source of [roomHeader, roomTitle, roomMedia, roomFooter, roomDock, composer, recorder, groupHeader, roomButton, roomTrigger]) {
+  for (const source of [roomHeader, roomTitle, roomMedia, roomFooter, roomDock, composer, recorder, groupTopChrome, roomButton, roomTrigger]) {
     assert.match(source, /components\/ui\/(?:IconButton|Tooltip)/);
   }
   for (const source of [roomHeader, roomTitle, roomFooter, roomDock, recorder, groupHeader, roomButton, roomTrigger, sectionCreator]) {

@@ -100,6 +100,7 @@ export function VoiceParticipantCard({
           <ProfileAvatarVisual
             displayName={participant.displayName}
             size={compact ? "sm" : "lg"}
+            className={speaking ? "voople-avatar-speaking rounded-full" : undefined}
             isOnline
             ringClassName={resolveRingStyle(participant.avatarRingId)?.className}
             avatarImage={

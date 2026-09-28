@@ -7,10 +7,11 @@ import type { ChatRoomParticipantView } from "@/types/chat";
 type VoiceRoomEmptyStateProps = {
   participant?: ChatRoomParticipantView;
   state: "preview" | "inside";
+  speaking?: boolean;
   onInvite?: () => void;
 };
 
-export function VoiceRoomEmptyState({ participant, state, onInvite }: VoiceRoomEmptyStateProps) {
+export function VoiceRoomEmptyState({ participant, state, speaking = false, onInvite }: VoiceRoomEmptyStateProps) {
   const inside = state === "inside";
 
   if (inside && participant) {
@@ -35,6 +36,7 @@ export function VoiceRoomEmptyState({ participant, state, onInvite }: VoiceRoomE
           <ProfileAvatarVisual
             displayName={participant.displayName}
             size="lg"
+            className={speaking ? "voople-avatar-speaking rounded-full" : undefined}
             isOnline
             avatarImage={participant.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -42,7 +44,7 @@ export function VoiceRoomEmptyState({ participant, state, onInvite }: VoiceRoomE
             ) : undefined}
           />
           <p className="mt-4 max-w-full truncate text-sm font-medium">{participant.displayName} · вы</p>
-          <p className="mt-1 max-w-full truncate text-xs text-[var(--app-muted)]">@{participant.username}</p>
+          <p className="mt-1 max-w-full truncate text-xs text-[var(--app-muted)]">{speaking ? "говорит" : `@${participant.username}`}</p>
         </div>
       </div>
     );

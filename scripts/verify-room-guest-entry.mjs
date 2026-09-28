@@ -162,6 +162,18 @@ try {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     await page.screenshot({ path: path.join(artifacts, `guest-room-${width}-${theme}.png`), fullPage: true });
 
+    await page.evaluate((state) => window.setGuestState({ ...state, micMuted: false, localSpeaking: true }), {
+      ...baseState,
+      joined: { guestId: "guest", sessionId: "session", displayName: "Гость", expiresAt: "2026-09-05T15:00:00.000Z" },
+      mediaStatus: "connected",
+      participantCount: 4,
+    });
+    const speakingMic = page.getByRole("button", { name: "Выключить микрофон" });
+    await speakingMic.waitFor();
+    assert.doesNotMatch(await speakingMic.getAttribute("class"), /voople-mic-speaking/);
+    await page.locator('.voople-room-guest-identity .voople-avatar-speaking').waitFor();
+    await page.screenshot({ path: path.join(artifacts, `guest-speaking-${width}-${theme}.png`), fullPage: true });
+
     await page.evaluate(() => window.setConversionState({
       phase: "success",
       result: { status: "joined", groupId: "group", groupName: "Сообщество дизайнеров" },

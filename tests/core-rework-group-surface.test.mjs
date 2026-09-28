@@ -93,6 +93,22 @@ test("desktop messenger keeps the conversation header stack compact", () => {
   assert.doesNotMatch(globals, /\.voople-group-now-room \{[\s\S]{0,400}?linear-gradient/);
 });
 
+test("Group chrome shares its actions across web and desktop without a channel title", () => {
+  const group = source("src/components/chat/GroupInfoDrawerView.tsx");
+  const chrome = source("src/components/chat/GroupTopChrome.tsx");
+  const titlebar = source("desktop/src/shell/DesktopTitleBar.tsx");
+  assert.doesNotMatch(group, /voople-group-current-context|# Общий/);
+  assert.match(group, /createPortal\(<GroupTopChrome/);
+  assert.match(group, /<GroupTopChrome/);
+  assert.match(chrome, /Пригласить в группу/);
+  assert.match(chrome, /Информация о группе/);
+  assert.match(titlebar, /voople-desktop-group-chrome-root/);
+  assert.match(titlebar, /className="desktop-titlebar__drag" data-tauri-drag-region/);
+  assert.doesNotMatch(titlebar.match(/<div ref=\{onGroupChromeSlotChange\}[^>]+>/)?.[0] ?? "", /data-tauri-drag-region/);
+  assert.doesNotMatch(titlebar, /desktop-titlebar__channel/);
+  assert.ok(titlebar.indexOf("desktop-titlebar__group-slot") < titlebar.indexOf("desktop-titlebar__controls"));
+});
+
 test("chat stream uses the wider centered canvas without stretching message copy or metadata", () => {
   const frame = source("src/components/chat/ChatThreadFrameView.tsx");
   const bubble = source("src/components/chat/ChatMessageBubbleVisual.tsx");

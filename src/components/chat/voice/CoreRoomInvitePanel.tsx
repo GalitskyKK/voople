@@ -66,7 +66,7 @@ export function CoreRoomInvitePanel({
   return (
     <div>
       <div className="pr-10">
-        <h3 className="text-xl font-semibold">Позвать в комнату</h3>
+        <h3 className="text-xl font-semibold">Пригласить в комнату</h3>
         <p className="mt-1 text-sm leading-6 text-[var(--app-muted)]">
           Приглашение действует 15 минут и ведёт именно в текущую сессию.
         </p>
@@ -74,9 +74,9 @@ export function CoreRoomInvitePanel({
       <div className="mt-5 border-y border-[var(--app-border)] py-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-medium">Позвать без аккаунта</p>
+            <p className="text-sm font-medium">Ссылка в текущий разговор</p>
             <p className="mt-1 text-xs leading-5 text-[var(--app-muted)]">
-              Гость попадёт только в эту комнату и не станет участником группы.
+              Аккаунт не нужен. Гость попадёт только в эту комнату: история группы и закрытые разделы останутся недоступны.
             </p>
           </div>
           <Button
@@ -96,7 +96,7 @@ export function CoreRoomInvitePanel({
             <ShareButton
               url={createGuest.data.shareUrl}
               mode="copy"
-              label="Скопировать"
+              label="Скопировать ссылку в комнату"
               title="Войти в комнату Voople"
             />
             <ShareButton

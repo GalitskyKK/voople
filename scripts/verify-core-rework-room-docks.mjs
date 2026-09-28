@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { createRequire } from "node:module";
-import { mkdtemp, readdir, readFile } from "node:fs/promises";
+import { mkdtemp } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadCurrentVisualCss } from "./lib/load-current-visual-css.mjs";
 
 const repo = fileURLToPath(new URL("../", import.meta.url)).replaceAll("\\", "/").replace(/\/$/, "");
-const distRoot = path.resolve(process.argv[2] ?? path.join(repo, "desktop/dist"));
 const artifacts = await mkdtemp(path.join(os.tmpdir(), "voople-core-room-docks-"));
 console.log(`Screenshots: ${artifacts}`);
 
@@ -28,7 +28,7 @@ const entry = `import {createRoot} from 'react-dom/client';
   const bindScreen=(element)=>{if(!element||element.childNodes.length)return;const mock=document.createElement('div');mock.className='grid h-full w-full place-items-center bg-slate-950 text-center text-white/70';mock.innerHTML='<div><strong class="block text-sm text-white">Экран nmggk</strong><span class="mt-1 block text-[10px]">DEEP ROCK GALACTIC</span></div>';element.append(mock)};
   function Demo(){
     const media=new URLSearchParams(location.search).get('media')||'voice';
-    const preview=<VoiceMiniStage screenContainerRef={bindScreen} screenShareOwner={media==='screen'?'nmggk':null} participants={participants} activeSpeakerIds={new Set(['biba'])} cameraParticipantIds={new Set()} onCameraContainerChange={noop} onOpen={noop}/>;
+    const preview=<VoiceMiniStage screenContainerRef={bindScreen} screenShareOwner={media==='screen'?'nmggk':null} participants={participants} localSpeaking={media==='voice'} activeSpeakerIds={new Set(media==='voice'?['nmggk']:['biba'])} cameraParticipantIds={new Set()} onCameraContainerChange={noop} onOpen={noop}/>;
     return <main className="h-dvh overflow-hidden bg-[var(--background)]"><div className="mx-auto max-w-3xl px-5 pt-10"><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--app-muted)]">Чат остаётся доступен</p><h1 className="mt-3 text-2xl font-semibold">Разговор продолжается поверх приложения</h1><div className="mt-8 h-40 border-y border-[var(--app-border)]"/></div><VoiceSessionDock mode={localStorage.getItem('voople:voice-dock-mode:v1')||'mini'} onModeChange={noop} chatName="DRG" participantCount={2} activeSpeakerName="Biba" durationLabel="18:42" mediaStatus="connected" connectionLabel="Голос подключён" connectionQuality={ConnectionQuality.Excellent} micMuted={false} outputMuted={false} cameraEnabled={false} screenSharing={media==='screen'} mediaActionPending={false} leavePending={false} mediaPreview={preview} onOpen={noop} onToggleMic={noop} onToggleOutput={noop} onLeave={noop}/></main>
   }
   createRoot(document.getElementById('root')).render(<AppThemeProvider><Demo/></AppThemeProvider>);`;
@@ -42,8 +42,7 @@ const bundle = await build({
   alias: { "@": `${repo}/src` },
   define: { "process.env.NODE_ENV": '"development"' },
 });
-const cssFiles = (await readdir(path.join(distRoot, "assets"), { recursive: true })).filter((file) => file.endsWith(".css"));
-const css = (await Promise.all(cssFiles.map((file) => readFile(path.join(distRoot, "assets", file), "utf8")))).join("\n");
+const css = await loadCurrentVisualCss(repo, { host: "web" });
 const server = createServer((request, response) => {
   if (request.url === "/app.js") { response.setHeader("Content-Type", "text/javascript"); response.end(bundle.outputFiles[0].text); return; }
   if (request.url === "/style.css") { response.setHeader("Content-Type", "text/css"); response.end(css); return; }
@@ -75,6 +74,10 @@ try {
     await page.goto(`http://127.0.0.1:${server.address().port}?media=${media}`);
     const selector = mode === "mini" ? ".voople-voice-dock" : `.voople-voice-dock--${mode}`;
     await page.locator(selector).waitFor();
+    if (mode === "mini" && media === "voice") {
+      assert.equal(await page.locator('.voople-voice-dock .voople-avatar-speaking').count(), 1);
+      assert.equal(await page.locator('.voople-voice-dock .voople-mic-speaking').count(), 0);
+    }
     assert.equal(await page.locator(selector).count(), 1);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);

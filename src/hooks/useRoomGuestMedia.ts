@@ -29,6 +29,7 @@ export function useRoomGuestMedia({
   const [error, setError] = useState<string | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
   const [micMuted, setMicMuted] = useState(true);
+  const [localSpeaking, setLocalSpeaking] = useState(false);
   const [participantCount, setParticipantCount] = useState(0);
   const [screenVisible, setScreenVisible] = useState(false);
   const roomRef = useRef<Room | null>(null);
@@ -36,6 +37,7 @@ export function useRoomGuestMedia({
   const activeScreenPublicationRef = useRef<string | null>(null);
 
   const clear = useCallback(() => {
+    setLocalSpeaking(false);
     audioRootRef.current?.replaceChildren();
     screenRootRef.current?.replaceChildren();
     activeScreenPublicationRef.current = null;
@@ -131,6 +133,9 @@ export function useRoomGuestMedia({
         })
         .on(RoomEvent.ParticipantConnected, syncCount)
         .on(RoomEvent.ParticipantDisconnected, syncCount)
+        .on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
+          setLocalSpeaking(speakers.some((speaker) => speaker.isLocal));
+        })
         .on(RoomEvent.Reconnecting, () => setStatus("reconnecting"))
         .on(RoomEvent.Reconnected, () => setStatus("connected"))
         .on(RoomEvent.Disconnected, () => {
@@ -164,6 +169,7 @@ export function useRoomGuestMedia({
     try {
       await room.localParticipant.setMicrophoneEnabled(!nextMuted, undefined, VOICE_PUBLISH_OPTIONS);
       setMicMuted(nextMuted);
+      if (nextMuted) setLocalSpeaking(false);
       await fetch("/api/room-guests/session", {
         method: "PATCH", credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
@@ -197,6 +203,7 @@ export function useRoomGuestMedia({
     error,
     micError,
     micMuted,
+    localSpeaking: status === "connected" && !micMuted && localSpeaking,
     participantCount,
     screenVisible,
     status,

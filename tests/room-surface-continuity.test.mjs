@@ -130,6 +130,8 @@ test("full room uses one shared reference-aligned visual frame", () => {
   assert.match(switchStatus, /motion-reduce:animate-none/);
   assert.match(footer, /voople-full-room__footer/);
   assert.match(styles, /\.voople-full-room\s*\{/);
+  assert.match(styles, /--app-radius-sm: 10px;/);
+  assert.doesNotMatch(read("src/components/chat/voice/VoiceRoomSwitcher.tsx"), /border-l-2/);
   assert.match(styles, /\.voople-full-room__header \{[\s\S]*?min-height: 3\.5rem;/);
   assert.match(styles, /\.voople-full-room__switcher \{[\s\S]*?width: 10rem;[\s\S]*?min-width: 10rem;/);
   assert.doesNotMatch(participant, /shadow-\[0_0_0_2px/);
@@ -166,6 +168,21 @@ test("full Room gives its identity a dedicated mobile row without hiding actions
     /@media \(max-width: 639px\)[\s\S]*?\.voople-full-room__switcher \{[\s\S]*?display: none;/,
   );
   assert.doesNotMatch(header, /hidden.*voople-full-room__header-actions/);
+});
+
+test("screen-share volume stays on the stream, with pointer and keyboard access", () => {
+  const content = read("src/components/chat/voice/VoiceRoomContent.tsx");
+  const stage = read("src/components/chat/voice/VoiceRoomStage.tsx");
+  const media = read("src/components/chat/voice/VoiceMediaStage.tsx");
+  const menu = read("src/components/chat/voice/VoiceScreenShareMenu.tsx");
+
+  assert.doesNotMatch(content, /<ScreenShareVolume/);
+  assert.match(stage, /screenShareIsLocal \? undefined : screenShareVolume/);
+  assert.match(media, /onContextMenu=\{showMenu \? openContextMenu : undefined\}/);
+  assert.match(media, /event\.key !== "ContextMenu"/);
+  assert.match(media, /aria-label=\{`Параметры демонстрации/);
+  assert.match(menu, /aria-label=\{`Громкость демонстрации/);
+  assert.match(menu, /onStopWatching\(\)/);
 });
 
 test("Full Room adapts the Group Chat drawer without collapsing the media stage", () => {

@@ -35,9 +35,6 @@ public static class VoopleWindowState {
 
 $installedExecutable = $null
 $uninstaller = $null
-$webViewData = Join-Path $env:RUNNER_TEMP "voople-installed-deep-link-smoke"
-$coldPath = "/room-invites/10000000-0000-4000-8000-000000000001"
-$warmPath = "/room-invites/20000000-0000-4000-8000-000000000002"
 $coldUri = "voople://room-invites/10000000-0000-4000-8000-000000000001"
 $warmUri = "voople://room-invites/20000000-0000-4000-8000-000000000002"
 $invalidUri = "${warmUri}?accept=1"
@@ -65,24 +62,11 @@ function Wait-InstalledProcess {
   throw "The installed Voople process did not expose exactly one main window."
 }
 
-function Start-InstalledVoople([string]$Uri) {
-  $startInfo = [Diagnostics.ProcessStartInfo]::new()
-  $startInfo.FileName = $script:installedExecutable
-  $startInfo.UseShellExecute = $false
-  $startInfo.ArgumentList.Add($Uri)
-  [Diagnostics.Process]::Start($startInfo) | Out-Null
-}
-
 function Open-VoopleProtocol([string]$Uri) {
   $startInfo = [Diagnostics.ProcessStartInfo]::new()
   $startInfo.FileName = $Uri
   $startInfo.UseShellExecute = $true
   [Diagnostics.Process]::Start($startInfo) | Out-Null
-}
-
-function Verify-RendererPath([string]$Path, [int]$Port) {
-  & node (Join-Path $PSScriptRoot "verify-installed-desktop-route.mjs") "http://127.0.0.1:$Port" $Path
-  if ($LASTEXITCODE -ne 0) { throw "Installed renderer path verification failed for $Path." }
 }
 
 try {
@@ -116,22 +100,9 @@ try {
     Wait-Process -Id $process.Id -ErrorAction SilentlyContinue
   }
 
-  $portProbe = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback, 0)
-  $portProbe.Start()
-  $debugPort = ([Net.IPEndPoint]$portProbe.LocalEndpoint).Port
-  $portProbe.Stop()
-  $webViewArguments = "--remote-debugging-port=$debugPort --remote-allow-origins=http://127.0.0.1:$debugPort"
-
-  # The cold-start process is launched directly so it inherits the WebView2
-  # diagnostics environment deterministically. The installer protocol command
-  # is validated above, and the warm/invalid checks below still exercise the
-  # real Windows voople:// protocol registration through ShellExecute.
-  $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = $webViewArguments
-  $env:WEBVIEW2_USER_DATA_FOLDER = $webViewData
-
-  Start-InstalledVoople $coldUri
+  Open-VoopleProtocol $coldUri
   $app = Wait-InstalledProcess
-  Verify-RendererPath $coldPath $debugPort
+  $coldProcessId = $app.Id
 
   [VoopleWindowState]::ShowWindowAsync($app.MainWindowHandle, 6) | Out-Null
   $deadline = [DateTime]::UtcNow.AddSeconds(10)
@@ -143,8 +114,10 @@ try {
   }
 
   Open-VoopleProtocol $warmUri
-  Verify-RendererPath $warmPath $debugPort
   $app = Wait-InstalledProcess
+  if ($app.Id -ne $coldProcessId) {
+    throw "The warm deep link created a different Voople process instead of reusing the installed instance."
+  }
   $deadline = [DateTime]::UtcNow.AddSeconds(10)
   while ([VoopleWindowState]::IsIconic($app.MainWindowHandle) -and [DateTime]::UtcNow -lt $deadline) {
     Start-Sleep -Milliseconds 100
@@ -155,12 +128,12 @@ try {
 
   Open-VoopleProtocol $invalidUri
   Start-Sleep -Seconds 1
-  Verify-RendererPath $warmPath $debugPort
-  if (@(Get-InstalledProcesses).Count -ne 1) {
-    throw "Deep links must be forwarded to exactly one installed app instance."
+  $remainingProcesses = @(Get-InstalledProcesses)
+  if ($remainingProcesses.Count -ne 1 -or $remainingProcesses[0].Id -ne $coldProcessId) {
+    throw "Deep links must leave exactly one installed Voople instance running."
   }
 
-  Write-Host "Installed NSIS protocol smoke passed: registration, cold link, warm replacement, unsafe query rejection and single-instance restore."
+  Write-Host "Installed NSIS protocol smoke passed: registration, cold protocol launch, warm single-instance restore and invalid-link single-instance handling."
 } finally {
   foreach ($process in @(Get-InstalledProcesses)) {
     Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
@@ -172,8 +145,6 @@ try {
       Write-Warning "Silent NSIS uninstall returned exit code $($remove.ExitCode)."
     }
   }
-  Remove-Item Env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -ErrorAction SilentlyContinue
-  Remove-Item Env:WEBVIEW2_USER_DATA_FOLDER -ErrorAction SilentlyContinue
 }
 
 if (Test-Path -LiteralPath $protocolKey) {

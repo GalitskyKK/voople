@@ -71,7 +71,8 @@ test("content columns are governed by available shell width", () => {
   const homeView = read("src/components/home/HomeOverviewPanelsView.tsx");
   const globals = read("src/app/globals.css");
 
-  assert.match(messages, /clamp\(17\.5rem,24vw,20rem\)/);
+  assert.match(messages, /lg:hidden/);
+  assert.match(messages, /hidden lg:flex/);
   assert.match(homeLayout, /voople-feed-page-container/);
   assert.match(homeView, /voople-home-secondary-rail/);
   assert.match(globals, /container-type: inline-size/);

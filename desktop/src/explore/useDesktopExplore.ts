@@ -1,42 +1,23 @@
 import type { Session } from "@supabase/supabase-js";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import type {
-  ExploreSearchResult,
-  HashtagSearchHit,
-  ExploreHighlights,
-} from "@/types/search";
+import type { BetaSearchResult } from "@/types/search";
 import type { PublicGroupSearchHit } from "@/types/chat";
 
 import { createDesktopTrpcClient } from "../api/trpc";
 import type { DesktopConfig } from "../config";
 
-const EMPTY_RESULT: ExploreSearchResult = {
-  users: [],
-  hashtags: [],
-  posts: [],
-};
+const EMPTY_RESULT: BetaSearchResult = { people: [] };
 
-function parseExploreResult(value: unknown): ExploreSearchResult {
+function parseExploreResult(value: unknown): BetaSearchResult {
   if (!value || typeof value !== "object") {
     throw new Error("Сервер вернул некорректный результат поиска");
   }
-  const result = value as Partial<ExploreSearchResult>;
-  if (
-    !Array.isArray(result.users) ||
-    !Array.isArray(result.hashtags) ||
-    !Array.isArray(result.posts)
-  ) {
+  const result = value as Partial<BetaSearchResult>;
+  if (!Array.isArray(result.people)) {
     throw new Error("Сервер вернул некорректный результат поиска");
   }
-  return result as ExploreSearchResult;
-}
-
-function parseTrending(value: unknown): HashtagSearchHit[] {
-  if (!Array.isArray(value)) {
-    throw new Error("Сервер вернул некорректный список трендов");
-  }
-  return value as HashtagSearchHit[];
+  return result as BetaSearchResult;
 }
 
 function parseCommunities(value: unknown): PublicGroupSearchHit[] {
@@ -44,27 +25,16 @@ function parseCommunities(value: unknown): PublicGroupSearchHit[] {
   return value as PublicGroupSearchHit[];
 }
 
-function parseHighlights(value: unknown): ExploreHighlights {
-  if (!value || typeof value !== "object") throw new Error("Сервер вернул некорректные рекомендации");
-  const result = value as Partial<ExploreHighlights>;
-  if (!Array.isArray(result.users) || !Array.isArray(result.posts) || !Array.isArray(result.communities)) throw new Error("Сервер вернул некорректные рекомендации");
-  return result as ExploreHighlights;
-}
 
 export function useDesktopExplore(
   config: DesktopConfig,
   session: Session,
   query: string,
 ) {
-  const [result, setResult] = useState<ExploreSearchResult>();
-  const [trending, setTrending] = useState<HashtagSearchHit[]>([]);
+  const [result, setResult] = useState<BetaSearchResult>();
   const [communities, setCommunities] = useState<PublicGroupSearchHit[]>([]);
-  const [highlights, setHighlights] = useState<ExploreHighlights>();
   const [searching, setSearching] = useState(false);
-  const [trendingLoading, setTrendingLoading] = useState(true);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [trendingError, setTrendingError] = useState<string | null>(null);
-  const [highlightsError, setHighlightsError] = useState<string | null>(null);
   const requestId = useRef(0);
   const client = useMemo(
     () => createDesktopTrpcClient(config, () => session.access_token),
@@ -81,30 +51,6 @@ export function useDesktopExplore(
         setCommunities([]);
         setSearchError(null);
         setSearching(false);
-        setTrendingLoading(true);
-        setTrendingError(null);
-        setHighlightsError(null);
-        try {
-          const [value, highlightsValue] = await Promise.all([
-            client.query("search.trendingHashtags", { limit: 10 }),
-            client.query("search.highlights"),
-          ]);
-          if (currentRequest === requestId.current) {
-            setTrending(parseTrending(value));
-            setHighlights(parseHighlights(highlightsValue));
-          }
-        } catch (error: unknown) {
-          if (currentRequest === requestId.current) {
-            setTrendingError(
-              error instanceof Error
-                ? error.message
-                : "Не удалось загрузить тренды",
-            );
-            setHighlightsError(error instanceof Error ? error.message : "Не удалось загрузить рекомендации");
-          }
-        } finally {
-          if (currentRequest === requestId.current) setTrendingLoading(false);
-        }
         return;
       }
 
@@ -113,7 +59,7 @@ export function useDesktopExplore(
       setResult(undefined);
       try {
         const [value, communityValue] = await Promise.all([
-          client.query("search.explore", { q: query }),
+          client.query("search.beta", { q: query }),
           query.length >= 2 ? client.query("chat.publicGroups", { q: query }) : Promise.resolve([]),
         ]);
         if (currentRequest === requestId.current) {
@@ -143,10 +89,5 @@ export function useDesktopExplore(
     communities,
     searchError,
     searching,
-    trending,
-    trendingError,
-    trendingLoading,
-    highlights,
-    highlightsError,
   };
 }

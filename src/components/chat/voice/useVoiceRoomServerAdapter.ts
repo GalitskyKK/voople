@@ -170,7 +170,7 @@ export function useVoiceRoomServerAdapter({
       error: coreLeave.error,
       run: async () => {
         await coreLeave.mutateAsync({ sessionId: coreSession.join.sessionId });
-        await utils.chat.coreGroupNow.invalidate({ groupId: coreSession.groupId });
+        void utils.chat.coreGroupNow.invalidate({ groupId: coreSession.groupId }).catch(() => undefined);
       },
     },
     mediaToken: {

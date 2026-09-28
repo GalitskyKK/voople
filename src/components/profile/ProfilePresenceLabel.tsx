@@ -12,7 +12,7 @@ export function ProfilePresenceLabel({
 }) {
   const { onlineUserIds } = useOnlineUsers();
   if (onlineUserIds.has(userId)) {
-    return <span className="text-emerald-500">В сети</span>;
+    return <span className="text-[var(--material-presence)]">В сети</span>;
   }
   if (!lastSeenAt) return null;
   return <>Был(а) в сети <RelativeTime iso={lastSeenAt} /></>;

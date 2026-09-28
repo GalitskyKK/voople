@@ -41,11 +41,12 @@ test("core group Room navigation is shared, gated and falls back to legacy Room"
   assert.match(lobbyAction, /<VoiceRoomButton/);
 
   assert.match(webHeader, /<GroupInfoDrawer/);
-  assert.match(webDrawer, /<GroupRoomAction/);
+  assert.match(webDrawer, /selectGroupTab\?\.\("people"\)/);
+  assert.match(await readFile(new URL("../src/components/chat/GroupSurfaceShell.tsx", import.meta.url), "utf8"), /<GroupNowVoicePanel enabled/);
   assert.match(publicGroup, /group\.joined \? \(/);
   assert.match(publicGroup, /<GroupRoomAction/);
   assert.match(publicGroupView, /roomAction\?: ReactNode/);
-  assert.match(desktop, /<GroupRoomAction/);
+  assert.doesNotMatch(desktop, /<GroupRoomAction/);
   assert.match(desktop, /<DesktopChatRoomHeaderAction/);
   assert.match(desktopHeader, /<VoiceRoomButton/);
   assert.match(desktopPublicGroup, /group\.joined \? \(/);

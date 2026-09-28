@@ -1,11 +1,11 @@
 import type { ProfileViewModel } from "@/types/domain";
 import { ProfileBadges } from "./ProfileBadges";
 import { ProfileCardView } from "./ProfileCardView";
-import { ProfileReactions } from "./ProfileReactions";
 import { ProfileEditSheet } from "./ProfileEditSheet";
 import { ProfileRelationshipActions } from "./ProfileRelationshipActions";
 import { ProfileStatusSection } from "./ProfileStatusSection";
 import { ProfileShareCardButton } from "./ProfileShareCardButton";
+import { PROFILE_STATUS_VISIBLE } from "@/lib/product/profile-beta-surface";
 
 type ProfileCardProps = {
   profile: ProfileViewModel;
@@ -33,14 +33,13 @@ export function ProfileCard({
           />
         )
       }
-      status={
+      status={PROFILE_STATUS_VISIBLE ? (
         <ProfileStatusSection
           username={profile.username}
           initialStatus={profile.status}
           isOwner={isOwner}
         />
-      }
-      reactions={<ProfileReactions profileUserId={profile.id} canReact={!isOwner} />}
+      ) : undefined}
       shareAction={isOwner ? <ProfileShareCardButton profile={profile} /> : undefined}
       editAction={isOwner ? <ProfileEditSheet profile={profile} /> : undefined}
       className={className}

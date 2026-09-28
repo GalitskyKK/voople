@@ -1,0 +1,16 @@
+[Unit]
+Description=Expire Voople group room grace sessions
+After=network.target
+
+[Service]
+Type=oneshot
+User=deploy
+EnvironmentFile=/opt/voople/cron.env
+ExecStart=/opt/voople/bin/voople-room-maintenance
+TimeoutStartSec=30s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+UMask=0077

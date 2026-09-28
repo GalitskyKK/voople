@@ -18,12 +18,13 @@ test("Supabase proxy lets the runtime calculate the decoded response length", ()
   assert.match(responseHeaders, /content-type/);
 });
 
-test("OTP login trusts the device before idempotent profile synchronization", () => {
+test("OTP login saves device trust before idempotent profile synchronization", () => {
   const login = read("src/app/(auth)/login/page.tsx");
-  const finishLogin = login.match(/const finishLogin = async[\s\S]*?\n  };/)?.[0] ?? "";
   const sync = read("src/lib/auth/sync-public-user.ts");
 
-  assert.ok(finishLogin.indexOf("trustCurrentDevice") < finishLogin.indexOf("syncPublicUser"));
+  assert.match(login, /await trustCurrentDeviceWithRetry\(\{ accessToken: data\.session\.access_token/);
+  assert.ok(login.indexOf("await trustCurrentDeviceWithRetry({ accessToken: data.session.access_token") < login.indexOf("try { await finishLogin(); }"));
+  assert.doesNotMatch(login, /trustCurrentDevice\([^)]*\)\.catch\(\(\) => undefined\)/);
   assert.match(sync, /const SYNC_ATTEMPTS = 2/);
   assert.match(sync, /readJsonResponse<SyncPublicUserResult>/);
   assert.doesNotMatch(sync, /await res\.json\(\)/);

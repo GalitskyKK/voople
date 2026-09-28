@@ -28,6 +28,7 @@ const entry = `import {Heart,MessageCircle,Repeat2} from 'lucide-react';
   import {AppShellFrame} from '@/components/layout/AppShellFrame';
   import {MessengerSidebarView} from '@/components/layout/MessengerSidebarView';
   import {ProfilePageView} from '@/components/profile/ProfilePageView';
+  import {ProfileLoadingView} from '@/components/profile/ProfileLoadingView';
   import {ProfileCardVisual} from '@/components/profile/ProfileCardVisual';
   import {ProfileCardIdentityVisual} from '@/components/profile/ProfileCardIdentityVisual';
   import {ProfileCardBodyVisual} from '@/components/profile/ProfileCardBodyVisual';
@@ -45,7 +46,7 @@ const entry = `import {Heart,MessageCircle,Repeat2} from 'lucide-react';
   const destination=({href,label,className,active,children})=><a href={href} aria-label={label} aria-current={active?'page':undefined} className={className}>{children}</a>;
   function ProfileCard(){return <ProfileCardVisual customization={profile.customization} banner={<ProfileBanner customization={profile.customization} className="h-[var(--profile-banner-height)] aspect-auto"/>} header={<ProfileCardIdentityVisual customization={profile.customization} displayName={profile.displayName} username={profile.username} avatar={<ProfileAvatar displayName={profile.displayName} size="xl" shape="square" isOnline/>}/>} body={<ProfileCardBodyVisual profile={profile} status={<div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2 text-sm">Кто сегодня в войс?</div>} reactions={<div className="text-xs text-[var(--app-muted)]">Реакции профиля · 12</div>} shareAction={<button className="h-9 w-full rounded-xl border border-[var(--app-border)] text-xs font-semibold">Поделиться профилем</button>}/>} />}
   function Post({post}){return <PostCardSurface><header className="flex items-center gap-3 px-4 pt-4"><ProfileAvatar displayName="nmggk" size="sm" shape="square"/><div><strong className="block text-sm">nmggk</strong><span className="text-xs text-[var(--app-muted)]">@nmggk</span></div><time className="ml-auto text-xs text-[var(--app-muted)]">сегодня</time></header><PostCardBody><p className="text-sm leading-6">{post.text}</p><PostCardActions><span className="voople-post-action"><Heart/> {post.likeCount}</span><span className="voople-post-action"><MessageCircle/> {post.replyCount}</span><span className="voople-post-action"><Repeat2/> {post.repostCount}</span></PostCardActions></PostCardBody></PostCardSurface>}
-  function Demo(){const sidebar=<AppSidebarVisual pathname="/nmggk" collapsed={false} renderDestination={destination} primaryNavigation={<MessengerSidebarView pathname="/nmggk" chats={chats} loading={false} onlineUserIds={new Set(['biba'])} liveByGroup={new Map([['group-1',{groupId:'group-1',participantCount:3,roomCount:2,hasScreenShare:false}]])} createGroupAction={<button type="button" aria-label="Создать группу">+</button>} renderDestination={destination} onRetry={()=>{}}/>} accountNavigation={<button className="flex w-full items-center gap-2 px-2 py-1 text-left"><ProfileAvatar displayName="nmggk" size="sm" shape="square" isOnline/><span className="text-xs">nmggk</span></button>}/>;return <AppShellFrame routeKind="profile" navigationKind="messenger" fixedViewport sidebar={sidebar}><div data-voople-scroll="" className="voople-scroll h-full overflow-y-auto px-5"><ProfilePageView posts={posts} card={<ProfileCard/>} renderPost={(post)=><Post key={post.id} post={post}/>} initialTab="posts"/></div></AppShellFrame>}
+  function Demo(){const sidebar=<AppSidebarVisual pathname="/nmggk" collapsed={false} renderDestination={destination} primaryNavigation={<MessengerSidebarView pathname="/nmggk" chats={chats} loading={false} onlineUserIds={new Set(['biba'])} liveByGroup={new Map([['group-1',{groupId:'group-1',participantCount:3,roomCount:2,hasScreenShare:false}]])} createGroupAction={<button type="button" aria-label="Создать группу">+</button>} renderDestination={destination} onRetry={()=>{}}/>} accountNavigation={<button className="flex w-full items-center gap-2 px-2 py-1 text-left"><ProfileAvatar displayName="nmggk" size="sm" shape="square" isOnline/><span className="text-xs">nmggk</span></button>}/>;const loading=new URLSearchParams(location.search).has('loading');return <AppShellFrame routeKind="profile" navigationKind="messenger" fixedViewport sidebar={sidebar}><div data-voople-scroll="" className="voople-scroll h-full overflow-y-auto px-5">{loading?<ProfileLoadingView/>:<ProfilePageView posts={posts} card={<ProfileCard/>} renderPost={(post)=><Post key={post.id} post={post}/>} initialTab="posts"/>}</div></AppShellFrame>}
   createRoot(document.getElementById('root')).render(<AppThemeProvider><Demo/></AppThemeProvider>);`;
 
 const bundle = await build({
@@ -73,12 +74,12 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
-  for (const viewport of [{ width: 1440, height: 900, name: "profile.png" }, { width: 390, height: 844, name: "profile-mobile.png" }]) {
+  for (const viewport of [{ width: 1440, height: 900, name: "profile.png" }, { width: 390, height: 844, name: "profile-mobile.png" }, { width: 1440, height: 900, name: "profile-loading.png", loading: true }, { width: 390, height: 844, name: "profile-loading-mobile.png", loading: true }]) {
     const page = await browser.newPage({ viewport });
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
-    await page.goto(`http://127.0.0.1:${server.address().port}`);
+    await page.goto(`http://127.0.0.1:${server.address().port}${viewport.loading ? "?loading" : ""}`);
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(250);
     if (await page.locator(".voople-profile-page").count() === 0) {
@@ -87,7 +88,7 @@ try {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);
     await page.screenshot({ path: path.join(artifacts, viewport.name), fullPage: false });
-    console.log(`PASS profile ${viewport.width}px: no overflow or runtime errors`);
+    console.log(`PASS profile ${viewport.loading ? "loading " : ""}${viewport.width}px: no overflow or runtime errors`);
     await page.close();
   }
 } finally {

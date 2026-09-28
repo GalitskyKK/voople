@@ -2,48 +2,50 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("Split is atomic while permanent Room creation stays deliberate", async () => {
-  const [hook, dialog, connected, room] = await Promise.all([
-    readFile(new URL("../src/hooks/useGroupNowRoomCreate.ts", import.meta.url), "utf8"),
-    readFile(new URL("../src/components/chat/GroupNowRoomCreateDialog.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../src/components/chat/GroupNowConnectedPanel.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../src/components/chat/GroupNowRoomSection.tsx", import.meta.url), "utf8"),
-  ]);
+import { splitCandidates, toggleSplitSelection, selectedSplitUsers } from "../src/lib/chat/live-move-selection.ts";
 
+const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
+
+test("Split picker selects 1..N current members, never self or guests", () => {
+  const people = [
+    { id: "a", isMe: true, guest: false },
+    { id: "b", isMe: false, guest: false },
+    { id: "c", isMe: false, guest: false },
+    { id: "d", isMe: false, guest: true },
+  ];
+  const candidates = splitCandidates(people);
+  assert.deepEqual(candidates.map((p) => p.id), ["b", "c"]);
+  assert.deepEqual(selectedSplitUsers(candidates, []), []);
+  const selected = toggleSplitSelection(toggleSplitSelection([], "b"), "c");
+  assert.deepEqual(selectedSplitUsers(candidates, selected).map((p) => p.id), ["b", "c"]);
+  assert.deepEqual(toggleSplitSelection(selected, "b"), ["c"]);
+  assert.deepEqual(selectedSplitUsers(candidates, ["d"]), []);
+});
+
+test("ordinary create stays pinned; Split submits once after selection", async () => {
+  const [hook, move, picker, panel, router, service] = await Promise.all([
+    read("src/hooks/useGroupNowRoomCreate.ts"),
+    read("src/hooks/useGroupLiveMove.ts"),
+    read("src/components/chat/GroupNowSplitPicker.tsx"),
+    read("src/components/chat/GroupNowConnectedPanel.tsx"),
+    read("src/server/trpc/routers/chat-core-rework.ts"),
+    read("src/server/services/group-room-mutations.service.ts"),
+  ]);
   assert.match(hook, /coreCreateAndJoinRoom\.useMutation/);
-  assert.match(hook, /requestId: crypto\.randomUUID\(\)/);
-  assert.match(hook, /retryCreation\.kind === draft\.kind/);
-  assert.match(hook, /retryCreation\.name === draft\.name/);
-  assert.match(hook, /setRetryCreation\(pendingCreation\)/);
-  assert.match(hook, /finishCreate\(pendingCreation, false\)/);
-  assert.match(hook, /finishCreate\(confirmation, true\)/);
-  assert.match(hook, /DEFAULT_SPLIT_DRAFT/);
-  assert.match(hook, /kind: "temporary"/);
-  assert.match(hook, /name: "Сплит"/);
-  assert.match(hook, /void submit\(DEFAULT_SPLIT_DRAFT\)/);
-  assert.match(hook, /coreSendVoop\.useMutation/);
-  assert.match(hook, /sessionId: currentSessionId/);
-  assert.match(hook, /inviteeId: user\.id/);
-  assert.doesNotMatch(hook, /coreSendRoomInvite\.useMutation/);
-  assert.match(hook, /const showRoom = useCallback/);
-  assert.match(hook, /setOpen\(true\)/);
-  assert.match(hook, /micMuted: true/);
-  assert.match(hook, /mediaHandoff\.connect/);
-  assert.match(dialog, /kind: "pinned"/);
-  assert.match(dialog, /останется в группе/);
-  assert.doesNotMatch(dialog, /Тип комнаты/);
-  assert.doesNotMatch(dialog, /Временная/);
-  assert.match(dialog, /Создать и зайти/);
-  assert.match(dialog, /Завершить и создать/);
-  assert.match(dialog, /return props\.open \? <RoomCreateSession \{\.\.\.props\} \/> : null/);
-  assert.doesNotMatch(dialog, /useEffect/);
-  assert.match(connected, /GroupNowRoomCreateDialog/);
-  assert.match(connected, /onCreateSplit=\{create\.startSplit\}/);
-  assert.match(connected, /canCreatePinned \? create\.showRoom : undefined/);
-  assert.match(connected, /createPending=\{create\.pending\}/);
-  assert.match(connected, /createError=\{create\.error\}/);
-  assert.match(connected, /onBack=\{create\.close\}/);
-  assert.match(room, /onCreateSplit\?: \(\) => void/);
-  assert.match(room, /Отделиться во временную комнату/);
-  assert.match(room, /onClick=\{onCreateSplit\}/);
+  assert.match(hook, /useGroupLiveMove/);
+  assert.doesNotMatch(hook, /coreSendVoop|coreVoopStatus|coreJoinRoom\.useMutation/);
+  assert.match(move, /startVoop: \(user: GroupNowUser\) =>/);
+  assert.match(move, /send\("voop", \[user\]\)/);
+  assert.match(move, /submitSplit: \(users: GroupNowUser\[\]\) => \{ void send\("split", users\)/);
+  assert.match(move, /requestMutation\.mutateAsync\(/);
+  assert.match(picker, /type="checkbox"/);
+  assert.match(picker, /disabled=\{!chosen\.length \|\| pending\}/);
+  assert.match(picker, /onSubmit\(chosen\)/);
+  assert.doesNotMatch(picker, /onChoose\(user\)/);
+  assert.match(panel, /onSubmit=\{create\.submitSplit\}/);
+  assert.match(panel, /onCreateSplit=\{create\.startSplit\}/);
+  const ordinaryCreate = router.slice(router.indexOf("coreCreateRoom:"), router.indexOf("coreSetRoomKind:"));
+  assert.doesNotMatch(ordinaryCreate, /kind: input\.kind/);
+  assert.match(ordinaryCreate, /kind: "pinned"/);
+  assert.match(service, /createGroupRoomRest\(\{ \.\.\.input, kind: "pinned", name \}\)/);
 });

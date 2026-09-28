@@ -43,8 +43,8 @@ export function VoiceRoomSwitcher({
             <div
               key={room.id}
               className={cn(
-                "group/room voople-full-room__switcher-room flex min-h-12 w-full min-w-0 items-center border-l-2 border-transparent transition hover:bg-[var(--app-surface-soft)]",
-                current && "border-l-[var(--theme-accent)] bg-[var(--app-surface-soft)]",
+                "group/room voople-full-room__switcher-room flex min-h-12 w-full min-w-0 items-center rounded-[var(--app-radius-md)] border border-transparent transition hover:bg-[var(--app-surface-soft)]",
+                current && "voople-full-room__switcher-room--current border-[var(--app-border)] bg-[var(--app-surface-soft)]",
               )}
             >
               <button

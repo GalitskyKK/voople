@@ -36,7 +36,7 @@ test("unreleased platform apps stay disabled until their vertical slice ships", 
   }
 });
 
-test("core rework surfaces require both internal channel and server capability", () => {
+test("core rework surfaces require beta-or-internal channel and server capability", () => {
   assert.equal(resolveFeatureAvailability("core_rework_shell", {
     platform: "web",
     channel: "stable",
@@ -52,6 +52,18 @@ test("core rework surfaces require both internal channel and server capability",
     platform: "web",
     channel: "internal",
     serverCapabilities: new Set(["core_rework_shell"]),
+  }).enabled, true);
+
+  assert.equal(resolveFeatureAvailability("core_rework_shell", {
+    platform: "windows",
+    channel: "beta",
+    serverCapabilities: new Set(["core_rework_shell"]),
+  }).enabled, true);
+
+  assert.equal(resolveFeatureAvailability("multi_room_groups", {
+    platform: "web",
+    channel: "beta",
+    serverCapabilities: new Set(["multi_room_groups"]),
   }).enabled, true);
 });
 

@@ -40,13 +40,14 @@ function InviteActions({ invite }: { invite: CoreRoomInvitePreview | null }) {
     onSuccess: invalidate,
   });
   const acceptVoop = trpc.chat.coreAcceptVoop.useMutation({ onSuccess: invalidate });
+  const respondMove = trpc.chat.coreRespondLiveMove.useMutation({ onSuccess: invalidate });
   const join = useGroupNowRoomJoin({
     onJoined: ({ groupId, room }, result, credentials) => {
       voice.openCoreRoom({ groupId, room, join: result, credentials });
       if (invite) respond.mutate({ inviteId: invite.id, response: "accepted" });
     },
   });
-  const status = invite?.status === "pending"
+  const status = invite?.status === "pending" && !invite.requestId
     ? acceptVoop.data ? "accepted" : respond.data?.status ?? invite.status
     : invite?.status ?? "expired";
   const available = status === "pending" && Boolean(invite?.groupId && invite.room);
@@ -55,6 +56,10 @@ function InviteActions({ invite }: { invite: CoreRoomInvitePreview | null }) {
     if (!invite?.groupId || !invite.room || join.pending) return;
     setError(null);
     try {
+      if (invite.requestId) {
+        await respondMove.mutateAsync({ consentId: invite.id, accept: true });
+        return;
+      }
       if (invite.intent === "voop") {
         const accepted = await acceptVoop.mutateAsync({
           inviteId: invite.id,
@@ -85,6 +90,10 @@ function InviteActions({ invite }: { invite: CoreRoomInvitePreview | null }) {
     if (!invite || respond.isPending) return;
     setError(null);
     try {
+      if (invite.requestId) {
+        await respondMove.mutateAsync({ consentId: invite.id, accept: false });
+        return;
+      }
       await respond.mutateAsync({ inviteId: invite.id, response: "declined" });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось отклонить приглашение");
@@ -93,13 +102,15 @@ function InviteActions({ invite }: { invite: CoreRoomInvitePreview | null }) {
 
   return (
     <div className="mt-3">
-      {available && invite ? (
+      {invite?.requestId && invite.status === "accepted" && invite.requestStatus === "pending" ? (
+        <p className="text-xs text-[var(--app-muted)]" role="status">Согласие отправлено · ждём остальных ({invite.acceptedCount}/{invite.selectedCount})</p>
+      ) : available && invite ? (
         <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" aria-label={join.pending || acceptVoop.isPending ? "Подключаем" : invite.intent === "voop" ? "Принять Вуп" : `Зайти в ${invite.room?.name}`} className="border border-[var(--theme-accent)] bg-[var(--app-accent-soft)] shadow-none [&>svg]:shrink-0" disabled={join.pending || acceptVoop.isPending || respond.isPending} onClick={() => void accept()}>
+          <Button type="button" size="sm" aria-label={join.pending || acceptVoop.isPending || respondMove.isPending ? "Подключаем" : invite.intent === "voop" ? "Принять Вуп" : invite.intent === "split" ? "Принять Сплит" : `Зайти в ${invite.room?.name}`} className="border border-[var(--theme-accent)] bg-[var(--app-accent-soft)] shadow-none [&>svg]:shrink-0" disabled={join.pending || acceptVoop.isPending || respond.isPending || respondMove.isPending} onClick={() => void accept()}>
             {join.pending || acceptVoop.isPending ? <LoaderCircle className="h-4 w-4 animate-spin motion-reduce:animate-none" /> : <Radio className="h-4 w-4" />}
-            {join.pending || acceptVoop.isPending ? "Подключаем" : invite.intent === "voop" ? "Отойти" : "Войти в комнату"}
+            {join.pending || acceptVoop.isPending || respondMove.isPending ? "Подключаем" : invite.intent === "voop" ? "Отойти" : invite.intent === "split" ? "Согласиться" : "Войти в комнату"}
           </Button>
-          <Button type="button" size="sm" variant="ghost" disabled={join.pending || acceptVoop.isPending || respond.isPending} onClick={() => void decline()}>
+          <Button type="button" size="sm" variant="ghost" disabled={join.pending || acceptVoop.isPending || respond.isPending || respondMove.isPending} onClick={() => void decline()}>
             <X className="h-4 w-4" />
             Отклонить
           </Button>
@@ -109,8 +120,8 @@ function InviteActions({ invite }: { invite: CoreRoomInvitePreview | null }) {
           {status === "pending" ? "Комната больше недоступна" : STATUS_LABELS[status]}
         </p>
       )}
-      {error || respond.error || acceptVoop.error ? (
-        <p className="mt-2 text-xs text-red-400" role="alert">{error ?? respond.error?.message ?? acceptVoop.error?.message}</p>
+      {error || respond.error || acceptVoop.error || respondMove.error ? (
+        <p className="mt-2 text-xs text-red-400" role="alert">{error ?? respond.error?.message ?? acceptVoop.error?.message ?? respondMove.error?.message}</p>
       ) : null}
       <GroupNowRoomSwitchDialog
         room={confirmVoop && invite?.room ? { ...invite.room, name: "Сплит" } : join.confirmationTarget?.room ?? null}

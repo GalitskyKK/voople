@@ -24,7 +24,9 @@ export function GroupDiscoverySettingsPanel({ canManage, loadCatalog, load, save
       .catch((cause: unknown) => { if (active) setError(cause instanceof Error ? cause.message : "Не удалось загрузить темы"); });
     return () => { active = false; };
   }, [load, loadCatalog]);
-  if (!catalog || !profile) return <div className="mt-4 h-36 animate-pulse rounded-2xl bg-[var(--app-surface-soft)]" />;
+  if (!catalog || !profile) return error
+    ? <p className="mt-4 text-sm text-red-400" role="alert">{error}</p>
+    : <div className="mt-4 h-36 animate-pulse rounded-2xl bg-[var(--app-surface-soft)]" />;
   const selected = new Set(profile.topicSlugs);
   const submit = async () => {
     if (pending) return;

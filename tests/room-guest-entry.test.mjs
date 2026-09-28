@@ -8,6 +8,7 @@ import {
 } from "../src/lib/chat/room-guest-invite-url.ts";
 import {
   RoomGuestResponseError,
+  guestSessionMatchesInvite,
   roomGuestMicrophoneError,
   roomGuestResponseJson,
   roomGuestUnavailableReasonFromError,
@@ -29,6 +30,23 @@ test("guest microphone failures expose a useful recovery reason", () => {
   assert.match(roomGuestMicrophoneError({ name: "NotAllowedError" }), /настройках браузера/);
   assert.match(roomGuestMicrophoneError({ name: "NotFoundError" }), /Микрофон не найден/);
   assert.equal(roomGuestMicrophoneError(new Error("device busy")), "device busy");
+});
+
+test("an existing guest cookie cannot restore a different Room link", async () => {
+  assert.equal(guestSessionMatchesInvite("room-session-a", "room-session-a"), true);
+  assert.equal(guestSessionMatchesInvite("room-session-b", "room-session-a"), false);
+  assert.equal(guestSessionMatchesInvite(null, "room-session-a"), false);
+
+  const [hook, route, data] = await Promise.all([
+    readFile(new URL("../src/hooks/useRoomGuestSession.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/room-guest/[token]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/server/data/room-guests-rest.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(hook, /guestSessionMatchesInvite\(expectedSessionId, snapshot\.guest\.sessionId\)/);
+  assert.match(hook, /connectSession\(preview\.participantCount, true, preview\.sessionId\)/);
+  assert.match(route, /<RoomGuestPage key=\{token\}/);
+  assert.match(data, /sessionId: String\(session\.id\)/);
+  assert.match(data, /\.gt\("last_seen_at", new Date\(Date\.now\(\) - 120_000\)/);
 });
 
 test("guest join failures keep a machine-readable unavailable reason", async () => {
@@ -87,10 +105,16 @@ test("guest transport keeps credentials out of browser JavaScript and restricts 
   assert.match(inviteRoute, /\{ error: message, reason \}/);
   assert.match(data, /class RoomGuestUnavailableError extends Error/);
   assert.match(service, /error instanceof RoomGuestUnavailableError/);
+  assert.match(data, /\.select\("id, invite_id, live_session_id, display_name, access_expires_at/);
+  assert.match(data, /invite\.live_session_id !== data\.live_session_id/);
+  assert.match(data, /if \(invite\.revoked_at\)/);
+  assert.match(data, /new Date\(invite\.expires_at\)\.getTime\(\) <= Date\.now\(\)/);
+  assert.match(data, /heartbeatRoomGuestRest[\s\S]*?await resolveRoomGuestRest\(accessToken\)/);
   assert.doesNotMatch(inviteRoute, /accessToken: result\.accessToken/);
   assert.match(sessionRoute, /Cache-Control": "private, no-store"/);
   assert.match(sessionRoute, /roomGuestCookieOptions/);
   assert.match(sessionRoute, /resumeRoomGuestSession/);
+  assert.match(sessionRoute, /roomGuestUnavailableReason\(error\) !== null/);
   assert.match(sessionRoute, /status: ended \? 410 : 503/);
   assert.match(media, /const identity = `guest:\$\{input\.guestId\}`/);
   assert.match(media, /canPublishData: false/);
@@ -125,11 +149,33 @@ test("guest UI joins muted, exposes recovery states and keeps guests out of prof
   assert.match(media, /screenPublicationBelongsToFocus/);
   assert.match(media, /publication\.setSubscribed\(false\)/);
   assert.match(hook, /setInterval\(heartbeat, 20_000\)/);
+  assert.match(hook, /response\.status !== 401 && response\.status !== 410/);
+  assert.match(hook, /await disconnectMedia\(\)/);
+  assert.match(hook, /await loadPreview\(\)/);
   assert.match(hook, /crypto\.randomUUID\(\)/);
-  assert.match(hook, /connectSession\(preview\.participantCount, true\)/);
+  assert.match(hook, /connectSession\(preview\.participantCount, true, preview\.sessionId\)/);
   assert.doesNotMatch(hook, /pagehide|keepalive: true/);
   assert.match(snapshot, /from\("live_session_guests"\)/);
   assert.match(snapshot, /last_seen_at/);
   assert.match(groupNow, /id: `guest:\$\{guest\.guestId\}`/);
-  assert.match(participant, /!onOpenProfile \|\| user\.guest/);
+  assert.match(participant, /!user\.guest && onOpenProfile/);
+});
+
+test("guest credentials cannot become Group credentials or cross the invited LiveSession", async () => {
+  const [trpc, router, data, guestRoute, sessionRoute] = await Promise.all([
+    readFile(new URL("../src/server/trpc/init.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/server/trpc/routers/chat-core-rework.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/server/data/room-guests-rest.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/api/room-guests/invites/[token]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/api/room-guests/session/route.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(trpc, /protectedProcedure = t\.procedure\.use[\s\S]*?getVerifiedUser\(\)[\s\S]*?UNAUTHORIZED/);
+  assert.match(router, /coreGroupNow: protectedProcedure/);
+  assert.match(router, /coreRoomInviteCandidates: protectedProcedure/);
+  assert.match(data, /\.eq\("token_hash", tokenHash\(token\)\)/);
+  assert.match(data, /\.eq\("id", invite\.live_session_id\)/);
+  assert.match(data, /invite\.live_session_id !== data\.live_session_id/);
+  assert.match(guestRoute, /roomGuestCookieOptions\(\)/);
+  assert.doesNotMatch(guestRoute, /chat_members|supabase\.auth\.signIn/);
+  assert.match(sessionRoute, /roomGuestUnavailableReason\(error\) !== null/);
 });

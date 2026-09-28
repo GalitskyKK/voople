@@ -62,7 +62,7 @@ test("room main surface owns one secondary panel and cancels stale fullscreen re
   assert.match(surface, /type SecondaryPanel = "settings" \| "soundboard" \| "invite" \| "messages" \| null/);
   assert.match(
     surface,
-    /setSecondaryPanel\(\(current\) => current === "messages" \? current : null\);\s+void exitFullscreen\(\);\s+onClose\(\)/,
+    /setSecondaryPanel\(\(current\) => current === "messages" \? current : null\);\s+void exitFullscreen\(\);\s+if \(target === "mini"\) onCloseToMini\(\);\s+else onCloseToCompact\(\)/,
   );
   assert.doesNotMatch(surface, /settingsOpen|soundboardOpen/);
   assert.match(fullscreen, /if \(pendingRef\.current\) return/);

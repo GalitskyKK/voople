@@ -106,12 +106,13 @@ test("search title, query and scopes share one sticky stack", () => {
   const explore = read("src/components/explore/ExploreView.tsx");
   const stickyStack = read("src/components/layout/SectionStickyHeaderStack.tsx");
 
-  const stackStart = explore.indexOf("<SectionStickyHeaderStack>");
+  const stackStart = explore.indexOf("<SectionStickyHeaderStack");
   const stackEnd = explore.indexOf("</SectionStickyHeaderStack>");
   assert.ok(stackStart > 0);
   assert.ok(stackEnd > stackStart);
   const contents = explore.slice(stackStart, stackEnd);
-  assert.match(contents, /SectionPageHeader/);
+  assert.doesNotMatch(contents, /SectionPageHeader|SectionHeaderGlow/);
+  assert.match(contents, /<h1 className="sr-only">Поиск<\/h1>/);
   assert.match(contents, /type="search"/);
   assert.match(contents, /aria-label="Раздел поиска"/);
   assert.match(stickyStack, /sticky top-\[var\(--voople-sticky-offset\)\]/);
@@ -128,7 +129,7 @@ test("authenticated sticky chrome uses one offset without masking strips", () =>
   assert.match(sectionHeader, /top-\[var\(--voople-sticky-offset\)\]/);
   assert.match(shop, /voople-sticky-section-header/);
   assert.match(desktopShell, /data-voople-scroll=""/);
-  assert.match(globals, /\.voople-sticky-section-stack[\s\S]*background: var\(--background\)/);
+  assert.match(globals, /\.voople-sticky-section-stack \{[^}]*background: var\(--material-stage\)/);
   assert.doesNotMatch(globals, /0 -4rem 0 var\(--background\)/);
   assert.doesNotMatch(feedHeader, /linear-gradient|sticky top-0/);
 });

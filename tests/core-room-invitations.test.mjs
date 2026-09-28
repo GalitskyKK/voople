@@ -107,7 +107,7 @@ test("desktop Room links survive authentication without bypassing the invite pre
   assert.match(router, /pendingPath=\{pendingPath\}/);
   assert.match(router, /continuationPath=\{pendingPath\}/);
   assert.match(authenticated, /initialPathname=\{initialPathname\}/);
-  assert.match(shell, /useState\(initialPathname \?\? "\/feed"\)/);
+  assert.match(shell, /useState\(initialPathname === "\/explore" \? "\/search" : initialPathname \?\? "\/messages"\)/);
   assert.match(shell, /navigate\(initialPathname\)[\s\S]+onInitialPathConsumed\(\)/);
   assert.match(login, /DesktopAuthContinuationNotice path=\{continuationPath\}/);
   assert.match(continuation, /data-voople-continuation-path=\{path\}/);

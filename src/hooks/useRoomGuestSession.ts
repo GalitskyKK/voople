@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 
-import { roomGuestResponseJson } from "@/lib/chat/room-guest-client";
+import { guestSessionMatchesInvite, roomGuestResponseJson } from "@/lib/chat/room-guest-client";
 import type {
   RoomGuestInvitePreview,
   RoomGuestSessionIdentity,
@@ -23,6 +23,7 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
   const [joined, setJoined] = useState<RoomGuestSessionIdentity | null>(null);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const media = useRoomGuestMedia(mediaRoots);
+  const disconnectMedia = media.disconnect;
   const joinRequestIdRef = useRef<string | null>(null);
   const restoreAttemptedRef = useRef(false);
 
@@ -62,7 +63,7 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
   }, []);
 
   const updateMediaPresence = useCallback(async (milestone?: "media_connected") => {
-    await fetch("/api/room-guests/session", {
+    return fetch("/api/room-guests/session", {
       method: "PATCH",
       credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
@@ -73,11 +74,16 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
   const connectSession = useCallback(async (
     initialParticipantCount: number,
     allowMissing = false,
+    expectedSessionId?: string,
   ) => {
     setSessionError(null);
     try {
       const snapshot = await fetchSession(allowMissing);
       if (!snapshot) return null;
+      if (expectedSessionId && !guestSessionMatchesInvite(expectedSessionId, snapshot.guest.sessionId)) {
+        if (allowMissing) return null;
+        throw new Error("Гостевая сессия не относится к этой ссылке. Повторите вход.");
+      }
       setJoined(snapshot.guest);
       const mediaConnected = await media.connect(snapshot.media, Math.max(1, initialParticipantCount));
       if (mediaConnected && snapshot.media.enabled) {
@@ -91,9 +97,9 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
   }, [fetchSession, media, updateMediaPresence]);
 
   useEffect(() => {
-    if (!preview?.available || joined || restoreAttemptedRef.current) return;
+    if (!preview?.sessionId || joined || restoreAttemptedRef.current) return;
     restoreAttemptedRef.current = true;
-    void connectSession(preview.participantCount, true);
+    void connectSession(preview.participantCount, true, preview.sessionId);
   }, [connectSession, joined, preview]);
 
   const join = useCallback(async (displayName: string) => {
@@ -112,12 +118,12 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
     ));
     joinRequestIdRef.current = null;
     setJoined(result);
-    await connectSession((preview?.participantCount ?? 0) + 1);
+    await connectSession((preview?.participantCount ?? 0) + 1, false, result.sessionId);
   }, [connectSession, preview?.participantCount, token]);
 
   const connect = useCallback(
-    () => connectSession(media.participantCount || preview?.participantCount || 1),
-    [connectSession, media.participantCount, preview?.participantCount],
+    () => connectSession(media.participantCount || preview?.participantCount || 1, false, joined?.sessionId),
+    [connectSession, joined?.sessionId, media.participantCount, preview?.participantCount],
   );
 
   const leave = useCallback(async () => {
@@ -138,10 +144,21 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
 
   useEffect(() => {
     if (!joined || media.status !== "connected") return;
-    const heartbeat = () => void updateMediaPresence().catch(() => undefined);
+    let active = true;
+    const heartbeat = () => void updateMediaPresence().then(async (response) => {
+      if (!active || (response.status !== 401 && response.status !== 410)) return;
+      await disconnectMedia();
+      if (!active) return;
+      setJoined(null);
+      setSessionError(null);
+      await loadPreview();
+    }).catch(() => undefined);
     const timer = window.setInterval(heartbeat, 20_000);
-    return () => window.clearInterval(timer);
-  }, [joined, media.status, updateMediaPresence]);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [disconnectMedia, joined, loadPreview, media.status, updateMediaPresence]);
 
   return {
     preview,

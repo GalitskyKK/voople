@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useRef,
   useState,
   type Dispatch,
   type MutableRefObject,
@@ -13,7 +14,7 @@ import { reportProductEvent } from "@/lib/telemetry/client"
 import {
   VOICE_MEDIA_SURFACE_TIMEOUT_MS,
   waitForVoiceMediaConnection,
-  waitForVoiceRoomLifecycle,
+  runConfirmedVoiceLeave,
   type VoiceRoomSessionTransition
 } from "./voice-room-surface"
 import type { useVoiceMediaConnection } from "./useVoiceMediaConnection"
@@ -46,6 +47,7 @@ export function useVoiceRoomSurfaceSession({
 }: SurfaceSessionOptions) {
   const [transition, setTransition] = useState<VoiceRoomSessionTransition>(null)
   const [failedOperation, setFailedOperation] = useState<"connect" | "leave" | null>(null)
+  const leavePendingRef = useRef(false)
 
   const resetSurface = useCallback(() => {
     setTransition(null)
@@ -105,30 +107,30 @@ export function useVoiceRoomSurfaceSession({
     })
 
   const leaveRoom = async () => {
+    if (leavePendingRef.current) return false
+    leavePendingRef.current = true
     setTransition("leaving")
     setFailedOperation(null)
     setMediaError(null)
     sessionOperation.cancel()
     mediaConnection.disconnect()
     try {
-      await waitForVoiceRoomLifecycle(
-        (async () => {
-          await server.leave.run()
-          await server.room.refetch()
-        })()
-      )
-      setTransition("post-leave")
+      await runConfirmedVoiceLeave(server.leave.run, server.room.refetch)
       reportProductEvent("room_left", {
         durationSeconds: startedAt
           ? Math.max(0, Math.round((Date.now() - new Date(startedAt).getTime()) / 1_000))
           : 0
       })
+      return true
     } catch (error) {
       setFailedOperation("leave")
       setMediaError(
         error instanceof Error ? error.message : "Не удалось подтвердить выход из комнаты"
       )
       setTransition(null)
+      return false
+    } finally {
+      leavePendingRef.current = false
     }
   }
 

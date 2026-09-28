@@ -20,7 +20,7 @@ export function VoiceDockMediaIndicators({
       role="status"
       aria-label={labels.join(", ")}
     >
-      {micMuted ? <MicOff className="h-3.5 w-3.5 text-red-500" aria-hidden="true" /> : <Mic className="h-3.5 w-3.5 text-emerald-500" aria-hidden="true" />}
+      {micMuted ? <MicOff className="h-3.5 w-3.5 text-red-500" aria-hidden="true" /> : <Mic className="h-3.5 w-3.5 text-[var(--material-ice)]" aria-hidden="true" />}
       {cameraEnabled ? <Camera className="h-3.5 w-3.5 text-[var(--theme-accent)]" aria-hidden="true" /> : null}
       {screenSharing ? <MonitorUp className="h-3.5 w-3.5 text-[var(--theme-accent)]" aria-hidden="true" /> : null}
     </span>

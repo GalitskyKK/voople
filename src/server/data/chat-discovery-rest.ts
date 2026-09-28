@@ -133,7 +133,7 @@ export async function listPublicGroupsRest(
       .in("chat_id", groupIds),
     admin
       .from("group_customization")
-      .select("chat_id, public_slug, icon, avatar_key")
+      .select("chat_id, public_slug, description, icon, avatar_key")
       .in("chat_id", groupIds),
     admin.from("group_join_requests").select("chat_id").in("chat_id", groupIds).eq("user_id", userId).eq("status", "pending"),
     loadGroupCommunitySummariesRest(groupIds, userId),
@@ -161,6 +161,7 @@ export async function listPublicGroupsRest(
       ? [{
           id: group.id as string,
           name: group.name as string,
+          description: (customizationByChat.get(group.id as string)?.description as string | null | undefined) ?? null,
           publicSlug:
             (customizationByChat.get(group.id as string)?.public_slug as string | null | undefined) ?? null,
           icon:
@@ -216,7 +217,7 @@ export async function listTopPublicGroupsRest(
     .slice(0, Math.min(Math.max(limit, 1), 12));
   const topIds = topGroups.map((group) => group.id as string);
   const [{ data: customization, error: customizationError }, communities] = await Promise.all([
-    admin.from("group_customization").select("chat_id, public_slug, icon, avatar_key").in("chat_id", topIds),
+    admin.from("group_customization").select("chat_id, public_slug, description, icon, avatar_key").in("chat_id", topIds),
     loadGroupCommunitySummariesRest(topIds, userId),
   ]);
   if (customizationError) throw new Error(customizationError.message);
@@ -227,6 +228,7 @@ export async function listTopPublicGroupsRest(
     return {
       id,
       name: group.name as string,
+      description: (identity?.description as string | null | undefined) ?? null,
       publicSlug: (identity?.public_slug as string | null | undefined) ?? null,
       icon: (identity?.icon as string | null | undefined) ?? null,
       avatarUrl: publicAssetUrl((identity?.avatar_key as string | null | undefined) ?? null),

@@ -9,14 +9,17 @@ look and behave.
 
 Voople has one identity with two presentation modes:
 
-- **Product UI is calm and soft.** Dense tools such as chat, rooms, settings and
-  profiles use quiet surfaces, restrained elevation and predictable geometry.
+- **Authenticated beta uses quiet matte surfaces.** Void, Chrome, Matte Stage,
+  Quiet Row, Current Signal, Overlay and Identity define hierarchy. Ice is
+  reserved for live/current/focus/connected signals. Identity supplies colour.
 - **Public pages are editorial.** The landing page may use larger type, more
   whitespace, hairline dividers and scroll-led storytelling, while retaining
-  the same typeface, purple brand colour and interaction language.
-- **Purple means Voople or a primary action.** Success, danger, presence and
-  media state use their own semantic colours. Decorative gradients must not
-  compete with primary actions.
+  the same typeface and interaction language. Its purple brand assets do not
+  define authenticated controls.
+- **State uses form and intensity.** Presence is a quiet cold point; live voice
+  adds a radio/waveform pictogram and ice signal. Danger keeps muted red for
+  safety. Primary actions rely on density, contrast and edge, not a purple or
+  saturated blue fill.
 - **Familiar patterns, Voople language.** Proven interaction patterns may be
   reused, but layouts, terminology and visual assets must not imitate another
   product literally.
@@ -31,12 +34,101 @@ replace it with page-specific initials, mascots or generated symbols.
 Components consume semantic tokens, never reference-specific colours. The
 dependency direction is:
 
-`primitive palette -> semantic tokens -> component tokens`
+`primitive palette -> Chrome / Stage / Row / Signal tokens -> component primitives -> route composition`
 
 The canonical tokens live in `src/app/globals.css`; Tauri imports the same
 global stylesheet and only supplies native window fonts and chrome.
 
-### Brand palette
+### Material hierarchy (beta)
+
+Void and Light each have complete material values in `globals.css`. App theme
+selection supplies the base `--background` / `--foreground` palette; Light
+supplies genuinely light fills, borders, shadows, focus and loading colours.
+Messenger owns composition but must not redefine a second canvas palette or
+force `color-scheme: dark`. Profile
+Card customization is an independent identity surface, not a generic panel.
+
+| Layer | Tokens / primitives | Purpose |
+| --- | --- | --- |
+| Void | `--material-canvas-app` | Outer canvas. |
+| Chrome | `--material-chrome`, `--material-canvas-sidebar` | Mostly opaque cold graphite/navy sidebar and contextual header. No blur or glow. |
+| Matte Stage | `--material-stage`, `.voople-stage` | Working surface slightly lighter than Chrome. Quiet tonal variation only; no nebula, aurora or gradient artwork. |
+| Quiet Row / Room Section | `--material-row-hover`, `.voople-group-now-room` | Nearly flat Rooms, People, Search, Notifications and Settings. Small luminance change on hover/focus. No glass cards. |
+| Divider | `--material-divider` | Quieter than control borders; separates columns and Room sections without creating cards. |
+| Current Signal | `--material-current-fill`, `--material-ice` | Quiet raised matte surface, thin Ice marker and explicit current label. No cyan body, bright outline or bloom. |
+| Overlay / Floating | `--material-overlay-fill`, `.voople-overlay-surface` | Elevated opaque menus, popovers, dialogs, sheets, composers and Mini Room. Restrained Frost is optional; never nest glass. |
+| Identity | Canonical avatar, Profile Card, Group artwork and cosmetics | Primary expressive and colourful layer. Preserve paid themes and custom identity. |
+
+Ice signals live/current/focus/connected state only. Wine is not semantic;
+any material temperature must be imperceptible as a pink gradient. Purple
+belongs to logo/public/identity/customization/legacy previews, not system
+controls. Authenticated system states use material tokens independently of
+purple or emerald custom theme accents. Existing glass tokens remain available
+for deferred surfaces; glass is not a required brand primitive.
+
+### Authenticated Group Voice
+
+Group Voice is one vertical flow of Room sections. Lobby is first, followed by
+pinned Rooms in server order. Temporary Rooms follow in their own section in
+server order; empty temporary Rooms are hidden. Pending Split/Voop never adds
+a placeholder Room. A compact **+ Комната** action creates a persistent pinned
+Room through the existing dialog.
+
+Each Room is a semantic section with a separate 44–48px header button and an
+inline participant grid. Header click joins/switches directly; the current
+header opens Full Room. Pending join stays local to that header; authoritative
+success determines the current marker. Show **Вы здесь**, count and room-level
+screen sharing. Split is a small current-session action. Leave belongs in the
+persistent session dock.
+
+Render every participant without slicing, +N, collapse controls or horizontal
+scrolling. The full-width compact/mobile Voice surface uses roughly 168–190px
+minimum columns; the desktop Live column uses one dense participant row per
+line. Items are quiet 40–44px rows with 28–32px avatars and names. Secondary
+username/guest labels may hide in the narrow Live column. A 20- or 50-person
+Room grows vertically within its own scrolling region.
+
+Participant actions are independent of Room entry. Current-session click/tap,
+right-click, ContextMenu and Shift+F10 expose the shared person menu with
+0–200% volume, local mute, reset and eligible registered non-self Voop. Foreign
+Rooms expose identity/presence only, never per-person media state or volume.
+Current media details come exclusively from the existing ChatRoomControl and
+must match the active core LiveSession ID. No extra media subscription/store.
+
+Desktop Compact lives above the account footer in the shared 220px sidebar;
+identity opens Full Room and compact controls operate mic, output, camera,
+share and leave. Mobile Compact lives above bottom navigation, respects safe
+areas and reserves content space; mic/output/leave remain visible with 44px
+targets. Mini remains floating after explicit minimization of Full Room. Full,
+Mini and Compact share one lifecycle and preserve media track parking.
+
+Canonical Chat has no Room-card shelf or roster. The Group header spans the
+workspace and contains Group identity, membership/online/voice counts, Invite
+and Settings, without a participant avatar stack. A wide desktop Group has one
+matte Stage with Live / Chat / People columns and quiet dividers. At medium
+desktop width, Live and Chat remain side by side while People opens in an
+on-demand right panel. Below the desktop composition threshold, **Войс / Чат /
+Люди** tabs show one surface at a time. Direct Chat has no Live or People
+columns. Live, Chat timeline and People scroll independently; Chat remains the
+dominant column and its composer stays pinned. People keeps its existing
+Room / available / offline grouping. Custom Profile Cards stay expressive.
+The shared desktop Stage has a restrained 16px radius; columns have no separate
+card boundaries. Current Room gains only a small luminance lift, 2px Ice marker
+and optional inner highlight, with no outer glow.
+
+Loading uses Room-list skeletons. Error/offline states preserve the call.
+Keyboard focus is visible; Escape closes menus and restores focus. Both Void
+and Light work without blur, with reduced motion and at 360px without horizontal
+overflow. Mobile targets are at least 44px. The legacy filename
+`messenger-glass.css` remains the shared composition stylesheet.
+
+### Legacy/public brand palette
+
+The `--voople-brand-*` purple family is retained for public/marketing assets,
+logo artwork and user-selected identity content. It is **not** the canonical
+authenticated application palette, focus colour, selected state or default
+primary action. Void and Light app themes use cold ice accents; a custom
+Profile Card may display the user's own colours without recolouring the shell.
 
 | Token | Value | Use |
 | --- | --- | --- |
@@ -47,9 +139,11 @@ global stylesheet and only supplies native window fonts and chrome.
 | `--voople-brand-600` | `#6656c5` | primary hover/pressed |
 | `--voople-brand-800` | `#3c315b` | deep branded surface |
 
-Use semantic aliases (`--theme-accent`, `--app-accent-soft`,
-`--color-success`, `--color-danger`) in components. Do not use a raw palette
-value when a semantic alias exists.
+Authenticated components use semantic material aliases. `--theme-accent` is a
+compatibility alias and resolves to ice in the default Void and Light themes;
+do not use `--voople-brand-*` in generic authenticated controls. `groupAccentColor`
+belongs to Group identity (avatar, tag, explicit preview), not tabs, Room body,
+focus, Settings, composer or primary controls.
 
 ### Surfaces and content
 
@@ -107,7 +201,9 @@ all-caps text. Headlines should wrap by meaning, not by arbitrary `<br>` tags.
 
 ## Shared UI contract
 
-- Authenticated pages use the canonical app shell and shared page header.
+- Authenticated pages use the canonical app shell; compact contextual headers
+  share Chrome with navigation. Ordinary page headings sit directly on Stage,
+  without an enclosing header card or generic decorative glow.
 - Web and Tauri render domain views from `src/components`; native folders only
   adapt navigation, authentication transport, updater and window controls.
 - Profile visuals use the canonical avatar/card/customization components.
@@ -139,7 +235,7 @@ desktop viewport.
 - The app shell owns height; feature panels scroll internally.
 - Persistent docks and composers respect safe areas.
 - Interactive elements use semantic controls, accessible names, keyboard
-  support, visible focus and at least a 40px practical target on touch layouts.
+  support, visible focus and at least a 44px practical target on touch layouts.
 - Text and essential icons meet WCAG AA contrast.
 - Hover-only information has a focus/touch alternative.
 

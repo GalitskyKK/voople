@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { cn } from "@/lib/utils";
+import { PROFILE_POSTS_VISIBLE } from "@/lib/product/profile-beta-surface";
 import type { ProfileViewModel } from "@/types/domain";
 
 import { ProfileEditTrigger } from "./ProfileEditTrigger";
@@ -54,7 +55,7 @@ export function ProfileEditSheet({
           <aside className="profile-editor-sidebar">
             <p className="profile-editor-title">Редактор профиля</p>
             <nav className="profile-editor-tabs" aria-label="Разделы редактора">
-              {PROFILE_EDITOR_PANELS.map((entry) => (
+              {PROFILE_EDITOR_PANELS.filter((entry) => PROFILE_POSTS_VISIBLE || entry.id !== "feed").map((entry) => (
                 <button key={entry.id} type="button" onClick={() => controller.setPanel(entry.id)} aria-current={controller.panel === entry.id ? "page" : undefined} className={cn("profile-editor-tab", controller.panel === entry.id && "profile-editor-tab--active")}>
                   <span><span className="block text-sm font-medium">{entry.label}</span><span className="profile-editor-tab__hint">{entry.hint}</span></span>
                   <ChevronRight className="hidden h-4 w-4 opacity-40 lg:block" />
@@ -90,7 +91,7 @@ export function ProfileEditSheet({
                 {controller.panel === "avatar" ? <ProfileEditorAvatarPanel controller={controller} profileHasPlus={Boolean(profile.hasVooplePlus)} onOpenShop={beforeShopNavigation} /> : null}
                 {controller.panel === "banner" ? <ProfileEditorBannerPanel {...commonPanelProps} /> : null}
                 {controller.panel === "frame" ? <ProfileEditorFramePanel {...commonPanelProps} /> : null}
-                {controller.panel === "feed" ? <ProfileEditorFeedPanel {...commonPanelProps} avatarUrl={controller.avatarUrl} name={controller.draft.name} /> : null}
+                {PROFILE_POSTS_VISIBLE && controller.panel === "feed" ? <ProfileEditorFeedPanel {...commonPanelProps} avatarUrl={controller.avatarUrl} name={controller.draft.name} /> : null}
                 {controller.panel === "name" ? <ProfileEditorNamePanel controller={controller} hasVooplePlus={Boolean(profile.hasVooplePlus)} /> : null}
 
                 <div className="profile-editor-footer" aria-live="polite">

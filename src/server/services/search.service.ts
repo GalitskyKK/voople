@@ -6,6 +6,10 @@ import {
 import { getTopPostsRest, searchPostsRest } from "@/server/data/posts-rest";
 import { getTopUsersRest } from "@/server/data/search-highlights-rest";
 import { listTopPublicGroupsRest } from "@/server/data/chat-discovery-rest";
+import { assertCanOpenDirectChatRest } from "@/server/data/chat-direct-privacy-rest";
+import { getProfileCommonGroupsRest } from "@/server/data/profile-common-groups-rest";
+import { listVisibleOnlineUserIdsRest } from "@/server/data/privacy-rest";
+import { filterUnblockedUserIdsRest } from "@/server/data/user-blocks-rest";
 import {
   getTrendingHashtagsRest,
   searchHashtagsRest,
@@ -15,6 +19,7 @@ import type {
   SearchHit,
   UserSearchHit,
   ExploreHighlights,
+  BetaSearchResult,
 } from "@/types/search";
 
 export type {
@@ -101,6 +106,27 @@ export async function searchExplore(
 
 export async function getTrendingHashtags(limit = 10) {
   return getTrendingHashtagsRest(limit);
+}
+
+export async function searchBetaPeople(query: string, viewerId: string): Promise<BetaSearchResult> {
+  if (!query.trim().replace(/[%_]/g, "")) return { people: [] };
+  const candidates = await searchUsers(query, 12);
+  if (!candidates.length) return { people: [] };
+  const visibleIds = new Set(await filterUnblockedUserIdsRest(viewerId, candidates.map((user) => user.id)));
+  const onlineIds = new Set(await listVisibleOnlineUserIdsRest(viewerId));
+  const people = await Promise.all(candidates.filter((user) => visibleIds.has(user.id)).slice(0, 8).map(async (user) => {
+    const [commonGroups, canMessage] = await Promise.all([
+      getProfileCommonGroupsRest(viewerId, user.id),
+      assertCanOpenDirectChatRest(viewerId, user.id).then(() => true, () => false),
+    ]);
+    return {
+      ...user,
+      online: onlineIds.has(user.id),
+      commonGroups: { count: commonGroups.count, groups: commonGroups.groups.map(({ id, name }) => ({ id, name })) },
+      canMessage,
+    };
+  }));
+  return { people };
 }
 
 export async function getExploreHighlights(viewerId?: string | null): Promise<ExploreHighlights> {

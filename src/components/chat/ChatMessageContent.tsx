@@ -14,7 +14,7 @@ export function ChatMessageContent({ nodes, fallback }: { nodes: ChatMessageCont
     </span>
   ) : node.type === "gift" ? (
     <span key={`gift-${node.itemId}-${index}`} className="my-1 flex min-w-52 items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_35%,var(--app-border))] bg-[var(--app-accent-soft)] p-3">
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--theme-accent)] text-white"><Gift className="h-5 w-5" /></span>
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--material-border-hover)] bg-[var(--material-control-fill)] text-[var(--material-ice)]"><Gift className="h-5 w-5" /></span>
       <span className="min-w-0"><span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--theme-accent)]">Подарок</span><span className="block truncate text-sm font-semibold">{node.itemName}</span>{node.message ? <span className="mt-0.5 block text-xs opacity-75"><RichText text={node.message} /></span> : null}</span>
     </span>
   ) : node.url ? (

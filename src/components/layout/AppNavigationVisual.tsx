@@ -39,6 +39,7 @@ type AppSidebarVisualProps = NavigationVisualProps & {
   primaryNavigation?: ReactNode;
   navAfter?: ReactNode;
   footerAfter?: ReactNode;
+  sessionDock?: ReactNode;
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
 };
@@ -51,6 +52,7 @@ export function AppSidebarVisual({
   primaryNavigation,
   navAfter,
   footerAfter,
+  sessionDock,
   collapsed = true,
   onCollapsedChange,
   mode = "authenticated",
@@ -67,9 +69,9 @@ export function AppSidebarVisual({
     >
       <div className="voople-sidebar__brand flex shrink-0 items-center justify-between gap-2 px-4 pb-7 pt-7">
         {renderDestination({
-          href: "/feed",
+          href: mode === "authenticated" ? "/messages" : "/feed",
           label: COPY.appName,
-          active: pathname === "/feed",
+          active: pathname === (mode === "authenticated" ? "/messages" : "/feed"),
           className:
             "inline-flex items-center gap-2.5 text-[1.125rem] font-semibold tracking-[-0.02em] text-[var(--foreground)] transition-opacity hover:opacity-85",
           children: <><VoopleMark className="h-8 w-8" /><span className="voople-sidebar__label voople-wordmark">{COPY.wordmark}</span></>,
@@ -136,6 +138,8 @@ export function AppSidebarVisual({
       )}
 
       {!primaryNavigation && !collapsed ? navAfter : null}
+
+      {mode === "authenticated" ? <div id="voople-sidebar-session-root" className="voople-sidebar__session shrink-0">{sessionDock}</div> : null}
 
       <div className="voople-sidebar__footer shrink-0 border-t border-[var(--app-border)] px-3 pb-7 pt-5">
         {footerItems.map(({ href, label, icon: Icon }) => {

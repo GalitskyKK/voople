@@ -43,7 +43,9 @@ export function formatGroupNowVoiceSummary(rooms: readonly GroupNowRoom[]) {
 
 export function formatGroupNowElapsed(startedAt: string | null, nowMs = Date.now()) {
   if (!startedAt) return null;
-  const startedMs = Date.parse(startedAt);
+  // Postgres `timestamp` values arrive without an offset; the database stores UTC.
+  const normalized = /(?:Z|[+-]\d{2}:\d{2})$/.test(startedAt) ? startedAt : `${startedAt}Z`;
+  const startedMs = Date.parse(normalized);
   if (Number.isNaN(startedMs)) return null;
   const totalMinutes = Math.max(0, Math.floor((nowMs - startedMs) / 60_000));
   if (totalMinutes < 1) return "только что";

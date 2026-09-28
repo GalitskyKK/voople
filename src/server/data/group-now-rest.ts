@@ -99,6 +99,7 @@ export async function loadGroupNowSnapshotRest(
         .select("session_id, user_id, mic_muted, camera_enabled, screen_sharing, joined_at")
         .in("session_id", sessionIds)
         .is("left_at", null)
+        .gt("last_seen_at", new Date(Date.now() - 120_000).toISOString())
         .order("joined_at", { ascending: true })
     : { data: [], error: null };
   if (participantsResult.error) throw new Error(participantsResult.error.message);

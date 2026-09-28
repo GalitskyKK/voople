@@ -16,7 +16,6 @@ import type {
 import { VoiceRoomEmptyState } from "./VoiceRoomEmptyState";
 import {
   VoiceRoomErrorState,
-  VoiceRoomPostLeaveState,
   VoiceRoomTransitionState,
 } from "./VoiceRoomSessionStates";
 import { resolveVoiceRoomErrorTitle } from "./voice-room-surface";
@@ -29,7 +28,6 @@ export function VoiceRoomContent({
   session,
   errorMessage,
   onInvite,
-  onClose,
 }: {
   identity: VoiceRoomIdentityModel;
   stage: VoiceRoomStageModel;
@@ -37,7 +35,6 @@ export function VoiceRoomContent({
   session: VoiceRoomSessionModel;
   errorMessage: string | null;
   onInvite?: () => void;
-  onClose: () => void;
 }) {
   const sessionPhase = session.phase;
   const directCallState =
@@ -63,16 +60,6 @@ export function VoiceRoomContent({
         retryLabel={session.retryLabel}
         retryPending={session.retryPending}
         onRetry={session.onRetry}
-      />
-    );
-  }
-  if (sessionPhase === "post-leave") {
-    return (
-      <VoiceRoomPostLeaveState
-        connectLabel={identity.active ? "Вернуться в комнату" : session.connectLabel}
-        connectDisabled={session.connectDisabled}
-        onConnect={session.onConnect}
-        onClose={onClose}
       />
     );
   }
@@ -125,9 +112,6 @@ export function VoiceRoomContent({
           <Button type="button" onClick={stage.onWatchScreenShare}>Смотреть</Button>
         </div>
       ) : null}
-      {stage.watchingScreenShare && !controls.screenSharing ? (
-        <ScreenShareVolume stage={stage} />
-      ) : null}
       {sessionPhase !== "preview" &&
       !identity.isDirect &&
       stage.participants.length <= 1 &&
@@ -140,6 +124,9 @@ export function VoiceRoomContent({
           screenShareOwner={stage.screenShareOwner}
           screenShareTrackId={stage.screenShareTrackId}
           screenShareIsLocal={stage.screenShareIsLocal}
+          screenShareVolume={stage.screenShareVolume}
+          onScreenShareVolumeChange={stage.onScreenShareVolumeChange}
+          onStopWatchingScreenShare={stage.onStopWatchingScreenShare}
           participants={stage.participants}
           participantVolumes={stage.participantVolumes}
           micMuted={controls.micMuted}
@@ -184,35 +171,6 @@ function DirectCallPreview({ chatName }: { chatName: string }) {
       <p className="mt-2 max-w-sm text-sm leading-6 text-[var(--app-muted)]">
         Собеседник увидит входящий звонок. Микрофон можно выключить до подключения.
       </p>
-    </div>
-  );
-}
-
-function ScreenShareVolume({ stage }: { stage: VoiceRoomStageModel }) {
-  const percent = Math.round(stage.screenShareVolume * 100);
-  return (
-    <div className="mb-3 flex shrink-0 flex-wrap items-center gap-3 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2">
-      <label className="flex min-w-48 flex-1 items-center gap-3 text-xs font-medium">
-        Звук демонстрации
-        <input
-          type="range"
-          min={0}
-          max={200}
-          step={5}
-          value={percent}
-          onChange={(event) => stage.onScreenShareVolumeChange(Number(event.target.value) / 100)}
-          className="min-w-24 flex-1 accent-[var(--theme-accent)]"
-          aria-label="Громкость демонстрации"
-        />
-        <span className="w-10 text-right tabular-nums">{percent}%</span>
-      </label>
-      <button
-        type="button"
-        onClick={stage.onStopWatchingScreenShare}
-        className="rounded-lg px-3 py-1.5 text-xs text-[var(--app-muted)] hover:bg-[var(--app-surface-hover)] hover:text-[var(--foreground)]"
-      >
-        Не смотреть
-      </button>
     </div>
   );
 }

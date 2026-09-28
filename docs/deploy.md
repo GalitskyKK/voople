@@ -21,7 +21,8 @@ so a 2 vCPU / 4 GB / 50 GB VM is a viable low-cost start; 4/8 avoids memory
 pressure during image optimization, overlapping deploys and incident analysis.
 
 Open inbound TCP 22 from trusted administrator IPs and TCP 80/443 plus UDP 443
-from the Internet. The Next.js port is internal to the Docker network.
+from the Internet. Docker publishes Next.js only on host `127.0.0.1:3000`;
+system Caddy proxies that local port.
 
 The deployment uses Caddy rather than nginx because the current topology is one
 web node and Caddy owns automatic TLS renewal, HTTP/2/3 and WebSocket proxying
@@ -30,14 +31,33 @@ balancer when there are multiple app nodes or specialized traffic policies.
 
 ## Files on the server
 
-Create `/opt/voople` owned by a dedicated deployment user in the `docker` group.
+Create `/opt/voople` owned by a dedicated deployment user with rootless Docker;
+do not add that user to the rootful `docker` group.
 Copy `deploy/production/compose.env.example` to `/opt/voople/.env` and
-`deploy/production/app.env.example` to `/opt/voople/app.env`. Both real files
-must be mode `600` and must never enter Git.
+`deploy/production/app.env.example` to `/opt/voople/app.env`. Create
+`/opt/voople/cron.env` with one generated URL-safe `CRON_SECRET` and mode
+`600`, owned by the deployment user. The web container reads `app.env` and
+`cron.env`; the maintenance systemd service reads only `cron.env`. These real
+files must never enter Git.
 
-The deployment workflow uploads only `compose.yaml` and `Caddyfile`; it never
-overwrites runtime secrets. Authenticate Docker on the server once with a
-read-only GitHub token if the GHCR package is private.
+The deployment workflow uploads only `compose.yaml`; it never overwrites
+runtime secrets, systemd units or system Caddy. `Caddyfile` is installed during
+host bootstrap and changed only by a separate, deliberate host maintenance
+operation, followed by Caddy validation/reload. Authenticate Docker on the
+server once with a read-only GitHub token if the GHCR package is private.
+
+## Room grace maintenance
+
+Production scheduling belongs to the Selectel host. Install the tracked
+`deploy/production/systemd/voople-room-maintenance.service` and `.timer` plus
+`deploy/production/bin/voople-room-maintenance` following the exact commands
+in [the host runbook](../deploy/production/README.md). The timer runs each
+minute and calls `http://127.0.0.1:3000/api/cron/expire-group-room-grace`
+without public DNS or TLS. The route checks the bearer `CRON_SECRET` and calls
+the service-role-only bounded cleanup RPC. The service exits non-zero for an
+HTTP error or timeout; a successful manual run writes a JSON cleanup result
+to the journal. The timer has no dependency on Vercel. Provision `cron.env`
+and restart the web container before enabling the timer.
 
 ## GitHub environment
 
@@ -81,7 +101,7 @@ In the managed project:
 2. Add exact redirect URLs `https://voople.app/auth/confirm` and any other
    production callback routes used by the application.
 3. Keep localhost URLs only for development; remove obsolete Vercel preview
-   patterns after the Vercel deployment is retired.
+   patterns after confirming no remaining preview users depend on them.
 4. Keep the existing `*.supabase.co` API URL for this migration. A paid
    `api.voople.app` Supabase custom domain can be introduced later without a
    database move.
@@ -131,3 +151,13 @@ Before switching DNS or tagging a release:
 7. Run login/register, chat/realtime, voice join/reconnect, upload, payment
    return and account deletion smoke tests.
 8. Confirm container log rotation, disk alerts and a tested rollback image.
+9. Confirm `voople-room-maintenance.timer` is enabled, a manual service run
+   succeeds, and `CRON_SECRET` is present in both the timer and web container
+   through the shared host file (without printing its value).
+
+The former Vercel project is not a production scheduler or deploy target.
+After Selectel is stable, manually remove its `voople.app` and `www.voople.app`
+custom domains, disable Git auto-deploy, clean up obsolete Supabase Auth
+preview redirects after checking use, and keep the domainless project only as
+a temporary archive before eventual deletion. Do not change production DNS as
+part of this retirement checklist.

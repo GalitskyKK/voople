@@ -42,10 +42,12 @@
 !/docs/core-rework-architecture.md
 !/docs/rework-integration-plan.md
 !/docs/product-metrics.md
+!/docs/product-monetization.md
 !/docs/readme-assets/
 !/docs/readme-assets/.gitkeep
 !/docs/readme-assets/*.webp
 /drizzle/*
+!/drizzle/77-friendships.sql
 !/drizzle/38-group-emojis.sql
 !/drizzle/39-structured-chat-content.sql
 !/drizzle/43-group-sounds.sql
@@ -67,7 +69,9 @@
 !/drizzle/65-chat-read-cursors.sql
 !/drizzle/68-guest-funnel-analytics.sql
 !/drizzle/71-product-group-metrics.sql
+!/drizzle/73-core-room-source-invariant.sql
 !/drizzle/72-deferred-voop.sql
+!/drizzle/74-group-room-archive-presence.sql
 # Local release checkouts are separate Git worktrees, not project sources.
 /.worktrees/
 # Local toolchain experiment for the feature-gated Windows process-audio build.

@@ -103,7 +103,7 @@ export function AdminAssetPackUpload({
                 className={cn(
                   "flex items-center justify-between gap-2 rounded-lg border px-2 py-1.5",
                   done
-                    ? "border-emerald-500/40 bg-emerald-500/10"
+                    ? "border-[var(--material-border-hover)] bg-[var(--material-control-fill)]"
                     : "border-[var(--app-border)] bg-[var(--background)]",
                 )}
               >
@@ -112,7 +112,7 @@ export function AdminAssetPackUpload({
                   <code className="text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]">{fileName}</code>
                 </span>
                 {done ? (
-                  <Check className="h-4 w-4 shrink-0 text-emerald-400" aria-hidden />
+                  <Check className="h-4 w-4 shrink-0 text-[var(--material-ice)]" aria-hidden />
                 ) : (
                   <label className="shrink-0">
                     <input

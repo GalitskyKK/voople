@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type MutableRefObject } from "react";
 import { LocalAudioTrack, Room, Track, type Room as LiveKitRoom } from "livekit-client";
 
 import { syncVoiceTrackProcessor } from "@/lib/livekit/rnnoise-track-processor";
+import { shouldResetMissingMicrophone } from "@/lib/livekit/microphone-device";
 import type { VoicePreferences } from "@/lib/livekit/voice-preferences";
 
 import type { MediaStatus } from "./voice-room-config";
@@ -45,10 +46,13 @@ export function useVoiceDeviceSettings({
       ]);
       setInputDevices(inputs);
       setOutputDevices(outputs);
+      if (shouldResetMissingMicrophone(preferencesRef.current.inputDeviceId, inputs)) {
+        persistPreferences({ inputDeviceId: "default" });
+      }
     } catch {
       // Device labels can remain unavailable until microphone permission exists.
     }
-  }, []);
+  }, [persistPreferences, preferencesRef]);
 
   const micTest = useVoiceMicTest({ preferencesRef, refreshDevices, setError });
 

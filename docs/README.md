@@ -22,7 +22,7 @@
 | [customization.md](./customization.md) | Спеки ассетов кастомизации для дизайна |
 | [shop.md](./shop.md) | Магазин, voops, экипировка, payment intents |
 | [shop-catalog.md](./shop-catalog.md) | Добавление предметов: catalog.ts → CDN → БД |
-| [deploy.md](./deploy.md) | Production deploy через GitHub, Vercel, Supabase |
+| [deploy.md](./deploy.md) | Production deploy через GitHub Actions, Selectel и Supabase |
 | [comments-reposts.md](./comments-reposts.md) | План реализации комментариев и репостов |
 | [messenger-ux.md](./messenger-ux.md) | Архитектура UI мессенджера, действия и правила расширения |
 | [web-desktop-rollout.md](./web-desktop-rollout.md) | Общие компоненты web/desktop, миграции 36–40, звонки и release gates |

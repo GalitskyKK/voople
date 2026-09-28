@@ -8,6 +8,13 @@ import {
   getGroupDiscoveryProfile,
   getUserPrivacySettings,
   getUserBlockState,
+  cancelFriendRequest,
+  getFriendState,
+  listFriendIds,
+  listIncomingFriendRequests,
+  removeFriend,
+  respondFriendRequest,
+  sendFriendRequest,
   getUserInterestSettings,
   listVisibleOnlineUserIds,
   listContactPins,
@@ -41,6 +48,34 @@ function socialError(error: unknown, fallback: string): never {
 }
 
 export const socialRouter = createTRPCRouter({
+  friendState: protectedProcedure.input(z.object({ userId: z.string().uuid() }))
+    .query(({ ctx, input }) => getFriendState(ctx.user.id, input.userId)),
+  myFriends: protectedProcedure.query(({ ctx }) => listFriendIds(ctx.user.id)),
+  incomingFriendRequests: protectedProcedure.query(({ ctx }) => listIncomingFriendRequests(ctx.user.id)),
+  sendFriendRequest: protectedProcedure.input(z.object({ userId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.follow, ctx.user.id);
+      try { return await sendFriendRequest(ctx.user.id, input.userId); }
+      catch (error) { return socialError(error, "Не удалось отправить запрос"); }
+    }),
+  respondFriendRequest: protectedProcedure.input(z.object({ requestId: z.string().uuid(), accept: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.updateSocialProfile, ctx.user.id);
+      try { return await respondFriendRequest(ctx.user.id, input.requestId, input.accept); }
+      catch (error) { return socialError(error, "Не удалось ответить на запрос"); }
+    }),
+  cancelFriendRequest: protectedProcedure.input(z.object({ requestId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.updateSocialProfile, ctx.user.id);
+      try { return await cancelFriendRequest(ctx.user.id, input.requestId); }
+      catch (error) { return socialError(error, "Не удалось отменить запрос"); }
+    }),
+  removeFriend: protectedProcedure.input(z.object({ userId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.updateSocialProfile, ctx.user.id);
+      try { return await removeFriend(ctx.user.id, input.userId); }
+      catch (error) { return socialError(error, "Не удалось удалить друга"); }
+    }),
   blockState: protectedProcedure
     .input(z.object({ userId: z.string().uuid() }))
     .query(({ ctx, input }) => getUserBlockState(ctx.user.id, input.userId)),

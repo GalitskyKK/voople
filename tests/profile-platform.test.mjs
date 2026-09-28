@@ -35,13 +35,13 @@ test("desktop profile owns data only and keeps presentation in canonical views",
   assert.match(read("desktop/src/adapters/DesktopProfileAdapter.tsx"), /ProfileCardView/);
 });
 
-test("the owner profile restores the canonical desktop composer", () => {
+test("profile composer remains in code but is absent from beta web and desktop routes", () => {
   const profile = read("src/components/profile/ProfilePage.tsx");
   const view = read("src/components/profile/ProfilePageView.tsx");
 
-  assert.match(profile, /canPost = false/);
-  assert.match(profile, /<CreatePostBlock profile=\{profile\} canPost=\{canPost && isOwner\}/);
-  assert.match(view, /feedTab === "posts" \? renderComposer\?\.\(\) : null/);
+  assert.equal(existsSync("src/components/feed/CreatePostBlock.tsx"), true);
+  assert.doesNotMatch(profile, /CreatePostBlock|PostCard|ProfileQuestions/);
+  assert.doesNotMatch(view, /renderComposer|renderQuestions|ProfileFeedTabs/);
 });
 
 test("desktop entry imports only the client-safe object storage module", () => {
@@ -62,6 +62,6 @@ test("mini profile shares the canonical customization layers on web and desktop"
   assert.match(desktopAuthor, /PostAuthorVisual/);
   assert.match(miniCard, /ProfileCardVisual/);
   assert.match(miniCard, /ProfileAvatar/);
-  assert.match(miniCard, /ProfileStats/);
+  assert.doesNotMatch(miniCard, /ProfileStats/);
   assert.equal(profileVisual.match(/ProfileCardEffectLayer/g)?.length, 3);
 });

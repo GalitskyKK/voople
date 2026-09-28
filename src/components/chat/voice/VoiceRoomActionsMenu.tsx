@@ -116,7 +116,7 @@ export function VoiceRoomActionsMenu({
           {errorMessage ? <p className="mt-1 text-xs text-red-400" role="alert">{errorMessage}</p> : null}
           <div className="mt-2 flex justify-end gap-2">
             <button type="button" onClick={() => setMode("actions")} className="min-h-9 px-2 text-xs text-[var(--app-muted)]">Отмена</button>
-            <button type="submit" disabled={pending || !draft.trim()} className="min-h-9 rounded-[var(--app-radius-sm)] bg-[var(--theme-accent)] px-3 text-xs font-semibold text-white disabled:opacity-45">Сохранить</button>
+            <button type="submit" disabled={pending || !draft.trim()} className="min-h-9 rounded-[var(--app-radius-sm)] border border-[var(--material-border-hover)] bg-[var(--material-control-fill)] px-3 text-xs font-semibold text-[var(--foreground)] shadow-[inset_0_1px_0_var(--material-highlight)] disabled:opacity-45">Сохранить</button>
           </div>
         </form>
       ) : mode === "archive" ? (
@@ -142,10 +142,12 @@ export function VoiceRoomActionsMenu({
               {room.kind === "pinned" ? "Открепить" : "Закрепить"}
             </button>
           ) : null}
-          <button type="button" role="menuitem" className={`${itemClass} voople-room-actions__danger`} onClick={() => setMode("archive")}>
-            <Archive className="h-4 w-4" aria-hidden="true" />
-            Архивировать
-          </button>
+          {room.canPin || room.kind === "temporary" ? (
+            <button type="button" role="menuitem" className={`${itemClass} voople-room-actions__danger`} onClick={() => setMode("archive")}>
+              <Archive className="h-4 w-4" aria-hidden="true" />
+              Архивировать
+            </button>
+          ) : null}
           {errorMessage ? <p className="px-2.5 py-2 text-xs text-red-400" role="alert">{errorMessage}</p> : null}
         </>
       )}

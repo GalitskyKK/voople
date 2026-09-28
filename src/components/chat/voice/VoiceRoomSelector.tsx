@@ -51,8 +51,8 @@ function RoomPickerContent({
           <div
             key={room.id}
             className={cn(
-              "group/room-option flex min-h-12 items-center border-l-2 border-transparent",
-              current && "border-l-[var(--theme-accent)] bg-[var(--app-accent-soft)]",
+              "group/room-option flex min-h-12 items-center rounded-[var(--app-radius-md)] border border-transparent",
+              current && "border-[var(--app-border)] bg-[var(--app-accent-soft)]",
             )}
           >
             <button

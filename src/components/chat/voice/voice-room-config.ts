@@ -11,6 +11,8 @@ import {
 } from "livekit-client";
 
 import type { VoicePreferences } from "@/lib/livekit/voice-preferences";
+import { traceVoiceMic } from "../../../lib/livekit/voice-mic-debug.ts";
+import { canRetryWithDefaultMicrophone } from "../../../lib/livekit/microphone-device.ts";
 import type { ChatRoomView } from "@/types/chat";
 
 export type MediaStatus =
@@ -160,6 +162,63 @@ export function getMicrophoneMuted(room: Room | null) {
   if (!room) return true;
   const publication = room.localParticipant.getTrackPublication(Track.Source.Microphone);
   return !publication || publication.isMuted;
+}
+
+export async function setMicrophoneEnabledAndConfirm(
+  room: Room,
+  enabled: boolean,
+  captureOptions: AudioCaptureOptions,
+) {
+  const before = room.localParticipant.getTrackPublication(Track.Source.Microphone);
+  traceVoiceMic("livekit.before", {
+    enabled,
+    roomState: room.state,
+    publicationMuted: before?.isMuted ?? null,
+    trackState: before?.track?.mediaStreamTrack.readyState ?? null,
+  });
+  const result = await room.localParticipant.setMicrophoneEnabled(
+    enabled,
+    captureOptions,
+    VOICE_PUBLISH_OPTIONS,
+  );
+  const publication = room.localParticipant.getTrackPublication(Track.Source.Microphone);
+  traceVoiceMic("livekit.after", {
+    resultPresent: Boolean(result),
+    resultMuted: result?.isMuted ?? null,
+    publicationPresent: Boolean(publication),
+    publicationMuted: publication?.isMuted ?? null,
+    trackState: publication?.track?.mediaStreamTrack.readyState ?? null,
+  });
+  if (enabled ? !publication || publication.isMuted : Boolean(publication && !publication.isMuted)) {
+    throw new Error("Микрофон не подтвердил изменение. Проверьте устройство и повторите.");
+  }
+  return getMicrophoneMuted(room);
+}
+
+export async function setMicrophoneEnabledWithFallback(
+  room: Room,
+  enabled: boolean,
+  preferences: VoicePreferences,
+): Promise<{ muted: boolean; usedDefault: boolean }> {
+  try {
+    return {
+      muted: await setMicrophoneEnabledAndConfirm(room, enabled, getAudioCaptureOptions(preferences)),
+      usedDefault: false,
+    };
+  } catch (error) {
+    if (!enabled || !canRetryWithDefaultMicrophone(error, preferences.inputDeviceId)) throw error;
+    traceVoiceMic("livekit.device-fallback", {
+      errorName: error instanceof Error ? error.name : "unknown",
+      errorConstraint: error instanceof Error && "constraint" in error
+        ? String(error.constraint) : null,
+    });
+    const muted = await setMicrophoneEnabledAndConfirm(
+      room,
+      true,
+      getAudioCaptureOptions({ ...preferences, inputDeviceId: "default" }),
+    );
+    return { muted, usedDefault: true };
+  }
 }
 
 export function getConnectionLabel(status: MediaStatus) {

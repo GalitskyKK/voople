@@ -5,6 +5,7 @@ import type {
 import type { GroupNowRoomTarget } from "@/types/group-now";
 
 import type { VoiceControlState } from "./voice-room-config";
+import type { VoiceSessionParticipants } from "@/types/voice-session-participants";
 
 export type ChatRoomControlProps = {
   chatId: string;
@@ -13,6 +14,8 @@ export type ChatRoomControlProps = {
   renderTrigger?: boolean;
   initialOpen?: boolean;
   onStateChange?: (state: VoiceControlState) => void;
+  onParticipantsChange?: (value: VoiceSessionParticipants | null) => void;
+  onLeaveConfirmed?: (chatId: string, sessionId: string | null) => void;
   coreSession?: CoreVoiceSessionDescriptor;
   initialCoreCredentials?: EnabledVoiceMediaCredentials;
   onCoreRoomSwitch?: (target: GroupNowRoomTarget) => void | Promise<void>;
@@ -20,7 +23,7 @@ export type ChatRoomControlProps = {
 
 export type ChatRoomControlHandle = {
   open: () => void;
-  minimize: () => void;
+  minimize: (showDock?: boolean) => void;
   join: () => void;
   toggleMicrophone: () => void;
   toggleOutput: () => void;

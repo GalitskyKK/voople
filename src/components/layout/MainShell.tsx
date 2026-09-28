@@ -54,9 +54,7 @@ export function MainShell({
     isMessagesRoute && !isLg && isMessagesThreadPath(pathname);
   const hideMobileTopBar = isMessagesRoute && !isLg;
   const hideMobileBottomNav = isMobileMessagesThread;
-  const showFab =
-    !pathname.startsWith("/messages") &&
-    (pathname === "/feed" || pathname === "/me" || isProfileRoute);
+  const showFab = pathname === "/feed";
 
   useEffect(
     () => registerInternalNavigationAdapter((href) => router.push(href)),
@@ -64,7 +62,7 @@ export function MainShell({
   );
 
   useEffect(() => {
-    if (roomSurfacePathRef.current !== pathname) minimizeVoicePanel?.();
+    if (roomSurfacePathRef.current !== pathname) minimizeVoicePanel?.(false);
     roomSurfacePathRef.current = pathname;
   }, [minimizeVoicePanel, pathname]);
 

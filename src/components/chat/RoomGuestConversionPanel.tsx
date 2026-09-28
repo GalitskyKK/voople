@@ -69,7 +69,7 @@ export function RoomGuestConversionPanel({
           Создайте аккаунт или войдите. После этого Voople вернёт вас сюда и завершит переход без повторной гостевой ссылки.
         </p>
         <div className="mx-auto mt-6 flex w-full max-w-sm flex-col gap-3 sm:flex-row sm:justify-center">
-          <Link href={registrationHref} className={`${linkButtonClass} bg-[var(--theme-accent)] text-[var(--foreground)]`}>
+          <Link href={registrationHref} className={`${linkButtonClass} border border-[var(--material-border-hover)] bg-[var(--material-control-fill)] text-[var(--foreground)]`}>
             <UserPlus className="h-4 w-4" aria-hidden="true" /> Создать аккаунт
           </Link>
           <Link href={loginHref} className={`${linkButtonClass} border border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--foreground)]`}>
@@ -84,12 +84,12 @@ export function RoomGuestConversionPanel({
     const copy = successCopy(result);
     return (
       <div className="grid min-h-[30rem] place-content-center px-6 py-12 text-center" role="status" aria-live="polite">
-        <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-emerald-400/15 text-emerald-300">
+        <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[var(--material-ice-soft)] text-[var(--material-ice)]">
           <Check className="h-6 w-6" aria-hidden="true" />
         </span>
         <h1 className="mt-5 text-2xl font-semibold">{copy.title}</h1>
         <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[var(--app-muted)]">{copy.detail}</p>
-        <Link href={copy.href} className={`${linkButtonClass} mx-auto mt-6 bg-[var(--theme-accent)] text-[var(--foreground)]`}>
+        <Link href={copy.href} className={`${linkButtonClass} mx-auto mt-6 border border-[var(--material-border-hover)] bg-[var(--material-control-fill)] text-[var(--foreground)]`}>
           {copy.action}
         </Link>
       </div>

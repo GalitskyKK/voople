@@ -191,6 +191,7 @@ export type ChatGroupAuditEntryView = {
 export type PublicGroupSearchHit = {
   id: string;
   name: string;
+  description: string | null;
   publicSlug: string | null;
   icon: string | null;
   avatarUrl: string | null;
@@ -202,7 +203,6 @@ export type PublicGroupSearchHit = {
 };
 
 export type PublicGroupPageView = PublicGroupSearchHit & {
-  description: string | null;
   accentColor: string | null;
   bannerUrl: string | null;
 };

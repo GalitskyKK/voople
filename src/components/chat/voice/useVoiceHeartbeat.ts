@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from "react"
 import type { Room } from "livekit-client";
 
 import { trpc } from "@/lib/trpc/client";
+import { traceVoiceMic } from "@/lib/livekit/voice-mic-debug";
 
 import { getMicrophoneMuted } from "./voice-room-config";
 
@@ -37,6 +38,7 @@ export function useVoiceHeartbeat(
     pendingRef.current = true;
     try {
       const micMuted = getMicrophoneMuted(roomRef.current);
+      traceVoiceMic("heartbeat.send", { micMuted, roomState: roomRef.current?.state ?? null, targetKind });
       if (targetKind === "core" && sessionId) {
         await sendCoreHeartbeat({
           sessionId,

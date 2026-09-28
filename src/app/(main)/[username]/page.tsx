@@ -6,31 +6,28 @@ import { ProfileJsonLd } from "@/components/seo/ProfileJsonLd"
 import { WebSessionBootstrapRecovery } from "@/components/auth/WebSessionBootstrapRecovery"
 import { createProfileMetadata } from "@/lib/seo/metadata"
 import { getServerAuthBootstrap } from "@/server/services/auth-session.service"
-import { getProfileByUsername, getProfilePageData } from "@/server/services/profile.service"
+import { getBetaProfileByUsername, getProfilePageData } from "@/server/services/profile.service"
 
 export const revalidate = 60
 
 type PageProps = {
   params: Promise<{ username: string }>
-  searchParams: Promise<{ ask?: string }>
 }
 
-export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { username } = await params
-  const { ask } = await searchParams
-  const profile = await getProfileByUsername(username)
+  const profile = await getBetaProfileByUsername(username)
   if (!profile) return {}
   return createProfileMetadata({
     displayName: profile.displayName,
     username: profile.username,
     bio: profile.bio,
-    ask: ask === "1"
+    ask: false
   })
 }
 
-export default async function UserProfilePage({ params, searchParams }: PageProps) {
+export default async function UserProfilePage({ params }: PageProps) {
   const { username } = await params
-  const { ask } = await searchParams
   const bootstrap = await getServerAuthBootstrap()
   if (bootstrap.status === "error") {
     return <WebSessionBootstrapRecovery reason={bootstrap.reason} />
@@ -42,7 +39,7 @@ export default async function UserProfilePage({ params, searchParams }: PageProp
 
   if (!pageData) notFound()
 
-  const { profile, posts, canvasStrokes } = pageData
+  const { profile, canvasStrokes } = pageData
 
   const canFollow = viewerId !== profile.id
 
@@ -51,12 +48,9 @@ export default async function UserProfilePage({ params, searchParams }: PageProp
       <ProfileJsonLd displayName={profile.displayName} username={profile.username} bio={profile.bio} />
       <ProfilePage
         profile={profile}
-        posts={posts}
         initialCanvasStrokes={canvasStrokes}
         viewerId={viewerId}
-        canPost={Boolean(viewerId && viewerId === profile.id)}
         canFollow={canFollow}
-        askDeepLink={ask === "1"}
       />
     </>
   )

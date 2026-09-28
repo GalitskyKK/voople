@@ -67,7 +67,7 @@ export function ChatList({
       )}
       emptyAction={
         <Link
-          href="/explore"
+          href="/search"
           className="voople-link mt-3 inline-flex text-sm font-medium"
         >
           Найти людей
@@ -123,7 +123,7 @@ export function ChatList({
         </DisplayNameWithPin>
       )}
       renderGlobalSearchAction={(query) => (
-        <Link href={`/explore?q=${encodeURIComponent(query)}`} className="voople-link mt-3 inline-flex font-medium">
+        <Link href={`/search?q=${encodeURIComponent(query)}`} className="voople-link mt-3 inline-flex font-medium">
           Искать «{query}» во всём Voople →
         </Link>
       )}

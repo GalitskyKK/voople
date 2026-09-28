@@ -1,10 +1,11 @@
 import { BrandedLoadingView } from "@/components/brand/BrandedLoadingView";
 import { AppPageContent } from "@/components/layout/AppPageContent";
+import { ProfileLoadingView } from "@/components/profile/ProfileLoadingView";
 
-export function DesktopRouteFallback() {
+export function DesktopRouteFallback({ profile = false }: { profile?: boolean }) {
   return (
     <AppPageContent className="py-4 lg:py-6">
-      <BrandedLoadingView compact />
+      {profile ? <ProfileLoadingView /> : <BrandedLoadingView compact />}
     </AppPageContent>
   );
 }

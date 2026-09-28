@@ -41,7 +41,7 @@ export function ChatConversationState({
       className={cn(
         "voople-chat-state text-[var(--foreground)]",
         compact
-          ? "flex min-h-10 shrink-0 items-center gap-2 border-t border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-1.5"
+          ? "flex min-h-10 shrink-0 items-center gap-2 bg-[var(--material-control-fill)] px-3 py-1.5"
           : "flex min-h-0 flex-1 items-center justify-center px-5 py-8",
       )}
       role={mode === "loading" ? "status" : "alert"}
@@ -51,7 +51,7 @@ export function ChatConversationState({
         <span
           className={cn(
             "grid shrink-0 place-items-center text-[var(--theme-accent)]",
-            compact ? "h-7 w-7" : "mb-4 h-11 w-11 border border-[var(--app-border)] bg-[var(--app-surface)]",
+            compact ? "h-7 w-7" : "mb-4 h-8 w-8",
           )}
           aria-hidden="true"
         >
@@ -67,8 +67,8 @@ export function ChatConversationState({
           <button
             type="button"
             className={cn(
-              "inline-flex shrink-0 items-center justify-center gap-1.5 border border-[var(--app-border-strong)] font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--app-surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]",
-              compact ? "h-7 px-2 text-xs" : "mt-4 h-9 px-3 text-sm",
+              "voople-material-control inline-flex shrink-0 items-center justify-center gap-1.5 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]",
+              compact ? "min-h-9 px-2 text-xs" : "mt-4 min-h-10 px-3 text-sm",
             )}
             onClick={onRetry}
           >

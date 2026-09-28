@@ -19,6 +19,6 @@ export async function toggleContactPinRest(userId: string, pinnedUserId: string)
     p_user_id: userId,
     p_pinned_user_id: pinnedUserId,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(error.message.includes("FRIEND_REQUIRED") ? "Закрепить можно только друга" : error.message);
   return { pinned: data === true, pinnedUserIds: await listContactPinsRest(userId) };
 }

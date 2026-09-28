@@ -7,13 +7,11 @@ export type VoiceRoomSurfacePhase =
   | "inside"
   | "reconnecting"
   | "leaving"
-  | "post-leave"
   | "error";
 
 export type VoiceRoomSessionTransition =
   | "connecting"
   | "leaving"
-  | "post-leave"
   | null;
 
 export const VOICE_ROOM_LIFECYCLE_TIMEOUT_MS = 10_000;
@@ -46,6 +44,16 @@ export async function waitForVoiceRoomLifecycle<T>(
   } finally {
     if (timeoutId !== null) clearTimeout(timeoutId)
   }
+}
+
+export async function runConfirmedVoiceLeave(
+  leave: () => Promise<unknown>,
+  refresh: () => Promise<unknown>,
+) {
+  await waitForVoiceRoomLifecycle(leave());
+  // A read-model refresh can fail after the mutation has already succeeded.
+  // It must not turn a confirmed leave into a false retryable failure.
+  void Promise.resolve().then(refresh).catch(() => undefined);
 }
 
 export async function waitForVoiceMediaConnection<T>(
@@ -86,7 +94,6 @@ export function resolveVoiceRoomSurfacePhase({
   hasError: boolean;
 }): VoiceRoomSurfacePhase {
   if (transition === "leaving") return "leaving";
-  if (transition === "post-leave") return "post-leave";
   if (transition === "connecting") return "connecting";
   if (loading) return "loading";
   if (inside && mediaStatus === "reconnecting") return "reconnecting";

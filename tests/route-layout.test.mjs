@@ -8,7 +8,7 @@ import {
 } from "../src/lib/layout/route-layout.ts";
 
 test("wide product routes share one web and desktop geometry policy", () => {
-  for (const pathname of ["/feed", "/explore", "/notifications", "/events", "/shop"]) {
+  for (const pathname of ["/feed", "/explore", "/search", "/notifications", "/events", "/shop"]) {
     assert.equal(getAppRouteLayout(pathname).contentClassName, "max-w-[1440px]");
   }
 });
@@ -28,5 +28,6 @@ test("profile slugs do not swallow reserved application routes", () => {
   assert.equal(isAppProfilePath("/nmkk"), true);
   assert.equal(isAppProfilePath("/me"), true);
   assert.equal(isAppProfilePath("/explore"), false);
+  assert.equal(isAppProfilePath("/search"), false);
   assert.equal(isAppProfilePath("/room-invites"), false);
 });

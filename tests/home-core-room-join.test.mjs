@@ -60,4 +60,9 @@ test("Home Room CTA performs the shared session-bound join on web and desktop", 
   assert.match(voiceProvider, /autoConnectPendingRef\.current = !existingControl/);
   assert.match(voiceProvider, /if \(state\.inside\)/);
   assert.match(voiceProvider, /return activeSession\?\.chatId === session\.chatId/);
+  assert.doesNotMatch(
+    voiceProvider,
+    /autoConnectPendingRef\.current = false;\s*latestControl\.open\(\);\s*latestControl\.join\(\)/,
+    "joining a Room must not force the Full Room surface open",
+  );
 });

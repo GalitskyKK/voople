@@ -1,3 +1,4 @@
+import { groupVoiceFixture } from "./lib/visual-group-voice.mjs";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { createRequire } from "node:module";
@@ -10,7 +11,6 @@ import { loadCurrentVisualCss } from "./lib/load-current-visual-css.mjs";
 const repo = fileURLToPath(new URL("../", import.meta.url)).replaceAll("\\", "/").replace(/\/$/, "");
 const captureDirIndex = process.argv.indexOf("--capture-dir");
 const captureDirectory = captureDirIndex >= 0 ? process.argv[captureDirIndex + 1] : null;
-const captureOnly = process.argv.includes("--capture-only");
 const artifacts = captureDirectory
   ? path.resolve(repo, captureDirectory)
   : await mkdtemp(path.join(os.tmpdir(), "voople-core-group-surface-"));
@@ -21,55 +21,32 @@ const require = createRequire(`${repo}/package.json`);
 const { build } = require("esbuild");
 const { chromium } = require("playwright");
 
-const entry = `import {useState} from 'react';import {createRoot} from 'react-dom/client';
-  import {AppThemeProvider} from '@/components/theme/AppThemeProvider';
-  import {AppSidebarVisual} from '@/components/layout/AppNavigationVisual';
-  import {AppShellFrame} from '@/components/layout/AppShellFrame';
-  import {MessengerSidebarView} from '@/components/layout/MessengerSidebarView';
-  import {MessagesLayoutView} from '@/components/chat/MessagesLayoutView';
-  import {GroupAvatar} from '@/components/chat/GroupAvatar';
-  import {ProfileAvatar} from '@/components/profile/ProfileAvatar';
-  import {GroupIdentity} from '@/components/chat/GroupManagementTrigger';
-  import {GroupSurfaceTabs} from '@/components/chat/GroupSurfaceTabs';
-  import {ChatSectionsBarView} from '@/components/chat/ChatSectionsBarView';
-  import {SubchatCreatorView} from '@/components/chat/SubchatCreatorView';
-  import {ChatMessageBubbleVisual} from '@/components/chat/ChatMessageBubbleVisual';
-  import {ChatComposerFrame,CHAT_COMPOSER_SURFACE_CLASS} from '@/components/chat/ChatComposerVisual';
-  import {GroupLiveShelfView} from '@/components/chat/GroupLiveShelfView';
-  import {GroupNowPanelView} from '@/components/chat/GroupNowPanelView';
-  import {GroupPeoplePanelView} from '@/components/chat/GroupPeoplePanelView';
-  const users=[
-    {id:'biba',username:'biba',displayName:'Biba',avatarUrl:null,isMe:false,micMuted:false,cameraEnabled:false,screenSharing:false},
-    {id:'kk',username:'kk',displayName:'kk',avatarUrl:null,isMe:false,micMuted:false,cameraEnabled:false,screenSharing:false},
-    {id:'anya',username:'anya',displayName:'Anya',avatarUrl:null,isMe:false,micMuted:true,cameraEnabled:false,screenSharing:false},
-    {id:'nmggk',username:'nmggk',displayName:'nmggk',avatarUrl:null,isMe:true,micMuted:false,cameraEnabled:false,screenSharing:true},
-    {id:'test',username:'test',displayName:'Test',avatarUrl:null,isMe:false,micMuted:null,cameraEnabled:null,screenSharing:null}
-  ];
-  const rooms=[
-    {id:'lobby',kind:'lobby',name:'Лобби',joinTarget:{kind:'room',roomId:'lobby'},state:'active',liveSessionId:'s1',startedAt:'2026-09-06T10:00:00Z',startedBy:'biba',participantCount:3,hasScreenShare:false,participants:users.slice(0,3)},
-    {id:'drg',kind:'pinned',name:'DRG',joinTarget:{kind:'room',roomId:'drg'},state:'active',liveSessionId:'s2',startedAt:'2026-09-06T10:10:00Z',startedBy:'nmggk',participantCount:1,hasScreenShare:true,participants:[users[3]]}
-  ];
-  const members=users.map((user,index)=>({type:'user',id:user.id,username:user.username,displayName:user.displayName,bio:null,avatarUrl:null,role:index===0?'owner':index===1?'admin':'member',roleColor:null,activeRoom:index===0?{chatId:'lobby',name:'Лобби'}:index===3?{chatId:'drg',name:'DRG'}:null}));
-  const common={parentChatId:null,topicsEnabled:false,topicsLayout:'tabs',topicIcon:null,groupVisibility:'private',joinPolicy:'invite_only',sectionAccessMode:'inherit',favoritePosition:1,groupBannerUrl:null,groupTag:null,boostCount:0,boostedByMe:false,viewerRole:'member',lastMessage:null,unreadCount:0,channels:[]};
-  const chats=[{...common,id:'group-1',type:'group',name:'VOICEKK',groupIcon:'V',groupAvatarUrl:null,groupAccentColor:'#8b5cf6',memberCount:7,unreadCount:5,otherUser:null},{...common,id:'direct-1',type:'direct',name:null,groupIcon:null,groupAvatarUrl:null,groupAccentColor:null,memberCount:2,unreadCount:2,otherUser:{id:'astra',username:'astra',displayName:'Astra',hasVooplePlus:false,avatarUrl:null,avatarDecorationUrl:null,avatarRingId:null,lastSeenAt:null}}];
-  const renderDestination=({href,label,className,active,children})=><button type="button" data-href={href} aria-label={label} aria-current={active?'page':undefined} className={className} onClick={()=>{if(href.includes('surface=now'))window.setGroupTab?.('now')}}>{children}</button>;
-  function GroupSurface(){const [tab,setTab]=useState('chat');window.setGroupTab=setTab;const messages=[
-    {id:'message-1',senderId:'biba',text:'Кто сегодня в голос?',createdAt:'2026-09-08T18:38:00Z',isMine:false,readAt:null,reactions:[],sender:{displayName:'Biba',hasVooplePlus:false,avatarUrl:null}},
-    {id:'message-2',senderId:'nmggk',text:'Я зайду после девяти. Можно сразу в DRG.',createdAt:'2026-09-08T18:41:00Z',isMine:true,readAt:'2026-09-08T18:42:00Z',reactions:[{emoji:'👍',count:2,reactedByMe:false}],sender:{displayName:'nmggk',hasVooplePlus:false,avatarUrl:null},roomContext:{roomId:'drg',liveSessionId:'s2',roomName:'DRG: Deep Rock Galactic',roomKind:'pinned',capturedAt:'2026-09-08T18:41:00Z'}},
-    {id:'message-3',senderId:'anya',text:'Ок, позовите меня через Вуп.',createdAt:'2026-09-08T18:43:00Z',isMine:false,readAt:null,reactions:[],sender:{displayName:'Anya',hasVooplePlus:false,avatarUrl:null}}
-  ];return <div className="flex min-h-0 flex-1 flex-col"><div className="voople-group-surface-header voople-group-surface-header--combined"><header className="voople-panel-header voople-chat-window__header voople-chat-window__header--group flex items-center gap-3 border-b border-[var(--app-border)] px-4"><button className="voople-group-header-identity flex min-w-0 flex-1 items-center gap-3 text-left"><GroupIdentity chatName="VOICEKK" memberCount={7} groupIcon="V" groupAvatarUrl={null} groupAccentColor="#8b5cf6" groupTag={null}/></button><button className="h-8 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] px-3 text-xs font-semibold">Войти в Лобби</button></header><GroupSurfaceTabs activeTab={tab} onTabChange={setTab}/></div>{tab==='chat'?<><GroupLiveShelfView groupId="group-1" rooms={rooms} currentUserRoomId="drg" onJoinRoom={()=>{}}/><div className="flex min-h-0 flex-1 flex-col"><ChatSectionsBarView rootChat={{...chats[0],topicsEnabled:true,channels:[{...chats[0],id:'game',name:'Game',parentChatId:'group-1',topicIcon:null},{...chats[0],id:'memes',name:'Мемы',parentChatId:'group-1',topicIcon:null}]}} activeChatId="group-1" createAction={({open,onOpenChange})=><SubchatCreatorView open={open} onOpenChange={onOpenChange} createSubchat={async()=> 'created-section'} onCreated={()=>{}}/>} renderDestination={(chat,className,children)=><button key={chat.id} className={className}>{children}</button>}/><div className="flex min-h-0 flex-1 flex-col justify-end gap-1 px-5 py-4">{messages.map((message)=><ChatMessageBubbleVisual key={message.id} message={message} showSender groupPosition="only" senderAvatar={<ProfileAvatar displayName={message.sender.displayName} size="sm" shape="square"/>}/>)}</div><ChatComposerFrame className="px-3"><div className={CHAT_COMPOSER_SURFACE_CLASS}><div className="h-8 px-2 py-1.5 text-sm text-[var(--app-muted)]">Сообщение VOICEKK…</div></div></ChatComposerFrame></div></>:tab==='now'?<GroupNowPanelView mode="ready" value={{groupId:'group-1',groupName:'VOICEKK',rooms,onlineOutsideRooms:[],visibleOnlineCount:7,currentUserRoomId:'drg'}} onJoinRoom={()=>{}} onLeaveCurrent={()=>{}} onCreateSplit={()=>{}} onCreateRoom={()=>{}}/>:<GroupPeoplePanelView members={members} onlineUserIds={new Set(users.slice(0,3).map(user=>user.id))} onRetry={()=>{}} onVoop={()=>{}}/>}</div>}
-  function Demo(){const sidebar=<AppSidebarVisual pathname="/messages/group-1" collapsed={false} renderDestination={renderDestination} primaryNavigation={<MessengerSidebarView pathname="/messages/group-1" chats={chats} loading={false} onlineUserIds={new Set(['astra'])} liveByGroup={new Map([['group-1',{groupId:'group-1',participantCount:4,roomCount:2,hasScreenShare:true}]])} createGroupAction={<button type="button" aria-label="Создать группу" className="h-5 w-5 border border-[var(--app-border)] text-xs">+</button>} renderDestination={renderDestination} onRetry={()=>{}}/>} accountNavigation={<button type="button" className="flex w-full items-center gap-2 px-2 py-1 text-left"><ProfileAvatar displayName="Yozhik" size="sm" shape="square" isOnline/><span className="text-xs">Yozhik</span></button>}/>;return <AppShellFrame routeKind="messages" fixedViewport sidebar={sidebar}><MessagesLayoutView isThread list={<div/>} thread={<GroupSurface/>}/></AppShellFrame>}
-  createRoot(document.getElementById('root')).render(<AppThemeProvider><Demo/></AppThemeProvider>);`;
-
 const bundle = await build({
-  stdin: { contents: entry, resolveDir: repo, loader: "tsx" }, bundle: true, write: false,
+  stdin: { contents: groupVoiceFixture, resolveDir: repo, loader: "tsx" }, bundle: true, write: false,
   format: "iife", jsx: "automatic", alias: { "@": `${repo}/src` },
   define: { "process.env.NODE_ENV": '"development"' },
+  plugins: [{ name: "profile-preview-fixture", setup(build) {
+    // This layout fixture has no authenticated tRPC provider. Keep the preview trigger contract.
+    build.onResolve({ filter: /^@\/components\/feed\/MiniProfilePopover$/ }, () => ({ path: "profile-preview", namespace: "fixture" }));
+    build.onLoad({ filter: /^profile-preview$/, namespace: "fixture" }, () => ({ loader: "tsx", resolveDir: repo, contents: `
+      import {useState} from 'react';
+      export function MiniProfilePopover({author,children,renderDestination,previewOnClick,className}) {
+        const [open,setOpen]=useState(false);
+        return <span className={className} onClick={previewOnClick?()=>setOpen(true):undefined}>
+          {children}{open ? renderDestination({href:'/'+author.username,label:'Открыть профиль '+author.displayName,className:'',active:false,children:'Профиль'}) : null}
+        </span>;
+      }
+    ` }));
+  } }],
 });
 const cssByHost = {
   web: await loadCurrentVisualCss(repo, { host: "web" }),
   desktop: await loadCurrentVisualCss(repo, { host: "desktop" }),
 };
+const messengerCss = await readFile(path.join(repo, "src/app/styles/messenger-glass.css"), "utf8");
+for (const host of Object.keys(cssByHost)) {
+  if (!cssByHost[host].includes(".voople-group-surface-header")) cssByHost[host] += `\n${messengerCss}`;
+}
 const logo = await readFile(path.join(repo, "public/favicon/android-chrome-192x192.png"));
 const geistSans = await readFile(path.join(repo, "node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2"));
 const geistMono = await readFile(path.join(repo, "node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2"));
@@ -90,93 +67,153 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
-  const visualCases = captureOnly
-    ? [
-        { width: 1440, height: 900, tab: "chat", theme: "void", host: "web", outputName: "chat.png" },
-        { width: 1440, height: 900, tab: "now", theme: "void", host: "web", outputName: "now.png" },
-        { width: 1440, height: 900, tab: "people", theme: "void", host: "web", outputName: "people.png" },
-      ]
-    : [
-      ...["web", "desktop"].flatMap((host) => [
-      { width: 1280, height: 800, tab: "chat", theme: "void", host },
-      { width: 1280, height: 800, tab: "chat", theme: "void", host, state: "sections" },
-      { width: 1280, height: 800, tab: "chat", theme: "void", host, state: "create" },
-      { width: 1280, height: 800, tab: "chat", theme: "void", host, state: "collapsed" },
-      { width: 1280, height: 800, tab: "now", theme: "void", host },
-      { width: 1280, height: 800, tab: "people", theme: "void", host },
-      { width: 390, height: 800, tab: "chat", theme: "light", host },
-      { width: 390, height: 800, tab: "chat", theme: "light", host, state: "sections" },
-      { width: 390, height: 800, tab: "chat", theme: "light", host, state: "create" },
-      { width: 390, height: 800, tab: "chat", theme: "light", host, state: "collapsed" },
-      { width: 390, height: 800, tab: "now", theme: "light", host },
-      { width: 390, height: 800, tab: "people", theme: "light", host },
-      ]),
-    ];
-  for (const { width, height, tab, theme, host, state = "default", outputName } of visualCases) {
-    const page = await browser.newPage({ viewport: { width, height } });
-    const errors = [];
-    page.on("pageerror", (error) => errors.push(error.message));
-    page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
-    await page.addInitScript((value) => {
-      window.localStorage.setItem("voople:app-theme", value);
-    }, theme);
-    await page.goto(`http://127.0.0.1:${server.address().port}?host=${host}`);
-    await page.evaluate(() => document.fonts.ready);
-    await page.waitForFunction(() => typeof window.setGroupTab === "function");
-    if (tab === "now" && width >= 1024) {
-      await page.getByRole("button", { name: /Голосовые комнаты группы VOICEKK/ }).click();
+  const visualCases = ["web", "desktop"].flatMap(host => [
+    {width:1440,theme:"void",host,count:8}, {width:1440,theme:"light",host,count:8},
+    {width:1280,theme:"void",host,count:8}, {width:1100,theme:"void",host,count:8},
+    {width:390,theme:"void",host,count:8}, {width:390,theme:"light",host,count:8},
+    {width:430,theme:"void",host,count:8}, {width:768,theme:"void",host,count:8},
+    {width:360,theme:"light",host,count:8}, {width:1440,theme:"void",host,count:20},
+    {width:390,theme:"light",host,count:20},
+  ]);
+  for (const {width, theme, host, count} of visualCases) {
+    const page = await browser.newPage({viewport:{width,height:900}});
+    const errors=[];
+    page.on("pageerror", error=>errors.push(error.message));
+    page.on("console", message=>{if(message.type()==="error")errors.push(message.text())});
+    await page.addInitScript(value=>localStorage.setItem("voople:app-theme",value),theme);
+    await page.goto(`http://127.0.0.1:${server.address().port}?host=${host}&count=${count}`);
+    await page.evaluate(()=>document.fonts.ready);
+    await page.getByRole("button",{name:"Открыть текущую комнату Лобби"}).waitFor();
+    const expectedMode=width>=1360?"wide":width>=1040?"medium":"compact";
+    await page.locator(`.voople-group-surface[data-mode="${expectedMode}"]`).waitFor();
+    assert.equal(await page.locator('.voople-group-workspace__live').count(),1);
+    assert.equal(await page.locator('.voople-group-now').count(),1);
+    assert.equal(await page.locator('.voople-group-workspace__chat').count(),expectedMode==="compact"?0:1);
+    assert.equal(await page.locator('.voople-group-workspace__people').count(),expectedMode==="wide"?1:0);
+    assert.equal(await page.locator('[role="tablist"][aria-label="Раздел группы"]').count(),expectedMode==="compact"?1:0);
+    if(expectedMode!=="compact"){
+      assert.equal(await page.getByRole('textbox',{name:'Сообщение группе'}).isVisible(),true);
+      const chatWidth=await page.locator('.voople-group-workspace__chat').evaluate(el=>el.getBoundingClientRect().width);
+      assert.ok(chatWidth>=520,`Chat remains readable: ${chatWidth}px`);
+      assert.equal(await page.locator('.voople-group-workspace__live').evaluate(el=>getComputedStyle(el).overflowY),'auto');
+      assert.equal(await page.locator('.voople-chat-window__messages').evaluate(el=>getComputedStyle(el).overflowY),'auto');
+      const shadow=await page.locator('.voople-group-now-room--current').evaluate(el=>getComputedStyle(el).boxShadow);
+      assert.ok(shadow==="none"||shadow.includes("inset"),`Current Room has no outer shadow: ${shadow}`);
+    }
+    if(expectedMode==="wide"){
+      assert.equal(await page.locator('.voople-group-people').evaluate(el=>getComputedStyle(el).overflowY),'auto');
+    }
+    const room=page.locator('[data-layout="room-section"]');
+    assert.deepEqual(await room.evaluateAll(nodes=>nodes.map(n=>n.dataset.roomKind)),["lobby","pinned","pinned","temporary"]);
+    assert.equal(await room.first().locator('[data-participant-id]').count(),count);
+    assert.equal(await page.locator('[data-participant-id]').count(),count+9);
+    assert.equal(await room.nth(1).getByLabel("Микрофон выключен").count(),0);
+    assert.equal(await room.nth(1).getByLabel("Камера включена").count(),0);
+    assert.equal(await room.nth(1).locator('button button').count(),0);
+    assert.equal(await page.getByText("Пустая временная").count(),0);
+    assert.equal(await page.getByRole("button",{name:"Отделиться во временную комнату"}).count(),1);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    assert.notEqual(await page.locator('.voople-stage').evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)');
+    if(width>=1024){
+      await page.locator('#voople-sidebar-session-root .voople-voice-dock--compact').waitFor();
+      assert.equal(await page.locator('.voople-sidebar').evaluate(el=>el.getBoundingClientRect().width),220);
+      assert.ok((await page.locator('.voople-voice-dock--compact').boundingBox()).height<=84,'Sidebar dock stays compact');
     } else {
-      await page.evaluate((value) => window.setGroupTab(value), tab);
+      assert.equal(await room.first().locator('.voople-group-now__participants').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),1);
+      const dock=await page.locator('.voople-voice-dock--compact').boundingBox();
+      const stage=await page.locator('.voople-stage').boundingBox();
+      assert.ok(stage.y+stage.height<=dock.y,'Stage stays above mobile dock');
+      assert.ok(dock.height<=90,`Mobile dock stays compact: ${dock.height}px`);
+      for(const box of await page.locator('.voople-voice-compact__control').evaluateAll(nodes=>nodes.map(n=>({w:n.getBoundingClientRect().width,h:n.getBoundingClientRect().height}))))assert.ok(box.w>=44&&box.h>=44);
     }
-    await page.getByRole("tab", { name: tab === "chat" ? "Чат" : tab === "now" ? "Войс" : "Люди" }).waitFor();
-    await page.waitForTimeout(250);
-    if (tab === "chat") {
-      await page.getByText("Из комнаты DRG: Deep Rock Galactic", { exact: true }).waitFor();
-      await page.waitForFunction(() => {
-        const shelf = document.querySelector(".voople-group-live-shelf");
-        return shelf && getComputedStyle(shelf).opacity === "1";
-      });
-      if (width >= 1024) {
-        await page.locator(".voople-sidebar").getByLabel("Непрочитанных сообщений: 5").waitFor();
-        await page.locator(".voople-sidebar").getByLabel("Непрочитанных сообщений: 2").waitFor();
-        await page.getByRole("button", { name: /Голосовые комнаты группы VOICEKK: 4 в голосе/ }).waitFor();
-      }
-      if (state === "sections") {
-        await page.getByRole("button", { name: /Текущий раздел: Общий/ }).click();
-        await page.getByRole("dialog", { name: "Выбор раздела группы" }).waitFor();
-        await page.waitForTimeout(200);
-      }
-      if (state === "create") {
-        await page.getByRole("button", { name: "Новый раздел" }).click();
-        await page.getByRole("form", { name: "Новый раздел" }).waitFor();
-        await page.waitForTimeout(200);
-      }
-      if (state === "collapsed") {
-        await page.getByRole("button", { name: "Свернуть активные разговоры" }).click();
-        await page.getByRole("button", { name: "Развернуть активные разговоры" }).waitFor();
-        await page.waitForTimeout(200);
+    const compactControls=page.locator('.voople-voice-dock--compact');
+    for(const label of ['Включить микрофон','Выключить звук собеседников','Включить камеру','Показать экран','Выйти из разговора']){
+      assert.equal(await compactControls.getByRole('button',{name:label,exact:true}).isVisible(),true,`${label} is directly visible`);
+    }
+    assert.equal(await page.locator('.voople-voice-compact__controls button').count(),5);
+    await (expectedMode==="compact"
+      ? page.locator('.voople-group-now__available [data-participant-id]').last()
+      : room.first().locator('[data-participant-id]').last()).scrollIntoViewIfNeeded();
+    assert.equal(await page.locator('.voople-stage').evaluate(el=>el.scrollWidth<=el.clientWidth),true);
+    await page.locator('.voople-group-workspace__live').evaluate(el=>{el.scrollTop=0});
+    const file=path.join(artifacts,`group-${host}-workspace-${width}-${theme}-${count}.png`);
+    await page.screenshot({path:file});
+    if(expectedMode==="medium" && count===8 && width===1100){
+      const trigger=page.getByRole('button',{name:'Показать участников группы'});
+      await trigger.click();
+      await page.getByRole('complementary',{name:'Участники группы'}).waitFor();
+      assert.equal(await page.locator('.voople-group-workspace__people').count(),0);
+      assert.equal(await page.locator('.voople-group-workspace__people-drawer .voople-group-people').evaluate(el=>getComputedStyle(el).overflowY),'auto');
+      await page.screenshot({path:path.join(artifacts,`group-${host}-people-drawer-1100-void.png`)});
+      await page.keyboard.press('Escape');
+      assert.equal(await page.getByRole('complementary',{name:'Участники группы'}).count(),0);
+      assert.equal(await trigger.evaluate(el=>el===document.activeElement),true);
+      for (const widthAfterLeavingMedium of [1440,390]) {
+        await trigger.click();
+        await page.getByRole('complementary',{name:'Участники группы'}).waitFor();
+        await page.setViewportSize({width:widthAfterLeavingMedium,height:900});
+        await page.locator(`.voople-group-surface[data-mode="${widthAfterLeavingMedium===1440?'wide':'compact'}"]`).waitFor();
+        await page.setViewportSize({width:1100,height:900});
+        await page.locator('.voople-group-surface[data-mode="medium"]').waitFor();
+        assert.equal(await page.getByRole('complementary',{name:'Участники группы'}).count(),0);
+        assert.equal(await trigger.getAttribute('aria-expanded'),'false');
       }
     }
-    if (tab === "now") {
-      assert.equal(await page.locator('[data-layout="room-section"]').count(), 2);
-      await page.getByRole("button", { name: "Выйти из разговора: DRG" }).waitFor();
-      await page.getByRole("button", { name: "Отделиться во временную комнату" }).waitFor();
-      await page.getByRole("button", { name: "Создать постоянную комнату" }).waitFor();
+    const person=room.first().getByRole('button',{name:'Действия участника Biba',exact:true});
+    await person.click();
+    await page.getByRole('slider').fill('150');
+    assert.equal(await page.evaluate(()=>window.fixture.volumes['user-1']),1.5);
+    await page.getByRole('menuitem',{name:'Сбросить до 100%'}).click();
+    assert.equal(await page.evaluate(()=>window.fixture.volumes['user-1']),1);
+    await person.focus();await person.press('Shift+F10');
+    await page.getByRole('slider').waitFor();await page.getByRole('slider').focus();await page.keyboard.press('Escape');
+    assert.equal(await person.evaluate(el=>el===document.activeElement),true);
+    await person.click();await page.getByRole('menuitem',{name:'Заглушить',exact:true}).click();
+    assert.equal(await page.evaluate(()=>window.fixture.volumes['user-1']),0);
+    await person.click();await page.getByRole('menuitem',{name:'Вуп · отдельный разговор'}).click();
+    assert.equal(await page.evaluate(()=>window.fixture.event),'voop:user-1');
+    assert.equal(await room.count(),4);
+    await page.getByRole('button',{name:'Отменить',exact:true}).click();
+    await room.first().getByRole('button',{name:'Действия участника Гость',exact:true}).click();
+    assert.equal(await page.getByRole('menuitem',{name:/Вуп/}).count(),0);
+    assert.equal(await page.getByRole('menuitem',{name:'Открыть профиль'}).count(),0);
+    await page.keyboard.press('Escape');
+    await room.nth(1).locator('[data-participant-id]').first().click();
+    await room.nth(1).getByRole('link',{name:/Открыть профиль/}).first().click();
+    assert.match(await page.evaluate(()=>window.fixture.event),/^profile:/);
+    await page.getByRole('button',{name:'Перейти в комнату DRG',exact:true}).click();
+    await room.nth(1).getByText('Подключаемся…').waitFor();
+    assert.equal(await room.first().getByText('Вы здесь').count(),1);
+    await page.evaluate(()=>{window.fixture.setPending(null);window.fixture.setError('Пробное отключение: текущий разговор сохранён')});
+    await page.getByRole('alert').waitFor();
+    assert.equal(await room.first().getByText('Вы здесь').count(),1);
+    if(expectedMode==="compact"){
+      await page.getByRole('tab',{name:'Чат',exact:true}).click();
+      assert.equal(await page.locator('.voople-group-workspace__live').count(),0);
+      assert.equal(await page.locator('.voople-group-workspace__chat').count(),1);
+      await page.getByRole('tab',{name:'Люди',exact:true}).click();
+      assert.equal(await page.locator('.voople-group-workspace__chat').count(),0);
+      assert.equal(await page.locator('.voople-group-workspace__people').count(),1);
     }
-    if (tab === "people") {
-      await page.getByLabel("В разговоре: 2").waitFor();
-      await page.getByLabel("Онлайн: 2").waitFor();
-      await page.getByLabel("Остальные: 1").waitFor();
-      await page.getByRole("button", { name: /Вуп: позвать/ }).first().waitFor();
+    assert.equal(await page.locator('.voople-group-live-shelf').count(),0);
+    assert.equal(await page.locator('.voople-voice-dock--compact').count(),1);
+    await page.getByRole('region',{name:'Компактный голосовой разговор'}).waitFor();
+    if(host==="web" && width===1440 && theme==="void" && count===8){
+      await page.setViewportSize({width:390,height:900});
+      await page.locator('.voople-group-surface[data-mode="compact"]').waitFor();
+      await page.getByRole('tab',{name:'Чат',exact:true}).click();
+      assert.equal(await page.locator('.voople-group-workspace__chat').count(),1);
+      assert.equal(await page.locator('.voople-group-workspace__live').count(),0);
+      await page.setViewportSize({width:1440,height:900});
+      await page.locator('.voople-group-surface[data-mode="wide"]').waitFor();
+      assert.equal(await page.locator('.voople-group-workspace__chat').count(),1);
+      assert.equal(await page.locator('.voople-group-workspace__live').count(),1);
     }
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-    assert.deepEqual(errors, []);
-    const stateSuffix = state === "default" ? "" : `-${state}`;
-    await page.screenshot({ path: path.join(artifacts, outputName ?? `group-${host}-${tab}-${width}-${theme}${stateSuffix}.png`) });
-    console.log(`PASS ${host} ${tab}${stateSuffix} ${width}px ${theme}: no overflow or runtime errors`);
+    assert.deepEqual(errors,[]);
+    console.log(`PASS ${host} ${width}px ${theme} ${count} people: roster, privacy, volume, keyboard, pending, dock, overflow`);
     await page.close();
   }
 } finally {
   await browser?.close();
-  await new Promise((resolve) => server.close(resolve));
+  await new Promise(resolve=>server.close(resolve));
 }

@@ -39,7 +39,7 @@ export function GroupNameEditor({
   };
 
   return (
-    <section className="mt-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
+    <section className="mt-4 border-b border-[var(--material-border)] pb-5">
       <label className="text-sm font-semibold" htmlFor="group-name-input">Название группы</label>
       <p className="mt-1 text-xs leading-5 text-[var(--app-muted)]">Отображается в чатах, приглашениях и карточках сообщества.</p>
       <div className="mt-3 flex gap-2">

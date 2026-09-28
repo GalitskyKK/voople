@@ -17,6 +17,7 @@ export type RoomGuestPreviewParticipant = {
 export type RoomGuestInvitePreview = {
   available: boolean;
   reason: "active" | RoomGuestInviteUnavailableReason;
+  sessionId: string | null;
   groupName: string | null;
   roomName: string | null;
   participantCount: number;

@@ -45,7 +45,7 @@ function DesktopSessionRouter({
   onPendingPathConsumed: () => void;
   onPendingPathPreserved: (path: string) => void;
 }) {
-  const { bootstrapError, loading, retry, session } = useDesktopAuth();
+  const { bootstrapError, deviceTrustPending, loading, retry, session } = useDesktopAuth();
   if (loading) return <BrandedLoadingView fullscreen />;
   if (bootstrapError) {
     return (
@@ -57,7 +57,7 @@ function DesktopSessionRouter({
       />
     );
   }
-  if (!session) return <DesktopLogin config={config} continuationPath={pendingPath} />;
+  if (!session || deviceTrustPending) return <DesktopLogin config={config} continuationPath={pendingPath} />;
   return (
     <Suspense fallback={<BrandedLoadingView fullscreen />}>
       <DesktopAuthenticatedApp

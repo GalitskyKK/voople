@@ -87,7 +87,9 @@ export function buildGroupNowView(input: BuildGroupNowViewInput): GroupNowView {
     }
   }
   const selectedSessionIds = new Set(
-    [...latestSessionByRoom.values()].map((session) => session.id),
+    [...latestSessionByRoom.values()]
+      .filter((session) => session.status === "active" || session.status === "connecting")
+      .map((session) => session.id),
   );
 
   const participantsBySession = new Map<string, GroupNowParticipant[]>();
@@ -101,11 +103,15 @@ export function buildGroupNowView(input: BuildGroupNowViewInput): GroupNowView {
     placedUserIds.add(participant.user.id);
   }
 
-  const rooms: GroupNowRoom[] = input.rooms.map((room) => {
+  const rooms: GroupNowRoom[] = input.rooms.map((room): GroupNowRoom => {
     const session = latestSessionByRoom.get(room.id);
     const participants = session
       ? participantsBySession.get(session.id) ?? []
       : [];
+    // A non-ended DB row without fresh participants is not a current call.
+    const activeSession = participants.length > 0 && session?.status !== "grace"
+      ? session
+      : undefined;
     return {
       id: room.id,
       kind: room.kind,
@@ -113,15 +119,15 @@ export function buildGroupNowView(input: BuildGroupNowViewInput): GroupNowView {
       canManage: room.canManage,
       canPin: room.canPin,
       joinTarget: { kind: "room", roomId: room.id },
-      state: session?.status ?? "idle",
-      liveSessionId: session?.id ?? null,
-      startedAt: session?.startedAt ?? null,
-      startedBy: session?.startedBy ?? null,
+      state: activeSession?.status ?? "idle",
+      liveSessionId: activeSession?.id ?? null,
+      startedAt: activeSession?.startedAt ?? null,
+      startedBy: activeSession?.startedBy ?? null,
       participantCount: participants.length,
       hasScreenShare: participants.some((participant) => participant.screenSharing),
       participants,
     };
-  });
+  }).filter((room) => room.kind !== "temporary" || room.liveSessionId !== null);
 
   const roomById = new Map(rooms.map((room) => [room.id, room]));
   for (const legacy of input.legacyPresence) {
@@ -191,4 +197,13 @@ export function buildGroupNowView(input: BuildGroupNowViewInput): GroupNowView {
     ]).size,
     currentUserRoomId: currentUserRoom?.id ?? null,
   };
+}
+
+export function resolveCurrentLiveSessionId(view: GroupNowView): string | null {
+  const room = view.rooms.find((candidate) =>
+    candidate.id === view.currentUserRoomId
+    && candidate.joinTarget.kind === "room"
+    && candidate.participants.some((participant) => participant.isMe),
+  );
+  return room?.liveSessionId ?? null;
 }

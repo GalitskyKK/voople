@@ -1,10 +1,13 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { LIVE_MOVE_SCHEMA_UNAVAILABLE } from "@/lib/chat/live-move-readiness";
+
 import { assertRateLimit } from "@/lib/ratelimit-guard";
 import { rateLimits } from "@/lib/ratelimit";
+import { getCoreRoomInviteSessionRest } from "@/server/data/core-room-invitations-rest";
+import { liveMoveStatusForConsent } from "@/server/services/live-move.service";
 import {
-  acceptCoreVoopRequest,
   archiveGroupRoom,
   cancelCoreRoomInvite,
   createAndJoinGroupRoom,
@@ -13,7 +16,6 @@ import {
   createGroupRoom,
   createRoomGuestInvite,
   getCoreRoomInvitePreview,
-  getCoreVoopStatus,
   getGroupNow,
   heartbeatGroupRoom,
   joinGroupRoom,
@@ -22,10 +24,16 @@ import {
   respondToCoreRoomInvite,
   renameGroupRoom,
   sendCoreRoomInvite,
-  sendCoreVoopRequest,
   setGroupRoomKind,
 } from "@/server/services/chat.service";
 import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
+import {
+  cancelLiveMove,
+  liveMoveStatus,
+  listMyLiveMoves,
+  requestLiveMove,
+  respondLiveMove,
+} from "@/server/services/live-move.service";
 import {
   assertServerFeatureAvailable,
   getServerFeatureAccess,
@@ -65,6 +73,69 @@ function toRoomError(error: unknown, fallback: string): TRPCError {
 }
 
 export const chatCoreReworkProcedures = {
+  coreRequestLiveMove: protectedProcedure
+    .input(z.strictObject({
+      groupId: z.string().uuid(),
+      mode: z.enum(["split", "voop"]),
+      inviteeIds: z.array(z.string().uuid()).min(1).max(8),
+      expectedSourceSessionId: z.string().uuid().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
+      try {
+        return await requestLiveMove({ ...input, inviterId: ctx.user.id });
+      } catch (error) {
+        throw toRoomError(error, "Не удалось отправить запрос на Сплит");
+      }
+    }),
+
+  coreRespondLiveMove: protectedProcedure
+    .input(z.strictObject({ consentId: z.string().uuid(), accept: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
+      try {
+        return await respondLiveMove(input.consentId, ctx.user.id, input.accept);
+      } catch (error) {
+        throw toRoomError(error, "Не удалось ответить на запрос");
+      }
+    }),
+
+  coreCancelLiveMove: protectedProcedure
+    .input(z.strictObject({ requestId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      try {
+        return await cancelLiveMove(input.requestId, ctx.user.id);
+      } catch (error) {
+        throw toRoomError(error, "Не удалось отменить запрос");
+      }
+    }),
+
+  coreLiveMoveStatus: protectedProcedure
+    .input(z.strictObject({ requestId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      try {
+        return await liveMoveStatus(input.requestId, ctx.user.id);
+      } catch (error) {
+        throw toRoomError(error, "Не удалось проверить запрос");
+      }
+    }),
+
+  coreMyLiveMoves: protectedProcedure.query(async ({ ctx }) => {
+    assertMultiRoomAccess(ctx.user.id);
+    try {
+      return await listMyLiveMoves(ctx.user.id);
+    } catch (error) {
+      if (error instanceof Error && error.message === LIVE_MOVE_SCHEMA_UNAVAILABLE) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: LIVE_MOVE_SCHEMA_UNAVAILABLE });
+      }
+      throw toRoomError(error, "Не удалось проверить переходы между комнатами");
+    }
+  }),
+
   coreRoomAvailability: protectedProcedure.query(({ ctx }) => ({
     enabled: getServerFeatureAccess("multi_room_groups", ctx.user.id).enabled,
   })),
@@ -81,9 +152,8 @@ export const chatCoreReworkProcedures = {
     }),
 
   coreCreateRoom: protectedProcedure
-    .input(z.object({
+    .input(z.strictObject({
       groupId: z.string().uuid(),
-      kind: roomKindSchema,
       name: z.string().trim().min(1).max(80),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -105,9 +175,8 @@ export const chatCoreReworkProcedures = {
     }),
 
   coreCreateAndJoinRoom: protectedProcedure
-    .input(z.object({
+    .input(z.strictObject({
       groupId: z.string().uuid(),
-      kind: roomKindSchema,
       name: z.string().trim().min(1).max(80),
       requestId: z.string().uuid(),
       micMuted: z.boolean().default(true),
@@ -121,7 +190,7 @@ export const chatCoreReworkProcedures = {
         const result = await createAndJoinGroupRoom({
           groupId: input.groupId,
           userId: ctx.user.id,
-          kind: input.kind,
+          kind: "pinned",
           name: input.name,
           requestId: input.requestId,
           micMuted: input.micMuted,
@@ -300,19 +369,21 @@ export const chatCoreReworkProcedures = {
       assertMultiRoomAccess(ctx.user.id);
       await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
       try {
-        const invite = await sendCoreVoopRequest({
-          ...input,
-          inviterId: ctx.user.id,
+        const context = await getCoreRoomInviteSessionRest(input.sessionId, ctx.user.id);
+        const invite = await requestLiveMove({
+          groupId: context.groupId, inviterId: ctx.user.id,
+          inviteeIds: [input.inviteeId], mode: "voop",
+          expectedSourceSessionId: input.sessionId,
         });
         await recordServerProductEvent({
           name: "room_invite_sent",
           actorId: ctx.user.id,
           dedupeId: `voop:${invite.id}`,
           route: "/trpc/chat.coreSendVoop",
-          subject: { kind: "group", id: invite.groupId },
+          subject: { kind: "group", id: context.groupId },
           properties: { transport: "voop" },
         });
-        return invite;
+        return { ...invite, groupId: context.groupId };
       } catch (error) {
         throw toRoomError(error, "Не удалось отправить Вуп");
       }
@@ -323,7 +394,7 @@ export const chatCoreReworkProcedures = {
     .query(async ({ ctx, input }) => {
       assertMultiRoomAccess(ctx.user.id);
       try {
-        return await getCoreVoopStatus(input.inviteId, ctx.user.id);
+        return await liveMoveStatus(input.inviteId, ctx.user.id);
       } catch (error) {
         throw toRoomError(error, "Не удалось проверить Вуп");
       }
@@ -338,11 +409,9 @@ export const chatCoreReworkProcedures = {
       assertMultiRoomAccess(ctx.user.id);
       await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
       try {
-        const accepted = await acceptCoreVoopRequest({
-          inviteId: input.inviteId,
-          userId: ctx.user.id,
-          allowCrossContext: input.confirmedCrossContext,
-        });
+        await respondLiveMove(input.inviteId, ctx.user.id, true);
+        const accepted = await liveMoveStatusForConsent(input.inviteId, ctx.user.id);
+        if (!accepted.join || !accepted.room) throw new Error("Вуп ещё ожидает согласия");
         const credentials = await createGroupRoomMediaToken(
           accepted.join.sessionId,
           ctx.user.id,
@@ -355,23 +424,7 @@ export const chatCoreReworkProcedures = {
           subject: { kind: "group", id: accepted.groupId },
           properties: { roomKind: "temporary", transition: "voop" },
         });
-        return {
-          ...accepted,
-          credentials,
-          room: {
-            id: accepted.room.id,
-            kind: accepted.room.kind,
-            name: accepted.room.name,
-            joinTarget: { kind: "room" as const, roomId: accepted.room.id },
-            state: "active" as const,
-            liveSessionId: accepted.join.sessionId,
-            startedAt: new Date().toISOString(),
-            startedBy: ctx.user.id,
-            participantCount: 1,
-            hasScreenShare: false,
-            participants: [],
-          },
-        };
+        return { ...accepted, credentials };
       } catch (error) {
         throw toRoomError(error, "Не удалось принять Вуп");
       }

@@ -21,6 +21,7 @@ import {
   joinGroupRoom,
 } from "@/server/services/group-room-mutations.service";
 import { getGroupNow } from "@/server/services/group-now.service";
+import { listLiveMoveInvitePreviews } from "@/server/services/live-move-preview.service";
 import { filterUserIdsByPrivacyFieldRest } from "@/server/data/privacy-rest";
 import { assertUsersCanInteractRest } from "@/server/data/user-blocks-rest";
 import type {
@@ -106,6 +107,9 @@ export async function sendCoreVoopRequest(input: {
     requireRootGroupMember(context.groupId, input.inviterId),
     requireRootGroupMember(context.groupId, input.inviteeId),
   ]);
+  if (!context.participantIds.includes(input.inviteeId)) {
+    throw new Error("Вуп доступен только участнику текущего разговора");
+  }
   await assertUsersCanInteractRest(input.inviterId, input.inviteeId);
   const allowedIds = await filterUserIdsByPrivacyFieldRest(
     [input.inviteeId],
@@ -160,6 +164,9 @@ export async function acceptCoreVoopRequest(input: {
     request.inviterId,
   );
   if (context.groupId !== request.groupId) throw new Error("Вуп больше недоступен");
+  if (!context.participantIds.includes(input.userId)) {
+    throw new Error("Вы больше не в исходном разговоре");
+  }
   await requireRootGroupMember(request.groupId, input.userId);
   const result = await createAndJoinGroupRoom({
     groupId: request.groupId,
@@ -218,7 +225,11 @@ export async function cancelCoreRoomInvite(input: {
 }
 
 export async function listCoreRoomInvitePreviews(inviteIds: string[], userId: string) {
-  const previews = await listCoreRoomInvitePreviewsRest(inviteIds, userId);
+  const [legacyPreviews, movePreviews] = await Promise.all([
+    listCoreRoomInvitePreviewsRest(inviteIds, userId),
+    listLiveMoveInvitePreviews(inviteIds, userId),
+  ]);
+  const previews = new Map([...legacyPreviews, ...movePreviews]);
   const groupIds = [...new Set([...previews.values()].flatMap((preview) =>
     preview.groupId ? [preview.groupId] : [],
   ))];

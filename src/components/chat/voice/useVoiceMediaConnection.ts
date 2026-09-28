@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 
 import { ConnectionQuality, ConnectionState, Room } from "livekit-client";
 
 import { syncVoiceTrackProcessor } from "@/lib/livekit/rnnoise-track-processor";
+import { traceVoiceMic } from "@/lib/livekit/voice-mic-debug";
 import type { VoicePreferences } from "@/lib/livekit/voice-preferences";
 import type { VoiceMediaCredentials } from "@/types/voice";
 
@@ -11,6 +12,7 @@ import {
   getAudioCaptureOptions,
   getMicrophoneMuted,
   reconnectPolicy,
+  setMicrophoneEnabledWithFallback,
   VOICE_PUBLISH_OPTIONS,
   type LiveKitEndpoint,
   type MediaStatus,
@@ -26,6 +28,7 @@ import {
 export function useVoiceMediaConnection({
   roomRef,
   preferencesRef,
+  persistPreferences,
   desiredMicMutedRef,
   screenShareQualityRef,
   getCredentials,
@@ -44,6 +47,7 @@ export function useVoiceMediaConnection({
 }: {
   roomRef: MutableRefObject<Room | null>
   preferencesRef: MutableRefObject<VoicePreferences>
+  persistPreferences: (patch: Partial<VoicePreferences>) => VoicePreferences
   desiredMicMutedRef: MutableRefObject<boolean>
   screenShareQualityRef: MutableRefObject<ScreenShareQuality>
   getCredentials: () => Promise<VoiceMediaCredentials>
@@ -214,6 +218,11 @@ export function useVoiceMediaConnection({
           }
 
           setMicMuted(getMicrophoneMuted(room));
+          traceVoiceMic("connection.connected", {
+            roomState: room.state,
+            desiredMuted: desiredMicMutedRef.current,
+            actualMuted: getMicrophoneMuted(room),
+          });
 
           const isCurrentRoom = () => isCurrent() && roomRef.current === room;
 
@@ -241,16 +250,17 @@ export function useVoiceMediaConnection({
             if (!isCurrentRoom()) return;
 
             if (!desiredMicMutedRef.current) {
+              traceVoiceMic("connection.restore", { roomState: room.state, desiredMuted: false });
               try {
-                await room.localParticipant.setMicrophoneEnabled(
-                  true,
-                  getAudioCaptureOptions(preferencesRef.current),
-                  VOICE_PUBLISH_OPTIONS,
+                const { usedDefault } = await setMicrophoneEnabledWithFallback(
+                  room, true, preferencesRef.current,
                 );
+                if (usedDefault) persistPreferences({ inputDeviceId: "default" });
 
                 if (!isCurrentRoom()) return;
 
                 if (desiredMicMutedRef.current) {
+                  traceVoiceMic("connection.remute", { reason: "desired state changed during restore" });
                   await room.localParticipant.setMicrophoneEnabled(false).catch(() => undefined);
                 } else {
                   const processorError = await syncVoiceTrackProcessor(room, {
@@ -267,6 +277,13 @@ export function useVoiceMediaConnection({
               } catch (cause) {
                 if (!isCurrentRoom()) return;
 
+                traceVoiceMic("connection.restore-error", {
+                  errorName: cause instanceof Error ? cause.name : "unknown",
+                  errorMessage: cause instanceof Error ? cause.message : String(cause),
+                  errorConstraint: cause instanceof Error && "constraint" in cause
+                    ? String(cause.constraint) : null,
+                });
+
                 setMediaError(
                   cause instanceof Error && cause.message.includes("timed out")
                     ? "Сервер не подтвердил микрофон. Комната осталась подключена — повторите включение или используйте совместимый режим."
@@ -280,6 +297,11 @@ export function useVoiceMediaConnection({
             if (!isCurrentRoom()) return;
 
             setMicMuted(getMicrophoneMuted(room));
+            traceVoiceMic("connection.settled", {
+              roomState: room.state,
+              desiredMuted: desiredMicMutedRef.current,
+              actualMuted: getMicrophoneMuted(room),
+            });
 
             await refreshDevices().catch(() => undefined);
 

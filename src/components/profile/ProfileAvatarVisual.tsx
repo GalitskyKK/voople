@@ -79,7 +79,7 @@ export function ProfileAvatarVisual({
       {isOnline && (
         <span
           className={cn(
-            "profile-avatar__presence absolute bottom-0 right-0 z-30 rounded-full border-[var(--background)] bg-emerald-500",
+            "profile-avatar__presence absolute bottom-0 right-0 z-30 rounded-full border-[var(--background)] bg-[var(--material-presence)]",
             onlineDotSize[size],
           )}
           aria-label="В сети"

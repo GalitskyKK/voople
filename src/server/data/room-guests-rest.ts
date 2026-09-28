@@ -61,6 +61,7 @@ function unavailable(
   return {
     available: false,
     reason,
+    sessionId: null,
     groupName: null,
     roomName: null,
     participantCount: 0,
@@ -176,7 +177,8 @@ export async function previewRoomGuestInviteRest(
     admin.from("chats").select("id, name, type, parent_chat_id")
       .eq("id", session.conversation_id).maybeSingle(),
     admin.from("live_session_participants").select("user_id")
-      .eq("session_id", session.id).is("left_at", null),
+      .eq("session_id", session.id).is("left_at", null)
+      .gt("last_seen_at", new Date(Date.now() - 120_000).toISOString()),
     admin.from("live_session_guests").select("id, display_name")
       .eq("live_session_id", session.id).is("left_at", null)
       .is("converted_at", null)
@@ -213,6 +215,7 @@ export async function previewRoomGuestInviteRest(
   return {
     available: !full,
     reason: full ? "full" : "active",
+    sessionId: String(session.id),
     groupName: String(group.name || "Группа"),
     roomName: String(room.name),
     participantCount: members.length + guests.length,
@@ -241,7 +244,7 @@ export async function resolveRoomGuestRest(accessToken: string) {
   const now = new Date().toISOString();
   const { data, error } = await getAdminClient()
     .from("live_session_guests")
-    .select("id, live_session_id, display_name, access_expires_at, live_sessions!inner(provider_session_id, status, ended_at)")
+    .select("id, invite_id, live_session_id, display_name, access_expires_at, live_sessions!inner(provider_session_id, status, ended_at)")
     .eq("access_token_hash", tokenHash(accessToken))
     .is("left_at", null)
     .is("converted_at", null)
@@ -253,6 +256,22 @@ export async function resolveRoomGuestRest(accessToken: string) {
   if (!session || session.ended_at || !ACTIVE_SESSION_STATES.includes(String(session.status))) {
     throw new Error("Комната уже закрыта");
   }
+  const inviteResult = await getAdminClient()
+    .from("room_guest_invites")
+    .select("live_session_id, expires_at, revoked_at")
+    .eq("id", data.invite_id)
+    .maybeSingle();
+  if (inviteResult.error) throw new Error(inviteResult.error.message);
+  const invite = inviteResult.data;
+  if (!invite || invite.live_session_id !== data.live_session_id) {
+    throw new RoomGuestUnavailableError("Приглашение не найдено", "missing");
+  }
+  if (invite.revoked_at) {
+    throw new RoomGuestUnavailableError("Приглашение отозвано", "revoked");
+  }
+  if (new Date(invite.expires_at).getTime() <= Date.now()) {
+    throw new RoomGuestUnavailableError("Срок приглашения истёк", "expired");
+  }
   return {
     guestId: String(data.id),
     sessionId: String(data.live_session_id),
@@ -263,6 +282,7 @@ export async function resolveRoomGuestRest(accessToken: string) {
 }
 
 export async function heartbeatRoomGuestRest(accessToken: string, micMuted: boolean) {
+  await resolveRoomGuestRest(accessToken);
   const { data, error } = await getAdminClient().rpc("heartbeat_room_guest_v2", {
     p_access_token_hash: tokenHash(accessToken),
     p_mic_muted: micMuted,

@@ -57,8 +57,8 @@ export function GroupChatCreatorView(props: GroupChatCreatorViewProps) {
         <div className="pr-10">
           <h2 className="text-xl font-semibold">Новая группа</h2>
           <p className="mt-1 text-sm text-[var(--app-muted)]">
-            Группу можно создать одному. Сразу добавить можно до 19 взаимных
-            подписок, а остальных — пригласить по ссылке после создания.
+            Группу можно создать одному. Сразу добавить можно до 19 друзей
+            сразу, а остальных — пригласить по ссылке после создания.
           </p>
         </div>
 

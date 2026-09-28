@@ -1,5 +1,8 @@
 "use client";
 
+import type { ReactNode } from "react";
+import type { VoiceSessionParticipants } from "@/types/voice-session-participants";
+
 import { useEffect, useState } from "react";
 
 import { trpc } from "@/lib/trpc/client";
@@ -14,12 +17,14 @@ export function GroupNowPanel({
   variant = "surface",
   onJoinRoom,
   onLeaveCurrent,
+  onExpandCurrent,
   leavePending = false,
   onCreateSplit,
   onCreateRoom,
   createPending = false,
   createError = null,
   onOpenProfile,
+  sessionDetails, onVoop, splitPending, moveStatus,
 }: {
   enabled?: boolean;
   groupId: string;
@@ -27,11 +32,16 @@ export function GroupNowPanel({
   variant?: "surface" | "shelf";
   onJoinRoom: (room: GroupNowRoom) => void | Promise<void>;
   onLeaveCurrent?: (room: GroupNowRoom) => void | Promise<void>;
+  onExpandCurrent?: (room: GroupNowRoom) => void;
   leavePending?: boolean;
-  onCreateSplit?: (user?: GroupNowUser) => void;
+  onCreateSplit?: () => void;
   onCreateRoom?: () => void;
   createPending?: boolean;
   createError?: string | null;
+  onVoop?: (user: GroupNowUser) => void;
+  splitPending?: boolean;
+  moveStatus?: ReactNode;
+  sessionDetails?: VoiceSessionParticipants | null;
   onOpenProfile?: (user: GroupNowUser) => void;
 }) {
   const [online, setOnline] = useState(true);
@@ -110,12 +120,14 @@ export function GroupNowPanel({
       actionError={actionError}
       onJoinRoom={(room) => void joinRoom(room)}
       onLeaveCurrent={onLeaveCurrent ? (room) => void leaveRoom(room) : undefined}
+      onExpandCurrent={onExpandCurrent}
       leavePending={leavePending}
       onCreateSplit={onCreateSplit}
       onCreateRoom={onCreateRoom}
       createPending={createPending}
       createError={createError}
       onOpenProfile={onOpenProfile}
+      sessionDetails={sessionDetails} onVoop={onVoop} splitPending={splitPending} moveStatus={moveStatus}
     />
   );
 }

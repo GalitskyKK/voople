@@ -68,7 +68,7 @@ export function ChatVoiceMessage({ url, durationLabel }: { url: string; duration
           }}
         />
       ) : null}
-      <button type="button" onClick={() => void toggle()} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--theme-accent)] text-white shadow-sm" aria-label={playing ? "Пауза" : "Слушать голосовое"}>
+      <button type="button" onClick={() => void toggle()} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--material-border-hover)] bg-[var(--material-control-fill)] text-[var(--material-ice)] shadow-sm" aria-label={playing ? "Пауза" : "Слушать голосовое"}>
         {playing ? <Pause className="h-4 w-4 fill-current" /> : <Play className="ml-0.5 h-4 w-4 fill-current" />}
       </button>
       <div className="min-w-0 flex-1">

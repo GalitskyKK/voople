@@ -51,6 +51,10 @@ test("Board 2 room context hides inaccessible sections and respects room privacy
   assert.match(presence, /filterUserIdsByPrivacyFieldRest/);
   assert.match(presence, /"roomsScope"/);
   assert.match(members, /activeRoom: activeRooms\.get\(user\.id\) \?\? null/);
-  assert.match(view, /\["now", "Войс"\]/);
-  assert.match(view, /Войс · \{activeRoom\.name\}/);
+  assert.match(view, /activeRooms\.reduce\(\(count, room\) => count \+ room\.participantCount, 0\)/);
+  assert.match(view, /activeRooms\.flatMap\(\(room\) => room\.participants\.map\(\(person\) => person\.id\)\)/);
+  const roomSection = read("src/components/chat/GroupNowRoomSection.tsx");
+  assert.match(roomSection, /room\.name/);
+  assert.match(roomSection, /room\.participantCount/);
+  assert.doesNotMatch(view, /Фильтр участников|MemberFilter/);
 });

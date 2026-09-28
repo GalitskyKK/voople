@@ -16,7 +16,7 @@ import { COPY } from "@/lib/constants/copy";
 import { createClient } from "@/lib/supabase/client";
 import {
   startTrustedPasswordLogin,
-  trustCurrentDevice,
+  trustCurrentDeviceWithRetry,
 } from "@/lib/auth/trusted-device-client";
 
 const schema = z.object({ email: z.string().email("Некорректный email"), password: z.string().min(6, "Минимум 6 символов") });
@@ -30,16 +30,15 @@ export default function LoginPage() {
   const [code, setCode] = useState("");
   const [codeBusy, setCodeBusy] = useState(false);
   const [codeError, setCodeError] = useState<string | null>(null);
+  const [trustFailure, setTrustFailure] = useState(false);
+  const [trustBusy, setTrustBusy] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const codeInputs = useRef<Array<HTMLInputElement | null>>([]);
   const { register, handleSubmit, formState: { errors, isSubmitting }, setError, getValues } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
-  const finishLogin = async (trustAccessToken?: string) => {
-    if (trustAccessToken) {
-      await trustCurrentDevice({ accessToken: trustAccessToken, platform: "web" }).catch(() => undefined);
-    }
+  const finishLogin = async () => {
     const { username, created } = await syncPublicUser();
     const requestedRedirect = new URLSearchParams(window.location.search).get("redirect");
     const safeRedirect = safeAuthContinuation(requestedRedirect);
@@ -104,7 +103,40 @@ export default function LoginPage() {
     setCodeBusy(true); setCodeError(null);
     const { data, error } = await createClient().auth.verifyOtp({ email: codeSentTo, token: code, type: "email" });
     if (error || !data.session) { setCodeBusy(false); return setCodeError(error?.message ?? "Не удалось подтвердить код"); }
-    try { await finishLogin(data.session.access_token); } catch (error) { setCodeBusy(false); setCodeError(error instanceof Error ? error.message : "Не удалось создать профиль"); }
+    try {
+      await trustCurrentDeviceWithRetry({ accessToken: data.session.access_token, platform: "web" });
+    } catch {
+      setCodeBusy(false);
+      setTrustFailure(true);
+      return;
+    }
+    try { await finishLogin(); } catch (error) { setCodeBusy(false); setCodeError(error instanceof Error ? error.message : "Не удалось создать профиль"); }
+  };
+  const retryDeviceTrust = async () => {
+    setTrustBusy(true);
+    try {
+      const { data: { session } } = await createClient().auth.getSession();
+      if (!session) {
+        setTrustFailure(false);
+        setCodeError("Сессия истекла. Войдите ещё раз.");
+        return;
+      }
+      await trustCurrentDeviceWithRetry({ accessToken: session.access_token, platform: "web" });
+      setTrustFailure(false);
+      await finishLogin();
+    } catch {
+      // The authenticated session remains available for another retry or continuation.
+    } finally {
+      setTrustBusy(false);
+    }
+  };
+  const continueWithoutTrust = async () => {
+    setTrustBusy(true);
+    try { await finishLogin(); } catch (error) {
+      setCodeError(error instanceof Error ? error.message : "Не удалось открыть профиль");
+    } finally {
+      setTrustBusy(false);
+    }
   };
   const setCodeDigit = (index: number, raw: string) => {
     const digits = raw.replace(/\D/g, "").slice(0, CODE_LENGTH);
@@ -122,6 +154,16 @@ export default function LoginPage() {
     setCode(digits);
     window.setTimeout(() => codeInputs.current[Math.min(digits.length, CODE_LENGTH - 1)]?.focus(), 0);
   };
+
+  if (trustFailure) {
+    return <section className="voople-panel w-full max-w-sm space-y-4 p-6" aria-labelledby="device-trust-title">
+      <h1 id="device-trust-title" className="voople-display">Не удалось запомнить это устройство</h1>
+      <p className="text-sm text-[var(--app-muted)]">Вы уже вошли. Можно повторить сохранение или продолжить без него. В следующий раз может снова понадобиться код.</p>
+      {codeError && <p className="text-sm text-red-400" role="alert">{codeError}</p>}
+      <Button type="button" className="w-full" disabled={trustBusy} onClick={retryDeviceTrust}>{trustBusy ? "Повторяем…" : "Повторить"}</Button>
+      <button type="button" className="w-full text-center text-sm voople-link" disabled={trustBusy} onClick={continueWithoutTrust}>Продолжить без запоминания</button>
+    </section>;
+  }
 
   return <form onSubmit={handleSubmit(onSubmit)} className="voople-panel w-full max-w-sm space-y-4 p-6"><h1 className="voople-display">{COPY.login}</h1><label className="voople-label">Email<input type="email" className="voople-input mt-1.5" {...register("email")} />{errors.email && <span className="mt-1 block text-xs text-red-400">{errors.email.message}</span>}</label>{!codeMode && <label className="voople-label">Пароль<input type="password" className="voople-input mt-1.5" {...register("password")} />{errors.password && <span className="mt-1 block text-xs text-red-400">{errors.password.message}</span>}</label>}{codeMode && codeSentTo && <fieldset className="voople-label"><legend>Код из письма</legend><div className="mt-2 grid grid-cols-6 gap-2">{Array.from({ length: CODE_LENGTH }, (_, index) => <input key={index} ref={(element) => { codeInputs.current[index] = element; }} value={code[index] ?? ""} onChange={(event) => setCodeDigit(index, event.target.value)} onPaste={pasteCode} onKeyDown={(event) => { if (event.key === "Backspace" && !code[index] && index > 0) codeInputs.current[index - 1]?.focus(); if (event.key === "ArrowLeft" && index > 0) codeInputs.current[index - 1]?.focus(); if (event.key === "ArrowRight" && index < CODE_LENGTH - 1) codeInputs.current[index + 1]?.focus(); }} inputMode="numeric" autoComplete={index === 0 ? "one-time-code" : "off"} maxLength={CODE_LENGTH} aria-label={`Цифра ${index + 1} кода`} className="aspect-square min-w-0 rounded-xl border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] text-center text-xl font-semibold tabular-nums outline-none transition focus:border-(--theme-accent) focus:ring-2 focus:ring-(--theme-accent)/30" />)}</div></fieldset>}{(!codeMode || !codeSentTo) && <TurnstileChallenge action="login" resetKey={captchaResetKey} onTokenChange={setCaptchaToken} onUnavailable={setCaptchaError} />}{errors.root && <p className="text-sm text-red-400">{errors.root.message}</p>}{codeError && <p className="text-sm text-red-400">{codeError}</p>}{captchaError && <p className="text-sm text-red-400">{captchaError}</p>}{!codeMode ? <Button type="submit" className="w-full" disabled={isSubmitting}>{COPY.login}</Button> : codeSentTo ? <><Button type="button" className="w-full" disabled={codeBusy} onClick={verifyCode}>{codeBusy ? "Проверяем…" : "Войти по коду"}</Button><button type="button" className="w-full text-sm voople-link" disabled={codeBusy} onClick={sendCode}>Отправить код ещё раз</button></> : <Button type="button" className="w-full" disabled={codeBusy} onClick={sendCode}>{codeBusy ? "Отправляем…" : "Отправить код"}</Button>}<button type="button" className="w-full text-center text-sm voople-link" onClick={() => { setCodeMode((value) => !value); setCodeSentTo(null); setCodeError(null); setCode(""); setCaptchaToken(null); setCaptchaResetKey((value) => value + 1); }}>{codeMode ? "Войти с паролем" : "Войти по коду из письма"}</button><p className="text-center text-sm text-[var(--app-muted)]">Нет аккаунта? <WebAuthContinuationLink entry="/register">{COPY.register}</WebAuthContinuationLink></p></form>;
 }

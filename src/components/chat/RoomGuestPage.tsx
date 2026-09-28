@@ -107,7 +107,7 @@ export function RoomGuestPage({
                   </p>
                 </div>
                 <p className="flex items-center gap-2 text-sm text-[var(--app-muted)]" role="status">
-                  <span className={`h-2 w-2 rounded-full ${online && guest.mediaStatus === "connected" ? "bg-emerald-400" : "bg-amber-400"}`} />
+                  <span className={`h-2 w-2 rounded-full ${online && guest.mediaStatus === "connected" ? "bg-[var(--material-ice)]" : "bg-[var(--material-presence)] opacity-50"}`} />
                   {!online ? "Нет сети" : guest.mediaStatus === "connected" ? "Голос подключён"
                     : guest.mediaStatus === "reconnecting" ? "Восстанавливаем связь"
                       : guest.mediaStatus === "connecting" ? "Подключаем голос" : "Голос не подключён"}

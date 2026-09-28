@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { buildGroupNowView } from "../src/lib/chat/group-now.ts";
+import { buildGroupNowView, resolveCurrentLiveSessionId } from "../src/lib/chat/group-now.ts";
+import { formatGroupNowElapsed } from "../src/lib/chat/group-now-presentation.ts";
 
 const user = (id) => ({
   id,
@@ -47,6 +48,64 @@ test("Group Now keeps Lobby first and derives active media state", () => {
   assert.equal(result.currentUserRoomId, "drg");
   assert.deepEqual(result.onlineOutsideRooms.map((entry) => entry.id), ["bob"]);
   assert.equal(result.visibleOnlineCount, 2);
+  assert.equal(resolveCurrentLiveSessionId(result), "session");
+});
+
+test("Split resolves the current Lobby LiveSession, not merely a selected room", () => {
+  const result = buildGroupNowView({
+    groupId: "group",
+    groupName: "VOICEKK",
+    viewerId: "alice",
+    rooms: [lobby],
+    sessions: [{ id: "lobby-session", roomId: "lobby", status: "active", startedAt: "2026-08-31T12:00:00", startedBy: "alice" }],
+    participants: [{ sessionId: "lobby-session", user: user("alice"), micMuted: true, cameraEnabled: false, screenSharing: false }],
+    legacyPresence: [],
+    onlineUsers: [],
+  });
+  assert.equal(result.currentUserRoomId, "lobby");
+  assert.equal(resolveCurrentLiveSessionId(result), "lobby-session");
+  assert.equal(resolveCurrentLiveSessionId({ ...result, currentUserRoomId: null }), null);
+});
+
+test("Room duration uses only a fresh LiveSession and retains its start through reconnect", () => {
+  const now = Date.parse("2026-09-23T12:24:00Z");
+  const base = {
+    groupId: "group", groupName: "VOICEKK", viewerId: "alice", rooms: [lobby],
+    legacyPresence: [], onlineUsers: [],
+    participants: [{ sessionId: "live", user: user("alice"), micMuted: true, cameraEnabled: false, screenSharing: false }],
+  };
+  const fresh = buildGroupNowView({ ...base, sessions: [{ id: "live", roomId: "lobby", status: "active", startedAt: "2026-09-23T12:24:00", startedBy: "alice" }] });
+  assert.equal(formatGroupNowElapsed(fresh.rooms[0].startedAt, now), "только что");
+  const ongoing = buildGroupNowView({ ...base, sessions: [{ id: "live", roomId: "lobby", status: "active", startedAt: "2026-09-23T12:00:00", startedBy: "alice" }] });
+  assert.equal(formatGroupNowElapsed(ongoing.rooms[0].startedAt, now), "24 мин");
+  const afterReconnect = buildGroupNowView({ ...base, sessions: [{ id: "live", roomId: "lobby", status: "active", startedAt: "2026-09-23T12:00:00", startedBy: "alice" }] });
+  assert.equal(afterReconnect.rooms[0].startedAt, ongoing.rooms[0].startedAt);
+  const stale = buildGroupNowView({ ...base, participants: [], sessions: [{ id: "live", roomId: "lobby", status: "active", startedAt: "2026-09-17T07:24:00", startedBy: "alice" }] });
+  assert.equal(stale.rooms[0].startedAt, null);
+  assert.equal(stale.rooms[0].liveSessionId, null);
+  assert.equal(stale.currentUserRoomId, null);
+});
+
+test("temporary Room disappears on last leave while grace and orphan rows may remain in storage", () => {
+  const temporary = { id: "split", kind: "temporary", name: "Сплит", createdAt: "2026-09-23T12:00:00Z" };
+  const pinned = { id: "pinned", kind: "pinned", name: "Постоянная", createdAt: "2026-09-23T12:00:00Z" };
+  const base = {
+    groupId: "group", groupName: "DRG", viewerId: "alice",
+    rooms: [lobby, pinned, temporary], legacyPresence: [], onlineUsers: [],
+  };
+  const activeSession = { id: "live", roomId: "split", status: "active", startedAt: "2026-09-23T12:00:00Z", startedBy: "alice" };
+  const present = [{ sessionId: "live", user: user("alice"), micMuted: true, cameraEnabled: false, screenSharing: false }];
+  const live = buildGroupNowView({ ...base, sessions: [activeSession], participants: present });
+  assert.deepEqual(live.rooms.map((room) => room.id), ["lobby", "split", "pinned"]);
+  assert.equal(live.currentUserRoomId, "split");
+
+  const grace = buildGroupNowView({ ...base, sessions: [{ ...activeSession, status: "grace" }], participants: [] });
+  assert.deepEqual(grace.rooms.map((room) => room.id), ["lobby", "pinned"]);
+  assert.equal(grace.currentUserRoomId, null);
+  const orphan = buildGroupNowView({ ...base, sessions: [], participants: [] });
+  assert.deepEqual(orphan.rooms.map((room) => room.id), ["lobby", "pinned"]);
+  const stale = buildGroupNowView({ ...base, sessions: [activeSession], participants: [] });
+  assert.deepEqual(stale.rooms.map((room) => room.id), ["lobby", "pinned"]);
 });
 
 test("new LiveSession wins over duplicate legacy presence", () => {
@@ -110,6 +169,7 @@ test("server read model owns membership and presence privacy", () => {
   const data = readFileSync("src/server/data/group-now-rest.ts", "utf8");
 
   assert.match(service, /assertChatMemberRest/);
+  assert.match(data, /\.gt\("last_seen_at", new Date\(Date\.now\(\) - 120_000\)\.toISOString\(\)\)/);
   assert.match(service, /membership\.parentChatId/);
   assert.match(service, /filterUserIdsByPrivacyFieldRest/);
   assert.match(service, /"roomsScope"/);

@@ -31,6 +31,28 @@ test("internal transport needs capability and the exact user", () => {
   });
 });
 
+test("beta transport requires capability but not the internal user allowlist", () => {
+  const beta = { VOOPLE_RELEASE_CHANNEL: "beta" };
+  assert.deepEqual(resolveServerFeatureAccess("multi_room_groups", userId, beta), {
+    enabled: false,
+    reason: "server",
+  });
+  assert.deepEqual(resolveServerFeatureAccess("multi_room_groups", userId, {
+    ...beta,
+    VOOPLE_SERVER_CAPABILITIES: "multi_room_groups",
+  }), {
+    enabled: true,
+    reason: "available",
+  });
+  assert.deepEqual(resolveServerFeatureAccess("multi_room_groups", userId, {
+    VOOPLE_RELEASE_CHANNEL: "stable",
+    VOOPLE_SERVER_CAPABILITIES: "multi_room_groups",
+  }), {
+    enabled: false,
+    reason: "channel",
+  });
+});
+
 test("core rework transport is fail-closed and user allowlisted", async () => {
   const [access, service, env] = await Promise.all([
     readFile(new URL("../src/lib/product/server-feature-access.ts", import.meta.url), "utf8"),

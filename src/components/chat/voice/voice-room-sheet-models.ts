@@ -120,7 +120,7 @@ export type VoiceRoomMessagesModel = {
 };
 
 export type VoiceRoomMainSurfaceProps = {
-  overlay: { open: boolean; onClose: () => void };
+  overlay: { open: boolean; onCloseToMini: () => void; onCloseToCompact: () => void };
   identity: VoiceRoomIdentityModel;
   connection: VoiceRoomConnectionModel;
   stage: VoiceRoomStageModel;

@@ -16,17 +16,19 @@ export function GroupLiveShelfRoomCell({
   currentUserRoomId,
   pending,
   onJoinRoom,
+  onExpandCurrent,
 }: {
   room: GroupNowRoom;
   currentUserRoomId: string | null;
   pending: boolean;
   onJoinRoom: (room: GroupNowRoom) => void;
+  onExpandCurrent?: (room: GroupNowRoom) => void;
 }) {
   const action = resolveGroupNowRoomAction(room.id, currentUserRoomId);
   const current = action === "current";
   const visibleParticipants = room.participants.slice(0, 3);
   const overflowCount = Math.max(0, room.participants.length - visibleParticipants.length);
-  const label = `${actionLabels[action]}: ${room.name}, ${room.participantCount} в голосе${room.hasScreenShare ? ", идёт демонстрация" : ""}`;
+  const label = `${current ? "Открыть" : actionLabels[action]}: ${room.name}, ${room.participantCount} в голосе${room.hasScreenShare ? ", идёт демонстрация" : ""}`;
 
   return (
     <button
@@ -34,8 +36,8 @@ export function GroupLiveShelfRoomCell({
       aria-label={label}
       aria-current={current ? "true" : undefined}
       aria-busy={pending || undefined}
-      disabled={pending || current}
-      onClick={() => onJoinRoom(room)}
+      disabled={pending || current && !onExpandCurrent}
+      onClick={() => current ? onExpandCurrent?.(room) : onJoinRoom(room)}
       className={cn(
         "voople-room-material voople-live-room-card group relative flex min-h-[7rem] min-w-0 flex-1 overflow-hidden rounded-xl p-4 text-left disabled:cursor-default",
         current && "voople-live-room-card--current",

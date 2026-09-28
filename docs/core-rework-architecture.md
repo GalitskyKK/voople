@@ -1,10 +1,9 @@
 # Core rework architecture
 
-Status: accepted foundation for the staged core rework. The current product and
-interface contract is owned by `rework_plan/VOOPLE_PRODUCT_DECISION_MEMO.md`,
-`rework_plan/VOOPLE_IA_UI_SPEC.md` and
-`rework_plan/VOOPLE_IMPLEMENTATION_BRIEF.md`. This document retains the data,
-authorization and rollout invariants that support that contract.
+Status: accepted technical foundation for the staged core rework. Current
+product behaviour is owned by `PRODUCT.md`; older `rework_plan/` documents are
+historical references. This document retains data, authorization and rollout
+invariants that support the current product contract.
 
 ## Aggregate model
 
@@ -134,9 +133,16 @@ session.
 
 Temporary Rooms enter `grace` when their last participant leaves and are
 archived only by the bounded grace-expiry operation. Lobby and pinned Rooms
-remain durable while their empty LiveSession ends. During the compatibility
-window, the legacy entry path rejects users who already have a new active
-LiveSession, and the new switch transaction accounts for legacy presence. The
+remain durable while their empty LiveSession ends. GroupNow hides temporary
+Rooms without a fresh active/connecting participant or guest; visibility does
+not depend on physical archive timing.
+The service-role-only bounded expiry RPC runs from the authorized cron route
+once per minute via the Selectel host systemd timer, with at most 100 sessions
+per call. `CRON_SECRET` must be
+configured on the deployment for that route to execute maintenance. During
+the compatibility window, the legacy entry path rejects users who already
+have a new active LiveSession, and the new switch transaction accounts for
+legacy presence. The
 contract stays internal until real database concurrency, old-client and
 two-client media gates pass.
 
@@ -148,10 +154,11 @@ and the same request UUID is reused only after explicit confirmation. The RPC
 remains service-role-only and preserves the authorization checks in migrations
 59–60.
 
-Internal transport is fail-closed. `chat.core*` procedures require an
-authenticated user plus all of: `VOOPLE_RELEASE_CHANNEL=internal`, the
-`multi_room_groups` server capability and the user's UUID in the internal
-allowlist. Missing or invalid configuration resolves to stable/disabled and is
+Core Room transport is fail-closed. `chat.core*` procedures require an
+authenticated user, `VOOPLE_RELEASE_CHANNEL=internal` or `beta`, and the
+`multi_room_groups` server capability. The internal channel additionally
+requires the user's UUID in its allowlist. Missing or invalid configuration
+resolves to stable/disabled and is
 reported as a hidden surface, not as an open experimental endpoint. Inputs are
 validated at the tRPC boundary, create/manage/join operations retain the shared
 rate limits, and telemetry records only action state rather than Room or user

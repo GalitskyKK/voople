@@ -11,6 +11,7 @@ import { AppPreferencesProvider } from "@/components/settings/AppPreferencesProv
 import { WebVitalsReporter } from "@/components/telemetry/WebVitalsReporter";
 
 import "./globals.css";
+import "./styles/messenger-glass.css";
 
 export const metadata = createRootMetadata();
 

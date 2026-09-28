@@ -27,8 +27,8 @@ export function ChatThreadFrameView({
   groupSurface?: GroupSurfaceConfig;
   sections?: ReactNode;
   timeline: ChatTimelineItem[];
-  messagesRef: { current: HTMLDivElement | null };
-  messagesContentRef: { current: HTMLDivElement | null };
+  messagesRef: (node: HTMLDivElement | null) => void;
+  messagesContentRef: (node: HTMLDivElement | null) => void;
   renderMessage: (item: Extract<ChatTimelineItem, { type: "message" }>) => ReactNode;
   beforeMessages?: ReactNode;
   afterMessages?: ReactNode;
@@ -41,16 +41,12 @@ export function ChatThreadFrameView({
     <>
       {sections}
       <div
-        ref={(node) => {
-          messagesRef.current = node;
-        }}
+        ref={messagesRef}
         data-voople-scroll=""
         className="voople-chat-window__messages voople-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-1 py-3"
       >
         <div
-          ref={(node) => {
-            messagesContentRef.current = node;
-          }}
+          ref={messagesContentRef}
           className="mx-auto flex min-h-full w-full max-w-[72rem] flex-col justify-end gap-0.5 px-2 sm:px-5 lg:px-6"
         >
           {beforeMessages}
@@ -103,7 +99,7 @@ export function ChatThreadFrameView({
       ) : (
         <>
           {header}
-          {chatContent}
+          <div className="voople-stage flex min-h-0 flex-1 flex-col">{chatContent}</div>
         </>
       )}
       {overlays}

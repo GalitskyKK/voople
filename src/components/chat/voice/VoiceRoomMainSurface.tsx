@@ -22,7 +22,7 @@ type SecondaryPanel = "settings" | "soundboard" | "invite" | "messages" | null;
 
 /** Full Room replaces route content while the global application sidebar remains mounted. */
 export function VoiceRoomMainSurface({
-  overlay: { open, onClose },
+  overlay: { open, onCloseToMini, onCloseToCompact },
   identity,
   connection,
   stage,
@@ -49,11 +49,13 @@ export function VoiceRoomMainSurface({
     exitFullscreen,
   } = useVoiceRoomFullscreen();
 
-  const minimize = useCallback(() => {
+  const closeSurface = useCallback((target: "mini" | "compact") => {
+    if (session.leavePending) return;
     setSecondaryPanel((current) => current === "messages" ? current : null);
     void exitFullscreen();
-    onClose();
-  }, [exitFullscreen, onClose]);
+    if (target === "mini") onCloseToMini();
+    else onCloseToCompact();
+  }, [exitFullscreen, onCloseToCompact, onCloseToMini, session.leavePending]);
   const closeRoomMessages = useCallback(() => {
     setSecondaryPanel(null);
     window.requestAnimationFrame(() => {
@@ -93,11 +95,11 @@ export function VoiceRoomMainSurface({
       if (event.key !== "Escape") return;
       event.preventDefault();
       event.stopPropagation();
-      minimize();
+      closeSurface("compact");
     };
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
-  }, [fullscreen, minimize, open, secondaryPanel]);
+  }, [closeSurface, fullscreen, open, secondaryPanel]);
 
   if (!open || !mounted) return null;
   const mainArea = document.querySelector<HTMLElement>("[data-voople-main-area]");
@@ -134,7 +136,10 @@ export function VoiceRoomMainSurface({
               access={access}
               fullscreen={fullscreen}
               fullscreenPending={fullscreenPending}
-              onMinimize={minimize}
+              leavePending={session.leavePending}
+              canMinimizeToMini={session.inside}
+              onMinimizeToMini={() => closeSurface("mini")}
+              onCloseToCompact={() => closeSurface("compact")}
               onOpenSoundboard={() => setSecondaryPanel("soundboard")}
               onToggleRoomMessages={() => {
                 if (secondaryPanel === "messages") closeRoomMessages();
@@ -151,7 +156,6 @@ export function VoiceRoomMainSurface({
                 session={session}
                 errorMessage={connection.errorMessage}
                 onInvite={invite ? () => setSecondaryPanel("invite") : undefined}
-                onClose={minimize}
               />
               {pendingRoom ? <VoiceRoomSwitchStatus roomName={pendingRoom.name} /> : null}
             </div>

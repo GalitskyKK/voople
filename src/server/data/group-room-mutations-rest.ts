@@ -54,6 +54,9 @@ function throwRoomMutationError(message: string) {
   if (message.includes("ROOM_IDEMPOTENCY_CONFLICT")) {
     throw new Error("Запрос создания комнаты уже использован");
   }
+  if (message.includes("ROOM_SOURCE_INACTIVE")) {
+    throw new Error("Исходный разговор завершён или вы больше не в нём");
+  }
   if (message.includes("ROOM_NAME_INVALID")) {
     throw new Error("Название комнаты должно содержать от 1 до 80 символов");
   }
@@ -199,10 +202,10 @@ export async function heartbeatGroupRoomRest(input: {
   return { ok: true as const };
 }
 
-export async function expireGroupRoomGraceRest(before?: string) {
+export async function expireGroupRoomGraceRest(limit = 100) {
   const { data, error } = await getAdminClient().rpc(
-    "expire_group_room_grace",
-    before ? { p_before: before } : {},
+    "expire_group_room_grace_bounded",
+    { p_limit: limit },
   );
   if (error) throwRoomMutationError(error.message);
   const expired = z.number().int().nonnegative().parse(data);

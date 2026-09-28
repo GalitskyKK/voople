@@ -140,7 +140,7 @@ export function AdminOverviewPage() {
                 <Icon className="h-5 w-5 text-[var(--app-muted)]" />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{label}</p>
-                  <p className={ready ? "text-xs text-emerald-400" : "text-xs text-amber-400"}>
+                  <p className={ready ? "text-xs text-[var(--material-ice)]" : "text-xs text-[var(--material-secondary-text)]"}>
                     {ready ? "Настроено" : "Требует настройки"}
                   </p>
                 </div>

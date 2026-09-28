@@ -1,59 +1,63 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { AudioLines, MicOff, Video } from "lucide-react";
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
-import { cn } from "@/lib/utils";
-import type { GroupNowParticipant as GroupNowParticipantView, GroupNowUser } from "@/types/group-now";
+import type { GroupNowUser } from "@/types/group-now";
+import type { VoiceSessionParticipantDetail } from "@/types/voice-session-participants";
+import { VoiceParticipantContextMenu } from "./voice/VoiceParticipantContextMenu";
+import { GroupPersonPreview } from "./GroupPersonPreview";
 
-export function GroupNowParticipant({
-  user,
-  onOpenProfile,
-  variant = "inline",
-}: {
-  user: GroupNowUser | GroupNowParticipantView;
+export function GroupNowParticipant({ user, onOpenProfile, detail, onVolumeChange, onVoop, voopPending }: {
+  user: GroupNowUser;
   onOpenProfile?: (user: GroupNowUser) => void;
-  variant?: "inline" | "room";
+  detail?: VoiceSessionParticipantDetail;
+  onVolumeChange?: (volume: number) => void;
+  onVoop?: (user: GroupNowUser) => void;
+  voopPending?: boolean;
 }) {
-  const avatar = (
-    <ProfileAvatarVisual
-      displayName={user.displayName}
-      size="sm"
-      isOnline
-      shape={variant === "room" ? "round" : "square"}
+  const trigger = useRef<HTMLButtonElement>(null);
+  const [point, setPoint] = useState<{ x: number; y: number } | null>(null);
+  const volumeAvailable = Boolean(detail && !detail.isMe && onVolumeChange);
+  const menuAvailable = volumeAvailable || Boolean(onVoop);
+  const openMenu = () => {
+    const rect = trigger.current?.getBoundingClientRect();
+    if (rect) setPoint({ x: rect.left, y: rect.bottom });
+  };
+  const content = <>
+    <ProfileAvatarVisual displayName={user.displayName} size="sm" shape="round"
       avatarImage={user.avatarUrl ? (
-        // Shared portable surface: Next Image cannot be used by the Tauri renderer.
-        // eslint-disable-next-line @next/next/no-img-element
+        // eslint-disable-next-line @next/next/no-img-element -- portable identity shared with Tauri
         <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
-      ) : undefined}
-    />
-  );
+      ) : undefined} />
+    <span className="min-w-0 flex-1">
+      <span className="block truncate text-[13px] font-medium">{user.displayName}</span>
+      <span className="block truncate text-xs text-[var(--app-muted)]">{user.guest ? "гость" : `@${user.username}`}</span>
+    </span>
+    {detail?.speaking ? <AudioLines className="h-3.5 w-3.5 shrink-0 text-[var(--material-ice)]" aria-label="Говорит" /> : null}
+    {detail?.muted ? <MicOff className="h-3.5 w-3.5 shrink-0 text-[var(--app-muted)]" aria-label="Микрофон выключен" /> : null}
+    {detail?.camera ? <Video className="h-3.5 w-3.5 shrink-0 text-[var(--app-muted)]" aria-label="Камера включена" /> : null}
+  </>;
+  const identity = <button ref={trigger} type="button" className="voople-group-now-participant" data-participant-id={user.id}
+    aria-label={`${menuAvailable ? "Действия участника" : "Просмотреть профиль"} ${user.displayName}`}
+    aria-haspopup={menuAvailable ? "menu" : undefined} aria-expanded={menuAvailable ? Boolean(point) : undefined}
+    onClick={menuAvailable ? openMenu : undefined}
+    onContextMenu={(event) => { if (menuAvailable) { event.preventDefault(); setPoint({ x: event.clientX, y: event.clientY }); } }}
+    onKeyDown={(event) => {
+      if (menuAvailable && (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10"))) {
+        event.preventDefault(); openMenu();
+      }
+    }}>{content}</button>;
 
-  const content = variant === "room" ? (
-    <>
-      {avatar}
-      <span className="sr-only">{user.displayName}</span>
-    </>
-  ) : (
-    <>
-      {avatar}
-      <span className="max-w-24 truncate text-xs font-medium text-[var(--foreground)]">{user.displayName}</span>
-    </>
-  );
-
-  const className = cn(
-    variant === "room"
-      ? "voople-group-now-participant voople-group-now-participant--room relative inline-grid h-8 w-8 shrink-0 place-items-center rounded-full"
-      : "inline-flex min-w-0 items-center gap-2",
-    variant === "room" && "isMe" in user && user.isMe === true && "voople-group-now-participant--me",
-  );
-
-  if (!onOpenProfile || user.guest) return <span className={className}>{content}</span>;
-
-  return (
-    <button
-      type="button"
-      onClick={() => onOpenProfile(user)}
-      className={`${className} text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--theme-accent)]`}
-      aria-label={`Открыть профиль ${user.displayName}`}
-    >
-      {content}
-    </button>
-  );
+  return <>
+    {!user.guest ? <GroupPersonPreview id={user.id} username={user.username} displayName={user.displayName}
+        onOpenProfile={onOpenProfile ? () => onOpenProfile(user) : undefined} previewOnClick={!menuAvailable} focusPreview={!menuAvailable}>
+        {identity}
+      </GroupPersonPreview> : menuAvailable ? identity : <div className="voople-group-now-participant" data-participant-id={user.id}>{content}</div>}
+    {menuAvailable ? <VoiceParticipantContextMenu participant={user} open={Boolean(point)} anchorPoint={point}
+      volume={detail?.volume ?? 1} onVolumeChange={volumeAvailable ? onVolumeChange : undefined}
+      onOpenProfile={!user.guest && onOpenProfile ? () => onOpenProfile(user) : undefined}
+      onVoop={onVoop ? () => onVoop(user) : undefined} voopPending={voopPending}
+      onOpenChange={(open) => { if (!open) { setPoint(null); trigger.current?.focus({ preventScroll: true }); } }} /> : null}
+  </>;
 }

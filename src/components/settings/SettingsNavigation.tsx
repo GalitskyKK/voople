@@ -1,14 +1,14 @@
 import { cn } from "@/lib/utils";
 
 export const SETTINGS_SECTIONS = [
-  ["appearance", "Оформление"],
-  ["messages", "Чаты"],
+  ["account", "Аккаунт"],
+  ["profile", "Профиль"],
+  ["privacy", "Приватность"],
   ["notifications", "Уведомления"],
-  ["interface", "Интерфейс"],
-  ["privacy", "Приватность и активность"],
-  ["hotkeys", "Горячие клавиши"],
+  ["voice", "Голос и видео"],
+  ["appearance", "Внешний вид"],
   ["security", "Безопасность"],
-  ["legal", "Документы"],
+  ["advanced", "Дополнительно"],
 ] as const;
 
 export type SettingsSectionId = (typeof SETTINGS_SECTIONS)[number][0];

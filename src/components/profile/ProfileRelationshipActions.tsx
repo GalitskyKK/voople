@@ -9,7 +9,7 @@ import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { IconButton } from "@/components/ui/IconButton";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
-import { ProfileFollowButton } from "./ProfileFollowButton";
+import { ProfileFriendAction } from "./ProfileFriendAction";
 import { ProfileMessageAction } from "./ProfileMessageAction";
 import { ProfileMessageButton } from "./ProfileMessageButton";
 
@@ -38,7 +38,7 @@ export function ProfileRelationshipActions({
   const setBlock = trpc.social.setUserBlock.useMutation({
     onSuccess: (result) => {
       utils.social.blockState.setData({ userId }, { blockedByMe: result.blocked });
-      void utils.profile.getFollowState.invalidate({ username });
+      void utils.social.friendState.invalidate({ userId });
       void utils.social.myPinnedContacts.invalidate();
       void utils.feed.getPage.invalidate();
     },
@@ -53,7 +53,7 @@ export function ProfileRelationshipActions({
       return;
     }
     if (nextBlocked && !window.confirm(
-      `Заблокировать @${username}? Подписки, закрепление и активные приглашения между вами будут удалены.`,
+      `Заблокировать @${username}? Дружба, запросы, подписки и активные приглашения между вами будут удалены.`,
     )) return;
     setMenuOpen(false);
     setBlock.mutate({ userId, blocked: nextBlocked });
@@ -93,7 +93,7 @@ export function ProfileRelationshipActions({
 
   return (
     <>
-      <ProfileFollowButton username={username} canFollow={canFollow} layout={layout} />
+      <ProfileFriendAction userId={userId} />
       {onNavigate ? (
         <ProfileMessageAction username={username} size="sm" onNavigate={onNavigate} />
       ) : (

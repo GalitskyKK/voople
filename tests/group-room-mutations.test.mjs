@@ -40,7 +40,7 @@ test("server owns authorization and old clients respect new active sessions", as
   assert.match(service, /requireRoomAdmin/);
   assert.match(data, /z\.object/);
   assert.match(data, /roomRpc\("join_group_room"/);
-  assert.match(data, /"expire_group_room_grace"/);
+  assert.match(data, /"expire_group_room_grace_bounded"/);
   assert.match(legacy, /\.from\("live_session_participants"\)/);
   assert.ok(manifest.match(/60-core-room-mutations\.sql/g)?.length === 2);
 });

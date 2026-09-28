@@ -94,7 +94,7 @@ export function ScreenShareSourcePicker({
                   <span className="flex items-center gap-3 border-t border-[var(--app-border)] px-3 py-2.5">
                     <span className="min-w-0 flex-1 truncate text-sm font-medium">{source.title}</span>
                     {source.canShareAudio ? (
-                      <Volume2 className="h-4 w-4 shrink-0 text-emerald-400" aria-label="Звук доступен" />
+                      <Volume2 className="h-4 w-4 shrink-0 text-[var(--material-ice)]" aria-label="Звук доступен" />
                     ) : (
                       <VolumeX className="h-4 w-4 shrink-0 text-[var(--app-muted)]" aria-label="Без звука приложения" />
                     )}

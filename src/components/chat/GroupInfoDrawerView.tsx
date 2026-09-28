@@ -1,15 +1,16 @@
 "use client";
 
-import { Check, ChevronDown, Hash, MoreHorizontal, Settings2, Tag, UserPlus, UsersRound } from "lucide-react";
+import { Check, ChevronDown, Settings2, Tag, UserPlus, UsersRound } from "lucide-react";
 import { createPortal } from "react-dom";
 
-import { IconButton } from "@/components/ui/IconButton";
 import { RichText } from "@/components/ui/RichText";
 import { Sheet } from "@/components/ui/Sheet";
 import type { ChatGroupMemberView } from "@/types/chat";
 import type { GroupNowView } from "@/types/group-now";
 
 import { GroupAvatar } from "./GroupAvatar";
+import { GroupTopChrome } from "./GroupTopChrome";
+import { useGroupTopChromeSlot } from "./GroupTopChromeSlotContext";
 import { useGroupSurfaceNavigation } from "./GroupSurfaceNavigationContext";
 import { useGroupIdentitySlot } from "./GroupIdentitySlotContext";
 
@@ -40,6 +41,7 @@ export function GroupInfoDrawerView({ open, chatName, memberCount, groupIcon, gr
 }) {
   const selectGroupTab = useGroupSurfaceNavigation();
   const identitySlot = useGroupIdentitySlot();
+  const desktopChromeSlot = useGroupTopChromeSlot();
   const activeRooms = now?.rooms.filter((room) => (room.state === "active" || room.state === "connecting") && room.participantCount > 0) ?? [];
   const roomCount = activeRooms.reduce((count, room) => count + room.participantCount, 0);
   const onlineCount = now?.visibleOnlineCount ?? 0;
@@ -61,13 +63,9 @@ export function GroupInfoDrawerView({ open, chatName, memberCount, groupIcon, gr
   return (
     <>
       {identitySlot ? createPortal(identity, identitySlot) : identity}
-      <div className="voople-group-current-context" aria-label="Текущий чат группы"><Hash className="h-4 w-4" aria-hidden="true" /><strong>Общий</strong></div>
-
-      <div className="voople-group-header-actions ml-auto flex shrink-0 items-center gap-2">
-        {canManage ? <button type="button" onClick={onInvite} className="voople-group-header-invite hidden h-12 shrink-0 items-center gap-2.5 px-5 text-sm font-semibold sm:inline-flex"><UserPlus className="h-3.5 w-3.5" aria-hidden="true" />Пригласить в группу</button> : null}
-        {canManage ? <IconButton label="Пригласить в группу" tooltipSide="bottom" onClick={onInvite} className="voople-group-header-more inline-flex h-12 w-12 shrink-0 items-center justify-center sm:hidden"><UserPlus className="h-5 w-5" /></IconButton> : null}
-        <IconButton label={canManage ? "Настройки группы" : "Информация о группе"} tooltipSide="bottom" onClick={canManage ? onManage : () => onOpenChange(true)} className="voople-group-header-more inline-flex h-12 w-12 shrink-0 items-center justify-center">{canManage ? <Settings2 className="h-5 w-5" /> : <MoreHorizontal className="h-5 w-5" />}</IconButton>
-      </div>
+      {desktopChromeSlot
+        ? createPortal(<GroupTopChrome name={chatName} canManage={canManage} onOpenInfo={() => onOpenChange(true)} onManage={onManage} onInvite={onInvite} />, desktopChromeSlot)
+        : <GroupTopChrome name={chatName} canManage={canManage} onOpenInfo={() => onOpenChange(true)} onManage={onManage} onInvite={onInvite} />}
 
       <Sheet open={open} onClose={() => onOpenChange(false)} placement="context" ariaLabel={`Информация о группе ${chatName}`}>
         <div className="-mx-5 -mt-5">

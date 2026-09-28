@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { VoopleMark } from "@/components/brand/VoopleMark";
 import { RoomGuestConversionPanel } from "@/components/chat/RoomGuestConversionPanel";
 import { RoomGuestMicButton } from "@/components/chat/RoomGuestMicButton";
+import { RoomGuestIdentity } from "@/components/chat/RoomGuestIdentity";
 import { RoomGuestUnavailableState } from "@/components/chat/RoomGuestUnavailableState";
 import { Button } from "@/components/ui/Button";
 import { useBrowserOnline } from "@/hooks/useBrowserOnline";
@@ -126,11 +127,12 @@ export function RoomGuestPage({
                     <p className="mt-2 text-sm leading-6 text-[var(--app-muted)]">
                       Вы услышите разговор и увидите демонстрацию экрана, когда участник её включит.
                     </p>
+                    <RoomGuestIdentity name={guest.joined.displayName} speaking={guest.localSpeaking} />
                   </div>
                 ) : (
-                  <span className="absolute left-7 top-7 z-10 flex items-center gap-2 rounded-lg bg-black/75 px-3 py-2 text-xs text-white sm:left-10 sm:top-10">
+                  <><span className="absolute left-7 top-7 z-10 flex items-center gap-2 rounded-lg bg-black/75 px-3 py-2 text-xs text-white sm:left-10 sm:top-10">
                     <MonitorPlay className="h-4 w-4" aria-hidden="true" /> Демонстрация
-                  </span>
+                  </span><RoomGuestIdentity name={guest.joined.displayName} speaking={guest.localSpeaking} overlay /></>
                 )}
                 <div ref={audioRootRef} className="hidden" aria-hidden="true" />
               </div>
@@ -152,7 +154,7 @@ export function RoomGuestPage({
                 </div>
               ) : null}
               <footer className="flex flex-wrap items-center justify-center gap-3 border-t border-[var(--app-border)] px-5 py-4">
-                <RoomGuestMicButton muted={guest.micMuted} speaking={guest.localSpeaking}
+                <RoomGuestMicButton muted={guest.micMuted}
                   disabled={!online || guest.mediaStatus !== "connected"} onToggle={() => void guest.toggleMicrophone()} />
                 <Button variant="secondary" onClick={() => void guest.leave()}>
                   <LogOut className="h-4 w-4" /> Выйти

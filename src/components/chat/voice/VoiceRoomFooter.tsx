@@ -54,7 +54,6 @@ export function VoiceRoomFooter({
         <VoiceMediaControls
           mediaStatus={connection.status}
           micMuted={controls.micMuted}
-          localSpeaking={controls.localSpeaking}
           outputMuted={controls.outputMuted}
           mediaActionPending={controls.mediaActionPending}
           screenSharing={controls.screenSharing}

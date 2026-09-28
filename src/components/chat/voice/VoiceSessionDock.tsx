@@ -155,7 +155,7 @@ export function VoiceSessionDock({
         </button>
 
         <IconButton
-          label={micMuted ? "Включить микрофон" : localSpeaking ? "Микрофон активен — вы говорите. Выключить микрофон" : "Выключить микрофон"}
+          label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
           disabled={mediaActionPending || mediaStatus !== "connected"}
           onClick={onToggleMic}
           className={cn(
@@ -163,7 +163,6 @@ export function VoiceSessionDock({
             micMuted
               ? "border-red-500/25 bg-red-500/10 text-red-500"
               : "border-[var(--material-border-hover)] bg-[var(--material-control-fill)] text-[var(--material-ice)]",
-            localSpeaking && "voople-mic-speaking",
           )}
         >
           {micMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}

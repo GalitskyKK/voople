@@ -20,6 +20,7 @@ type VoiceRoomStageProps = {
   participants: ChatRoomParticipantView[];
   participantVolumes: Record<string, number>;
   micMuted: boolean;
+  localSpeaking: boolean;
   remoteMicMutedById: Record<string, boolean>;
   activeSpeakerIds: ReadonlySet<string>;
   cameraParticipantIds: ReadonlySet<string>;
@@ -41,6 +42,7 @@ export function VoiceRoomStage({
   participants,
   participantVolumes,
   micMuted,
+  localSpeaking,
   remoteMicMutedById,
   activeSpeakerIds,
   cameraParticipantIds,
@@ -91,7 +93,7 @@ export function VoiceRoomStage({
         muted={participant.isMe
           ? micMuted
           : (remoteMicMutedById[participant.id] ?? participant.micMuted)}
-        speaking={activeSpeakerIds.has(participant.id)}
+        speaking={participant.isMe ? localSpeaking : activeSpeakerIds.has(participant.id)}
         volume={participantVolumes[participant.id] ?? 1}
         hasCamera={hasCamera}
         onCameraContainerChange={onCameraContainerChange}

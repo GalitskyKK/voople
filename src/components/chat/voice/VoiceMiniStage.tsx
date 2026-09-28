@@ -3,12 +3,14 @@
 import { Maximize2, Mic, MonitorUp } from "lucide-react";
 
 import { IconButton } from "@/components/ui/IconButton";
+import { cn } from "@/lib/utils";
 import type { ChatRoomParticipantView } from "@/types/chat";
 
 type VoiceMiniStageProps = {
   screenContainerRef: (element: HTMLDivElement | null) => void;
   screenShareOwner: string | null;
   participants: ChatRoomParticipantView[];
+  localSpeaking: boolean;
   activeSpeakerIds: ReadonlySet<string>;
   cameraParticipantIds: ReadonlySet<string>;
   onCameraContainerChange: (
@@ -22,6 +24,7 @@ export function VoiceMiniStage({
   screenContainerRef,
   screenShareOwner,
   participants,
+  localSpeaking,
   activeSpeakerIds,
   cameraParticipantIds,
   onCameraContainerChange,
@@ -31,7 +34,7 @@ export function VoiceMiniStage({
     cameraParticipantIds.has(participant.id),
   );
   const activeParticipant =
-    participants.find((participant) => activeSpeakerIds.has(participant.id)) ??
+    participants.find((participant) => activeSpeakerIds.has(participant.id) || (participant.isMe && localSpeaking)) ??
     participants.find((participant) => !participant.isMe) ??
     participants[0];
 
@@ -54,7 +57,7 @@ export function VoiceMiniStage({
       ) : activeParticipant ? (
         <div className="absolute inset-0 flex items-center justify-center bg-[var(--app-surface-soft)]">
           <div className="flex flex-col items-center gap-2 px-4 text-center">
-            <span className="h-16 w-16 overflow-hidden rounded-full bg-[var(--app-accent-soft)] text-2xl font-semibold leading-[4rem] text-[var(--theme-accent)]">
+            <span className={cn("h-16 w-16 overflow-hidden rounded-full bg-[var(--app-accent-soft)] text-2xl font-semibold leading-[4rem] text-[var(--theme-accent)]", (activeParticipant.isMe ? localSpeaking : activeSpeakerIds.has(activeParticipant.id)) && "voople-avatar-speaking")}>
               {activeParticipant.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- shared media preview for Next.js and Tauri
                 <img src={activeParticipant.avatarUrl} alt="" className="h-full w-full object-cover" />

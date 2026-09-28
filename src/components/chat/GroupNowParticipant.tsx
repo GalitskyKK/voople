@@ -26,6 +26,7 @@ export function GroupNowParticipant({ user, onOpenProfile, detail, onVolumeChang
   };
   const content = <>
     <ProfileAvatarVisual displayName={user.displayName} size="sm" shape="round"
+      className={detail?.speaking ? "voople-avatar-speaking rounded-full" : undefined}
       avatarImage={user.avatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- portable identity shared with Tauri
         <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />

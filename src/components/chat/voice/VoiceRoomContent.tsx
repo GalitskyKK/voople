@@ -117,7 +117,7 @@ export function VoiceRoomContent({
       stage.participants.length <= 1 &&
       !stage.screenShareOwner &&
       stage.cameraParticipantIds.size === 0 ? (
-        <VoiceRoomEmptyState participant={stage.participants[0]} state="inside" onInvite={onInvite} />
+        <VoiceRoomEmptyState participant={stage.participants[0]} state="inside" speaking={controls.localSpeaking} onInvite={onInvite} />
       ) : (
         <VoiceRoomStage
           screenContainerRef={stage.screenContainerRef}
@@ -130,6 +130,7 @@ export function VoiceRoomContent({
           participants={stage.participants}
           participantVolumes={stage.participantVolumes}
           micMuted={controls.micMuted}
+          localSpeaking={controls.localSpeaking}
           remoteMicMutedById={stage.remoteMicMutedById}
           activeSpeakerIds={stage.activeSpeakerIds}
           cameraParticipantIds={stage.cameraParticipantIds}

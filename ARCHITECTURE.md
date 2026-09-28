@@ -468,7 +468,9 @@ must remain server-authoritative.
 - group boosts must be stored as allocations with expiry/revocation semantics,
   not a permanent boolean on the group.
 
-Current group-boost semantics:
+Current **legacy runtime** group-boost semantics (technical migration context,
+not the accepted future charge-derived Grade contract in
+`docs/product-monetization.md`):
 
 - one active Voople+ account can allocate one boost to one root group;
 - allocating it elsewhere moves the existing assignment;
@@ -489,8 +491,10 @@ Current group-boost semantics:
   preview and the database membership RPC both re-evaluate the current boost/grace level; clients
   never turn a stored vanity slug into an active invitation by themselves.
 
-Future boost perks must use the same derived count. Do not add `is_boosted` or
-persist a level that can drift from subscriptions.
+Changes to this legacy runtime must keep effective boosts derived from active
+allocations; do not add `is_boosted` or persist a level that can drift from
+subscriptions. Future Group Grades require a separate charge model and must
+not reuse the 1/3/6/12/24 boost ladder as their product contract.
 
 ## 14. Database changes
 

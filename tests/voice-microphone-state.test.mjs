@@ -179,9 +179,18 @@ test("local speaking indication uses LiveKit active-speaker events and never lig
   assert.match(guestMedia, /speaker\.isLocal/);
   assert.match(guestMedia, /status === "connected" && !micMuted && localSpeaking/);
   for (const surface of [compact, full, guestButton]) {
-    assert.match(surface, /voople-mic-speaking/);
-    assert.match(surface, /Микрофон активен — вы говорите/);
+    assert.doesNotMatch(surface, /voople-mic-speaking|Микрофон активен — вы говорите/);
+    assert.match(surface, /Выключить микрофон/);
   }
+  const [card, roster, identity, solo, mini] = await Promise.all([
+    readFile(new URL("../src/components/chat/voice/VoiceParticipantCard.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/GroupNowParticipant.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/RoomGuestIdentity.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/VoiceRoomEmptyState.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/VoiceMiniStage.tsx", import.meta.url), "utf8"),
+  ]);
+  for (const surface of [card, roster, identity, solo, mini]) assert.match(surface, /voople-avatar-speaking/);
+  assert.match(styles, /voople-avatar-speaking/);
   assert.match(styles, /prefers-reduced-motion: reduce/);
 });
 

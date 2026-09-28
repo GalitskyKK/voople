@@ -104,7 +104,7 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 }
 
 /* --------------------------------------------------------------------------
-   Group header: current context
+   Group chrome and Rooms-pane identity
    -------------------------------------------------------------------------- */
 
 .voople-shell[data-route-kind="messages"] .voople-panel-header {
@@ -129,13 +129,7 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 }
 
 .voople-group-header-identity:hover { background: transparent; }
-.voople-group-current-context, .voople-group-pane-chevron, .voople-group-pane-banner { display: none; }
-.voople-group-surface[data-mode="medium"] .voople-group-current-context,
-.voople-group-surface[data-mode="wide"] .voople-group-current-context {
-  display: inline-flex; flex: 1; min-width: 0; align-items: center; gap: 9px;
-  color: var(--foreground); font-size: 15px;
-}
-.voople-group-current-context svg { color: var(--material-secondary-text); }
+.voople-group-pane-chevron, .voople-group-pane-banner { display: none; }
 .voople-group-pane-identity:empty { display: none; }
 .voople-group-pane-identity {
   position: sticky; top: 0; z-index: 2; padding: 0 10px 8px;
@@ -237,35 +231,13 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
   border-radius: 999px;
 }
 
-.voople-group-header-actions { gap: 8px; }
-
-.voople-group-header-invite,
-.voople-group-header-more {
-  position: relative;
-  overflow: hidden;
-  height: 40px;
-  border: 1px solid var(--material-border);
-  border-radius: var(--material-control-radius);
-  background: var(--material-control-fill);
-  color: var(--foreground);
-  box-shadow: inset 0 1px 0 var(--material-highlight);
-  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
-}
-
-.voople-group-header-invite {
-  padding-inline: 14px;
-  color: var(--foreground);
-  font-size: 14px;
-}
-
-.voople-group-header-more { width: 40px; }
-
-.voople-group-header-invite:hover,
-.voople-group-header-more:hover {
-  border-color: var(--material-border-hover);
-  background: var(--material-interactive-fill);
-  color: var(--foreground);
-}
+.voople-group-top-chrome { display: flex; min-width: 0; align-items: center; gap: 6px; margin-left: auto; }
+.voople-group-top-chrome__name { min-width: 0; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 6px; padding: 6px 8px; color: var(--foreground); font-size: 13px; font-weight: 650; }
+.voople-group-top-chrome__action { display: grid; width: 36px; height: 36px; flex: none; place-items: center; border-radius: 7px; color: var(--app-muted); }
+.voople-group-top-chrome__name:hover, .voople-group-top-chrome__action:hover { background: var(--material-interactive-fill); color: var(--foreground); }
+.voople-group-top-chrome__name:focus-visible, .voople-group-top-chrome__action:focus-visible { outline: 2px solid var(--material-focus-ring); outline-offset: -2px; }
+.voople-group-surface[data-mode="compact"] .voople-group-top-chrome__name { display: none; }
+.voople-group-surface[data-mode="compact"] .voople-group-top-chrome__action { width: 44px; height: 44px; }
 
 /* --------------------------------------------------------------------------
    Group tabs
@@ -632,8 +604,6 @@ button.voople-room-material:focus-visible,
   .voople-dropdown-menu[data-route-kind="messages"],
   .voople-group-people-list,
   .voople-chat-composer__surface,
-  .voople-group-header-invite,
-  .voople-group-header-more,
   .voople-group-people-control {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -654,8 +624,6 @@ button.voople-room-material:focus-visible,
   .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__avatar { width: 52px; height: 52px; border-radius: 12px; }
   .voople-group-header-name,
   .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__name { font-size: 20px; }
-  .voople-group-header-invite { display: none; }
-  .voople-group-header-more { width: 44px; height: 44px; }
   .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs { min-height: 40px; padding-inline: 12px; }
   .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs > [role="tablist"] { gap: 1.2rem; }
   .voople-group-now { padding: 18px 12px 28px; }
@@ -669,8 +637,6 @@ button.voople-room-material:focus-visible,
   .voople-shell[data-route-kind="messages"] .voople-sidebar,
   .voople-group-people-list,
   .voople-chat-composer__surface,
-  .voople-group-header-invite,
-  .voople-group-header-more,
   .voople-shell[data-route-kind="messages"] .voople-panel-header,
   .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs {
     -webkit-backdrop-filter: none;
@@ -747,15 +713,17 @@ button.voople-room-material:focus-visible,
 .voople-voice-compact__control:hover, .voople-voice-compact__identity:hover { background: var(--material-row-hover); }
 .voople-voice-compact__control:focus-visible, .voople-voice-compact__identity:focus-visible { outline: 2px solid var(--material-focus-ring); outline-offset: -2px; }
 .voople-voice-compact__control:disabled { opacity: .45; }
-.voople-mic-speaking {
+.voople-avatar-speaking {
   box-shadow: 0 0 0 2px var(--material-ice), 0 0 0 5px var(--material-ice-soft);
-  animation: voople-mic-signal 1.5s ease-in-out infinite;
+  animation: voople-avatar-signal 1.5s ease-in-out infinite;
 }
-@keyframes voople-mic-signal {
+.voople-room-guest-identity { display: flex; width: fit-content; max-width: 100%; align-items: center; gap: 9px; margin: 20px auto 0; border: 1px solid var(--material-border); border-radius: 10px; padding: 7px 10px; background: var(--app-surface); color: var(--foreground); box-shadow: var(--app-shadow-md); }
+.voople-room-guest-identity--overlay { position: absolute; z-index: 20; left: 1rem; bottom: 1rem; max-width: calc(100% - 2rem); margin: 0; }
+@keyframes voople-avatar-signal {
   50% { box-shadow: 0 0 0 2px var(--material-ice), 0 0 0 7px var(--material-ice-soft); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .voople-mic-speaking { animation: none; }
+  .voople-avatar-speaking { animation: none; }
 }
 .voople-voice-compact__leave { color: var(--voople-danger); }
 .voople-voice-dock--sidebar { position: static; max-width: none; margin: 0 6px 4px; border: 0; border-top: 1px solid var(--material-border); border-radius: 0; background: transparent; padding: 2px 0 0; }

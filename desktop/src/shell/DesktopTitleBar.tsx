@@ -11,14 +11,14 @@ function runWindowAction(action: "minimize" | "maximize" | "close") {
   return appWindow.close();
 }
 
-export function DesktopTitleBar() {
+export function DesktopTitleBar({ onGroupChromeSlotChange }: { onGroupChromeSlotChange: (element: HTMLDivElement | null) => void }) {
   return (
     <header className="desktop-titlebar">
       <div className="desktop-titlebar__drag" data-tauri-drag-region>
         <VoopleMark className="desktop-titlebar__mark" tauriDragRegion />
         <span className="desktop-titlebar__name" data-tauri-drag-region>Voople</span>
-        <span className="desktop-titlebar__channel" data-tauri-drag-region>desktop</span>
       </div>
+      <div ref={onGroupChromeSlotChange} id="voople-desktop-group-chrome-root" className="desktop-titlebar__group-slot" />
       <div className="desktop-titlebar__controls" aria-label="Управление окном">
         <button
           type="button"

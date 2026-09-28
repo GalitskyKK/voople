@@ -108,11 +108,12 @@ joined by the viewer; blocked pairs reveal no common Groups.
 ## Group Economy
 
 The social core stays free, including basic Groups and Rooms, ordinary voice
-and screen share, Split, Switch, Voop and invitations. Personal Voople+,
-Group+, Group+ Day, shared contributions, permanent assets and earned Group
-identity are secondary or future layers. They cannot gate the core loop.
-Promotional acquisition is specified in `docs/product-monetization.md`; no
-fingerprinting or reward engine is part of the current beta slice.
+and screen share, Split, Switch, Voop and invitations. Future personal Voople+
+plans and charge-derived Group Grades cannot gate the core loop. The accepted
+direction is documented in `docs/product-monetization.md`: full Voople+ includes
+one Group charge, additional charges contribute to a Group's Grade, and Group
+Night is a temporary acquisition trial. These are not beta billing entitlements.
+The former Group+ Day/Month and boost ladder proposals are deprecated.
 
 ## Beta evidence and quality
 

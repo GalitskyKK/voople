@@ -1,17 +1,13 @@
-# Monetization: next contract
+# Monetization direction for the next release
 
-`PRODUCT.md` and the accepted direction in `docs/product-monetization.md` govern the next release. This note reconciles them with the older personal subscription and boost model; it authorizes no runtime entitlement change.
+`PRODUCT.md` defines current beta behavior. The accepted future monetization contract is in [`product-monetization.md`](./product-monetization.md).
 
-1. **Free core communication.** Basic Groups and Rooms, messages, voice, standard screen share, Split, Switch, Voop, invitations and Room guest entry stay useful without payment. Paid status grants no moderation or membership privilege.
-2. **Voople+ and Group+.** Personal Voople+ remains a separate personal identity/utility offer where currently implemented. The next Group offer is Group-owned `Group+ Month` or a 24-hour `Group+ Day`. Higher supported media quality, more history/storage/presets and persistent Group identity are candidate Group+ value as specified in the accepted document. Shared contributions are later work; a payer is a funding source, not an owner.
-3. **Grades.** No concrete Grades entitlement or progression contract appears in the accepted direction. Treat Grades as a proposed earned status layer reflecting real Group history, without a paid shortcut or grind mechanic. Define its data, abuse and presentation rules separately before implementation.
-4. **Group Night.** A later event/acquisition layer, contingent on demand and the Night feature itself. Do not promise it in current purchase UI.
-5. **Permanent packs.** Small permanent Group identity packs are part of the first planned monetization release. They remain with the Group after Group+ expires; personal cosmetics remain separate.
+- Voople+ Style is a personal styling plan (~149 RUB/month hypothesis).
+- Voople+ is a personal premium plan (~299 RUB/month hypothesis) with exactly one active, assignable Group charge. Reassignment is limited to once per seven days while the plan remains active.
+- Users can contribute additional standalone Group charges (~99 RUB/month hypothesis) with the UI action «Добавить заряд группе».
+- Active charge counts derive the Group Grade: 0 Basic, 1–2 Grade I, 3–4 Grade II, 5+ Grade III. Grade benefits apply inside the Group to its participants; personal Voople+ benefits apply to the subscriber everywhere.
+- Group Night is a qualified, temporary Grade III acquisition trial, not a SKU. At expiry the Group returns to its charge-derived Grade.
+- Downgrade keeps assets, Group identity, Room presets, vanity preference and customization data. Grade-dependent use may pause or become read-only.
+- Buying a plan or charge grants no Group governance permission.
 
-## Existing boost/level code
-
-- **Reusable:** the pure limits and quality decision helpers in `src/lib/group-perks.ts` can inform cost and capability analysis. Identity assets and preview components can be reused after their entitlements are remapped to the accepted Group-owned model.
-- **Legacy presentation:** `src/components/subscription/VooplePlusGroupLevels.tsx` and the personal-boost offer in `MONETIZATION.md` explain the existing 1/3/6/12/24 boost ladder. They are not the next Group+ sales contract.
-- **Incompatible as next entitlement rules:** boost counts, slot allocation and milestone-locked Group perks in `src/lib/group-perks.ts` cannot determine Group+ Day/Month or permanent pack ownership. Existing runtime behavior remains until a separate migration is designed; do not silently swap its rules in this polish pass.
-
-The prices in the accepted document are experiments, not product constants. No new price, Grade threshold or entitlement rule is set here.
+`Group+ Day`, `Group+ Month` and the 1/3/6/12/24 boost ladder are legacy/deprecated proposals. Existing boost code is migration context, not the new Grade contract. These are documentation decisions only; this PR does not implement billing, Grades or paywalls.

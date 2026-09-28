@@ -26,6 +26,8 @@ const bundle = await build({
   format: "iife", jsx: "automatic", alias: { "@": `${repo}/src` },
   define: { "process.env.NODE_ENV": '"development"' },
   plugins: [{ name: "profile-preview-fixture", setup(build) {
+    build.onResolve({ filter: /^@tauri-apps\/api\/window$/ }, () => ({ path: "tauri-window", namespace: "fixture" }));
+    build.onLoad({ filter: /^tauri-window$/, namespace: "fixture" }, () => ({ loader: "js", contents: "export const getCurrentWindow=()=>({minimize(){},toggleMaximize(){},close(){}});" }));
     // This layout fixture has no authenticated tRPC provider. Keep the preview trigger contract.
     build.onResolve({ filter: /^@\/components\/feed\/MiniProfilePopover$/ }, () => ({ path: "profile-preview", namespace: "fixture" }));
     build.onLoad({ filter: /^profile-preview$/, namespace: "fixture" }, () => ({ loader: "tsx", resolveDir: repo, contents: `
@@ -67,7 +69,7 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
-  const visualCases = ["web", "desktop"].flatMap(host => [
+  const allVisualCases = ["web", "desktop"].flatMap(host => [
     {width:1440,theme:"void",host,count:8}, {width:1440,theme:"light",host,count:8},
     {width:1280,theme:"void",host,count:8}, {width:1100,theme:"void",host,count:8},
     {width:390,theme:"void",host,count:8}, {width:390,theme:"light",host,count:8},
@@ -75,6 +77,9 @@ try {
     {width:360,theme:"light",host,count:8}, {width:1440,theme:"void",host,count:20},
     {width:390,theme:"light",host,count:20},
   ]);
+  const visualCases = process.argv.includes("--correction-focus")
+    ? allVisualCases.filter(({width,theme,count}) => [390,768,1100,1440].includes(width) && theme === "void" && count === 8)
+    : allVisualCases;
   for (const {width, theme, host, count} of visualCases) {
     const page = await browser.newPage({viewport:{width,height:900}});
     const errors=[];
@@ -89,6 +94,13 @@ try {
     assert.equal(await page.locator('.voople-group-workspace__live').count(),1);
     const groupIdentity = page.getByRole('button',{name:'Информация о группе VOICEKK'});
     assert.equal(await groupIdentity.count(),1);
+    assert.equal(await page.getByRole('button',{name:'Пригласить в группу'}).count() >= 1,true);
+    assert.equal(await page.locator('.voople-group-current-context').count(),0);
+    if (host === 'desktop') {
+      await page.locator('.desktop-titlebar__group-slot .voople-group-top-chrome').waitFor();
+      assert.equal(await page.locator('.desktop-titlebar__controls button').count(),3);
+      assert.equal(await page.locator('.voople-panel-header .voople-group-top-chrome').count(),0);
+    } else assert.equal(await page.locator('.voople-panel-header .voople-group-top-chrome').count(),1);
     assert.equal(await page.locator('.voople-group-pane-identity').count(),expectedMode==='compact'?0:1);
     assert.equal(await page.locator('.voople-group-pane-identity .voople-group-header-identity').count(),expectedMode==='compact'?0:1);
     assert.equal(await page.locator('.voople-group-now').count(),1);
@@ -137,9 +149,12 @@ try {
     assert.equal(await page.locator('.voople-voice-compact__controls button').count(),5);
     if (count===8 && theme==='void' && (width===390 || width===1440)) {
       await compactControls.getByRole('button',{name:'Включить микрофон'}).click();
-      const speakingMic=compactControls.getByRole('button',{name:/Микрофон активен — вы говорите/});
+      const speakingMic=compactControls.getByRole('button',{name:'Выключить микрофон'});
       await speakingMic.waitFor();
-      assert.match(await speakingMic.getAttribute('class'),/voople-mic-speaking/);
+      assert.doesNotMatch(await speakingMic.getAttribute('class'),/voople-mic-speaking/);
+      const localAvatar=room.first().locator('[data-participant-id="user-0"] .voople-avatar-speaking');
+      await localAvatar.waitFor();
+      await room.first().locator('[data-participant-id="user-1"] .voople-avatar-speaking').waitFor();
       await page.screenshot({path:path.join(artifacts,`group-${host}-speaking-${width}.png`)});
       await speakingMic.click();
     }

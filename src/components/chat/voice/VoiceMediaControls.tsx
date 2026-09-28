@@ -10,7 +10,6 @@ import type { MediaStatus } from "./voice-room-config";
 type VoiceMediaControlsProps = {
   mediaStatus: MediaStatus;
   micMuted: boolean;
-  localSpeaking: boolean;
   outputMuted: boolean;
   mediaActionPending: boolean;
   screenSharing: boolean;
@@ -32,7 +31,6 @@ const liveControlClass =
 export function VoiceMediaControls({
   mediaStatus,
   micMuted,
-  localSpeaking,
   outputMuted,
   mediaActionPending,
   screenSharing,
@@ -50,7 +48,7 @@ export function VoiceMediaControls({
   return (
     <div className="flex flex-wrap items-center justify-center gap-2">
       <IconButton
-        label={micMuted ? "Включить микрофон" : localSpeaking ? "Микрофон активен — вы говорите. Выключить микрофон" : "Выключить микрофон"}
+        label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
         aria-pressed={!micMuted}
         tooltipClassName="shrink-0"
         disabled={sessionPending || !connected || mediaActionPending}
@@ -63,7 +61,6 @@ export function VoiceMediaControls({
           micMuted
             ? "border-red-500/25 bg-red-500/10"
             : liveControlClass,
-          localSpeaking && "voople-mic-speaking",
         )}
       >
         {mediaActionPending ? (

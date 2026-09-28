@@ -13,7 +13,7 @@ export function useVoiceParticipantBridge(
   const { stage, controls, session, connection } = controller.sheet;
   const { participants, remoteMicMutedById, cameraParticipantIds, activeSpeakerIds,
     participantVolumes, onParticipantVolumeChange } = stage;
-  const { micMuted } = controls;
+  const { micMuted, localSpeaking } = controls;
   const { inside } = session;
   const connected = connection.status === "connected";
   useEffect(() => {
@@ -23,12 +23,12 @@ export function useVoiceParticipantBridge(
         isMe: person.isMe,
         muted: person.isMe ? micMuted : (remoteMicMutedById[person.id] ?? person.micMuted),
         camera: connected && cameraParticipantIds.has(person.id),
-        speaking: connected && activeSpeakerIds.has(person.id),
+        speaking: connected && (person.isMe ? localSpeaking : activeSpeakerIds.has(person.id)),
         volume: participantVolumes[person.id] ?? 1,
       }])),
       setParticipantVolume: onParticipantVolumeChange,
     } : null);
-  }, [sessionId, inside, participants, micMuted, remoteMicMutedById, cameraParticipantIds,
+  }, [sessionId, inside, participants, micMuted, localSpeaking, remoteMicMutedById, cameraParticipantIds,
     activeSpeakerIds, participantVolumes, onParticipantVolumeChange, connected, publish]);
   useEffect(() => () => publish?.(null), [publish]);
 }

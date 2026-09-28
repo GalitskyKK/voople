@@ -4,17 +4,15 @@ import { Mic, MicOff } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 
-export function RoomGuestMicButton({ muted, speaking, disabled, onToggle }: {
+export function RoomGuestMicButton({ muted, disabled, onToggle }: {
   muted: boolean;
-  speaking: boolean;
   disabled: boolean;
   onToggle: () => void;
 }) {
   return <Button
     variant={muted ? "secondary" : "primary"}
     aria-pressed={!muted}
-    aria-label={muted ? "Включить микрофон" : speaking ? "Микрофон активен — вы говорите. Выключить микрофон" : "Выключить микрофон"}
-    className={speaking ? "voople-mic-speaking" : undefined}
+    aria-label={muted ? "Включить микрофон" : "Выключить микрофон"}
     disabled={disabled}
     onClick={onToggle}
   >

@@ -1,8 +1,9 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 
 import { getDesktopConfig } from "./config";
 import { DesktopTitleBar } from "./shell/DesktopTitleBar";
 import { BrandedLoadingView } from "@/components/brand/BrandedLoadingView";
+import { GroupTopChromeSlotContext } from "@/components/chat/GroupTopChromeSlotContext";
 
 const DesktopConfiguredApp = lazy(() =>
   import("./DesktopConfiguredApp").then((module) => ({
@@ -12,20 +13,23 @@ const DesktopConfiguredApp = lazy(() =>
 
 export function App() {
   const config = getDesktopConfig();
+  const [groupChromeSlot, setGroupChromeSlot] = useState<HTMLElement | null>(null);
   return (
-    <div className="desktop-window-frame">
-      <DesktopTitleBar />
-      <div className="desktop-window-content">
-        {config ? (
-          <Suspense fallback={<BrandedLoadingView fullscreen />}>
-            <DesktopConfiguredApp config={config} />
-          </Suspense>
-        ) : (
-          <DesktopSetup />
-        )}
-        <div id="voople-desktop-overlay-root" className="desktop-overlay-root" />
+    <GroupTopChromeSlotContext.Provider value={groupChromeSlot}>
+      <div className="desktop-window-frame">
+        <DesktopTitleBar onGroupChromeSlotChange={setGroupChromeSlot} />
+        <div className="desktop-window-content">
+          {config ? (
+            <Suspense fallback={<BrandedLoadingView fullscreen />}>
+              <DesktopConfiguredApp config={config} />
+            </Suspense>
+          ) : (
+            <DesktopSetup />
+          )}
+          <div id="voople-desktop-overlay-root" className="desktop-overlay-root" />
+        </div>
       </div>
-    </div>
+    </GroupTopChromeSlotContext.Provider>
   );
 }
 

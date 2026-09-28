@@ -74,6 +74,7 @@ test("web and desktop registration complete email confirmation through the share
   const desktopRegister = read("desktop/src/auth/DesktopRegister.tsx");
   const confirmation = read("src/app/(auth)/auth/confirm/page.tsx");
   const proxy = read("src/proxy.ts");
+  const publicPaths = read("src/lib/auth/public-paths.ts");
 
   assert.match(webRegister, /emailRedirectTo: emailConfirmationRedirect\(window.location.origin, redirectAfter\)/);
   assert.match(desktopRegister, /emailRedirectTo: emailConfirmationRedirect\(config.apiUrl, continuationPath\)/);
@@ -83,5 +84,8 @@ test("web and desktop registration complete email confirmation through the share
   assert.match(confirmation, /safeAuthContinuation\(params\.get\("redirect"\)\)/);
   assert.match(confirmation, /searchParams\.delete\("code"\)/);
   assert.doesNotMatch(confirmation, /error\.message|localStorage|sessionStorage|joinRoom|acceptInvite/);
-  assert.match(proxy, /"\/auth"/);
+  assert.match(proxy, /import \{ isPublicPath \} from "@\/lib\/auth\/public-paths"/);
+  assert.match(proxy, /const publicPath = isPublicPath\(pathname\)/);
+  assert.match(publicPaths, /"\/auth"/);
+  assert.match(publicPaths, /"\/room-guest"/);
 });

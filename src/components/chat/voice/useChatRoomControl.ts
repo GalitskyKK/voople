@@ -337,7 +337,7 @@ export function useChatRoomControl(
       preview: dockMode === "mini" && !open ? {
         screenContainerRef: video.bindScreenContainer,
         screenShareOwner: video.screenShareOwner,
-        participants,
+        participants, localSpeaking,
         activeSpeakerIds,
         cameraParticipantIds: video.cameraParticipantIds,
         onCameraContainerChange: video.bindCameraContainer,

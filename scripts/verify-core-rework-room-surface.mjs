@@ -57,7 +57,7 @@ const entry = `import {useState} from 'react';
     const identity={isDirect:false,callPhase:'connected',chatName:'VOICEKK / DRG',active:true,durationLabel:'01:42'};
     const connection={label:phase==='reconnecting'?'Восстанавливаем связь…':connected?'Голос подключён':null,status:phase==='reconnecting'?'reconnecting':phase==='error'?'error':connected?'connected':'idle',quality:phase==='reconnecting'?ConnectionQuality.Poor:ConnectionQuality.Excellent,audioBlocked:false,errorMessage:phase==='error'?'Сервер комнаты не ответил вовремя.':null,onResumeAudio:noop};
     const access={canManage:true,mode:'open',pending:false,onToggle:noop};
-    const controls={micMuted:false,outputMuted:false,mediaActionPending:false,screenSharePending:false,screenSharing:false,screenShareHasAudio:true,cameraEnabled:false,cameraPending:false,onMicToggle:noop,onOutputToggle:noop,onScreenShareToggle:noop,onCameraToggle:noop};
+    const controls={micMuted:false,localSpeaking:true,outputMuted:false,mediaActionPending:false,screenSharePending:false,screenSharing:false,screenShareHasAudio:true,cameraEnabled:false,cameraPending:false,onMicToggle:noop,onOutputToggle:noop,onScreenShareToggle:noop,onCameraToggle:noop};
     const session={phase,inside:connected,leavePending:phase==='leaving',onLeave:noop,connectPending:phase==='loading',connectDisabled:false,onConnect:noop,connectLabel:'Войти',retryLabel:phase==='error'?'Повторить загрузку':'Повторить подключение',retryPending:false,onRetry:noop};
     const stage={screenContainerRef:bindScreen,screenShareOwner,screenShareAvailable:null,screenShareTrackId:screenShareOwner?'screen-1':null,screenShareIsLocal:false,watchingScreenShare:Boolean(screenShareOwner),screenShareVolume:screenVolume,participants,groupSounds:[],participantVolumes:{},remoteMicMutedById:{},activeSpeakerIds:new Set(['biba']),cameraParticipantIds:new Set(),onCameraContainerChange:noop,onParticipantVolumeChange:noop,onScreenShareVolumeChange:setScreenVolume,onGroupSoundPlay:noop,onWatchScreenShare:noop,onStopWatchingScreenShare:noop};
     const room=<section data-chat-open={messagesOpen?'true':'false'} className="voople-full-room flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden border-0 shadow-none">
@@ -87,9 +87,14 @@ const bundle = await build({
   format: "iife",
   jsx: "automatic",
   alias: { "@": `${repo}/src` },
+  define: { "process.env.NODE_ENV": '"development"' },
   plugins: [{
     name: "room-messages-trpc-fixture",
     setup(build) {
+      build.onResolve({ filter: /^@\/components\/feed\/MiniProfilePopover$/ }, () => ({ path: "profile-preview", namespace: "room-profile" }));
+      build.onLoad({ filter: /^profile-preview$/, namespace: "room-profile" }, () => ({ loader: "tsx", resolveDir: repo, contents: "export function MiniProfilePopover({children}){return children;}" }));
+      build.onResolve({ filter: /^next\/link$/ }, () => ({ path: "next-link", namespace: "room-fixture-link" }));
+      build.onLoad({ filter: /^next-link$/, namespace: "room-fixture-link" }, () => ({ loader: "js", resolveDir: repo, contents: "import React from 'react'; export default function Link({href,children,...props}){return React.createElement('a',{href:typeof href==='string'?href:'#',...props},children)}" }));
       build.onResolve({ filter: /^@\/lib\/trpc\/client$/ }, () => ({ path: "trpc-client", namespace: "room-fixture" }));
       build.onLoad({ filter: /.*/, namespace: "room-fixture" }, () => ({
         loader: "js",
@@ -158,18 +163,32 @@ try {
       ? cases.filter((item) => item.width === 1280 && !item.messages)
       : process.argv.includes("--screen-menu-only")
         ? cases.filter((item) => (item.width === 390 || item.width === 1280) && item.media !== "voice" && !item.messages)
+      : process.argv.includes("--speaking-focus")
+        ? [
+          ...cases.filter((item) => item.media === "voice" && item.people === 1),
+          ...cases.filter((item) => item.media === "voice" && item.renameEdit).map((item) => ({ ...item, renameEdit: false })),
+        ]
       : cases;
   for (const { width, height, theme, phase, fullscreen = false, media = "screen", messages = false, people = 3, renameEdit = false, roomActions = false, roomPicker = false, expected, host } of selectedCases) {
     const page = await browser.newPage({ viewport: { width, height } });
     const errors = [];
-    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("pageerror", (error) => errors.push(error.stack ?? error.message));
     page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
     await page.addInitScript((value) => window.localStorage.setItem("voople:app-theme", value), theme);
     await page.goto(`http://127.0.0.1:${server.address().port}?phase=${phase}&fullscreen=${fullscreen ? "1" : "0"}&media=${media}&messages=${messages ? "1" : "0"}&people=${people}&host=${host}`);
+    await page.waitForTimeout(400);
+    if (errors.length) throw new Error(errors.join("\n"));
+    await page.getByRole("heading", { name: "DRG" }).waitFor();
+    if (errors.length) throw new Error(errors.join("\n"));
+    if (process.argv.includes("--speaking-focus")) {
+      assert.ok(await page.locator('.voople-avatar-speaking').count() > 0, `Speaker ring missing: ${host} ${width}px, ${people} people`);
+      assert.equal(await page.locator('.voople-full-room__solo .voople-avatar-speaking').count(), people === 1 ? 1 : 0);
+      assert.equal(await page.locator('.voople-full-room__participant .voople-avatar-speaking').count(), people === 2 ? 2 : 0);
+      assert.equal(await page.locator('.voople-mic-speaking').count(), 0);
+    }
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(250);
     if (errors.length) throw new Error(errors.join("\n"));
-    await page.getByRole("heading", { name: "DRG" }).waitFor();
     if (renameEdit) {
       await page.getByRole("button", { name: /Переименовать комнату/ }).click();
       await page.getByRole("textbox", { name: "Название комнаты" }).waitFor();

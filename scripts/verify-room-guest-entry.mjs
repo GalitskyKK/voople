@@ -168,9 +168,10 @@ try {
       mediaStatus: "connected",
       participantCount: 4,
     });
-    const speakingMic = page.getByRole("button", { name: /Микрофон активен — вы говорите/ });
+    const speakingMic = page.getByRole("button", { name: "Выключить микрофон" });
     await speakingMic.waitFor();
-    assert.match(await speakingMic.getAttribute("class"), /voople-mic-speaking/);
+    assert.doesNotMatch(await speakingMic.getAttribute("class"), /voople-mic-speaking/);
+    await page.locator('.voople-room-guest-identity .voople-avatar-speaking').waitFor();
     await page.screenshot({ path: path.join(artifacts, `guest-speaking-${width}-${theme}.png`), fullPage: true });
 
     await page.evaluate(() => window.setConversionState({

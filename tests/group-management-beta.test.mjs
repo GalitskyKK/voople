@@ -35,6 +35,8 @@ test("Group Settings has one beta IA and a dedicated authorized summary read", (
   assert.doesNotMatch(data, /observeMessages|listMessagesRest|chat_messages/);
   assert.match(sheet, /section === "access"[\s\S]*?<GroupVisibilitySettings/);
   assert.match(sheet, /section === "advanced" && props\.canManage/);
+  assert.doesNotMatch(sheet, /GroupTopicsSettings|Категории|Темы|Разделы/);
+  assert.match(page, /topicsEnabled=\{chat\.topicsEnabled\}/);
   assert.doesNotMatch(sheet, /<GroupBoostPanel/);
   assert.match(read("src/components/chat/GroupVisibilitySettings.tsx"), /Видна в поиске/);
   assert.doesNotMatch(read("src/components/chat/GroupVisibilitySettings.tsx"), /Видна в рекомендациях/);

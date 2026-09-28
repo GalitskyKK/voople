@@ -424,6 +424,12 @@ button.voople-room-material:hover .voople-room-material__reflection {
   border-top-color: var(--material-border);
   background: transparent;
 }
+.voople-group-workspace__chat .voople-chat-composer__surface {
+  background: color-mix(in srgb, var(--material-overlay-fill) 88%, transparent);
+}
+.voople-chat-emoji-picker {
+  background: var(--material-overlay-fill);
+}
 
 .voople-shell[data-route-kind="messages"] .voople-chat-composer__reply,
 .voople-shell[data-route-kind="messages"] .voople-chat-composer__pending {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useReducer } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 
 import {
   parseVoiceDockMode,
@@ -22,6 +22,12 @@ function initialPresentation(fullOpen: boolean): VoiceDockPresentation {
 
 export function useVoiceDockPresentation(initialOpen: boolean) {
   const [state, dispatch] = useReducer(reduceVoiceDockPresentation, initialOpen, initialPresentation);
+  const joinedRef = useRef(false);
+  const joined = useCallback(() => {
+    if (joinedRef.current) return;
+    joinedRef.current = true;
+    dispatch({ type: "joined" });
+  }, []);
 
   useEffect(() => {
     try { window.localStorage.setItem(VOICE_DOCK_MODE_KEY, state.dockMode); } catch { /* optional preference */ }
@@ -29,6 +35,7 @@ export function useVoiceDockPresentation(initialOpen: boolean) {
 
   return {
     ...state,
+    joined,
     openFull: () => dispatch({ type: "open-full" }),
     closeToMini: () => dispatch({ type: "close-to-mini" }),
     closeToCompact: () => dispatch({ type: "close-to-compact" }),

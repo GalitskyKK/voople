@@ -14,8 +14,9 @@ import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 import { ProfileBadgesView } from "@/components/profile/ProfileBadgesView";
 import { reportProductEvent } from "@/lib/telemetry/client";
 import { navigateInternally } from "@/lib/platform/internal-navigation";
+import { cn } from "@/lib/utils";
 
-export function MiniProfilePopover({ author, children, renderDestination }: { author: PostAuthorView; children: ReactNode; renderDestination: NavigationDestinationRenderer }) {
+export function MiniProfilePopover({ author, children, renderDestination, previewOnClick = false, focusPreview = true, className }: { author: PostAuthorView; children: ReactNode; renderDestination: NavigationDestinationRenderer; previewOnClick?: boolean; focusPreview?: boolean; className?: string }) {
   const mounted = useIsClient();
   const anchorRef = useRef<HTMLSpanElement | null>(null);
   const popoverRef = useRef<HTMLElement | null>(null);
@@ -128,7 +129,7 @@ export function MiniProfilePopover({ author, children, renderDestination }: { au
 
   return (
     <>
-      <span ref={anchorRef} className="inline-flex min-w-0" onMouseEnter={scheduleShow} onMouseLeave={scheduleClose} onFocusCapture={show} onBlurCapture={scheduleClose} onPointerDown={clearTimers}>{children}</span>
+      <span ref={anchorRef} className={cn("inline-flex min-w-0", className)} onMouseEnter={scheduleShow} onMouseLeave={scheduleClose} onFocusCapture={focusPreview ? show : undefined} onBlurCapture={scheduleClose} onPointerDown={clearTimers} onClick={previewOnClick ? show : () => setOpen(false)} onContextMenuCapture={() => { clearTimers(); setOpen(false); }}>{children}</span>
       {open && mounted ? createPortal(
         <aside
           ref={popoverRef}

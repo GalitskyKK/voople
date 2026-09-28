@@ -1,6 +1,7 @@
 import { Eye, FileText, UserPlus, Users } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { PROFILE_POSTS_VISIBLE } from "@/lib/product/profile-beta-surface";
 
 type ProfileStatsProps = {
   posts: number;
@@ -28,7 +29,7 @@ export function ProfileStats({ posts, followers, following, views, className }: 
       )}
       aria-label="Статистика профиля"
     >
-      {ITEMS.map(({ key, Icon, label }) => (
+      {ITEMS.filter(({ key }) => PROFILE_POSTS_VISIBLE || key !== "posts").map(({ key, Icon, label }) => (
         <div
           key={key}
           className="flex min-w-0 items-center gap-1"

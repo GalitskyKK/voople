@@ -30,11 +30,14 @@ test("Full closes to Mini or Compact without changing the active media session",
   assert.doesNotMatch(controller, /onOpen:.*enterAndConnect/);
 });
 
-test("join alone never exposes Mini and changing Dock mode preserves Full/inside state", () => {
-  const joined = { fullOpen: false, dockVisible: false, dockMode: "mini" };
-  assert.equal(joined.dockVisible, false);
+test("Join exposes Compact immediately; Mini requires explicit Full minimization", () => {
+  const joined = reduceVoiceDockPresentation({ fullOpen: false, dockVisible: false, dockMode: "mini" }, { type: "joined" });
+  assert.deepEqual(joined, { fullOpen: false, dockVisible: true, dockMode: "compact" });
+  const minimized = reduceVoiceDockPresentation(reduceVoiceDockPresentation(joined, { type: "open-full" }), { type: "close-to-mini" });
+  assert.deepEqual(minimized, { fullOpen: false, dockVisible: true, dockMode: "mini" });
+  assert.deepEqual(reduceVoiceDockPresentation(full, { type: "joined" }), full);
   assert.deepEqual(reduceVoiceDockPresentation(joined, { type: "change-mode", mode: "minimal" }), {
-    fullOpen: false, dockVisible: false, dockMode: "minimal",
+    fullOpen: false, dockVisible: true, dockMode: "minimal",
   });
   assert.deepEqual(reduceVoiceDockPresentation(full, { type: "hide" }), {
     fullOpen: false, dockVisible: false, dockMode: "compact",

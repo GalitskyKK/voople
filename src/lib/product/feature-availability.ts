@@ -118,14 +118,14 @@ export const FEATURE_AVAILABILITY = Object.freeze({
   core_rework_shell: {
     exposure: "primary",
     platforms: CURRENT_PLATFORMS,
-    channels: ["internal"],
+    channels: ["internal", "beta"],
     serverCapability: "core_rework_shell",
     fallbackHref: "/messages",
   },
   multi_room_groups: {
     exposure: "primary",
     platforms: CURRENT_PLATFORMS,
-    channels: ["internal"],
+    channels: ["internal", "beta"],
     serverCapability: "multi_room_groups",
     fallbackHref: "/messages",
   },

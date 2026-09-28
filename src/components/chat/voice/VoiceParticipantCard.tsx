@@ -8,6 +8,7 @@ import { resolveRingStyle } from "@/lib/customization/rings";
 import { cn } from "@/lib/utils";
 import type { ChatRoomParticipantView } from "@/types/chat";
 import { VoiceParticipantContextMenu } from "./VoiceParticipantContextMenu";
+import { GroupPersonPreview } from "../GroupPersonPreview";
 
 export function VoiceParticipantCard({
   participant,
@@ -126,10 +127,11 @@ export function VoiceParticipantCard({
       ) : null}
 
       <div className={cn("relative z-10 min-w-0 max-w-full", hasCamera && "text-white")}>
-        <p className="truncate text-sm font-medium">
-          {participant.displayName}
-          {participant.isMe ? " · вы" : ""}
-        </p>
+        {!participant.guest && !participant.isMe ? (
+          <GroupPersonPreview id={participant.id} username={participant.username} displayName={participant.displayName} previewOnClick>
+            <button type="button" className="max-w-full truncate rounded text-sm font-medium focus-visible:outline-2 focus-visible:outline-[var(--material-focus-ring)]" aria-label={`Просмотреть профиль ${participant.displayName}`}>{participant.displayName}</button>
+          </GroupPersonPreview>
+        ) : <p className="truncate text-sm font-medium">{participant.displayName}{participant.isMe ? " · вы" : ""}</p>}
         <p className={cn("truncate text-xs", hasCamera ? "text-white/70" : "text-[var(--app-muted)]")}>
           {speaking ? "говорит" : participant.guest ? "гость" : `@${participant.username}`}
         </p>

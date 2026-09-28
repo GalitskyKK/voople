@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { ShareButton } from "@/components/ui/ShareButton";
+import { PROFILE_POSTS_VISIBLE } from "@/lib/product/profile-beta-surface";
 import { useAuthGate } from "@/components/auth/AuthGateProvider";
 
 const QUESTION_MAX_LENGTH = 500;
@@ -105,13 +106,13 @@ function AskLinkBanner({ username }: { username: string }) {
   return (
     <div className="voople-panel flex flex-wrap items-center justify-between gap-2 p-4">
       <div>
-        <p className="text-sm font-semibold text-[var(--foreground)]">Собирай анонимные вопросы</p>
-        <p className="text-xs text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">Кинь ссылку в сторис, Roblox или чат — спросят анонимно</p>
+        <p className="text-sm font-semibold text-[var(--foreground)]">Ссылка для вопросов</p>
+        <p className="text-xs text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]">По ссылке можно задать вопрос к профилю.</p>
       </div>
       <ShareButton
         url={`/${username}?ask=1`}
         title="Спроси меня анонимно"
-        text="Задай мне анонимный вопрос в Voople 👀"
+        text="Задать вопрос в Voople"
         label="Поделиться ссылкой"
       />
     </div>
@@ -379,7 +380,7 @@ function AnsweredItem({
 
       <div className="flex items-center justify-between gap-2">
         <RelativeTime iso={item.answeredAt} className="text-xs text-[color-mix(in_srgb,var(--foreground)_50%,transparent)]" />
-        {isOwner && (
+        {PROFILE_POSTS_VISIBLE && isOwner && (
           <button
             type="button"
             disabled={share.isPending || share.isSuccess}

@@ -22,7 +22,6 @@ import { GroupCommunityPanel } from "./GroupCommunityPanel";
 import { GroupEmojiManager } from "./GroupEmojiManager";
 import { GroupInviteLinkPanel } from "./GroupInviteLinkPanel";
 import { GroupMembersList } from "./GroupMembersList";
-import { GroupTopicsSettings } from "./GroupTopicsSettings";
 import { GroupVisibilitySettings } from "./GroupVisibilitySettings";
 import { GroupAvatar } from "./GroupAvatar";
 import { GroupManagementTrigger } from "./GroupManagementTrigger";
@@ -198,7 +197,6 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
             ) : null}
 
             {section === "advanced" && props.canManage ? <>
-              <GroupTopicsSettings enabled={props.topicsEnabled} canManage={props.canManage} onChange={props.updateTopics} />
               {props.groupVisibility === "public" ? <GroupDiscoverySettingsPanel canManage={props.canManage} loadCatalog={props.loadInterestCatalog} load={props.loadDiscoveryProfile} save={props.updateDiscoveryProfile} /> : null}
               <GroupEmojiManager
                 canManage={props.canManage}

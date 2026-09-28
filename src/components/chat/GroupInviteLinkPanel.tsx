@@ -10,13 +10,19 @@ export function GroupInviteLinkPanel({
   createInvite,
   revokeInvite,
   loadVanityInvite,
+  lifetime = "permanent",
+  initialToken = null,
+  onTokenChange,
 }: {
   inviteBaseUrl?: string;
   createInvite: () => Promise<{ token: string }>;
   revokeInvite: (token: string) => Promise<unknown>;
   loadVanityInvite?: () => Promise<string | null>;
+  lifetime?: "24h" | "permanent";
+  initialToken?: string | null;
+  onTokenChange?: (token: string | null) => void;
 }) {
-  const [token, setToken] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(initialToken);
   const [copied, setCopied] = useState(false);
   const [creating, setCreating] = useState(false);
   const [revoking, setRevoking] = useState(false);
@@ -48,6 +54,7 @@ export function GroupInviteLinkPanel({
     try {
       const result = await createInvite();
       setToken(result.token);
+      onTokenChange?.(result.token);
       setCopied(false);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось создать ссылку");
@@ -74,6 +81,7 @@ export function GroupInviteLinkPanel({
     try {
       await revokeInvite(token);
       setToken(null);
+      onTokenChange?.(null);
       setCopied(false);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось отозвать ссылку");
@@ -91,7 +99,7 @@ export function GroupInviteLinkPanel({
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium">Пригласить по ссылке</p>
           <p className="mt-0.5 text-xs leading-5 text-[var(--app-muted)]">
-            Постоянная ссылка действует, пока вы её не отзовёте. Участник сам подтверждает вход.
+            {lifetime === "24h" ? "Ссылка действует 24 часа. Участник сам подтверждает вход." : "Постоянная ссылка действует, пока вы её не отзовёте. Участник сам подтверждает вход."}
           </p>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { canVoopGroupMember } from "@/lib/chat/group-people";
 import type { ChatGroupMemberView } from "@/types/chat";
 
 import { GroupAvatar } from "./GroupAvatar";
+import { GroupPersonPreview } from "./GroupPersonPreview";
 import { GroupPeopleVoopAction } from "./GroupPeopleVoopAction";
 
 const roleLabels = { owner: "владелец", admin: "администратор", member: "участник" } as const;
@@ -66,9 +67,9 @@ function GroupPeopleRow({ member, variant, online, onOpenProfile, onVoop, voopin
   );
   return (
     <div className={`voople-group-people-row group flex min-h-12 w-full max-w-[360px] items-center gap-2 rounded-xl px-2 ${variant === "offline" ? "opacity-70" : "bg-[var(--material-control-fill)]"}`}>
-      {onOpenProfile ? (
-        <button type="button" onClick={() => onOpenProfile(member.username)} className="flex min-h-12 min-w-0 flex-1 items-center gap-2 rounded-xl text-left focus-visible:outline-2 focus-visible:outline-[var(--material-focus-ring)]">{content}</button>
-      ) : <div className="flex min-h-12 min-w-0 flex-1 items-center gap-2">{content}</div>}
+      <GroupPersonPreview id={member.id} username={member.username} displayName={member.displayName} onOpenProfile={onOpenProfile} previewOnClick className="flex-1">
+        <button type="button" aria-label={`Просмотреть профиль ${member.displayName}`} className="flex min-h-12 min-w-0 flex-1 items-center gap-2 rounded-xl text-left focus-visible:outline-2 focus-visible:outline-[var(--material-focus-ring)]">{content}</button>
+      </GroupPersonPreview>
       {onVoop ? <GroupPeopleVoopAction displayName={member.displayName} waiting={vooping} disabled={voopBusy && !vooping} onSelect={() => onVoop(member)} /> : null}
     </div>
   );

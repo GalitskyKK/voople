@@ -14,6 +14,9 @@ type VoiceRoomStageProps = {
   screenShareOwner: string | null;
   screenShareTrackId: string | null;
   screenShareIsLocal: boolean;
+  screenShareVolume: number;
+  onScreenShareVolumeChange: (volume: number) => void;
+  onStopWatchingScreenShare: () => void;
   participants: ChatRoomParticipantView[];
   participantVolumes: Record<string, number>;
   micMuted: boolean;
@@ -32,6 +35,9 @@ export function VoiceRoomStage({
   screenShareOwner,
   screenShareTrackId,
   screenShareIsLocal,
+  screenShareVolume,
+  onScreenShareVolumeChange,
+  onStopWatchingScreenShare,
   participants,
   participantVolumes,
   micMuted,
@@ -146,6 +152,9 @@ export function VoiceRoomStage({
                 <VoiceMediaStage
                   screenContainerRef={screenContainerRef}
                   screenShareOwner={screenShareOwner}
+                  volume={screenShareIsLocal ? undefined : screenShareVolume}
+                  onVolumeChange={onScreenShareVolumeChange}
+                  onStopWatching={onStopWatchingScreenShare}
                   focused
                   className="h-full"
                 />
@@ -158,6 +167,9 @@ export function VoiceRoomStage({
                 <VoiceMediaStage
                   screenContainerRef={screenContainerRef}
                   screenShareOwner={screenShareOwner}
+                  volume={screenShareIsLocal ? undefined : screenShareVolume}
+                  onVolumeChange={onScreenShareVolumeChange}
+                  onStopWatching={onStopWatchingScreenShare}
                   onFocus={() => focusMedia("screen")}
                   className="h-full"
                 />
@@ -171,6 +183,9 @@ export function VoiceRoomStage({
               <VoiceMediaStage
                 screenContainerRef={screenContainerRef}
                 screenShareOwner={screenShareOwner}
+                volume={screenShareIsLocal ? undefined : screenShareVolume}
+                onVolumeChange={onScreenShareVolumeChange}
+                onStopWatching={onStopWatchingScreenShare}
                 onFocus={() => focusMedia("screen")}
               />
             ) : null}

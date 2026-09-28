@@ -13,7 +13,7 @@ export function ChatComposerFrame({
   return (
     <div
       className={cn(
-        "voople-chat-composer shrink-0 py-3",
+        "voople-chat-composer relative z-10 shrink-0 py-1.5",
         className,
       )}
     >

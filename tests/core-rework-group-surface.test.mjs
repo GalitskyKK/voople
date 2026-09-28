@@ -140,7 +140,8 @@ test("only matching current-session roster gets media, volume, Split and Voop", 
   assert.match(person, /VoiceParticipantContextMenu/);
   assert.match(person, /ContextMenu/);
   assert.match(person, /event.shiftKey && event.key === "F10"/);
-  assert.match(person, /onClick=\{\(\) => menuAvailable \? openMenu\(\)/);
+  assert.match(person, /onClick=\{menuAvailable \? openMenu : undefined\}/);
+  assert.match(person, /previewOnClick=\{!menuAvailable\}/);
   assert.match(bridge, /setParticipantVolume: onParticipantVolumeChange/);
   assert.doesNotMatch(bridge, /new Room|useQuery|setInterval|\.on\(/);
   assert.match(provider, /participantDetails\?\.sessionId === activeSession\?\.coreSession\?\.join.sessionId/);

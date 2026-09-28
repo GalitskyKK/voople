@@ -3,39 +3,7 @@ import { NextResponse, type NextRequest } from "next/server"
 
 import { isTemporaryAuthError } from "@/lib/supabase/auth-claims"
 import { createFetchWithRetry } from "@/lib/supabase/fetch-retry"
-
-const PUBLIC_PATHS = [
-  "/login",
-  "/register",
-  "/auth",
-  "/feed",
-  "/group",
-  "/explore",
-  "/hashtag",
-  "/post",
-  "/shop",
-  "/legal",
-  "/invite",
-  "/download",
-  "/api",
-]
-
-function isPublicPath(pathname: string) {
-  if (pathname === "/") {
-    return true
-  }
-  if (pathname === "/favicon.ico" || pathname.startsWith("/favicon/")) {
-    return true
-  }
-  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
-    return true
-  }
-  const segments = pathname.split("/").filter(Boolean)
-  if (segments.length === 1 && !["messages", "notifications"].includes(segments[0]!)) {
-    return true
-  }
-  return false
-}
+import { isPublicPath } from "@/lib/auth/public-paths"
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown, Settings2, Tag, UserPlus, UsersRound } from "lucide-react";
+import { Check, Settings2, Tag, UserPlus, UsersRound } from "lucide-react";
 import { createPortal } from "react-dom";
 
 import { RichText } from "@/components/ui/RichText";
@@ -9,6 +9,8 @@ import type { ChatGroupMemberView } from "@/types/chat";
 import type { GroupNowView } from "@/types/group-now";
 
 import { GroupAvatar } from "./GroupAvatar";
+import { GroupIdentityDisclosure } from "./GroupIdentityDisclosure";
+import { useGroupPeopleAction } from "./GroupPeopleActionContext";
 import { GroupTopChrome } from "./GroupTopChrome";
 import { useGroupTopChromeSlot } from "./GroupTopChromeSlotContext";
 import { useGroupSurfaceNavigation } from "./GroupSurfaceNavigationContext";
@@ -41,6 +43,7 @@ export function GroupInfoDrawerView({ open, chatName, memberCount, groupIcon, gr
 }) {
   const selectGroupTab = useGroupSurfaceNavigation();
   const identitySlot = useGroupIdentitySlot();
+  const peopleAction = useGroupPeopleAction();
   const desktopChromeSlot = useGroupTopChromeSlot();
   const activeRooms = now?.rooms.filter((room) => (room.state === "active" || room.state === "connecting") && room.participantCount > 0) ?? [];
   const roomCount = activeRooms.reduce((count, room) => count + room.participantCount, 0);
@@ -48,26 +51,31 @@ export function GroupInfoDrawerView({ open, chatName, memberCount, groupIcon, gr
   const activeIds = new Set(activeRooms.flatMap((room) => room.participants.map((person) => person.id)));
   const preview = [...(members ?? [])].sort((left, right) => Number(activeIds.has(right.id)) - Number(activeIds.has(left.id))).slice(0, 5);
 
-  const identity = (
-      <button type="button" onClick={() => onOpenChange(true)} className="voople-group-header-identity flex min-w-0 flex-1 items-center gap-3 text-left" aria-label={`Информация о группе ${chatName}`}>
-        {groupBannerUrl ? <span className="voople-group-pane-banner" style={{ backgroundImage: `url("${groupBannerUrl}")` }} aria-hidden="true" /> : null}
-        <span className="voople-group-header-avatar shrink-0"><GroupAvatar name={chatName} avatarUrl={groupAvatarUrl} icon={groupIcon} accentColor={groupAccentColor} size="lg" shape="square" /></span>
-        <span className="min-w-0">
-          <span className="flex min-w-0 items-center gap-2"><strong className="voople-group-header-name block min-w-0 truncate">{chatName}</strong>{groupTag ? <span className="voople-group-header-tag shrink-0">{groupTag}</span> : null}</span>
-          <span className="voople-group-header-meta mt-1.5 block truncate text-[12px] text-[var(--app-muted)]">{memberCount} участников · {onlineCount} онлайн · {roomCount} в голосе</span>
-        </span>
-        <ChevronDown className="voople-group-pane-chevron h-4 w-4 shrink-0" aria-hidden="true" />
-      </button>
-  );
+  const openPeople = () => {
+    onOpenChange(false);
+    if (identitySlot) peopleAction?.openPeople();
+    else if (onOpenPeople) onOpenPeople();
+    else selectGroupTab?.("people");
+  };
 
   return (
     <>
-      {identitySlot ? createPortal(identity, identitySlot) : identity}
+      {identitySlot ? createPortal(<GroupIdentityDisclosure
+        open={open} name={chatName} memberCount={memberCount} onlineCount={onlineCount} roomCount={roomCount}
+        icon={groupIcon} avatarUrl={groupAvatarUrl} bannerUrl={groupBannerUrl} accentColor={groupAccentColor}
+        tag={groupTag} tagEquipped={groupTagEquipped} tagPending={groupTagPending} canManage={canManage}
+        description={description} members={preview} infoLoading={infoLoading} membersLoading={membersLoading} error={error}
+        onOpenChange={onOpenChange} onInvite={onInvite} onOpenPeople={openPeople} onManage={onManage}
+        onOpenProfile={onOpenProfile} onToggleTag={onToggleGroupTag}
+      />, identitySlot) : <button type="button" onClick={() => onOpenChange(true)} className="voople-group-header-identity flex min-w-0 flex-1 items-center gap-3 text-left" aria-label={`Информация о группе ${chatName}`}>
+        <span className="voople-group-header-avatar shrink-0"><GroupAvatar name={chatName} avatarUrl={groupAvatarUrl} icon={groupIcon} accentColor={groupAccentColor} size="lg" shape="square" /></span>
+        <span className="min-w-0"><strong className="voople-group-header-name block truncate">{chatName}</strong><span className="voople-group-header-meta block truncate">{memberCount} участников</span></span>
+      </button>}
       {desktopChromeSlot
         ? createPortal(<GroupTopChrome name={chatName} canManage={canManage} onOpenInfo={() => onOpenChange(true)} onManage={onManage} onInvite={onInvite} />, desktopChromeSlot)
         : <GroupTopChrome name={chatName} canManage={canManage} onOpenInfo={() => onOpenChange(true)} onManage={onManage} onInvite={onInvite} />}
 
-      <Sheet open={open} onClose={() => onOpenChange(false)} placement="context" ariaLabel={`Информация о группе ${chatName}`}>
+      <Sheet open={open && !identitySlot} onClose={() => onOpenChange(false)} placement="context" ariaLabel={`Информация о группе ${chatName}`}>
         <div className="-mx-5 -mt-5">
           <div className="h-24 bg-[var(--material-raised-fill)] bg-cover bg-center" style={groupBannerUrl ? { backgroundImage: `url("${groupBannerUrl}")` } : undefined} />
           <div className="px-5">
@@ -83,7 +91,7 @@ export function GroupInfoDrawerView({ open, chatName, memberCount, groupIcon, gr
           {infoLoading ? <div className="h-16 animate-pulse rounded-xl bg-[var(--material-raised-fill)]" /> : description ? <RichText text={description} /> : <p className="text-[var(--app-muted)]">Описание группы пока не добавлено.</p>}
           <p className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-[var(--app-muted)]"><span>{onlineCount} онлайн</span><span>{roomCount} в голосе</span></p>
           <section aria-label="Несколько участников"><h3 className="text-xs font-semibold text-[var(--foreground)]">Участники</h3>{membersLoading ? <div className="mt-2 h-10 animate-pulse rounded-xl bg-[var(--material-raised-fill)]" /> : <div className="mt-2 flex -space-x-1.5">{preview.map((member) => <button key={member.id} type="button" onClick={() => onOpenProfile(member.username)} className="rounded-xl focus-visible:outline-2 focus-visible:outline-[var(--material-focus-ring)]" aria-label={member.displayName}><GroupAvatar name={member.displayName} avatarUrl={member.avatarUrl ?? null} icon={null} accentColor={member.roleColor} size="sm" shape="square" /></button>)}</div>}</section>
-          <button type="button" onClick={() => { onOpenChange(false); if (onOpenPeople) onOpenPeople(); else selectGroupTab?.("people"); }} className="voople-material-control flex min-h-11 w-full items-center justify-center gap-2 px-3 text-sm font-medium"><UsersRound className="h-4 w-4" />Все люди</button>
+          <button type="button" onClick={openPeople} className="voople-material-control flex min-h-11 w-full items-center justify-center gap-2 px-3 text-sm font-medium"><UsersRound className="h-4 w-4" />Все люди</button>
           {canManage ? <button type="button" onClick={onInvite} className="voople-material-control flex min-h-11 w-full items-center justify-center gap-2 px-3 text-sm font-semibold"><UserPlus className="h-4 w-4" />Пригласить в группу</button> : null}
         </div>
       </Sheet>

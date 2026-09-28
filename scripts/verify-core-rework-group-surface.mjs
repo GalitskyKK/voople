@@ -25,6 +25,19 @@ const bundle = await build({
   stdin: { contents: groupVoiceFixture, resolveDir: repo, loader: "tsx" }, bundle: true, write: false,
   format: "iife", jsx: "automatic", alias: { "@": `${repo}/src` },
   define: { "process.env.NODE_ENV": '"development"' },
+  plugins: [{ name: "profile-preview-fixture", setup(build) {
+    // This layout fixture has no authenticated tRPC provider. Keep the preview trigger contract.
+    build.onResolve({ filter: /^@\/components\/feed\/MiniProfilePopover$/ }, () => ({ path: "profile-preview", namespace: "fixture" }));
+    build.onLoad({ filter: /^profile-preview$/, namespace: "fixture" }, () => ({ loader: "tsx", resolveDir: repo, contents: `
+      import {useState} from 'react';
+      export function MiniProfilePopover({author,children,renderDestination,previewOnClick,className}) {
+        const [open,setOpen]=useState(false);
+        return <span className={className} onClick={previewOnClick?()=>setOpen(true):undefined}>
+          {children}{open ? renderDestination({href:'/'+author.username,label:'Открыть профиль '+author.displayName,className:'',active:false,children:'Профиль'}) : null}
+        </span>;
+      }
+    ` }));
+  } }],
 });
 const cssByHost = {
   web: await loadCurrentVisualCss(repo, { host: "web" }),
@@ -166,6 +179,7 @@ try {
     assert.equal(await page.getByRole('menuitem',{name:'Открыть профиль'}).count(),0);
     await page.keyboard.press('Escape');
     await room.nth(1).locator('[data-participant-id]').first().click();
+    await room.nth(1).getByRole('link',{name:/Открыть профиль/}).first().click();
     assert.match(await page.evaluate(()=>window.fixture.event),/^profile:/);
     await page.getByRole('button',{name:'Перейти в комнату DRG',exact:true}).click();
     await room.nth(1).getByText('Подключаемся…').waitFor();

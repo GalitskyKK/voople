@@ -6,12 +6,13 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 
 test("group membership invite copies a shared link directly on web and desktop", () => {
   const header = read("src/components/chat/GroupInfoDrawerView.tsx");
+  const topChrome = read("src/components/chat/GroupTopChrome.tsx");
   const web = read("src/components/chat/GroupInfoDrawer.tsx");
   const desktop = read("desktop/src/adapters/DesktopChatThreadAdapter.tsx");
   const quickInvite = read("src/components/chat/useGroupInviteQuickCopy.tsx");
 
   assert.match(header, /canManage \? <button[^\n]+onClick=\{onInvite\}/);
-  assert.match(header, /label="Пригласить в группу"/);
+  assert.match(topChrome, /label="Пригласить в группу"/);
   assert.match(header, />Пригласить в группу<\/button>/);
   assert.match(header, /label=\{canManage \? "Настройки группы"/);
   assert.match(header, /voople-group-header-tag/);

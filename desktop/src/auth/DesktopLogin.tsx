@@ -7,12 +7,20 @@ import { DesktopRegister } from "./DesktopRegister";
 import { getSupabase } from "./supabase";
 import {
   startTrustedPasswordLogin,
-  trustCurrentDevice,
+  trustCurrentDeviceWithRetry,
 } from "@/lib/auth/trusted-device-client";
+import { DesktopAuthContinuationNotice } from "./DesktopAuthContinuationNotice";
+import { useDesktopAuth } from "./AuthProvider";
 
 type LoginMode = "password" | "code";
 
-export function DesktopLogin({ config }: { config: DesktopConfig }) {
+export function DesktopLogin({
+  config,
+  continuationPath = null,
+}: {
+  config: DesktopConfig;
+  continuationPath?: string | null;
+}) {
   const [registering, setRegistering] = useState(false);
   const [mode, setMode] = useState<LoginMode>("password");
   const [email, setEmail] = useState("");
@@ -21,13 +29,21 @@ export function DesktopLogin({ config }: { config: DesktopConfig }) {
   const [codeSent, setCodeSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [trustFailure, setTrustFailure] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const supabase = getSupabase(config);
+  const { setDeviceTrustPending } = useDesktopAuth();
 
   if (registering) {
-    return <DesktopRegister config={config} onLogin={() => setRegistering(false)} />;
+    return (
+      <DesktopRegister
+        config={config}
+        continuationPath={continuationPath}
+        onLogin={() => setRegistering(false)}
+      />
+    );
   }
 
   const submit = async (event: FormEvent) => {
@@ -83,21 +99,30 @@ export function DesktopLogin({ config }: { config: DesktopConfig }) {
         return;
       }
 
-      const result = await supabase.auth.verifyOtp({
-        email: email.trim(),
-        token: code,
-        type: "email",
-      });
-      if (result.error) {
-        setError(result.error.message);
-        return;
-      }
-      if (result.data.session) {
-        await trustCurrentDevice({
-          apiUrl: config.apiUrl,
-          accessToken: result.data.session.access_token,
-          platform: "desktop",
-        }).catch(() => undefined);
+      setDeviceTrustPending(true);
+      let keepLoginVisible = false;
+      try {
+        const result = await supabase.auth.verifyOtp({
+          email: email.trim(),
+          token: code,
+          type: "email",
+        });
+        if (result.error || !result.data.session) {
+          setError(result.error?.message ?? "Не удалось подтвердить код");
+          return;
+        }
+        try {
+          await trustCurrentDeviceWithRetry({
+            apiUrl: config.apiUrl,
+            accessToken: result.data.session.access_token,
+            platform: "desktop",
+          });
+        } catch {
+          keepLoginVisible = true;
+          setTrustFailure(true);
+        }
+      } finally {
+        if (!keepLoginVisible) setDeviceTrustPending(false);
       }
     } catch (cause) {
       const technicalMessage = cause instanceof Error ? cause.message : "";
@@ -124,6 +149,34 @@ export function DesktopLogin({ config }: { config: DesktopConfig }) {
     setCaptchaResetKey((value) => value + 1);
   };
 
+  const retryDeviceTrust = async () => {
+    setBusy(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setTrustFailure(false);
+        setDeviceTrustPending(false);
+        return;
+      }
+      await trustCurrentDeviceWithRetry({ apiUrl: config.apiUrl, accessToken: session.access_token, platform: "desktop" });
+      setTrustFailure(false);
+      setDeviceTrustPending(false);
+    } catch {
+      // Stay on the authenticated recovery screen.
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (trustFailure) {
+    return <main className="auth-page"><section className="auth-card" aria-labelledby="device-trust-title">
+      <h1 id="device-trust-title">Не удалось запомнить это устройство</h1>
+      <p className="muted">Вы уже вошли. Можно повторить сохранение или продолжить без него. В следующий раз может снова понадобиться код.</p>
+      <button type="button" className="primary-button" disabled={busy} onClick={retryDeviceTrust}>{busy ? "Повторяем…" : "Повторить"}</button>
+      <button type="button" className="text-button" disabled={busy} onClick={() => setDeviceTrustPending(false)}>Продолжить без запоминания</button>
+    </section></main>;
+  }
+
   return (
     <main className="auth-page">
       <section className="auth-card" aria-labelledby="login-title">
@@ -131,6 +184,7 @@ export function DesktopLogin({ config }: { config: DesktopConfig }) {
         <p className="eyebrow">VOOPLE DESKTOP</p>
         <h1 id="login-title">С возвращением</h1>
         <p className="muted">Войдите в тот же аккаунт, которым пользуетесь в Voople.</p>
+        <DesktopAuthContinuationNotice path={continuationPath} />
 
         <form onSubmit={submit} className="auth-form">
           <label>

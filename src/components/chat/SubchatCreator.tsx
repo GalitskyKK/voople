@@ -9,9 +9,13 @@ import { SubchatCreatorView } from "./SubchatCreatorView";
 export function SubchatCreator({
   parentChatId,
   viewerRole,
+  open,
+  onOpenChange,
 }: {
   parentChatId: string;
   viewerRole: "owner" | "admin" | "member";
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const router = useRouter();
   const utils = trpc.useUtils();
@@ -19,6 +23,8 @@ export function SubchatCreator({
 
   return (
     <SubchatCreatorView
+      open={open}
+      onOpenChange={onOpenChange}
       canRestrict={viewerRole === "owner" || viewerRole === "admin"}
       loadMembers={() => utils.client.chat.groupMembers.query({ chatId: parentChatId })}
       createSubchat={async (name, icon, accessMode, memberIds) => {

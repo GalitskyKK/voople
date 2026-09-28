@@ -14,6 +14,9 @@ type VoiceRoomStageProps = {
   screenShareOwner: string | null;
   screenShareTrackId: string | null;
   screenShareIsLocal: boolean;
+  screenShareVolume: number;
+  onScreenShareVolumeChange: (volume: number) => void;
+  onStopWatchingScreenShare: () => void;
   participants: ChatRoomParticipantView[];
   participantVolumes: Record<string, number>;
   micMuted: boolean;
@@ -32,6 +35,9 @@ export function VoiceRoomStage({
   screenShareOwner,
   screenShareTrackId,
   screenShareIsLocal,
+  screenShareVolume,
+  onScreenShareVolumeChange,
+  onStopWatchingScreenShare,
   participants,
   participantVolumes,
   micMuted,
@@ -106,17 +112,17 @@ export function VoiceRoomStage({
     );
 
     return (
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <p className="text-xs font-medium text-[var(--app-muted)]">
+      <div className="voople-full-room__stage flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="voople-full-room__stage-toolbar mb-2 flex items-center justify-between gap-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--app-muted)]">
             {layout === "focus" ? "Фокус" : "Сетка"}
           </p>
-          <div className="flex rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-1">
+          <div className="voople-full-room__layout-switch flex rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-1">
             <button
               type="button"
               onClick={() => selectLayout("focus")}
               className={cn(
-                "grid h-8 w-9 place-items-center rounded-lg transition",
+                "grid h-8 w-9 place-items-center rounded-[var(--app-radius-sm)] transition",
                 layout === "focus" && "bg-[var(--app-surface)] text-(--theme-accent) shadow-sm",
               )}
               aria-label="Показывать выбранное видео крупно"
@@ -128,7 +134,7 @@ export function VoiceRoomStage({
               type="button"
               onClick={() => selectLayout("grid")}
               className={cn(
-                "grid h-8 w-9 place-items-center rounded-lg transition",
+                "grid h-8 w-9 place-items-center rounded-[var(--app-radius-sm)] transition",
                 layout === "grid" && "bg-[var(--app-surface)] text-(--theme-accent) shadow-sm",
               )}
               aria-label="Показывать все видео сеткой"
@@ -140,12 +146,15 @@ export function VoiceRoomStage({
         </div>
 
         {layout === "focus" ? (
-          <div className="grid min-h-0 flex-1 gap-2 lg:grid-cols-[minmax(0,1fr)_12rem]">
+          <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_5rem] gap-2">
             <div className="min-h-0 min-w-0">
               {activeFocusId === "screen" && screenShareOwner ? (
                 <VoiceMediaStage
                   screenContainerRef={screenContainerRef}
                   screenShareOwner={screenShareOwner}
+                  volume={screenShareIsLocal ? undefined : screenShareVolume}
+                  onVolumeChange={onScreenShareVolumeChange}
+                  onStopWatching={onStopWatchingScreenShare}
                   focused
                   className="h-full"
                 />
@@ -153,12 +162,16 @@ export function VoiceRoomStage({
                 renderParticipant(focusedParticipant, "focused")
               ) : null}
             </div>
-            <div className="grid min-h-0 grid-cols-2 content-start gap-2 overflow-y-auto lg:grid-cols-1">
+            <div className="grid min-h-0 grid-flow-col auto-cols-[minmax(7rem,10rem)] gap-2 overflow-x-auto overflow-y-hidden">
               {screenShareOwner && activeFocusId !== "screen" ? (
                 <VoiceMediaStage
                   screenContainerRef={screenContainerRef}
                   screenShareOwner={screenShareOwner}
+                  volume={screenShareIsLocal ? undefined : screenShareVolume}
+                  onVolumeChange={onScreenShareVolumeChange}
+                  onStopWatching={onStopWatchingScreenShare}
                   onFocus={() => focusMedia("screen")}
+                  className="h-full"
                 />
               ) : null}
               {remainingParticipants.map((participant) => renderParticipant(participant))}
@@ -170,6 +183,9 @@ export function VoiceRoomStage({
               <VoiceMediaStage
                 screenContainerRef={screenContainerRef}
                 screenShareOwner={screenShareOwner}
+                volume={screenShareIsLocal ? undefined : screenShareVolume}
+                onVolumeChange={onScreenShareVolumeChange}
+                onStopWatching={onStopWatchingScreenShare}
                 onFocus={() => focusMedia("screen")}
               />
             ) : null}
@@ -183,7 +199,7 @@ export function VoiceRoomStage({
   return (
     <div
       className={cn(
-        "grid min-h-0 min-w-0 flex-1 content-center gap-2 overflow-y-auto [grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))]",
+        "voople-full-room__stage grid min-h-0 min-w-0 flex-1 auto-rows-fr gap-2 overflow-y-auto [grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))]",
         participants.length === 1 && "mx-auto max-w-xl grid-cols-1",
         participants.length >= 5 && "lg:[grid-template-columns:repeat(3,minmax(0,1fr))]",
       )}

@@ -28,6 +28,10 @@ export function useLocalChatDraft({
     textRef.current = text;
   }, [text]);
 
+  useEffect(() => () => {
+    if (accountId && !editing) storeChatDraft(accountId, chatId, textRef.current);
+  }, [accountId, chatId, editing]);
+
   useEffect(() => {
     if (!accountId) return;
     const key = `${accountId}:${chatId}`;

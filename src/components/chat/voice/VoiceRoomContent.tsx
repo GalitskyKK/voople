@@ -1,5 +1,7 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
+
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -14,9 +16,9 @@ import type {
 import { VoiceRoomEmptyState } from "./VoiceRoomEmptyState";
 import {
   VoiceRoomErrorState,
-  VoiceRoomPostLeaveState,
   VoiceRoomTransitionState,
 } from "./VoiceRoomSessionStates";
+import { resolveVoiceRoomErrorTitle } from "./voice-room-surface";
 import { VoiceRoomStage } from "./VoiceRoomStage";
 
 export function VoiceRoomContent({
@@ -26,15 +28,13 @@ export function VoiceRoomContent({
   session,
   errorMessage,
   onInvite,
-  onClose,
 }: {
   identity: VoiceRoomIdentityModel;
   stage: VoiceRoomStageModel;
   controls: VoiceRoomControlsModel;
   session: VoiceRoomSessionModel;
   errorMessage: string | null;
-  onInvite: () => void;
-  onClose: () => void;
+  onInvite?: () => void;
 }) {
   const sessionPhase = session.phase;
   const directCallState =
@@ -55,20 +55,11 @@ export function VoiceRoomContent({
   if (sessionPhase === "error") {
     return (
       <VoiceRoomErrorState
+        title={resolveVoiceRoomErrorTitle(session.retryLabel)}
         message={errorMessage}
         retryLabel={session.retryLabel}
         retryPending={session.retryPending}
         onRetry={session.onRetry}
-      />
-    );
-  }
-  if (sessionPhase === "post-leave") {
-    return (
-      <VoiceRoomPostLeaveState
-        connectLabel={identity.active ? "Вернуться в комнату" : session.connectLabel}
-        connectDisabled={session.connectDisabled}
-        onConnect={session.onConnect}
-        onClose={onClose}
       />
     );
   }
@@ -86,9 +77,18 @@ export function VoiceRoomContent({
   }
 
   return (
-    <div className="voople-room-surface voople-room-surface__state flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
+    <div className="voople-room-surface voople-room-surface__state voople-full-room__content flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-4">
+      {sessionPhase === "reconnecting" ? (
+        <div className="mb-3 flex shrink-0 items-center gap-3 rounded-[var(--app-radius-sm)] border border-amber-400/35 bg-amber-400/8 px-3 py-2" role="status" aria-live="polite">
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-amber-400 motion-reduce:animate-none" aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">Восстанавливаем связь</p>
+            <p className="truncate text-xs text-[var(--app-muted)]">Участники и демонстрация останутся на месте.</p>
+          </div>
+        </div>
+      ) : null}
       {sessionPhase === "preview" && identity.active ? (
-        <div className="mb-3 shrink-0 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2 text-sm text-[var(--app-muted)]">
+        <div className="mb-3 shrink-0 rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2 text-sm text-[var(--app-muted)]">
           Комната уже идёт — участники видны до подключения. Нажмите «Войти в комнату», чтобы присоединиться.
         </div>
       ) : null}
@@ -102,7 +102,7 @@ export function VoiceRoomContent({
         />
       ) : null}
       {stage.screenShareAvailable && !stage.watchingScreenShare && !controls.screenSharing ? (
-        <div className="mb-3 flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--theme-accent)_35%,var(--app-border))] bg-[var(--app-accent-soft)] p-3">
+        <div className="mb-3 flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-[var(--app-radius-sm)] border border-[color-mix(in_srgb,var(--theme-accent)_35%,var(--app-border))] bg-[var(--app-accent-soft)] p-3">
           <div>
             <p className="text-sm font-semibold">Идёт демонстрация</p>
             <p className="text-xs text-[var(--app-muted)]">
@@ -111,9 +111,6 @@ export function VoiceRoomContent({
           </div>
           <Button type="button" onClick={stage.onWatchScreenShare}>Смотреть</Button>
         </div>
-      ) : null}
-      {stage.watchingScreenShare && !controls.screenSharing ? (
-        <ScreenShareVolume stage={stage} />
       ) : null}
       {sessionPhase !== "preview" &&
       !identity.isDirect &&
@@ -127,6 +124,9 @@ export function VoiceRoomContent({
           screenShareOwner={stage.screenShareOwner}
           screenShareTrackId={stage.screenShareTrackId}
           screenShareIsLocal={stage.screenShareIsLocal}
+          screenShareVolume={stage.screenShareVolume}
+          onScreenShareVolumeChange={stage.onScreenShareVolumeChange}
+          onStopWatchingScreenShare={stage.onStopWatchingScreenShare}
           participants={stage.participants}
           participantVolumes={stage.participantVolumes}
           micMuted={controls.micMuted}
@@ -143,14 +143,8 @@ export function VoiceRoomContent({
 
 function DirectCallState({ identity }: { identity: VoiceRoomIdentityModel }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center">
-      <div className="relative">
-        <div
-          className={cn(
-            "absolute -inset-5 rounded-full bg-[var(--theme-accent)]/20 blur-xl",
-            identity.callPhase !== "ended" && "animate-pulse",
-          )}
-        />
+    <div className="voople-full-room__content flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center">
+      <div className="rounded-[var(--app-radius-sm)] border border-[var(--app-border)] p-2">
         <ProfileAvatarVisual
           displayName={identity.chatName}
           size="lg"
@@ -171,41 +165,12 @@ function DirectCallState({ identity }: { identity: VoiceRoomIdentityModel }) {
 
 function DirectCallPreview({ chatName }: { chatName: string }) {
   return (
-    <div className="flex min-h-72 flex-col items-center justify-center px-6 py-10 text-center">
+    <div className="voople-full-room__content flex min-h-72 flex-col items-center justify-center px-6 py-10 text-center">
       <ProfileAvatarVisual displayName={chatName} size="lg" />
       <h3 className="mt-5 text-xl font-semibold">Начать разговор</h3>
       <p className="mt-2 max-w-sm text-sm leading-6 text-[var(--app-muted)]">
         Собеседник увидит входящий звонок. Микрофон можно выключить до подключения.
       </p>
-    </div>
-  );
-}
-
-function ScreenShareVolume({ stage }: { stage: VoiceRoomStageModel }) {
-  const percent = Math.round(stage.screenShareVolume * 100);
-  return (
-    <div className="mb-3 flex shrink-0 flex-wrap items-center gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 py-2">
-      <label className="flex min-w-48 flex-1 items-center gap-3 text-xs font-medium">
-        Звук демонстрации
-        <input
-          type="range"
-          min={0}
-          max={200}
-          step={5}
-          value={percent}
-          onChange={(event) => stage.onScreenShareVolumeChange(Number(event.target.value) / 100)}
-          className="min-w-24 flex-1 accent-[var(--theme-accent)]"
-          aria-label="Громкость демонстрации"
-        />
-        <span className="w-10 text-right tabular-nums">{percent}%</span>
-      </label>
-      <button
-        type="button"
-        onClick={stage.onStopWatchingScreenShare}
-        className="rounded-lg px-3 py-1.5 text-xs text-[var(--app-muted)] hover:bg-[var(--app-surface-hover)] hover:text-[var(--foreground)]"
-      >
-        Не смотреть
-      </button>
     </div>
   );
 }

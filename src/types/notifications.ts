@@ -1,3 +1,5 @@
+import type { CoreRoomInvitePreview } from "./room-invitations";
+
 export type NotificationView = {
   id: string;
   type: string;
@@ -11,4 +13,5 @@ export type NotificationView = {
   } | null;
   referenceId: string | null;
   profileUsername: string | null;
+  roomInvite: CoreRoomInvitePreview | null;
 };

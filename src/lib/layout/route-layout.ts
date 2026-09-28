@@ -8,7 +8,9 @@ const RESERVED_PROFILE_SLUGS = new Set([
   "messages",
   "notifications",
   "post",
+  "search",
   "register",
+  "room-invites",
   "settings",
   "shop",
 ]);
@@ -47,7 +49,7 @@ export function getAppRouteLayout(pathname: string): AppRouteLayout {
     };
   }
 
-  if (["/feed", "/explore", "/notifications", "/events", "/shop"].some(
+  if (["/feed", "/explore", "/search", "/notifications", "/events", "/shop"].some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   )) {
     return {

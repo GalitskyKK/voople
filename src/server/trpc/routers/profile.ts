@@ -14,6 +14,8 @@ import {
   getPinnedPostByUsername,
   getPostsByUsername,
   getProfileByUsername,
+  getBetaProfileByUsername,
+  getProfileCommonGroups,
   setPinnedPost,
 } from "@/server/services/profile.service"
 import { recordProfileView } from "@/server/services/views.service"
@@ -21,6 +23,15 @@ import { recordProfileView } from "@/server/services/views.service"
 import { createTRPCRouter, optionalAuthProcedure, protectedProcedure } from "../init"
 
 export const profileRouter = createTRPCRouter({
+  getBetaByUsername: optionalAuthProcedure
+    .input(z.object({ username: z.string().min(1).max(30) }))
+    .query(async ({ input, ctx }) => {
+      const profile = await getBetaProfileByUsername(input.username, ctx.user?.id ?? null)
+      if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "Профиль не найден" })
+      return profile
+    }),
+  commonGroups: protectedProcedure.input(z.object({ userId: z.string().uuid() }))
+    .query(({ ctx, input }) => getProfileCommonGroups(ctx.user.id, input.userId)),
   getByUsername: optionalAuthProcedure
     .input(z.object({ username: z.string().min(1).max(30) }))
     .query(async ({ input, ctx }) => {

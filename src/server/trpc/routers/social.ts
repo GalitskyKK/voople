@@ -7,12 +7,21 @@ import { MAX_GROUP_TOPICS, MAX_USER_INTERESTS } from "@/lib/social/interests";
 import {
   getGroupDiscoveryProfile,
   getUserPrivacySettings,
+  getUserBlockState,
+  cancelFriendRequest,
+  getFriendState,
+  listFriendIds,
+  listIncomingFriendRequests,
+  removeFriend,
+  respondFriendRequest,
+  sendFriendRequest,
   getUserInterestSettings,
   listVisibleOnlineUserIds,
   listContactPins,
   loadInterestCatalog,
   setGroupDiscoveryProfile,
   setUserPrivacySettings,
+  setUserBlock,
   toggleContactPin,
   setUserInterests,
 } from "@/server/services/social.service";
@@ -39,6 +48,58 @@ function socialError(error: unknown, fallback: string): never {
 }
 
 export const socialRouter = createTRPCRouter({
+  friendState: protectedProcedure.input(z.object({ userId: z.string().uuid() }))
+    .query(({ ctx, input }) => getFriendState(ctx.user.id, input.userId)),
+  myFriends: protectedProcedure.query(({ ctx }) => listFriendIds(ctx.user.id)),
+  incomingFriendRequests: protectedProcedure.query(({ ctx }) => listIncomingFriendRequests(ctx.user.id)),
+  sendFriendRequest: protectedProcedure.input(z.object({ userId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.follow, ctx.user.id);
+      try { return await sendFriendRequest(ctx.user.id, input.userId); }
+      catch (error) { return socialError(error, "Не удалось отправить запрос"); }
+    }),
+  respondFriendRequest: protectedProcedure.input(z.object({ requestId: z.string().uuid(), accept: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.updateSocialProfile, ctx.user.id);
+      try { return await respondFriendRequest(ctx.user.id, input.requestId, input.accept); }
+      catch (error) { return socialError(error, "Не удалось ответить на запрос"); }
+    }),
+  cancelFriendRequest: protectedProcedure.input(z.object({ requestId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.updateSocialProfile, ctx.user.id);
+      try { return await cancelFriendRequest(ctx.user.id, input.requestId); }
+      catch (error) { return socialError(error, "Не удалось отменить запрос"); }
+    }),
+  removeFriend: protectedProcedure.input(z.object({ userId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.updateSocialProfile, ctx.user.id);
+      try { return await removeFriend(ctx.user.id, input.userId); }
+      catch (error) { return socialError(error, "Не удалось удалить друга"); }
+    }),
+  blockState: protectedProcedure
+    .input(z.object({ userId: z.string().uuid() }))
+    .query(({ ctx, input }) => getUserBlockState(ctx.user.id, input.userId)),
+  setUserBlock: protectedProcedure
+    .input(z.object({ userId: z.string().uuid(), blocked: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.updateSocialProfile, ctx.user.id);
+      try {
+        const result = await setUserBlock({
+          blockerId: ctx.user.id,
+          blockedId: input.userId,
+          blocked: input.blocked,
+        });
+        await recordServerProductEvent({
+          name: "user_block_updated",
+          actorId: ctx.user.id,
+          route: "/trpc/social.setUserBlock",
+          properties: { state: result.blocked ? "blocked" : "unblocked" },
+        });
+        return result;
+      } catch (error) {
+        return socialError(error, "Не удалось изменить блокировку");
+      }
+    }),
   myPinnedContacts: protectedProcedure.query(async ({ ctx }) => ({ pinnedUserIds: await listContactPins(ctx.user.id), limit: 3 as const })),
   togglePinnedContact: protectedProcedure.input(z.object({ userId: z.string().uuid() })).mutation(async ({ ctx, input }) => {
     await assertRateLimit(rateLimits.updateSocialProfile, ctx.user.id);

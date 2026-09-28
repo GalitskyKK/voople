@@ -8,6 +8,7 @@ import {
   getScreenShareCaptureOptions,
 } from "../src/components/chat/voice/voice-room-config.ts";
 import { shouldSubscribeToScreenPublication } from "../src/components/chat/voice/useScreenShareSubscription.ts";
+import { screenPublicationBelongsToFocus } from "../src/components/chat/voice/screen-share-focus.ts";
 import { resolveDesktopProcessAudioSource } from "../src/lib/livekit/desktop-process-audio.ts";
 
 const read = (path) => readFileSync(path, "utf8");
@@ -137,6 +138,29 @@ test("local preview is opt-in, race-safe and pauses outside the focused window",
   assert.match(roomStage, /selection\?\.screenTrackId === screenShareTrackId/);
 });
 
+test("concurrent screen shares keep focus until the active publication ends", () => {
+  const subscription = read("src/components/chat/voice/useScreenShareSubscription.ts");
+  const focus = read("src/components/chat/voice/screen-share-focus.ts");
+  const videoStage = read("src/components/chat/voice/useVoiceVideoStage.ts");
+  const activeVideo = { source: Track.Source.ScreenShare, trackSid: "screen-a" };
+  const otherVideo = { source: Track.Source.ScreenShare, trackSid: "screen-b" };
+  const screenAudio = { source: Track.Source.ScreenShareAudio, trackSid: "audio-a" };
+  const participant = { trackPublications: new Map([["video", activeVideo], ["audio", screenAudio]]) };
+
+  assert.equal(screenPublicationBelongsToFocus(activeVideo, participant, "screen-a"), true);
+  assert.equal(screenPublicationBelongsToFocus(screenAudio, participant, "screen-a"), true);
+  assert.equal(screenPublicationBelongsToFocus(otherVideo, participant, "screen-a"), false);
+  assert.match(focus, /screenPublicationBelongsToFocus/);
+  assert.match(subscription, /watchingRef\.current && ownsFocus/);
+  assert.match(subscription, /subscribed && ownsFocus && matchesExpectedSession/);
+  assert.match(subscription, /promoteNextScreen/);
+  assert.match(subscription, /if \(promoteNextScreen\(publication\.trackSid\)\)/);
+  assert.match(
+    videoStage,
+    /activeScreenTrackRef\.current && activeScreenTrackRef\.current !== publication\.trackSid\) return/,
+  );
+});
+
 test("room screen stage owns remaining height and contains remote video", () => {
   const content = read("src/components/chat/voice/VoiceRoomContent.tsx");
   const stage = read("src/components/chat/voice/VoiceMediaStage.tsx");
@@ -166,15 +190,15 @@ test("desktop sheets stay below the titlebar and fullscreen targets app content"
   const desktopApp = read("desktop/src/App.tsx");
   const desktopStyles = read("desktop/src/styles.css");
   const sheet = read("src/components/ui/Sheet.tsx");
-  const roomSheet = read("src/components/chat/voice/VoiceRoomSheet.tsx");
+  const roomSurface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
   const fullscreen = read("src/components/chat/voice/useVoiceRoomFullscreen.ts");
 
   assert.match(desktopApp, /id="voople-desktop-overlay-root"/);
   assert.match(desktopStyles, /\.desktop-overlay-root\s*\{[\s\S]*position: absolute;[\s\S]*inset: 0;/);
   assert.match(sheet, /desktopOverlayRoot[\s\S]*"absolute inset-0/);
   assert.match(fullscreen, /querySelector<HTMLElement>\("\.desktop-window-content"\)/);
-  assert.match(roomSheet, /fullscreen && "h-full max-h-none/);
-  assert.doesNotMatch(roomSheet, /fullscreen && "h-dvh/);
+  assert.match(roomSurface, /fullscreen \? "fixed inset-0 z-\[200\]"/);
+  assert.doesNotMatch(roomSurface, /fullscreen && "h-dvh/);
   assert.doesNotMatch(sheet, /z-\[300\]|z-\[301\]/);
 });
 

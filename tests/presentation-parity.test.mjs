@@ -38,6 +38,8 @@ test("web and desktop home use one responsive feed layout", () => {
 test("web and desktop chat composer share one presentation layer", () => {
   const web = read("src/components/chat/ChatComposer.tsx");
   const desktop = read("desktop/src/adapters/DesktopChatComposerAdapter.tsx");
+  const desktopThread = read("desktop/src/adapters/DesktopChatThreadAdapter.tsx");
+  const desktopUpload = read("desktop/src/chat/useDesktopChatUpload.ts");
   const form = read("src/components/chat/ChatComposerFormView.tsx");
   const preview = read("src/components/chat/ChatComposerPreviewView.tsx");
   const baseline = JSON.parse(read(".architecture-baseline.json"));
@@ -46,6 +48,10 @@ test("web and desktop chat composer share one presentation layer", () => {
   assert.match(web, /ChatComposerPreviewView/);
   assert.match(desktop, /ChatComposerFormView/);
   assert.match(desktop, /ChatComposerPreviewView/);
+  assert.match(desktop, /useChatComposerSession\(chatId\)/);
+  assert.match(desktopThread, /useChatComposerSession\(chatId\)/);
+  assert.match(desktopUpload, /setUpload: Dispatch<SetStateAction<ChatPendingUpload \| null>>/);
+  assert.doesNotMatch(desktopUpload, /useState<ChatPendingUpload \| null>/);
   assert.match(form, /ChatComposerInputView/);
   assert.match(preview, /editableAudioMetadata/);
   assert.equal(
@@ -58,6 +64,7 @@ test("portable desktop UI baseline is empty and migrated domains use shared view
   const baseline = JSON.parse(read(".architecture-baseline.json"));
   const webThread = read("src/components/chat/ChatWindow.tsx");
   const desktopThread = read("desktop/src/adapters/DesktopChatThreadAdapter.tsx");
+  const conversationStart = read("src/components/chat/ChatConversationStart.tsx");
   const desktopMessages = read("desktop/src/adapters/DesktopMessagesAdapter.tsx");
   const desktopCreate = read("desktop/src/adapters/DesktopCreatePostAdapter.tsx");
   const desktopComments = read("desktop/src/adapters/DesktopPostCommentsAdapter.tsx");
@@ -69,6 +76,10 @@ test("portable desktop UI baseline is empty and migrated domains use shared view
   assert.deepEqual(baseline.desktopPortableUi, []);
   assert.match(webThread, /ChatThreadFrameView/);
   assert.match(desktopThread, /ChatThreadFrameView/);
+  assert.match(webThread, /ChatConversationStart/);
+  assert.match(desktopThread, /ChatConversationStart/);
+  assert.match(conversationStart, /isGroup \? \(isSubchat \? "section" : "group"\) : "direct"/);
+  assert.doesNotMatch(conversationStart, /useQuery|from ["']next\/|from ["']@\/server/);
   assert.match(desktopMessages, /MessagesLayoutView/);
   assert.match(desktopCreate, /CreatePostDialogView/);
   assert.match(desktopComments, /PostCommentsView/);
@@ -95,12 +106,13 @@ test("search title, query and scopes share one sticky stack", () => {
   const explore = read("src/components/explore/ExploreView.tsx");
   const stickyStack = read("src/components/layout/SectionStickyHeaderStack.tsx");
 
-  const stackStart = explore.indexOf("<SectionStickyHeaderStack>");
+  const stackStart = explore.indexOf("<SectionStickyHeaderStack");
   const stackEnd = explore.indexOf("</SectionStickyHeaderStack>");
   assert.ok(stackStart > 0);
   assert.ok(stackEnd > stackStart);
   const contents = explore.slice(stackStart, stackEnd);
-  assert.match(contents, /SectionPageHeader/);
+  assert.doesNotMatch(contents, /SectionPageHeader|SectionHeaderGlow/);
+  assert.match(contents, /<h1 className="sr-only">Поиск<\/h1>/);
   assert.match(contents, /type="search"/);
   assert.match(contents, /aria-label="Раздел поиска"/);
   assert.match(stickyStack, /sticky top-\[var\(--voople-sticky-offset\)\]/);
@@ -117,7 +129,7 @@ test("authenticated sticky chrome uses one offset without masking strips", () =>
   assert.match(sectionHeader, /top-\[var\(--voople-sticky-offset\)\]/);
   assert.match(shop, /voople-sticky-section-header/);
   assert.match(desktopShell, /data-voople-scroll=""/);
-  assert.match(globals, /\.voople-sticky-section-stack[\s\S]*background: var\(--background\)/);
+  assert.match(globals, /\.voople-sticky-section-stack \{[^}]*background: var\(--material-stage\)/);
   assert.doesNotMatch(globals, /0 -4rem 0 var\(--background\)/);
   assert.doesNotMatch(feedHeader, /linear-gradient|sticky top-0/);
 });
@@ -134,4 +146,22 @@ test("public group presentation is shared by Next and desktop routes", () => {
   assert.match(desktopAdapter, /chat\.publicGroupBySlug/);
   assert.match(desktopShell, /groupSlugFromPath/);
   assert.match(desktopShell, /<DesktopPublicGroup/);
+});
+
+test("Room invitation links use one protected preview on web and desktop", () => {
+  const web = read("src/app/(main)/room-invites/[inviteId]/page.tsx");
+  const webAdapter = read("src/components/chat/voice/WebCoreRoomInvitePreview.tsx");
+  const shared = read("src/components/chat/voice/CoreRoomInvitePreviewView.tsx");
+  const desktopAdapter = read("desktop/src/adapters/DesktopRoomInviteAdapter.tsx");
+  const desktop = read("desktop/src/shell/DesktopShell.tsx");
+
+  const container = read("src/components/chat/voice/CoreRoomInvitePreview.tsx");
+  assert.match(web, /WebCoreRoomInvitePreview/);
+  assert.match(webAdapter, /<CoreRoomInvitePreview/);
+  assert.match(desktopAdapter, /<CoreRoomInvitePreview/);
+  assert.match(container, /CoreRoomInvitePreviewView/);
+  assert.match(container, /useCoreRoomInvitePreview/);
+  assert.doesNotMatch(shared, /useQuery|from ["']next\/|from ["']@\/server/);
+  assert.match(desktop, /DesktopRoomInvitePreview/);
+  assert.match(desktop, /roomInviteIdFromPath/);
 });

@@ -4,6 +4,7 @@ import { createHash, randomBytes } from "node:crypto";
 
 import { getAdminClient } from "@/lib/supabase/admin";
 import { getChatMembershipRest } from "@/server/data/chat-access-rest";
+import { assertCanUseDirectChatRest } from "@/server/data/chat-direct-privacy-rest";
 import {
   acceptGroupVanityInviteRest,
   previewGroupVanityInviteRest,
@@ -87,7 +88,7 @@ async function getMembership(chatId: string, userId: string) {
   return getChatMembershipRest(chatId, userId);
 }
 
-export async function createChatInviteRest(chatId: string, userId: string) {
+export async function createChatInviteRest(chatId: string, userId: string, lifetime: "24h" | "7d" | "permanent" = "permanent") {
   const membership = await getMembership(chatId, userId);
   if (membership.type !== "group") {
     throw new Error("Ссылки-приглашения доступны только для групп");
@@ -101,18 +102,19 @@ export async function createChatInviteRest(chatId: string, userId: string) {
 
   const token = randomBytes(32).toString("base64url");
   const tokenHash = hashInviteToken(token);
+  const expiresAt = lifetime === "permanent" ? null : new Date(Date.now() + (lifetime === "7d" ? 7 : 1) * 24 * 60 * 60 * 1000).toISOString();
   const admin = getAdminClient();
 
   const { error } = await admin.from("chat_invites").insert({
     chat_id: chatId,
     created_by: userId,
     token_hash: tokenHash,
-    expires_at: null,
+    expires_at: expiresAt,
     max_uses: null,
   });
   if (error) throw new Error(error.message);
 
-  return { token, expiresAt: null };
+  return { token, expiresAt };
 }
 
 export async function revokeChatInviteRest(chatId: string, userId: string, token: string) {
@@ -259,6 +261,19 @@ async function assertNoOtherActiveRoom(chatId: string, userId: string) {
   if (data?.length) {
     throw new Error("Сначала завершите текущий разговор");
   }
+
+  const { data: liveParticipant, error: liveParticipantError } = await admin
+    .from("live_session_participants")
+    .select("session_id")
+    .eq("user_id", userId)
+    .is("left_at", null)
+    .limit(1);
+  if (liveParticipantError && liveParticipantError.code !== "42P01") {
+    throw new Error(liveParticipantError.message);
+  }
+  if (liveParticipant?.length) {
+    throw new Error("Сначала завершите текущий разговор");
+  }
 }
 
 async function finishRoom(
@@ -380,6 +395,9 @@ export async function getChatRoomRest(chatId: string, userId: string): Promise<C
 
 export async function enterChatRoomRest(chatId: string, userId: string, micMuted: boolean) {
   const membership = await getMembership(chatId, userId);
+  if (membership.type === "direct") {
+    await assertCanUseDirectChatRest(chatId, userId);
+  }
   await assertNoOtherActiveRoom(chatId, userId);
   const current = await getChatRoomRest(chatId, userId);
   const admin = getAdminClient();

@@ -6,12 +6,16 @@ import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { messageHasMusicForPlaylist } from "@/lib/chat/playlist-from-message";
 import { CHAT_REACTION_EMOJIS, type ChatReactionEmoji } from "@/lib/chat/reactions";
 import { cn } from "@/lib/utils";
+import type { ContextMenuAnchor } from "@/lib/layout/context-menu-position";
 import type { ChatMessageView } from "@/types/chat";
 
 type ChatMessageMenuProps = {
   message: ChatMessageView;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  contextAnchor?: ContextMenuAnchor | null;
+  restoreFocusElement?: HTMLElement | null;
+  onTriggerOpen?: () => void;
   onReply: (message: ChatMessageView) => void;
   onEdit?: (message: ChatMessageView) => void;
   onDelete?: (message: ChatMessageView) => void;
@@ -28,6 +32,9 @@ export function ChatMessageMenu({
   message,
   open,
   onOpenChange,
+  contextAnchor,
+  restoreFocusElement,
+  onTriggerOpen,
   onReply,
   onEdit,
   onDelete,
@@ -46,6 +53,8 @@ export function ChatMessageMenu({
     <DropdownMenu
       open={open}
       onOpenChange={onOpenChange}
+      contextAnchor={contextAnchor}
+      restoreFocusElement={restoreFocusElement}
       align={isMine ? "end" : "start"}
       side="inward"
       menuClassName="voople-chat-message-menu"
@@ -63,6 +72,7 @@ export function ChatMessageMenu({
             showTrigger ? "h-7 w-7" : "h-0 w-0 overflow-hidden",
           )}
           aria-label="Действия с сообщением"
+          onClick={onTriggerOpen}
         >
           <MoreHorizontal className="h-4 w-4" />
         </button>

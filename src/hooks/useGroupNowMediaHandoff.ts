@@ -1,0 +1,85 @@
+"use client";
+
+import { useCallback } from "react";
+
+import { roomJoinErrorMessage } from "@/lib/chat/group-room-join";
+import { trpc } from "@/lib/trpc/client";
+import type { GroupNowRoomTarget } from "@/types/group-now";
+import type { GroupRoomJoinResult } from "@/types/group-room-mutations";
+import type { EnabledVoiceMediaCredentials } from "@/types/voice";
+
+const MEDIA_TOKEN_TIMEOUT_MS = 12_000
+
+async function waitForMediaToken<T>(operation: Promise<T>): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error("Сервер слишком долго выдаёт доступ к голосовой комнате."))
+    }, MEDIA_TOKEN_TIMEOUT_MS)
+  })
+
+  try {
+    return await Promise.race([operation, timeout])
+  } finally {
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId)
+    }
+  }
+}
+
+export function useGroupNowMediaHandoff({
+  onJoined,
+}: {
+  onJoined: (
+    target: GroupNowRoomTarget,
+    result: GroupRoomJoinResult,
+    credentials: EnabledVoiceMediaCredentials,
+  ) => void | Promise<void>;
+}) {
+  const utils = trpc.useUtils();
+  const mediaTokenMutation = trpc.chat.coreRoomMediaToken.useMutation();
+  const leaveMutation = trpc.chat.coreLeaveRoom.useMutation();
+
+  const connect = useCallback(async (
+    target: GroupNowRoomTarget,
+    result: GroupRoomJoinResult,
+  ) => {
+    try {
+      const credentials = await waitForMediaToken(
+        mediaTokenMutation.mutateAsync({
+          sessionId: result.sessionId
+        })
+      )
+      if (!credentials.enabled) {
+        throw new Error("Медиасервер для комнаты временно недоступен");
+      }
+      await onJoined(target, result, credentials);
+    } catch (error) {
+      let cleanupFailed = false;
+      try {
+        await leaveMutation.mutateAsync({ sessionId: result.sessionId });
+      } catch {
+        cleanupFailed = true;
+      } finally {
+        await Promise.all([
+          utils.chat.coreGroupNow.invalidate({ groupId: target.groupId }),
+          utils.home.activeRooms.invalidate(),
+        ]);
+      }
+      if (cleanupFailed) {
+        throw new Error(`${roomJoinErrorMessage(error)}. Сессия завершится автоматически.`);
+      }
+      throw error;
+    }
+    await Promise.all([
+      utils.chat.coreGroupNow.invalidate({ groupId: target.groupId }),
+      utils.home.activeRooms.invalidate(),
+    ]);
+  }, [leaveMutation, mediaTokenMutation, onJoined, utils.chat.coreGroupNow, utils.home.activeRooms]);
+
+  return {
+    connect,
+    pending: mediaTokenMutation.isPending || leaveMutation.isPending,
+  };
+}

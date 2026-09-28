@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { ConnectionQuality } from "livekit-client";
 
 import type { ChatRoomParticipantView, GroupSoundView } from "@/types/chat";
+import type { GroupNowRoom, GroupNowRoomKind } from "@/types/group-now";
 import type { VoiceRoomSurfacePhase } from "./voice-room-surface";
 
 import type { MediaStatus } from "./voice-room-config";
@@ -81,13 +82,54 @@ export type VoiceRoomSessionModel = {
   onRetry: () => void | Promise<void>;
 };
 
-export type VoiceRoomSheetProps = {
-  overlay: { open: boolean; onClose: () => void };
+export type VoiceRoomSwitcherModel = {
+  rooms: GroupNowRoom[];
+  currentRoomId: string;
+  pendingRoomId: string | null;
+  errorMessage: string | null;
+  refreshing: boolean;
+  onSelect: (room: GroupNowRoom) => void | Promise<void>;
+  onRetry: () => void | Promise<void>;
+  management: VoiceRoomManagementModel | null;
+};
+
+export type VoiceRoomManagementModel = {
+  pendingRoomId: string | null;
+  errorRoomId: string | null;
+  errorMessage: string | null;
+  onRename: (roomId: string, name: string) => void | Promise<void>;
+  onSetPinned: (roomId: string, pinned: boolean) => void | Promise<void>;
+  onArchive: (roomId: string) => void | Promise<void>;
+};
+
+export type VoiceRoomRenameModel = {
+  roomId: string;
+  name: string;
+  pending: boolean;
+  errorMessage: string | null;
+  onSubmit: (name: string) => void | Promise<void>;
+};
+
+export type VoiceRoomMessagesModel = {
+  chatId: string;
+  groupId: string;
+  roomId: string;
+  liveSessionId: string;
+  roomName: string;
+  roomKind: GroupNowRoomKind;
+};
+
+export type VoiceRoomMainSurfaceProps = {
+  overlay: { open: boolean; onCloseToMini: () => void; onCloseToCompact: () => void };
   identity: VoiceRoomIdentityModel;
   connection: VoiceRoomConnectionModel;
   stage: VoiceRoomStageModel;
   controls: VoiceRoomControlsModel;
   access: VoiceRoomAccessModel;
   session: VoiceRoomSessionModel;
+  roomSwitcher: VoiceRoomSwitcherModel | null;
+  roomRename: VoiceRoomRenameModel | null;
+  messages: VoiceRoomMessagesModel | null;
+  invite: { sessionId: string } | null;
   settingsPanel: ReactNode;
 };

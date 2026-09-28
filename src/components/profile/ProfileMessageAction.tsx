@@ -26,7 +26,7 @@ export function ProfileMessageAction({
       type="button"
       variant="secondary"
       size={size}
-      className={size === "sm" ? "shrink-0" : undefined}
+      className={size === "sm" ? "h-11 w-11 shrink-0 px-0 sm:h-8 sm:w-8" : undefined}
       aria-label={COPY.message}
       disabled={openChat.isPending}
       onClick={() => {

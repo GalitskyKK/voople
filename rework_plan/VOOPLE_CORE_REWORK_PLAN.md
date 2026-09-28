@@ -636,7 +636,7 @@ Music оставить как полноценную identity/utility-функц
 - mood;
 - current music optional;
 - short status;
-- voople.ru/@handle.
+- voople.app/@handle.
 
 Пользователь может:
 

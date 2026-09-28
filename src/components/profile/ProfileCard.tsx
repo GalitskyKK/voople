@@ -1,12 +1,11 @@
 import type { ProfileViewModel } from "@/types/domain";
 import { ProfileBadges } from "./ProfileBadges";
 import { ProfileCardView } from "./ProfileCardView";
-import { ProfileReactions } from "./ProfileReactions";
 import { ProfileEditSheet } from "./ProfileEditSheet";
-import { ProfileFollowButton } from "./ProfileFollowButton";
-import { ProfileMessageButton } from "./ProfileMessageButton";
+import { ProfileRelationshipActions } from "./ProfileRelationshipActions";
 import { ProfileStatusSection } from "./ProfileStatusSection";
 import { ProfileShareCardButton } from "./ProfileShareCardButton";
+import { PROFILE_STATUS_VISIBLE } from "@/lib/product/profile-beta-surface";
 
 type ProfileCardProps = {
   profile: ProfileViewModel;
@@ -26,21 +25,21 @@ export function ProfileCard({
       profile={profile}
       badges={<ProfileBadges userId={profile.id} compact className="mt-0 min-w-0 flex-nowrap overflow-hidden" />}
       relationshipActions={
-        isOwner || !canFollow ? undefined : (
-          <>
-            <ProfileFollowButton username={profile.username} canFollow={canFollow} />
-            <ProfileMessageButton username={profile.username} size="sm" />
-          </>
+        isOwner ? undefined : (
+          <ProfileRelationshipActions
+            userId={profile.id}
+            username={profile.username}
+            canFollow={canFollow}
+          />
         )
       }
-      status={
+      status={PROFILE_STATUS_VISIBLE ? (
         <ProfileStatusSection
           username={profile.username}
           initialStatus={profile.status}
           isOwner={isOwner}
         />
-      }
-      reactions={<ProfileReactions profileUserId={profile.id} canReact={!isOwner} />}
+      ) : undefined}
       shareAction={isOwner ? <ProfileShareCardButton profile={profile} /> : undefined}
       editAction={isOwner ? <ProfileEditSheet profile={profile} /> : undefined}
       className={className}

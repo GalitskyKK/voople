@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
+import { Bell } from "lucide-react";
 
+import { NotificationNavBadge } from "@/components/notifications/NotificationNavBadge";
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { useRealtimeInbox } from "@/hooks/useRealtimeChat";
@@ -15,9 +17,13 @@ import { GroupChatCreator } from "./GroupChatCreator";
 
 type ChatListProps = {
   activeChatId?: string | null;
+  savedMessagesActive?: boolean;
 };
 
-export function ChatList({ activeChatId = null }: ChatListProps) {
+export function ChatList({
+  activeChatId = null,
+  savedMessagesActive = false,
+}: ChatListProps) {
   const router = useRouter();
   const { onlineUserIds } = useOnlineUsers();
   const utils = trpc.useUtils();
@@ -29,6 +35,10 @@ export function ChatList({ activeChatId = null }: ChatListProps) {
     refetchInterval: 60_000,
   });
   const openDirect = trpc.chat.openDirect.useMutation();
+  const savedMessages = trpc.savedMessages.availability.useQuery(undefined, {
+    retry: false,
+    staleTime: 60_000,
+  });
   const searchContacts = useCallback(
     async (query: string) => {
       const contacts = await utils.client.chat.contacts.query({ q: query.trim() });
@@ -42,10 +52,22 @@ export function ChatList({ activeChatId = null }: ChatListProps) {
       activeChatId={activeChatId}
       loading={isLoading}
       error={error?.message}
-      headerAction={<GroupChatCreator compact />}
+      headerAction={(
+        <span className="flex items-center gap-1">
+          <Link
+            href="/notifications"
+            className="relative grid h-9 w-9 place-items-center rounded-xl text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
+            aria-label="Уведомления"
+          >
+            <Bell className="h-4 w-4" aria-hidden="true" />
+            <NotificationNavBadge className="right-0 top-0" />
+          </Link>
+          <GroupChatCreator variant="compact" />
+        </span>
+      )}
       emptyAction={
         <Link
-          href="/explore"
+          href="/search"
           className="voople-link mt-3 inline-flex text-sm font-medium"
         >
           Найти людей
@@ -101,10 +123,20 @@ export function ChatList({ activeChatId = null }: ChatListProps) {
         </DisplayNameWithPin>
       )}
       renderGlobalSearchAction={(query) => (
-        <Link href={`/explore?q=${encodeURIComponent(query)}`} className="voople-link mt-3 inline-flex font-medium">
+        <Link href={`/search?q=${encodeURIComponent(query)}`} className="voople-link mt-3 inline-flex font-medium">
           Искать «{query}» во всём Voople →
         </Link>
       )}
+      savedMessagesActive={savedMessagesActive}
+      renderSavedMessagesDestination={
+        savedMessages.data?.enabled
+          ? ({ className, children }) => (
+              <Link href="/messages/saved" className={className}>
+                {children}
+              </Link>
+            )
+          : undefined
+      }
     />
   );
 }

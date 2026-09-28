@@ -1,57 +1,51 @@
 "use client";
 
-import { Hash } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { cn } from "@/lib/utils";
 import type { ChatListItem } from "@/types/chat";
+
+import type { ChatSectionDestinationRenderer } from "./chat-section-destination";
+import { ChatSectionPicker } from "./ChatSectionPicker";
 
 export function ChatSectionsBarView({
   rootChat,
   activeChatId,
   renderDestination,
   createAction,
+  onToggleFavorite,
+  pendingFavoriteId,
+  favoriteError,
 }: {
   rootChat: ChatListItem;
   activeChatId: string;
-  renderDestination: (
-    chat: ChatListItem,
-    className: string,
-    children: ReactNode,
-  ) => ReactNode;
-  createAction?: ReactNode;
+  renderDestination: ChatSectionDestinationRenderer;
+  createAction?: ReactNode | ((control: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+  }) => ReactNode);
+  onToggleFavorite?: (sectionId: string) => void | Promise<void>;
+  pendingFavoriteId?: string | null;
+  favoriteError?: string | null;
 }) {
   if (!rootChat.topicsEnabled) return null;
   const sections = [rootChat, ...rootChat.channels];
+  const activeSection = sections.find((section) => section.id === activeChatId) ?? rootChat;
 
   return (
     <nav
-      className="voople-scroll flex shrink-0 gap-1 overflow-x-auto border-b border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-1.5"
+      className="voople-chat-sections flex min-h-11 shrink-0 items-center gap-1 border-b border-[var(--app-border)] bg-[var(--app-surface)] px-3 lg:min-h-9"
       aria-label="Разделы группы"
-      style={rootChat.groupAccentColor ? { "--group-accent": rootChat.groupAccentColor } as React.CSSProperties : undefined}
     >
-      {sections.map((section, index) =>
-        renderDestination(
-          section,
-          cn(
-            "inline-flex h-8 max-w-52 shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition",
-            activeChatId === section.id
-              ? "bg-[color-mix(in_srgb,var(--group-accent,var(--theme-accent))_16%,var(--app-surface-soft))] text-[var(--group-accent,var(--theme-accent))]"
-              : "text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]",
-          ),
-          <>
-            {index === 0 ? (
-              <Hash className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            ) : section.topicIcon ? (
-              <span aria-hidden="true">{section.topicIcon}</span>
-            ) : (
-              <Hash className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            )}
-            <span className="truncate">{index === 0 ? "Общий" : section.name || "Раздел"}</span>
-          </>,
-        ),
-      )}
-      {createAction}
+      <ChatSectionPicker
+        sections={sections}
+        activeSection={activeSection}
+        rootChatId={rootChat.id}
+        renderDestination={renderDestination}
+        createAction={createAction}
+        onToggleFavorite={onToggleFavorite}
+        pendingFavoriteId={pendingFavoriteId}
+        favoriteError={favoriteError}
+      />
     </nav>
   );
 }

@@ -7,29 +7,24 @@ import { AppPanelHeader } from "@/components/layout/AppPanelHeader";
 
 import {
   ChatListFilters,
-  type ChatListFilter,
   type ChatSearchScope,
 } from "./ChatListFilters";
 
 export function ChatListSearchPanel({
   query,
   searchActive,
-  filter,
   searchScope,
   headerAction,
   onQueryChange,
   onSearchActiveChange,
-  onFilterChange,
   onSearchScopeChange,
 }: {
   query: string;
   searchActive: boolean;
-  filter: ChatListFilter;
   searchScope: ChatSearchScope;
   headerAction?: ReactNode;
   onQueryChange: (value: string) => void;
   onSearchActiveChange: (value: boolean) => void;
-  onFilterChange: (value: ChatListFilter) => void;
   onSearchScopeChange: (value: ChatSearchScope) => void;
 }) {
   const closeSearch = () => {
@@ -42,7 +37,9 @@ export function ChatListSearchPanel({
     <>
       <AppPanelHeader>
         <h1 className="min-w-0 flex-1 truncate text-lg font-bold tracking-[-0.025em]">Чаты</h1>
-        {headerAction}
+        {headerAction ? (
+          <span className="voople-chat-list__create">{headerAction}</span>
+        ) : null}
       </AppPanelHeader>
       <div className="shrink-0 space-y-2.5 border-b border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-3">
         <div className="flex gap-2">
@@ -64,7 +61,6 @@ export function ChatListSearchPanel({
                 event.currentTarget.blur();
               }}
               onFocus={() => {
-                onFilterChange("all");
                 onSearchScopeChange("all");
                 onSearchActiveChange(true);
               }}
@@ -74,7 +70,12 @@ export function ChatListSearchPanel({
             />
           </label>
         </div>
-        <ChatListFilters searchActive={searchActive} filter={filter} searchScope={searchScope} onFilterChange={onFilterChange} onSearchScopeChange={onSearchScopeChange} />
+        {searchActive ? (
+          <ChatListFilters
+            searchScope={searchScope}
+            onSearchScopeChange={onSearchScopeChange}
+          />
+        ) : null}
       </div>
     </>
   );

@@ -2,11 +2,19 @@
 
 import { trpc } from "@/lib/trpc/client";
 
-export function useVoiceRoomServerSession(chatId: string, open: boolean) {
+export function useVoiceRoomServerSession(
+  chatId: string,
+  open: boolean,
+  enabled = true,
+) {
   const utils = trpc.useUtils();
   const room = trpc.chat.room.useQuery(
     { chatId },
-    { staleTime: 5_000, refetchInterval: open ? 5_000 : 15_000 },
+    {
+      enabled,
+      staleTime: 5_000,
+      refetchInterval: enabled ? open ? 5_000 : 15_000 : false,
+    },
   );
   const enter = trpc.chat.enterRoom.useMutation();
   const mediaToken = trpc.chat.roomMediaToken.useMutation();

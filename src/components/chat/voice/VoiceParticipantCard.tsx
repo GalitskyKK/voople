@@ -8,6 +8,7 @@ import { resolveRingStyle } from "@/lib/customization/rings";
 import { cn } from "@/lib/utils";
 import type { ChatRoomParticipantView } from "@/types/chat";
 import { VoiceParticipantContextMenu } from "./VoiceParticipantContextMenu";
+import { GroupPersonPreview } from "../GroupPersonPreview";
 
 export function VoiceParticipantCard({
   participant,
@@ -68,10 +69,12 @@ export function VoiceParticipantCard({
         onContextMenu={openContextMenu}
         onKeyDown={openContextMenuFromKeyboard}
         className={cn(
-          "relative flex flex-col items-center justify-end overflow-hidden rounded-2xl border bg-[var(--app-surface-soft)] text-center outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--theme-accent)]",
-          compact ? "min-h-32 gap-2 px-3 py-3" : "min-h-44 gap-3 px-4 py-4",
+          "voople-full-room__participant relative flex flex-col items-center justify-end overflow-hidden rounded-[var(--app-radius-sm)] border bg-[var(--app-surface-soft)] text-center outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--theme-accent)]",
+          compact ? "min-h-20 gap-1 px-2 py-2" : "min-h-44 gap-3 px-4 py-4",
           focused && "col-span-2 h-full min-h-64 border-(--theme-accent) lg:col-span-4",
-          speaking ? "border-[var(--theme-accent)] shadow-[0_0_0_2px_color-mix(in_srgb,var(--theme-accent)_20%,transparent)]" : "border-[var(--app-border)]",
+          speaking
+            ? "border-[var(--theme-accent)]"
+            : "border-[color-mix(in_srgb,var(--app-border)_65%,var(--app-muted))]",
           className,
         )}
       >
@@ -96,7 +99,7 @@ export function VoiceParticipantCard({
         <div className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center">
           <ProfileAvatarVisual
             displayName={participant.displayName}
-            size="lg"
+            size={compact ? "sm" : "lg"}
             isOnline
             ringClassName={resolveRingStyle(participant.avatarRingId)?.className}
             avatarImage={
@@ -124,12 +127,13 @@ export function VoiceParticipantCard({
       ) : null}
 
       <div className={cn("relative z-10 min-w-0 max-w-full", hasCamera && "text-white")}>
-        <p className="truncate text-sm font-medium">
-          {participant.displayName}
-          {participant.isMe ? " · вы" : ""}
-        </p>
+        {!participant.guest && !participant.isMe ? (
+          <GroupPersonPreview id={participant.id} username={participant.username} displayName={participant.displayName} previewOnClick>
+            <button type="button" className="max-w-full truncate rounded text-sm font-medium focus-visible:outline-2 focus-visible:outline-[var(--material-focus-ring)]" aria-label={`Просмотреть профиль ${participant.displayName}`}>{participant.displayName}</button>
+          </GroupPersonPreview>
+        ) : <p className="truncate text-sm font-medium">{participant.displayName}{participant.isMe ? " · вы" : ""}</p>}
         <p className={cn("truncate text-xs", hasCamera ? "text-white/70" : "text-[var(--app-muted)]")}>
-          {speaking ? "говорит" : `@${participant.username}`}
+          {speaking ? "говорит" : participant.guest ? "гость" : `@${participant.username}`}
         </p>
       </div>
       {muted ? (
@@ -137,7 +141,7 @@ export function VoiceParticipantCard({
           <MicOff className="h-4 w-4" aria-label="Микрофон выключен" />
         </span>
       ) : (
-        <span className="absolute right-3 top-3 z-10 rounded-full bg-[var(--theme-accent)] p-1.5 text-white">
+        <span className="absolute right-3 top-3 z-10 rounded-full border border-[var(--material-border-hover)] bg-[var(--material-control-fill)] p-1.5 text-[var(--material-ice)]">
           <Mic className="h-4 w-4" aria-label="Микрофон включён" />
         </span>
       )}

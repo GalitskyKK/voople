@@ -36,7 +36,7 @@ export function ChatEmojiPicker({ open, onClose, onPick, customEmojis = [], clas
     <div
       ref={rootRef}
       className={cn(
-        "voople-chat-emoji-picker grid max-h-72 grid-cols-8 gap-0.5 overflow-y-auto rounded-[var(--app-radius-lg)] border border-[var(--app-border)] bg-[var(--app-surface)] p-2 shadow-[var(--app-shadow-md)]",
+        "voople-chat-emoji-picker voople-overlay-surface grid max-h-[min(18rem,calc(100dvh-8rem))] grid-cols-8 gap-0.5 overflow-y-auto rounded-[var(--app-radius-lg)] p-2",
         className,
       )}
       role="listbox"

@@ -1,4 +1,5 @@
 import { GeistMono } from "geist/font/mono";
+import { GeistPixelSquare } from "geist/font/pixel";
 import { GeistSans } from "geist/font/sans";
 
 import { WebsiteJsonLd } from "@/components/seo/WebsiteJsonLd";
@@ -10,6 +11,7 @@ import { AppPreferencesProvider } from "@/components/settings/AppPreferencesProv
 import { WebVitalsReporter } from "@/components/telemetry/WebVitalsReporter";
 
 import "./globals.css";
+import "./styles/messenger-glass.css";
 
 export const metadata = createRootMetadata();
 
@@ -19,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    <html lang="ru" className={`${GeistSans.variable} ${GeistMono.variable} ${GeistPixelSquare.variable}`}>
       <body className="relative min-h-dvh bg-background text-foreground antialiased">
         <WebsiteJsonLd />
         <a href="#main-content" className="voople-skip-link">

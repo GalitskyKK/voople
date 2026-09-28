@@ -241,7 +241,7 @@ creates `playwright/.auth/user.json` at runtime; the directory, report, traces
 and failure videos are ignored by Git. Do not attach a trace publicly until it
 has been checked for personal chat content.
 
-The scheduled `E2E smoke` GitHub Action targets `https://voople.ru`. Add the
+The scheduled `E2E smoke` GitHub Action targets `https://voople.app`. Add the
 four `E2E_*` values as repository Actions secrets to enable authenticated
 checks. If they are absent, the same workflow intentionally runs only the
 public project. A failing smoke test blocks confidence in a release but does

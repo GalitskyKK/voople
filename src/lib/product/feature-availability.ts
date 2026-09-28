@@ -26,6 +26,7 @@ export const PRODUCT_FEATURES = [
   "feed_recommendations",
   "core_rework_shell",
   "multi_room_groups",
+  "saved_messages",
 ] as const;
 
 export type ProductFeature = (typeof PRODUCT_FEATURES)[number];
@@ -106,7 +107,7 @@ export const FEATURE_AVAILABILITY = Object.freeze({
     exposure: "secondary",
     platforms: CURRENT_PLATFORMS,
     channels: ["internal", "beta"],
-    fallbackHref: "/explore",
+    fallbackHref: "/search",
   },
   feed_recommendations: {
     exposure: "secondary",
@@ -117,15 +118,22 @@ export const FEATURE_AVAILABILITY = Object.freeze({
   core_rework_shell: {
     exposure: "primary",
     platforms: CURRENT_PLATFORMS,
-    channels: ["internal"],
+    channels: ["internal", "beta"],
     serverCapability: "core_rework_shell",
     fallbackHref: "/messages",
   },
   multi_room_groups: {
     exposure: "primary",
     platforms: CURRENT_PLATFORMS,
-    channels: ["internal"],
+    channels: ["internal", "beta"],
     serverCapability: "multi_room_groups",
+    fallbackHref: "/messages",
+  },
+  saved_messages: {
+    exposure: "primary",
+    platforms: CURRENT_PLATFORMS,
+    channels: ["internal"],
+    serverCapability: "saved_messages",
     fallbackHref: "/messages",
   },
 } satisfies Record<ProductFeature, FeatureAvailabilityRule>);

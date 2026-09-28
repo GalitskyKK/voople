@@ -2,6 +2,7 @@ import "server-only";
 
 import { getAdminClient } from "@/lib/supabase/admin";
 import { DIRECT_CALL_RING_MS, insertRoomTimelineEventRest } from "@/server/data/chat-rooms-rest";
+import { filterUnblockedUserIdsRest } from "@/server/data/user-blocks-rest";
 import {
   toProfileCustomizationView,
   type CustomizationRow,
@@ -88,12 +89,14 @@ export async function listIncomingCallsRest(
 
   const roomIds = rooms.map((room) => room.chat_id as string);
   const callerIds = [...new Set(rooms.map((room) => room.started_by as string))];
+  const visibleCallerIds = await filterUnblockedUserIdsRest(userId, callerIds);
+  if (!visibleCallerIds.length) return [];
   const [participantsResult, callersResult] = await Promise.all([
     admin
       .from("chat_room_participants")
       .select("chat_id, user_id")
       .in("chat_id", roomIds)
-      .in("user_id", callerIds)
+      .in("user_id", visibleCallerIds)
       .gte(
         "last_seen_at",
         new Date(Date.now() - CALLER_STALE_AFTER_MS).toISOString(),
@@ -101,7 +104,7 @@ export async function listIncomingCallsRest(
     admin
       .from("users")
       .select("id, username, display_name, profile_customization (avatar_type, avatar_data, animated_avatar_id, avatar_decoration_id, avatar_ring_id)")
-      .in("id", callerIds),
+      .in("id", visibleCallerIds),
   ]);
   if (participantsResult.error) throw new Error(participantsResult.error.message);
   if (callersResult.error) throw new Error(callersResult.error.message);

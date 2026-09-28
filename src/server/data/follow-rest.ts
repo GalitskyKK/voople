@@ -1,5 +1,9 @@
 import { getAdminClient } from "@/lib/supabase/admin";
 import { createNotification } from "@/server/services/notifications.service";
+import {
+  assertUsersCanInteractRest,
+  filterUnblockedUserIdsRest,
+} from "@/server/data/user-blocks-rest";
 
 export type FollowState = {
   isSelf: boolean;
@@ -17,6 +21,10 @@ export async function getFollowStateRest(
   }
   if (viewerId === profileUserId) {
     return { isSelf: true, following: false, followsYou: false, canFollow: false };
+  }
+  const unblocked = await filterUnblockedUserIdsRest(viewerId, [profileUserId]);
+  if (!unblocked.includes(profileUserId)) {
+    return { isSelf: false, following: false, followsYou: false, canFollow: false };
   }
 
   const admin = getAdminClient();
@@ -51,6 +59,7 @@ export async function toggleFollowRest(followerId: string, followingId: string) 
   if (followerId === followingId) {
     throw new Error("Нельзя подписаться на себя");
   }
+  await assertUsersCanInteractRest(followerId, followingId);
 
   const admin = getAdminClient();
 

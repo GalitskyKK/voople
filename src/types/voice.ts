@@ -1,11 +1,35 @@
-export type VoiceSessionLease = {
-  enabled: boolean;
-  url?: string;
-  endpoints?: Array<{ url: string; label: string }>;
-  token?: string;
-  expiresAt: string | null;
-  refreshAfter: string | null;
-  screenShareQuality?: "standard" | "plus";
+export type DisabledVoiceMediaCredentials = {
+  enabled: false;
+  screenShareQuality: "standard" | "plus";
+  expiresAt: null;
+  refreshAfter: null;
+};
+
+export type EnabledVoiceMediaCredentials = {
+  enabled: true;
+  url: string;
+  endpoints: Array<{ url: string; label: string }>;
+  token: string;
+  expiresAt: string;
+  refreshAfter: string;
+  screenShareQuality: "standard" | "plus";
+};
+
+export type VoiceMediaCredentials =
+  | DisabledVoiceMediaCredentials
+  | EnabledVoiceMediaCredentials;
+
+export type VoiceSessionLease = VoiceMediaCredentials;
+
+export type CoreVoiceSessionDescriptor = {
+  groupId: string;
+  conversationId?: string;
+  room: GroupNowRoom;
+  join: GroupRoomJoinResult;
+};
+
+export type CoreVoiceSessionLaunch = CoreVoiceSessionDescriptor & {
+  credentials: EnabledVoiceMediaCredentials;
 };
 
 export type ScreenAudioSessionLease = {
@@ -33,3 +57,5 @@ export type VoicePreferencesV2 = {
   screenShareVolume: number;
   participantVolumes: Record<string, number>;
 };
+import type { GroupNowRoom } from "./group-now";
+import type { GroupRoomJoinResult } from "./group-room-mutations";

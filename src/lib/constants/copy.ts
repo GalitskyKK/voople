@@ -1,5 +1,6 @@
 export const COPY = {
   appName: "вупл.",
+  wordmark: "VOOPLE",
   feed: "Главная",
   explore: "Обзор",
   following: "Подписки",

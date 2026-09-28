@@ -14,12 +14,16 @@ export function DesktopSubchatCreatorAdapter({
   session,
   onCreated,
   viewerRole,
+  open,
+  onOpenChange,
 }: {
   parentChatId: string;
   config: DesktopConfig;
   session: Session;
   onCreated: (chatId: string) => void;
   viewerRole: "owner" | "admin" | "member";
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const client = useMemo(
     () => createDesktopTrpcClient(config, () => session.access_token),
@@ -44,6 +48,8 @@ export function DesktopSubchatCreatorAdapter({
 
   return (
     <SubchatCreatorView
+      open={open}
+      onOpenChange={onOpenChange}
       createSubchat={createSubchat}
       onCreated={onCreated}
       canRestrict={viewerRole === "owner" || viewerRole === "admin"}

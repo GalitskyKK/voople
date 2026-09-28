@@ -62,6 +62,20 @@ export const chatRoomParticipants = pgTable(
   }),
 );
 
+export const chatReadCursors = pgTable(
+  "chat_read_cursors",
+  {
+    chatId: uuid("chat_id").notNull().references(() => chats.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    readThroughAt: timestamp("read_through_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.chatId, t.userId] }),
+    userIdx: index("chat_read_cursors_user_idx").on(t.userId, t.chatId),
+  }),
+);
+
 export const chatRoomInvites = pgTable(
   "chat_room_invites",
   {
@@ -70,7 +84,9 @@ export const chatRoomInvites = pgTable(
     roomSessionId: uuid("room_session_id").notNull(),
     inviterId: uuid("inviter_id").notNull().references(() => users.id, { onDelete: "cascade" }),
     inviteeId: uuid("invitee_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    intent: varchar("intent", { length: 20 }).$type<"join_room" | "voop">().notNull().default("join_room"),
     status: varchar("status", { length: 20 }).notNull().default("pending"),
+    targetRoomSessionId: uuid("target_room_session_id"),
     expiresAt: timestamp("expires_at").notNull(),
     respondedAt: timestamp("responded_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -79,10 +95,11 @@ export const chatRoomInvites = pgTable(
   (t) => ({
     inviteeStatusIdx: index("chat_room_invites_invitee_status_idx").on(t.inviteeId, t.status, t.createdAt),
     sessionIdx: index("chat_room_invites_session_idx").on(t.chatId, t.roomSessionId, t.createdAt),
-    sessionInviteeUnique: uniqueIndex("chat_room_invites_session_invitee_unique").on(
+    sessionInviteeIntentUnique: uniqueIndex("chat_room_invites_session_invitee_intent_unique").on(
       t.chatId,
       t.roomSessionId,
       t.inviteeId,
+      t.intent,
     ),
   }),
 );
@@ -99,6 +116,7 @@ export const groupRooms = pgTable(
     kind: varchar("kind", { length: 20 }).$type<GroupRoomKind>().notNull(),
     name: varchar("name", { length: 80 }).notNull(),
     createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+    creationRequestId: uuid("creation_request_id"),
     archivedAt: timestamp("archived_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -108,6 +126,9 @@ export const groupRooms = pgTable(
     activeLobbyUnique: uniqueIndex("group_rooms_active_lobby_unique")
       .on(t.groupChatId)
       .where(sql`${t.kind} = 'lobby' AND ${t.archivedAt} IS NULL`),
+    creationRequestUnique: uniqueIndex("group_rooms_creation_request_unique")
+      .on(t.creationRequestId)
+      .where(sql`${t.creationRequestId} IS NOT NULL`),
   }),
 );
 

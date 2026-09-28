@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { createVoiceOperationGate } from "../src/lib/livekit/voice-operation-gate.ts";
+import {
+  VOICE_MEDIA_CONNECTION_TIMEOUT_MS,
+  VOICE_MEDIA_SURFACE_TIMEOUT_MS,
+} from "../src/components/chat/voice/voice-room-surface.ts";
 
 const read = (path) => readFileSync(path, "utf8");
 
@@ -22,39 +26,45 @@ test("voice operation generations reject work completed after cancellation", () 
 test("join uses microphone intent and compensates a cancelled server enter", () => {
   const lifecycle = read("src/components/chat/voice/useVoiceRoomSurfaceSession.ts");
 
-  assert.match(lifecycle, /micMuted: desiredMicMutedRef\.current/);
+  assert.match(lifecycle, /server\.enter\.run\(desiredMicMutedRef\.current\)/);
   assert.doesNotMatch(lifecycle, /mutateAsync\(\{ chatId, micMuted \}\)/);
-  assert.match(lifecycle, /if \(!isCurrent\(\)\) \{\s+await server\.leave\.mutateAsync/);
-  assert.match(lifecycle, /sessionOperation\.cancel\(\);\s+mediaConnection\.disconnect\(\)/);
+  assert.match(lifecycle, /if \(!isCurrent\(\)\) \{\s+await server\.leave\.run/);
+  assert.match(lifecycle, /sessionOperation\.cancel\(\);?\s+mediaConnection\.disconnect\(\)/);
 });
 
 test("ChatRoomControl is only a shared controller-to-view boundary", () => {
   const control = read("src/components/chat/ChatRoomControl.tsx");
   const view = read("src/components/chat/voice/ChatRoomControlView.tsx");
-  const sheet = read("src/components/chat/voice/VoiceRoomSheet.tsx");
-  const sheetModels = read("src/components/chat/voice/voice-room-sheet-models.ts");
+  const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
+  const surfaceModels = read("src/components/chat/voice/voice-room-sheet-models.ts");
   const baseline = read(".architecture-baseline.json");
 
   assert.match(control, /useChatRoomControl\(props, ref\)/);
   assert.match(control, /<ChatRoomControlView controller=\{controller\}/);
   assert.doesNotMatch(control, /useState|mutateAsync|new Room/);
-  assert.match(view, /<VoiceRoomSheet/);
-  assert.match(sheet, /<VoiceRoomHeader/);
-  assert.match(sheet, /<VoiceRoomContent/);
-  assert.match(sheet, /<VoiceRoomFooter/);
-  assert.match(sheetModels, /identity: VoiceRoomIdentityModel/);
-  assert.match(sheetModels, /connection: VoiceRoomConnectionModel/);
-  assert.match(sheetModels, /session: VoiceRoomSessionModel/);
+  assert.match(view, /<VoiceRoomMainSurface/);
+  assert.match(surface, /<VoiceRoomHeader/);
+  assert.match(surface, /<VoiceRoomContent/);
+  assert.match(surface, /<VoiceRoomFooter/);
+  assert.match(surfaceModels, /identity: VoiceRoomIdentityModel/);
+  assert.match(surfaceModels, /VoiceRoomMainSurfaceProps/);
+  assert.match(surfaceModels, /connection: VoiceRoomConnectionModel/);
+  assert.match(surfaceModels, /session: VoiceRoomSessionModel/);
+  assert.match(surfaceModels, /roomSwitcher: VoiceRoomSwitcherModel \| null/);
+  assert.match(surface, /<VoiceRoomSwitcher/);
   assert.doesNotMatch(baseline, /ChatRoomControl\.tsx/);
 });
 
-test("room sheet owns one secondary panel and cancels stale fullscreen requests", () => {
-  const sheet = read("src/components/chat/voice/VoiceRoomSheet.tsx");
+test("room main surface owns one secondary panel and cancels stale fullscreen requests", () => {
+  const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
   const fullscreen = read("src/components/chat/voice/useVoiceRoomFullscreen.ts");
 
-  assert.match(sheet, /type SecondaryPanel = "settings" \| "soundboard" \| null/);
-  assert.match(sheet, /setSecondaryPanel\(null\);\s+void exitFullscreen\(\);\s+onClose\(\)/);
-  assert.doesNotMatch(sheet, /settingsOpen|soundboardOpen/);
+  assert.match(surface, /type SecondaryPanel = "settings" \| "soundboard" \| "invite" \| "messages" \| null/);
+  assert.match(
+    surface,
+    /setSecondaryPanel\(\(current\) => current === "messages" \? current : null\);\s+void exitFullscreen\(\);\s+if \(target === "mini"\) onCloseToMini\(\);\s+else onCloseToCompact\(\)/,
+  );
+  assert.doesNotMatch(surface, /settingsOpen|soundboardOpen/);
   assert.match(fullscreen, /if \(pendingRef\.current\) return/);
   assert.match(fullscreen, /generationRef\.current !== generation/);
   assert.match(fullscreen, /document\.fullscreenElement === target/);
@@ -72,12 +82,31 @@ test("microphone test cancels pending device access and prevents duplicate start
   assert.match(micTest, /mountedRef\.current = false/);
 });
 
-test("LiveKit connect checks its generation after every long async boundary", () => {
+test("LiveKit connect is bounded, single-flight and abandons stale rooms", () => {
   const connection = read("src/components/chat/voice/useVoiceMediaConnection.ts");
 
+  assert.match(connection, /if \(connectPromiseRef\.current\) return connectPromiseRef\.current/);
   assert.match(connection, /const isCurrent = \(\) =>/);
-  assert.match(connection, /await getCredentials\(\);\s+if \(!isCurrent\(\)\) return/);
-  assert.match(connection, /await room\.prepareConnection[\s\S]*if \(!isCurrent\(\)\) return abandonRoom\(room\)/);
-  assert.match(connection, /await room\.startAudio\(\)[\s\S]*if \(!isCurrent\(\)\) return abandonRoom\(room\)/);
-  assert.match(connection, /await syncVoiceTrackProcessor[\s\S]*if \(!isCurrent\(\)\) return abandonRoom\(room\)/);
+  assert.match(connection, /waitForVoiceMediaConnection\(\s*getCredentials\(\)/);
+  assert.match(connection, /VOICE_MEDIA_CREDENTIALS_TIMEOUT_MS/);
+  assert.match(connection, /VOICE_MEDIA_ENDPOINT_TIMEOUT_MS/);
+  assert.match(connection, /room\.connect\(endpoint\.url, credentials\.token/);
+  assert.match(connection, /adaptiveStream: true/);
+  assert.match(connection, /disconnectOnPageLeave: true/);
+  assert.doesNotMatch(connection, /ConnectionCheck/);
+  assert.match(connection, /if \(!isCurrent\(\)\) \{\s+abandonRoom\(room\)/);
+  assert.match(connection, /const isCurrentRoom = \(\) => isCurrent\(\) && roomRef\.current === room/);
+  assert.match(connection, /await room\.startAudio\(\)[\s\S]*if \(isCurrentRoom\(\)\)/);
+  assert.match(connection, /await syncVoiceTrackProcessor[\s\S]*if \(!isCurrentRoom\(\)\) return/);
+  assert.equal(VOICE_MEDIA_CONNECTION_TIMEOUT_MS, 20_000);
+  assert.equal(VOICE_MEDIA_SURFACE_TIMEOUT_MS, 24_000);
+});
+
+test("voice connection ships without temporary browser debug markers", () => {
+  const provider = read("src/components/chat/voice/VoiceSessionProvider.tsx");
+  const connection = read("src/components/chat/voice/useVoiceMediaConnection.ts");
+  const surface = read("src/components/chat/voice/useVoiceRoomSurfaceSession.ts");
+
+  assert.doesNotMatch(`${provider}\n${connection}\n${surface}`, /console\.|\[VOICE-/);
+  assert.doesNotMatch(connection, /credentials\.token[^)]*console/s);
 });

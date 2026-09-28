@@ -8,7 +8,11 @@ import {
 import { getAdminClient } from "@/lib/supabase/admin";
 import { hydrateLegacyMessageContentRest, hydrateMessageContentRest, type StoredChatMessageContentNode } from "@/server/data/chat-content-rest";
 import { loadMessageReactionsRest } from "@/server/data/chat-reactions-rest";
-import type { ChatMessageAttachment, ChatMessageView } from "@/types/chat";
+import type {
+  ChatMessageAttachment,
+  ChatMessageRoomContext,
+  ChatMessageView,
+} from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
 
 export type MessageRow = {
@@ -32,6 +36,15 @@ type TrackRow = {
   artist: string;
   file_url: string;
   duration_seconds: number | null;
+};
+
+type MessageRoomContextRow = {
+  message_id: string;
+  room_id: string | null;
+  live_session_id: string | null;
+  room_name_snapshot: string;
+  room_kind_snapshot: string;
+  captured_at: string;
 };
 
 export const MESSAGE_SELECT =
@@ -89,6 +102,7 @@ function mapMessageRow(
   repliesById: Map<string, MessageRow>,
   attachmentsById: Map<string, ChatMessageAttachment | null>,
   contentById: Map<string, ChatMessageView["content"]>,
+  roomContextsById: Map<string, ChatMessageRoomContext>,
 ): ChatMessageView {
   const replyRow = row.reply_to_message_id ? repliesById.get(row.reply_to_message_id) : undefined;
   return {
@@ -99,16 +113,47 @@ function mapMessageRow(
     createdAt: row.created_at,
     isMine: row.sender_id === viewerId,
     readAt: row.read_at,
+    roomContext: roomContextsById.get(row.id) ?? null,
     replyTo: replyRow ? { id: replyRow.id, senderId: replyRow.sender_id, text: replyRow.text, isMine: replyRow.sender_id === viewerId } : null,
     attachment: attachmentsById.get(row.id) ?? null,
     reactions: [],
   };
 }
 
+function isRoomKind(value: string): value is ChatMessageRoomContext["roomKind"] {
+  return value === "lobby" || value === "temporary" || value === "pinned";
+}
+
+async function loadMessageRoomContextsRest(messageIds: string[]) {
+  const result = new Map<string, ChatMessageRoomContext>();
+  if (messageIds.length === 0) return result;
+
+  const { data, error } = await getAdminClient()
+    .from("message_room_contexts")
+    .select("message_id, room_id, live_session_id, room_name_snapshot, room_kind_snapshot, captured_at")
+    .in("message_id", messageIds);
+  if (error?.code === "42P01" || error?.code === "PGRST205") return result;
+  if (error) throw new Error(error.message);
+
+  for (const row of (data ?? []) as MessageRoomContextRow[]) {
+    const roomName = row.room_name_snapshot.trim();
+    if (!roomName || roomName.length > 80 || !isRoomKind(row.room_kind_snapshot)) continue;
+    result.set(row.message_id, {
+      roomId: row.room_id,
+      liveSessionId: row.live_session_id,
+      roomName,
+      roomKind: row.room_kind_snapshot,
+      capturedAt: row.captured_at,
+    });
+  }
+  return result;
+}
+
 export async function hydrateMessages(rows: MessageRow[], viewerId: string, chatId: string): Promise<ChatMessageView[]> {
   const repliesById = new Map(rows.map((row) => [row.id, row]));
   const trackIds = [...new Set(rows.map((row) => row.shared_track_id).filter(Boolean))] as string[];
   const reactionsPromise = loadMessageReactionsRest(rows.map((row) => row.id), viewerId);
+  const roomContextsPromise = loadMessageRoomContextsRest(rows.map((row) => row.id));
   const contentPromise = Promise.all([
     hydrateMessageContentRest(new Map(rows.map((row) => [row.id, row.content]))),
     hydrateLegacyMessageContentRest(
@@ -129,6 +174,20 @@ export async function hydrateMessages(rows: MessageRow[], viewerId: string, chat
   }
   const attachmentsById = new Map<string, ChatMessageAttachment | null>();
   await Promise.all(rows.map(async (row) => attachmentsById.set(row.id, await buildAttachment(row, tracksById))));
-  const [reactionsByMessage, contentById] = await Promise.all([reactionsPromise, contentPromise]);
-  return rows.map((row) => ({ ...mapMessageRow(row, viewerId, repliesById, attachmentsById, contentById), reactions: reactionsByMessage.get(row.id) ?? [] }));
+  const [reactionsByMessage, contentById, roomContextsById] = await Promise.all([
+    reactionsPromise,
+    contentPromise,
+    roomContextsPromise,
+  ]);
+  return rows.map((row) => ({
+    ...mapMessageRow(
+      row,
+      viewerId,
+      repliesById,
+      attachmentsById,
+      contentById,
+      roomContextsById,
+    ),
+    reactions: reactionsByMessage.get(row.id) ?? [],
+  }));
 }

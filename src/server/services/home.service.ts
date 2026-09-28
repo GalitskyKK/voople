@@ -2,7 +2,6 @@ import "server-only";
 
 import { listChats } from "@/server/services/chat.service";
 import {
-  getActiveRoomPresenceRest,
   getHomeChatAttentionRest,
   getRelationshipScoresRest,
   getVisibleListeningActivityRest,
@@ -11,50 +10,18 @@ import {
 import { listVisibleOnlineUserIdsRest } from "@/server/data/privacy-rest";
 import { listContactPinsRest } from "@/server/data/contact-pins-rest";
 import { fetchCurrentUserSummary } from "@/server/data/users-rest";
+import { toHomeDirectItem, toHomeGroupItem } from "@/server/mappers/home-chat-item";
+import { listActiveHomeRoomItems } from "@/server/services/home-active-rooms.service";
 import { scoreHomeContinue, scoreHomeNow, selectRankedHomeItems } from "@/lib/social/home-ranking";
 import type { HomeNowItem, HomeOverviewView } from "@/types/home";
-
-function lastConversationPreview(
-  chat: Awaited<ReturnType<typeof listChats>>[number],
-  userId: string,
-) {
-  if (!chat.lastMessage) return null;
-  return `${chat.lastMessage.senderId === userId ? "Вы: " : ""}${chat.lastMessage.preview}`;
-}
-
-function directItem(chat: Awaited<ReturnType<typeof listChats>>[number], userId: string): HomeNowItem | null {
-  if (chat.type !== "direct" || !chat.otherUser) return null;
-  return {
-    id: chat.id,
-    kind: "person",
-    title: chat.otherUser.displayName,
-    subtitle: lastConversationPreview(chat, userId) || `@${chat.otherUser.username}`,
-    href: `/messages/${chat.id}`,
-    avatarUrl: chat.otherUser.avatarUrl,
-    avatarDecorationUrl: chat.otherUser.avatarDecorationUrl,
-    avatarRingId: chat.otherUser.avatarRingId,
-    userId: chat.otherUser.id,
-    online: false,
-  };
-}
-
-function groupItem(chat: Awaited<ReturnType<typeof listChats>>[number], userId: string): HomeNowItem | null {
-  if (chat.type !== "group" || chat.parentChatId) return null;
-  return {
-    id: chat.id,
-    kind: "group",
-    title: chat.name?.trim() || "Группа",
-    subtitle: lastConversationPreview(chat, userId) || `${chat.memberCount} участников`,
-    href: `/messages/${chat.id}`,
-    avatarUrl: chat.groupAvatarUrl,
-    userId: null,
-    online: false,
-  };
-}
 
 export async function getHomeOverview(userId: string): Promise<HomeOverviewView> {
   const chats = await listChats(userId);
   const rootChats = chats.filter((chat) => !chat.parentChatId);
+  const attentionTargets = rootChats.flatMap((chat) => [
+    { chatId: chat.id, rootChatId: chat.id },
+    ...chat.channels.map((channel) => ({ chatId: channel.id, rootChatId: chat.id })),
+  ]);
   const directChats = rootChats.filter((chat) => chat.type === "direct" && chat.otherUser);
   const sharedGroupPeople = await listSharedGroupPeopleRest(userId);
   const directUserIds = new Set(directChats.map((chat) => chat.otherUser!.id));
@@ -63,10 +30,10 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
     ...directChats.map((chat) => ({ userId: chat.otherUser!.id, chatId: chat.id })),
     ...sharedOnlyPeople.map((person) => ({ userId: person.id })),
   ];
-  const [viewer, roomPresence, attention, visibleOnlineIds, listeningActivity, relationshipScores, pinnedUserIds] = await Promise.all([
+  const [viewer, activeRooms, attention, visibleOnlineIds, listeningActivity, relationshipScores, pinnedUserIds] = await Promise.all([
     fetchCurrentUserSummary(userId),
-    getActiveRoomPresenceRest(rootChats.map((chat) => chat.id), userId),
-    getHomeChatAttentionRest(rootChats.map((chat) => chat.id), userId),
+    listActiveHomeRoomItems(chats, userId),
+    getHomeChatAttentionRest(attentionTargets, userId),
     listVisibleOnlineUserIdsRest(userId),
     getVisibleListeningActivityRest(userId, relationshipCandidates.map((candidate) => candidate.userId)),
     getRelationshipScoresRest(userId, relationshipCandidates),
@@ -74,7 +41,7 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
   ]);
   const visibleOnline = new Set(visibleOnlineIds);
   const pinnedUsers = new Set(pinnedUserIds);
-  const direct = chats.map((chat) => directItem(chat, userId)).filter((item): item is HomeNowItem => Boolean(item)).map((item) => {
+  const direct = chats.map((chat) => toHomeDirectItem(chat, userId)).filter((item): item is HomeNowItem => Boolean(item)).map((item) => {
     const chat = rootChats.find((candidate) => candidate.id === item.id);
     const lastInteractionAt = chat?.lastMessage?.createdAt;
     const listening = item.userId ? listeningActivity.get(item.userId) : null;
@@ -119,31 +86,20 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
       }),
     };
   });
-  const groups = chats.map((chat) => groupItem(chat, userId)).filter((item): item is HomeNowItem => Boolean(item));
+  const groups = chats.map((chat) => toHomeGroupItem(chat, userId)).filter((item): item is HomeNowItem => Boolean(item));
   const itemById = new Map([...direct, ...groups].map((item) => [item.id, item]));
-  const activeRooms = [...groups, ...direct].flatMap((item) => {
-    const participants = roomPresence.get(item.id) ?? [];
-    return participants.length > 0
-      ? [{
-          ...item,
-          kind: "room" as const,
-          activity: "in_room" as const,
-          score: scoreHomeNow({ activeRoom: true, pinned: item.pinned }),
-          subtitle: `${participants.length} ${item.userId ? "в разговоре" : "в комнате"} · Зайти`,
-          participants,
-        }]
-      : [];
-  });
   const now = selectRankedHomeItems(
     [...activeRooms, ...direct.filter((item) => item.activity), ...sharedPeople.filter((item) => item.activity)],
     { limit: 5, minimumScore: 1 },
   );
-  const activeRoomIds = new Set(activeRooms.map((room) => room.id));
+  const activeConversationIds = new Set(activeRooms.flatMap((room) =>
+    room.conversationId ? [room.conversationId] : [],
+  ));
   const continueItems = rootChats.flatMap((chat) => {
     const item = itemById.get(chat.id);
     if (!item?.subtitle) return [];
     const chatAttention = attention.get(chat.id);
-    const unreadCount = chatAttention?.unreadCount ?? 0;
+    const unreadCount = chat.unreadCount;
     const relationshipScore = item.userId ? relationshipScores.get(item.userId) ?? 0 : 0;
     const score = scoreHomeContinue({
       mentionOrReply: chatAttention?.mentionOrReply,
@@ -153,6 +109,9 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
     });
     return [{ ...item, unreadCount, score }];
   });
+  const continueWithoutActiveRooms = continueItems.filter(
+    (item) => !activeConversationIds.has(item.id),
+  );
   return {
     viewer: viewer ? {
       id: viewer.id,
@@ -167,13 +126,11 @@ export async function getHomeOverview(userId: string): Promise<HomeOverviewView>
       online: true,
     } : null,
     now,
-    continue: selectRankedHomeItems(continueItems, {
-      excludeIds: activeRoomIds,
+    continue: selectRankedHomeItems(continueWithoutActiveRooms, {
       limit: 4,
       minimumScore: 1,
     }),
     continueCandidates: selectRankedHomeItems(continueItems, {
-      excludeIds: activeRoomIds,
       limit: 24,
       minimumScore: 0,
     }),

@@ -16,28 +16,28 @@ directory.
 
 ## Product source gate
 
-Before changing product behaviour, layout or presentation, read the relevant
-parts of the tracked canonical product sources:
+Before changing product behaviour or navigation:
 
-1. `rework_plan/VOOPLE_CORE_REWORK_PLAN.md`
-2. `temp_info_for_redesign_and_improvement/VOOPLE_FINAL_PRODUCT_SOCIAL_UX_IMPLEMENTATION_PLAN.md`
-3. `docs/product-delivery-matrix.md`
-4. `docs/core-rework-architecture.md` for Group, Room, LiveSession or rollout work
+1. Read `PRODUCT.md`.
+2. Read the relevant accepted technical contract in `ARCHITECTURE.md`
+   or `docs/core-rework-architecture.md`.
+3. Read `DESIGN_SYSTEM.md` for presentation changes.
+4. Read an ADR when the affected domain has one.
 
-The core rework plan owns current core behaviour, navigation and visual
-direction. The final social/UX plan supplements secondary surfaces only where
-it does not conflict with the core rework plan. The real application remains
-the source for working behaviour that the plans do not explicitly replace.
-The generated image in `rework_plan` is a moodboard, not a literal layout spec;
-apply the corrections listed in the plan's Visual baseline section. Preserve
-the real two-column profile skeleton as the documented exception.
+`PRODUCT.md` is the single canonical source for current product behaviour.
+`ARCHITECTURE.md` and `docs/core-rework-architecture.md` own technical
+invariants; `DESIGN_SYSTEM.md` owns presentation; domain ADRs own their
+individual architectural decisions. None overrides current product behaviour.
 
-For every completed product slice, update `docs/product-delivery-matrix.md` with
-the web, desktop, responsive, state and test evidence. A route, placeholder,
-schema or visual shell alone is never enough to mark an item complete. Do not
-call an item complete until its data contract, authorization, interaction,
-loading/empty/error/offline states, web/desktop parity, responsive behaviour and
-relevant automated or visual checks are all present.
+Files under `rework_plan/` and older social/UX plans are historical/reference
+material and implementation background. They cannot override `PRODUCT.md`.
+
+When an old specification conflicts with `PRODUCT.md`, follow `PRODUCT.md`
+and update stale active documentation in the same slice if it could mislead
+future contributors.
+
+Do not delete legacy product code merely because its surface is currently
+deferred. Exposure and deletion are separate decisions.
 
 ## Product architecture
 
@@ -134,6 +134,11 @@ the backend through tRPC or an API route. Server modules must not import UI.
 
 ## Verification
 
+Run final verification from a checkout outside `node_modules`, using the
+repository's native Node test command. A TSX run or lint inside `node_modules`
+is not equivalent: module resolution and React compiler checks can differ and
+hide CI failures. Do not replace failed native tests with a different loader.
+
 Run before handing off a code change:
 
 1. `npm run check:architecture`
@@ -148,3 +153,13 @@ servers after verification.
 Temporary exceptions to size limits require a narrow entry in
 `.architecture-baseline.json` with a reason. Do not raise an exception cap to
 make a check pass; refactor the file.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

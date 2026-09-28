@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
+import { useOptionalVoiceSession } from "@/components/chat/voice/VoiceSessionProvider";
 import { PlayerShell } from "@/components/player/PlayerShell";
 import { useIsLgViewport } from "@/hooks/useIsLgViewport";
 import { isMessagesThreadPath } from "@/lib/layout/messages-path";
@@ -40,6 +41,9 @@ export function MainShell({
   const pathname = usePathname();
   const router = useRouter();
   const shellScrollRef = useRef<HTMLDivElement>(null);
+  const roomSurfacePathRef = useRef(pathname);
+  const voiceSession = useOptionalVoiceSession();
+  const minimizeVoicePanel = voiceSession?.minimizePanel;
   const isLg = useIsLgViewport();
   const scrollMode = useScrollMode(pathname);
   const usesWindowScroll = scrollMode === "window";
@@ -50,18 +54,22 @@ export function MainShell({
     isMessagesRoute && !isLg && isMessagesThreadPath(pathname);
   const hideMobileTopBar = isMessagesRoute && !isLg;
   const hideMobileBottomNav = isMobileMessagesThread;
-  const showFab =
-    !pathname.startsWith("/messages") &&
-    (pathname === "/feed" || pathname === "/me" || isProfileRoute);
+  const showFab = pathname === "/feed";
 
   useEffect(
     () => registerInternalNavigationAdapter((href) => router.push(href)),
     [router],
   );
 
+  useEffect(() => {
+    if (roomSurfacePathRef.current !== pathname) minimizeVoicePanel?.(false);
+    roomSurfacePathRef.current = pathname;
+  }, [minimizeVoicePanel, pathname]);
+
   return (
     <AppShellFrame
       routeKind={routeLayout.routeKind}
+      navigationKind={authenticated ? "messenger" : "navigation"}
       sidebar={<DesktopSidebar authenticated={authenticated} />}
       overlay={authenticated ? <PlayerShell /> : undefined}
       fixedViewport={isMessagesRoute}

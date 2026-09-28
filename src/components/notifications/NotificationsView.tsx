@@ -7,11 +7,13 @@ import type { NavigationDestinationRenderer } from "@/components/layout/AppNavig
 import { SectionFrame } from "@/components/layout/SectionFrame";
 import { SectionPageHeader } from "@/components/layout/SectionPageHeader";
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
+import { AppInternalLink } from "@/components/ui/AppInternalLink";
 import { RelativeTime } from "@/components/ui/RelativeTime";
 import { COPY } from "@/lib/constants/copy";
 import { vooplusBadgeUrl } from "@/lib/constants/vooplus-badge";
 import { cn } from "@/lib/utils";
 import type { NotificationView } from "@/types/notifications";
+import { RoomInviteNotificationActions } from "./RoomInviteNotificationActions";
 import {
   notificationActionText,
   notificationHref,
@@ -25,7 +27,7 @@ const FILTERS: Array<{ id: NotificationFilter; label: string }> = [
   { id: "all", label: "Все" },
   { id: "mentions", label: "Упоминания" },
   { id: "reactions", label: "Реакции" },
-  { id: "follows", label: "Подписки" },
+  { id: "follows", label: "Друзья" },
   { id: "groups", label: "Группы" },
 ];
 
@@ -33,7 +35,7 @@ function matchesFilter(item: NotificationView, filter: NotificationFilter) {
   if (filter === "all") return true;
   if (filter === "mentions") return item.type === "mention" || item.type === "reply";
   if (filter === "reactions") return ["like", "profile_reaction", "repost"].includes(item.type);
-  if (filter === "follows") return item.type === "follow";
+  if (filter === "follows") return ["friend_request", "friend_accept"].includes(item.type);
   return item.type.startsWith("group_") || item.type.startsWith("room_");
 }
 
@@ -67,13 +69,14 @@ export function NotificationsView({
       <SectionPageHeader
         title={COPY.notifications}
         density="compact"
+        variant="plain"
         sticky
       />
 
       <div className="grid items-start gap-5 xl:grid-cols-[14rem_minmax(0,1fr)]">
-      <div className="voople-scroll -mt-2 flex gap-1 overflow-x-auto rounded-2xl bg-[var(--app-surface-soft)] p-1 xl:sticky xl:top-24 xl:mt-0 xl:flex-col xl:overflow-visible" aria-label="Категория уведомлений">
+      <div className="voople-scroll flex gap-1 overflow-x-auto p-1 xl:sticky xl:top-24 xl:flex-col xl:overflow-visible" aria-label="Категория уведомлений">
         {FILTERS.map(({ id, label }) => (
-          <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)} className={cn("min-w-24 flex-1 rounded-xl px-3 py-2 text-xs font-medium transition xl:w-full xl:flex-none xl:text-left", filter === id ? "bg-[var(--app-surface)] text-[var(--foreground)] shadow-[var(--app-shadow-sm)]" : "text-[var(--app-muted)] hover:text-[var(--foreground)]")}>{label}</button>
+          <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)} className={cn("min-h-10 min-w-24 flex-1 rounded-xl px-3 py-2 text-xs font-medium transition xl:w-full xl:flex-none xl:text-left", filter === id ? "bg-[var(--material-interactive-fill)] text-[var(--foreground)]" : "text-[var(--app-muted)] hover:bg-[var(--material-control-fill)] hover:text-[var(--foreground)]")}>{label}</button>
         ))}
       </div>
 
@@ -118,67 +121,75 @@ export function NotificationsView({
           )}
 
           {visibleItems.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[var(--app-border)] px-4 py-10 text-center text-sm text-[var(--app-muted)]">
+            <div className="px-4 py-10 text-center text-sm text-[var(--app-muted)]">
               {filter === "all" ? "Пока здесь ничего нет" : "В этой категории уведомлений нет"}
             </div>
           ) : (
-            <ul className="space-y-2">
+            <ul className="divide-y divide-[var(--material-border)]">
               {visibleItems.map((notification) => {
                 const actor = notification.actor;
                 const Icon = notificationIcon(notification.type);
                 const href = notificationHref(notification);
                 const className = cn(
-                  "flex w-full items-start gap-3 rounded-xl border px-3 py-3 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]",
+                  "flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-[var(--material-control-fill)]",
                   notification.read
-                    ? "border-[color-mix(in_srgb,var(--foreground)_5%,transparent)] bg-[color-mix(in_srgb,var(--foreground)_2%,transparent)]"
-                    : "border-[color-mix(in_srgb,var(--theme-accent)_30%,transparent)] bg-[var(--app-accent-soft)]",
+                    ? "bg-transparent"
+                    : "bg-[var(--app-accent-soft)]",
+                );
+                const content = (
+                  <>
+                    <span className="mt-0.5 text-[var(--theme-accent)]">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">
+                        {notification.type === "profile_canvas_draw" || !actor ? (
+                          notificationText(
+                            notification.type,
+                            actor?.displayName ?? "",
+                            notification.roomInvite?.intent,
+                          )
+                        ) : (
+                          <span className="inline-flex flex-wrap items-center gap-x-1 gap-y-0.5">
+                            <DisplayNameWithPin hasVooplePlus={actor.hasVooplePlus} badgeUrl={badgeUrl} size="xs">
+                              {actor.displayName}
+                            </DisplayNameWithPin>
+                            <span>{notificationActionText(notification.type, notification.roomInvite?.intent)}</span>
+                          </span>
+                        )}
+                      </p>
+                      <RelativeTime iso={notification.createdAt} className="mt-1 block text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]" />
+                      {notification.type === "room_invite" ? (
+                        <>
+                          <RoomInviteNotificationActions invite={notification.roomInvite} />
+                          {notification.roomInvite ? (
+                            <AppInternalLink
+                              href={`/room-invites/${notification.roomInvite.id}`}
+                              className="mt-2 inline-flex text-xs font-medium text-[var(--theme-accent)] hover:underline"
+                            >
+                              Открыть приглашение
+                            </AppInternalLink>
+                          ) : null}
+                        </>
+                      ) : null}
+                    </div>
+                  </>
                 );
 
                 return (
                   <li key={notification.id}>
-                    {renderDestination({
+                    {notification.type === "room_invite" ? (
+                      <div className={className}>{content}</div>
+                    ) : renderDestination({
                       href,
                       label: notificationText(
                         notification.type,
                         actor?.displayName ?? "",
+                        notification.roomInvite?.intent,
                       ),
                       className,
                       active: false,
-                      children: (
-                        <>
-                          <span className="mt-0.5 text-[var(--theme-accent)]">
-                            <Icon className="h-5 w-5" aria-hidden="true" />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm text-[color-mix(in_srgb,var(--foreground)_90%,transparent)]">
-                              {notification.type === "profile_canvas_draw" ||
-                              !actor ? (
-                                notificationText(
-                                  notification.type,
-                                  actor?.displayName ?? "",
-                                )
-                              ) : (
-                                <span className="inline-flex flex-wrap items-center gap-x-1 gap-y-0.5">
-                                  <DisplayNameWithPin
-                                    hasVooplePlus={actor.hasVooplePlus}
-                                    badgeUrl={badgeUrl}
-                                    size="xs"
-                                  >
-                                    {actor.displayName}
-                                  </DisplayNameWithPin>
-                                  <span>
-                                    {notificationActionText(notification.type)}
-                                  </span>
-                                </span>
-                              )}
-                            </p>
-                            <RelativeTime
-                              iso={notification.createdAt}
-                              className="mt-1 block text-xs text-[color-mix(in_srgb,var(--foreground)_40%,transparent)]"
-                            />
-                          </div>
-                        </>
-                      ),
+                      children: content,
                     })}
                   </li>
                 );

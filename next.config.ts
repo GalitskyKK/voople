@@ -12,14 +12,21 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [{
+      source: "/:path*",
+      headers: [
+        ...securityHeaders,
+        { key: "X-Accel-Buffering", value: "no" },
+      ],
+    }];
   },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "tgudhcgpllbqfxmpvnst.supabase.co" },
       { protocol: "https", hostname: "images.unsplash.com" },
-      { protocol: "https", hostname: "cdn.voople.ru" },
+      { protocol: "https", hostname: "cdn.voople.app" },
     ],
   },
 };

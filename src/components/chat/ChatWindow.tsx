@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
 import { useChatMessageEditor } from "@/hooks/useChatMessageEditor";
@@ -7,15 +8,11 @@ import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import { useChatMessageSelection } from "@/hooks/useChatMessageSelection";
 import { useChatConversationAttention } from "@/hooks/useChatConversationAttention";
 import { useChatSendMutation } from "@/hooks/useChatSendMutation";
-import type { PendingChatUpload } from "@/hooks/useChatUpload";
+import { useChatMessageActions } from "@/hooks/useChatMessageActions";
+import { useBrowserOnline } from "@/hooks/useBrowserOnline";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
 import { trpc } from "@/lib/trpc/client";
-import type { ChatMessageView } from "@/types/chat";
-import type { PlaylistTrackView } from "@/types/playlist";
-import type { ChatReactionEmoji } from "@/lib/chat/reactions";
-import { playlistMetadataDefaultsFromMessage } from "@/lib/chat/playlist-from-message";
 import { parseComposerContent } from "@/lib/chat/message-content";
-import { reportProductEvent } from "@/lib/telemetry/client";
 import { Toast } from "@/components/ui/Toast";
 import { ChatComposer } from "./ChatComposer";
 import { ChatTrackMetadataDialog } from "./ChatTrackMetadataDialog";
@@ -26,25 +23,25 @@ import { ChatWindowHeader } from "./ChatWindowHeader";
 import { ChatSectionsBar } from "./ChatSectionsBar";
 import { ChatJumpToLatest } from "./ChatJumpToLatest";
 import { ChatSelectionController } from "./ChatSelectionController";
-type ChatWindowProps = {
-  chatId: string;
-};
-export function ChatWindow({ chatId }: ChatWindowProps) {
-  const [text, setText] = useState("");
-  const [replyTo, setReplyTo] = useState<ChatMessageView | null>(null);
-  const [pendingUpload, setPendingUpload] = useState<PendingChatUpload | null>(null);
-  const [pendingTrack, setPendingTrack] = useState<PlaylistTrackView | null>(null);
+import { ChatConversationStart } from "./ChatConversationStart";
+import { ChatConversationState } from "./ChatConversationState";
+import { useChatComposerSession } from "./ChatComposerSessionProvider";
+type ChatWindowProps = { chatId: string; initialGroupTab?: "chat" | "now" | "people" };
+export function ChatWindow({ chatId, initialGroupTab = "now" }: ChatWindowProps) {
+  const router = useRouter();
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-  const [playlistConfirmMessage, setPlaylistConfirmMessage] = useState<ChatMessageView | null>(
-    null,
-  );
+  const {
+    text, replyTo, editing, pendingUpload, pendingTrack,
+    setText, setReplyTo, setEditing, setPendingUpload, setPendingTrack,
+    discardPendingUpload,
+  } = useChatComposerSession(chatId);
   const { onlineUserIds } = useOnlineUsers();
-  const utils = trpc.useUtils();
-  const editor = useChatMessageEditor(chatId, setText);
+  const online = useBrowserOnline();
+  const actions = useChatMessageActions(chatId);
+  const editor = useChatMessageEditor(chatId, setText, editing, setEditing);
   const { data: me } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
   const { realtimeDegraded } = useRealtimeChat(chatId, me?.id);
-  const { data, isLoading, error } = trpc.chat.observeMessages.useQuery(
+  const { data, isLoading, error, refetch } = trpc.chat.observeMessages.useQuery(
     { chatId },
     {
       staleTime: 5_000,
@@ -63,86 +60,8 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     chatId, viewerId: me?.id, text, replyTo, pendingUpload, pendingTrack,
     setText, setReplyTo, setPendingUpload, setPendingTrack,
   });
-
   const { containerRef: messagesRef, contentRef: messagesContentRef, isAwayFromBottom, scrollToBottom } =
     useChatAutoScroll(chatId, data?.messages.length ?? 0);
-
-  const removeMessage = trpc.chat.deleteMessage.useMutation({
-    onSuccess: (_data, variables) => {
-      utils.chat.observeMessages.setData({ chatId }, (current) => {
-        if (!current) return current;
-        return {
-          ...current,
-          messages: current.messages.filter((m) => m.id !== variables.messageId),
-        };
-      });
-      void utils.chat.list.invalidate();
-    },
-    onError: (err) => {
-      setToast(err.message);
-      window.setTimeout(() => setToast(null), 3500);
-    },
-  });
-
-  const addToPlaylist = trpc.playlist.addFromChatMessage.useMutation({
-    onSuccess: () => {
-      setPlaylistConfirmMessage(null);
-      setToast("Добавлено в плейлист");
-      void utils.playlist.listMine.invalidate();
-      window.setTimeout(() => setToast(null), 2500);
-    },
-    onError: (err) => {
-      setToast(err.message);
-      window.setTimeout(() => setToast(null), 3500);
-    },
-  });
-
-  const toggleReaction = trpc.chat.toggleReaction.useMutation({
-    onMutate: async ({ messageId, emoji, emojiId }) => {
-      await utils.chat.observeMessages.cancel({ chatId });
-      const previous = utils.chat.observeMessages.getData({ chatId });
-      utils.chat.observeMessages.setData({ chatId }, (current) => {
-        if (!current) return current;
-        return {
-          ...current,
-          messages: current.messages.map((message) => {
-            if (message.id !== messageId) return message;
-            const reactions = [...message.reactions];
-            const index = reactions.findIndex((reaction) => emojiId
-              ? reaction.emojiId === emojiId
-              : reaction.emoji === emoji);
-            if (index < 0) {
-              reactions.push({ emoji: emoji ?? "Эмодзи", emojiId: emojiId ?? null, count: 1, reactedByMe: true });
-            } else {
-              const reaction = reactions[index]!;
-              if (reaction.reactedByMe && reaction.count <= 1) reactions.splice(index, 1);
-              else reactions[index] = {
-                ...reaction,
-                count: reaction.count + (reaction.reactedByMe ? -1 : 1),
-                reactedByMe: !reaction.reactedByMe,
-              };
-            }
-            return { ...message, reactions };
-          }),
-        };
-      });
-      return { previous };
-    },
-    onError: (error, _input, context) => {
-      if (context?.previous) utils.chat.observeMessages.setData({ chatId }, context.previous);
-      setToast(error.message);
-      window.setTimeout(() => setToast(null), 3000);
-    },
-    onSuccess: (result) => {
-      utils.chat.observeMessages.setData({ chatId }, (current) => current ? {
-        ...current,
-        messages: current.messages.map((message) => message.id === result.messageId
-          ? { ...message, reactions: result.reactions }
-          : message),
-      } : current);
-      reportProductEvent("reaction_used", { surface: "chat" });
-    },
-  });
 
   const handleSend = () => {
     const trimmed = text.trim();
@@ -170,18 +89,14 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     });
   };
 
-  if (isLoading) {
+  if (!data) {
     return (
       <div className="voople-chat-window flex min-h-0 flex-1 flex-col">
-        <div className="min-h-0 flex-1 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="voople-chat-window flex min-h-0 flex-1 flex-col justify-center">
-        <p className="text-sm text-red-400">{error.message}</p>
+        <ChatConversationState
+          mode={!online ? "offline" : isLoading ? "loading" : "error"}
+          message={!online || isLoading ? null : error?.message}
+          onRetry={() => void refetch()}
+        />
       </div>
     );
   }
@@ -193,15 +108,21 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   const timeline = buildChatTimeline(data?.messages ?? []);
   const viewerId = me?.id ?? null;
   const otherOnline = Boolean(other?.id && onlineUserIds.has(other.id));
-  const playlistDefaults = playlistConfirmMessage
-    ? playlistMetadataDefaultsFromMessage(playlistConfirmMessage)
-    : null;
-
   return (
     <ChatThreadFrameView
       accentColor={isGroup ? data?.chat.groupAccentColor : null}
+      groupSurface={isGroup ? {
+        groupId: data?.chat.parentChatId ?? chatId,
+        conversationId: chatId,
+        groupName: data?.chat.parentName ?? chatTitle,
+        currentUserId: me?.id,
+        initialTab: initialGroupTab,
+        combineHeader: !isSubchat && !selection.selecting,
+        canCreatePinned: data?.chat.viewerRole !== "member", onlineUserIds,
+        onOpenProfile: (username) => router.push(`/${username}`),
+      } : undefined}
       header={selection.selecting ? (
-        <ChatSelectionController messages={selection.selectedMessages} onCancel={selection.clear} onDeleteMessage={(messageId) => removeMessage.mutateAsync({ messageId })} />
+        <ChatSelectionController messages={selection.selectedMessages} onCancel={selection.clear} onDeleteMessage={(messageId) => actions.removeMessage.mutateAsync({ messageId })} />
       ) : <ChatWindowHeader
         chatId={chatId}
         chatTitle={chatTitle}
@@ -224,6 +145,21 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         <ChatSectionsBar chatId={chatId} viewerRole={data?.chat.viewerRole ?? "member"} />
       ) : null}
       timeline={timeline}
+      emptyState={
+        <ChatConversationStart
+          chatTitle={chatTitle}
+          isGroup={isGroup}
+          isSubchat={isSubchat}
+          parentName={data?.chat.parentName}
+          memberCount={data?.chat.memberCount ?? 0}
+          topicIcon={data?.chat.topicIcon}
+          groupIcon={data?.chat.groupIcon}
+          groupAvatarUrl={data?.chat.groupAvatarUrl}
+          groupAccentColor={data?.chat.groupAccentColor}
+          other={other}
+          otherOnline={otherOnline}
+        />
+      }
       messagesRef={messagesRef}
       messagesContentRef={messagesContentRef}
       renderMessage={(item) => (
@@ -238,29 +174,34 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
           onReply={setReplyTo}
           onEdit={(message) => {
             setReplyTo(null);
-            setPendingUpload(null);
+            discardPendingUpload();
             setPendingTrack(null);
             editor.beginEditing(message);
           }}
           onDelete={(message) => {
-            if (window.confirm("Удалить сообщение?")) removeMessage.mutate({ messageId: message.id });
+            if (window.confirm("Удалить сообщение?")) actions.removeMessage.mutate({ messageId: message.id });
           }}
-          onAddToPlaylist={(message) => setPlaylistConfirmMessage(message)}
+          onAddToPlaylist={actions.setPlaylistConfirmMessage}
           onOpenImage={setLightboxUrl}
-          showSender={isGroup}
-          onToggleReaction={(message, reaction) => {
-            if (!toggleReaction.isPending) toggleReaction.mutate({
-              messageId: message.id,
-              ...(reaction.emojiId ? { emojiId: reaction.emojiId } : { emoji: reaction.emoji as ChatReactionEmoji }),
-            });
-          }}
+          showSender
+          onToggleReaction={(message, reaction) =>
+            actions.toggleMessageReaction(message.id, {
+              emoji: reaction.emoji,
+              emojiId: reaction.emojiId ?? null,
+            })}
         />
       )}
       afterMessages={isAwayFromBottom ? <ChatJumpToLatest onClick={scrollToBottom} /> : null}
+      connectionState={!online ? (
+        <ChatConversationState mode="offline" variant="inline" onRetry={() => void refetch()} />
+      ) : error ? (
+        <ChatConversationState mode="error" variant="inline" message={error.message} onRetry={() => void refetch()} />
+      ) : null}
       composer={
-        <div className="px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:px-4 lg:pb-3">
+        <div className={isGroup ? "px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:px-3 lg:pb-2" : "px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:px-4 lg:pb-3"}>
         <ChatComposer
           chatId={chatId}
+          placeholder={`Сообщение ${chatTitle}…`}
           text={text}
           onTextChange={setText}
           replyTo={replyTo}
@@ -282,24 +223,24 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
       overlays={
         <>
           <ChatMediaLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
-          {playlistConfirmMessage && playlistDefaults ? (
+          {actions.playlistConfirmMessage && actions.playlistDefaults ? (
             <ChatTrackMetadataDialog
               open
-              initialTitle={playlistDefaults.title}
-              initialArtist={playlistDefaults.artist}
-              isSubmitting={addToPlaylist.isPending}
-              error={addToPlaylist.error?.message ?? null}
-              onClose={() => setPlaylistConfirmMessage(null)}
+              initialTitle={actions.playlistDefaults.title}
+              initialArtist={actions.playlistDefaults.artist}
+              isSubmitting={actions.addToPlaylist.isPending}
+              error={actions.addToPlaylist.error?.message ?? null}
+              onClose={() => actions.setPlaylistConfirmMessage(null)}
               onConfirm={(draft) =>
-                addToPlaylist.mutate({
-                  messageId: playlistConfirmMessage.id,
+                actions.addToPlaylist.mutate({
+                  messageId: actions.playlistConfirmMessage!.id,
                   title: draft.title,
                   artist: draft.artist,
                 })
               }
             />
           ) : null}
-          {toast ? <Toast message={toast} className="z-[130]" /> : null}
+          {actions.toast ? <Toast message={actions.toast} className="z-[130]" /> : null}
         </>
       }
     />

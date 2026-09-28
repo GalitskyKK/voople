@@ -4,6 +4,8 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { normalizeGroupJoinPolicy, normalizeGroupVisibility } from "@/lib/chat/group-access";
 import type { GroupJoinPolicy, GroupVisibility } from "@/types/chat";
 
+export class ChatAccessDeniedError extends Error {}
+
 export type ChatMembership = {
   chatId: string;
   accessChatId: string;
@@ -30,7 +32,7 @@ export async function getChatMembershipRest(
 
   if (chatError) throw new Error(chatError.message);
   if (!chat || (chat.type !== "direct" && chat.type !== "group")) {
-    throw new Error("Беседа недоступна");
+    throw new ChatAccessDeniedError("Беседа недоступна");
   }
 
   const parentChatId = (chat.parent_chat_id as string | null) ?? null;
@@ -52,7 +54,8 @@ export async function getChatMembershipRest(
   ]);
 
   if (memberError) throw new Error(memberError.message);
-  if (!member) throw new Error("Нет доступа к этой беседе");
+  if ("error" in parentResult && parentResult.error) throw new Error(parentResult.error.message);
+  if (!member) throw new ChatAccessDeniedError("Нет доступа к этой беседе");
   const role: ChatMembership["role"] =
     member.role === "owner" || member.role === "admin" ? member.role : "member";
   if (
@@ -61,7 +64,7 @@ export async function getChatMembershipRest(
       parentResult.data.type !== "group" ||
       parentResult.data.parent_chat_id)
   ) {
-    throw new Error("Родительская группа недоступна");
+    throw new ChatAccessDeniedError("Родительская группа недоступна");
   }
   if (
     parentChatId &&
@@ -75,7 +78,7 @@ export async function getChatMembershipRest(
       .eq("user_id", userId)
       .maybeSingle();
     if (sectionMemberError) throw new Error(sectionMemberError.message);
-    if (!sectionMember) throw new Error("Этот раздел доступен только выбранным участникам");
+    if (!sectionMember) throw new ChatAccessDeniedError("Этот раздел доступен только выбранным участникам");
   }
 
   return {

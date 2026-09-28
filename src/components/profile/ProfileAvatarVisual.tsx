@@ -26,6 +26,7 @@ type ProfileAvatarVisualProps = {
   className?: string;
   size?: ProfileAvatarVisualSize;
   isOnline?: boolean;
+  shape?: "round" | "square";
 };
 
 /**
@@ -40,6 +41,7 @@ export function ProfileAvatarVisual({
   className,
   size = "md",
   isOnline = false,
+  shape = "round",
 }: ProfileAvatarVisualProps) {
   return (
     <div
@@ -63,16 +65,21 @@ export function ProfileAvatarVisual({
       )}
       <span
         className={cn(
-          "relative flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-violet-600 to-violet-400 font-semibold text-[var(--foreground)]",
+          "relative flex h-full w-full items-center justify-center overflow-hidden border border-[color-mix(in_srgb,var(--theme-accent)_28%,var(--app-border))] bg-[color-mix(in_srgb,var(--theme-accent)_18%,var(--app-surface-soft))] font-semibold text-[var(--theme-accent)]",
+          shape === "square" ? "rounded-md" : "rounded-full",
           ringClassName,
         )}
       >
-        {avatarImage ?? displayName.charAt(0).toUpperCase()}
+        {avatarImage ?? (
+          <span className="voople-avatar-token__glyph">
+            {displayName.charAt(0).toUpperCase()}
+          </span>
+        )}
       </span>
       {isOnline && (
         <span
           className={cn(
-            "profile-avatar__presence absolute bottom-0 right-0 z-30 rounded-full border-[var(--background)] bg-emerald-500",
+            "profile-avatar__presence absolute bottom-0 right-0 z-30 rounded-full border-[var(--background)] bg-[var(--material-presence)]",
             onlineDotSize[size],
           )}
           aria-label="В сети"

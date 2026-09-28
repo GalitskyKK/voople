@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useAuthGate } from "@/components/auth/AuthGateProvider";
 import { trpc } from "@/lib/trpc/client";
 import type { PublicGroupPageView } from "@/types/chat";
+import { GroupRoomAction } from "./GroupRoomAction";
 import { PublicGroupPageView as PublicGroupView } from "./PublicGroupPageView";
 
 export function PublicGroupPage({ group }: { group: PublicGroupPageView }) {
@@ -35,6 +36,9 @@ export function PublicGroupPage({ group }: { group: PublicGroupPageView }) {
       requestPending={requestPending}
       error={join.error?.message}
       onAction={openGroup}
+      roomAction={group.joined ? (
+        <GroupRoomAction groupId={group.id} groupName={group.name} display="label" />
+      ) : null}
     />
   );
 }

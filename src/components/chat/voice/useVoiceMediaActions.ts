@@ -1,16 +1,16 @@
 "use client";
 
 import { useRef, useState, type MutableRefObject } from "react";
-import { Track, type Room } from "livekit-client";
+import { LocalAudioTrack, Track, type Room } from "livekit-client";
 
 import { syncVoiceTrackProcessor } from "@/lib/livekit/rnnoise-track-processor";
+import { traceVoiceMic } from "@/lib/livekit/voice-mic-debug";
 import type { VoicePreferences } from "@/lib/livekit/voice-preferences";
 import { reportProductEvent } from "@/lib/telemetry/client";
 
 import {
-  getAudioCaptureOptions,
   getMicrophoneMuted,
-  VOICE_PUBLISH_OPTIONS,
+  setMicrophoneEnabledWithFallback,
   type MediaStatus,
   type ScreenShareQuality,
 } from "./voice-room-config";
@@ -26,6 +26,7 @@ type DesktopScreenShareToggle = (
 export function useVoiceMediaActions({
   roomRef,
   preferencesRef,
+  persistPreferences,
   desiredMicMutedRef,
   screenShareQualityRef,
   mediaStatus,
@@ -43,6 +44,7 @@ export function useVoiceMediaActions({
 }: {
   roomRef: MutableRefObject<Room | null>;
   preferencesRef: MutableRefObject<VoicePreferences>;
+  persistPreferences: (patch: Partial<VoicePreferences>) => VoicePreferences;
   desiredMicMutedRef: MutableRefObject<boolean>;
   screenShareQualityRef: MutableRefObject<ScreenShareQuality>;
   mediaStatus: MediaStatus;
@@ -66,13 +68,20 @@ export function useVoiceMediaActions({
   const [cameraPending, setCameraPending] = useState(false);
 
   const toggleMicrophone = async () => {
-    if (actionRef.current) return;
+    if (actionRef.current) {
+      traceVoiceMic("action.busy", { mediaStatus });
+      return;
+    }
     const room = roomRef.current;
+    traceVoiceMic("action.begin", {
+      mediaStatus,
+      roomState: room?.state ?? null,
+      publicationMuted: room?.localParticipant.getTrackPublication(Track.Source.Microphone)?.isMuted ?? null,
+      desiredMuted: desiredMicMutedRef.current,
+      selectedInputDeviceId: preferencesRef.current.inputDeviceId,
+    });
     if (!room || mediaStatus !== "connected") {
-      setMicMuted((muted) => {
-        desiredMicMutedRef.current = !muted;
-        return !muted;
-      });
+      setMicMuted(getMicrophoneMuted(room));
       return;
     }
 
@@ -80,34 +89,50 @@ export function useVoiceMediaActions({
     setMediaActionPending(true);
     setError(null);
     const targetEnabled = getMicrophoneMuted(room);
+    traceVoiceMic("action.target", { targetEnabled });
     try {
-      await room.localParticipant.setMicrophoneEnabled(
-        targetEnabled,
-        getAudioCaptureOptions(preferencesRef.current),
-        VOICE_PUBLISH_OPTIONS,
+      const { muted: actualMuted, usedDefault } = await setMicrophoneEnabledWithFallback(
+        room, targetEnabled, preferencesRef.current,
       );
+      if (usedDefault) persistPreferences({ inputDeviceId: "default" });
+      desiredMicMutedRef.current = actualMuted;
+      setMicMuted(actualMuted);
+      traceVoiceMic("action.confirmed", {
+        actualMuted,
+        desiredMuted: desiredMicMutedRef.current,
+        roomState: room.state,
+      });
+      void sendHeartbeat();
       const processorError = await syncVoiceTrackProcessor(room, {
         rnnoiseEnabled: preferencesRef.current.enhancedNoiseSuppression,
         microphoneGain: preferencesRef.current.microphoneGain,
       });
       if (processorError) setError(processorError);
-      const actualMuted = getMicrophoneMuted(room);
-      desiredMicMutedRef.current = actualMuted;
-      setMicMuted(actualMuted);
-      if (actualMuted === targetEnabled) {
-        throw new Error("Медиасервер не подтвердил изменение микрофона");
-      }
+      const afterProcessor = room.localParticipant.getTrackPublication(Track.Source.Microphone);
+      traceVoiceMic("action.processor", {
+        processorError,
+        publicationMuted: afterProcessor?.isMuted ?? null,
+        trackState: afterProcessor?.track?.mediaStreamTrack.readyState ?? null,
+        processorName: afterProcessor?.track instanceof LocalAudioTrack
+          ? afterProcessor.track.getProcessor()?.name ?? null : null,
+      });
       void playVoiceRoomSound(actualMuted ? "mute" : "unmute");
-      void sendHeartbeat();
       await refreshDevices();
     } catch (cause) {
+      traceVoiceMic("action.error", {
+        errorName: cause instanceof Error ? cause.name : "unknown",
+        errorMessage: cause instanceof Error ? cause.message : String(cause),
+        errorConstraint: cause instanceof Error && cause.name === "OverconstrainedError"
+          && "constraint" in cause ? String(cause.constraint) : null,
+        roomState: room.state,
+      });
       const actualMuted = getMicrophoneMuted(room);
       desiredMicMutedRef.current = actualMuted;
       setMicMuted(actualMuted);
       setError(
         cause instanceof Error && cause.message.includes("timed out")
           ? "Сервер не подтвердил публикацию микрофона. Переподключитесь или включите совместимый режим."
-          : cause instanceof Error
+          : cause instanceof Error && cause.message
             ? cause.message
             : "Не удалось изменить состояние микрофона.",
       );

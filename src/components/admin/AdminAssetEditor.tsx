@@ -369,7 +369,7 @@ export function AdminAssetEditor({ open, item, onClose, onSaved }: AdminAssetEdi
                 onUploaded={handlePackUploaded}
                 onError={setError}
               />
-              {uploadStatus ? <p className="text-xs text-emerald-400">{uploadStatus}</p> : null}
+              {uploadStatus ? <p className="text-xs text-[var(--material-ice)]">{uploadStatus}</p> : null}
             </>
           ) : needsCdn ? (
             <div className="space-y-3 rounded-xl border border-[var(--app-border)] p-3">
@@ -459,7 +459,7 @@ export function AdminAssetEditor({ open, item, onClose, onSaved }: AdminAssetEdi
                 </div>
               ) : null}
               {uploadStatus ? (
-                <p className="text-xs text-emerald-400">{uploadStatus}</p>
+                <p className="text-xs text-[var(--material-ice)]">{uploadStatus}</p>
               ) : null}
             </div>
           ) : (

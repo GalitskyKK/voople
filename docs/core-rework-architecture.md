@@ -1,8 +1,9 @@
 # Core rework architecture
 
-Status: accepted foundation for the staged core rework. This document turns
-`rework_plan/VOOPLE_CORE_REWORK_PLAN.md` into implementation invariants without
-making the new shell public before its data contracts are ready.
+Status: accepted technical foundation for the staged core rework. Current
+product behaviour is owned by `PRODUCT.md`; older `rework_plan/` documents are
+historical references. This document retains data, authorization and rollout
+invariants that support the current product contract.
 
 ## Aggregate model
 
@@ -54,8 +55,10 @@ and room-kind snapshots.
 
 The snapshot is intentional: a temporary room can later be archived or removed
 without erasing the context shown in history, search, pins, replies or media.
-A Room side panel is a filtered view of Group Chat messages with that context;
-it is not a second message history.
+Full Room reuses the ordinary selected Group/Section conversation in a
+contextual drawer. It must not filter the conversation by Room or LiveSession.
+The immutable Room snapshot is metadata on each message, not a second message
+history or an access boundary.
 
 ## Feature availability
 
@@ -79,6 +82,89 @@ code.
 
 ## Compatibility and rollout
 
+The server-owned Group Now read model is the compatibility boundary during the
+dual-read window:
+
+- only a member of the root Group can request it;
+- Room placement is filtered by each participant's `roomsScope` before a view
+  model is built, while the separate online list uses `onlineScope`;
+- an active LiveSession is authoritative when the same user is also reported
+  by the legacy heartbeat tables;
+- legacy root presence maps to Lobby and legacy section presence receives a
+  stable compatibility Room identity;
+- only current Group members are admitted from either presence source.
+
+The read model remains an internal server contract until the capability-gated
+shell has complete loading, empty, error, offline and responsive states. It is
+not exposed by a public procedure merely because the tables and mapper exist.
+
+## Room guest boundary
+
+A guest is an ephemeral participant of one concrete LiveSession, not a User or
+a Group member. `live_session_guests` therefore remains separate from `users`,
+`chat_members` and registered `live_session_participants`. A guest link grants
+only the ability to preview and join its exact active Room before expiry; it
+never grants Group history, sections, member presence outside that Room or a
+reusable account session.
+
+Invite and access credentials are generated server-side. Only SHA-256 hashes
+are persisted, while the browser receives the access credential exclusively in
+an HttpOnly, same-site cookie scoped to the guest API. A server HMAC derives the
+same access credential from the invite plus a client request UUID, allowing a
+lost join response to be retried without storing a raw token or creating a
+second guest. The database serializes the invite, binds the request UUID to one
+invite, applies capacity atomically and rejects an idempotency conflict.
+
+Guest media identity is namespaced as `guest:<uuid>` and may subscribe plus
+publish microphone audio only. Camera, screen share, data publication and Room
+management remain unavailable until separately designed and authorized. A
+heartbeat drives presence; explicit leave ends it immediately and readers drop
+stale heartbeats after 60 seconds. Conversion to an account must be an explicit
+future operation and must not retroactively expose Group data.
+
+The mutation boundary is also server-owned. Release migration 60 provides
+service-role-only RPCs for create, pin, archive, join, switch, leave and media
+heartbeats. Join/switch serializes both the actor and target Room in one
+transaction. A switch inside the same root Group is immediate; a DM or another
+Group raises `ROOM_CONTEXT_CONFIRMATION_REQUIRED` unless the caller supplies an
+explicit confirmation. Leave and heartbeat carry the concrete LiveSession ID,
+so a delayed request from the previous Room cannot remove or overwrite a newer
+session.
+
+Temporary Rooms enter `grace` when their last participant leaves and are
+archived only by the bounded grace-expiry operation. Lobby and pinned Rooms
+remain durable while their empty LiveSession ends. GroupNow hides temporary
+Rooms without a fresh active/connecting participant or guest; visibility does
+not depend on physical archive timing.
+The service-role-only bounded expiry RPC runs from the authorized cron route
+once per minute via the Selectel host systemd timer, with at most 100 sessions
+per call. `CRON_SECRET` must be
+configured on the deployment for that route to execute maintenance. During
+the compatibility window, the legacy entry path rejects users who already
+have a new active LiveSession, and the new switch transaction accounts for
+legacy presence. The
+contract stays internal until real database concurrency, old-client and
+two-client media gates pass.
+
+Release migration 61 adds the UI-facing create-and-join transaction. A client
+request UUID is persisted as a unique creation key, so a lost response can be
+retried without creating a second Room. The Room insert and join happen in one
+database statement: a cross-context confirmation error rolls the insert back,
+and the same request UUID is reused only after explicit confirmation. The RPC
+remains service-role-only and preserves the authorization checks in migrations
+59–60.
+
+Core Room transport is fail-closed. `chat.core*` procedures require an
+authenticated user, `VOOPLE_RELEASE_CHANNEL=internal` or `beta`, and the
+`multi_room_groups` server capability. The internal channel additionally
+requires the user's UUID in its allowlist. Missing or invalid configuration
+resolves to stable/disabled and is
+reported as a hidden surface, not as an open experimental endpoint. Inputs are
+validated at the tRPC boundary, create/manage/join operations retain the shared
+rate limits, and telemetry records only action state rather than Room or user
+identifiers. The UI feature registry remains a second presentation gate; it
+does not replace this server authorization.
+
 The rollout order is:
 
 1. additive schema and typed contracts, with no public UI change;
@@ -100,16 +186,20 @@ data and domain code but do not define the primary messenger navigation. They
 may remain secondary or web-beta surfaces. Account security, privacy, legal,
 notifications and recovery are never hidden.
 
-## First implementation slices
+## Current implementation slices
 
-1. Foundation: tracked source gate, feature availability registry and additive
-   schema.
-2. Read model: Groups, Lobby, Rooms, participant presence and privacy filters.
-3. Mutation model: create, pin, archive, join, switch and leave with concurrency
-   tests.
-4. Shared shell: compact navigation, Global Now and Group Now behind an internal
-   flag.
-5. Room and messenger integration, followed by the staged rollout above.
+The foundation, Room read/mutation contracts and constrained guest boundary are
+already present. New interface work follows `VOOPLE_IMPLEMENTATION_BRIEF.md`:
+
+1. source-of-truth alignment;
+2. everyday messenger with Chat default and bounded Live Shelf;
+3. Full/Mini Room continuity with Full Room in the main content area;
+4. one shared Group/Section conversation in main and contextual drawer, plus
+   screen-share composition;
+5. real guest acquisition acceptance.
+
+Saved Messages, profiles, discovery and economy remain preserved secondary
+capabilities and do not interrupt this sequence.
 
 No schema-only slice is called product-complete. The delivery matrix remains the
 gate for authorization, states, web/desktop parity, responsive behaviour and

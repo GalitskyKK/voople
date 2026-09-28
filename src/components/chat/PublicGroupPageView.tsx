@@ -1,4 +1,5 @@
 import { ArrowRight, UsersRound } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { RichText } from "@/components/ui/RichText";
@@ -12,12 +13,14 @@ export function PublicGroupPageView({
   requestPending,
   error,
   onAction,
+  roomAction,
 }: {
   group: PublicGroupPageModel;
   actionPending: boolean;
   requestPending: boolean;
   error?: string | null;
   onAction: () => void;
+  roomAction?: ReactNode;
 }) {
   const actionLabel = group.joined
     ? "Открыть"
@@ -48,14 +51,17 @@ export function PublicGroupPageView({
             size="lg"
             className="border-4 border-[var(--app-surface)]"
           />
-          <Button
-            type="button"
-            onClick={onAction}
-            disabled={actionPending || requestPending || (!group.joined && group.joinPolicy === "invite_only")}
-          >
-            {actionPending ? "Отправляем…" : actionLabel}
-            {group.joined || group.joinPolicy === "open" ? <ArrowRight className="h-4 w-4" /> : null}
-          </Button>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {roomAction}
+            <Button
+              type="button"
+              onClick={onAction}
+              disabled={actionPending || requestPending || (!group.joined && group.joinPolicy === "invite_only")}
+            >
+              {actionPending ? "Отправляем…" : actionLabel}
+              {group.joined || group.joinPolicy === "open" ? <ArrowRight className="h-4 w-4" /> : null}
+            </Button>
+          </div>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <h1 className="text-2xl font-semibold tracking-[-0.025em] text-[var(--foreground)]">{group.name}</h1>

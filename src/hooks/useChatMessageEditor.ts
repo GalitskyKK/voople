@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 
 import { trpc } from "@/lib/trpc/client";
 import type { ChatMessageView } from "@/types/chat";
@@ -8,8 +8,9 @@ import type { ChatMessageView } from "@/types/chat";
 export function useChatMessageEditor(
   chatId: string,
   setText: (value: string) => void,
+  editing: ChatMessageView | null,
+  setEditing: Dispatch<SetStateAction<ChatMessageView | null>>,
 ) {
-  const [editing, setEditing] = useState<ChatMessageView | null>(null);
   const utils = trpc.useUtils();
   const mutation = trpc.chat.editMessage.useMutation({
     onSuccess: (updated) => {

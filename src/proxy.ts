@@ -7,6 +7,7 @@ import { createFetchWithRetry } from "@/lib/supabase/fetch-retry"
 const PUBLIC_PATHS = [
   "/login",
   "/register",
+  "/auth",
   "/feed",
   "/group",
   "/explore",

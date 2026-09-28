@@ -2,6 +2,7 @@
 @source "../";
 
 :root {
+  color-scheme: dark;
   --voople-sidebar-width: 72px;
   --voople-brand-50: #f5f3ff;
   --voople-brand-100: #ebe7ff;
@@ -40,6 +41,8 @@
   --foreground: #e8e8ec;
   --theme-primary: #0b0b10;
   --theme-accent: #8b5cf6;
+  --voople-wine: #8a4452;
+  --voople-ice: #6a8aa3;
   --app-surface: #17171e;
   --app-surface-soft: rgba(255, 255, 255, 0.045);
   --app-border: rgba(255, 255, 255, 0.08);
@@ -53,6 +56,49 @@
   --app-radius-md: 0.875rem;
   --app-radius-lg: 1rem;
   --app-radius-xl: 1.25rem;
+  /* Primitive palette -> semantic material -> component/route composition. */
+  --material-canvas-app: #090c11;
+  --material-chrome: #0d1117;
+  --material-stage: #141a21;
+  --material-current-fill: #192129;
+  --material-row-hover: rgb(213 227 240 / 0.045);
+  --material-canvas-workspace: var(--material-stage);
+  --material-canvas-sidebar: var(--material-chrome);
+  --material-ambient-wash: linear-gradient(120deg, rgb(128 145 160 / 0.018), transparent);
+  --material-stage-depth: inset 0 1px 1px rgb(255 255 255 / 0.018), 0 8px 24px rgb(0 0 0 / 0.08);
+  --material-stage-grain: linear-gradient(115deg, rgb(255 255 255 / 0.006), transparent 46%, rgb(0 0 0 / 0.006));
+  --material-panel-fill: rgb(29 35 48 / 0.48);
+  --material-raised-fill: rgb(38 47 62 / 0.44);
+  --material-glass-body: rgb(31 36 44 / 0.40);
+  --material-glass-active-body: rgb(32 38 46 / 0.44);
+  --material-glass-edge: conic-gradient(from 135deg at 50% 50%, rgb(9 15 25 / 0.13), rgb(165 196 219 / 0.13) 27%, rgb(236 246 255 / 0.55) 43%, rgb(116 164 195 / 0.23) 54%, rgb(28 38 52 / 0.11) 78%, rgb(9 15 25 / 0.13));
+  --material-glass-active-edge: conic-gradient(from 135deg at 50% 50%, rgb(19 32 44 / 0.20), rgb(114 187 230 / 0.43) 26%, rgb(235 249 255 / 0.86) 43%, rgb(105 180 230 / 0.53) 54%, rgb(29 56 76 / 0.16) 78%, rgb(19 32 44 / 0.20));
+  --material-glass-scrim: linear-gradient(0deg, rgb(6 12 21 / 0.13), transparent 62%);
+  --material-control-fill: rgb(62 77 96 / 0.34);
+  --material-overlay-fill: #1f2836;
+  --material-inset-fill: rgb(11 17 27 / 0.48);
+  --material-interactive-fill: rgb(54 79 106 / 0.48);
+  --material-border: rgb(219 232 246 / 0.14);
+  --material-divider: rgb(219 232 246 / 0.075);
+  --material-border-hover: rgb(219 232 246 / 0.28);
+  --material-highlight: rgb(245 249 255 / 0.095);
+  --material-specular: linear-gradient(90deg, transparent 2%, rgb(153 86 115 / 0.12) 17%, rgb(241 248 255 / 0.36) 46%, rgb(126 194 247 / 0.20) 74%, transparent 98%);
+  --material-accent-glow: 0 0 0 1px rgb(121 189 255 / 0.23), 0 0 24px rgb(83 164 237 / 0.13);
+  --material-shadow: 0 14px 32px rgb(0 0 0 / 0.20);
+  --material-shadow-hover: 0 18px 36px rgb(0 0 0 / 0.25);
+  --material-overlay-shadow: 0 18px 48px rgb(0 0 0 / 0.38);
+  --material-blur: 16px;
+  --material-saturation: 1.1;
+  --material-radius: 16px;
+  --material-control-radius: 10px;
+  --material-focus-ring: #a8d5ff;
+  --material-ice: #9dcbec;
+  --material-ice-soft: rgb(157 203 236 / 0.12);
+  --material-wine: #8e5367;
+  --material-presence: #a9bccb;
+  --material-secondary-text: #aebdcb;
+  --material-skeleton-base: #24303c;
+  --material-skeleton-highlight: #344557;
   --voople-scrollbar-size: 8px;
   --voople-scrollbar-thumb: color-mix(in srgb, var(--foreground) 14%, transparent);
   --voople-scrollbar-thumb-hover: color-mix(in srgb, var(--foreground) 24%, transparent);
@@ -69,6 +115,102 @@
   --color-border: var(--app-border);
   --color-success: var(--voople-success);
   --color-danger: var(--voople-danger);
+  --font-voople-pixel: var(--font-geist-pixel-square, var(--font-geist-sans));
+}
+
+html[data-app-theme="light"] {
+  color-scheme: light;
+  --material-canvas-app: #e9eef4;
+  --material-chrome: #e9eef4;
+  --material-stage: #f3f6fa;
+  --material-current-fill: #e8eef4;
+  --material-row-hover: rgb(35 57 78 / 0.045);
+  --material-canvas-workspace: var(--material-stage);
+  --material-canvas-sidebar: var(--material-chrome);
+  --material-ambient-wash: linear-gradient(120deg, rgb(128 145 160 / 0.018), transparent);
+  --material-stage-depth: inset 0 1px 1px rgb(255 255 255 / 0.7), 0 9px 26px rgb(52 72 92 / 0.07);
+  --material-stage-grain: none;
+  --material-panel-fill: rgb(255 255 255 / 0.69);
+  --material-raised-fill: rgb(255 255 255 / 0.77);
+  --material-glass-body: rgb(255 255 255 / 0.42);
+  --material-glass-active-body: rgb(255 255 255 / 0.46);
+  --material-glass-edge: conic-gradient(from 135deg at 50% 50%, rgb(44 67 87 / 0.08), rgb(255 255 255 / 0.67) 35%, rgb(255 255 255 / 0.88) 48%, rgb(84 119 148 / 0.22) 77%, rgb(44 67 87 / 0.08));
+  --material-glass-active-edge: conic-gradient(from 135deg at 50% 50%, rgb(44 67 87 / 0.12), rgb(165 213 247 / 0.78) 35%, rgb(255 255 255 / 0.96) 48%, rgb(62 123 175 / 0.36) 77%, rgb(44 67 87 / 0.12));
+  --material-glass-scrim: linear-gradient(0deg, rgb(255 255 255 / 0.12), transparent 62%);
+  --material-control-fill: rgb(245 249 253 / 0.76);
+  --material-overlay-fill: #ffffff;
+  --material-inset-fill: rgb(216 228 240 / 0.38);
+  --material-interactive-fill: rgb(210 228 247 / 0.68);
+  --material-border: rgb(39 65 92 / 0.13);
+  --material-divider: rgb(39 65 92 / 0.09);
+  --material-border-hover: rgb(39 65 92 / 0.25);
+  --material-highlight: rgb(255 255 255 / 0.72);
+  --material-specular: linear-gradient(90deg, transparent 3%, rgb(255 255 255 / 0.90) 48%, transparent 97%);
+  --material-accent-glow: 0 0 0 1px rgb(63 116 177 / 0.15), 0 0 20px rgb(84 145 206 / 0.12);
+  --material-shadow: 0 8px 24px rgb(41 61 84 / 0.08);
+  --material-shadow-hover: 0 12px 28px rgb(41 61 84 / 0.13);
+  --material-overlay-shadow: 0 18px 42px rgb(41 61 84 / 0.17);
+  --material-focus-ring: #315d9a;
+  --material-ice: #315f87;
+  --material-ice-soft: rgb(49 95 135 / 0.1);
+  --material-wine: #895d6d;
+  --material-presence: #647f94;
+  --material-secondary-text: #52647a;
+  --material-skeleton-base: #dfe7f0;
+  --material-skeleton-highlight: #f2f7fb;
+}
+
+/* Authenticated UI uses ice as light, not the legacy public/brand purple.
+   Keep these aliases on the application root so portal overlays share them. */
+html:has(.voople-shell) {
+  --theme-accent: var(--material-ice);
+  --app-accent-soft: var(--material-ice-soft);
+  --voople-success: var(--material-presence);
+  --background: var(--material-canvas-app);
+  --foreground: #e9eef4;
+}
+
+html[data-app-theme="light"]:has(.voople-shell) {
+  --foreground: #1b2938;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --material-canvas-sidebar: var(--material-chrome);
+    --material-ambient-wash: none;
+    --material-stage-grain: none;
+    --material-panel-fill: #1c2430;
+    --material-raised-fill: #26303f;
+    --material-glass-body: #26303f;
+    --material-glass-active-body: #30435a;
+    --material-glass-scrim: none;
+    --material-control-fill: #303c4d;
+    --material-overlay-fill: #26313f;
+    --material-inset-fill: #111b28;
+    --material-interactive-fill: #30435a;
+  }
+
+  html[data-app-theme="light"] {
+    --material-canvas-sidebar: var(--material-chrome);
+    --material-panel-fill: #ffffff;
+    --material-raised-fill: #f7faff;
+    --material-glass-body: #f7faff;
+    --material-glass-active-body: #e0eefb;
+    --material-glass-scrim: none;
+    --material-control-fill: #edf3f9;
+    --material-overlay-fill: #ffffff;
+    --material-inset-fill: #e1eaf3;
+    --material-interactive-fill: #e0eefb;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (max-width: 900px) {
+  .voople-overlay-surface,
+  .voople-signal-glass,
+  .voople-glass-object {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 @theme inline {
@@ -76,6 +218,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-pixel: var(--font-voople-pixel);
 }
 
 html {
@@ -131,7 +274,7 @@ body {
   }
 
   :focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--theme-accent) 70%, white);
+    outline: 2px solid var(--material-focus-ring);
     outline-offset: 2px;
   }
 
@@ -178,9 +321,7 @@ body {
 
   .voople-branded-loading--fullscreen {
     min-height: 100%;
-    background:
-      radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--theme-accent) 13%, transparent), transparent 17rem),
-      var(--app-bg);
+    background: var(--material-canvas-app);
   }
 
   .voople-branded-loading--compact {
@@ -198,21 +339,14 @@ body {
   }
 
   .voople-branded-loading__mark::before {
-    position: absolute;
-    z-index: -1;
-    inset: -0.65rem;
-    border: 1px solid color-mix(in srgb, var(--theme-accent) 24%, transparent);
-    border-radius: 1.25rem;
-    background: color-mix(in srgb, var(--theme-accent) 9%, transparent);
-    content: "";
-    animation: voople-loading-halo 1.8s ease-out infinite;
+    content: none;
   }
 
   .voople-branded-loading__label {
     margin-top: 1.15rem;
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--app-text-secondary);
+    color: var(--material-secondary-text);
   }
 
   .voople-branded-loading__dots {
@@ -335,9 +469,85 @@ body {
   }
 
   .voople-panel {
-    border-radius: var(--app-radius-xl);
-    background: var(--app-surface);
-    box-shadow: var(--app-shadow-sm);
+    border-radius: var(--material-radius);
+    background: var(--material-panel-fill);
+    box-shadow: var(--material-shadow);
+  }
+
+  .voople-panel--raised { background: var(--material-raised-fill); }
+
+  /* Matte working plane: no backdrop-filter. Ambient light and a barely
+     visible static texture supply information beneath selective glass. */
+  .voople-stage {
+    min-width: 0;
+    margin: 8px;
+    border-radius: 22px;
+    background-color: var(--material-stage);
+    background-image: var(--material-stage-grain), var(--material-ambient-wash);
+    background-size: auto;
+    box-shadow: var(--material-stage-depth);
+  }
+
+  .voople-material-control {
+    border: 1px solid var(--material-border);
+    border-radius: var(--material-control-radius);
+    background: var(--material-control-fill);
+    color: var(--foreground);
+    transition: border-color var(--voople-motion-fast), background var(--voople-motion-fast);
+  }
+
+  .voople-material-control:hover:not(:disabled) {
+    border-color: var(--material-border-hover);
+    background: var(--material-interactive-fill);
+  }
+
+  .voople-material-row {
+    border-radius: var(--material-control-radius);
+    background: var(--material-panel-fill);
+    box-shadow: none;
+  }
+
+  .voople-material-row:hover { background: var(--material-interactive-fill); }
+
+  .voople-overlay-surface {
+    border: 1px solid var(--material-border);
+    background: var(--material-overlay-fill);
+    box-shadow: var(--material-overlay-shadow), inset 0 1px 0 var(--material-highlight);
+    -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+    backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+  }
+
+  .voople-glass-object {
+    border: 1px solid var(--material-border);
+    background: var(--material-raised-fill);
+    box-shadow: var(--material-shadow), inset 0 1px 0 var(--material-highlight);
+    -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+    backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+  }
+
+  .voople-signal-glass {
+    border: 1px solid color-mix(in srgb, var(--voople-ice) 38%, var(--material-border));
+    background: var(--material-glass-active-body);
+    box-shadow: var(--material-shadow), 0 12px 28px rgb(83 164 237 / 0.10), inset 0 1px 0 var(--material-highlight);
+    -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+    backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+  }
+
+  .voople-skeleton {
+    display: block;
+    background: var(--material-skeleton-base);
+    background-image: linear-gradient(100deg, transparent 25%, var(--material-skeleton-highlight) 50%, transparent 75%);
+    background-size: 200% 100%;
+    animation: voople-skeleton-shimmer 1.8s linear infinite;
+  }
+
+  .voople-skeleton--avatar { border-radius: 50%; }
+  .voople-skeleton--text { border-radius: 999px; }
+  .voople-skeleton--room { border-radius: var(--material-radius); }
+  .voople-skeleton--row { border-radius: var(--material-control-radius); }
+
+  @keyframes voople-skeleton-shimmer {
+    to { background-position: -200% 0; }
   }
 
   .voople-sidebar {
@@ -389,8 +599,8 @@ body {
 
   .voople-panel--inset {
     border-radius: var(--app-radius-lg);
-    border: 1px solid var(--app-border);
-    background: var(--app-surface-soft);
+    border: 1px solid var(--material-border);
+    background: var(--material-inset-fill);
     box-shadow: none;
   }
 
@@ -524,18 +734,13 @@ body {
   50% { transform: translateY(-0.2rem) scale(1); }
 }
 
-@keyframes voople-loading-halo {
-  0% { opacity: 0.35; transform: scale(0.9); }
-  55% { opacity: 0.75; }
-  100% { opacity: 0; transform: scale(1.25); }
-}
-
 @keyframes voople-loading-dot {
   0%, 65%, 100% { opacity: 0.28; transform: translateY(0); }
   35% { opacity: 1; transform: translateY(-0.2rem); }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .voople-skeleton { animation: none; background-image: none; }
   .voople-branded-loading__mark,
   .voople-branded-loading__mark::before,
   .voople-branded-loading__dots i {
@@ -1509,11 +1714,9 @@ button.voople-post-action:active {
   grid-template-columns: minmax(180px, 1fr) auto minmax(120px, 1fr);
   align-items: center;
   gap: 1rem;
-  border: 1px solid var(--app-border);
-  border-radius: 1rem;
-  background: var(--app-surface);
+  border-bottom: 1px solid var(--material-border);
+  background: var(--material-stage);
   padding: 0.625rem 0.75rem;
-  backdrop-filter: blur(18px);
   overflow: hidden;
 }
 
@@ -1649,14 +1852,66 @@ button.voople-post-action:active {
 }
 
 .voople-shell {
-  background:
-    radial-gradient(circle at 8% 8%, color-mix(in srgb, var(--theme-accent) 8%, transparent), transparent 28rem),
-    color-mix(in srgb, var(--background) 92%, var(--app-surface));
+  background: var(--material-chrome);
+}
+
+.voople-invite-stage {
+  background: var(--material-ambient-wash), var(--material-stage);
 }
 
 .voople-sidebar {
   width: var(--voople-sidebar-width);
-  background: transparent;
+  background: var(--material-chrome);
+}
+
+@media (min-width: 1024px) {
+  .voople-shell[data-navigation-kind="messenger"] {
+    --voople-sidebar-width: 220px;
+  }
+
+  .voople-shell[data-navigation-kind="messenger"] .voople-sidebar {
+    width: var(--voople-sidebar-width);
+    min-width: var(--voople-sidebar-width);
+    background: var(--material-chrome);
+  }
+
+  .voople-shell[data-navigation-kind="messenger"] .voople-sidebar__brand {
+    padding: 1.15rem 1.15rem 1rem;
+  }
+
+  .voople-shell[data-navigation-kind="messenger"] .voople-sidebar__footer {
+    border-top: 1px solid rgb(255 255 255 / 0.04);
+    background: color-mix(in srgb, var(--background) 86%, transparent);
+    padding: 0.85rem 0.9rem;
+  }
+
+  .voople-shell[data-navigation-kind="messenger"] .voople-messenger-sidebar {
+    padding-inline: 0.75rem;
+  }
+
+  .voople-shell[data-navigation-kind="messenger"] .voople-messenger-sidebar__search {
+    height: 44px;
+    border: 1px solid var(--app-border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--app-surface-soft) 84%, transparent);
+  }
+
+  .voople-shell[data-navigation-kind="messenger"] .voople-messenger-sidebar__row {
+    min-height: 46px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    transform: none;
+    transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+  }
+
+  .voople-shell[data-navigation-kind="messenger"] .voople-messenger-sidebar__row:hover:not(.voople-messenger-sidebar__row--active) {
+    background: var(--app-surface-soft);
+  }
+
+  .voople-shell[data-navigation-kind="messenger"] .voople-messenger-sidebar__row--active {
+    border-color: color-mix(in srgb, var(--theme-accent) 26%, var(--app-border));
+    background: color-mix(in srgb, var(--app-accent-soft) 82%, transparent);
+  }
 }
 
 .voople-sidebar__label {
@@ -1670,6 +1925,87 @@ button.voople-post-action:active {
   min-width: 0;
 }
 
+/* Authenticated pages keep one quiet social shell instead of changing visual
+   systems when the route leaves Messages. */
+.voople-shell[data-navigation-kind="messenger"] {
+  background: var(--material-chrome);
+}
+
+.voople-shell[data-route-kind="profile"] .voople-shell__workspace {
+  max-width: 1180px;
+}
+
+.voople-shell[data-route-kind="profile"] .voople-profile-page {
+  align-items: flex-start;
+  gap: clamp(1.25rem, 2.4vw, 2rem);
+  padding-block: clamp(1rem, 2.5vw, 2rem);
+}
+
+.voople-shell[data-route-kind="profile"] .voople-profile-page__posts {
+  width: 100%;
+  max-width: 44rem;
+  margin-inline: auto;
+  padding: 0 2px 2rem;
+}
+
+.voople-shell[data-route-kind="profile"] .voople-profile-feed-tabs {
+  top: 0;
+  min-height: 3rem;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-lg);
+  background: color-mix(in srgb, var(--app-surface) 86%, transparent);
+  padding: 0.25rem;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 5%, transparent);
+  backdrop-filter: blur(16px) saturate(1.04);
+}
+
+.voople-shell[data-route-kind="profile"] .voople-profile-feed-tabs button {
+  min-height: 2.45rem;
+  flex: 1;
+  border-radius: calc(var(--app-radius-lg) - 4px);
+  padding-block: 0.55rem;
+}
+
+.voople-shell[data-route-kind="profile"] .voople-profile-feed-tabs button[aria-current="page"] {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+.voople-shell[data-route-kind="profile"] .voople-profile-feed-tabs button[aria-current="page"] > span[aria-hidden] {
+  right: 28%;
+  bottom: 0.22rem;
+  left: 28%;
+  height: 1px;
+}
+
+.voople-shell[data-route-kind="profile"] .voople-post-card__surface,
+.voople-shell[data-route-kind="profile"] .voople-compose-block {
+  border: 1px solid var(--app-border);
+  background: color-mix(in srgb, var(--app-surface) 88%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 4%, transparent),
+    0 14px 36px rgb(0 0 0 / 0.08);
+  backdrop-filter: blur(14px) saturate(1.03);
+}
+
+@media (max-width: 1023px) {
+  .voople-shell[data-route-kind="profile"] .voople-profile-page__posts {
+    max-width: none;
+  }
+}
+
+@media (max-width: 639px) {
+  .voople-shell[data-route-kind="profile"] .voople-profile-page {
+    gap: 1rem;
+    padding-block: 0.75rem;
+  }
+
+  .voople-shell[data-route-kind="profile"] .voople-profile-feed-tabs {
+    border-radius: var(--app-radius-md);
+  }
+}
+
 .voople-tooltip-anchor {
   display: inline-flex;
   flex-shrink: 0;
@@ -1681,12 +2017,12 @@ button.voople-post-action:active {
   z-index: 120;
   max-width: min(18rem, calc(100vw - 1rem));
   pointer-events: none;
-  border: 1px solid var(--app-border);
+  border: 1px solid var(--material-border);
   border-radius: 0.5rem;
-  background: color-mix(in srgb, var(--app-surface) 96%, transparent);
+  background: var(--material-overlay-fill);
   padding: 0.4rem 0.6rem;
   color: var(--foreground);
-  box-shadow: var(--app-shadow-md);
+  box-shadow: var(--material-overlay-shadow);
   font-size: 0.75rem;
   font-weight: 600;
   line-height: 1rem;
@@ -1758,9 +2094,93 @@ button.voople-post-action:active {
   /* feed + profile scroll area */
 }
 
+.voople-shell[data-navigation-kind="messenger"]:not([data-route-kind="messages"]) .voople-shell__scroll {
+  min-width: 0;
+  margin: 8px;
+  border-radius: 22px;
+  background: var(--material-stage-grain), var(--material-ambient-wash), var(--material-stage);
+  background-size: auto;
+  box-shadow: var(--material-stage-depth);
+}
+
+@media (max-width: 900px) {
+  .voople-stage,
+  .voople-shell[data-navigation-kind="messenger"]:not([data-route-kind="messages"]) .voople-shell__scroll {
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
 @media (min-width: 1024px) {
   :root {
     --voople-sticky-offset: 0px;
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-chat-sections {
+    min-height: 2.25rem;
+    padding-inline: 0.75rem;
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-chat-sections__item {
+    border-radius: 0;
+  }
+
+  .voople-shell[data-route-kind="messages"]
+    .voople-chat-sections__item--active::after {
+    position: absolute;
+    right: 0.75rem;
+    bottom: -1px;
+    left: 0.75rem;
+    height: 2px;
+    background: var(--material-ice);
+    content: "";
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-chat-bubble__body,
+  .voople-shell[data-route-kind="messages"] .voople-chat-composer__surface {
+    border-radius: var(--app-radius-sm);
+    box-shadow: none;
+  }
+
+  .voople-shell[data-route-kind="messages"]
+    .voople-chat-bubble:hover
+    .voople-chat-bubble__body {
+    box-shadow: none;
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__row,
+  .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__search,
+  .voople-shell[data-route-kind="messages"] .voople-sidebar__footer button {
+    border-radius: 8px;
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__search {
+    border: 1px solid var(--app-border);
+    background: var(--app-surface-soft);
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__kbd {
+    border: 1px solid var(--app-border);
+    border-radius: 4px;
+    padding: 0.125rem 0.375rem;
+    color: var(--app-muted);
+  }
+
+  .voople-shell[data-route-kind="messages"] .voople-chat-list__create {
+    display: none;
+  }
+
+  .voople-shell[data-route-kind="messages"] .font-mono {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    letter-spacing: -0.02em;
+  }
+
+  .voople-shell[data-route-kind="messages"]
+    .voople-messages-layout[data-thread="true"]
+    > div
+    > aside {
+    display: none;
   }
 
   .voople-shell {
@@ -1773,10 +2193,7 @@ button.voople-post-action:active {
 
   .voople-shell__workspace {
     overflow: hidden;
-    border: 1px solid var(--app-border);
-    border-radius: 1.125rem;
-    background: var(--background);
-    box-shadow: 0 12px 36px rgb(0 0 0 / 0.18);
+    background: var(--material-chrome);
   }
 
   .voople-shell__main {
@@ -1842,23 +2259,298 @@ button.voople-post-action:active {
 
 .voople-chat-window__messages {
   touch-action: pan-y;
-  background-color: var(--chat-wallpaper-color, color-mix(in srgb, var(--app-surface) 90%, var(--background)));
-  background-image: var(--chat-wallpaper-image, none);
-  background-size: var(--chat-wallpaper-size, auto);
-  background-attachment: local;
+  background: transparent;
 }
 
 .voople-chat-window__header {
   position: relative;
   z-index: 5;
-  background: color-mix(in srgb, var(--app-surface) 92%, transparent);
-  backdrop-filter: blur(18px);
+  background: var(--material-chrome);
+}
+
+.voople-group-surface-tabs__tab[aria-selected="true"]::after {
+  position: absolute;
+  right: 0.75rem;
+  bottom: -1px;
+  left: 0.75rem;
+  height: 2px;
+  background: var(--theme-accent);
+  content: "";
+}
+
+.voople-group-live-shelf {
+  container-type: inline-size;
+  animation: voople-live-shelf-enter 180ms cubic-bezier(.2,.8,.25,1) both;
+}
+
+.voople-wordmark,
+.voople-avatar-token__glyph,
+.voople-counter {
+  font-family: var(--font-voople-pixel), var(--font-geist-sans), system-ui, sans-serif;
+  font-synthesis: none;
+}
+
+.voople-wordmark {
+  font-size: 0.9375rem;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.voople-avatar-token__glyph,
+.voople-counter {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.voople-group-live-shelf__layout {
+  display: none;
+}
+
+.voople-group-live-shelf__layout--wide {
+  display: flex;
+}
+
+@container (max-width: 760px) {
+  .voople-group-live-shelf__layout--wide {
+    display: none;
+  }
+
+  .voople-group-live-shelf__layout--medium {
+    display: flex;
+  }
+}
+
+@container (max-width: 520px) {
+  .voople-group-live-shelf__layout--medium {
+    display: none;
+  }
+
+  .voople-group-live-shelf__layout--compact {
+    display: flex;
+  }
+}
+
+@keyframes voople-live-shelf-enter {
+  from { opacity: 0; clip-path: inset(0 0 100% 0); }
+  to { opacity: 1; clip-path: inset(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voople-group-live-shelf {
+    animation: none;
+  }
 }
 
 .voople-voice-session--active
   .voople-shell[data-route-kind="messages"]
   ~ .voople-voice-dock {
   bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.voople-full-room {
+  --app-radius-sm: 10px;
+  --app-radius-md: 13px;
+  --app-radius-lg: 18px;
+  --app-radius-xl: 22px;
+  border-radius: var(--app-radius-lg);
+  background: var(--background);
+  box-shadow: 0 18px 54px rgb(0 0 0 / 0.28);
+  container-type: inline-size;
+}
+
+.voople-full-room__room-selector {
+  display: none;
+}
+
+.voople-full-room__room-selector button {
+  border-radius: var(--app-radius-sm);
+}
+
+.voople-room-chat-panel {
+  position: relative;
+  z-index: auto;
+  width: clamp(20rem, var(--room-chat-panel-width, 22.5rem), 30rem);
+  min-width: 20rem;
+  max-width: 40cqw;
+  flex-shrink: 0;
+  border-left: 1px solid var(--app-border);
+}
+
+.voople-room-chat-panel__resize {
+  position: absolute;
+  inset-block: 0;
+  left: -1.375rem;
+  z-index: 2;
+  display: grid;
+  width: 2.75rem;
+  cursor: ew-resize;
+  place-items: center;
+  color: transparent;
+  touch-action: none;
+}
+
+.voople-room-chat-panel__resize::before {
+  position: absolute;
+  inset-block: 0;
+  left: 1.34375rem;
+  width: 1px;
+  background: var(--app-border);
+  content: "";
+}
+
+.voople-room-chat-panel__resize:hover,
+.voople-room-chat-panel__resize:focus-visible {
+  color: var(--theme-accent);
+  outline: none;
+}
+
+@container (max-width: 1159px) {
+  .voople-full-room[data-chat-open="true"] .voople-full-room__switcher {
+    display: none;
+  }
+
+  .voople-full-room[data-chat-open="true"] .voople-full-room__room-selector {
+    display: flex;
+  }
+}
+
+@container (max-width: 999px) {
+  .voople-room-chat-panel {
+    position: absolute;
+    inset: 0 0 4.25rem;
+    z-index: 30;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    border-left-width: 0;
+  }
+
+  .voople-room-chat-panel__resize {
+    display: none;
+  }
+}
+
+@container (max-width: 799px) {
+  .voople-full-room__switcher {
+    display: none;
+  }
+
+  .voople-full-room__room-selector {
+    display: flex;
+  }
+}
+
+.voople-full-room__header {
+  min-height: 3.5rem;
+  background: var(--background);
+}
+
+.voople-full-room__switcher {
+  display: flex;
+  width: 10rem;
+  min-width: 10rem;
+  flex-direction: column;
+}
+
+.voople-full-room__switcher-room--current {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.045);
+}
+
+.voople-full-room__title {
+  line-height: 1;
+  letter-spacing: 0.065em;
+}
+
+.voople-full-room__header-actions button,
+.voople-full-room__footer button {
+  border-radius: var(--app-radius-sm);
+  box-shadow: none;
+}
+
+.voople-full-room__content {
+  background: color-mix(in srgb, var(--app-surface) 40%, var(--background));
+}
+
+.voople-full-room__stage-toolbar {
+  min-height: 2.25rem;
+  border-bottom: 1px solid var(--app-border);
+  padding-bottom: 0.5rem;
+}
+
+.voople-full-room__layout-switch button[aria-pressed="true"] {
+  box-shadow: none;
+}
+
+.voople-full-room__media,
+.voople-full-room__participant {
+  box-shadow: none;
+}
+
+.voople-full-room__participant:focus-visible {
+  outline: 2px solid var(--theme-accent);
+  outline-offset: -2px;
+}
+
+.voople-full-room__footer {
+  min-height: 4.25rem;
+}
+
+@keyframes voople-room-switch-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .voople-full-room__switch-status {
+    animation: voople-room-switch-enter 140ms var(--voople-ease-out) both;
+  }
+}
+
+@media (max-width: 639px) {
+  .voople-full-room {
+    height: 100dvh;
+    max-height: 100dvh;
+    border-width: 0;
+    border-radius: 0;
+  }
+
+  .voople-full-room__header {
+    min-height: 4rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    padding-left: 0.75rem;
+  }
+
+  .voople-full-room__switcher {
+    display: none;
+  }
+
+  .voople-full-room__room-selector {
+    width: 100%;
+  }
+
+  .voople-full-room__room-selector > :first-child {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .voople-full-room__room-picker-sheet {
+    max-height: min(72dvh, 36rem);
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    border-radius: var(--app-radius-lg) var(--app-radius-lg) 0 0;
+  }
+
+  .voople-full-room__header-actions {
+    align-self: flex-end;
+    gap: 0;
+  }
+
+  .voople-full-room__content {
+    padding: 0.625rem;
+  }
 }
 
 [data-chat-wallpaper="plain"] {
@@ -1888,13 +2580,16 @@ button.voople-post-action:active {
 }
 
 .voople-chat-bubble__body {
-  box-shadow: 0 1px 1px color-mix(in srgb, var(--foreground) 7%, transparent);
-  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  box-shadow: none;
 }
 
-.voople-chat-bubble:hover .voople-chat-bubble__body {
-  border-color: color-mix(in srgb, var(--theme-accent) 24%, var(--app-border));
-  box-shadow: 0 3px 12px color-mix(in srgb, var(--background) 45%, transparent);
+.voople-chat-stream-row {
+  transition: background-color 140ms ease;
+}
+
+.voople-chat-stream-row:hover,
+.voople-chat-stream-row:focus-within {
+  background: color-mix(in srgb, var(--app-surface-soft) 62%, transparent);
 }
 
 .voople-chat-bubble-row--selection {
@@ -1989,6 +2684,15 @@ button.voople-post-action:active {
   color: #f87171;
 }
 
+.voople-room-actions__danger {
+  color: var(--voople-danger);
+}
+
+.voople-room-actions__danger-primary {
+  background: var(--voople-danger);
+  color: #fff;
+}
+
 .voople-dropdown-menu {
   transform-origin: top center;
   animation: voople-menu-enter 150ms cubic-bezier(.2,.85,.25,1) both;
@@ -2040,15 +2744,12 @@ button.voople-post-action:active {
 
 .voople-sticky-section-stack {
   isolation: isolate;
-  background: var(--background);
-  box-shadow: 0 1rem 1.25rem -1.25rem rgb(0 0 0 / 0.68);
+  background: var(--material-stage);
 }
 
 .voople-sticky-section-header {
   isolation: isolate;
-  background: var(--app-surface);
-  box-shadow: var(--app-shadow-sm);
-  backdrop-filter: blur(18px);
+  background: var(--material-stage);
 }
 
 .voople-status-publish-banner {
@@ -2189,11 +2890,8 @@ html[data-density="compact"] .shop-category {
 .settings-section {
   display: grid;
   gap: 1rem;
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius-xl);
-  background: color-mix(in srgb, var(--app-surface) 96%, transparent);
-  padding: clamp(1rem, 3vw, 1.35rem);
-  box-shadow: var(--app-shadow-sm);
+  padding-block: 0.25rem 1.5rem;
+  border-bottom: 1px solid var(--material-border);
 }
 
 .settings-layout {
@@ -2215,6 +2913,7 @@ html[data-density="compact"] .shop-category {
 
 .settings-nav button {
   flex: none;
+  min-height: 40px;
   border: 0;
   border-radius: 0.7rem;
   padding: 0.55rem 0.75rem;
@@ -2230,8 +2929,13 @@ html[data-density="compact"] .shop-category {
 .settings-nav button:hover,
 .settings-nav button:focus-visible,
 .settings-nav button.settings-nav__active {
-  background: var(--app-surface-soft);
+  background: var(--material-interactive-fill);
   color: var(--foreground);
+}
+
+.settings-nav button:focus-visible {
+  outline: 2px solid var(--theme-accent);
+  outline-offset: -2px;
 }
 
 @media (min-width: 768px) {
@@ -2245,10 +2949,7 @@ html[data-density="compact"] .shop-category {
     top: 1rem;
     flex-direction: column;
     overflow: visible;
-    border: 1px solid var(--app-border);
-    border-radius: var(--app-radius-lg);
-    background: var(--app-surface);
-    padding: 0.45rem;
+    padding: 0;
   }
 }
 
@@ -2778,23 +3479,44 @@ html[data-density="compact"] .shop-category {
 
 /* Public product surface. Scoped aliases keep the landing expressive without
    leaking marketing colours into authenticated light/dark themes. */
-.voople-landing {
-  --background: var(--voople-canvas-deep);
-  --foreground: var(--voople-ink-warm);
-  --theme-accent: var(--voople-brand-400);
-  --app-surface: var(--voople-surface-deep);
-  --app-surface-soft: rgba(247, 244, 255, 0.055);
-  --app-border: rgba(247, 244, 255, 0.105);
-  --app-border-strong: rgba(247, 244, 255, 0.19);
-  --app-accent-soft: rgba(124, 109, 219, 0.16);
-  --app-muted: rgba(247, 244, 255, 0.62);
-  min-height: 100dvh;
-  overflow-x: clip;
-  background:
-    radial-gradient(circle at 72% 7%, rgba(124, 109, 219, 0.12), transparent 26rem),
-    var(--background);
-  color: var(--foreground);
-}
+   .voople-landing {
+     --landing-bg: #07090c;
+     --landing-surface: #0b0e13;
+     --landing-surface-soft: #10141a;
+     --landing-border: #282d35;
+     --landing-border-strong: #3a414c;
+   
+     --landing-text: #f0eee8;
+     --landing-muted: #888e98;
+     --landing-muted-2: #626873;
+   
+     --landing-violet: #a160ff;
+     --landing-violet-soft: #7d42cc;
+     --landing-green: #7cf05a;
+   
+     min-height: 100dvh;
+     color: var(--landing-text);
+     background-color: var(--landing-bg);
+     background-image:
+       linear-gradient(
+         rgba(255, 255, 255, 0.016) 1px,
+         transparent 1px
+       ),
+       linear-gradient(
+         90deg,
+         rgba(255, 255, 255, 0.016) 1px,
+         transparent 1px
+       );
+     background-size: 32px 32px;
+   
+     font-family:
+       Inter,
+       system-ui,
+       -apple-system,
+       BlinkMacSystemFont,
+       "Segoe UI",
+       sans-serif;
+   }
 
 .landing-header {
   position: absolute;
@@ -3238,25 +3960,11 @@ html[data-density="compact"] .shop-category {
   display: grid;
   gap: 0.85rem;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--voople-brand-400) 48%, var(--app-border));
+  border: 1px solid var(--material-border);
   border-radius: var(--app-radius-xl);
-  background:
-    radial-gradient(circle at 92% 4%, color-mix(in srgb, var(--voople-brand-400) 23%, transparent), transparent 38%),
-    linear-gradient(145deg, color-mix(in srgb, var(--voople-brand-500) 12%, var(--app-surface)), var(--app-surface-soft));
+  background: var(--material-control-fill);
   padding: 1rem;
   box-shadow: inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
-}
-
-.voople-plus-surface::after {
-  position: absolute;
-  right: -2rem;
-  bottom: -4.5rem;
-  width: 10rem;
-  height: 10rem;
-  border: 1px solid color-mix(in srgb, var(--voople-brand-300) 16%, transparent);
-  border-radius: 999px;
-  content: "";
-  pointer-events: none;
 }
 
 .voople-plus-surface__heading {
@@ -3294,11 +4002,11 @@ html[data-density="compact"] .shop-category {
   min-height: 1.45rem;
   align-items: center;
   gap: 0.3rem;
-  border: 1px solid color-mix(in srgb, var(--voople-brand-300) 48%, transparent);
+  border: 1px solid var(--material-border);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--voople-brand-500) 20%, var(--app-surface));
+  background: var(--material-control-fill);
   padding-inline: 0.5rem;
-  color: color-mix(in srgb, var(--voople-brand-200) 82%, var(--foreground));
+  color: var(--foreground);
   font-size: 0.65rem;
   font-weight: 750;
   letter-spacing: 0.025em;
@@ -3343,12 +4051,9 @@ html[data-density="compact"] .shop-category {
   display: grid;
   gap: clamp(2.75rem, 6vw, 5.5rem);
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--voople-brand-400) 45%, var(--app-border));
+  border: 1px solid var(--material-border);
   border-radius: var(--app-radius-xl);
-  background:
-    radial-gradient(circle at 92% 4%, color-mix(in srgb, var(--voople-brand-500) 26%, transparent), transparent 28%),
-    radial-gradient(circle at 4% 44%, color-mix(in srgb, var(--voople-brand-700) 18%, transparent), transparent 30%),
-    var(--app-surface);
+  background: var(--material-stage);
   padding: clamp(1.25rem, 4vw, 3.75rem);
   box-shadow: var(--app-shadow-md);
 }
@@ -3374,11 +4079,11 @@ html[data-density="compact"] .shop-category {
   width: fit-content;
   align-items: center;
   gap: 0.45rem;
-  border: 1px solid color-mix(in srgb, var(--voople-brand-300) 36%, transparent);
+  border: 1px solid var(--material-border);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--voople-brand-500) 12%, transparent);
+  background: var(--material-control-fill);
   padding: 0.4rem 0.7rem;
-  color: color-mix(in srgb, var(--voople-brand-200) 80%, var(--foreground));
+  color: var(--material-secondary-text);
   font-size: 0.75rem;
   font-weight: 750;
   letter-spacing: 0.08em;
@@ -3395,7 +4100,7 @@ html[data-density="compact"] .shop-category {
 }
 
 .voople-plus-offer__hero h2 span {
-  color: color-mix(in srgb, var(--voople-brand-300) 82%, var(--foreground));
+  color: var(--material-ice);
 }
 
 .voople-plus-offer__hero p {
@@ -3411,7 +4116,8 @@ html[data-density="compact"] .shop-category {
   align-items: center;
   gap: 0.55rem;
   border-radius: var(--app-radius-md);
-  background: var(--theme-accent);
+  border: 1px solid var(--material-border-hover);
+  background: var(--material-interactive-fill);
   padding: 0.7rem 1rem;
   color: var(--foreground);
   font-size: 0.875rem;
@@ -3435,15 +4141,15 @@ html[data-density="compact"] .shop-category {
   flex: none;
   justify-items: end;
   gap: 0.1rem;
-  border: 1px solid color-mix(in srgb, var(--voople-brand-300) 25%, var(--app-border));
+  border: 1px solid var(--material-border);
   border-radius: var(--app-radius-xl);
-  background: color-mix(in srgb, var(--voople-brand-500) 9%, var(--app-surface-soft));
+  background: var(--material-control-fill);
   padding: 1rem;
   color: var(--app-muted);
 }
 
 .voople-plus-offer__price svg {
-  color: var(--voople-brand-300);
+  color: var(--material-ice);
 }
 
 .voople-plus-offer__price span {
@@ -3463,7 +4169,7 @@ html[data-density="compact"] .shop-category {
   grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-template-rows: repeat(4, minmax(6rem, auto));
   gap: 0.85rem;
-  border: 1px solid color-mix(in srgb, var(--voople-brand-300) 20%, var(--app-border));
+  border: 1px solid var(--material-border);
   border-radius: calc(var(--app-radius-xl) + 0.4rem);
   background: color-mix(in srgb, var(--app-surface-soft) 76%, transparent);
   padding: clamp(0.85rem, 2vw, 1.35rem);
@@ -3475,15 +4181,15 @@ html[data-density="compact"] .shop-category {
   z-index: -1;
   inset: 8% 14%;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--voople-brand-500) 34%, transparent);
+  background: color-mix(in srgb, var(--material-ice) 11%, transparent);
   filter: blur(6rem);
-  opacity: 0.7;
+  opacity: 0.35;
 }
 
 .voople-plus-stage section {
   position: relative;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--voople-brand-300) 22%, var(--app-border));
+  border: 1px solid var(--material-border);
   border-radius: var(--app-radius-xl);
   background: color-mix(in srgb, var(--app-surface) 90%, transparent);
   box-shadow: var(--app-shadow-md);
@@ -3494,16 +4200,13 @@ html[data-density="compact"] .shop-category {
   grid-column: 1 / 7;
   grid-row: 1 / 5;
   grid-template-rows: auto 1fr;
-  background:
-    radial-gradient(circle at 16% 14%, color-mix(in srgb, #a78bfa 32%, transparent), transparent 36%),
-    radial-gradient(circle at 80% 70%, color-mix(in srgb, #34d399 18%, transparent), transparent 38%),
-    linear-gradient(145deg, color-mix(in srgb, var(--app-surface) 96%, #211334), var(--app-surface-soft)) !important;
+  background: var(--material-panel-fill);
 }
 
 .voople-plus-stage__chat::after {
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(125deg, transparent 45%, color-mix(in srgb, var(--voople-brand-200) 7%, transparent) 46% 47%, transparent 48%);
+  background-image: linear-gradient(125deg, transparent 45%, color-mix(in srgb, var(--material-ice) 3%, transparent) 46% 47%, transparent 48%);
   background-size: 8rem 8rem;
   content: "";
   pointer-events: none;
@@ -3547,8 +4250,8 @@ html[data-density="compact"] .shop-category {
   flex: none;
   place-items: center;
   border-radius: 0.7rem;
-  background: color-mix(in srgb, var(--voople-brand-500) 18%, var(--app-surface));
-  color: var(--voople-brand-300);
+  background: var(--material-control-fill);
+  color: var(--material-ice);
 }
 
 .voople-plus-stage__messages {
@@ -3606,16 +4309,14 @@ html[data-density="compact"] .shop-category {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  color: var(--voople-brand-300);
+  color: var(--material-ice);
   font-size: 0.62rem;
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .voople-plus-stage__name {
-  background: linear-gradient(90deg, var(--voople-brand-200), #f0abfc);
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--foreground);
 }
 
 .voople-plus-stage__themes {
@@ -3660,7 +4361,7 @@ html[data-density="compact"] .shop-category {
   align-items: center;
   gap: 0.65rem;
   padding: 0.9rem;
-  color: var(--voople-brand-300);
+  color: var(--material-ice);
 }
 
 .voople-plus-stage__avatars {
@@ -3675,7 +4376,7 @@ html[data-density="compact"] .shop-category {
   place-items: center;
   border: 2px solid var(--app-surface);
   border-radius: 999px;
-  background: var(--voople-brand-700);
+  background: var(--material-control-fill);
   color: white;
   font-size: 0.55rem;
   font-weight: 800;
@@ -3695,9 +4396,9 @@ html[data-density="compact"] .shop-category {
 .voople-plus-stage__boost-status {
   margin-left: auto;
   border-radius: 999px;
-  background: color-mix(in srgb, #34d399 16%, transparent);
+  background: var(--material-control-fill);
   padding: 0.3rem 0.55rem;
-  color: #6ee7b7;
+  color: var(--material-ice);
   font-size: 0.7rem;
   font-weight: 750;
 }
@@ -3749,8 +4450,8 @@ html[data-density="compact"] .shop-category {
   flex: none;
   place-items: center;
   border-radius: 0.65rem;
-  background: color-mix(in srgb, var(--voople-brand-500) 18%, var(--app-surface));
-  color: var(--voople-brand-300);
+  background: var(--material-control-fill);
+  color: var(--material-ice);
 }
 
 .voople-plus-benefit-card h3 {
@@ -3784,7 +4485,7 @@ html[data-density="compact"] .shop-category {
 .voople-plus-benefit-card li svg {
   margin-top: 0.1rem;
   flex: none;
-  color: var(--voople-brand-300);
+  color: var(--material-ice);
 }
 
 .voople-plus-benefit-card__visual {
@@ -3794,9 +4495,9 @@ html[data-density="compact"] .shop-category {
   align-items: center;
   gap: 0.75rem;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--voople-brand-300) 18%, var(--app-border));
+  border: 1px solid var(--material-border);
   border-radius: var(--app-radius-lg);
-  background: color-mix(in srgb, var(--voople-brand-500) 7%, var(--app-surface));
+  background: var(--material-control-fill);
   padding: 1rem;
 }
 
@@ -3837,7 +4538,7 @@ html[data-density="compact"] .shop-category {
 
 .voople-plus-benefit-card__visual--comfort {
   justify-content: space-between;
-  background: linear-gradient(135deg, color-mix(in srgb, #a78bfa 18%, var(--app-surface)), color-mix(in srgb, #34d399 9%, var(--app-surface)));
+  background: var(--material-control-fill);
 }
 
 .voople-plus-benefit-card__visual--comfort span {
@@ -3850,7 +4551,7 @@ html[data-density="compact"] .shop-category {
 }
 
 .voople-plus-benefit-card__visual--groups {
-  color: var(--voople-brand-300);
+  color: var(--material-ice);
 }
 
 .voople-plus-benefit-card__visual--groups span {
@@ -3864,7 +4565,7 @@ html[data-density="compact"] .shop-category {
   height: 0.45rem;
   margin-left: auto;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--voople-brand-700), var(--voople-brand-300));
+  background: var(--material-ice);
 }
 
 .voople-plus-benefits--compact {
@@ -3881,11 +4582,9 @@ html[data-density="compact"] .shop-category {
 
 .voople-plus-checkout {
   scroll-margin-top: 5rem;
-  border: 1px solid color-mix(in srgb, var(--voople-brand-300) 24%, var(--app-border));
+  border: 1px solid var(--material-border);
   border-radius: calc(var(--app-radius-xl) + 0.2rem);
-  background:
-    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--voople-brand-500) 17%, transparent), transparent 38%),
-    var(--app-surface-soft);
+  background: var(--material-control-fill);
   padding: clamp(1rem, 2.5vw, 1.5rem);
 }
 
@@ -3899,7 +4598,7 @@ html[data-density="compact"] .shop-category {
 
 .voople-plus-checkout__heading p,
 .voople-plus-faq > p {
-  color: var(--voople-brand-300);
+  color: var(--material-secondary-text);
   font-size: 0.66rem;
   font-weight: 750;
   letter-spacing: 0.12em;
@@ -3938,14 +4637,14 @@ html[data-density="compact"] .shop-category {
 }
 
 .voople-plus-plan:hover {
-  border-color: color-mix(in srgb, var(--voople-brand-300) 55%, var(--app-border));
+  border-color: var(--material-border-hover);
   transform: translateY(-1px);
 }
 
 .voople-plus-plan--active {
-  border-color: var(--voople-brand-400);
-  background: color-mix(in srgb, var(--voople-brand-500) 13%, var(--app-surface));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--voople-brand-400) 24%, transparent);
+  border-color: var(--material-ice);
+  background: var(--material-interactive-fill);
+  box-shadow: inset 0 1px 0 var(--material-highlight);
 }
 
 .voople-plus-faq {
@@ -3980,16 +4679,13 @@ html[data-density="compact"] .shop-category {
 }
 
 .shop-item-card--plus {
-  border-color: color-mix(in srgb, var(--voople-brand-400) 42%, var(--app-border));
-  background:
-    linear-gradient(150deg, color-mix(in srgb, var(--voople-brand-500) 9%, var(--app-surface-soft)), var(--app-surface-soft));
+  border-color: var(--material-border);
+  background: var(--material-control-fill);
 }
 
 .profile-editor-plus-zone {
-  border-color: color-mix(in srgb, var(--voople-brand-400) 42%, var(--app-border));
-  background:
-    radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--voople-brand-400) 16%, transparent), transparent 38%),
-    color-mix(in srgb, var(--voople-brand-500) 7%, var(--app-surface-soft));
+  border-color: var(--material-border);
+  background: var(--material-control-fill);
 }
 
 .settings-theme-picker__group {
@@ -4185,9 +4881,7 @@ html[data-density="compact"] .shop-category {
 }
 
 .settings-rows {
-  overflow: hidden;
-  border: 1px solid var(--app-border);
-  border-radius: var(--app-radius-lg);
+  min-width: 0;
 }
 
 .settings-row {
@@ -4196,8 +4890,8 @@ html[data-density="compact"] .shop-category {
   align-items: center;
   justify-content: space-between;
   gap: 1.25rem;
-  background: var(--app-surface-soft);
-  padding: 0.9rem 1rem;
+  background: transparent;
+  padding: 0.9rem 0;
 }
 
 .settings-row + .settings-row {
@@ -4283,9 +4977,9 @@ html[data-density="compact"] .shop-category {
   min-height: 2.5rem;
   align-items: center;
   justify-content: center;
-  border: 1px solid color-mix(in srgb, var(--voople-brand-300) 58%, var(--app-border));
+  border: 1px solid var(--material-border-hover);
   border-radius: var(--app-radius-lg);
-  background: color-mix(in srgb, var(--voople-brand-500) 26%, var(--app-surface));
+  background: var(--material-interactive-fill);
   padding-inline: 1rem;
   color: var(--foreground);
   font-size: 0.875rem;
@@ -4294,8 +4988,8 @@ html[data-density="compact"] .shop-category {
 }
 
 .settings-subscription-link:hover {
-  border-color: var(--voople-brand-300);
-  background: color-mix(in srgb, var(--voople-brand-500) 34%, var(--app-surface));
+  border-color: var(--material-ice);
+  background: var(--material-control-fill);
 }
 
 .settings-legal-links ul {
@@ -4534,9 +5228,9 @@ html[data-density="compact"] .shop-category {
 .voople-plus-levels {
   margin: clamp(1.5rem, 4vw, 4rem) 0;
   padding: clamp(1rem, 3vw, 2rem);
-  border: 1px solid color-mix(in srgb, var(--voople-brand-400) 32%, var(--app-border));
+  border: 1px solid var(--material-border);
   border-radius: clamp(1.25rem, 3vw, 2rem);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--voople-brand-500) 10%, var(--app-surface)), var(--app-surface));
+  background: var(--material-stage);
 }
 
 .voople-plus-levels__heading > span {

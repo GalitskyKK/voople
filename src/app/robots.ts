@@ -14,6 +14,8 @@ export default function robots(): MetadataRoute.Robots {
           "/api/",
           "/messages/",
           "/notifications/",
+          "/room-invites/",
+          "/room-guest/",
           "/me",
           "/me/",
           "/settings",

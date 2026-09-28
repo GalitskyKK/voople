@@ -90,8 +90,8 @@ export function SafeExternalLink({ url, children }: { url: string; children: Rea
             <p className="mt-2 text-sm leading-6 text-[var(--app-muted)]">Google Web Risk отметил адрес как потенциально опасный: {verdict.threats.join(", ") || "небезопасный ресурс"}.</p>
           </div>
         ) : verdict?.status === "safe" ? (
-          <p className="mt-4 flex items-start gap-2 rounded-xl border border-emerald-500/35 bg-emerald-500/10 p-3 text-sm leading-6">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" /> Адрес не найден в известных списках угроз. Проверка не гарантирует абсолютную безопасность.
+          <p className="mt-4 flex items-start gap-2 rounded-xl border border-[var(--material-border)] bg-[var(--material-control-fill)] p-3 text-sm leading-6">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--material-ice)]" /> Адрес не найден в известных списках угроз. Проверка не гарантирует абсолютную безопасность.
           </p>
         ) : verdict ? (
           <label className="mt-4 flex items-start gap-3 rounded-xl border border-amber-500/35 bg-amber-500/10 p-3 text-sm leading-6">
@@ -112,7 +112,7 @@ export function SafeExternalLink({ url, children }: { url: string; children: Rea
               type="button"
               onClick={() => void continueToUrl()}
               disabled={verdict.status === "unknown" && !acceptedUnknown}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[var(--theme-accent)] px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[var(--material-border-hover)] bg-[var(--material-control-fill)] px-4 text-sm font-semibold text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-45"
             >
               Перейти <ExternalLink className="h-4 w-4" />
             </button>

@@ -68,6 +68,8 @@ test("mini room exposes full-surface drag, eight resize handles and keyboard res
   assert.match(handles, /onKeyDown=\{\(event\) => onKeyDown\(direction, event\)\}/);
   assert.match(geometry, /voople:voice-dock-geometry:v2/);
   assert.match(geometry, /window\.addEventListener\("resize", keepInsideViewport\)/);
+  assert.match(geometry, /transform: `translate\(calc\(-50% \+ \$\{geometry\.offsetX\}px\), \$\{geometry\.offsetY\}px\)`/);
+  assert.doesNotMatch(dock, /-translate-x-1\/2 touch-none/);
   assert.match(geometry, /captureClick/);
 });
 
@@ -87,7 +89,7 @@ test("remote participant context menu controls the existing persisted LiveKit vo
   assert.match(output, /participant\.trackPublications\.values\(\)/);
 });
 
-test("compact room summary keeps participant, speaker and active capture state visible", () => {
+test("compact room summary exposes session identity and active media controls", () => {
   const participants = [
     { id: "me", displayName: "Вы" },
     { id: "biba", displayName: "Biba" },
@@ -106,9 +108,20 @@ test("compact room summary keeps participant, speaker and active capture state v
   const compact = read("src/components/chat/voice/VoiceCompactSessionDock.tsx");
   const minimal = read("src/components/chat/voice/VoiceMinimalSessionDock.tsx");
   const dock = read("src/components/chat/voice/VoiceSessionDock.tsx");
-  assert.match(compact, /activeSpeakerName/);
-  assert.match(compact, /VoiceDockMediaIndicators/);
+  assert.match(compact, /participantCount/);
+  assert.match(compact, /aria-pressed=\{cameraEnabled\}/);
+  assert.match(compact, /aria-pressed=\{screenSharing\}/);
+  for (const label of ["микрофон", "звук собеседников", "камеру", "экран", "Выйти из разговора"]) {
+    assert.match(compact, new RegExp(label));
+  }
+  assert.doesNotMatch(compact, /MoreHorizontal|aria-expanded=\{expanded\}|\{expanded \?/);
   assert.match(minimal, /participantLabel/);
   assert.match(minimal, /VoiceDockMediaIndicators/);
   assert.match(dock, /reportProductEvent\("room_expanded", \{ state: "full" \}\)/);
+  assert.match(dock, /rounded-\[var\(--app-radius-sm\)\]/);
+  assert.doesNotMatch(dock, /rounded-2xl|backdrop-blur-xl|radial-gradient/);
+  assert.match(compact, /voople-voice-dock--compact/);
+  assert.doesNotMatch(compact, /rounded-2xl|backdrop-blur-xl/);
+  assert.match(minimal, /voople-voice-dock--minimal/);
+  assert.doesNotMatch(minimal, /voople-voice-dock--minimal[^"\n]*rounded-full|hover:-translate-y/);
 });

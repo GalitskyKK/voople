@@ -3,11 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
-import { downloadAccountExport } from "@/lib/account-export-client";
 import { listTrustedDevices, revokeTrustedDevice } from "@/lib/auth/trusted-device-client";
 
 import { AccountSecuritySettings } from "./AccountSecuritySettings";
-import { AccountDataControls } from "./AccountDataControls";
 
 export function WebAccountSecuritySettings() {
   const supabase = useMemo(() => createClient(), []);
@@ -54,7 +52,6 @@ export function WebAccountSecuritySettings() {
         await revokeTrustedDevice({ accessToken: data.session.access_token, deviceRecordId });
       }}
     />
-    <AccountDataControls exportAccountData={() => downloadAccountExport("/api/account/export")} />
     </>
   );
 }

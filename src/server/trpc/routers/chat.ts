@@ -16,6 +16,7 @@ import {
   getSectionAccess,
   getMessageNotification,
   getChatRoom,
+  getGroupSettingsSummary,
   heartbeatChatRoom,
   leaveChatRoom,
   leaveGroup,
@@ -27,6 +28,7 @@ import {
   setGroupVisibility,
   setGroupName,
   setSectionAccess,
+  toggleChatSectionFavorite,
   listChats,
   previewChatInvite,
   removeGroupMember,
@@ -42,9 +44,11 @@ import {
   recordServerProductEvent,
 } from "@/server/services/client-telemetry.service";
 import { chatMessageProcedures } from "./chat-messages";
+import { chatCoreReworkProcedures } from "./chat-core-rework";
 
 export const chatRouter = createTRPCRouter({
   ...chatMessageProcedures,
+  ...chatCoreReworkProcedures,
   ...chatModerationProcedures,
   ...chatCommunityProcedures,
   ...chatGroupRoleProcedures,
@@ -59,11 +63,11 @@ export const chatRouter = createTRPCRouter({
     }),
 
   createInvite: protectedProcedure
-    .input(z.object({ chatId: z.string().uuid() }))
+    .input(z.object({ chatId: z.string().uuid(), lifetime: z.enum(["24h", "7d", "permanent"]).optional() }))
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.createChatInvite, ctx.user.id);
       try {
-        return await createChatInvite(input.chatId, ctx.user.id);
+        return await createChatInvite(input.chatId, ctx.user.id, input.lifetime);
       } catch (error) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -248,7 +252,13 @@ export const chatRouter = createTRPCRouter({
       await assertRateLimit(rateLimits.createGroupChat, ctx.user.id);
       try {
         const result = await createGroupChat(ctx.user.id, input.name, input.memberIds);
-        await recordServerProductEvent({ name: "group_created", actorId: ctx.user.id, route: "/trpc/chat.createGroup", properties: { count: input.memberIds.length + 1 } });
+        await recordServerProductEvent({
+          name: "group_created",
+          actorId: ctx.user.id,
+          route: "/trpc/chat.createGroup",
+          subject: { kind: "group", id: result },
+          properties: { count: input.memberIds.length + 1 },
+        });
         return result;
       } catch (error) {
         throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось создать группу" });
@@ -394,6 +404,34 @@ export const chatRouter = createTRPCRouter({
             error instanceof Error
               ? error.message
               : "Не удалось создать раздел",
+        });
+      }
+    }),
+  groupSettingsSummary: protectedProcedure
+    .input(z.object({ chatId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        return await getGroupSettingsSummary(input.chatId, ctx.user.id);
+      } catch (error) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Не удалось загрузить настройки группы" });
+      }
+    }),
+  toggleSectionFavorite: protectedProcedure
+    .input(z.object({ sectionId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertRateLimit(rateLimits.updateChatPreference, ctx.user.id);
+      try {
+        return await toggleChatSectionFavorite(ctx.user.id, input.sectionId);
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : "";
+        const message = detail.includes("CHAT_SECTION_FAVORITE_LIMIT")
+          ? "Можно закрепить не больше двух разделов"
+          : detail.includes("FAVORITE_ACCESS_DENIED")
+            ? "Раздел недоступен"
+            : "Не удалось обновить избранные разделы";
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message,
         });
       }
     }),

@@ -40,7 +40,7 @@ export function AdminModerationPage() {
       {message ? <p className="rounded-xl border border-[var(--app-border)] px-4 py-3 text-sm" role="status">{message}</p> : null}
       {reports.error ? <p className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{reports.error.message}. Проверьте миграцию 35.</p> : null}
       {reports.isLoading ? <p className="text-sm text-[var(--app-muted)]">Загружаем жалобы…</p> : null}
-      {reports.data?.length === 0 ? <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-8 text-center"><ShieldX className="mx-auto h-7 w-7 text-emerald-400" /><p className="mt-3 font-medium">Очередь пуста</p></div> : null}
+      {reports.data?.length === 0 ? <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-8 text-center"><ShieldX className="mx-auto h-7 w-7 text-[var(--material-secondary-text)]" /><p className="mt-3 font-medium">Очередь пуста</p></div> : null}
 
       <div className="space-y-3">
         {reports.data?.map((report) => (

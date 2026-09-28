@@ -8,6 +8,7 @@ import { DesktopAutoUpdater } from "./updates/DesktopAutoUpdater";
 import { registerExternalLinkOpener } from "@/lib/platform/external-links";
 import { BrandedLoadingView } from "@/components/brand/BrandedLoadingView";
 import { SessionBootstrapRecoveryView } from "@/components/auth/SessionBootstrapRecoveryView";
+import { useDesktopDeepLink } from "./navigation/useDesktopDeepLink";
 
 const DesktopAuthenticatedApp = lazy(() =>
   import("./DesktopAuthenticatedApp").then((module) => ({
@@ -16,19 +17,35 @@ const DesktopAuthenticatedApp = lazy(() =>
 );
 
 export function DesktopConfiguredApp({ config }: { config: DesktopConfig }) {
+  const { clearPendingPath, pendingPath, preservePendingPath } = useDesktopDeepLink();
   useEffect(() => registerExternalLinkOpener((url) => invoke("open_external_url", { url })), []);
   return (
     <>
       <DesktopAutoUpdater />
       <AuthProvider config={config}>
-        <DesktopSessionRouter config={config} />
+        <DesktopSessionRouter
+          config={config}
+          pendingPath={pendingPath}
+          onPendingPathConsumed={clearPendingPath}
+          onPendingPathPreserved={preservePendingPath}
+        />
       </AuthProvider>
     </>
   );
 }
 
-function DesktopSessionRouter({ config }: { config: DesktopConfig }) {
-  const { bootstrapError, loading, retry, session } = useDesktopAuth();
+function DesktopSessionRouter({
+  config,
+  pendingPath,
+  onPendingPathConsumed,
+  onPendingPathPreserved,
+}: {
+  config: DesktopConfig;
+  pendingPath: string | null;
+  onPendingPathConsumed: () => void;
+  onPendingPathPreserved: (path: string) => void;
+}) {
+  const { bootstrapError, deviceTrustPending, loading, retry, session } = useDesktopAuth();
   if (loading) return <BrandedLoadingView fullscreen />;
   if (bootstrapError) {
     return (
@@ -40,10 +57,16 @@ function DesktopSessionRouter({ config }: { config: DesktopConfig }) {
       />
     );
   }
-  if (!session) return <DesktopLogin config={config} />;
+  if (!session || deviceTrustPending) return <DesktopLogin config={config} continuationPath={pendingPath} />;
   return (
     <Suspense fallback={<BrandedLoadingView fullscreen />}>
-      <DesktopAuthenticatedApp config={config} session={session} />
+      <DesktopAuthenticatedApp
+        config={config}
+        session={session}
+        initialPathname={pendingPath}
+        onInitialPathConsumed={onPendingPathConsumed}
+        onPendingPathPreserved={onPendingPathPreserved}
+      />
     </Suspense>
   );
 }

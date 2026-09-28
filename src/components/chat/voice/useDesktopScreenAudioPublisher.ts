@@ -9,13 +9,16 @@ import {
   type DesktopCaptureSource,
   type DesktopProcessAudioSource,
 } from "@/lib/livekit/desktop-process-audio";
-import { trpc } from "@/lib/trpc/client";
 import {
   getScreenShareCaptureOptions,
   getBrowserDisplayMediaOptions,
   getScreenSharePublishOptions,
   type ScreenShareQuality,
 } from "./voice-room-config";
+import {
+  useScreenAudioToken,
+  type ScreenAudioTokenTarget,
+} from "./useScreenAudioToken";
 
 type NativeCaptureRequest = {
   processId: number | null;
@@ -33,10 +36,11 @@ type ActiveCapture =
   | { kind: "browser"; stream: MediaStream };
 
 export function useDesktopScreenAudioPublisher(
-  chatId: string,
+  target: ScreenAudioTokenTarget,
   onNativeSessionChange: (screenSessionId: string | null) => void,
 ) {
-  const token = trpc.chat.roomScreenAudioToken.useMutation();
+  const screenAudioToken = useScreenAudioToken(target);
+  const createScreenAudioToken = screenAudioToken.createToken;
   const nativePublisherSupportedRef = useRef(false);
   const automaticProcessIdRef = useRef<number | null>(null);
   const sourcesRef = useRef<DesktopProcessAudioSource[]>([]);
@@ -243,7 +247,7 @@ export function useDesktopScreenAudioPublisher(
     }
 
     const screenSessionId = crypto.randomUUID();
-    const credentials = await token.mutateAsync({ chatId, screenSessionId });
+    const credentials = await createScreenAudioToken(screenSessionId);
 
     if (operationRef.current !== operation) {
       return { active: false, warning: null };
@@ -303,11 +307,6 @@ export function useDesktopScreenAudioPublisher(
       return { active: false, warning: null };
     }
 
-    console.info("Native screen-share worker ready", {
-      expiresAt: credentials.expiresAt,
-      screenSessionId,
-    });
-
     // IMPORTANT:
     // Do not restart the media pipeline at credentials.refreshAfter.
     // LiveKit handles token refresh for an established Room. If refreshAfter
@@ -315,7 +314,11 @@ export function useDesktopScreenAudioPublisher(
     // backend mutation that does not stop/restart this worker.
 
     return { active: true, warning: null };
-  }, [chatId, onNativeSessionChange, stopCurrent, token]);
+  }, [
+    createScreenAudioToken,
+    onNativeSessionChange,
+    stopCurrent,
+  ]);
 
   const toggle = useCallback(async (
     room: Room,
@@ -332,9 +335,7 @@ export function useDesktopScreenAudioPublisher(
         // The supervisor remains the teardown owner, while the presentation
         // state can turn off immediately. A subsequent START still waits for
         // stopCurrent() through its single-flight promise.
-        void stopping.catch((error: unknown) => {
-          console.error("Не удалось завершить нативную демонстрацию", error);
-        });
+        void stopping.catch(() => undefined);
         return { enabled: false, hasAudio: false, warning: null };
       }
 
@@ -472,9 +473,7 @@ export function useDesktopScreenAudioPublisher(
 
   useEffect(() => () => {
     pickerResolverRef.current?.(null);
-    void stop().catch((error) => {
-      console.warn("Screen-share cleanup failed", error);
-    });
+    void stop().catch(() => undefined);
   }, [stop]);
 
   return {
@@ -483,7 +482,7 @@ export function useDesktopScreenAudioPublisher(
     capturePicker,
     selectCaptureSource: (source: DesktopCaptureSource) => resolveCapturePicker(source),
     cancelCaptureSource: () => resolveCapturePicker(null),
-    pending: token.isPending,
-    error: token.error?.message ?? null,
+    pending: screenAudioToken.pending,
+    error: screenAudioToken.error,
   };
 }

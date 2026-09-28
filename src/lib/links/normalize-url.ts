@@ -38,5 +38,5 @@ export function isTrustedVoopleUrl(source: string) {
   if (!normalized) return false;
   const url = new URL(normalized);
   return url.protocol === "https:"
-    && (url.hostname === "voople.ru" || url.hostname.endsWith(".voople.ru"));
+    && (url.hostname === "voople.app" || url.hostname.endsWith(".voople.app"));
 }

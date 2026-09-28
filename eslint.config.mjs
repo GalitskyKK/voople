@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    ".worktrees/**",
     "desktop/dist/**",
     "desktop/src-tauri/target/**",
     "public/audio/**",

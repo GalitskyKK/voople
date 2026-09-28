@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useVoiceSidebarRoot } from "./useVoiceSidebarRoot";
+import { useRef } from "react";
 import {
   ChevronDown,
   Mic,
@@ -20,17 +22,12 @@ import { reportProductEvent } from "@/lib/telemetry/client";
 import { VoiceCompactSessionDock } from "./VoiceCompactSessionDock";
 import { VoiceDockResizeHandles } from "./VoiceDockResizeHandles";
 import { VoiceMinimalSessionDock } from "./VoiceMinimalSessionDock";
-import type { VoiceDockMode, VoiceSessionDockProps } from "./voice-session-dock-types";
+import type { VoiceSessionDockProps } from "./voice-session-dock-types";
 import { useVoiceDockGeometry } from "./useVoiceDockGeometry";
-const DOCK_MODE_KEY = "voople:voice-dock-mode:v1";
-
-function initialDockMode(): VoiceDockMode {
-  if (typeof window === "undefined") return "mini";
-  const stored = window.localStorage.getItem(DOCK_MODE_KEY);
-  return stored === "compact" || stored === "minimal" ? stored : "mini";
-}
 
 export function VoiceSessionDock({
+  mode,
+  onModeChange,
   chatName,
   participantCount,
   activeSpeakerName,
@@ -48,21 +45,18 @@ export function VoiceSessionDock({
   onOpen,
   onToggleMic,
   onToggleOutput,
+  onToggleCamera, onToggleScreenShare, cameraPending, screenSharePending, errorMessage,
   onLeave,
 }: VoiceSessionDockProps) {
+  const sidebarRoot = useVoiceSidebarRoot();
   const dockRef = useRef<HTMLDivElement | null>(null);
   const geometry = useVoiceDockGeometry(dockRef);
-  const [mode, setMode] = useState<VoiceDockMode>(initialDockMode);
   const weakConnection =
     connectionQuality === ConnectionQuality.Poor ||
     connectionQuality === ConnectionQuality.Lost;
 
-  useEffect(() => {
-    window.localStorage.setItem(DOCK_MODE_KEY, mode);
-  }, [mode]);
-
-  const changeMode = (next: VoiceDockMode) => {
-    setMode(next);
+  const changeMode = (next: typeof mode) => {
+    onModeChange(next);
     reportProductEvent(next === "minimal" ? "room_minimized" : next === "compact" ? "room_compacted" : "room_expanded", { state: next });
   };
   const openFullRoomFromCompact = () => {
@@ -80,20 +74,20 @@ export function VoiceSessionDock({
   }
 
   if (mode === "compact") {
-    return (
-      <VoiceCompactSessionDock
-        {...{ chatName, participantCount, activeSpeakerName, durationLabel, mediaStatus, connectionLabel, micMuted, cameraEnabled, screenSharing, mediaActionPending, leavePending, onToggleMic, onLeave }}
-        onOpen={openFullRoomFromCompact}
-        onModeChange={changeMode}
-      />
-    );
+    const compact = <VoiceCompactSessionDock
+      {...{ chatName, participantCount, activeSpeakerName, durationLabel, mediaStatus, connectionLabel,
+        micMuted, outputMuted, cameraEnabled, screenSharing, mediaActionPending, leavePending,
+        onToggleMic, onToggleOutput, onToggleCamera, onToggleScreenShare, cameraPending, screenSharePending,
+        onLeave, errorMessage }}
+      onOpen={openFullRoomFromCompact} inSidebar={Boolean(sidebarRoot)} />;
+    return sidebarRoot ? createPortal(compact, sidebarRoot) : compact;
   }
 
   return (
     <div
       ref={dockRef}
       className={cn(
-        "voople-voice-dock fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] left-1/2 z-[70] flex -translate-x-1/2 touch-none select-none flex-col gap-2 overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_94%,transparent)] p-2 shadow-[var(--app-shadow-nav)] backdrop-blur-xl lg:bottom-4",
+        "voople-signal-glass voople-voice-dock fixed bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] left-1/2 z-[70] flex touch-none select-none flex-col gap-2 overflow-hidden rounded-[var(--app-radius-sm)] p-2 lg:bottom-4",
         geometry.gestureActive ? "cursor-grabbing" : "cursor-grab",
       )}
       style={geometry.style}
@@ -137,14 +131,14 @@ export function VoiceSessionDock({
         <button
           type="button"
           onClick={onOpen}
-          className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-2 py-1.5 text-left transition hover:bg-[var(--app-surface-soft)]"
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-[var(--app-radius-sm)] px-2 py-1.5 text-left transition hover:bg-[var(--app-surface-soft)]"
         >
           <span
             className={cn(
-              "grid h-9 w-9 shrink-0 place-items-center rounded-full",
+              "grid h-9 w-9 shrink-0 place-items-center rounded-[var(--app-radius-sm)]",
               mediaStatus === "connected"
-                ? "bg-emerald-500/12 text-emerald-500"
-                : "bg-amber-500/12 text-amber-500",
+                ? "bg-[var(--material-ice-soft)] text-[var(--material-ice)]"
+                : "bg-[var(--material-control-fill)] text-[var(--material-secondary-text)]",
             )}
           >
             {weakConnection ? <WifiOff className="h-4 w-4" /> : <Wifi className="h-4 w-4" />}
@@ -164,10 +158,10 @@ export function VoiceSessionDock({
           disabled={mediaActionPending || mediaStatus !== "connected"}
           onClick={onToggleMic}
           className={cn(
-            "grid h-10 w-10 shrink-0 place-items-center rounded-xl border transition disabled:opacity-50",
+            "grid h-10 w-10 shrink-0 place-items-center rounded-[var(--app-radius-sm)] border transition disabled:opacity-50",
             micMuted
               ? "border-red-500/25 bg-red-500/10 text-red-500"
-              : "border-[var(--theme-accent)] bg-[var(--theme-accent)] text-white",
+              : "border-[var(--material-border-hover)] bg-[var(--material-control-fill)] text-[var(--material-ice)]",
           )}
         >
           {micMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
@@ -176,7 +170,7 @@ export function VoiceSessionDock({
           label={outputMuted ? "Включить звук собеседников" : "Выключить звук собеседников"}
           onClick={onToggleOutput}
           className={cn(
-            "grid h-10 w-10 shrink-0 place-items-center rounded-xl border transition",
+            "grid h-10 w-10 shrink-0 place-items-center rounded-[var(--app-radius-sm)] border transition",
             outputMuted
               ? "border-red-500/25 bg-red-500/10 text-red-500"
               : "border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-muted)]",
@@ -187,7 +181,7 @@ export function VoiceSessionDock({
         <IconButton
           label="Участники и настройки"
           onClick={onOpen}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-muted)] transition hover:text-[var(--foreground)]"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-muted)] transition hover:text-[var(--foreground)]"
         >
           <Settings2 className="h-4 w-4" />
         </IconButton>
@@ -195,7 +189,7 @@ export function VoiceSessionDock({
           label="Выйти из разговора"
           disabled={leavePending}
           onClick={onLeave}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-red-500 text-white transition hover:bg-red-400 disabled:opacity-50"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-[var(--app-radius-sm)] bg-red-500 text-white transition hover:bg-red-400 disabled:opacity-50"
         >
           <PhoneOff className="h-4 w-4" />
         </IconButton>

@@ -1,0 +1,141 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+test("core Room invitations are session-bound, private and idempotent", async () => {
+  const [migration, data, service, router] = await Promise.all([
+    readFile(new URL("../drizzle/58-room-invitations.sql", import.meta.url), "utf8"),
+    readFile(new URL("../src/server/data/core-room-invitations-rest.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/server/services/core-room-invitations.service.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/server/trpc/routers/chat-core-rework.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(migration, /UNIQUE \(chat_id, room_session_id, invitee_id\)/);
+  assert.match(migration, /REVOKE ALL ON TABLE public\.chat_room_invites FROM anon, authenticated/);
+  assert.match(data, /eq\("session_id", sessionId\)[\s\S]+eq\("user_id", actorId\)[\s\S]+is\("left_at", null\)/);
+  assert.match(data, /onConflict: "chat_id,room_session_id,invitee_id,intent"/);
+  assert.match(data, /INVITE_TTL_MS = 15 \* 60_000/);
+  assert.match(data, /Сначала войдите в приглашённую комнату/);
+  assert.match(data, /eq\("status", "pending"\)\s+\.select\("status"\)\s+\.maybeSingle\(\)/);
+  assert.match(data, /latestStatus === input\.response/);
+  assert.match(data, /listCoreRoomInvitesForSenderRest/);
+  assert.match(data, /cancelCoreRoomInviteRest[\s\S]+eq\("inviter_id", input\.inviterId\)[\s\S]+eq\("status", "pending"\)/);
+  assert.match(data, /Preserve the notification while emitting its realtime UPDATE/);
+  assert.match(service, /requireRootGroupMember\(context\.groupId, input\.inviteeId\)/);
+  assert.match(service, /cancelCoreRoomInvite[\s\S]+requireRootGroupMember\(groupId, input\.inviterId\)/);
+  assert.match(service, /listCoreRoomInvitePreviews[\s\S]+requireRootGroupMember\(groupId, userId\)/);
+  assert.match(service, /filterUserIdsByPrivacyFieldRest[\s\S]+"inviteScope"/);
+  assert.match(service, /sendCoreRoomInvite[\s\S]+assertUsersCanInteractRest/);
+  assert.match(data, /respondToCoreRoomInviteRest[\s\S]+assertUsersCanInteractRest/);
+  assert.match(data, /filterUnblockedUserIdsRest\(userId, inviterIds\)/);
+  assert.match(router, /rateLimits\.inviteToChatRoom/);
+  assert.match(router, /name: "room_invite_sent"/);
+  assert.doesNotMatch(router, /properties: \{[^}]*inviteeId/);
+});
+
+test("Room invite sender and notification action share the core join lifecycle", async () => {
+  const [sheet, panel, notifications, notificationUi, action, notificationService, preview, route, desktop] = await Promise.all([
+    readFile(new URL("../src/components/chat/voice/VoiceRoomMainSurface.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/CoreRoomInvitePanel.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/notifications/NotificationsView.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/notifications/notification-ui.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/notifications/RoomInviteNotificationActions.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/server/services/notifications.service.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/CoreRoomInvitePreviewView.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/(main)/room-invites/[inviteId]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/shell/DesktopShell.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(sheet, /secondaryPanel === "invite"/);
+  assert.match(sheet, /CoreRoomInvitePanel/);
+  assert.match(panel, /coreRoomInviteCandidates\.useQuery/);
+  assert.match(panel, /coreSendRoomInvite\.useMutation/);
+  assert.match(panel, /coreCancelRoomInvite\.useMutation/);
+  const candidateRow = await readFile(new URL("../src/components/chat/voice/CoreRoomInviteCandidateRow.tsx", import.meta.url), "utf8");
+  assert.match(candidateRow, /STATUS_LABELS\[status\]/);
+  assert.match(panel, /Приглашение действует 15 минут/);
+  assert.match(notifications, /RoomInviteNotificationActions/);
+  assert.match(notificationUi, /`\/room-invites\/\$\{notification\.roomInvite\.id\}`/);
+  assert.match(action, /useGroupNowRoomJoin/);
+  assert.match(action, /voice\.openCoreRoom/);
+  assert.match(action, /response: "accepted"/);
+  assert.match(action, /response: "declined"/);
+  assert.match(notificationService, /listCoreRoomInvitePreviews/);
+  const hook = await readFile(new URL("../src/hooks/useCoreRoomInvitePreview.ts", import.meta.url), "utf8");
+  const container = await readFile(new URL("../src/components/chat/voice/CoreRoomInvitePreview.tsx", import.meta.url), "utf8");
+  assert.match(hook, /coreRoomInvitePreview\.useQuery/);
+  assert.match(hook, /refetchOnReconnect: true/);
+  assert.match(hook, /refetchOnWindowFocus: true/);
+  assert.match(container, /RoomInviteNotificationActions/);
+  assert.match(preview, /Приглашение недоступно/);
+  assert.match(route, /CoreRoomInvitePreview/);
+  assert.match(route, /robots: \{ index: false, follow: false \}/);
+  assert.match(desktop, /roomInviteIdFromPath/);
+  assert.match(desktop, /<DesktopRoomInvitePreview\s+inviteId=\{roomInviteId\}/);
+  assert.match(action, /key=\{invite \? `\$\{invite\.id\}:\$\{invite\.expiresAt\}`/);
+  assert.match(action, /invite\?\.status === "pending"[\s\S]*respond\.data\?\.status \?\? invite\.status/);
+  assert.doesNotMatch(action, /setLocalStatus|useEffect/);
+});
+
+test("desktop Room links survive authentication without bypassing the invite preview", async () => {
+  const [cargo, config, native, hook, router, authenticated, shell, login, continuation, styles] = await Promise.all([
+    readFile(new URL("../desktop/src-tauri/Cargo.toml", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src-tauri/tauri.conf.json", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src-tauri/src/lib.rs", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/navigation/useDesktopDeepLink.ts", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/DesktopConfiguredApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/DesktopAuthenticatedApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/shell/DesktopShell.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/auth/DesktopLogin.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/auth/DesktopAuthContinuationNotice.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/styles.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(cargo, /tauri-plugin-single-instance = \{[^\n]+features = \["deep-link"\]/);
+  assert.match(cargo, /tauri-plugin-deep-link = "2"/);
+  assert.deepEqual(JSON.parse(config).plugins["deep-link"].desktop.schemes, ["voople"]);
+  assert.ok(
+    native.indexOf("tauri_plugin_single_instance::init") <
+      native.indexOf("tauri_plugin_deep_link::init"),
+  );
+  assert.match(native, /internal_path_from_deep_link[\s\S]+url\.query\(\)\.is_some\(\)[\s\S]+is_room_invite_id/);
+  assert.match(native, /fn take_pending_deep_link[\s\S]+\.take\(\)/);
+  assert.match(native, /keep_pending_deep_link[\s\S]+emit\("desktop-deep-link"/);
+  assert.match(hook, /roomInviteIdFromPath/);
+  assert.match(hook, /invoke<unknown>\("take_pending_deep_link"\)/);
+  assert.match(hook, /listen\(DEEP_LINK_EVENT[\s\S]+consumeNativePath/);
+  assert.match(router, /pendingPath=\{pendingPath\}/);
+  assert.match(router, /continuationPath=\{pendingPath\}/);
+  assert.match(authenticated, /initialPathname=\{initialPathname\}/);
+  assert.match(shell, /useState\(initialPathname === "\/explore" \? "\/search" : initialPathname \?\? "\/messages"\)/);
+  assert.match(shell, /navigate\(initialPathname\)[\s\S]+onInitialPathConsumed\(\)/);
+  assert.match(login, /DesktopAuthContinuationNotice path=\{continuationPath\}/);
+  assert.match(continuation, /data-voople-continuation-path=\{path\}/);
+  assert.match(continuation, /После входа откроем комнату/);
+  assert.match(styles, /\.status-page, \.auth-page \{[\s\S]+height: 100%;[\s\S]+overflow-y: auto;/);
+});
+
+test("unavailable Room invitations can switch accounts without losing the protected path", async () => {
+  const [container, view, web, route, desktopHook, desktopAdapter, desktopRouter] = await Promise.all([
+    readFile(new URL("../src/components/chat/voice/CoreRoomInvitePreview.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/CoreRoomInvitePreviewView.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/chat/voice/WebCoreRoomInvitePreview.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/app/(main)/room-invites/[inviteId]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/navigation/useDesktopDeepLink.ts", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/adapters/DesktopRoomInviteAdapter.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../desktop/src/DesktopConfiguredApp.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(container, /state\.kind === "unavailable" && onSwitchAccount/);
+  assert.match(container, /switchAccountError/);
+  assert.match(view, /Войти в другой аккаунт/);
+  assert.match(view, /Не удалось выйти из аккаунта/);
+  assert.match(web, /auth\.signOut\(\)/);
+  assert.match(web, /router\.replace\(authEntryHref\("\/login", invitePath\)\)/);
+  assert.match(route, /WebCoreRoomInvitePreview/);
+  assert.match(desktopHook, /preservePendingPath[\s\S]+isSupportedDeepLinkPath\(path\)/);
+  assert.ok(
+    desktopAdapter.indexOf("auth.signOut()") < desktopAdapter.indexOf("onPendingPathPreserved(invitePath)"),
+  );
+  assert.match(desktopRouter, /onPendingPathPreserved=\{preservePendingPath\}/);
+});

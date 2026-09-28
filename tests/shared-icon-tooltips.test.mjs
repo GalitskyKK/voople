@@ -74,6 +74,7 @@ test("sidebar account tooltip only responds to its physical trigger", () => {
 
 test("room and primary messaging icon controls share one tooltip vocabulary", () => {
   const roomHeader = read("src/components/chat/voice/VoiceRoomHeader.tsx");
+  const roomTitle = read("src/components/chat/voice/VoiceRoomTitle.tsx");
   const roomMedia = read("src/components/chat/voice/VoiceMediaControls.tsx");
   const roomFooter = read("src/components/chat/voice/VoiceRoomFooter.tsx");
   const roomDock = read("src/components/chat/voice/VoiceSessionDock.tsx");
@@ -84,14 +85,16 @@ test("room and primary messaging icon controls share one tooltip vocabulary", ()
   const roomTrigger = read("src/components/chat/voice/VoiceRoomTrigger.tsx");
   const sectionCreator = read("src/components/chat/SubchatCreatorView.tsx");
 
-  for (const source of [roomHeader, roomMedia, roomFooter, roomDock, composer, recorder, groupHeader, roomButton, roomTrigger, sectionCreator]) {
+  for (const source of [roomHeader, roomTitle, roomMedia, roomFooter, roomDock, composer, recorder, groupHeader, roomButton, roomTrigger]) {
     assert.match(source, /components\/ui\/(?:IconButton|Tooltip)/);
   }
-  for (const source of [roomHeader, roomFooter, roomDock, recorder, groupHeader, roomButton, roomTrigger, sectionCreator]) {
-    assert.doesNotMatch(source, /title=/);
+  for (const source of [roomHeader, roomTitle, roomFooter, roomDock, recorder, groupHeader, roomButton, roomTrigger, sectionCreator]) {
+    assert.doesNotMatch(source, /<[a-z][^>]*\btitle=/);
   }
   assert.match(roomButton, /display\s*=\s*"icon"/);
-  assert.match(sectionCreator, /label="Новый раздел"/);
+  assert.match(sectionCreator, /aria-label="Новый раздел"/);
+  assert.match(sectionCreator, /Создать раздел/);
+  assert.doesNotMatch(sectionCreator, /<Sheet/);
   assert.match(roomMedia, /grid h-11 w-11 place-items-center rounded-full/);
   assert.doesNotMatch(roomMedia, /compact\??:/);
   assert.doesNotMatch(roomMedia, /<span/);

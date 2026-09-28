@@ -3,7 +3,7 @@
 import { ScreenShareSourcePicker } from "./ScreenShareSourcePicker";
 import type { ChatRoomController } from "./useChatRoomControl";
 import { VoiceMiniStage } from "./VoiceMiniStage";
-import { VoiceRoomSheet } from "./VoiceRoomSheet";
+import { VoiceRoomMainSurface } from "./VoiceRoomMainSurface";
 import { VoiceRoomTrigger } from "./VoiceRoomTrigger";
 import { VoiceSessionDock } from "./VoiceSessionDock";
 import { VoiceSettingsPanel } from "./VoiceSettingsPanel";
@@ -35,7 +35,7 @@ export function ChatRoomControlView({ controller }: { controller: ChatRoomContro
         aria-hidden="true"
       />
 
-      {dock ? (
+      {dock && !sheet.overlay.open ? (
         <VoiceSessionDock
           {...dock}
           mediaPreview={
@@ -44,7 +44,7 @@ export function ChatRoomControlView({ controller }: { controller: ChatRoomContro
         />
       ) : null}
 
-      <VoiceRoomSheet
+      <VoiceRoomMainSurface
         {...sheet}
         settingsPanel={<VoiceSettingsPanel {...settings} />}
       />

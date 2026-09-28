@@ -236,7 +236,7 @@ export function useVoiceDockGeometry(dockRef: RefObject<HTMLDivElement | null>) 
   const style: CSSProperties = {
     width: `min(${geometry.width}px, calc(100vw - 1rem))`,
     height: geometry.height ? `min(${geometry.height}px, calc(100dvh - 1rem))` : undefined,
-    translate: `${geometry.offsetX}px ${geometry.offsetY}px`,
+    transform: `translate(calc(-50% + ${geometry.offsetX}px), ${geometry.offsetY}px)`,
   };
 
   return {

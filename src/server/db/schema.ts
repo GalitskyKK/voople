@@ -13,7 +13,7 @@ export const itemTypeEnum = pgEnum("item_type", [
 export const chatTypeEnum = pgEnum("chat_type", ["direct", "group"]);
 export const notifTypeEnum = pgEnum("notif_type", [
   "like", "card_reaction", "follow", "reply", "repost", "match",
-  "mystery_drop", "profile_canvas_draw", "question", "room_invite",
+  "mystery_drop", "profile_canvas_draw", "question", "room_invite", "friend_request", "friend_accept",
 ]);
 export const acquiredViaEnum = pgEnum("acquired_via", [
   "purchase", "earned", "gifted", "seasonal_reward",
@@ -463,6 +463,40 @@ export const messages = pgTable(
     chatIdx: index("messages_chat_idx").on(t.chatId),
     createdAtIdx: index("messages_time_idx").on(t.createdAt),
     chatTimeIdx: index("messages_chat_time_idx").on(t.chatId, t.createdAt),
+  }),
+);
+
+export const savedMessages = pgTable(
+  "saved_messages",
+  {
+    id: uuid("id").primaryKey(),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    text: varchar("text", { length: 1000 }),
+    content: jsonb("content"),
+    mediaUrl: varchar("media_url", { length: 500 }),
+    mediaTitle: varchar("media_title", { length: 100 }),
+    mediaArtist: varchar("media_artist", { length: 100 }),
+    sharedPostId: uuid("shared_post_id").references(() => posts.id, {
+      onDelete: "set null",
+    }),
+    sharedTrackId: uuid("shared_track_id").references(() => playlistTracks.id, {
+      onDelete: "set null",
+    }),
+    replyToMessageId: uuid("reply_to_message_id").references(
+      (): AnyPgColumn => savedMessages.id,
+      { onDelete: "set null" },
+    ),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    editedAt: timestamp("edited_at", { withTimezone: true }),
+  },
+  (table) => ({
+    ownerTimeIdx: index("saved_messages_owner_time_idx").on(
+      table.ownerId,
+      table.createdAt,
+      table.id,
+    ),
   }),
 );
 

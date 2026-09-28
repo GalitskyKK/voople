@@ -3,27 +3,31 @@
 import { useCallback, useEffect, useImperativeHandle, useRef, useState, type ForwardedRef } from "react";
 import { ConnectionQuality, Room } from "livekit-client";
 
-import { reportProductEvent } from "@/lib/telemetry/client";
 import { resolveVoiceDockActiveSpeaker } from "@/lib/livekit/voice-dock-state";
 
 import { getDirectCallPhase } from "./call-phase";
+import { buildVoiceRoomRenameModel } from "./buildVoiceRoomRenameModel";
+import { buildVoiceRoomSwitcherModel } from "./buildVoiceRoomSwitcherModel";
 import { resolveVoiceRoomSurfacePhase } from "./voice-room-surface";
 import type { ChatRoomControlHandle, ChatRoomControlProps } from "./chat-room-control-types";
 import { getConnectionLabel, type MediaStatus } from "./voice-room-config";
+import { buildVoiceRoomMessagesModel } from "./voice-conversation-context";
 import { playVoiceRoomSound } from "./voice-room-sounds";
 import { useCallDuration } from "./useCallDuration";
+import { useCoreVoiceRoomSwitch } from "./useCoreVoiceRoomSwitch";
 import { useDesktopScreenAudioPublisher } from "./useDesktopScreenAudioPublisher";
 import { useGroupSoundboard } from "./useGroupSoundboard";
 import { useScreenShareSubscription } from "./useScreenShareSubscription";
 import { useTerminalVoiceRecovery } from "./useTerminalVoiceRecovery";
 import { useVoiceDeviceSettings } from "./useVoiceDeviceSettings";
-import { useVoiceHeartbeat } from "./useVoiceHeartbeat";
+import { useVoiceDockPresentation } from "./useVoiceDockPresentation";
 import { useVoiceMediaActions } from "./useVoiceMediaActions";
 import { useVoiceMediaConnection } from "./useVoiceMediaConnection";
 import { useVoiceOutput } from "./useVoiceOutput";
 import { useVoicePreferences } from "./useVoicePreferences";
 import { useVoiceRoomEventConfigurator } from "./useVoiceRoomEventConfigurator";
-import { useVoiceRoomServerSession } from "./useVoiceRoomServerSession";
+import { useVoiceRoomRuntime } from "./useVoiceRoomRuntime";
+import { useVoiceRoomPresentationActions } from "./useVoiceRoomPresentationActions";
 import { useVoiceRoomSurfaceSession } from "./useVoiceRoomSurfaceSession";
 import { useVoiceRoomTermination } from "./useVoiceRoomTermination";
 import { useVoiceSessionOperation } from "./useVoiceSessionOperation";
@@ -38,22 +42,28 @@ export function useChatRoomControl(
     renderTrigger = true,
     initialOpen = false,
     onStateChange,
+    onLeaveConfirmed,
+    coreSession,
+    initialCoreCredentials,
+    onCoreRoomSwitch,
   }: ChatRoomControlProps,
   ref: ForwardedRef<ChatRoomControlHandle>,
 ) {
-  const [open, setOpen] = useState(initialOpen);
-  const [micMuted, setMicMuted] = useState(false);
+  const dockPresentation = useVoiceDockPresentation(initialOpen);
+  const { fullOpen: open, dockVisible, dockMode } = dockPresentation;
+  const { joined, exited } = dockPresentation;
+  const [micMuted, setMicMuted] = useState(Boolean(coreSession));
   const [mediaStatus, setMediaStatus] = useState<MediaStatus>("idle");
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [audioBlocked, setAudioBlocked] = useState(false);
   const [connectionQuality, setConnectionQuality] = useState(ConnectionQuality.Unknown);
   const [activeSpeakerIds, setActiveSpeakerIds] = useState<ReadonlySet<string>>(() => new Set());
   const [remoteMicMutedById, setRemoteMicMutedById] = useState<Record<string, boolean>>({});
+  const roomSwitch = useCoreVoiceRoomSwitch(coreSession, onCoreRoomSwitch);
   const liveRoomRef = useRef<Room | null>(null);
   const screenShareQualityRef = useRef<"standard" | "plus">("standard");
-  const desiredMicMutedRef = useRef(false);
+  const desiredMicMutedRef = useRef(Boolean(coreSession));
   const { preferences, preferencesRef, persistPreferences } = useVoicePreferences();
-
   const devices = useVoiceDeviceSettings({
     open,
     roomRef: liveRoomRef,
@@ -74,22 +84,34 @@ export function useChatRoomControl(
     setWatching: video.setWatchingScreenShare,
   });
   const desktopAudio = useDesktopScreenAudioPublisher(
-    chatId,
+    coreSession
+      ? { kind: "core", sessionId: coreSession.join.sessionId }
+      : { kind: "legacy", chatId },
     screenSubscription.setExpectedLocalSessionId,
   );
   const soundboard = useGroupSoundboard(chatId, chatType === "group", liveRoomRef);
-  const server = useVoiceRoomServerSession(chatId, open);
+  const runtime = useVoiceRoomRuntime({
+    chatId,
+    open,
+    coreSession,
+    initialCoreCredentials,
+    roomRef: liveRoomRef,
+    cameraEnabled: video.cameraEnabled,
+    screenSharing: video.screenSharing,
+  });
+  const { server, value, active, inside, participants, participantCount, heartbeat } = runtime;
+  useEffect(() => {
+    if (inside) joined();
+    else if (!server.room.isLoading && !server.room.isFetching && !server.room.error) exited();
+  }, [inside, server.room.isLoading, server.room.isFetching, server.room.error, joined, exited]);
+  const currentCoreRoom = coreSession
+    ? server.directory?.rooms.find((room) => room.id === coreSession.room.id) ?? coreSession.room
+    : null;
   const sessionOperation = useVoiceSessionOperation();
-  const value = server.room.data;
-  const active = value?.status === "active" || value?.status === "ringing";
-  const inside = Boolean(value?.isInside);
-  const participants = value?.participants ?? [];
-  const participantCount = participants.length;
   const durationLabel = useCallDuration(
     value?.startedAt ?? null,
     inside && value?.status === "active",
   );
-  const heartbeat = useVoiceHeartbeat(chatId, inside, liveRoomRef);
   const meIsStarter = Boolean(
     value?.startedBy &&
       participants.find((participant) => participant.isMe)?.id === value.startedBy,
@@ -101,7 +123,7 @@ export function useChatRoomControl(
     clearVideoMedia();
   }, [clearAudio, clearVideoMedia]);
   const recovery = useTerminalVoiceRecovery({
-    chatId,
+    sessionKind: server.kind,
     inside,
     roomRef: liveRoomRef,
     clearAttachedMedia,
@@ -112,7 +134,7 @@ export function useChatRoomControl(
   const { setConnectMedia: setRecoveryConnectMedia } = recovery;
   const mediaActions = useVoiceMediaActions({
     roomRef: liveRoomRef,
-    preferencesRef,
+    preferencesRef, persistPreferences,
     desiredMicMutedRef,
     screenShareQualityRef,
     mediaStatus,
@@ -131,7 +153,6 @@ export function useChatRoomControl(
     toggleDesktopScreenAudio: desktopAudio.toggle,
     setError: setMediaError,
   });
-
   useEffect(() => {
     onStateChange?.({
       inside,
@@ -170,10 +191,10 @@ export function useChatRoomControl(
   });
   const mediaConnection = useVoiceMediaConnection({
     roomRef: liveRoomRef,
-    preferencesRef,
+    preferencesRef, persistPreferences,
     desiredMicMutedRef,
     screenShareQualityRef,
-    getCredentials: () => server.mediaToken.mutateAsync({ chatId }),
+    getCredentials: server.mediaToken.get,
     configureRoom: configureRoomEvents,
     syncExistingPublications: screenSubscription.syncExisting,
     clearAttachedMedia,
@@ -198,7 +219,6 @@ export function useChatRoomControl(
     setRecoveryConnectMedia(mediaConnection.connect);
   }, [mediaConnection.connect, setRecoveryConnectMedia]);
   const surfaceSession = useVoiceRoomSurfaceSession({
-    chatId,
     chatType,
     inside,
     active,
@@ -214,25 +234,22 @@ export function useChatRoomControl(
     failedOperation: failedSessionOperation,
     resetSurface: resetSessionSurface,
     enterAndConnect,
-    leaveRoom,
+    leaveRoom: requestLeaveRoom,
   } = surfaceSession;
   const toggleOutputWithMicrophone = async () => {
     if (!output.outputMuted && !micMuted) await mediaActions.toggleMicrophone();
     const muted = output.toggleOutput();
     void playVoiceRoomSound(muted ? "deafen" : "undeafen");
   };
-  const openRoom = useCallback(() => {
-    resetSessionSurface();
-    setMediaError(null);
-    setOpen(true);
-    reportProductEvent("room_opened", { kind: chatType });
-  }, [chatType, resetSessionSurface]);
-  const closeRoom = () => {
-    devices.micTest.stop();
-    video.parkVisibleMedia();
-    resetSessionSurface();
-    setOpen(false);
-  };
+  const { openRoom, closeRoom, leaveRoom, minimizePanel } = useVoiceRoomPresentationActions({
+    dock: dockPresentation, inside, leavePending: sessionTransition === "leaving" || server.leave.isPending,
+    chatId, chatType,
+    sessionId: coreSession?.join.sessionId ?? null,
+    resetSurface: resetSessionSurface, setMediaError,
+    stopMicTest: devices.micTest.stop,
+    parkMedia: video.parkVisibleMedia,
+    requestLeaveRoom, onLeaveConfirmed,
+  });
   const resumeAudio = async () => {
     const liveRoom = liveRoomRef.current;
     if (!liveRoom) return;
@@ -244,13 +261,13 @@ export function useChatRoomControl(
     mediaConnection.disconnect();
     if (wasInside) await mediaConnection.connect();
   };
-
   useImperativeHandle(ref, () => ({
     open: openRoom,
+    minimize: minimizePanel,
     join: () => void enterAndConnect(),
     toggleMicrophone: () => void mediaActions.toggleMicrophone(),
     toggleOutput: () => void toggleOutputWithMicrophone(),
-    leave: () => { if (inside) void leaveRoom(); },
+    leave: async () => { if (inside) await leaveRoom(); },
   }));
   const isDirect = chatType === "direct";
   const connectionLabel = getConnectionLabel(mediaStatus);
@@ -299,8 +316,11 @@ export function useChatRoomControl(
     trigger: renderTrigger ? {
       active, isDirect, mediaStatus, participantCount, onOpen: openRoom,
     } : null,
-    dock: inside ? {
-      chatName, participantCount, durationLabel, mediaStatus, connectionLabel,
+    dock: inside && dockVisible ? {
+      mode: dockMode,
+      onModeChange: dockPresentation.changeMode,
+      chatName: currentCoreRoom && server.directory?.groupName ? `${server.directory.groupName} / ${currentCoreRoom.name}` : chatName,
+      participantCount, durationLabel, mediaStatus, connectionLabel, errorMessage,
       activeSpeakerName: resolveVoiceDockActiveSpeaker(participants, activeSpeakerIds),
       connectionQuality, micMuted, outputMuted: output.outputMuted,
       cameraEnabled: video.cameraEnabled,
@@ -310,8 +330,12 @@ export function useChatRoomControl(
       onOpen: openRoom,
       onToggleMic: () => void mediaActions.toggleMicrophone(),
       onToggleOutput: () => void toggleOutputWithMicrophone(),
+      onToggleCamera: () => void mediaActions.toggleCamera(),
+      onToggleScreenShare: () => void mediaActions.toggleScreenShare(),
+      cameraPending: mediaActions.cameraPending,
+      screenSharePending: mediaActions.screenSharePending,
       onLeave: () => void leaveRoom(),
-      preview: !open ? {
+      preview: dockMode === "mini" && !open ? {
         screenContainerRef: video.bindScreenContainer,
         screenShareOwner: video.screenShareOwner,
         participants,
@@ -347,11 +371,19 @@ export function useChatRoomControl(
       onReconnect: reconnectMedia,
     },
     sheet: {
-      overlay: { open, onClose: closeRoom },
+      overlay: {
+        open,
+        onCloseToMini: () => closeRoom("mini"),
+        onCloseToCompact: () => closeRoom("compact"),
+      },
+      invite: coreSession && inside ? { sessionId: coreSession.join.sessionId } : null,
+      messages: buildVoiceRoomMessagesModel(coreSession, inside),
       identity: {
         isDirect,
         callPhase: getDirectCallPhase({ direct: isDirect, room: value, starter: meIsStarter }),
-        chatName,
+        chatName: currentCoreRoom && server.directory?.groupName
+          ? `${server.directory.groupName} / ${currentCoreRoom.name}`
+          : chatName,
         active,
         durationLabel,
       },
@@ -402,13 +434,12 @@ export function useChatRoomControl(
         onCameraToggle: mediaActions.toggleCamera,
       },
       access: {
-        canManage: meIsStarter && active && !isDirect,
+        canManage: server.access.supported && meIsStarter && active && !isDirect,
         mode: (value?.accessMode ?? "open") as "open" | "locked",
         pending: server.access.isPending,
-        onToggle: () => server.access.mutate({
-          chatId,
-          accessMode: value?.accessMode === "locked" ? "open" : "locked",
-        }),
+        onToggle: () => server.access.set(
+          value?.accessMode === "locked" ? "open" : "locked",
+        ),
       },
       session: {
         phase: surfacePhase,
@@ -446,6 +477,16 @@ export function useChatRoomControl(
               ? () => void server.room.refetch()
               : enterAndConnect,
       },
+      roomSwitcher: buildVoiceRoomSwitcherModel(
+        coreSession?.room.id ?? null,
+        server.directory,
+        Boolean(onCoreRoomSwitch),
+        roomSwitch.pendingRoomId,
+        roomSwitch.errorMessage,
+        roomSwitch.switchRoom,
+        server.roomActions,
+      ),
+      roomRename: buildVoiceRoomRenameModel(currentCoreRoom, server.rename, currentCoreRoom?.canManage === true && active),
     },
     picker: desktopAudio.capturePicker ? {
       sources: desktopAudio.capturePicker,

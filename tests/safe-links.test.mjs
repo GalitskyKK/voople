@@ -28,8 +28,8 @@ test("rejects active schemes, credentials and local destinations", () => {
 });
 
 test("only HTTPS Voople domains bypass the external interstitial", () => {
-  assert.equal(isTrustedVoopleUrl("https://voople.ru/feed"), true);
-  assert.equal(isTrustedVoopleUrl("https://auth.voople.ru/callback"), true);
-  assert.equal(isTrustedVoopleUrl("http://voople.ru/feed"), false);
-  assert.equal(isTrustedVoopleUrl("https://voople.ru.example.com/"), false);
+  assert.equal(isTrustedVoopleUrl("https://voople.app/feed"), true);
+  assert.equal(isTrustedVoopleUrl("https://auth.voople.app/callback"), true);
+  assert.equal(isTrustedVoopleUrl("http://voople.app/feed"), false);
+  assert.equal(isTrustedVoopleUrl("https://voople.app.example.com/"), false);
 });

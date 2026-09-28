@@ -229,7 +229,7 @@ export function AccountSecuritySettings({
       </form>
 
       {error ? <p className="text-sm text-red-400" role="alert">{error}</p> : null}
-      {notice ? <p className="text-sm text-emerald-500" role="status">{notice}</p> : null}
+      {notice ? <p className="text-sm text-[var(--material-ice)]" role="status">{notice}</p> : null}
     </div>
   );
 }

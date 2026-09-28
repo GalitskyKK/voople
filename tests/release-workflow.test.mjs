@@ -45,6 +45,7 @@ test("release unit tests do not depend on shell glob expansion", () => {
 test("release migration readiness has process and database deadlines", () => {
   const releaseScript = read("scripts/release.mjs");
   const readiness = read("scripts/check-migration-readiness.mjs");
+  const applyMigration = read("scripts/apply-migration.mjs");
 
   assert.match(releaseScript, /timeout:\s*options\.timeout/);
   assert.match(
@@ -53,6 +54,21 @@ test("release migration readiness has process and database deadlines", () => {
   );
   assert.match(readiness, /statement_timeout:\s*30_000/);
   assert.match(readiness, /lock_timeout:\s*5_000/);
+  assert.match(readiness, /readinessDeadline/);
+  assert.match(readiness, /75_000/);
+  assert.match(applyMigration, /migrationDeadline/);
+  assert.match(applyMigration, /120_000/);
+});
+
+test("pending migration audit uses the checksum ledger without exposing secrets", () => {
+  const audit = read("scripts/check-pending-migrations.mjs");
+  const packageJson = read("package.json");
+
+  assert.match(audit, /app_schema_migrations\?select=id,checksum/);
+  assert.match(audit, /acceptedMigrationChecksums/);
+  assert.match(audit, /AbortSignal\.timeout\(15_000\)/);
+  assert.doesNotMatch(audit, /console\.log\([^\n]*(serviceRoleKey|SUPABASE_SERVICE_ROLE_KEY)/);
+  assert.match(packageJson, /"db:pending": "node scripts\/check-pending-migrations\.mjs"/);
 });
 
 test("verified migration readiness can only be reused without migration changes", () => {
@@ -145,4 +161,25 @@ test("public repository workflows pin actions and scope privileged credentials",
     smokeWorkflow.indexOf("    steps:"),
   );
   assert.doesNotMatch(smokeJobPreamble, /secrets\./);
+});
+
+test("desktop RC is installed before Room protocol evidence can be promoted", () => {
+  const workflow = read(".github/workflows/desktop-release.yml");
+  const installedSmoke = read("scripts/verify-installed-desktop-deep-links.ps1");
+  const rendererProbe = read("scripts/verify-installed-desktop-route.mjs");
+
+  assert.match(workflow, /Verify installed Room deep links/);
+  assert.match(workflow, /verify-installed-desktop-deep-links\.ps1/);
+  assert.match(workflow, /installedDeepLinkSmoke = \$true/);
+  assert.match(workflow, /installedDeepLinkSmoke -ne \$true/);
+  assert.match(installedSmoke, /Start-Process -FilePath \$installer -ArgumentList "\/S"/);
+  assert.match(installedSmoke, /HKEY_CURRENT_USER\\Software\\Classes\\voople/);
+  assert.match(installedSmoke, /Open-VoopleProtocol \$coldUri/);
+  assert.match(installedSmoke, /Open-VoopleProtocol \$warmUri/);
+  assert.match(installedSmoke, /Open-VoopleProtocol \$invalidUri/);
+  assert.match(installedSmoke, /VoopleWindowState.*IsIconic/s);
+  assert.match(installedSmoke, /Get-AuthenticodeSignature/);
+  assert.match(rendererProbe, /chromium\.connectOverCDP/);
+  assert.match(rendererProbe, /data-voople-continuation-path/);
+  assert.match(rendererProbe, /assert\.equal\(observedPath, expectedPath/);
 });

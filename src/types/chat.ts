@@ -67,6 +67,14 @@ export type ChatPendingUpload = {
   purpose?: "voice" | "circle";
 };
 
+export type ChatMessageRoomContext = {
+  roomId: string | null;
+  liveSessionId: string | null;
+  roomName: string;
+  roomKind: "lobby" | "temporary" | "pinned";
+  capturedAt: string;
+};
+
 export type ChatMessageView = {
   id: string;
   senderId: string;
@@ -81,6 +89,7 @@ export type ChatMessageView = {
     avatarUrl?: string | null;
   } | null;
   readAt?: string | null;
+  roomContext?: ChatMessageRoomContext | null;
   replyTo?: ChatMessageReplyPreview | null;
   attachment?: ChatMessageAttachment | null;
   reactions: ChatMessageReaction[];
@@ -108,6 +117,7 @@ export type ChatListItem = {
   groupVisibility: GroupVisibility;
   joinPolicy: GroupJoinPolicy;
   sectionAccessMode: "inherit" | "restricted";
+  favoritePosition?: 1 | 2 | null;
   groupIcon: string | null;
   groupAvatarUrl: string | null;
   groupBannerUrl: string | null;
@@ -133,6 +143,7 @@ export type ChatListItem = {
     createdAt: string;
     senderId: string;
   } | null;
+  unreadCount: number;
   channels: ChatListItem[];
 };
 
@@ -180,6 +191,7 @@ export type ChatGroupAuditEntryView = {
 export type PublicGroupSearchHit = {
   id: string;
   name: string;
+  description: string | null;
   publicSlug: string | null;
   icon: string | null;
   avatarUrl: string | null;
@@ -191,7 +203,6 @@ export type PublicGroupSearchHit = {
 };
 
 export type PublicGroupPageView = PublicGroupSearchHit & {
-  description: string | null;
   accentColor: string | null;
   bannerUrl: string | null;
 };
@@ -300,6 +311,7 @@ export type ChatRoomParticipantView = {
   avatarRingId: string | null;
   micMuted: boolean;
   isMe: boolean;
+  guest?: boolean;
 };
 
 export type ChatRoomView = {

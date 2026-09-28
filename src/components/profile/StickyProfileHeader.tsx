@@ -11,8 +11,7 @@ import type { ProfileViewModel } from "@/types/domain";
 import { DisplayNameWithPin } from "./DisplayNameWithPin";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ProfileEditSheet } from "./ProfileEditSheet";
-import { ProfileFollowButton } from "./ProfileFollowButton";
-import { ProfileMessageButton } from "./ProfileMessageButton";
+import { ProfileRelationshipActions } from "./ProfileRelationshipActions";
 
 type StickyProfileHeaderProps = {
   visible: boolean;
@@ -50,10 +49,12 @@ export function StickyProfileHeader({
       {isOwner ? (
         <ProfileEditSheet profile={profile} />
       ) : (
-        <>
-          <ProfileFollowButton username={username} canFollow={canFollow} layout="compact" />
-          <ProfileMessageButton username={username} size="sm" />
-        </>
+        <ProfileRelationshipActions
+          userId={profile.id}
+          username={username}
+          canFollow={canFollow}
+          layout="compact"
+        />
       )}
     </div>
   );
@@ -66,7 +67,7 @@ export function StickyProfileHeader({
       >
         <FeedAuthorChipBackdrop backgroundUrl={assets.feedCardBackgroundUrl} />
         <div className="relative z-10 flex h-full items-center gap-3 px-3">
-          <Link href="/feed" className="shrink-0 text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]" aria-label="Назад">
+          <Link href="/messages" className="shrink-0 text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]" aria-label="К группам">
             <ChevronLeft className="h-5 w-5" />
           </Link>
           <ProfileAvatar
@@ -103,7 +104,7 @@ export function StickyProfileHeader({
       className="voople-profile-sticky fixed left-0 right-0 top-12 z-40 flex h-[52px] items-center gap-3 border-b border-[var(--app-border)] bg-[color-mix(in_srgb,var(--background)_90%,transparent)] px-3 backdrop-blur-md lg:hidden"
       style={themeStyle}
     >
-      <Link href="/feed" className="shrink-0 text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]" aria-label="Назад">
+      <Link href="/messages" className="shrink-0 text-[color-mix(in_srgb,var(--foreground)_80%,transparent)]" aria-label="К группам">
         <ChevronLeft className="h-5 w-5" />
       </Link>
       <ProfileAvatar

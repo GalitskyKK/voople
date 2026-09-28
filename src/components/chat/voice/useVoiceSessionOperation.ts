@@ -17,9 +17,13 @@ export function useVoiceSessionOperation() {
   const mountedRef = useRef(true);
   const activeRef = useRef<Promise<void> | null>(null);
 
-  useEffect(() => () => {
-    mountedRef.current = false;
-    gateRef.current.cancel();
+  useEffect(() => {
+    mountedRef.current = true;
+  
+    return () => {
+      mountedRef.current = false;
+      gateRef.current.cancel();
+    };
   }, []);
 
   const cancel = useCallback(() => {

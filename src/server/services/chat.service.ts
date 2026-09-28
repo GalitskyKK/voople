@@ -24,6 +24,7 @@ export {
 } from "@/server/data/chat-rest";
 
 export { getMessageNotificationRest as getMessageNotification } from "@/server/data/chat-message-actions-rest";
+export { toggleChatSectionFavoriteRest as toggleChatSectionFavorite } from "@/server/data/chat-section-favorites-rest";
 
 export async function sendMessage(
   input: Parameters<typeof sendMessageRest>[0],
@@ -56,6 +57,21 @@ export {
 } from "@/server/data/chat-management-rest";
 export { setGroupNameRest as setGroupName } from "@/server/data/chat-group-identity-rest";
 export { listGroupMembersRest as listGroupMembers } from "@/server/data/chat-group-members-rest";
+export { getGroupSettingsSummaryRest as getGroupSettingsSummary } from "@/server/data/group-settings-summary-rest";
+export { getGroupNow } from "@/server/services/group-now.service";
+export {
+  archiveGroupRoom,
+  createAndJoinGroupRoom,
+  createGroupRoomMediaToken,
+  createGroupRoomScreenAudioToken,
+  createGroupRoom,
+  expireGroupRoomGrace,
+  heartbeatGroupRoom,
+  joinGroupRoom,
+  leaveGroupRoom,
+  renameGroupRoom,
+  setGroupRoomKind,
+} from "@/server/services/group-room-mutations.service";
 export {
   listGroupJoinRequestsRest as listGroupJoinRequests,
   resolveGroupJoinRequestRest as resolveGroupJoinRequest,
@@ -72,6 +88,19 @@ export {
   joinPublicGroupRest as joinPublicGroup,
   listPublicGroupsRest as listPublicGroups,
 } from "@/server/data/chat-discovery-rest";
+
+export {
+  acceptCoreVoopRequest,
+  cancelCoreRoomInvite,
+  getCoreRoomInvitePreview,
+  getCoreVoopStatus,
+  listCoreRoomInviteCandidates,
+  respondToCoreRoomInvite,
+  sendCoreRoomInvite,
+  sendCoreVoopRequest,
+} from "@/server/services/core-room-invitations.service";
+
+export { createRoomGuestInvite } from "@/server/services/room-guests.service";
 
 export {
   getGroupCommunityRest as getGroupCommunity,

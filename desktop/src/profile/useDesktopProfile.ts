@@ -1,7 +1,7 @@
 import type { Session } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import type { PostViewModel, ProfileViewModel } from "@/types/domain";
+import type { ProfileViewModel } from "@/types/domain";
 import type { Stroke } from "@/types/canvas";
 
 import { createDesktopTrpcClient } from "../api/trpc";
@@ -9,8 +9,6 @@ import type { DesktopConfig } from "../config";
 
 type DesktopProfileData = {
   profile: ProfileViewModel;
-  posts: PostViewModel[];
-  pinnedPost: PostViewModel | null;
   badgeIds: string[];
   canvasStrokes: Stroke[];
   isOwner: boolean;
@@ -43,13 +41,6 @@ function parseProfile(value: unknown): ProfileViewModel {
     throw new Error("Сервер вернул некорректный профиль");
   }
   return profile as ProfileViewModel;
-}
-
-function parsePosts(value: unknown): PostViewModel[] {
-  if (!Array.isArray(value)) {
-    throw new Error("Сервер вернул некорректную ленту профиля");
-  }
-  return value as PostViewModel[];
 }
 
 function parseCanvasStrokes(value: unknown): Stroke[] {
@@ -92,13 +83,11 @@ export function useDesktopProfile(
         const viewer = await client.query("user.me");
         const viewerUsername = parseUsername(viewer);
         const username = requestedUsername ?? viewerUsername;
-        const profileValue = await client.query("profile.getByUsername", {
+        const profileValue = await client.query("profile.getBetaByUsername", {
           username,
         });
         const profile = parseProfile(profileValue);
-        const [postsValue, pinnedPostValue, strokesValue, badgeIdsValue] = await Promise.all([
-          client.query("profile.getPostsByUsername", { username }),
-          client.query("profile.getPinnedPostByUsername", { username }),
+        const [strokesValue, badgeIdsValue] = await Promise.all([
           client.query("profileCanvas.listStrokes", {
             profileUserId: profile.id,
           }),
@@ -107,11 +96,6 @@ export function useDesktopProfile(
         if (currentRequest !== requestId.current) return;
         setData({
           profile,
-          posts: parsePosts(postsValue),
-          pinnedPost:
-            pinnedPostValue === null
-              ? null
-              : (parsePosts([pinnedPostValue])[0] ?? null),
           badgeIds: parseBadgeIds(badgeIdsValue),
           canvasStrokes: parseCanvasStrokes(strokesValue),
           isOwner: profile.username === viewerUsername,

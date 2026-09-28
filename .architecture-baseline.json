@@ -5,10 +5,6 @@
       "maxLines": 566,
       "reason": "Legacy admin form; split asset metadata, media upload and preview panels."
     },
-    "src/components/chat/ChatWindow.tsx": {
-      "maxLines": 329,
-      "reason": "Send and attention orchestration are extracted; split message-list and secondary action controllers next."
-    },
     "src/server/data/chat-rest.ts": {
       "maxLines": 800,
       "reason": "Legacy chat persistence module; split lists, messages and membership queries."

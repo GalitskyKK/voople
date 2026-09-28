@@ -4,8 +4,9 @@ import { useCallback, useMemo, useState } from "react";
 import type { NavigationDestinationRenderer } from "@/components/layout/AppNavigationVisual";
 import { AppPageContent } from "@/components/layout/AppPageContent";
 import { HomeFeedLayoutView } from "@/components/home/HomeFeedLayoutView";
+import { HomeNowConnectedPanel } from "@/components/home/HomeNowConnectedPanel";
+import { useHomeActiveRooms } from "@/hooks/useHomeActiveRooms";
 import {
-  HomeNowPanelView,
   HomeSecondaryRailView,
 } from "@/components/home/HomeOverviewPanelsView";
 
@@ -31,6 +32,7 @@ export function DesktopFeedAdapter({
 }) {
   const feed = useDesktopFeed(config, session, tab);
   const home = useDesktopHomeOverview(config, session);
+  const liveHome = useHomeActiveRooms(home.overview);
   const [messagingUsername, setMessagingUsername] = useState<string | null>(null);
   const [messageError, setMessageError] = useState<string | null>(null);
   const client = useMemo(
@@ -61,12 +63,16 @@ export function DesktopFeedAdapter({
                 aria-label="Загрузка актуальной активности"
               />
             ) : (
-              <HomeNowPanelView
-                overview={home.overview}
+              <HomeNowConnectedPanel
+                overview={liveHome.overview}
                 renderDestination={renderDestination}
                 onMessageUser={(username) => void messageUser(username)}
                 messagingUsername={messagingUsername}
                 messageError={messageError}
+                refreshing={liveHome.refreshing}
+                refreshPaused={liveHome.paused}
+                refreshError={liveHome.error}
+                onRetryRefresh={() => void liveHome.retry()}
               />
             )}
             {home.error ? (
@@ -109,7 +115,7 @@ export function DesktopFeedAdapter({
         }
         secondary={
           !home.loading && !home.error ? (
-            <HomeSecondaryRailView overview={home.overview} renderDestination={renderDestination} />
+            <HomeSecondaryRailView overview={liveHome.overview} renderDestination={renderDestination} />
           ) : null
         }
       />

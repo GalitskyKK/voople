@@ -65,7 +65,7 @@ export function VooplePlusInfoModal({ open, onClose, expiresAt }: VooplePlusInfo
         </div>
 
         {expiresAt ? (
-          <p className="mt-3 rounded-xl bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+          <p className="mt-3 rounded-xl bg-[var(--material-control-fill)] px-3 py-2 text-sm text-[var(--foreground)]">
             Активна до {formatDate(expiresAt)}
           </p>
         ) : (

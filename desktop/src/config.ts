@@ -22,7 +22,7 @@ export function getDesktopConfig(): DesktopConfig | null {
   const localApiUrl = import.meta.env.NEXT_PUBLIC_APP_URL?.trim();
   const apiUrl =
     explicitApiUrl ??
-    (import.meta.env.DEV ? localApiUrl || "http://127.0.0.1:3000" : "https://voople.ru");
+    (import.meta.env.DEV ? localApiUrl || "http://127.0.0.1:3000" : "https://voople.app");
   const turnstileSiteKey = (
     import.meta.env.VITE_TURNSTILE_SITE_KEY ??
     import.meta.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY

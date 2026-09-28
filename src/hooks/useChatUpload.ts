@@ -19,7 +19,7 @@ export type PendingChatAudioDraft = {
   durationSeconds: number | null;
 };
 
-export function useChatUpload(chatId: string) {
+export function useChatUpload(chatId: string | null) {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const presign = trpc.upload.createPresigned.useMutation();
@@ -49,7 +49,7 @@ export function useChatUpload(chatId: string) {
         contentType,
         sizeBytes: file.size,
         chatMediaKind: options?.purpose,
-        chatId,
+        ...(chatId ? { chatId } : {}),
       });
       await uploadPresignedFile({
         url: prepared.uploadUrl,

@@ -7,7 +7,7 @@ import { recoverFailedSendText, recoverFailedSendValue } from "@/lib/chat/send-d
 import { reportProductEvent } from "@/lib/telemetry/client";
 import { trpc } from "@/lib/trpc/client";
 import type { PendingChatUpload } from "@/hooks/useChatUpload";
-import type { ChatMessageView } from "@/types/chat";
+import type { ChatMessageRoomContext, ChatMessageView } from "@/types/chat";
 import type { PlaylistTrackView } from "@/types/playlist";
 
 export function useChatSendMutation({
@@ -17,6 +17,7 @@ export function useChatSendMutation({
   replyTo,
   pendingUpload,
   pendingTrack,
+  optimisticRoomContext,
   setText,
   setReplyTo,
   setPendingUpload,
@@ -28,6 +29,7 @@ export function useChatSendMutation({
   replyTo: ChatMessageView | null;
   pendingUpload: PendingChatUpload | null;
   pendingTrack: PlaylistTrackView | null;
+  optimisticRoomContext?: ChatMessageRoomContext | null;
   setText: Dispatch<SetStateAction<string>>;
   setReplyTo: Dispatch<SetStateAction<ChatMessageView | null>>;
   setPendingUpload: Dispatch<SetStateAction<PendingChatUpload | null>>;
@@ -49,6 +51,7 @@ export function useChatSendMutation({
         replyTo: replyMessage,
         pendingUpload,
         pendingTrack,
+        roomContext: optimisticRoomContext,
       });
       utils.chat.observeMessages.setData({ chatId }, (current) =>
         current?.messages.some((message) => message.id === optimistic.id)

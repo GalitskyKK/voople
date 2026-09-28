@@ -15,6 +15,7 @@ import {
 import { createPortal } from "react-dom";
 
 import { useIsClient } from "@/hooks/useIsClient";
+import { resolveContextMenuPosition, type ContextMenuAnchor } from "@/lib/layout/context-menu-position";
 import { cn } from "@/lib/utils";
 
 type DropdownMenuProps = {
@@ -23,8 +24,12 @@ type DropdownMenuProps = {
   trigger?: React.ReactNode;
   children: React.ReactNode;
   anchorPoint?: { x: number; y: number } | null;
+  contextAnchor?: ContextMenuAnchor | null;
+  restoreFocusElement?: HTMLElement | null;
   align?: "start" | "end";
   side?: "bottom" | "left" | "right" | "inward";
+  contentRole?: "menu" | "dialog";
+  ariaLabel?: string;
   menuClassName?: string;
   className?: string;
 };
@@ -37,8 +42,12 @@ export function DropdownMenu({
   trigger,
   children,
   anchorPoint = null,
+  contextAnchor = null,
+  restoreFocusElement = null,
   align = "end",
   side = "bottom",
+  contentRole = "menu",
+  ariaLabel,
   menuClassName,
   className,
 }: DropdownMenuProps) {
@@ -46,13 +55,19 @@ export function DropdownMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const mounted = useIsClient();
   const [position, setPosition] = useState<MenuPosition | null>(null);
+  const [routeKind, setRouteKind] = useState<string | null>(null);
   const focusedOpenRef = useRef(false);
 
   const updatePosition = useCallback(() => {
     const triggerEl = triggerRef.current;
-    if (!triggerEl && !anchorPoint) return;
+    if (!triggerEl && !anchorPoint && !contextAnchor) return;
 
     const rect = triggerEl?.getBoundingClientRect();
+    const anchorEl = restoreFocusElement ?? (anchorPoint ? document.elementFromPoint(anchorPoint.x, anchorPoint.y) : null);
+    const nextRouteKind = (anchorEl ?? triggerEl)
+      ?.closest<HTMLElement>("[data-route-kind]")
+      ?.dataset.routeKind ?? null;
+    setRouteKind((current) => current === nextRouteKind ? current : nextRouteKind);
     const anchorWidth = rect?.width ?? 0;
     const anchorLeft = anchorPoint?.x ?? rect?.left ?? 0;
     const anchorRight = anchorPoint?.x ?? rect?.right ?? 0;
@@ -60,6 +75,14 @@ export function DropdownMenu({
     const anchorBottom = anchorPoint?.y ?? rect?.bottom ?? 0;
     const menuWidth = menuRef.current?.offsetWidth ?? Math.max(200, anchorWidth);
     const menuHeight = menuRef.current?.offsetHeight ?? 160;
+    if (contextAnchor) {
+      const resolved = resolveContextMenuPosition({
+        anchor: contextAnchor, menuWidth, menuHeight,
+        viewportWidth: window.innerWidth, viewportHeight: window.innerHeight,
+      });
+      setPosition({ ...resolved, minWidth: Math.min(menuWidth, Math.max(0, window.innerWidth - 16)) });
+      return;
+    }
     const gap = 4;
 
     const resolvedSide = side === "inward"
@@ -83,7 +106,7 @@ export function DropdownMenu({
     left = Math.max(8, Math.min(left, window.innerWidth - menuWidth - 8));
 
     setPosition({ top, left, minWidth: menuWidth });
-  }, [align, anchorPoint, side]);
+  }, [align, anchorPoint, contextAnchor, restoreFocusElement, side]);
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -104,7 +127,15 @@ export function DropdownMenu({
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onOpenChange(false);
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      onOpenChange(false);
+      requestAnimationFrame(() => {
+        if (restoreFocusElement?.isConnected) restoreFocusElement.focus();
+        else triggerRef.current
+          ?.querySelector<HTMLElement>('button, [href], input, [tabindex]:not([tabindex="-1"])')
+          ?.focus();
+      });
     };
 
     window.addEventListener("pointerdown", onPointerDown);
@@ -118,7 +149,7 @@ export function DropdownMenu({
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [onOpenChange, open, updatePosition]);
+  }, [onOpenChange, open, restoreFocusElement, updatePosition]);
 
   useEffect(() => {
     if (!open) {
@@ -128,13 +159,16 @@ export function DropdownMenu({
     if (!position || focusedOpenRef.current) return;
     focusedOpenRef.current = true;
     const frame = requestAnimationFrame(() => {
-      menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+      menuRef.current?.querySelector<HTMLElement>('[data-dropdown-autofocus], [role="menuitem"]')?.focus();
     });
     return () => cancelAnimationFrame(frame);
   }, [open, position]);
 
   const handleMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    if (
+      contentRole !== "menu"
+      || (event.key !== "ArrowDown" && event.key !== "ArrowUp")
+    ) return;
     const items = Array.from(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
     if (!items.length) return;
     event.preventDefault();
@@ -148,10 +182,13 @@ export function DropdownMenu({
       ? createPortal(
           <div
             ref={menuRef}
-            role="menu"
+            data-voople-dropdown-menu="true"
+            data-route-kind={routeKind ?? undefined}
+            role={contentRole}
+            aria-label={ariaLabel}
             onKeyDown={handleMenuKeyDown}
             className={cn(
-              "voople-dropdown-menu fixed z-[110] overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] py-1 text-[var(--foreground)] shadow-[var(--app-shadow-md)]",
+              "voople-overlay-surface voople-dropdown-menu fixed z-[110] max-h-[calc(100vh-16px)] max-w-[calc(100vw-16px)] overflow-y-auto rounded-xl py-1 text-[var(--foreground)]",
               menuClassName,
             )}
             style={{

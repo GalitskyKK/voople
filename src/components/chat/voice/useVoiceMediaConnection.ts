@@ -4,38 +4,31 @@ import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 
 import { ConnectionQuality, ConnectionState, Room } from "livekit-client";
 
 import { syncVoiceTrackProcessor } from "@/lib/livekit/rnnoise-track-processor";
+import { traceVoiceMic } from "@/lib/livekit/voice-mic-debug";
 import type { VoicePreferences } from "@/lib/livekit/voice-preferences";
+import type { VoiceMediaCredentials } from "@/types/voice";
 
 import {
   getAudioCaptureOptions,
   getMicrophoneMuted,
   reconnectPolicy,
+  setMicrophoneEnabledWithFallback,
   VOICE_PUBLISH_OPTIONS,
   type LiveKitEndpoint,
   type MediaStatus,
   type ScreenShareQuality,
 } from "./voice-room-config";
-
-type VoiceMediaCredentials =
-  | {
-      enabled: false;
-      screenShareQuality: ScreenShareQuality;
-      expiresAt: null;
-      refreshAfter: null;
-    }
-  | {
-      enabled: true;
-      url: string;
-      endpoints: LiveKitEndpoint[];
-      token: string;
-      screenShareQuality: ScreenShareQuality;
-      expiresAt: string;
-      refreshAfter: string;
-    };
+import {
+  VOICE_MEDIA_CONNECTION_TIMEOUT_MS,
+  VOICE_MEDIA_CREDENTIALS_TIMEOUT_MS,
+  VOICE_MEDIA_ENDPOINT_TIMEOUT_MS,
+  waitForVoiceMediaConnection,
+} from "./voice-room-surface";
 
 export function useVoiceMediaConnection({
   roomRef,
   preferencesRef,
+  persistPreferences,
   desiredMicMutedRef,
   screenShareQualityRef,
   getCredentials,
@@ -52,27 +45,28 @@ export function useVoiceMediaConnection({
   setConnectionQuality,
   setAudioBlocked,
 }: {
-  roomRef: MutableRefObject<Room | null>;
-  preferencesRef: MutableRefObject<VoicePreferences>;
-  desiredMicMutedRef: MutableRefObject<boolean>;
-  screenShareQualityRef: MutableRefObject<ScreenShareQuality>;
-  getCredentials: () => Promise<VoiceMediaCredentials>;
-  configureRoom: (room: Room) => void;
-  syncExistingPublications: (room: Room) => void;
-  clearAttachedMedia: () => void;
-  refreshDevices: () => Promise<void>;
-  stopDesktopScreenAudio: () => Promise<void>;
-  cancelRecovery: () => void;
-  resetRecovery: () => void;
-  setMicMuted: (muted: boolean) => void;
-  setMediaStatus: (status: MediaStatus) => void;
-  setMediaError: (message: string | null) => void;
-  setConnectionQuality: (quality: ConnectionQuality) => void;
+  roomRef: MutableRefObject<Room | null>
+  preferencesRef: MutableRefObject<VoicePreferences>
+  persistPreferences: (patch: Partial<VoicePreferences>) => VoicePreferences
+  desiredMicMutedRef: MutableRefObject<boolean>
+  screenShareQualityRef: MutableRefObject<ScreenShareQuality>
+  getCredentials: () => Promise<VoiceMediaCredentials>
+  configureRoom: (room: Room) => void
+  syncExistingPublications: (room: Room) => void
+  clearAttachedMedia: () => void
+  refreshDevices: () => Promise<void>
+  stopDesktopScreenAudio: () => Promise<void>
+  cancelRecovery: () => void
+  resetRecovery: () => void
+  setMicMuted: (muted: boolean) => void
+  setMediaStatus: (status: MediaStatus) => void
+  setMediaError: (message: string | null) => void
+  setConnectionQuality: (quality: ConnectionQuality) => void
   setAudioBlocked: (blocked: boolean) => void;
 }) {
   const [endpoints, setEndpoints] = useState<LiveKitEndpoint[]>([]);
   const [currentEndpoint, setCurrentEndpoint] = useState<string | null>(null);
-  const connectPromiseRef = useRef<Promise<void> | null>(null);
+  const connectPromiseRef = useRef<Promise<boolean> | null>(null);
   const sequenceRef = useRef(0);
   const mountedRef = useRef(true);
 
@@ -102,20 +96,31 @@ export function useVoiceMediaConnection({
     setMediaStatus("idle");
     setConnectionQuality(ConnectionQuality.Unknown);
     setCurrentEndpoint(null);
-  }, [cancelRecovery, clearAttachedMedia, roomRef, setConnectionQuality, setMediaStatus, setMicMuted, stopDesktopScreenAudio]);
+  }, [
+    cancelRecovery,
+    clearAttachedMedia,
+    roomRef,
+    setConnectionQuality,
+    setMediaStatus,
+    setMicMuted,
+    stopDesktopScreenAudio,
+  ]);
 
   const connect = async () => {
+    if (connectPromiseRef.current) return connectPromiseRef.current;
     const current = roomRef.current;
     if (
       current &&
-      [ConnectionState.Connected, ConnectionState.Reconnecting, ConnectionState.Connecting].includes(current.state)
-    ) return;
-    if (connectPromiseRef.current) return connectPromiseRef.current;
+      [ConnectionState.Connected, ConnectionState.Reconnecting].includes(current.state)
+    )
+      return true;
 
     const sequence = ++sequenceRef.current;
     const task = (async () => {
-      const isCurrent = () =>
-        sequence === sequenceRef.current && mountedRef.current;
+      const isCurrent = () => sequence === sequenceRef.current && mountedRef.current;
+      const deadlineAt = Date.now() + VOICE_MEDIA_CONNECTION_TIMEOUT_MS;
+
+      const remainingTime = () => Math.max(0, deadlineAt - Date.now());
       const abandonRoom = (room: Room) => {
         if (roomRef.current === room) roomRef.current = null;
         void room.disconnect();
@@ -124,33 +129,41 @@ export function useVoiceMediaConnection({
       setMediaStatus("connecting");
       setMediaError(null);
       try {
-        const credentials = await getCredentials();
-        if (!isCurrent()) return;
+        const credentialsTimeout = Math.min(
+          VOICE_MEDIA_CREDENTIALS_TIMEOUT_MS,
+          Math.max(1, remainingTime()),
+        );
+
+        const credentials = await waitForVoiceMediaConnection(
+          getCredentials(),
+          credentialsTimeout,
+          "Сервер не выдал данные для голосового подключения вовремя.",
+        );
+        if (!isCurrent()) return false;
         if (!credentials.enabled) {
           setMediaStatus("unavailable");
-          return;
+          return false;
         }
-        console.info("Voice media lease acquired", {
-          expiresAt: credentials.expiresAt,
-          refreshAfter: credentials.refreshAfter,
-          endpointCount: credentials.endpoints?.length ?? 1,
-        });
         screenShareQualityRef.current = credentials.screenShareQuality;
         const availableEndpoints = credentials.endpoints?.length
           ? credentials.endpoints
           : [{ url: credentials.url, label: "Авто" }];
         setEndpoints(availableEndpoints);
         const preferredUrl = preferencesRef.current.endpointUrl;
-        const orderedEndpoints = preferredUrl === "auto"
-          ? availableEndpoints
-          : [
-              ...availableEndpoints.filter((endpoint) => endpoint.url === preferredUrl),
-              ...availableEndpoints.filter((endpoint) => endpoint.url !== preferredUrl),
-            ];
+        const orderedEndpoints =
+          preferredUrl === "auto"
+            ? availableEndpoints
+            : [
+                ...availableEndpoints.filter((endpoint) => endpoint.url === preferredUrl),
+                ...availableEndpoints.filter((endpoint) => endpoint.url !== preferredUrl),
+              ];
 
         let lastError: unknown;
+
         for (const endpoint of orderedEndpoints) {
-          if (!isCurrent()) return;
+          if (!isCurrent()) return false;
+          if (remainingTime() <= 0) break;
+
           const room = new Room({
             adaptiveStream: true,
             dynacast: true,
@@ -162,71 +175,153 @@ export function useVoiceMediaConnection({
           });
           configureRoom(room);
           roomRef.current = room;
+
           try {
-            await room.prepareConnection(endpoint.url, credentials.token);
-            if (!isCurrent()) return abandonRoom(room);
-            await room.connect(endpoint.url, credentials.token, {
-              autoSubscribe: false,
-              maxRetries: 3,
-              websocketTimeout: 15_000,
-              peerConnectionTimeout: 20_000,
-              rtcConfig: preferencesRef.current.compatibilityMode
-                ? { iceTransportPolicy: "relay" }
-                : undefined,
-            });
+            const endpointTimeout = Math.min(
+              VOICE_MEDIA_ENDPOINT_TIMEOUT_MS,
+              Math.max(1, remainingTime()),
+            );
+            await waitForVoiceMediaConnection(
+              room.connect(endpoint.url, credentials.token, {
+                autoSubscribe: false,
+                maxRetries: 2,
+                websocketTimeout: 12_000,
+                peerConnectionTimeout: 15_000,
+                rtcConfig: preferencesRef.current.compatibilityMode
+                  ? { iceTransportPolicy: "relay" }
+                  : undefined,
+              }),
+              endpointTimeout,
+              `Медиасервер «${endpoint.label}» не ответил вовремя.`,
+            );
           } catch (cause) {
             lastError = cause;
-            if (roomRef.current === room) roomRef.current = null;
-            void room.disconnect();
+            abandonRoom(room);
             continue;
           }
-          if (!isCurrent()) return abandonRoom(room);
+
+          if (!isCurrent()) {
+            abandonRoom(room);
+            return false;
+          }
 
           setCurrentEndpoint(endpoint.url);
           setMediaStatus("connected");
           resetRecovery();
           setConnectionQuality(room.localParticipant.connectionQuality);
-          syncExistingPublications(room);
+
           try {
-            await room.startAudio();
+            syncExistingPublications(room);
           } catch {
-            if (isCurrent()) setAudioBlocked(true);
+            // Уже установленное LiveKit-соединение не должно
+            // считаться failed из-за синхронизации публикаций.
           }
-          if (!isCurrent()) return abandonRoom(room);
-          if (preferencesRef.current.outputDeviceId !== "default") {
-            await room.switchActiveDevice("audiooutput", preferencesRef.current.outputDeviceId).catch(() => undefined);
-            if (!isCurrent()) return abandonRoom(room);
-          }
-          if (!desiredMicMutedRef.current) {
-            try {
-              await room.localParticipant.setMicrophoneEnabled(
-                true,
-                getAudioCaptureOptions(preferencesRef.current),
-                VOICE_PUBLISH_OPTIONS,
-              );
-              const processorError = await syncVoiceTrackProcessor(room, {
-                rnnoiseEnabled: preferencesRef.current.enhancedNoiseSuppression,
-                microphoneGain: preferencesRef.current.microphoneGain,
-              });
-              if (!isCurrent()) return abandonRoom(room);
-              if (processorError) setMediaError(processorError);
-            } catch (cause) {
-              if (!isCurrent()) return abandonRoom(room);
-              setMediaError(
-                cause instanceof Error && cause.message.includes("timed out")
-                  ? "Сервер не подтвердил микрофон. Комната осталась подключена — повторите включение или используйте совместимый режим."
-                  : cause instanceof Error ? cause.message : "Не удалось включить микрофон.",
-              );
-            }
-          }
-          if (!isCurrent()) return;
+
           setMicMuted(getMicrophoneMuted(room));
-          await refreshDevices();
-          return;
+          traceVoiceMic("connection.connected", {
+            roomState: room.state,
+            desiredMuted: desiredMicMutedRef.current,
+            actualMuted: getMicrophoneMuted(room),
+          });
+
+          const isCurrentRoom = () => isCurrent() && roomRef.current === room;
+
+          void (async () => {
+            try {
+              await room.startAudio();
+
+              if (isCurrentRoom()) {
+                setAudioBlocked(false);
+              }
+            } catch {
+              if (isCurrentRoom()) {
+                setAudioBlocked(true);
+              }
+            }
+
+            if (!isCurrentRoom()) return;
+
+            const outputDeviceId = preferencesRef.current.outputDeviceId;
+
+            if (outputDeviceId !== "default") {
+              await room.switchActiveDevice("audiooutput", outputDeviceId).catch(() => undefined);
+            }
+
+            if (!isCurrentRoom()) return;
+
+            if (!desiredMicMutedRef.current) {
+              traceVoiceMic("connection.restore", { roomState: room.state, desiredMuted: false });
+              try {
+                const { usedDefault } = await setMicrophoneEnabledWithFallback(
+                  room, true, preferencesRef.current,
+                );
+                if (usedDefault) persistPreferences({ inputDeviceId: "default" });
+
+                if (!isCurrentRoom()) return;
+
+                if (desiredMicMutedRef.current) {
+                  traceVoiceMic("connection.remute", { reason: "desired state changed during restore" });
+                  await room.localParticipant.setMicrophoneEnabled(false).catch(() => undefined);
+                } else {
+                  const processorError = await syncVoiceTrackProcessor(room, {
+                    rnnoiseEnabled: preferencesRef.current.enhancedNoiseSuppression,
+                    microphoneGain: preferencesRef.current.microphoneGain,
+                  });
+
+                  if (!isCurrentRoom()) return;
+
+                  if (processorError) {
+                    setMediaError(processorError);
+                  }
+                }
+              } catch (cause) {
+                if (!isCurrentRoom()) return;
+
+                traceVoiceMic("connection.restore-error", {
+                  errorName: cause instanceof Error ? cause.name : "unknown",
+                  errorMessage: cause instanceof Error ? cause.message : String(cause),
+                  errorConstraint: cause instanceof Error && "constraint" in cause
+                    ? String(cause.constraint) : null,
+                });
+
+                setMediaError(
+                  cause instanceof Error && cause.message.includes("timed out")
+                    ? "Сервер не подтвердил микрофон. Комната осталась подключена — повторите включение или используйте совместимый режим."
+                    : cause instanceof Error
+                      ? cause.message
+                      : "Не удалось включить микрофон.",
+                );
+              }
+            }
+
+            if (!isCurrentRoom()) return;
+
+            setMicMuted(getMicrophoneMuted(room));
+            traceVoiceMic("connection.settled", {
+              roomState: room.state,
+              desiredMuted: desiredMicMutedRef.current,
+              actualMuted: getMicrophoneMuted(room),
+            });
+
+            await refreshDevices().catch(() => undefined);
+
+            if (!isCurrentRoom()) return;
+
+            setMicMuted(getMicrophoneMuted(room));
+          })();
+
+          return true;
         }
+
+        if (remainingTime() <= 0) {
+          throw new Error(
+            "Не удалось подключиться к голосовому серверу за 20 секунд. Повторите попытку или включите совместимый режим.",
+          );
+        }
+
         throw lastError ?? new Error("Нет доступного медиасервера");
       } catch (cause) {
-        if (!isCurrent()) return;
+        if (!isCurrent()) return false;
         setMicMuted(true);
         setMediaStatus("error");
         setMediaError(
@@ -234,12 +329,13 @@ export function useVoiceMediaConnection({
             ? cause.message
             : "Не удалось подключить голос. Проверьте сеть или включите совместимый режим.",
         );
+        return false;
       }
     })();
 
     connectPromiseRef.current = task;
     try {
-      await task;
+      return await task;
     } finally {
       if (connectPromiseRef.current === task) connectPromiseRef.current = null;
     }

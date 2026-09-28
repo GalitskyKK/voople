@@ -15,14 +15,20 @@ import { DesktopChatThreadAdapter } from "./DesktopChatThreadAdapter";
 import { useDesktopChats } from "../chat/useDesktopChats";
 import { useDesktopPresence } from "../providers/DesktopPresenceProvider";
 import { useConversationExit } from "@/hooks/useConversationExit";
+import { trpc } from "@/lib/trpc/client";
+import { SavedMessagesController } from "@/components/chat/SavedMessagesController";
 
 export function DesktopMessagesAdapter({
   activeChatId,
+  savedMessagesActive,
+  initialGroupTab,
   config,
   session,
   navigate,
 }: {
   activeChatId: string | null;
+  savedMessagesActive: boolean;
+  initialGroupTab: "chat" | "now" | "people";
   config: DesktopConfig;
   session: Session;
   navigate: (href: string) => void;
@@ -41,10 +47,11 @@ export function DesktopMessagesAdapter({
     [client, session.user.id],
   );
   const onlineUserIds = useDesktopPresence();
-  const { chats, error, loading, refresh } = useDesktopChats(
-    config,
-    session,
-  );
+  const { chats, error, loading, refresh } = useDesktopChats();
+  const savedMessages = trpc.savedMessages.availability.useQuery(undefined, {
+    retry: false,
+    staleTime: 60_000,
+  });
   const badgeUrl = vooplusBadgeUrl(config.assetsCdnUrl);
   const activeRootChat: ChatListItem | null = activeChatId
     ? chats.find(
@@ -55,13 +62,13 @@ export function DesktopMessagesAdapter({
     : null;
 
   useConversationExit({
-    active: Boolean(activeChatId),
+    active: Boolean(activeChatId) || savedMessagesActive,
     onExit: () => navigate("/messages"),
   });
 
   return (
     <MessagesLayoutView
-      isThread={Boolean(activeChatId)}
+      isThread={Boolean(activeChatId) || savedMessagesActive}
       list={
         <ChatListView
           chats={chats}
@@ -82,7 +89,7 @@ export function DesktopMessagesAdapter({
             <button
               type="button"
               className="voople-link mt-3 inline-flex text-sm font-medium"
-              onClick={() => navigate("/explore")}
+              onClick={() => navigate("/search")}
             >
               Найти людей
             </button>
@@ -150,18 +157,35 @@ export function DesktopMessagesAdapter({
             </span>
           )}
           renderGlobalSearchAction={(query) => (
-            <button type="button" className="voople-link mt-3 font-medium" onClick={() => navigate("/explore")}>
+            <button type="button" className="voople-link mt-3 font-medium" onClick={() => navigate("/search")}>
               Искать «{query}» во всём Voople →
             </button>
           )}
+          savedMessagesActive={savedMessagesActive}
+          renderSavedMessagesDestination={
+            savedMessages.data?.enabled
+              ? ({ className, children }) => (
+                  <button
+                    type="button"
+                    className={className}
+                    onClick={() => navigate("/messages/saved")}
+                  >
+                    {children}
+                  </button>
+                )
+              : undefined
+          }
         />
       }
       thread={
-        activeChatId ? (
+        savedMessagesActive ? (
+          <SavedMessagesController onBack={() => navigate("/messages")} />
+        ) : activeChatId ? (
           <DesktopChatThreadAdapter
             key={activeChatId}
             chatId={activeChatId}
             rootChat={activeRootChat}
+            initialGroupTab={initialGroupTab}
             config={config}
             session={session}
             onBack={() => navigate("/messages")}

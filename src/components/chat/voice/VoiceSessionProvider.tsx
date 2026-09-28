@@ -6,55 +6,57 @@ import {
   Suspense,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 
 import type { IncomingCallView } from "@/types/chat";
-import type {
-  ChatRoomControlHandle,
-  VoiceControlState,
-} from "../ChatRoomControl";
+import { ChatComposerSessionProvider } from "@/components/chat/ChatComposerSessionProvider";
+import { GroupNowRoomSwitchDialog } from "@/components/chat/GroupNowRoomSwitchDialog";
+import { useGroupNowRoomJoin } from "@/hooks/useGroupNowRoomJoin";
+import type { GroupNowRoomTarget } from "@/types/group-now";
+import type { GroupRoomJoinResult } from "@/types/group-room-mutations";
+import type { CoreVoiceSessionDescriptor, CoreVoiceSessionLaunch, EnabledVoiceMediaCredentials } from "@/types/voice";
+import type { ChatRoomControlHandle, VoiceControlState } from "../ChatRoomControl";
 import { cn } from "@/lib/utils";
 import { IncomingCallOverlay } from "./IncomingCallOverlay";
-import {
-  useIncomingVoiceCalls,
-  type SubscribeToVoiceRooms,
-} from "./useIncomingVoiceCalls";
-
+import { LiveMoveHandoffBridge } from "./LiveMoveHandoffBridge";
+import { useIncomingVoiceCalls, type SubscribeToVoiceRooms } from "./useIncomingVoiceCalls";
+import { resolveVoiceConversationId } from "./voice-conversation-context";
+import { IDLE_VOICE_CONTROL_STATE } from "./voice-session-state";
+import { useVoiceParticipantSnapshot } from "./useVoiceParticipantSnapshot";
 const ChatRoomControl = lazy(() =>
   import("../ChatRoomControl").then((module) => ({
     default: module.ChatRoomControl,
   })),
 );
 
+import type { VoiceSessionParticipants } from "@/types/voice-session-participants";
+
 export type VoiceSessionDescriptor = {
   chatId: string;
   chatName: string;
   chatType: "direct" | "group";
+  coreSession?: CoreVoiceSessionDescriptor;
 };
 
 export type VoiceSessionContextValue = {
   activeSession: VoiceSessionDescriptor | null;
   state: VoiceControlState;
+  participantDetails: VoiceSessionParticipants | null;
   openRoom: (session: VoiceSessionDescriptor) => void;
+  joinRoom: (session: VoiceSessionDescriptor) => boolean;
+  openCoreRoom: (launch: CoreVoiceSessionLaunch) => void;
   openPanel: () => void;
+  minimizePanel: (showDock?: boolean) => void;
   toggleMicrophone: () => void;
   toggleOutput: () => void;
-  leaveRoom: () => void;
-};
-
-const IDLE_STATE: VoiceControlState = {
-  inside: false,
-  mediaStatus: "idle",
-  participantCount: 0,
-  micMuted: true,
-  outputMuted: false,
+  leaveRoom: () => Promise<void>;
 };
 
 const VoiceSessionContext = createContext<VoiceSessionContextValue | null>(null);
-
 export function VoiceSessionProvider({
   children,
   onIncomingCall,
@@ -65,25 +67,42 @@ export function VoiceSessionProvider({
   subscribeToVoiceRooms?: SubscribeToVoiceRooms;
 }) {
   const [activeSession, setActiveSession] = useState<VoiceSessionDescriptor | null>(null);
-  const [state, setState] = useState<VoiceControlState>(IDLE_STATE);
+  const activeSessionRef = useRef(activeSession);
+  useEffect(() => { activeSessionRef.current = activeSession; }, [activeSession]);
+  const [state, setState] = useState<VoiceControlState>(IDLE_VOICE_CONTROL_STATE);
+  const { participantDetails, handleParticipantsChange } = useVoiceParticipantSnapshot();
   const controlRef = useRef<ChatRoomControlHandle>(null);
   const autoConnectPendingRef = useRef(false);
+  const [initialCoreCredentials, setInitialCoreCredentials] = useState<EnabledVoiceMediaCredentials | null>(null);
   const handleControlRef = useCallback((control: ChatRoomControlHandle | null) => {
     controlRef.current = control;
     if (!control || !autoConnectPendingRef.current) return;
-    autoConnectPendingRef.current = false;
-    control.join();
+
+    // A keyed controller can be replaced once while the lazy boundary settles.
+    // Start against the latest mounted handle and consume the pending join once.
+    window.setTimeout(() => {
+      const latestControl = controlRef.current;
+      if (!latestControl || !autoConnectPendingRef.current) return;
+      autoConnectPendingRef.current = false;
+      latestControl.join();
+      setInitialCoreCredentials(null);
+    }, 0);
   }, []);
 
   const openRoom = useCallback(
     (session: VoiceSessionDescriptor) => {
       autoConnectPendingRef.current = false;
+      setInitialCoreCredentials(null);
+      if (state.inside && activeSession?.coreSession) {
+        controlRef.current?.open();
+        return;
+      }
       if (state.inside && activeSession && activeSession.chatId !== session.chatId) {
         controlRef.current?.open();
         return;
       }
       if (activeSession?.chatId !== session.chatId) {
-        setState(IDLE_STATE);
+        setState(IDLE_VOICE_CONTROL_STATE);
         setActiveSession(session);
       } else {
         setActiveSession(session);
@@ -92,6 +111,55 @@ export function VoiceSessionProvider({
     },
     [activeSession, state.inside],
   );
+
+  const openCoreRoom = useCallback(
+    (launch: CoreVoiceSessionLaunch) => {
+      autoConnectPendingRef.current = true;
+      setInitialCoreCredentials(launch.credentials);
+      setState(IDLE_VOICE_CONTROL_STATE);
+
+      setActiveSession({
+        chatId: launch.groupId,
+        chatName: launch.room.name,
+        chatType: "group",
+        coreSession: {
+          groupId: launch.groupId,
+          conversationId:
+            launch.conversationId ?? launch.groupId,
+          room: launch.room,
+          join: launch.join,
+        },
+      });
+    },
+    [],
+  );
+  const handleCoreRoomJoined = useCallback((
+    target: GroupNowRoomTarget,
+    join: GroupRoomJoinResult,
+    credentials: EnabledVoiceMediaCredentials,
+  ) => {
+    const conversationId = resolveVoiceConversationId(activeSession?.coreSession, target.groupId);
+    openCoreRoom({ groupId: target.groupId, conversationId, room: target.room, join, credentials });
+  }, [activeSession, openCoreRoom]);
+  const roomSwitch = useGroupNowRoomJoin({
+    onJoined: handleCoreRoomJoined,
+  });
+
+  const joinRoom = useCallback((session: VoiceSessionDescriptor) => {
+    if (state.inside) {
+      controlRef.current?.open();
+      return activeSession?.chatId === session.chatId;
+    }
+    const existingControl = activeSession?.chatId === session.chatId
+      ? controlRef.current
+      : null;
+    setInitialCoreCredentials(null);
+    autoConnectPendingRef.current = !existingControl;
+    if (!existingControl) setState(IDLE_VOICE_CONTROL_STATE);
+    setActiveSession(session);
+    existingControl?.join();
+    return true;
+  }, [activeSession?.chatId, state.inside]);
 
   const handleStateChange = useCallback((next: VoiceControlState) => {
     setState((current) =>
@@ -104,24 +172,38 @@ export function VoiceSessionProvider({
         : next,
     );
   }, []);
+  const handleLeaveConfirmed = useCallback((chatId: string, sessionId: string | null) => {
+    const current = activeSessionRef.current;
+    if (current?.chatId !== chatId || (current.coreSession?.join.sessionId ?? null) !== sessionId) return;
+    activeSessionRef.current = null;
+    autoConnectPendingRef.current = false;
+    setInitialCoreCredentials(null);
+    setState(IDLE_VOICE_CONTROL_STATE);
+    setActiveSession(null);
+  }, []);
+  const minimizePanel = useCallback((showDock?: boolean) => controlRef.current?.minimize(showDock), []);
 
   const value = useMemo(
     () => ({
       activeSession,
       state,
+      participantDetails: state.inside && participantDetails?.sessionId === activeSession?.coreSession?.join.sessionId ? participantDetails : null,
       openRoom,
+      joinRoom,
+      openCoreRoom,
       openPanel: () => controlRef.current?.open(),
+      minimizePanel,
       toggleMicrophone: () => {
         if (state.inside) controlRef.current?.toggleMicrophone();
       },
       toggleOutput: () => {
         if (state.inside) controlRef.current?.toggleOutput();
       },
-      leaveRoom: () => {
-        if (state.inside) controlRef.current?.leave();
+      leaveRoom: async () => {
+        if (state.inside) await controlRef.current?.leave();
       },
     }),
-    [activeSession, openRoom, state],
+    [activeSession, joinRoom, minimizePanel, openCoreRoom, openRoom, state, participantDetails],
   );
   const incoming = useIncomingVoiceCalls({
     busy: state.inside,
@@ -131,7 +213,8 @@ export function VoiceSessionProvider({
       const existingControl =
         activeSession?.chatId === call.chatId ? controlRef.current : null;
       autoConnectPendingRef.current = !existingControl;
-      setState(IDLE_STATE);
+      setInitialCoreCredentials(null);
+      setState(IDLE_VOICE_CONTROL_STATE);
       setActiveSession({
         chatId: call.chatId,
         chatName: call.chatName,
@@ -143,32 +226,45 @@ export function VoiceSessionProvider({
 
   return (
     <VoiceSessionContext.Provider value={value}>
-      <div
-        className={cn(
-          "contents",
-          state.inside && "voople-voice-session voople-voice-session--active",
-        )}
-      >
-        {children}
-        {activeSession ? (
-          <Suspense fallback={null}>
-            <ChatRoomControl
-              key={activeSession.chatId}
-              ref={handleControlRef}
-              {...activeSession}
-              renderTrigger={false}
-              initialOpen
-              onStateChange={handleStateChange}
-            />
-          </Suspense>
-        ) : null}
-        <IncomingCallOverlay
-          call={incoming.call}
-          declinePending={incoming.declinePending}
-          onAnswer={incoming.answer}
-          onDecline={() => void incoming.decline()}
-        />
-      </div>
+      <ChatComposerSessionProvider>
+        <div
+          className={cn(
+            "contents",
+            state.inside && "voople-voice-session voople-voice-session--active",
+          )}
+        >
+          {children}
+          <LiveMoveHandoffBridge />
+          {activeSession ? (
+            <Suspense fallback={null}>
+              <ChatRoomControl
+                key={`${activeSession.chatId}:${activeSession.coreSession?.join.sessionId ?? "legacy"}`}
+                ref={handleControlRef}
+                {...activeSession}
+                initialCoreCredentials={initialCoreCredentials ?? undefined}
+                onCoreRoomSwitch={roomSwitch.requestJoin}
+                renderTrigger={false}
+                onStateChange={handleStateChange}
+                onParticipantsChange={handleParticipantsChange}
+                onLeaveConfirmed={handleLeaveConfirmed}
+              />
+            </Suspense>
+          ) : null}
+          <GroupNowRoomSwitchDialog
+            room={roomSwitch.confirmationTarget?.room ?? null}
+            pending={roomSwitch.pending}
+            error={roomSwitch.confirmationError}
+            onCancel={roomSwitch.cancelSwitch}
+            onConfirm={() => void roomSwitch.confirmSwitch()}
+          />
+          <IncomingCallOverlay
+            call={incoming.call}
+            declinePending={incoming.declinePending}
+            onAnswer={incoming.answer}
+            onDecline={() => void incoming.decline()}
+          />
+        </div>
+      </ChatComposerSessionProvider>
     </VoiceSessionContext.Provider>
   );
 }
@@ -179,4 +275,8 @@ export function useVoiceSession() {
     throw new Error("useVoiceSession must be used inside VoiceSessionProvider");
   }
   return value;
+}
+
+export function useOptionalVoiceSession() {
+  return useContext(VoiceSessionContext);
 }

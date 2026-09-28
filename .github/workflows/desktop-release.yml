@@ -322,14 +322,26 @@ jobs:
             throw "Refusing to promote installer with signature status: $($signature.Status)."
           }
           @{
-            schemaVersion = 1
+            schemaVersion = 2
             version = $env:RELEASE_VERSION
             commit = $env:GITHUB_SHA
             sha256 = $hash
             authenticode = $signature.Status.ToString()
             processAudioPublisher = $env:PROCESS_AUDIO_INCLUDED -eq 'true'
             stagingMigrationRehearsal = '${{ steps.staging_config.outputs.configured }}' -eq 'true'
+            installedDeepLinkSmoke = $false
           } | ConvertTo-Json | Set-Content "release/provenance.json" -Encoding utf8
+
+      - name: Verify installed Room deep links
+        shell: pwsh
+        run: |
+          $requireAuthenticode = $env:REQUIRE_SIGNING -eq 'true'
+          ./scripts/verify-installed-desktop-deep-links.ps1 `
+            -InstallerPath "release/Voople-Setup-x64.exe" `
+            -RequireAuthenticode:$requireAuthenticode
+          $provenance = Get-Content "release/provenance.json" -Raw | ConvertFrom-Json
+          $provenance.installedDeepLinkSmoke = $true
+          $provenance | ConvertTo-Json | Set-Content "release/provenance.json" -Encoding utf8
 
       - name: Upload internal RC artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -381,6 +393,7 @@ jobs:
           if ($provenance.version -ne $env:RELEASE_VERSION) { throw "RC version does not match promotion." }
           $actualHash = (Get-FileHash "release/Voople-Setup-x64.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($actualHash -ne $provenance.sha256) { throw "RC checksum does not match provenance." }
+          if ($provenance.installedDeepLinkSmoke -ne $true) { throw "RC installed deep-link smoke evidence is missing." }
           if ($env:REQUIRE_SIGNING -eq "true") {
             $signature = Get-AuthenticodeSignature "release/Voople-Setup-x64.exe"
             if ($signature.Status -ne "Valid") { throw "RC Authenticode signature is not valid." }

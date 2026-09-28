@@ -91,3 +91,16 @@ export function toProfileCustomizationView(
     },
   };
 }
+
+export function compactAvatarFields(
+  related: CustomizationRow | CustomizationRow[] | null | undefined,
+) {
+  const customization = toProfileCustomizationView(
+    Array.isArray(related) ? related[0] : related,
+  );
+  return {
+    avatarUrl: customization.assets.animatedAvatarUrl ?? null,
+    avatarDecorationUrl: customization.assets.avatarDecorationUrl ?? null,
+    avatarRingId: customization.avatarRingId ?? null,
+  };
+}

@@ -1,17 +1,25 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { Heart, HelpCircle, MessageCircle, Palette, Repeat2, UserPlus } from "lucide-react";
+import { Heart, HelpCircle, MessageCircle, Palette, Radio, Repeat2, UserPlus } from "lucide-react";
 
 import type { NotificationView } from "@/types/notifications";
+import type { CoreRoomInviteIntent } from "@/types/room-invitations";
 
 /** Текст после имени актёра (для inline-пина в UI). */
-export function notificationActionText(type: string): string {
+export function notificationActionText(
+  type: string,
+  roomInviteIntent?: CoreRoomInviteIntent,
+): string {
   switch (type) {
     case "like":
       return "оценил(а) ваш пост";
     case "follow":
       return "подписался(ась) на вас";
+    case "friend_request":
+      return "отправил(а) запрос в друзья";
+    case "friend_accept":
+      return "принял(а) ваш запрос в друзья";
     case "reply":
       return "прокомментировал(а) ваш пост";
     case "repost":
@@ -22,6 +30,12 @@ export function notificationActionText(type: string): string {
       return "Кто-то оставил рисунок на вашей карточке";
     case "question":
       return "Вам задали анонимный вопрос";
+    case "room_invite":
+      return roomInviteIntent === "voop"
+        ? "зовёт вас отойти"
+        : roomInviteIntent === "split"
+          ? "предлагает Сплит"
+        : "приглашает вас в комнату";
     default:
       return "— новое уведомление";
   }
@@ -30,15 +44,23 @@ export function notificationActionText(type: string): string {
 /** Типы уведомлений без имени актёра (анонимные). */
 const ANONYMOUS_NOTIF_TYPES = new Set<string>(["profile_canvas_draw", "question"]);
 
-export function notificationText(type: string, actorName: string) {
+export function notificationText(
+  type: string,
+  actorName: string,
+  roomInviteIntent?: CoreRoomInviteIntent,
+) {
   if (ANONYMOUS_NOTIF_TYPES.has(type)) {
-    return notificationActionText(type);
+    return notificationActionText(type, roomInviteIntent);
   }
-  const action = notificationActionText(type);
+  const action = notificationActionText(type, roomInviteIntent);
   return actorName ? `${actorName} ${action}` : action;
 }
 
 export function notificationHref(notification: NotificationView) {
+  if (notification.type === "room_invite" && notification.roomInvite?.id) {
+    return `/room-invites/${notification.roomInvite.id}`;
+  }
+  if (notification.type === "room_invite") return "/notifications";
   if (
     (notification.type === "profile_canvas_draw" || notification.type === "question") &&
     notification.profileUsername
@@ -47,7 +69,7 @@ export function notificationHref(notification: NotificationView) {
   }
 
   if (
-    (notification.type === "follow" || notification.type === "profile_reaction") &&
+    (["follow", "friend_request", "friend_accept", "profile_reaction"].includes(notification.type)) &&
     notification.actor
   ) {
     return `/${notification.actor.username}`;
@@ -69,6 +91,8 @@ export function notificationHref(notification: NotificationView) {
 export function notificationIcon(type: string): LucideIcon {
   switch (type) {
     case "follow":
+    case "friend_request":
+    case "friend_accept":
       return UserPlus;
     case "reply":
       return MessageCircle;
@@ -78,6 +102,8 @@ export function notificationIcon(type: string): LucideIcon {
       return Palette;
     case "question":
       return HelpCircle;
+    case "room_invite":
+      return Radio;
     case "like":
     case "profile_reaction":
     default:

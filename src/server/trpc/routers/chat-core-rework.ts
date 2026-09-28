@@ -1,0 +1,529 @@
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+
+import { LIVE_MOVE_SCHEMA_UNAVAILABLE } from "@/lib/chat/live-move-readiness";
+
+import { assertRateLimit } from "@/lib/ratelimit-guard";
+import { rateLimits } from "@/lib/ratelimit";
+import { getCoreRoomInviteSessionRest } from "@/server/data/core-room-invitations-rest";
+import { liveMoveStatusForConsent } from "@/server/services/live-move.service";
+import {
+  archiveGroupRoom,
+  cancelCoreRoomInvite,
+  createAndJoinGroupRoom,
+  createGroupRoomMediaToken,
+  createGroupRoomScreenAudioToken,
+  createGroupRoom,
+  createRoomGuestInvite,
+  getCoreRoomInvitePreview,
+  getGroupNow,
+  heartbeatGroupRoom,
+  joinGroupRoom,
+  listCoreRoomInviteCandidates,
+  leaveGroupRoom,
+  respondToCoreRoomInvite,
+  renameGroupRoom,
+  sendCoreRoomInvite,
+  setGroupRoomKind,
+} from "@/server/services/chat.service";
+import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
+import {
+  cancelLiveMove,
+  liveMoveStatus,
+  listMyLiveMoves,
+  requestLiveMove,
+  respondLiveMove,
+} from "@/server/services/live-move.service";
+import {
+  assertServerFeatureAvailable,
+  getServerFeatureAccess,
+  ProductFeatureUnavailableError,
+} from "@/server/services/product-feature-access.service";
+
+import { protectedProcedure } from "../init";
+
+const roomKindSchema = z.enum(["temporary", "pinned"]);
+
+function assertMultiRoomAccess(userId: string) {
+  try {
+    assertServerFeatureAvailable("multi_room_groups", userId);
+  } catch (error) {
+    if (error instanceof ProductFeatureUnavailableError) {
+      throw new TRPCError({ code: "NOT_FOUND", message: error.message });
+    }
+    throw error;
+  }
+}
+
+function toRoomError(error: unknown, fallback: string): TRPCError {
+  if (error instanceof TRPCError) return error;
+  if (error instanceof ProductFeatureUnavailableError) {
+    return new TRPCError({ code: "NOT_FOUND", message: error.message });
+  }
+  if (
+    error instanceof Error
+    && error.message === "Сначала подтвердите завершение текущего разговора"
+  ) {
+    return new TRPCError({ code: "PRECONDITION_FAILED", message: error.message });
+  }
+  return new TRPCError({
+    code: "BAD_REQUEST",
+    message: error instanceof Error ? error.message : fallback,
+  });
+}
+
+export const chatCoreReworkProcedures = {
+  coreRequestLiveMove: protectedProcedure
+    .input(z.strictObject({
+      groupId: z.string().uuid(),
+      mode: z.enum(["split", "voop"]),
+      inviteeIds: z.array(z.string().uuid()).min(1).max(8),
+      expectedSourceSessionId: z.string().uuid().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
+      try {
+        return await requestLiveMove({ ...input, inviterId: ctx.user.id });
+      } catch (error) {
+        throw toRoomError(error, "Не удалось отправить запрос на Сплит");
+      }
+    }),
+
+  coreRespondLiveMove: protectedProcedure
+    .input(z.strictObject({ consentId: z.string().uuid(), accept: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
+      try {
+        return await respondLiveMove(input.consentId, ctx.user.id, input.accept);
+      } catch (error) {
+        throw toRoomError(error, "Не удалось ответить на запрос");
+      }
+    }),
+
+  coreCancelLiveMove: protectedProcedure
+    .input(z.strictObject({ requestId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      try {
+        return await cancelLiveMove(input.requestId, ctx.user.id);
+      } catch (error) {
+        throw toRoomError(error, "Не удалось отменить запрос");
+      }
+    }),
+
+  coreLiveMoveStatus: protectedProcedure
+    .input(z.strictObject({ requestId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      try {
+        return await liveMoveStatus(input.requestId, ctx.user.id);
+      } catch (error) {
+        throw toRoomError(error, "Не удалось проверить запрос");
+      }
+    }),
+
+  coreMyLiveMoves: protectedProcedure.query(async ({ ctx }) => {
+    assertMultiRoomAccess(ctx.user.id);
+    try {
+      return await listMyLiveMoves(ctx.user.id);
+    } catch (error) {
+      if (error instanceof Error && error.message === LIVE_MOVE_SCHEMA_UNAVAILABLE) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: LIVE_MOVE_SCHEMA_UNAVAILABLE });
+      }
+      throw toRoomError(error, "Не удалось проверить переходы между комнатами");
+    }
+  }),
+
+  coreRoomAvailability: protectedProcedure.query(({ ctx }) => ({
+    enabled: getServerFeatureAccess("multi_room_groups", ctx.user.id).enabled,
+  })),
+
+  coreGroupNow: protectedProcedure
+    .input(z.object({ groupId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        assertMultiRoomAccess(ctx.user.id);
+        return await getGroupNow(input.groupId, ctx.user.id);
+      } catch (error) {
+        throw toRoomError(error, "Не удалось загрузить комнаты группы");
+      }
+    }),
+
+  coreCreateRoom: protectedProcedure
+    .input(z.strictObject({
+      groupId: z.string().uuid(),
+      name: z.string().trim().min(1).max(80),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      try {
+        const room = await createGroupRoom({ ...input, userId: ctx.user.id });
+        await recordServerProductEvent({
+          name: "room_created",
+          actorId: ctx.user.id,
+          route: "/trpc/chat.coreCreateRoom",
+          subject: { kind: "group", id: input.groupId },
+          properties: { kind: room.kind },
+        });
+        return room;
+      } catch (error) {
+        throw toRoomError(error, "Не удалось создать комнату");
+      }
+    }),
+
+  coreCreateAndJoinRoom: protectedProcedure
+    .input(z.strictObject({
+      groupId: z.string().uuid(),
+      name: z.string().trim().min(1).max(80),
+      requestId: z.string().uuid(),
+      micMuted: z.boolean().default(true),
+      confirmedCrossContext: z.boolean().default(false),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
+      try {
+        const result = await createAndJoinGroupRoom({
+          groupId: input.groupId,
+          userId: ctx.user.id,
+          kind: "pinned",
+          name: input.name,
+          requestId: input.requestId,
+          micMuted: input.micMuted,
+          allowCrossContext: input.confirmedCrossContext,
+        });
+        await recordServerProductEvent({
+          name: "room_created",
+          actorId: ctx.user.id,
+          dedupeId: `created:${input.requestId}`,
+          route: "/trpc/chat.coreCreateAndJoinRoom",
+          subject: { kind: "group", id: input.groupId },
+          properties: { kind: result.room.kind, joined: true },
+        });
+        await recordServerProductEvent({
+          name: "room_joined",
+          actorId: ctx.user.id,
+          dedupeId: `joined:${input.requestId}`,
+          route: "/trpc/chat.coreCreateAndJoinRoom",
+          subject: { kind: "group", id: input.groupId },
+          properties: { roomKind: result.room.kind, transition: "create" },
+        });
+        return result;
+      } catch (error) {
+        throw toRoomError(error, "Не удалось создать комнату");
+      }
+    }),
+
+  coreSetRoomKind: protectedProcedure
+    .input(z.object({ roomId: z.string().uuid(), kind: roomKindSchema }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      try {
+        return await setGroupRoomKind({ ...input, userId: ctx.user.id });
+      } catch (error) {
+        throw toRoomError(error, "Не удалось изменить тип комнаты");
+      }
+    }),
+
+  coreRenameRoom: protectedProcedure
+    .input(z.object({
+      roomId: z.string().uuid(),
+      name: z.string().trim().min(1).max(80),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      try {
+        return await renameGroupRoom({ ...input, userId: ctx.user.id });
+      } catch (error) {
+        throw toRoomError(error, "Не удалось переименовать комнату");
+      }
+    }),
+
+  coreArchiveRoom: protectedProcedure
+    .input(z.object({ roomId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      try {
+        return await archiveGroupRoom(input.roomId, ctx.user.id);
+      } catch (error) {
+        throw toRoomError(error, "Не удалось удалить комнату");
+      }
+    }),
+
+  coreJoinRoom: protectedProcedure
+    .input(z.object({
+      roomId: z.string().uuid(),
+      micMuted: z.boolean().default(true),
+      confirmedCrossContext: z.boolean().default(false),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
+      try {
+        const joined = await joinGroupRoom({
+          roomId: input.roomId,
+          userId: ctx.user.id,
+          micMuted: input.micMuted,
+          allowCrossContext: input.confirmedCrossContext,
+        });
+        await recordServerProductEvent({
+          name: "room_joined",
+          actorId: ctx.user.id,
+          dedupeId: `session:${joined.result.sessionId}`,
+          route: "/trpc/chat.coreJoinRoom",
+          subject: { kind: "group", id: joined.groupId },
+          properties: {
+            roomKind: joined.roomKind,
+            transition: joined.result.switched ? "switch" : "join",
+          },
+        });
+        return joined.result;
+      } catch (error) {
+        throw toRoomError(error, "Не удалось войти в комнату");
+      }
+    }),
+
+  coreRoomInviteCandidates: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      try {
+        return await listCoreRoomInviteCandidates(input.sessionId, ctx.user.id);
+      } catch (error) {
+        throw toRoomError(error, "Не удалось загрузить участников для приглашения");
+      }
+    }),
+
+  coreCreateRoomGuestInvite: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
+      try {
+        const invite = await createRoomGuestInvite({
+          sessionId: input.sessionId,
+          userId: ctx.user.id,
+        });
+        await recordServerProductEvent({
+          name: "room_invite_sent",
+          actorId: ctx.user.id,
+          dedupeId: invite.id,
+          route: "/trpc/chat.coreCreateRoomGuestInvite",
+          properties: { transport: "guest_link" },
+        });
+        return invite;
+      } catch (error) {
+        throw toRoomError(error, "Не удалось создать гостевую ссылку");
+      }
+    }),
+
+  coreRoomInvitePreview: protectedProcedure
+    .input(z.object({ inviteId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      try {
+        return await getCoreRoomInvitePreview(input.inviteId, ctx.user.id);
+      } catch {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Не удалось открыть приглашение" });
+      }
+    }),
+
+  coreSendRoomInvite: protectedProcedure
+    .input(z.object({
+      sessionId: z.string().uuid(),
+      inviteeId: z.string().uuid(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
+      try {
+        const invite = await sendCoreRoomInvite({
+          ...input,
+          inviterId: ctx.user.id,
+        });
+        await recordServerProductEvent({
+          name: "room_invite_sent",
+          actorId: ctx.user.id,
+          route: "/trpc/chat.coreSendRoomInvite",
+          properties: { transport: "notification" },
+        });
+        return invite;
+      } catch (error) {
+        throw toRoomError(error, "Не удалось отправить приглашение");
+      }
+    }),
+
+  coreSendVoop: protectedProcedure
+    .input(z.object({
+      sessionId: z.string().uuid(),
+      inviteeId: z.string().uuid(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
+      try {
+        const context = await getCoreRoomInviteSessionRest(input.sessionId, ctx.user.id);
+        const invite = await requestLiveMove({
+          groupId: context.groupId, inviterId: ctx.user.id,
+          inviteeIds: [input.inviteeId], mode: "voop",
+          expectedSourceSessionId: input.sessionId,
+        });
+        await recordServerProductEvent({
+          name: "room_invite_sent",
+          actorId: ctx.user.id,
+          dedupeId: `voop:${invite.id}`,
+          route: "/trpc/chat.coreSendVoop",
+          subject: { kind: "group", id: context.groupId },
+          properties: { transport: "voop" },
+        });
+        return { ...invite, groupId: context.groupId };
+      } catch (error) {
+        throw toRoomError(error, "Не удалось отправить Вуп");
+      }
+    }),
+
+  coreVoopStatus: protectedProcedure
+    .input(z.object({ inviteId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      try {
+        return await liveMoveStatus(input.inviteId, ctx.user.id);
+      } catch (error) {
+        throw toRoomError(error, "Не удалось проверить Вуп");
+      }
+    }),
+
+  coreAcceptVoop: protectedProcedure
+    .input(z.object({
+      inviteId: z.string().uuid(),
+      confirmedCrossContext: z.boolean().default(false),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
+      try {
+        await respondLiveMove(input.inviteId, ctx.user.id, true);
+        const accepted = await liveMoveStatusForConsent(input.inviteId, ctx.user.id);
+        if (!accepted.join || !accepted.room) throw new Error("Вуп ещё ожидает согласия");
+        const credentials = await createGroupRoomMediaToken(
+          accepted.join.sessionId,
+          ctx.user.id,
+        );
+        await recordServerProductEvent({
+          name: "room_joined",
+          actorId: ctx.user.id,
+          dedupeId: `voop-accepted:${input.inviteId}`,
+          route: "/trpc/chat.coreAcceptVoop",
+          subject: { kind: "group", id: accepted.groupId },
+          properties: { roomKind: "temporary", transition: "voop" },
+        });
+        return { ...accepted, credentials };
+      } catch (error) {
+        throw toRoomError(error, "Не удалось принять Вуп");
+      }
+    }),
+
+  coreRespondRoomInvite: protectedProcedure
+    .input(z.object({
+      inviteId: z.string().uuid(),
+      response: z.enum(["accepted", "declined"]),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
+      try {
+        return await respondToCoreRoomInvite({ ...input, userId: ctx.user.id });
+      } catch (error) {
+        throw toRoomError(error, "Не удалось ответить на приглашение");
+      }
+    }),
+
+  coreCancelRoomInvite: protectedProcedure
+    .input(z.object({ inviteId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.inviteToChatRoom, ctx.user.id);
+      try {
+        return await cancelCoreRoomInvite({ ...input, inviterId: ctx.user.id });
+      } catch (error) {
+        throw toRoomError(error, "Не удалось отменить приглашение");
+      }
+    }),
+
+  coreRoomMediaToken: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
+      try {
+        return await createGroupRoomMediaToken(input.sessionId, ctx.user.id);
+      } catch (error) {
+        throw toRoomError(error, "Не удалось подключить голос");
+      }
+    }),
+
+  coreRoomScreenAudioToken: protectedProcedure
+    .input(z.object({
+      sessionId: z.string().uuid(),
+      screenSessionId: z.string().uuid(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
+      try {
+        return await createGroupRoomScreenAudioToken(
+          input.sessionId,
+          ctx.user.id,
+          input.screenSessionId,
+        );
+      } catch (error) {
+        throw toRoomError(error, "Не удалось подключить звук демонстрации");
+      }
+    }),
+
+  coreLeaveRoom: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      try {
+        const result = await leaveGroupRoom({
+          userId: ctx.user.id,
+          sessionId: input.sessionId,
+        });
+        if (result.left) {
+          await recordServerProductEvent({
+            name: "room_left",
+            actorId: ctx.user.id,
+            route: "/trpc/chat.coreLeaveRoom",
+            properties: { status: result.sessionStatus ?? "unknown" },
+          });
+        }
+        return result;
+      } catch (error) {
+        throw toRoomError(error, "Не удалось выйти из комнаты");
+      }
+    }),
+
+  coreHeartbeatRoom: protectedProcedure
+    .input(z.object({
+      sessionId: z.string().uuid(),
+      micMuted: z.boolean(),
+      cameraEnabled: z.boolean(),
+      screenSharing: z.boolean(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      try {
+        return await heartbeatGroupRoom({ ...input, userId: ctx.user.id });
+      } catch (error) {
+        throw toRoomError(error, "Связь с комнатой потеряна");
+      }
+    }),
+};

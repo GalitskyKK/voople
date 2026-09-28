@@ -1,8 +1,6 @@
 import type { Session } from "@supabase/supabase-js";
 
 import { AccountSecuritySettings } from "@/components/settings/AccountSecuritySettings";
-import { AccountDataControls } from "@/components/settings/AccountDataControls";
-import { downloadAccountExport } from "@/lib/account-export-client";
 import { listTrustedDevices, revokeTrustedDevice } from "@/lib/auth/trusted-device-client";
 
 import { getSupabase } from "../auth/supabase";
@@ -37,12 +35,6 @@ export function DesktopAccountSecuritySettings({
       }}
       loadTrustedDevices={() => listTrustedDevices({ apiUrl: config.apiUrl, accessToken: session.access_token })}
       revokeTrustedDevice={(deviceRecordId) => revokeTrustedDevice({ apiUrl: config.apiUrl, accessToken: session.access_token, deviceRecordId })}
-    />
-    <AccountDataControls
-      exportAccountData={() => downloadAccountExport(
-        new URL("/api/account/export", config.apiUrl).toString(),
-        session.access_token,
-      )}
     />
     </>
   );

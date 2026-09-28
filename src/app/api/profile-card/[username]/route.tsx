@@ -257,7 +257,7 @@ export async function GET(
             </div>
             <div style={{ position: "relative", zIndex: 3, display: "flex", justifyContent: "space-between", marginTop: 24, fontSize: 18, color: "#ffffff66" }}>
               <span>Мой вайб в Voople</span>
-              <span>voople.ru/{profile.username}</span>
+              <span>voople.app/{profile.username}</span>
             </div>
           </div>
           {frameUrl ? (

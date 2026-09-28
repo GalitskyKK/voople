@@ -83,7 +83,7 @@ export function ProfileFollowButton({
         type="button"
         variant={following ? "secondary" : "primary"}
         size="sm"
-        className="shrink-0"
+        className="h-11 w-11 shrink-0 px-0 sm:h-8 sm:w-auto sm:px-3"
         disabled={pending}
         aria-label={actionLabel}
         onClick={toggleFollow}
@@ -104,7 +104,7 @@ export function ProfileFollowButton({
         type="button"
         variant={following ? "secondary" : "primary"}
         size="sm"
-        className="w-full"
+        className="h-11 w-full sm:h-8"
         disabled={pending}
         aria-pressed={following}
         onClick={toggleFollow}

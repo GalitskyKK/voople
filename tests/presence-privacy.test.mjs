@@ -14,8 +14,8 @@ test("online presence is filtered by the server instead of a global client chann
 });
 
 test("web and desktop compose the same privacy settings view", () => {
-  const web = read("src/components/settings/WebInterestSettings.tsx");
-  const desktop = read("desktop/src/settings/DesktopInterestSettings.tsx");
+  const web = read("src/components/settings/WebPrivacySettings.tsx");
+  const desktop = read("desktop/src/settings/DesktopPrivacySettings.tsx");
   assert.match(web, /UserPrivacySettingsPanel/);
   assert.match(desktop, /UserPrivacySettingsPanel/);
 });
@@ -75,6 +75,13 @@ test("group member pickers and mutations enforce invite privacy", () => {
   assert.match(management, /listGroupContactsRest[\s\S]+filterUserIdsByPrivacyFieldRest/);
   assert.match(management, /addGroupMembersRest[\s\S]+Один из пользователей запретил приглашения/);
   assert.match(management, /createGroupChatRest[\s\S]+Один из пользователей запретил приглашения/);
+});
+
+test("Room invite candidates and mutations enforce invite privacy", () => {
+  const invitations = read("src/server/services/core-room-invitations.service.ts");
+  assert.match(invitations, /listCoreRoomInviteCandidates[\s\S]+"inviteScope"/);
+  assert.match(invitations, /sendCoreRoomInvite[\s\S]+"inviteScope"/);
+  assert.match(invitations, /Пользователь запретил приглашения от вас/);
 });
 
 test("recommendations and anonymous invite activity cannot bypass privacy", () => {

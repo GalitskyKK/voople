@@ -3,25 +3,21 @@ import { invoke } from "@tauri-apps/api/core";
 import { Plus } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { BrandedLoadingView } from "@/components/brand/BrandedLoadingView";
 import {
   AppBottomNavigationVisual,
-  AppSidebarVisual,
   type NavigationDestinationRenderer,
 } from "@/components/layout/AppNavigationVisual";
 import { AppShellFrame } from "@/components/layout/AppShellFrame";
 import { AppPageContent } from "@/components/layout/AppPageContent";
-import { AccountMenuVisual } from "@/components/layout/AccountMenuVisual";
 import { FeedHeaderVisual } from "@/components/layout/FeedHeaderVisual";
-import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { NotFoundView } from "@/components/system/NotFoundView";
 import { COPY, type FeedTabId } from "@/lib/constants/copy";
-import { resolveRingStyle } from "@/lib/customization/rings";
+import { roomInviteIdFromPath } from "@/lib/chat/core-room-invite-preview";
 import { getAppRouteLayout } from "@/lib/layout/route-layout";
+import { groupSurfaceFromPath } from "@/lib/layout/messages-path";
 import { registerInternalNavigationAdapter } from "@/lib/platform/internal-navigation";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 import { useVoiceSession } from "@/components/chat/voice/VoiceSessionProvider";
-import { useSidebarPreference } from "@/hooks/useSidebarPreference";
 
 import { syncDesktopUser } from "../api/sync-user";
 import { createDesktopTrpcClient } from "../api/trpc";
@@ -30,6 +26,8 @@ import type { DesktopConfig } from "../config";
 import { useDesktopHotkeys } from "../hooks/useDesktopHotkeys";
 import { useNativeVoiceHeartbeat } from "../hooks/useNativeVoiceHeartbeat";
 import { DesktopNotificationBridge } from "../notifications/DesktopNotificationBridge";
+import { DesktopAppSidebarAdapter } from "../adapters/DesktopAppSidebarAdapter";
+import { DesktopRouteFallback } from "./DesktopRouteFallback";
 const DesktopFeedAdapter = lazy(() =>
   import("../adapters/DesktopFeedAdapter").then((module) => ({
     default: module.DesktopFeedAdapter,
@@ -48,6 +46,11 @@ const DesktopHashtagFeedAdapter = lazy(() =>
 const DesktopNotifications = lazy(() =>
   import("../notifications/DesktopNotifications").then((module) => ({
     default: module.DesktopNotifications,
+  })),
+);
+const DesktopRoomInvitePreview = lazy(() =>
+  import("../adapters/DesktopRoomInviteAdapter").then((module) => ({
+    default: module.DesktopRoomInviteAdapter,
   })),
 );
 const DesktopProfile = lazy(() =>
@@ -111,6 +114,8 @@ const RESERVED_PROFILE_SLUGS = new Set([
   "messages",
   "notifications",
   "post",
+  "search",
+  "room-invites",
   "settings",
   "shop",
 ]);
@@ -155,18 +160,25 @@ function groupSlugFromPath(pathname: string) {
 
 export function DesktopShell({
   config,
+  initialPathname,
+  onInitialPathConsumed,
+  onPendingPathPreserved,
   session,
 }: {
   config: DesktopConfig;
+  initialPathname: string | null;
+  onInitialPathConsumed: () => void;
+  onPendingPathPreserved: (path: string) => void;
   session: Session;
 }) {
-  const [pathname, setPathname] = useState("/feed");
+  const [pathname, setPathname] = useState(initialPathname === "/explore" ? "/search" : initialPathname ?? "/messages");
   const [syncError, setSyncError] = useState<string | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
   const [feedVersion, setFeedVersion] = useState(0);
   const [feedTab, setFeedTab] = useState<FeedTabId>("overview");
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const previousPathnameRef = useRef("/feed");
+  const previousPathnameRef = useRef("/messages");
+  const roomSurfacePathRef = useRef(initialPathname ?? "/messages");
   const [viewerSummary, setViewerSummary] = useState<{
     username: string;
     displayName: string;
@@ -175,13 +187,18 @@ export function DesktopShell({
     avatarRingId?: string | null;
   } | null>(null);
   const { preferences } = useAppPreferences();
-  const { collapsed: sidebarCollapsed, setCollapsed: setSidebarCollapsed } = useSidebarPreference();
   const voiceSession = useVoiceSession();
+  const { minimizePanel: minimizeVoicePanel } = voiceSession;
   useNativeVoiceHeartbeat({
     config,
     accessToken: session.access_token,
     voiceSession,
   });
+
+  useEffect(() => {
+    if (roomSurfacePathRef.current !== pathname) minimizeVoicePanel(false);
+    roomSurfacePathRef.current = pathname;
+  }, [minimizeVoicePanel, pathname]);
 
   useEffect(() => {
     let active = true;
@@ -234,13 +251,20 @@ export function DesktopShell({
         void getSupabase(config).auth.signOut();
         return;
       }
+      const destination = href === "/explore" ? "/search" : href;
       setPathname((current) => {
-        if (current !== href) previousPathnameRef.current = current;
-        return href;
+        if (current !== destination) previousPathnameRef.current = current;
+        return destination;
       });
     },
     [config],
   );
+
+  useEffect(() => {
+    if (!initialPathname) return;
+    navigate(initialPathname);
+    onInitialPathConsumed();
+  }, [initialPathname, navigate, onInitialPathConsumed]);
 
   useEffect(
     () => registerInternalNavigationAdapter(navigate),
@@ -255,12 +279,13 @@ export function DesktopShell({
   const hotkeyActions = useMemo(
     () => ({
       newPost: () => {
+        if (pathname !== "/feed") return;
         revealMainWindow();
         setComposerOpen(true);
       },
       search: () => {
         revealMainWindow();
-        navigate("/explore");
+        navigate("/search");
       },
       messages: () => {
         revealMainWindow();
@@ -278,9 +303,9 @@ export function DesktopShell({
       },
       leaveVoiceRoom: voiceSession.leaveRoom,
     }),
-    [navigate, revealMainWindow, voiceSession],
+    [navigate, pathname, revealMainWindow, voiceSession],
   );
-  useDesktopHotkeys(preferences.hotkeys, hotkeyActions, pathname === "/settings");
+  useDesktopHotkeys(preferences.hotkeys.filter(({ action }) => action !== "newPost"), hotkeyActions, pathname === "/settings");
 
   const renderDestination = useCallback<NavigationDestinationRenderer>(
     ({ href, label, className, active, children, onNavigate }) => (
@@ -312,46 +337,29 @@ export function DesktopShell({
   const profileUsername = profileUsernameFromPath(pathname);
   const postId = postIdFromPath(pathname);
   const chatId = chatIdFromPath(pathname);
+  const savedMessagesActive = pathname === "/messages/saved";
   const groupSettingsChatId = groupSettingsChatIdFromPath(pathname);
+  const roomInviteId = roomInviteIdFromPath(pathname);
   const hashtag = hashtagFromPath(pathname);
   const groupSlug = groupSlugFromPath(pathname);
   const isProfileRoute = pathname === "/me" || profileUsername !== null;
-  const isMessagesRoute = pathname === "/messages" || chatId !== null || groupSettingsChatId !== null;
+  const isMessagesRoute = pathname === "/messages" || savedMessagesActive || chatId !== null || groupSettingsChatId !== null;
   const routeLayout = getAppRouteLayout(pathname);
 
   return (
     <AppShellFrame
       routeKind={routeLayout.routeKind}
+      navigationKind="messenger"
       fixedViewport
       sidebar={
-        <AppSidebarVisual
+        <DesktopAppSidebarAdapter
           pathname={pathname}
-          collapsed={sidebarCollapsed}
-          onCollapsedChange={setSidebarCollapsed}
-          notificationBadge={notificationBadge}
+          config={config}
+          session={session}
+          viewer={viewerSummary}
+          notificationBadge={notificationBadge ?? undefined}
           renderDestination={renderDestination}
-          accountNavigation={
-            viewerSummary ? (
-              <AccountMenuVisual
-                displayName={viewerSummary.displayName}
-                username={viewerSummary.username}
-                compact={sidebarCollapsed}
-                avatar={
-                  <ProfileAvatarVisual
-                    displayName={viewerSummary.displayName}
-                    size="sm"
-                    ringClassName={resolveRingStyle(viewerSummary.avatarRingId)?.className}
-                    avatarImage={viewerSummary.avatarUrl ? <img src={viewerSummary.avatarUrl} alt="" className="h-full w-full object-cover" /> : undefined}
-                    decorationImage={viewerSummary.avatarDecorationUrl ? <img src={viewerSummary.avatarDecorationUrl} alt="" className="h-full w-full object-contain" /> : undefined}
-                  />
-                }
-                onOpenProfile={() => navigate("/me")}
-                onOpenHelp={() => navigate("/help")}
-                onOpenSettings={() => navigate("/settings")}
-                onLogout={() => navigate("/login")}
-              />
-            ) : undefined
-          }
+          navigate={navigate}
         />
       }
       mainClassName={routeLayout.contentClassName}
@@ -371,7 +379,7 @@ export function DesktopShell({
             {syncError}
           </p>
         )}
-        <Suspense fallback={<DesktopRouteFallback />}>
+        <Suspense fallback={<DesktopRouteFallback profile={isProfileRoute} />}>
           {pathname === "/feed" ? (
             <DesktopFeedAdapter
               key={feedVersion}
@@ -381,11 +389,12 @@ export function DesktopShell({
               navigate={navigate}
               tab={feedTab}
             />
-          ) : pathname === "/explore" ? (
+          ) : pathname === "/search" ? (
             <DesktopExplore
               config={config}
               session={session}
               renderDestination={renderDestination}
+              navigate={navigate}
             />
           ) : hashtag ? (
             <DesktopHashtagFeedAdapter
@@ -400,6 +409,12 @@ export function DesktopShell({
               session={session}
               onUnreadCountChange={setUnreadNotifications}
               renderDestination={renderDestination}
+            />
+          ) : roomInviteId ? (
+            <DesktopRoomInvitePreview
+              inviteId={roomInviteId}
+              config={config}
+              onPendingPathPreserved={onPendingPathPreserved}
             />
           ) : pathname === "/events" ? (
             <AppPageContent><EventsPage /></AppPageContent>
@@ -429,6 +444,8 @@ export function DesktopShell({
               config={config}
               session={session}
               activeChatId={chatId}
+              savedMessagesActive={savedMessagesActive}
+              initialGroupTab={groupSurfaceFromPath(pathname)}
               navigate={navigate}
             />
           ) : postId ? (
@@ -455,7 +472,7 @@ export function DesktopShell({
         </Suspense>
       </div>
 
-      {(pathname === "/feed" || pathname === "/me") && (
+      {pathname === "/feed" && (
         <button
           type="button"
           className="desktop-create-fab"
@@ -468,7 +485,7 @@ export function DesktopShell({
         </button>
       )}
 
-      {!chatId && !groupSettingsChatId ? (
+      {!chatId && !savedMessagesActive && !groupSettingsChatId ? (
         <AppBottomNavigationVisual
           pathname={pathname}
           notificationBadge={notificationBadge}
@@ -487,13 +504,5 @@ export function DesktopShell({
         </Suspense>
       )}
     </AppShellFrame>
-  );
-}
-
-function DesktopRouteFallback() {
-  return (
-    <AppPageContent className="py-4 lg:py-6">
-      <BrandedLoadingView compact />
-    </AppPageContent>
   );
 }

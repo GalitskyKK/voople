@@ -1,24 +1,29 @@
 import type { Session } from "@supabase/supabase-js";
 import { ArrowLeft, Hash } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ChatSectionsBarView } from "@/components/chat/ChatSectionsBarView";
 import { ChatThreadFrameView } from "@/components/chat/ChatThreadFrameView";
 import { ChatWindowHeaderVisual } from "@/components/chat/ChatWindowHeaderVisual";
 import { ChatPeerPresence } from "@/components/chat/ChatPeerPresence";
-import { GroupInfoDrawerView, type GroupInfoDrawerTab } from "@/components/chat/GroupInfoDrawerView";
-import { VoiceRoomButton } from "@/components/chat/voice/VoiceRoomButton";
+import { GroupInfoDrawerView } from "@/components/chat/GroupInfoDrawerView";
+import { GroupInviteCopyNotice, useGroupInviteQuickCopy } from "@/components/chat/useGroupInviteQuickCopy";
 import { DisplayNameWithPin } from "@/components/profile/DisplayNameWithPin";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { ChatMediaLightbox } from "@/components/chat/ChatMediaLightbox";
 import { ChatMessageBubble } from "@/components/chat/ChatMessageBubble";
+import { ChatConversationStart } from "@/components/chat/ChatConversationStart";
 import { buildChatTimeline } from "@/lib/chat/group-messages";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
-import type { ChatGroupMemberView, ChatListItem, ChatMessageView, GroupCommunityView, GroupEmojiView } from "@/types/chat";
-import type { GroupDiscoveryProfileView, InterestCatalogView } from "@/types/social";
+import { useBrowserOnline } from "@/hooks/useBrowserOnline";
+import type { ChatListItem, GroupEmojiView } from "@/types/chat";
+import { ChatConversationState } from "@/components/chat/ChatConversationState";
+import { useChatComposerSession } from "@/components/chat/ChatComposerSessionProvider";
 
 import type { DesktopConfig } from "../config";
 import { DesktopChatComposerAdapter } from "./DesktopChatComposerAdapter";
+import { DesktopChatRoomHeaderAction } from "./DesktopChatRoomHeaderAction";
+import { useDesktopGroupPanel } from "./useDesktopGroupPanel";
 import { DesktopSectionAccessAdapter } from "./DesktopSectionAccessAdapter";
 import { DesktopSubchatCreatorAdapter } from "./DesktopSubchatCreatorAdapter";
 import { useDesktopChatThread } from "../chat/useDesktopChatThread";
@@ -27,6 +32,7 @@ import { createDesktopTrpcClient } from "../api/trpc";
 export function DesktopChatThreadAdapter({
   chatId,
   rootChat,
+  initialGroupTab,
   config,
   session,
   onBack,
@@ -38,6 +44,7 @@ export function DesktopChatThreadAdapter({
 }: {
   chatId: string;
   rootChat: ChatListItem | null;
+  initialGroupTab: "chat" | "now" | "people";
   config: DesktopConfig;
   session: Session;
   onBack: () => void;
@@ -58,20 +65,30 @@ export function DesktopChatThreadAdapter({
     sending,
     toggleReaction,
   } = useDesktopChatThread(config, session, chatId, onInboxChange);
-  const [replyTo, setReplyTo] = useState<ChatMessageView | null>(null);
-  const [editing, setEditing] = useState<ChatMessageView | null>(null);
+  const {
+    replyTo,
+    setText, setReplyTo, setEditing, setPendingTrack,
+    discardPendingUpload,
+  } = useChatComposerSession(chatId);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [groupEmojis, setGroupEmojis] = useState<GroupEmojiView[]>([]);
-  const [groupDrawerOpen, setGroupDrawerOpen] = useState(false);
-  const [groupDrawerTab, setGroupDrawerTab] = useState<GroupInfoDrawerTab>("info");
-  const [groupCommunity, setGroupCommunity] = useState<GroupCommunityView | null>(null);
-  const [groupMembers, setGroupMembers] = useState<ChatGroupMemberView[]>([]);
-  const [roomParticipantIds, setRoomParticipantIds] = useState<ReadonlySet<string>>(() => new Set());
-  const [groupTopicNames, setGroupTopicNames] = useState<string[]>([]);
-  const [groupPanelLoading, setGroupPanelLoading] = useState(false);
-  const [groupTagPending, setGroupTagPending] = useState(false);
-  const [groupPanelError, setGroupPanelError] = useState<string | null>(null);
-  const groupRequestIdRef = useRef(0);
+  const [pendingFavoriteId, setPendingFavoriteId] = useState<string | null>(null);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
+  const online = useBrowserOnline();
+  const invite = useGroupInviteQuickCopy({
+    groupId: chatId,
+    baseUrl: config.apiUrl,
+    createInvite: async () => {
+      const client = createDesktopTrpcClient(config, () => session.access_token);
+      return await client.mutation("chat.createInvite", { chatId, lifetime: "7d" }) as { token: string; expiresAt: string | null };
+    },
+  });
+  const groupPanel = useDesktopGroupPanel({
+    chatId,
+    config,
+    enabled: data?.chat.type === "group",
+    session,
+  });
   const { containerRef: messagesRef, contentRef: messagesContentRef } =
     useChatAutoScroll(chatId, data?.messages.length ?? 0);
 
@@ -85,73 +102,14 @@ export function DesktopChatThreadAdapter({
     return () => { active = false; };
   }, [chatId, config, data?.chat.type, session.access_token]);
 
-  const loadGroupPanel = () => {
-    if (data?.chat.type !== "group") return;
-    const requestId = ++groupRequestIdRef.current;
-    setGroupPanelLoading(true);
-    setGroupPanelError(null);
-    const client = createDesktopTrpcClient(config, () => session.access_token);
-    const request = Promise.all([
-      client.query("chat.groupCommunity", { chatId }),
-      client.query("chat.groupMembers", { chatId }),
-      client.query("chat.room", { chatId }),
-      client.query("social.groupDiscoveryProfile", { chatId }),
-      client.query("social.interestCatalog"),
-    ]).then(([communityValue, membersValue, roomValue, discoveryValue, catalogValue]) => {
-      if (requestId !== groupRequestIdRef.current) return;
-      setGroupCommunity(communityValue as GroupCommunityView);
-      setGroupMembers(membersValue as ChatGroupMemberView[]);
-      const room = roomValue as { participants?: Array<{ id: string }> };
-      setRoomParticipantIds(new Set(room.participants?.map((participant) => participant.id) ?? []));
-      const discovery = discoveryValue as GroupDiscoveryProfileView;
-      const catalog = catalogValue as InterestCatalogView;
-      const interests = catalog.categories.flatMap((category) => category.interests);
-      setGroupTopicNames(discovery.topicSlugs.map((slug) => interests.find((interest) => interest.slug === slug)?.name ?? slug));
-    });
-    void request
-      .catch((cause) => {
-        if (requestId === groupRequestIdRef.current) setGroupPanelError(cause instanceof Error ? cause.message : "Не удалось загрузить информацию о группе");
-      })
-      .finally(() => {
-        if (requestId === groupRequestIdRef.current) setGroupPanelLoading(false);
-      });
-  };
-
-  const toggleGroupProfileTag = async () => {
-    if (!groupCommunity?.effectiveTag || groupTagPending) return;
-    setGroupTagPending(true);
-    setGroupPanelError(null);
-    try {
-      const client = createDesktopTrpcClient(config, () => session.access_token);
-      await client.mutation("chat.setGroupProfileTag", {
-        chatId: groupCommunity.tagEquippedByMe ? null : chatId,
-      });
-      setGroupCommunity((current) => current ? {
-        ...current,
-        tagEquippedByMe: !current.tagEquippedByMe,
-      } : current);
-    } catch (cause) {
-      setGroupPanelError(cause instanceof Error ? cause.message : "Не удалось изменить тег профиля");
-    } finally {
-      setGroupTagPending(false);
-    }
-  };
-
-  if (loading && !data) {
-    return (
-      <div className="voople-chat-window flex min-h-0 flex-1 animate-pulse bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]" />
-    );
-  }
-
   if (!data) {
     return (
-      <div className="voople-chat-window flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-        <p className="text-sm text-red-400">
-          {error ?? "Не удалось открыть переписку"}
-        </p>
-        <button type="button" className="voople-button" onClick={retry}>
-          Повторить
-        </button>
+      <div className="voople-chat-window flex min-h-0 flex-1 flex-col">
+        <ChatConversationState
+          mode={!online ? "offline" : loading ? "loading" : "error"}
+          message={!online || loading ? null : error}
+          onRetry={retry}
+        />
       </div>
     );
   }
@@ -167,7 +125,19 @@ export function DesktopChatThreadAdapter({
   return (
     <ChatThreadFrameView
       accentColor={isGroup ? data.chat.groupAccentColor : null}
-      header={<ChatWindowHeaderVisual>
+      groupSurface={isGroup ? {
+        groupId: rootChat?.id ?? data.chat.parentChatId ?? chatId,
+        conversationId: chatId,
+        groupName: rootChat?.name ?? data.chat.parentName ?? title,
+        currentUserId: session.user.id,
+        initialTab: initialGroupTab,
+        combineHeader: !isSubchat,
+        canCreatePinned: data.chat.viewerRole !== "member",
+        onlineUserIds, onOpenProfile: onNavigateProfile,
+      } : undefined}
+      header={<ChatWindowHeaderVisual
+        className={isGroup && !isSubchat ? "voople-chat-window__header--group" : undefined}
+      >
         <button
           type="button"
           onClick={() =>
@@ -182,8 +152,7 @@ export function DesktopChatThreadAdapter({
         </button>
         {isGroup && !isSubchat ? (
           <GroupInfoDrawerView
-            open={groupDrawerOpen}
-            tab={groupDrawerTab}
+            open={groupPanel.open}
             chatName={title}
             memberCount={data.chat.memberCount}
             groupIcon={data.chat.groupIcon}
@@ -191,44 +160,32 @@ export function DesktopChatThreadAdapter({
             groupBannerUrl={data.chat.groupBannerUrl}
             groupAccentColor={data.chat.groupAccentColor}
             groupTag={data.chat.groupTag}
-            groupTagEquipped={groupCommunity?.tagEquippedByMe}
-            groupTagPending={groupTagPending}
+            groupTagEquipped={groupPanel.community?.tagEquippedByMe}
+            groupTagPending={groupPanel.tagPending}
             canManage={data.chat.viewerRole !== "member"}
-            description={groupCommunity?.description}
-            members={groupMembers}
-            onlineUserIds={onlineUserIds}
-            roomParticipantIds={roomParticipantIds}
-            infoLoading={groupPanelLoading && groupDrawerTab === "info"}
-            membersLoading={groupPanelLoading && groupDrawerTab === "members"}
-            error={groupPanelError}
-            topics={groupTopicNames}
-            sections={rootChat?.channels.map((section) => ({ id: section.id, name: section.name || "Раздел" })) ?? []}
-            roomAction={roomParticipantIds.size ? <VoiceRoomButton chatId={chatId} chatName={title} chatType="group" display="label" /> : undefined}
+            description={groupPanel.community?.description}
+            members={groupPanel.members}
+            now={groupPanel.now}
+            infoLoading={groupPanel.loading}
+            membersLoading={groupPanel.loading}
+            error={groupPanel.error}
             onOpenChange={(open) => {
-              setGroupDrawerOpen(open);
-              if (open) loadGroupPanel();
-            }}
-            onTabChange={(tab) => {
-              setGroupDrawerTab(tab);
-              loadGroupPanel();
+              groupPanel.setOpen(open);
+              if (open) groupPanel.load();
             }}
             onManage={() => {
-              setGroupDrawerOpen(false);
+              groupPanel.setOpen(false);
               onOpenGroupSettings(chatId);
             }}
             onInvite={() => {
-              setGroupDrawerOpen(false);
-              onOpenGroupSettings(chatId);
-            }}
-            onOpenSection={(sectionId) => {
-              setGroupDrawerOpen(false);
-              onNavigateChat(sectionId);
+              groupPanel.setOpen(false);
+              void invite.copy();
             }}
             onOpenProfile={(username) => {
-              setGroupDrawerOpen(false);
+              groupPanel.setOpen(false);
               onNavigateProfile(username);
             }}
-            onToggleGroupTag={() => void toggleGroupProfileTag()}
+            onToggleGroupTag={() => void groupPanel.toggleProfileTag()}
           />
         ) : isSubchat ? (
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--app-accent-soft)] text-[var(--theme-accent)]">
@@ -312,34 +269,64 @@ export function DesktopChatThreadAdapter({
             }}
           />
         ) : null}
-        <VoiceRoomButton
+        <DesktopChatRoomHeaderAction
           chatId={chatId}
           chatName={title}
           chatType={isGroup ? "group" : "direct"}
+          isRootGroup={isGroup && !isSubchat}
+          canCreatePinned={data.chat.viewerRole !== "member"}
+          onOpenProfile={onNavigateProfile}
         />
       </ChatWindowHeaderVisual>}
       sections={rootChat ? (
         <ChatSectionsBarView
           rootChat={rootChat}
           activeChatId={chatId}
-          createAction={
+          createAction={({ open, onOpenChange }) => (
             <DesktopSubchatCreatorAdapter
               parentChatId={rootChat.id}
               config={config}
               session={session}
               viewerRole={data.chat.viewerRole}
+              open={open}
+              onOpenChange={onOpenChange}
               onCreated={(createdChatId) => {
                 onInboxChange();
                 onNavigateChat(createdChatId);
               }}
             />
-          }
-          renderDestination={(chat, className, children) => (
+          )}
+          pendingFavoriteId={pendingFavoriteId}
+          favoriteError={favoriteError}
+          onToggleFavorite={async (sectionId) => {
+            setPendingFavoriteId(sectionId);
+            setFavoriteError(null);
+            try {
+              const client = createDesktopTrpcClient(
+                config,
+                () => session.access_token,
+              );
+              await client.mutation("chat.toggleSectionFavorite", { sectionId });
+              onInboxChange();
+            } catch (error) {
+              setFavoriteError(
+                error instanceof Error
+                  ? error.message
+                  : "Не удалось обновить избранное",
+              );
+            } finally {
+              setPendingFavoriteId(null);
+            }
+          }}
+          renderDestination={(chat, className, children, onNavigate) => (
             <button
               key={chat.id}
               type="button"
               className={className}
-              onClick={() => onNavigateChat(chat.id)}
+              onClick={() => {
+                onNavigate?.();
+                onNavigateChat(chat.id);
+              }}
             >
               {children}
             </button>
@@ -347,6 +334,21 @@ export function DesktopChatThreadAdapter({
         />
       ) : null}
       timeline={timeline}
+      emptyState={
+        <ChatConversationStart
+          chatTitle={title}
+          isGroup={isGroup}
+          isSubchat={isSubchat}
+          parentName={data.chat.parentName}
+          memberCount={data.chat.memberCount}
+          topicIcon={data.chat.topicIcon}
+          groupIcon={data.chat.groupIcon}
+          groupAvatarUrl={data.chat.groupAvatarUrl}
+          groupAccentColor={data.chat.groupAccentColor}
+          other={other}
+          otherOnline={Boolean(other && onlineUserIds.has(other.id))}
+        />
+      }
       messagesRef={messagesRef}
       messagesContentRef={messagesContentRef}
       renderMessage={(item) => (
@@ -355,11 +357,14 @@ export function DesktopChatThreadAdapter({
           message={item.message}
           viewerId={session.user.id}
           groupPosition={item.groupPosition}
-          showSender={isGroup}
+          showSender
           onReply={setReplyTo}
           onEdit={(message) => {
             setReplyTo(null);
+            discardPendingUpload();
+            setPendingTrack(null);
             setEditing(message);
+            setText(message.text ?? "");
           }}
           onDelete={(message) => {
             if (replyTo?.id === message.id) setReplyTo(null);
@@ -371,25 +376,25 @@ export function DesktopChatThreadAdapter({
           onOpenImage={setLightboxUrl}
         />
       )}
-      error={error}
+      connectionState={!online ? (
+        <ChatConversationState mode="offline" variant="inline" onRetry={retry} />
+      ) : error ? (
+        <ChatConversationState mode="error" variant="inline" message={error} onRetry={retry} />
+      ) : null}
       composer={<DesktopChatComposerAdapter
         chatId={chatId}
-        key={editing?.id ?? "new-message"}
+        placeholder={`Сообщение ${title}…`}
         config={config}
         session={session}
-        replyTo={replyTo}
-        editing={editing}
         sending={sending}
-        onCancelReply={() => setReplyTo(null)}
         onSend={sendMessage}
         onEdit={editMessage}
-        onCancelEdit={() => setEditing(null)}
         customEmojis={data.chat.type === "group" ? groupEmojis : []}
       />}
-      overlays={<ChatMediaLightbox
-        url={lightboxUrl}
-        onClose={() => setLightboxUrl(null)}
-      />}
+      overlays={<>
+        <ChatMediaLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+        {isGroup && !isSubchat ? <GroupInviteCopyNotice notice={invite.notice} /> : null}
+      </>}
     />
   );
 }

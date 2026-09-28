@@ -20,12 +20,12 @@ export function SidebarHighlights() {
       {!hasTeamPin && !badges.isLoading ? (
         <Link
           href="/events"
-          className="group block rounded-[var(--app-radius-lg)] border border-[color-mix(in_srgb,var(--theme-accent)_24%,var(--app-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-accent)_14%,var(--app-surface)),var(--app-surface-soft))] p-3 transition hover:border-[color-mix(in_srgb,var(--theme-accent)_50%,var(--app-border))]"
+          className="group block rounded-[var(--app-radius-lg)] border border-[var(--material-border)] bg-[var(--material-control-fill)] p-3 transition hover:border-[var(--material-border-hover)]"
         >
           <div className="flex items-center gap-2 text-xs font-semibold text-[var(--foreground)]">
             <span className="relative grid h-7 w-7 place-items-center rounded-lg bg-[var(--app-accent-soft)] text-(--theme-accent)">
               <Sparkles className="h-3.5 w-3.5" />
-              <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-[var(--app-surface)]" />
+              <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[var(--material-presence)] ring-2 ring-[var(--material-chrome)]" />
             </span>
             Событие
           </div>
@@ -39,7 +39,7 @@ export function SidebarHighlights() {
 
       <Link
         href="/shop?tab=plus"
-        className="group flex items-center gap-2.5 rounded-[var(--app-radius-lg)] border border-[color-mix(in_srgb,var(--voople-brand-400)_42%,var(--app-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--voople-brand-500)_14%,var(--app-surface)),var(--app-surface-soft))] p-2.5 transition hover:border-[color-mix(in_srgb,var(--voople-brand-300)_62%,var(--app-border))]"
+        className="group flex items-center gap-2.5 rounded-[var(--app-radius-lg)] border border-[var(--material-border)] bg-[var(--material-control-fill)] p-2.5 transition hover:border-[var(--material-border-hover)]"
       >
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[color-mix(in_srgb,var(--theme-accent)_16%,transparent)] text-(--theme-accent)">
           <Crown className="h-4 w-4" />

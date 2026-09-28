@@ -7,7 +7,7 @@ import { reportProductEvent } from "@/lib/telemetry/client";
 import type { MediaStatus } from "./voice-room-config";
 
 type RecoveryOptions = {
-  chatId: string;
+  sessionKind: "legacy" | "core";
   inside: boolean;
   roomRef: RefObject<Room | null>;
   clearAttachedMedia: () => void;
@@ -21,7 +21,7 @@ export function useTerminalVoiceRecovery(options: RecoveryOptions) {
   const mountedRef = useRef(true);
   const timerRef = useRef<number | null>(null);
   const attemptsRef = useRef(0);
-  const connectMediaRef = useRef<(() => Promise<void>) | null>(null);
+  const connectMediaRef = useRef<(() => Promise<unknown>) | null>(null);
   const optionsRef = useRef(options);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function useTerminalVoiceRecovery(options: RecoveryOptions) {
     cancelRecovery();
   }, [cancelRecovery]);
 
-  const setConnectMedia = useCallback((connectMedia: () => Promise<void>) => {
+  const setConnectMedia = useCallback((connectMedia: () => Promise<unknown>) => {
     connectMediaRef.current = connectMedia;
   }, []);
 
@@ -49,11 +49,6 @@ export function useTerminalVoiceRecovery(options: RecoveryOptions) {
     current.roomRef.current = null;
     current.clearAttachedMedia();
     current.setMicMuted(true);
-    console.warn("Voice media connection ended", {
-      chatId: current.chatId,
-      reason: String(reason ?? "unknown"),
-      attempt: attemptsRef.current,
-    });
     if (!insideRef.current || !mountedRef.current) {
       current.setMediaStatus("idle");
       return;

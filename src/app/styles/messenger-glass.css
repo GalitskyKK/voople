@@ -1,0 +1,778 @@
+/* ==========================================================================
+   Messages / Groups — opaque Chrome, matte Stage and quiet Room sections.
+   ========================================================================== */
+
+:where(.voople-shell, .voople-dropdown-menu)[data-route-kind="messages"] {
+  --voople-room-radius: var(--material-radius);
+  --voople-ice: var(--material-ice);
+  --voople-ice-strong: var(--material-ice);
+  --voople-ice-soft: var(--material-ice-soft);
+  --voople-wine-soft: rgb(142 64 88 / 0.06);
+  --voople-wine-wash: rgb(94 34 55 / 0.05);
+  --app-accent-soft: var(--material-interactive-fill);
+  --app-surface: var(--material-panel-fill);
+  --app-surface-soft: var(--material-inset-fill);
+  --app-border: var(--material-border);
+  --app-border-strong: var(--material-border-hover);
+  --app-muted: var(--material-secondary-text);
+  /* Compatibility aliases while route-specific layout remains here. */
+  --voople-glass-fill: var(--material-raised-fill);
+  --voople-glass-fill-hover: var(--voople-glass-fill);
+  --voople-glass-border: var(--material-border);
+  --voople-glass-border-hover: var(--material-border-hover);
+  --voople-glass-shadow: var(--material-shadow);
+  color: var(--foreground);
+}
+
+html[data-app-theme="light"] :where(.voople-shell, .voople-dropdown-menu)[data-route-kind="messages"] {
+  --voople-ice: var(--material-ice);
+  --voople-ice-strong: var(--material-ice);
+  --voople-ice-soft: var(--material-ice-soft);
+  --voople-wine-soft: rgb(142 64 88 / 0.055);
+  --voople-wine-wash: rgb(142 64 88 / 0.045);
+}
+
+/* Theme variables set on the route shell cannot recolor the root scrollbar
+   gutter because inherited `body` colors are resolved before that boundary.
+   Keep the whole viewport in the same material whenever Messenger is mounted. */
+html:has(body .voople-shell[data-route-kind="messages"]),
+body:has(> .voople-shell[data-route-kind="messages"]) {
+  background: var(--material-canvas-app);
+}
+
+/* --------------------------------------------------------------------------
+   Workspace / persistent atmosphere
+   -------------------------------------------------------------------------- */
+
+.voople-shell[data-route-kind="messages"] .voople-shell__column {
+  padding: 0;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-shell__workspace {
+  min-width: 0;
+  overflow: hidden;
+  background: var(--material-chrome);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-sidebar {
+  background: var(--material-chrome);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-sidebar__brand {
+  padding: 1.15rem 1.15rem 1rem;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-sidebar__footer {
+  padding: 0.85rem 0.9rem;
+  border-top: 1px solid var(--material-border);
+  background: transparent;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-messenger-sidebar {
+  padding-inline: 0.75rem;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__search {
+  height: 44px;
+  border: 1px solid var(--app-border);
+  border-radius: var(--material-control-radius);
+  background: var(--material-control-fill);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__row {
+  min-height: 46px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  transform: none;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__row:hover:not(.voople-messenger-sidebar__row--active) {
+  background: var(--app-surface-soft);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-messenger-sidebar__row--active {
+  border-color: color-mix(in srgb, var(--material-ice) 18%, var(--app-border));
+  background: var(--material-interactive-fill);
+}
+
+
+.voople-shell[data-route-kind="messages"] .voople-group-now,
+.voople-shell[data-route-kind="messages"] .voople-group-people {
+  min-height: 100%;
+  background: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   Group header: current context
+   -------------------------------------------------------------------------- */
+
+.voople-shell[data-route-kind="messages"] .voople-panel-header {
+  min-height: 62px;
+  padding: 4px 24px;
+  background: var(--material-chrome);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-chat-window__header--group {
+  min-height: 62px;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-group-surface-header {
+  flex: none;
+  background: var(--material-chrome);
+}
+
+.voople-group-header-identity {
+  min-width: 0;
+  padding: 0;
+  border-radius: 14px;
+}
+
+.voople-group-header-identity:hover { background: transparent; }
+
+.voople-chat-window__header--group .voople-group-header-avatar > * {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 0 0 1px rgb(255 255 255 / 0.07),
+    0 14px 32px rgb(0 0 0 / 0.24);
+}
+
+/* Desktop uses the shared GroupIdentity renderer while web Group Info wraps
+   the same avatar in `voople-group-header-avatar`. Keep both hosts on the
+   same context identity scale. */
+.voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__avatar {
+  width: 54px;
+  height: 54px;
+  flex: none;
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 0 0 1px rgb(255 255 255 / 0.07),
+    0 14px 32px rgb(0 0 0 / 0.24);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__name {
+  color: var(--foreground);
+  font-size: 22px;
+  font-weight: 720;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  text-transform: none;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__meta {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.voople-group-header-name {
+  color: var(--foreground);
+  font-size: 22px;
+  font-weight: 720;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+.voople-group-header-tag {
+  max-width: 7rem;
+  overflow: hidden;
+  padding: 4px 7px;
+  border: 1px solid var(--voople-glass-border);
+  border-radius: 7px;
+  color: var(--voople-ice-strong);
+  background: var(--voople-ice-soft);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voople-group-header-meta {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.voople-group-header-ring {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--material-secondary-text);
+  border-radius: 999px;
+}
+
+.voople-group-header-actions { gap: 8px; }
+
+.voople-group-header-invite,
+.voople-group-header-more {
+  position: relative;
+  overflow: hidden;
+  height: 40px;
+  border: 1px solid var(--material-border);
+  border-radius: var(--material-control-radius);
+  background: var(--material-control-fill);
+  color: var(--foreground);
+  box-shadow: inset 0 1px 0 var(--material-highlight);
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+}
+
+.voople-group-header-invite {
+  padding-inline: 14px;
+  color: var(--foreground);
+  font-size: 14px;
+}
+
+.voople-group-header-more { width: 40px; }
+
+.voople-group-header-invite:hover,
+.voople-group-header-more:hover {
+  border-color: var(--material-border-hover);
+  background: var(--material-interactive-fill);
+  color: var(--foreground);
+}
+
+/* --------------------------------------------------------------------------
+   Group tabs
+   -------------------------------------------------------------------------- */
+
+.voople-shell[data-route-kind="messages"] .voople-group-surface-tabs {
+  min-height: 38px;
+  padding-inline: 24px;
+  background: var(--material-chrome);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-group-surface-tabs > [role="tablist"] {
+  justify-content: flex-start;
+  gap: 2.5rem;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab {
+  min-width: 52px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--material-secondary-text);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  outline: 0;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab:hover { color: var(--foreground); }
+.voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab[aria-selected="true"] { color: var(--voople-ice-strong); }
+
+.voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab[aria-selected="true"]::after {
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  border-radius: 999px 999px 0 0;
+  background: var(--voople-ice);
+}
+
+/* --------------------------------------------------------------------------
+   Deferred Live Shelf material; canonical Group Voice does not use this primitive
+   -------------------------------------------------------------------------- */
+
+.voople-room-material {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid var(--voople-glass-border);
+  border-radius: var(--voople-room-radius);
+  background: var(--material-glass-body);
+  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturation));
+  box-shadow: var(--material-shadow), inset 0 1px 0 rgb(255 255 255 / 0.05), inset 0 -12px 22px rgb(0 0 0 / 0.07);
+  transform: none;
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 170ms ease, opacity 150ms ease;
+}
+
+/* A one-pixel masked optical rim: light is concentrated along the upper/left
+   edge, not painted into the Room body. The Room itself owns the only blur. */
+.voople-room-material::before {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  padding: 1px;
+  pointer-events: none;
+  border-radius: inherit;
+  background: var(--material-glass-edge);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  content: "";
+}
+
+.voople-room-material::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: var(--material-glass-scrim);
+  box-shadow: inset 1px 1px 0 rgb(255 255 255 / 0.035), inset -1px -1px 0 rgb(0 0 0 / 0.08);
+  content: "";
+}
+
+.voople-room-material__highlight {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: 26px;
+  left: 26px;
+  height: 1px;
+  pointer-events: none;
+  background: var(--material-specular);
+  opacity: 0.65;
+}
+
+/* Top-edge specular: a soft optical glint travelling along the rim only.
+   There is no vertical clip, so there is no visibly cut-off highlight. */
+.voople-room-material__reflection {
+  position: absolute;
+  z-index: 6;
+  top: 0;
+  right: 18px;
+  left: 18px;
+  height: 1px;
+  pointer-events: none;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg,
+      transparent 0%,
+      transparent 34%,
+      rgb(143 64 88 / 0.045) 40%,
+      rgb(124 194 255 / 0.12) 44%,
+      rgb(242 249 255 / 0.78) 49%,
+      rgb(190 225 255 / 0.22) 53%,
+      rgb(124 194 255 / 0.055) 58%,
+      transparent 66%,
+      transparent 100%);
+  background-size: 260% 100%;
+  background-position: 48% 0;
+  opacity: 0.22;
+  filter:
+    drop-shadow(0 0 2px rgb(239 248 255 / 0.22))
+    drop-shadow(0 1px 4px rgb(124 194 255 / 0.10));
+}
+
+button.voople-room-material:hover {
+  transform: none;
+  border-color: var(--voople-glass-border-hover);
+  background: var(--material-glass-body);
+  box-shadow: var(--material-shadow-hover), inset 0 1px 0 rgb(255 255 255 / 0.07);
+}
+
+button.voople-room-material:hover .voople-room-material__reflection {
+  animation: voople-border-specular 4.8s cubic-bezier(0.20, 0.62, 0.18, 1) 1 both;
+}
+
+/* --------------------------------------------------------------------------
+   Sections / composer
+   -------------------------------------------------------------------------- */
+
+.voople-shell[data-route-kind="messages"] .voople-chat-sections {
+  min-height: 40px;
+  border-bottom-color: transparent;
+  background: transparent;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-chat-sections__selector,
+.voople-shell[data-route-kind="messages"] .voople-chat-sections__favorite,
+.voople-shell[data-route-kind="messages"] .voople-chat-sections__create {
+  border-radius: 11px;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-chat-sections__selector {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-chat-sections__selector:hover,
+.voople-shell[data-route-kind="messages"] .voople-chat-sections__selector[aria-expanded="true"] {
+  background: var(--material-interactive-fill);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-chat-sections__create {
+  border: 1px solid transparent;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-chat-sections__create:hover {
+  border-color: rgb(121 189 255 / 0.09);
+  color: var(--voople-ice-strong);
+}
+
+.voople-chat-section-menu[data-route-kind="messages"] {
+  border-radius: 15px;
+}
+
+.voople-chat-section-menu[data-route-kind="messages"] .voople-subchat-creator {
+  border: 1px solid var(--material-border);
+  border-radius: var(--material-control-radius);
+  background: var(--material-control-fill);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-chat-composer {
+  border-top-color: var(--material-border);
+  background: transparent;
+}
+.voople-group-workspace__chat .voople-chat-composer__surface {
+  background: color-mix(in srgb, var(--material-overlay-fill) 88%, transparent);
+}
+.voople-chat-emoji-picker {
+  background: var(--material-overlay-fill);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-chat-composer__reply,
+.voople-shell[data-route-kind="messages"] .voople-chat-composer__pending {
+  border-color: var(--material-border);
+  background: var(--material-inset-fill);
+}
+
+button.voople-room-material:focus-visible,
+.voople-group-now-room__header:focus-visible,
+.voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab:focus-visible {
+  outline: 2px solid var(--material-focus-ring);
+  outline-offset: -2px;
+}
+
+@keyframes voople-border-specular {
+  0%   { background-position: 145% 0; opacity: 0; }
+  10%  { opacity: 0.10; }
+  24%  { opacity: 0.38; }
+  46%  { opacity: 0.72; }
+  70%  { opacity: 0.58; }
+  88%  { opacity: 0.16; }
+  100% { background-position: -45% 0; opacity: 0; }
+}
+
+/* Voice is an ordered list of Room sections with complete inline rosters. */
+.voople-group-now { width: 100%; max-width: 960px; margin: 0 auto; padding: 20px 28px 32px; }
+.voople-group-now__section-header { min-height: 40px; margin-bottom: 8px; }
+.voople-group-now__section-header h2,
+.voople-group-now__section-header h3 { font-size: 15px; line-height: 1.4; }
+.voople-group-now__section-count { color: var(--material-secondary-text); }
+.voople-group-now__rooms { display: flex; flex-direction: column; gap: 8px; }
+.voople-group-now-room { min-width: 0; border-bottom: 1px solid var(--material-border); border-radius: 8px; }
+.voople-group-now-room--current { background: var(--material-current-fill); }
+.voople-group-now-room__header { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; min-height: 48px; padding: 8px 12px; border-radius: 8px; text-align: left; }
+.voople-group-now-room--current .voople-group-now-room__header { box-shadow: inset 2px 0 var(--material-ice); }
+.voople-group-now-room__header:hover,
+.voople-group-now-participant:hover { background: var(--material-row-hover); }
+.voople-group-now-room__name { font-size: 14px; font-weight: 650; letter-spacing: 0; }
+.voople-group-now-room__action-cue { display: inline-flex; align-items: center; gap: 4px; color: var(--app-muted); opacity: 0; }
+.voople-group-now-room__header:hover .voople-group-now-room__action-cue,
+.voople-group-now-room__header:focus-visible .voople-group-now-room__action-cue { opacity: 1; }
+.voople-group-now__participants { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 4px 12px; padding: 4px 8px 12px; }
+.voople-group-now-participant { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 44px; border-radius: 6px; padding: 4px; text-align: left; }
+.voople-group-now__create,
+.voople-group-now-room__split { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 8px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--foreground); }
+.voople-group-now__create:hover,
+.voople-group-now-room__split:hover { background: var(--material-row-hover); }
+.voople-group-now button:focus-visible { outline: 2px solid var(--material-focus-ring); outline-offset: -2px; }
+.voople-group-now button:disabled { opacity: .55; cursor: wait; }
+.voople-group-now__online { margin-top: 24px; }
+.voople-group-now__available { padding-inline: 8px; }
+
+/* --------------------------------------------------------------------------
+   Live shelf / people / chat
+   -------------------------------------------------------------------------- */
+
+.voople-group-live-shelf {
+  container-type: inline-size;
+  padding: 12px 20px;
+  border-bottom: 0;
+  background: transparent;
+}
+
+.voople-group-live-shelf__layout { display: none; }
+.voople-group-live-shelf__layout--wide { display: flex; }
+.voople-live-room-card {
+  flex: 0 1 360px;
+  min-height: 112px;
+}
+
+@container (max-width: 520px) {
+  .voople-live-room-card { flex-basis: 100%; }
+}
+
+.voople-group-people-control {
+  min-height: 44px;
+  border: 1px solid var(--material-border);
+  background: var(--material-control-fill);
+  box-shadow: inset 0 1px 0 var(--material-highlight);
+}
+
+.voople-group-people-list {
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--material-radius);
+  background: transparent;
+  box-shadow: none;
+}
+
+.voople-group-people-state {
+  margin-top: 1rem;
+  border-radius: 16px;
+}
+
+.voople-group-people-row { background: transparent; transition: background 140ms ease; }
+.voople-group-people-row:hover { background: var(--material-interactive-fill); }
+
+.voople-chat-message-menu [role="menuitem"]:focus-visible,
+.voople-chat-message-menu [role="group"] button:focus-visible {
+  outline: 2px solid var(--theme-accent);
+  outline-offset: -2px;
+}
+
+.voople-group-people-voop {
+  display: inline-flex;
+  min-height: 40px;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 6px;
+  border: 1px solid var(--material-border);
+  border-radius: var(--material-control-radius);
+  background: var(--material-control-fill);
+  color: var(--foreground);
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease, opacity 140ms ease;
+}
+
+.voople-group-people-row:hover .voople-group-people-voop,
+.voople-group-people-voop:focus-visible {
+  border-color: var(--material-border-hover);
+  color: var(--voople-ice-strong);
+  opacity: 1;
+}
+
+.voople-group-people-voop:disabled { cursor: wait; opacity: 0.48; }
+
+.voople-group-people-voop__signal {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--material-interactive-fill);
+  color: var(--voople-ice);
+}
+
+.voople-group-people-voop strong,
+.voople-group-people-voop small { display: block; white-space: nowrap; }
+.voople-group-people-voop strong { font-size: 12px; line-height: 1.1; }
+.voople-group-people-voop small { margin-top: 2px; color: var(--app-muted); font-size: 11px; line-height: 1.1; }
+
+.voople-shell[data-route-kind="messages"] .voople-chat-window__messages {
+  touch-action: pan-y;
+  background: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive / performance
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 1280px) {
+  .voople-shell[data-route-kind="messages"] .voople-chat-window__header--group { min-height: 64px; }
+  .voople-chat-window__header--group .voople-group-header-avatar > * { width: 56px; height: 56px; }
+  .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__avatar { width: 56px; height: 56px; }
+  .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__name { font-size: 20px; }
+  .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__meta { font-size: 12px; }
+  .voople-group-header-name { font-size: 20px; }
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs { min-height: 36px; }
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__tab { height: 36px; font-size: 13px; }
+  .voople-group-now { max-width: 780px; padding: 26px 24px 34px; }
+}
+
+@media (max-width: 900px) {
+  .voople-group-now__participants { grid-template-columns: minmax(0, 1fr); }
+  .voople-group-now__create, .voople-group-now-room__split { min-height: 44px; }
+
+  .voople-room-material,
+  .voople-dropdown-menu[data-route-kind="messages"],
+  .voople-group-people-list,
+  .voople-chat-composer__surface,
+  .voople-group-header-invite,
+  .voople-group-header-more,
+  .voople-group-people-control {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .voople-room-material {
+    background: var(--material-glass-body);
+  }
+
+  .voople-live-room-card--current { background: var(--material-glass-active-body); }
+
+}
+
+@media (max-width: 620px) {
+  .voople-shell[data-route-kind="messages"] .voople-panel-header { padding-inline: 12px; }
+  .voople-shell[data-route-kind="messages"] .voople-chat-window__header--group { min-height: 64px; }
+  .voople-chat-window__header--group .voople-group-header-avatar > *,
+  .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__avatar { width: 52px; height: 52px; border-radius: 12px; }
+  .voople-group-header-name,
+  .voople-shell[data-route-kind="messages"] .voople-group-header-identity .voople-group-identity__name { font-size: 20px; }
+  .voople-group-header-invite { display: none; }
+  .voople-group-header-more { width: 44px; height: 44px; }
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs { min-height: 40px; padding-inline: 12px; }
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs > [role="tablist"] { gap: 1.2rem; }
+  .voople-group-now { padding: 18px 12px 28px; }
+  .voople-group-now__section-header { align-items: center; }
+  .voople-group-people-voop small { display: none; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .voople-room-material,
+  .voople-dropdown-menu[data-route-kind="messages"],
+  .voople-shell[data-route-kind="messages"] .voople-sidebar,
+  .voople-group-people-list,
+  .voople-chat-composer__surface,
+  .voople-group-header-invite,
+  .voople-group-header-more,
+  .voople-shell[data-route-kind="messages"] .voople-panel-header,
+  .voople-shell[data-route-kind="messages"] .voople-group-surface-tabs {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button.voople-room-material:hover .voople-room-material__reflection { animation: none; opacity: 0.18; background-position: 48% 0; }
+}
+
+/* Full Room belongs to the same Group material, without turning media into decoration. */
+.voople-room-material[data-room-kind="temporary"] {
+  border-style: dashed;
+}
+
+.voople-shell[data-route-kind="messages"] .voople-full-room__header,
+.voople-shell[data-route-kind="messages"] .voople-full-room__footer {
+  background: var(--material-chrome);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-full-room__content {
+  margin: 8px;
+  border-radius: 22px;
+  background: var(--material-ambient-wash), var(--material-stage);
+  box-shadow: var(--material-stage-depth);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-full-room__switcher {
+  background: var(--material-overlay-fill);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-full-room__switcher-room--current,
+.voople-shell[data-route-kind="messages"] .voople-full-room__participant,
+.voople-shell[data-route-kind="messages"] .voople-full-room__solo,
+.voople-shell[data-route-kind="messages"] .voople-full-room__empty {
+  border-color: var(--voople-glass-border-hover);
+  background: var(--material-raised-fill);
+  box-shadow: var(--voople-glass-shadow);
+}
+
+.voople-shell[data-route-kind="messages"] .voople-full-room__state-panel {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (max-width: 900px) {
+  .voople-shell[data-route-kind="messages"] .voople-full-room__content {
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+.voople-shell[data-route-kind="messages"] .voople-full-room__media {
+  border-color: var(--voople-glass-border-hover);
+}
+
+/* One Compact dock, portalled into the shared sidebar on desktop. */
+.voople-sidebar__session:empty { display: none; }
+.voople-voice-dock--compact {
+  position: fixed; bottom: calc(env(safe-area-inset-bottom) + 5.25rem); left: 8px; right: 8px;
+  max-width: 360px; margin-inline: auto;
+  z-index: 70; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0;
+  padding: 4px 6px; border: 1px solid var(--material-border); border-radius: 10px;
+  background: var(--material-overlay-fill); color: var(--foreground);
+}
+.voople-voice-compact__identity { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 34px; padding: 2px 6px; text-align: left; border-radius: 6px; }
+.voople-voice-compact__controls { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; }
+.voople-voice-compact__controls > .voople-tooltip-anchor { width: 100%; }
+.voople-voice-compact__control { display: grid; place-items: center; width: 100%; min-width: 0; min-height: 44px; border-radius: 6px; color: var(--app-muted); }
+.voople-voice-compact__control[aria-pressed="true"] { color: var(--material-ice); background: var(--material-row-hover); }
+.voople-voice-compact__control:hover, .voople-voice-compact__identity:hover { background: var(--material-row-hover); }
+.voople-voice-compact__control:focus-visible, .voople-voice-compact__identity:focus-visible { outline: 2px solid var(--material-focus-ring); outline-offset: -2px; }
+.voople-voice-compact__control:disabled { opacity: .45; }
+.voople-voice-compact__leave { color: var(--voople-danger); }
+.voople-voice-dock--sidebar { position: static; max-width: none; margin: 0 6px 4px; border: 0; border-top: 1px solid var(--material-border); border-radius: 0; background: transparent; padding: 2px 0 0; }
+.voople-voice-dock--sidebar .voople-voice-compact__control { min-height: 40px; }
+
+/* One Group Stage: Room map, conversation and member directory share the plane. */
+.voople-group-surface { min-width: 0; }
+.voople-group-surface-header--desktop { display: flex; align-items: center; }
+.voople-group-surface-header--desktop > .voople-panel-header { flex: 1; min-width: 0; }
+.voople-group-surface__people-action {
+  display: inline-flex; align-items: center; gap: 7px; min-height: 40px;
+  margin-right: 20px; padding: 0 12px; border-radius: 8px;
+  background: var(--material-control-fill); color: var(--foreground);
+  font-size: 13px; font-weight: 600;
+}
+.voople-group-surface__people-action:hover,
+.voople-group-surface__people-action[aria-expanded="true"] { background: var(--material-interactive-fill); }
+.voople-group-surface__people-action:focus-visible,
+.voople-group-workspace__drawer-header button:focus-visible { outline: 2px solid var(--material-focus-ring); outline-offset: 2px; }
+.voople-group-workspace { position: relative; display: flex; min-width: 0; overflow: hidden; }
+.voople-group-workspace--desktop {
+  display: grid; grid-template-columns: minmax(260px, 280px) minmax(0, 1fr);
+  border-radius: 16px; box-shadow: none;
+}
+.voople-group-surface[data-mode="wide"] .voople-group-workspace {
+  grid-template-columns: minmax(260px, 280px) minmax(0, 1fr) 240px;
+}
+.voople-group-workspace__live,
+.voople-group-workspace__chat,
+.voople-group-workspace__people { min-width: 0; min-height: 0; }
+.voople-group-workspace__live { flex: 1; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; }
+.voople-group-workspace__chat, .voople-group-workspace__people { display: flex; flex: 1; flex-direction: column; overflow: hidden; }
+.voople-group-workspace--desktop .voople-group-workspace__chat,
+.voople-group-workspace--desktop .voople-group-workspace__people { border-left: 1px solid var(--material-divider); }
+.voople-group-workspace--desktop .voople-group-now { max-width: none; padding: 16px 10px 24px; }
+.voople-group-workspace--desktop .voople-group-now__participants { grid-template-columns: minmax(0, 1fr); gap: 1px; padding: 2px 5px 10px; }
+.voople-group-workspace--desktop .voople-group-now-participant { min-height: 40px; }
+.voople-group-workspace--desktop .voople-group-now-participant > span:nth-child(2) > span:last-child { display: none; }
+.voople-group-workspace--desktop .voople-group-now-room { border-bottom-color: var(--material-divider); }
+.voople-group-workspace--desktop .voople-group-now-room--current { box-shadow: inset 0 1px rgb(255 255 255 / 0.03); }
+.voople-group-workspace--desktop .voople-group-now__online { display: none; }
+.voople-group-workspace__people .voople-group-people,
+.voople-group-workspace__people-drawer .voople-group-people { padding: 16px 10px 24px; }
+.voople-group-workspace__people .voople-group-people-row,
+.voople-group-workspace__people-drawer .voople-group-people-row { background: transparent; }
+.voople-group-workspace__people .voople-group-people-row:hover,
+.voople-group-workspace__people-drawer .voople-group-people-row:hover { background: var(--material-row-hover); }
+.voople-group-workspace__people-drawer {
+  position: absolute; z-index: 8; top: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column; width: min(320px, 45%);
+  border-left: 1px solid var(--material-border);
+  background: var(--material-stage); box-shadow: -12px 0 30px rgb(0 0 0 / 0.16);
+}
+.voople-group-workspace__drawer-header { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 4px 14px; border-bottom: 1px solid var(--material-divider); font-size: 14px; }
+.voople-group-workspace__drawer-header button { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 8px; }
+.voople-group-workspace__drawer-header button:hover { background: var(--material-row-hover); }
+
+@media (max-width: 1023px) {
+  html:has(.voople-voice-dock--compact) .voople-shell[data-navigation-kind="messenger"] .voople-shell__column {
+    padding-bottom: calc(var(--voople-compact-height, 104px) + 5.75rem + env(safe-area-inset-bottom));
+  }
+}

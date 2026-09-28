@@ -7,7 +7,7 @@ import { trpc } from "@/lib/trpc/client";
 import { GroupInviteSheet } from "./GroupInviteSheet";
 
 export function GroupSettingsPage({ chatId }: { chatId: string }) {
-  const query = trpc.chat.observeMessages.useQuery({ chatId });
+  const query = trpc.chat.groupSettingsSummary.useQuery({ chatId });
 
   if (query.isLoading) {
     return <div className="m-5 min-h-80 flex-1 animate-pulse rounded-3xl bg-[var(--app-surface-soft)]" />;
@@ -18,26 +18,19 @@ export function GroupSettingsPage({ chatId }: { chatId: string }) {
         <div>
           <h1 className="text-xl font-semibold">Настройки недоступны</h1>
           <p className="mt-2 text-sm text-[var(--app-muted)]">{query.error?.message ?? "Группа не найдена"}</p>
-          <Link href={`/messages/${chatId}`} className="voople-link mt-4 inline-block">Вернуться в чат</Link>
+          <Link href={`/messages/${chatId}`} className="voople-link mt-4 inline-block">Вернуться в группу</Link>
         </div>
       </div>
     );
   }
 
-  const chat = query.data.chat;
-  if (chat.type !== "group" || chat.parentChatId) {
-    return (
-      <div className="grid min-h-0 flex-1 place-items-center p-6 text-center">
-        <p className="text-sm text-[var(--app-muted)]">Настройки доступны только для основной группы.</p>
-      </div>
-    );
-  }
+  const chat = query.data;
 
   const canManage = chat.viewerRole === "owner" || chat.viewerRole === "admin";
   return (
     <GroupInviteSheet
       chatId={chatId}
-      chatName={chat.name || "Группа"}
+      chatName={chat.name}
       memberCount={chat.memberCount}
       groupIcon={chat.groupIcon}
       groupAvatarUrl={chat.groupAvatarUrl}

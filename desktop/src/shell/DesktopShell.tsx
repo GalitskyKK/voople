@@ -379,7 +379,7 @@ export function DesktopShell({
             {syncError}
           </p>
         )}
-        <Suspense fallback={<DesktopRouteFallback />}>
+        <Suspense fallback={<DesktopRouteFallback profile={isProfileRoute} />}>
           {pathname === "/feed" ? (
             <DesktopFeedAdapter
               key={feedVersion}

@@ -36,10 +36,6 @@ public static class VoopleWindowState {
 $installedExecutable = $null
 $uninstaller = $null
 $webViewData = Join-Path $env:RUNNER_TEMP "voople-installed-deep-link-smoke"
-$webViewBrowserArgumentsKey = "HKCU:\Software\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments"
-$webViewUserDataFolderKey = "HKCU:\Software\Policies\Microsoft\Edge\WebView2\UserDataFolder"
-$webViewPolicyValueName = $null
-$webViewPolicyInstalled = $false
 $coldPath = "/room-invites/10000000-0000-4000-8000-000000000001"
 $warmPath = "/room-invites/20000000-0000-4000-8000-000000000002"
 $coldUri = "voople://room-invites/10000000-0000-4000-8000-000000000001"
@@ -67,6 +63,14 @@ function Wait-InstalledProcess {
     Start-Sleep -Milliseconds 250
   }
   throw "The installed Voople process did not expose exactly one main window."
+}
+
+function Start-InstalledVoople([string]$Uri) {
+  $startInfo = [Diagnostics.ProcessStartInfo]::new()
+  $startInfo.FileName = $script:installedExecutable
+  $startInfo.UseShellExecute = $false
+  $startInfo.ArgumentList.Add($Uri)
+  [Diagnostics.Process]::Start($startInfo) | Out-Null
 }
 
 function Open-VoopleProtocol([string]$Uri) {
@@ -117,32 +121,15 @@ try {
   $debugPort = ([Net.IPEndPoint]$portProbe.LocalEndpoint).Port
   $portProbe.Stop()
   $webViewArguments = "--remote-debugging-port=$debugPort --remote-allow-origins=http://127.0.0.1:$debugPort"
-  $webViewPolicyValueName = [IO.Path]::GetFileName($installedExecutable)
-  $webViewOverrides = @(
-    @{ Key = $webViewBrowserArgumentsKey; Value = $webViewArguments },
-    @{ Key = $webViewUserDataFolderKey; Value = $webViewData }
-  )
-  foreach ($entry in $webViewOverrides) {
-    New-Item -Path $entry.Key -Force | Out-Null
-    $existing = (Get-Item -LiteralPath $entry.Key).GetValue($webViewPolicyValueName)
-    if ($null -ne $existing) {
-      throw "Refusing to replace an existing WebView2 override for $webViewPolicyValueName under $($entry.Key)."
-    }
-  }
-  foreach ($entry in $webViewOverrides) {
-    New-ItemProperty `
-      -LiteralPath $entry.Key `
-      -Name $webViewPolicyValueName `
-      -Value $entry.Value `
-      -PropertyType String | Out-Null
-  }
-  $webViewPolicyInstalled = $true
 
-  # Environment overrides still cover direct launches/local reproduction.
+  # The cold-start process is launched directly so it inherits the WebView2
+  # diagnostics environment deterministically. The installer protocol command
+  # is validated above, and the warm/invalid checks below still exercise the
+  # real Windows voople:// protocol registration through ShellExecute.
   $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = $webViewArguments
   $env:WEBVIEW2_USER_DATA_FOLDER = $webViewData
 
-  Open-VoopleProtocol $coldUri
+  Start-InstalledVoople $coldUri
   $app = Wait-InstalledProcess
   Verify-RendererPath $coldPath $debugPort
 
@@ -187,16 +174,6 @@ try {
   }
   Remove-Item Env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -ErrorAction SilentlyContinue
   Remove-Item Env:WEBVIEW2_USER_DATA_FOLDER -ErrorAction SilentlyContinue
-  if ($webViewPolicyInstalled -and -not [string]::IsNullOrWhiteSpace($webViewPolicyValueName)) {
-    Remove-ItemProperty `
-      -LiteralPath $webViewBrowserArgumentsKey `
-      -Name $webViewPolicyValueName `
-      -ErrorAction SilentlyContinue
-    Remove-ItemProperty `
-      -LiteralPath $webViewUserDataFolderKey `
-      -Name $webViewPolicyValueName `
-      -ErrorAction SilentlyContinue
-  }
 }
 
 if (Test-Path -LiteralPath $protocolKey) {

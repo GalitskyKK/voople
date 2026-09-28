@@ -7,6 +7,7 @@ export type VoiceDockPresentation = {
 };
 
 export type VoiceDockPresentationAction =
+  | { type: "joined" }
   | { type: "open-full" }
   | { type: "close-to-mini" }
   | { type: "close-to-compact" }
@@ -25,6 +26,7 @@ export function reduceVoiceDockPresentation(
   action: VoiceDockPresentationAction,
 ): VoiceDockPresentation {
   switch (action.type) {
+    case "joined": return state.fullOpen ? state : { fullOpen: false, dockVisible: true, dockMode: "compact" };
     case "open-full": return { ...state, fullOpen: true, dockVisible: false };
     case "close-to-mini": return { fullOpen: false, dockVisible: true, dockMode: "mini" };
     case "close-to-compact": return { fullOpen: false, dockVisible: true, dockMode: "compact" };

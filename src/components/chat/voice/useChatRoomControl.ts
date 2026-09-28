@@ -51,6 +51,7 @@ export function useChatRoomControl(
 ) {
   const dockPresentation = useVoiceDockPresentation(initialOpen);
   const { fullOpen: open, dockVisible, dockMode } = dockPresentation;
+  const { joined, exited } = dockPresentation;
   const [micMuted, setMicMuted] = useState(Boolean(coreSession));
   const [mediaStatus, setMediaStatus] = useState<MediaStatus>("idle");
   const [mediaError, setMediaError] = useState<string | null>(null);
@@ -99,6 +100,10 @@ export function useChatRoomControl(
     screenSharing: video.screenSharing,
   });
   const { server, value, active, inside, participants, participantCount, heartbeat } = runtime;
+  useEffect(() => {
+    if (inside) joined();
+    else if (!server.room.isLoading && !server.room.isFetching && !server.room.error) exited();
+  }, [inside, server.room.isLoading, server.room.isFetching, server.room.error, joined, exited]);
   const currentCoreRoom = coreSession
     ? server.directory?.rooms.find((room) => room.id === coreSession.room.id) ?? coreSession.room
     : null;

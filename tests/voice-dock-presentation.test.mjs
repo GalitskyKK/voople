@@ -30,15 +30,33 @@ test("Full closes to Mini or Compact without changing the active media session",
   assert.doesNotMatch(controller, /onOpen:.*enterAndConnect/);
 });
 
-test("join alone never exposes Mini and changing Dock mode preserves Full/inside state", () => {
-  const joined = { fullOpen: false, dockVisible: false, dockMode: "mini" };
-  assert.equal(joined.dockVisible, false);
+test("Join exposes Compact immediately; Mini requires explicit Full minimization", () => {
+  const joined = reduceVoiceDockPresentation({ fullOpen: false, dockVisible: false, dockMode: "mini" }, { type: "joined" });
+  assert.deepEqual(joined, { fullOpen: false, dockVisible: true, dockMode: "compact" });
+  const minimized = reduceVoiceDockPresentation(reduceVoiceDockPresentation(joined, { type: "open-full" }), { type: "close-to-mini" });
+  assert.deepEqual(minimized, { fullOpen: false, dockVisible: true, dockMode: "mini" });
+  assert.deepEqual(reduceVoiceDockPresentation(full, { type: "joined" }), full);
   assert.deepEqual(reduceVoiceDockPresentation(joined, { type: "change-mode", mode: "minimal" }), {
-    fullOpen: false, dockVisible: false, dockMode: "minimal",
+    fullOpen: false, dockVisible: true, dockMode: "minimal",
   });
   assert.deepEqual(reduceVoiceDockPresentation(full, { type: "hide" }), {
     fullOpen: false, dockVisible: false, dockMode: "compact",
   });
+});
+
+test("leave hides Compact and a later join can show Compact again", () => {
+  const initial = { fullOpen: false, dockVisible: false, dockMode: "mini" };
+  const joined = reduceVoiceDockPresentation(initial, { type: "joined" });
+  assert.deepEqual(joined, { fullOpen: false, dockVisible: true, dockMode: "compact" });
+  const left = reduceVoiceDockPresentation(joined, { type: "leave-confirmed" });
+  assert.deepEqual(left, { fullOpen: false, dockVisible: false, dockMode: "compact" });
+  assert.deepEqual(reduceVoiceDockPresentation(left, { type: "joined" }), joined);
+
+  const hook = read("src/components/chat/voice/useVoiceDockPresentation.ts");
+  const controller = read("src/components/chat/voice/useChatRoomControl.ts");
+  assert.match(hook, /const exited = useCallback\([\s\S]*?joinedRef\.current = false;[\s\S]*?dispatch\(\{ type: "leave-confirmed" \}\)/);
+  assert.match(hook, /const leaveConfirmed = useCallback\([\s\S]*?joinedRef\.current = false;[\s\S]*?dispatch\(\{ type: "leave-confirmed" \}\)/);
+  assert.match(controller, /if \(inside\) joined\(\);[\s\S]*?else if \(!server\.room\.isLoading && !server\.room\.isFetching && !server\.room\.error\) exited\(\)/);
 });
 
 test("confirmed leave removes Full and Dock; failed leave keeps presentation for retry", async () => {

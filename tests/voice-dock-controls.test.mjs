@@ -111,6 +111,10 @@ test("compact room summary exposes session identity and active media controls", 
   assert.match(compact, /participantCount/);
   assert.match(compact, /aria-pressed=\{cameraEnabled\}/);
   assert.match(compact, /aria-pressed=\{screenSharing\}/);
+  for (const label of ["микрофон", "звук собеседников", "камеру", "экран", "Выйти из разговора"]) {
+    assert.match(compact, new RegExp(label));
+  }
+  assert.doesNotMatch(compact, /MoreHorizontal|aria-expanded=\{expanded\}|\{expanded \?/);
   assert.match(minimal, /participantLabel/);
   assert.match(minimal, /VoiceDockMediaIndicators/);
   assert.match(dock, /reportProductEvent\("room_expanded", \{ state: "full" \}\)/);

@@ -58,6 +58,7 @@ try {
     {width:1440,theme:"void",host,count:8}, {width:1440,theme:"light",host,count:8},
     {width:1280,theme:"void",host,count:8}, {width:1100,theme:"void",host,count:8},
     {width:390,theme:"void",host,count:8}, {width:390,theme:"light",host,count:8},
+    {width:430,theme:"void",host,count:8}, {width:768,theme:"void",host,count:8},
     {width:360,theme:"light",host,count:8}, {width:1440,theme:"void",host,count:20},
     {width:390,theme:"light",host,count:20},
   ]);
@@ -103,13 +104,20 @@ try {
     if(width>=1024){
       await page.locator('#voople-sidebar-session-root .voople-voice-dock--compact').waitFor();
       assert.equal(await page.locator('.voople-sidebar').evaluate(el=>el.getBoundingClientRect().width),220);
+      assert.ok((await page.locator('.voople-voice-dock--compact').boundingBox()).height<=84,'Sidebar dock stays compact');
     } else {
       assert.equal(await room.first().locator('.voople-group-now__participants').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),1);
       const dock=await page.locator('.voople-voice-dock--compact').boundingBox();
       const stage=await page.locator('.voople-stage').boundingBox();
       assert.ok(stage.y+stage.height<=dock.y,'Stage stays above mobile dock');
+      assert.ok(dock.height<=90,`Mobile dock stays compact: ${dock.height}px`);
       for(const box of await page.locator('.voople-voice-compact__control').evaluateAll(nodes=>nodes.map(n=>({w:n.getBoundingClientRect().width,h:n.getBoundingClientRect().height}))))assert.ok(box.w>=44&&box.h>=44);
     }
+    const compactControls=page.locator('.voople-voice-dock--compact');
+    for(const label of ['Включить микрофон','Выключить звук собеседников','Включить камеру','Показать экран','Выйти из разговора']){
+      assert.equal(await compactControls.getByRole('button',{name:label,exact:true}).isVisible(),true,`${label} is directly visible`);
+    }
+    assert.equal(await page.locator('.voople-voice-compact__controls button').count(),5);
     await (expectedMode==="compact"
       ? page.locator('.voople-group-now__available [data-participant-id]').last()
       : room.first().locator('[data-participant-id]').last()).scrollIntoViewIfNeeded();

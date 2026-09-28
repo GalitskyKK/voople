@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Mic, MicOff, PhoneOff, Volume2, VolumeX, Video, VideoOff, MonitorUp, MoreHorizontal } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { Mic, MicOff, PhoneOff, Volume2, VolumeX, Video, VideoOff, MonitorUp } from "lucide-react";
 import { IconButton } from "@/components/ui/IconButton";
 import { cn } from "@/lib/utils";
 import type { VoiceSessionDockProps } from "./voice-session-dock-types";
@@ -23,7 +23,6 @@ export function VoiceCompactSessionDock({ chatName, participantCount, mediaStatu
     update();
     return () => { observer.disconnect(); document.documentElement.style.removeProperty("--voople-compact-height"); };
   }, [inSidebar]);
-  const [expanded, setExpanded] = useState(false);
   const connected = mediaStatus === "connected";
   const controlClass = "voople-voice-compact__control";
   return (
@@ -47,12 +46,6 @@ export function VoiceCompactSessionDock({ chatName, participantCount, mediaStatu
           disabled={mediaActionPending} onClick={onToggleOutput} className={controlClass}>
           {outputMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
         </IconButton>
-        {inSidebar ? null : <IconButton label="Камера и демонстрация экрана" aria-expanded={expanded}
-          onClick={() => setExpanded((value) => !value)} className={controlClass}><MoreHorizontal className="h-4 w-4" /></IconButton>}
-        <IconButton tooltipClassName="voople-voice-compact__leave-slot" label="Выйти из разговора" disabled={leavePending} onClick={onLeave}
-          className={`${controlClass} voople-voice-compact__leave`}><PhoneOff className="h-4 w-4" /></IconButton>
-      </div>
-      {inSidebar || expanded ? <div className="voople-voice-compact__media">
         <IconButton label={cameraEnabled ? "Выключить камеру" : "Включить камеру"} aria-pressed={cameraEnabled}
           disabled={cameraPending || !connected} onClick={onToggleCamera} className={controlClass}>
           {cameraEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
@@ -61,7 +54,9 @@ export function VoiceCompactSessionDock({ chatName, participantCount, mediaStatu
           disabled={screenSharePending || !connected} onClick={onToggleScreenShare} className={controlClass}>
           <MonitorUp className="h-4 w-4" />
         </IconButton>
-      </div> : null}
+        <IconButton label="Выйти из разговора" disabled={leavePending} onClick={onLeave}
+          className={`${controlClass} voople-voice-compact__leave`}><PhoneOff className="h-4 w-4" /></IconButton>
+      </div>
       {errorMessage ? <p className="col-span-full px-2 pb-1 text-xs text-[var(--voople-danger)]" role="alert">{errorMessage}</p> : null}
     </div>
   );

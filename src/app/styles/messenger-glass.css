@@ -696,24 +696,22 @@ button.voople-room-material:focus-visible,
 .voople-sidebar__session:empty { display: none; }
 .voople-voice-dock--compact {
   position: fixed; bottom: calc(env(safe-area-inset-bottom) + 5.25rem); left: 8px; right: 8px;
-  z-index: 70; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px;
-  padding: 6px; border: 1px solid var(--material-border); border-radius: 10px;
+  max-width: 360px; margin-inline: auto;
+  z-index: 70; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0;
+  padding: 4px 6px; border: 1px solid var(--material-border); border-radius: 10px;
   background: var(--material-overlay-fill); color: var(--foreground);
 }
-.voople-voice-compact__identity { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 44px; padding: 4px 8px; text-align: left; border-radius: 6px; }
-.voople-voice-compact__controls, .voople-voice-compact__media { display: flex; justify-content: space-around; gap: 4px; }
-.voople-voice-compact__control { display: grid; place-items: center; min-width: 44px; min-height: 44px; border-radius: 6px; color: var(--app-muted); }
+.voople-voice-compact__identity { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 34px; padding: 2px 6px; text-align: left; border-radius: 6px; }
+.voople-voice-compact__controls { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; }
+.voople-voice-compact__controls > .voople-tooltip-anchor { width: 100%; }
+.voople-voice-compact__control { display: grid; place-items: center; width: 100%; min-width: 0; min-height: 44px; border-radius: 6px; color: var(--app-muted); }
 .voople-voice-compact__control[aria-pressed="true"] { color: var(--material-ice); background: var(--material-row-hover); }
 .voople-voice-compact__control:hover, .voople-voice-compact__identity:hover { background: var(--material-row-hover); }
 .voople-voice-compact__control:focus-visible, .voople-voice-compact__identity:focus-visible { outline: 2px solid var(--material-focus-ring); outline-offset: -2px; }
 .voople-voice-compact__control:disabled { opacity: .45; }
 .voople-voice-compact__leave { color: var(--voople-danger); }
-.voople-voice-dock--sidebar { position: static; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0 10px 8px; border: 0; border-top: 1px solid var(--material-border); border-radius: 0; background: transparent; padding: 8px 0 0; }
-.voople-voice-dock--sidebar .voople-voice-compact__identity { grid-column: 1 / -1; }
-.voople-voice-dock--sidebar .voople-voice-compact__controls,
-.voople-voice-dock--sidebar .voople-voice-compact__media { display: contents; }
-.voople-voice-dock--sidebar .voople-voice-compact__control { min-width: 32px; min-height: 36px; }
-.voople-voice-dock--sidebar .voople-voice-compact__leave-slot { grid-column: 5; grid-row: 2; }
+.voople-voice-dock--sidebar { position: static; max-width: none; margin: 0 6px 4px; border: 0; border-top: 1px solid var(--material-border); border-radius: 0; background: transparent; padding: 2px 0 0; }
+.voople-voice-dock--sidebar .voople-voice-compact__control { min-height: 40px; }
 
 /* One Group Stage: Room map, conversation and member directory share the plane. */
 .voople-group-surface { min-width: 0; }

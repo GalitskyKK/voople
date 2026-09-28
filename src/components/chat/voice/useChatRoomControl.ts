@@ -58,6 +58,7 @@ export function useChatRoomControl(
   const [audioBlocked, setAudioBlocked] = useState(false);
   const [connectionQuality, setConnectionQuality] = useState(ConnectionQuality.Unknown);
   const [activeSpeakerIds, setActiveSpeakerIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [localSpeakerDetected, setLocalSpeakerDetected] = useState(false);
   const [remoteMicMutedById, setRemoteMicMutedById] = useState<Record<string, boolean>>({});
   const roomSwitch = useCoreVoiceRoomSwitch(coreSession, onCoreRoomSwitch);
   const liveRoomRef = useRef<Room | null>(null);
@@ -180,6 +181,7 @@ export function useChatRoomControl(
     setMicMuted,
     setRemoteMicMutedById,
     setActiveSpeakerIds,
+    setLocalSpeakerDetected,
     setConnectionQuality,
     setAudioBlocked,
     setMediaStatus,
@@ -270,12 +272,10 @@ export function useChatRoomControl(
     leave: async () => { if (inside) await leaveRoom(); },
   }));
   const isDirect = chatType === "direct";
+  const localSpeaking = !micMuted && mediaStatus === "connected" && localSpeakerDetected;
   const connectionLabel = getConnectionLabel(mediaStatus);
-  const selectedEndpoint =
-    preferences.endpointUrl === "auto" ||
-    mediaConnection.endpoints.some((endpoint) => endpoint.url === preferences.endpointUrl)
-      ? preferences.endpointUrl
-      : "auto";
+  const selectedEndpoint = preferences.endpointUrl === "auto" || mediaConnection.endpoints.some((endpoint) => endpoint.url === preferences.endpointUrl)
+    ? preferences.endpointUrl : "auto";
   const errorMessage =
     mediaError ??
     server.room.error?.message ??
@@ -296,8 +296,7 @@ export function useChatRoomControl(
     server.mediaToken.error?.message ??
     null;
   const roomLoadFailed = Boolean(server.room.error);
-  const connectPending =
-    sessionTransition === "connecting" || server.enter.isPending ||
+  const connectPending = sessionTransition === "connecting" || server.enter.isPending ||
     server.mediaToken.isPending || mediaStatus === "connecting";
   const surfacePhase = resolveVoiceRoomSurfacePhase({
     transition: sessionTransition,
@@ -322,7 +321,7 @@ export function useChatRoomControl(
       chatName: currentCoreRoom && server.directory?.groupName ? `${server.directory.groupName} / ${currentCoreRoom.name}` : chatName,
       participantCount, durationLabel, mediaStatus, connectionLabel, errorMessage,
       activeSpeakerName: resolveVoiceDockActiveSpeaker(participants, activeSpeakerIds),
-      connectionQuality, micMuted, outputMuted: output.outputMuted,
+      connectionQuality, micMuted, localSpeaking, outputMuted: output.outputMuted,
       cameraEnabled: video.cameraEnabled,
       screenSharing: video.screenSharing,
       mediaActionPending: mediaActions.mediaActionPending,
@@ -421,6 +420,7 @@ export function useChatRoomControl(
       },
       controls: {
         micMuted,
+        localSpeaking,
         outputMuted: output.outputMuted,
         mediaActionPending: mediaActions.mediaActionPending,
         screenSharePending: mediaActions.screenSharePending,

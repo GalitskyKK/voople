@@ -34,6 +34,7 @@ export function useVoiceRoomEventConfigurator(input: {
   setMicMuted: Dispatch<SetStateAction<boolean>>;
   setRemoteMicMutedById: Dispatch<SetStateAction<Record<string, boolean>>>;
   setActiveSpeakerIds: Dispatch<SetStateAction<ReadonlySet<string>>>;
+  setLocalSpeakerDetected: Dispatch<SetStateAction<boolean>>;
   setConnectionQuality: Dispatch<SetStateAction<ConnectionQuality>>;
   setAudioBlocked: Dispatch<SetStateAction<boolean>>;
   setMediaStatus: Dispatch<SetStateAction<MediaStatus>>;
@@ -44,6 +45,7 @@ export function useVoiceRoomEventConfigurator(input: {
   handleDisconnected: (room: Room, reason?: DisconnectReason) => void;
 }) {
   return useCallback((liveRoom: Room) => {
+    input.setLocalSpeakerDetected(false);
     configureVoiceRoomEvents({
       room: liveRoom,
       isCurrent: () => input.roomRef.current === liveRoom,
@@ -67,10 +69,16 @@ export function useVoiceRoomEventConfigurator(input: {
         input.setMicMuted(localMuted);
         input.setRemoteMicMutedById(remoteMutedById);
       },
-      onActiveSpeakersChange: input.setActiveSpeakerIds,
+      onActiveSpeakersChange: (ids) => {
+        input.setActiveSpeakerIds(ids);
+        input.setLocalSpeakerDetected(ids.has(liveRoom.localParticipant.identity));
+      },
       onConnectionQualityChange: input.setConnectionQuality,
       onAudioBlockedChange: input.setAudioBlocked,
-      onReconnecting: () => input.setMediaStatus("reconnecting"),
+      onReconnecting: () => {
+        input.setLocalSpeakerDetected(false);
+        input.setMediaStatus("reconnecting");
+      },
       onReconnected: () => {
         input.setMediaStatus("connected");
         input.setMediaError(null);

@@ -48,6 +48,7 @@ export type VoiceRoomStageModel = {
 
 export type VoiceRoomControlsModel = {
   micMuted: boolean;
+  localSpeaking: boolean;
   outputMuted: boolean;
   mediaActionPending: boolean;
   screenSharePending: boolean;

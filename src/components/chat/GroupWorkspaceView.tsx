@@ -4,6 +4,7 @@ import { UsersRound, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useGroupWorkspaceMode } from "@/hooks/useGroupWorkspaceMode";
 import { GroupSurfaceTabs, type GroupSurfaceTab } from "./GroupSurfaceTabs";
+import { GroupIdentitySlotContext } from "./GroupIdentitySlotContext";
 
 /** Shared composition for web, desktop and the visual fixture. */
 export function GroupWorkspaceView({ header, live, chat, renderPeople, combineHeader, activeTab, onTabChange }: {
@@ -16,6 +17,7 @@ export function GroupWorkspaceView({ header, live, chat, renderPeople, combineHe
   onTabChange: (tab: GroupSurfaceTab) => void;
 }) {
   const [peopleOpen, setPeopleOpen] = useState(false);
+  const [identitySlot, setIdentitySlot] = useState<HTMLElement | null>(null);
   const peopleTrigger = useRef<HTMLButtonElement>(null);
   const peopleClose = useRef<HTMLButtonElement>(null);
   const onModeChange = useCallback((_next: string, previous: string) => {
@@ -44,6 +46,7 @@ export function GroupWorkspaceView({ header, live, chat, renderPeople, combineHe
   const people = renderPeople(desktop);
 
   return (
+    <GroupIdentitySlotContext.Provider value={identitySlot}>
     <div ref={ref} className="voople-group-surface flex min-h-0 flex-1 flex-col" data-mode={mode}>
       <div className={`voople-group-surface-header${combineHeader ? " voople-group-surface-header--combined" : ""}${desktop ? " voople-group-surface-header--desktop" : ""}`}>
         {header}
@@ -56,7 +59,7 @@ export function GroupWorkspaceView({ header, live, chat, renderPeople, combineHe
         {!desktop ? <GroupSurfaceTabs activeTab={activeTab} onTabChange={onTabChange} /> : null}
       </div>
       <div className={`voople-stage voople-group-workspace min-h-0 flex-1${desktop ? " voople-group-workspace--desktop" : ""}`}>
-        {desktop || activeTab === "now" ? <section className="voople-group-workspace__live voople-scroll" aria-label="Комнаты группы">{live}</section> : null}
+        {desktop || activeTab === "now" ? <section className="voople-group-workspace__live voople-scroll" aria-label="Комнаты группы">{desktop ? <div ref={setIdentitySlot} className="voople-group-pane-identity" /> : null}{live}</section> : null}
         {desktop || activeTab === "chat" ? <section className="voople-group-workspace__chat" aria-label="Чат группы">{chat}</section> : null}
         {mode === "wide" || activeTab === "people" && !desktop ? <section className="voople-group-workspace__people" aria-label="Люди группы">{people}</section> : null}
         {mode === "medium" && peopleOpen ? <aside id="voople-group-people-drawer"
@@ -68,5 +71,6 @@ export function GroupWorkspaceView({ header, live, chat, renderPeople, combineHe
         </aside> : null}
       </div>
     </div>
+    </GroupIdentitySlotContext.Provider>
   );
 }

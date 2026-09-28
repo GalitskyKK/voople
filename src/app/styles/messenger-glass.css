@@ -129,6 +129,38 @@ body:has(> .voople-shell[data-route-kind="messages"]) {
 }
 
 .voople-group-header-identity:hover { background: transparent; }
+.voople-group-current-context, .voople-group-pane-chevron, .voople-group-pane-banner { display: none; }
+.voople-group-surface[data-mode="medium"] .voople-group-current-context,
+.voople-group-surface[data-mode="wide"] .voople-group-current-context {
+  display: inline-flex; flex: 1; min-width: 0; align-items: center; gap: 9px;
+  color: var(--foreground); font-size: 15px;
+}
+.voople-group-current-context svg { color: var(--material-secondary-text); }
+.voople-group-pane-identity:empty { display: none; }
+.voople-group-pane-identity {
+  position: sticky; top: 0; z-index: 2; padding: 0 10px 8px;
+  background: var(--material-stage);
+}
+.voople-group-pane-identity .voople-group-header-identity {
+  position: relative; display: flex; width: 100%; min-height: 78px;
+  overflow: hidden; padding: 12px 10px; gap: 10px;
+  border: 1px solid var(--material-divider); border-radius: 10px;
+  background: var(--material-control-fill);
+}
+.voople-group-pane-identity .voople-group-header-identity:hover { background: var(--material-interactive-fill); }
+.voople-group-pane-identity .voople-group-header-identity:focus-visible {
+  outline: 2px solid var(--material-focus-ring); outline-offset: -3px;
+}
+.voople-group-pane-identity .voople-group-header-avatar { position: relative; z-index: 1; }
+.voople-group-pane-identity .voople-group-header-avatar > * { width: 38px; height: 38px; border-radius: 9px; }
+.voople-group-pane-identity .voople-group-header-name { font-size: 14px; line-height: 1.2; letter-spacing: -0.01em; }
+.voople-group-pane-identity .voople-group-header-meta { margin-top: 3px; font-size: 10px; }
+.voople-group-pane-identity .voople-group-header-tag { max-width: 3.5rem; padding: 3px 4px; font-size: 9px; }
+.voople-group-pane-identity .voople-group-pane-chevron { display: block; color: var(--material-secondary-text); }
+.voople-group-pane-identity .voople-group-pane-banner {
+  position: absolute; inset: 0 0 auto; display: block; height: 23px;
+  background-position: center; background-size: cover; opacity: .45;
+}
 
 .voople-chat-window__header--group .voople-group-header-avatar > * {
   width: 54px;
@@ -715,6 +747,16 @@ button.voople-room-material:focus-visible,
 .voople-voice-compact__control:hover, .voople-voice-compact__identity:hover { background: var(--material-row-hover); }
 .voople-voice-compact__control:focus-visible, .voople-voice-compact__identity:focus-visible { outline: 2px solid var(--material-focus-ring); outline-offset: -2px; }
 .voople-voice-compact__control:disabled { opacity: .45; }
+.voople-mic-speaking {
+  box-shadow: 0 0 0 2px var(--material-ice), 0 0 0 5px var(--material-ice-soft);
+  animation: voople-mic-signal 1.5s ease-in-out infinite;
+}
+@keyframes voople-mic-signal {
+  50% { box-shadow: 0 0 0 2px var(--material-ice), 0 0 0 7px var(--material-ice-soft); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .voople-mic-speaking { animation: none; }
+}
 .voople-voice-compact__leave { color: var(--voople-danger); }
 .voople-voice-dock--sidebar { position: static; max-width: none; margin: 0 6px 4px; border: 0; border-top: 1px solid var(--material-border); border-radius: 0; background: transparent; padding: 2px 0 0; }
 .voople-voice-dock--sidebar .voople-voice-compact__control { min-height: 40px; }

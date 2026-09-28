@@ -9,7 +9,7 @@ import type { VoiceSessionDockProps } from "./voice-session-dock-types";
 type Props = Omit<VoiceSessionDockProps, "mode" | "onModeChange" | "connectionQuality" | "mediaPreview"> & { inSidebar?: boolean };
 
 export function VoiceCompactSessionDock({ chatName, participantCount, mediaStatus, connectionLabel,
-  micMuted, outputMuted, cameraEnabled, screenSharing, mediaActionPending, leavePending,
+  micMuted, localSpeaking, outputMuted, cameraEnabled, screenSharing, mediaActionPending, leavePending,
   onOpen, onToggleMic, onToggleOutput, onToggleCamera, onToggleScreenShare, onLeave,
   cameraPending, screenSharePending, errorMessage, inSidebar = false,
 }: Props) {
@@ -38,8 +38,8 @@ export function VoiceCompactSessionDock({ chatName, participantCount, mediaStatu
         </span>
       </button>
       <div className="voople-voice-compact__controls">
-        <IconButton label={micMuted ? "Включить микрофон" : "Выключить микрофон"} aria-pressed={!micMuted}
-          disabled={mediaActionPending || !connected} onClick={onToggleMic} className={controlClass}>
+        <IconButton label={micMuted ? "Включить микрофон" : localSpeaking ? "Микрофон активен — вы говорите. Выключить микрофон" : "Выключить микрофон"} aria-pressed={!micMuted}
+          disabled={mediaActionPending || !connected} onClick={onToggleMic} className={cn(controlClass, localSpeaking && "voople-mic-speaking")}>
           {micMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
         </IconButton>
         <IconButton label={outputMuted ? "Включить звук собеседников" : "Выключить звук собеседников"} aria-pressed={outputMuted}

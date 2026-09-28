@@ -154,6 +154,8 @@ export function RoomGuestPage({
                 <Button
                   variant={guest.micMuted ? "secondary" : "primary"}
                   aria-pressed={!guest.micMuted}
+                  aria-label={guest.micMuted ? "Включить микрофон" : guest.localSpeaking ? "Микрофон активен — вы говорите. Выключить микрофон" : "Выключить микрофон"}
+                  className={guest.localSpeaking ? "voople-mic-speaking" : undefined}
                   disabled={!online || guest.mediaStatus !== "connected"}
                   onClick={() => void guest.toggleMicrophone()}
                 >

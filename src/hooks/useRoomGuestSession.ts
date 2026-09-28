@@ -169,6 +169,7 @@ export function useRoomGuestSession(token: string, mediaRoots: RoomGuestMediaRoo
     mediaError: sessionError ?? media.error,
     micError: media.micError,
     micMuted: media.micMuted,
+    localSpeaking: media.localSpeaking,
     participantCount: media.participantCount,
     screenVisible: media.screenVisible,
     loadPreview,

@@ -87,6 +87,10 @@ try {
     const expectedMode=width>=1360?"wide":width>=1040?"medium":"compact";
     await page.locator(`.voople-group-surface[data-mode="${expectedMode}"]`).waitFor();
     assert.equal(await page.locator('.voople-group-workspace__live').count(),1);
+    const groupIdentity = page.getByRole('button',{name:'Информация о группе VOICEKK'});
+    assert.equal(await groupIdentity.count(),1);
+    assert.equal(await page.locator('.voople-group-pane-identity').count(),expectedMode==='compact'?0:1);
+    assert.equal(await page.locator('.voople-group-pane-identity .voople-group-header-identity').count(),expectedMode==='compact'?0:1);
     assert.equal(await page.locator('.voople-group-now').count(),1);
     assert.equal(await page.locator('.voople-group-workspace__chat').count(),expectedMode==="compact"?0:1);
     assert.equal(await page.locator('.voople-group-workspace__people').count(),expectedMode==="wide"?1:0);
@@ -138,6 +142,10 @@ try {
     await page.locator('.voople-group-workspace__live').evaluate(el=>{el.scrollTop=0});
     const file=path.join(artifacts,`group-${host}-workspace-${width}-${theme}-${count}.png`);
     await page.screenshot({path:file});
+    await groupIdentity.click();
+    await page.getByRole('dialog',{name:'Информация о группе VOICEKK'}).waitFor();
+    await page.keyboard.press('Escape');
+    assert.equal(await page.getByRole('dialog',{name:'Информация о группе VOICEKK'}).count(),0);
     if(expectedMode==="medium" && count===8 && width===1100){
       const trigger=page.getByRole('button',{name:'Показать участников группы'});
       await trigger.click();

@@ -160,6 +160,31 @@ test("core Room starts muted; UI and heartbeat follow LiveKit, not optimistic st
   assert.match(controls, /disabled=\{sessionPending \|\| !connected \|\| mediaActionPending\}/);
 });
 
+test("local speaking indication uses LiveKit active-speaker events and never lights while muted", async () => {
+  const paths = [
+    "../src/components/chat/voice/useVoiceRoomEventConfigurator.ts",
+    "../src/components/chat/voice/useChatRoomControl.ts",
+    "../src/components/chat/voice/VoiceCompactSessionDock.tsx",
+    "../src/components/chat/voice/VoiceMediaControls.tsx",
+    "../src/hooks/useRoomGuestMedia.ts",
+    "../src/components/chat/RoomGuestPage.tsx",
+    "../src/app/styles/messenger-glass.css",
+  ];
+  const [events, control, compact, full, guestMedia, guestPage, styles] = await Promise.all(
+    paths.map((path) => readFile(new URL(path, import.meta.url), "utf8")),
+  );
+  assert.match(events, /ids\.has\(liveRoom\.localParticipant\.identity\)/);
+  assert.match(control, /!micMuted && mediaStatus === "connected" && localSpeakerDetected/);
+  assert.match(guestMedia, /RoomEvent\.ActiveSpeakersChanged/);
+  assert.match(guestMedia, /speaker\.isLocal/);
+  assert.match(guestMedia, /status === "connected" && !micMuted && localSpeaking/);
+  for (const surface of [compact, full, guestPage]) {
+    assert.match(surface, /voople-mic-speaking/);
+    assert.match(surface, /Микрофон активен — вы говорите/);
+  }
+  assert.match(styles, /prefers-reduced-motion: reduce/);
+});
+
 test("development microphone trace covers callback, LiveKit result, processor and heartbeat without credentials", async () => {
   const [debug, controls, action, config, connection, heartbeat] = await Promise.all([
     readFile(new URL("../src/lib/livekit/voice-mic-debug.ts", import.meta.url), "utf8"),

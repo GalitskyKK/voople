@@ -15,10 +15,19 @@ test.describe("authenticated critical surface", () => {
 
     const messengerRail = page.locator(".voople-messenger-sidebar");
     await expect(messengerRail).toBeVisible();
-    await expect(messengerRail.getByRole("link", { name: "Поиск" })).toHaveAttribute(
-      "href",
-      "/search",
-    );
+    const searchTrigger = messengerRail.getByRole("button", { name: "Поиск" });
+    await expect(searchTrigger).toBeVisible();
+    await expect(searchTrigger).toHaveAttribute("aria-expanded", "false");
+    await searchTrigger.click();
+    await expect(searchTrigger).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByRole("dialog", { name: "Поиск" })).toBeVisible();
+    await expect(
+      page.getByRole("searchbox", { name: "Поиск диалогов, групп и людей" }),
+    ).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog", { name: "Поиск" })).toHaveCount(0);
+    await expect(searchTrigger).toHaveAttribute("aria-expanded", "false");
+    await expect(searchTrigger).toBeFocused();
 
     const accountMenuTrigger = page.getByRole("button", { name: "Открыть меню аккаунта" });
     await expect(accountMenuTrigger).toBeVisible();
@@ -45,10 +54,19 @@ test.describe("authenticated critical surface", () => {
 
     const messengerRail = page.locator(".voople-messenger-sidebar");
     await expect(messengerRail).toBeVisible();
-    await expect(messengerRail.getByRole("link", { name: "Поиск" })).toHaveAttribute(
-      "href",
-      "/search",
-    );
+    const searchTrigger = messengerRail.getByRole("button", { name: "Поиск" });
+    await expect(searchTrigger).toBeVisible();
+    await expect(searchTrigger).toHaveAttribute("aria-expanded", "false");
+    await searchTrigger.click();
+    await expect(searchTrigger).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByRole("dialog", { name: "Поиск" })).toBeVisible();
+    await expect(
+      page.getByRole("searchbox", { name: "Поиск диалогов, групп и людей" }),
+    ).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog", { name: "Поиск" })).toHaveCount(0);
+    await expect(searchTrigger).toHaveAttribute("aria-expanded", "false");
+    await expect(searchTrigger).toBeFocused();
     await expect(
       page.getByText("Выберите чат слева или начните новый", { exact: true }),
     ).toBeVisible();

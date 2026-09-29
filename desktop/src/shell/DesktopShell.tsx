@@ -24,6 +24,7 @@ import { createDesktopTrpcClient } from "../api/trpc";
 import { getSupabase } from "../auth/supabase";
 import type { DesktopConfig } from "../config";
 import { useDesktopHotkeys } from "../hooks/useDesktopHotkeys";
+import { desktopSearchDestination } from "../navigation/desktop-search-route";
 import { useNativeVoiceHeartbeat } from "../hooks/useNativeVoiceHeartbeat";
 import { DesktopNotificationBridge } from "../notifications/DesktopNotificationBridge";
 import { DesktopAppSidebarAdapter } from "../adapters/DesktopAppSidebarAdapter";
@@ -171,7 +172,9 @@ export function DesktopShell({
   onPendingPathPreserved: (path: string) => void;
   session: Session;
 }) {
-  const [pathname, setPathname] = useState(initialPathname === "/explore" ? "/search" : initialPathname ?? "/messages");
+  const initialSearchDestination = desktopSearchDestination(initialPathname ?? "");
+  const [pathname, setPathname] = useState(initialSearchDestination?.pathname ?? initialPathname ?? "/messages");
+  const [searchQuery, setSearchQuery] = useState(initialSearchDestination?.query ?? "");
   const [syncError, setSyncError] = useState<string | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
   const [feedVersion, setFeedVersion] = useState(0);
@@ -251,7 +254,10 @@ export function DesktopShell({
         void getSupabase(config).auth.signOut();
         return;
       }
-      const destination = href === "/explore" ? "/search" : href;
+      const searchDestination = desktopSearchDestination(href);
+      const destination = searchDestination?.pathname ?? href;
+      if (searchDestination) setSearchQuery(searchDestination.query);
+      else if (destination !== "/search") setSearchQuery("");
       setPathname((current) => {
         if (current !== destination) previousPathnameRef.current = current;
         return destination;
@@ -391,6 +397,8 @@ export function DesktopShell({
             />
           ) : pathname === "/search" ? (
             <DesktopExplore
+              key={`search:${searchQuery}`}
+              initialQuery={searchQuery}
               config={config}
               session={session}
               renderDestination={renderDestination}

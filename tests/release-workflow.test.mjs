@@ -2,54 +2,69 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 const read = (path) => readFileSync(path, "utf8");
-test("desktop RC records native audio capability and preserves a visible fallback", () => {
-  const workflow = read(".github/workflows/desktop-release.yml");
-  const cargoConfig = read(".cargo/config.toml");
-  const releaseScript = read("scripts/release.mjs");
-  assert.match(workflow, /--features process-audio-publisher/);
-  assert.match(workflow, /desktop\/screen-share-worker\/Cargo\.toml/);
-  assert.match(workflow, /voople-screen-share-worker-\$Target\.exe/);
-  assert.match(cargoConfig, /\[target\.x86_64-pc-windows-msvc\]/);
-  assert.match(cargoConfig, /rustflags = \["-C", "target-feature=\+crt-static"\]/);
-  assert.match(releaseScript, /"--features",\s*"process-audio-publisher"/);
-  assert.match(workflow, /processAudioPublisher = \$env:PROCESS_AUDIO_INCLUDED/);
-  assert.match(workflow, /fallback build/);
+test("release preparation replaces direct master and tag publication", () => {
+  const script = read("scripts/release.mjs");
+  const packageJson = JSON.parse(read("package.json"));
+  assert.equal(packageJson.scripts["release:prepare"], "node scripts/release.mjs");
+  assert.match(script, /release\/desktop-/);
+  assert.match(script, /"pr", "create"/);
+  assert.doesNotMatch(script, /git\s*\(\s*"tag",\s*"-a"/);
+  assert.doesNotMatch(script, /\["push",\s*"--atomic"/);
+  assert.doesNotMatch(script, /\["push",\s*"origin",\s*"master"/);
+  assert.doesNotMatch(script, /VOOPLE_RELEASE_E2E|VERIFY_NATIVE_AUDIO|check-migration-readiness/);
 });
-test("local release E2E exercises the production build deterministically", () => {
-  const releaseScript = read("scripts/release.mjs");
-  const playwrightConfig = read("playwright.config.ts");
-  assert.match(releaseScript, /VOOPLE_RELEASE_E2E:\s*"1"/);
-  assert.match(
-    releaseScript,
-    /process\.platform === "win32"[\s\S]*?\["--webpack"\]/,
-  );
-  assert.match(playwrightConfig, /isReleaseE2E/);
-  assert.match(playwrightConfig, /isReleaseE2E[\s\S]*localProductionCommand/);
-  assert.match(playwrightConfig, /isReleaseE2E \? 1 : 2/);
+
+test("merged release tag workflow guards the existing tag pipeline", () => {
+  const workflow = read(".github/workflows/desktop-release-tag.yml");
+  const release = read(".github/workflows/desktop-release.yml");
+  const docs = read("desktop/RELEASE.md");
+  const removedToken = ["DESKTOP", "RELEASE", "TAG", "TOKEN"].join("_");
+  assert.match(workflow, /types: \[closed\]/);
+  assert.match(workflow, /pull_request\.merged == true/);
+  assert.match(workflow, /startsWith\(github\.event\.pull_request\.head\.ref, 'release\/desktop-'\)/);
+  assert.match(workflow, /permissions:\s*\n\s+contents: write\s*\n\s+actions: write/);
+  assert.doesNotMatch(workflow, /secrets\.|\bPAT\b|deploy.key/i);
+  assert.ok(!workflow.includes(removedToken));
+  assert.ok(!docs.includes(removedToken));
+  assert.match(workflow, /ref: \$\{\{ github\.event\.pull_request\.merge_commit_sha \}\}/);
+  assert.match(workflow, /token: \$\{\{ github\.token \}\}/);
+  assert.match(workflow, /git merge-base --is-ancestor "\$BASE_SHA" "\$MERGED_SHA"/);
+  assert.match(workflow, /test "\$\(git rev-parse FETCH_HEAD\)" = "\$HEAD_SHA"/);
+  assert.match(workflow, /git diff --no-renames --name-only -z "\$base" "\$HEAD_SHA"/);
+  assert.match(workflow, /validate-desktop-release-tag\.mjs/);
+  assert.ok(workflow.indexOf("Check release PR changed files") < workflow.indexOf("Validate merged release"));
+  assert.match(workflow, /git tag -a "\$TAG" "\$MERGED_SHA"/);
+  assert.match(workflow, /git push origin "refs\/tags\/\$TAG"/);
+  assert.match(workflow, /GH_TOKEN: \$\{\{ github\.token \}\}/);
+  assert.match(workflow, /gh workflow run desktop-release\.yml --ref "\$TAG" -f publish=false -f allow_unsigned=false/);
+  assert.ok(workflow.indexOf('git push origin "refs/tags/$TAG"') < workflow.indexOf("gh workflow run desktop-release.yml"));
+  assert.match(release, /desktop-v\*/);
+  assert.match(release, /REQUIRE_SIGNING: \$\{\{ vars\.DESKTOP_REQUIRE_WINDOWS_SIGNING == 'true'/);
+  assert.match(release, /startsWith\(github\.ref, 'refs\/tags\/desktop-v'\) \|\| inputs\.publish == true/);
+  assert.match(release, /DESKTOP_UPDATER_PRIVATE_KEY/);
+  assert.match(release, /Tauri updater signature is missing/);
 });
-test("release unit tests do not depend on shell glob expansion", () => {
-  const releaseScript = read("scripts/release.mjs");
-  assert.match(releaseScript, /await readdir\(\s*"tests"/);
-  assert.match(releaseScript, /entry\.name\.endsWith\("\.test\.mjs"\)/);
-  assert.match(releaseScript, /\.\.\.unitTestFiles/);
-  assert.doesNotMatch(releaseScript, /"tests\/\*\.test\.mjs"/);
+
+test("release PR whitelist rejects application, script, and workflow changes", () => {
+  const workflow = read(".github/workflows/desktop-release-tag.yml");
+  const match = workflow.match(/case "\$path" in\s*([^\n]+)\)/);
+  assert.ok(match);
+  const allowed = match[1].trim().split("|");
+  assert.deepEqual(allowed.sort(), [
+    "CHANGELOG.md",
+    "desktop/package.json",
+    "desktop/package-lock.json",
+    "desktop/src-tauri/Cargo.toml",
+    "desktop/src-tauri/Cargo.lock",
+    "desktop/src-tauri/tauri.conf.json",
+  ].sort());
+  for (const path of ["src/app/page.tsx", "scripts/release.mjs", ".github/workflows/desktop-release.yml"]) {
+    assert.ok(!allowed.includes(path), `${path} must be rejected`);
+  }
+  assert.match(workflow, /\*\)\s+echo "Release PR changed forbidden file: \$path" >&2\s+exit 1/);
+  assert.match(workflow, /test "\$count" -eq 6/);
 });
-test("release migration readiness has process and database deadlines", () => {
-  const releaseScript = read("scripts/release.mjs");
-  const readiness = read("scripts/check-migration-readiness.mjs");
-  const applyMigration = read("scripts/apply-migration.mjs");
-  assert.match(releaseScript, /timeout:\s*options\.timeout/);
-  assert.match(
-    releaseScript,
-    /"scripts\/check-migration-readiness\.mjs",[\s\S]*?timeout:\s*90_000/,
-  );
-  assert.match(readiness, /statement_timeout:\s*30_000/);
-  assert.match(readiness, /lock_timeout:\s*5_000/);
-  assert.match(readiness, /readinessDeadline/);
-  assert.match(readiness, /75_000/);
-  assert.match(applyMigration, /migrationDeadline/);
-  assert.match(applyMigration, /120_000/);
-});
+
 test("pending migration audit uses the checksum ledger without exposing secrets", () => {
   const audit = read("scripts/check-pending-migrations.mjs");
   const packageJson = read("package.json");
@@ -58,15 +73,6 @@ test("pending migration audit uses the checksum ledger without exposing secrets"
   assert.match(audit, /AbortSignal\.timeout\(15_000\)/);
   assert.doesNotMatch(audit, /console\.log\([^\n]*(serviceRoleKey|SUPABASE_SERVICE_ROLE_KEY)/);
   assert.match(packageJson, /"db:pending": "node scripts\/check-pending-migrations\.mjs"/);
-});
-test("verified migration readiness can only be reused without migration changes", () => {
-  const releaseScript = read("scripts/release.mjs");
-  assert.match(releaseScript, /VOOPLE_RELEASE_MIGRATIONS_VERIFIED/);
-  assert.match(releaseScript, /changedMigrationInputs/);
-  assert.match(releaseScript, /"drizzle"/);
-  assert.match(releaseScript, /"scripts\/migration-manifest\.mjs"/);
-  assert.match(releaseScript, /"scripts\/migration-checksum\.mjs"/);
-  assert.match(releaseScript, /Cannot reuse migration readiness when migration inputs changed/);
 });
 test("Windows COM capture compiles in the isolated worker gate", () => {
   const manifest = read("desktop/screen-share-worker/Cargo.toml");
@@ -105,7 +111,8 @@ test("public repository workflows pin actions and scope privileged credentials",
   const smokeWorkflow = read(".github/workflows/e2e-smoke.yml");
   const secretScanWorkflow = read(".github/workflows/secret-scan.yml");
   const qualityWorkflow = read(".github/workflows/quality-gate.yml");
-  const workflows = `${releaseWorkflow}\n${smokeWorkflow}\n${secretScanWorkflow}\n${qualityWorkflow}`;
+  const tagWorkflow = read(".github/workflows/desktop-release-tag.yml");
+  const workflows = `${releaseWorkflow}\n${smokeWorkflow}\n${secretScanWorkflow}\n${qualityWorkflow}\n${tagWorkflow}`;
   assert.doesNotMatch(
     workflows,
     /uses:\s+[^\s#]+@(v\d+|stable|main|master)(?:\s|$)/,

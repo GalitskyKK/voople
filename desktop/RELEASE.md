@@ -16,10 +16,10 @@ checks cold delivery, replacement by a second warm Room invite, rejection of an
 invite URL with a query string, single-instance restoration and silent uninstall.
 The RC provenance must contain this successful result before stable promotion.
 
-A `desktop-vX.Y.Z` tag requests promotion automatically; a manual run promotes
-only when `publish` is enabled. Publishing an unsigned test build additionally
-requires `allow_unsigned`. Tagged releases require Authenticode when
-`DESKTOP_REQUIRE_WINDOWS_SIGNING=true`; Tauri updater signatures are mandatory
+A `desktop-vX.Y.Z` tag starts the existing release pipeline; a manual run promotes
+only when `publish` is enabled. Publishing an unsigned manual test build additionally
+requires `allow_unsigned`. Tagged beta releases work without Authenticode when
+`DESKTOP_REQUIRE_WINDOWS_SIGNING=false`; Tauri updater signatures remain mandatory
 for every RC and stable release.
 
 The tag must match the version in `desktop/package.json` and
@@ -129,15 +129,36 @@ frontend code change.
 
 ## Release
 
-1. Run `npm run release` on a clean, synchronized `master`. It updates all
-   versions and `CHANGELOG.md`, verifies the migration ledger and the portable
-   local gates, then atomically pushes the commit and tag after confirmation.
-   Native installer and process-audio checks run on GitHub; set
-   `VERIFY_NATIVE_AUDIO=1` only when intentionally checking the local Windows
-   toolchain.
-2. Verify the internal RC artifact, browser/installer smoke results and, when a
-   staging database exists, its migration rehearsal.
-3. Approve `desktop-stable` after those available checks are accepted.
-4. Verify production migration readiness, signature, checksum,
-   install/uninstall, updater, release catalog and `/download/desktop` before
+1. Update local `master` to the latest `origin/master` and make sure the working
+   tree is clean. Run `npm run release:prepare` (or `npm run release`). Choose a
+   patch, minor, or major bump, optionally enter an explicit version, and write
+   a release title and 1–5 short user-facing notes. The command displays commits
+   since the previous Desktop tag for context, but never copies them into the
+   changelog. Use `npm run release:prepare -- --dry-run` to preview without edits.
+2. The command updates all five Desktop version files and `CHANGELOG.md`, checks
+   version and Cargo lock consistency, creates `release/desktop-X.Y.Z`, commits
+   and pushes it, then opens a PR to `master`. If GitHub CLI is unavailable or
+   unauthenticated, create the PR manually using the printed title and body.
+   No Desktop artifacts are published by the preparation command or its PR.
+3. Review the release diff and normal Quality Gate. A release PR may change only
+   the five Desktop version files and `CHANGELOG.md`; any other changed path
+   blocks tagging. Merge the release PR.
+   `.github/workflows/desktop-release-tag.yml` checks the PR file list before
+   using code from the exact merged commit, validates its versions and changelog,
+   and pushes `desktop-vX.Y.Z` on that commit. A mismatch or duplicate tag
+   stops this step. The workflow uses the built-in, ephemeral `GITHUB_TOKEN`;
+   no additional release token or secret is needed.
+4. The tag workflow explicitly dispatches `.github/workflows/desktop-release.yml`
+   at the newly created tag. GitHub does not start a push workflow for a tag
+   pushed with `GITHUB_TOKEN`. The Desktop release workflow keeps its tag push
+   trigger for manually created recovery tags. Verify the internal
+   RC artifact, browser/installer smoke results and, when a staging database
+   exists, its migration rehearsal.
+5. Approve `desktop-stable` after those available checks are accepted.
+6. Verify the GitHub Release, CDN, production migration readiness, signature,
+   checksum, install/uninstall, updater, release catalog and `/download/desktop` before
    announcing the release.
+
+If the tag push succeeds but dispatch fails, leave the tag in place. Manually
+run the Desktop release workflow with the existing `desktop-vX.Y.Z` tag as its
+ref. Do not recreate or move the tag.

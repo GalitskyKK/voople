@@ -21,6 +21,8 @@ import type { GroupRoomJoinResult } from "@/types/group-room-mutations";
 import type { CoreVoiceSessionDescriptor, CoreVoiceSessionLaunch, EnabledVoiceMediaCredentials } from "@/types/voice";
 import type { ChatRoomControlHandle, VoiceControlState } from "../ChatRoomControl";
 import { cn } from "@/lib/utils";
+import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
+import { preloadProductSounds } from "@/lib/sound/sound-playback";
 import { IncomingCallOverlay } from "./IncomingCallOverlay";
 import { LiveMoveHandoffBridge } from "./LiveMoveHandoffBridge";
 import { useIncomingVoiceCalls, type SubscribeToVoiceRooms } from "./useIncomingVoiceCalls";
@@ -61,11 +63,18 @@ export function VoiceSessionProvider({
   children,
   onIncomingCall,
   subscribeToVoiceRooms,
+  allowCustomIncomingSound = true,
 }: {
   children: React.ReactNode;
   onIncomingCall?: (call: IncomingCallView) => void;
   subscribeToVoiceRooms?: SubscribeToVoiceRooms;
+  allowCustomIncomingSound?: boolean;
 }) {
+  const { preferences } = useAppPreferences();
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void preloadProductSounds(preferences.soundPack); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [preferences.soundPack]);
   const [activeSession, setActiveSession] = useState<VoiceSessionDescriptor | null>(null);
   const activeSessionRef = useRef(activeSession);
   useEffect(() => { activeSessionRef.current = activeSession; }, [activeSession]);
@@ -259,6 +268,7 @@ export function VoiceSessionProvider({
           />
           <IncomingCallOverlay
             call={incoming.call}
+            allowCustomSound={allowCustomIncomingSound}
             declinePending={incoming.declinePending}
             onAnswer={incoming.answer}
             onDecline={() => void incoming.decline()}

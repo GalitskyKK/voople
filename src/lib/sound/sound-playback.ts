@@ -1,12 +1,21 @@
+import { readAppPreferences } from "@/lib/app-preferences";
 import { soundEngine } from "./sound-engine";
-import type { ProductSoundId } from "./sound-catalog";
+import type { LoopSoundId, ProductSoundId, SoundPackId } from "./sound-catalog";
 
 export function playProductSound(id: ProductSoundId) {
-  return soundEngine.play(id);
+  return soundEngine.play(id, readAppPreferences().soundPack);
 }
 
-export function preloadProductSounds() {
-  return soundEngine.preload();
+export function startProductSoundLoop(id: LoopSoundId) {
+  return soundEngine.startLoop(id, readAppPreferences().soundPack);
+}
+
+export function stopProductSoundLoop(id: LoopSoundId) {
+  soundEngine.stopLoop(id);
+}
+
+export function preloadProductSounds(pack?: SoundPackId) {
+  return soundEngine.preload(pack ?? readAppPreferences().soundPack);
 }
 
 /** External Group media remains an HTML media element and never enters the trusted buffer cache. */

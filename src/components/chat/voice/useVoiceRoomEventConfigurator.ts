@@ -11,8 +11,7 @@ import {
   type RemoteTrack,
   type RemoteTrackPublication,
 } from "livekit-client";
-import { useCallback, useEffect, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
-import { preloadProductSounds } from "@/lib/sound/sound-playback";
+import { useCallback, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 
 import type { MediaStatus } from "./voice-room-config";
 import { configureVoiceRoomEvents } from "./configureVoiceRoomEvents";
@@ -45,10 +44,6 @@ export function useVoiceRoomEventConfigurator(input: {
   onDataReceived: Parameters<typeof configureVoiceRoomEvents>[0]["onDataReceived"];
   handleDisconnected: (room: Room, reason?: DisconnectReason) => void;
 }) {
-  useEffect(() => {
-    const timer = window.setTimeout(() => { void preloadProductSounds(); }, 0);
-    return () => window.clearTimeout(timer);
-  }, []);
   return useCallback((liveRoom: Room) => {
     input.setLocalSpeakerDetected(false);
     configureVoiceRoomEvents({

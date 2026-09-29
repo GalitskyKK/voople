@@ -1,11 +1,12 @@
 import type { Session } from "@supabase/supabase-js";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { VoiceSessionProvider } from "@/components/chat/voice/VoiceSessionProvider";
 import { LegalConsentGate } from "@/components/legal/LegalConsentGate";
 import type { SubscribeToVoiceRooms } from "@/components/chat/voice/useIncomingVoiceCalls";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
+import { stopProductSoundLoop } from "@/lib/sound/sound-playback";
 import type { IncomingCallView } from "@/types/chat";
 
 import { DesktopTRPCProvider } from "./api/DesktopTRPCProvider";
@@ -15,6 +16,7 @@ import {
   notifyIncomingCall,
   prepareDesktopNotifications,
 } from "./notifications/incoming-call";
+import { notificationAudioPolicy } from "./notifications/audio-policy";
 import { DesktopPresenceProvider } from "./providers/DesktopPresenceProvider";
 import { DesktopChatsProvider } from "./chat/useDesktopChats";
 import { DesktopShell } from "./shell/DesktopShell";
@@ -34,6 +36,25 @@ export function DesktopAuthenticatedApp({
   session: Session;
 }) {
   const { preferences } = useAppPreferences();
+  const [focused, setFocused] = useState(false);
+  const [visible, setVisible] = useState(() => document.visibilityState === "visible");
+
+  useEffect(() => {
+    const appWindow = getCurrentWindow();
+    let active = true;
+    let disposeFocus: (() => void) | undefined;
+    void appWindow.isFocused().then((value) => { if (active) setFocused(value); }).catch(() => undefined);
+    void appWindow.onFocusChanged(({ payload }) => { if (active) setFocused(payload); })
+      .then((dispose) => { if (active) disposeFocus = dispose; else dispose(); })
+      .catch(() => undefined);
+    const onVisibilityChange = () => setVisible(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => { active = false; disposeFocus?.(); document.removeEventListener("visibilitychange", onVisibilityChange); };
+  }, []);
+
+  const customIncomingSound = Boolean(notificationAudioPolicy({
+    enabled: preferences.notificationSound, focused, visible, sound: "call.incoming",
+  }).customSound);
 
   useEffect(() => {
     if (!preferences.notifyCalls) return;
@@ -45,14 +66,22 @@ export function DesktopAuthenticatedApp({
       if (!preferences.notifyCalls) return;
       void getCurrentWindow()
         .isFocused()
-        .then((focused) => {
-          if (!focused) {
-            return notifyIncomingCall(call, preferences.notificationSound);
+        .then((isFocused) => {
+          const policy = notificationAudioPolicy({
+            enabled: preferences.notificationSound,
+            focused: isFocused,
+            visible: document.visibilityState === "visible",
+            sound: "call.incoming",
+          });
+          if (!isFocused || document.visibilityState !== "visible") {
+            stopProductSoundLoop("call.incoming");
+            if (!isFocused) setFocused(false);
+            return notifyIncomingCall(call, policy.nativeSound);
           }
         })
-        .catch(() => notifyIncomingCall(call, preferences.notificationSound));
+        .catch(() => notifyIncomingCall(call, preferences.notificationSound && !customIncomingSound));
     },
-    [preferences.notificationSound, preferences.notifyCalls],
+    [customIncomingSound, preferences.notificationSound, preferences.notifyCalls],
   );
 
   const subscribeToVoiceRooms = useCallback<SubscribeToVoiceRooms>(
@@ -87,6 +116,7 @@ export function DesktopAuthenticatedApp({
         <DesktopReleaseNotesDialog />
         <VoiceSessionProvider
           onIncomingCall={handleIncomingCall}
+          allowCustomIncomingSound={customIncomingSound}
           subscribeToVoiceRooms={subscribeToVoiceRooms}
         >
           <DesktopPresenceProvider config={config} session={session}>

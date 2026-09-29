@@ -6,7 +6,7 @@ import { notificationHref, notificationText } from "@/components/notifications/n
 import type { AppPreferences } from "@/lib/app-preferences";
 import type { ChatMessageNotificationView } from "@/types/chat";
 import type { NotificationView } from "@/types/notifications";
-import { playProductSound, preloadProductSounds } from "@/lib/sound/sound-playback";
+import { playProductSound } from "@/lib/sound/sound-playback";
 
 import { createDesktopTrpcClient } from "../api/trpc";
 import { getSupabase } from "../auth/supabase";
@@ -46,10 +46,6 @@ export function DesktopNotificationBridge({
 
   useEffect(() => { pathnameRef.current = pathname; }, [pathname]);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => { void preloadProductSounds(); }, 0);
-    return () => window.clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     const appWindow = getCurrentWindow();

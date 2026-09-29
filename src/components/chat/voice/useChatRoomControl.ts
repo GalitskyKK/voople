@@ -5,7 +5,6 @@ import { ConnectionQuality, Room } from "livekit-client";
 
 import { resolveVoiceDockActiveSpeaker } from "@/lib/livekit/voice-dock-state";
 
-import { getDirectCallPhase } from "./call-phase";
 import { buildVoiceRoomRenameModel } from "./buildVoiceRoomRenameModel";
 import { buildVoiceRoomSwitcherModel } from "./buildVoiceRoomSwitcherModel";
 import { resolveVoiceRoomSurfacePhase } from "./voice-room-surface";
@@ -16,6 +15,7 @@ import { playVoiceRoomSound } from "./voice-room-sounds";
 import { useCallDuration } from "./useCallDuration";
 import { useCoreVoiceRoomSwitch } from "./useCoreVoiceRoomSwitch";
 import { useDesktopScreenAudioPublisher } from "./useDesktopScreenAudioPublisher";
+import { useDirectCallSounds } from "./useDirectCallSounds";
 import { useGroupSoundboard } from "./useGroupSoundboard";
 import { useScreenShareSubscription } from "./useScreenShareSubscription";
 import { useTerminalVoiceRecovery } from "./useTerminalVoiceRecovery";
@@ -26,6 +26,7 @@ import { useVoiceMediaConnection } from "./useVoiceMediaConnection";
 import { useVoiceOutput } from "./useVoiceOutput";
 import { useVoicePreferences } from "./useVoicePreferences";
 import { useVoiceRoomEventConfigurator } from "./useVoiceRoomEventConfigurator";
+import { useVoiceRoomAudioActions } from "./useVoiceRoomAudioActions";
 import { useVoiceRoomRuntime } from "./useVoiceRoomRuntime";
 import { useVoiceRoomPresentationActions } from "./useVoiceRoomPresentationActions";
 import { useVoiceRoomSurfaceSession } from "./useVoiceRoomSurfaceSession";
@@ -117,6 +118,10 @@ export function useChatRoomControl(
     value?.startedBy &&
       participants.find((participant) => participant.isMe)?.id === value.startedBy,
   );
+  const directCall = useDirectCallSounds({ chatId, chatType, room: value,
+    starter: meIsStarter, inside, mediaConnected: mediaStatus === "connected",
+    participantCount, onLeaveConfirmed });
+  const isDirect = directCall.isDirect;
   const { clearAudio } = output;
   const { clearVideoMedia } = video;
   const clearAttachedMedia = useCallback(() => {
@@ -250,19 +255,10 @@ export function useChatRoomControl(
     resetSurface: resetSessionSurface, setMediaError,
     stopMicTest: devices.micTest.stop,
     parkMedia: video.parkVisibleMedia,
-    requestLeaveRoom, onLeaveConfirmed,
+    requestLeaveRoom,
+    onLeaveConfirmed: directCall.onLeaveConfirmed,
   });
-  const resumeAudio = async () => {
-    const liveRoom = liveRoomRef.current;
-    if (!liveRoom) return;
-    await liveRoom.startAudio();
-    setAudioBlocked(!liveRoom.canPlaybackAudio);
-  };
-  const reconnectMedia = async () => {
-    const wasInside = inside;
-    mediaConnection.disconnect();
-    if (wasInside) await mediaConnection.connect();
-  };
+  const { resumeAudio, reconnectMedia } = useVoiceRoomAudioActions(liveRoomRef, setAudioBlocked, inside, mediaConnection);
   useImperativeHandle(ref, () => ({
     open: openRoom,
     minimize: minimizePanel,
@@ -271,7 +267,6 @@ export function useChatRoomControl(
     toggleOutput: () => void toggleOutputWithMicrophone(),
     leave: async () => { if (inside) await leaveRoom(); },
   }));
-  const isDirect = chatType === "direct";
   const localSpeaking = !micMuted && mediaStatus === "connected" && localSpeakerDetected;
   const connectionLabel = getConnectionLabel(mediaStatus);
   const selectedEndpoint = preferences.endpointUrl === "auto" || mediaConnection.endpoints.some((endpoint) => endpoint.url === preferences.endpointUrl)
@@ -379,7 +374,7 @@ export function useChatRoomControl(
       messages: buildVoiceRoomMessagesModel(coreSession, inside),
       identity: {
         isDirect,
-        callPhase: getDirectCallPhase({ direct: isDirect, room: value, starter: meIsStarter }),
+        callPhase: directCall.phase,
         chatName: currentCoreRoom && server.directory?.groupName
           ? `${server.directory.groupName} / ${currentCoreRoom.name}`
           : chatName,

@@ -116,7 +116,7 @@ export function useVoiceMediaActions({
         processorName: afterProcessor?.track instanceof LocalAudioTrack
           ? afterProcessor.track.getProcessor()?.name ?? null : null,
       });
-      void playVoiceRoomSound(actualMuted ? "mute" : "unmute");
+      void playVoiceRoomSound(actualMuted ? "mute" : "unmute", preferencesRef.current.roomSounds);
       await refreshDevices();
     } catch (cause) {
       traceVoiceMic("action.error", {

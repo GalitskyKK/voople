@@ -241,7 +241,7 @@ export function useChatRoomControl(
   const toggleOutputWithMicrophone = async () => {
     if (!output.outputMuted && !micMuted) await mediaActions.toggleMicrophone();
     const muted = output.toggleOutput();
-    void playVoiceRoomSound(muted ? "deafen" : "undeafen");
+    void playVoiceRoomSound(muted ? "deafen" : "undeafen", preferencesRef.current.roomSounds);
   };
   const { openRoom, closeRoom, leaveRoom, minimizePanel } = useVoiceRoomPresentationActions({
     dock: dockPresentation, inside, leavePending: sessionTransition === "leaving" || server.leave.isPending,

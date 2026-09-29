@@ -1,23 +1,15 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { RemoteParticipant, Room } from "livekit-client";
 
 import { trpc } from "@/lib/trpc/client";
 import type { GroupSoundView } from "@/types/chat";
+import { playExternalSound } from "@/lib/sound/sound-playback";
 
 const TOPIC = "voople.group-sound.v1";
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
-
-function playSoundUrl(url: string) {
-  const audio = new Audio(url);
-  audio.volume = 0.8;
-  return audio.play().then(() => new Promise<void>((resolve, reject) => {
-    audio.addEventListener("ended", () => resolve(), { once: true });
-    audio.addEventListener("error", () => reject(new Error("Не удалось воспроизвести звук группы")), { once: true });
-  }));
-}
 
 export function useGroupSoundboard(
   chatId: string,
@@ -33,18 +25,30 @@ export function useGroupSoundboard(
   const lastLocalPlayRef = useRef(0);
   const lastRemotePlayRef = useRef(new Map<string, number>());
   const playbackQueueRef = useRef(Promise.resolve());
+  const activePlaybackRef = useRef<ReturnType<typeof playExternalSound> | null>(null);
+  const mountedRef = useRef(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; activePlaybackRef.current?.stop(); };
+  }, []);
 
   const enqueueSound = useCallback((url: string) => {
     playbackQueueRef.current = playbackQueueRef.current
       .catch(() => undefined)
       .then(async () => {
+        if (!mountedRef.current) return;
         await roomRef.current?.startAudio();
-        await playSoundUrl(url);
-        setError(null);
+        if (!mountedRef.current) return;
+        const playback = playExternalSound(url, { category: "soundboard" });
+        activePlaybackRef.current = playback;
+        try { await playback.completed; }
+        finally { if (activePlaybackRef.current === playback) activePlaybackRef.current = null; }
+        if (mountedRef.current) setError(null);
       })
       .catch((cause) => {
-        setError(cause instanceof Error ? cause.message : "Не удалось воспроизвести звук группы");
+        if (mountedRef.current) setError(cause instanceof Error ? cause.message : "Не удалось воспроизвести звук группы");
       });
     return playbackQueueRef.current;
   }, [roomRef]);

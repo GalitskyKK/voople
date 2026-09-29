@@ -2,6 +2,8 @@ import "server-only";
 
 import { createHash, randomBytes } from "node:crypto";
 
+import { DIRECT_CALL_RING_MS, matchesIncomingCall } from "@/lib/chat/direct-call-state";
+
 import { getAdminClient } from "@/lib/supabase/admin";
 import { getChatMembershipRest } from "@/server/data/chat-access-rest";
 import { assertCanUseDirectChatRest } from "@/server/data/chat-direct-privacy-rest";
@@ -23,7 +25,6 @@ import type {
 } from "@/types/chat";
 
 const ROOM_STALE_AFTER_MS = 3 * 60_000;
-export const DIRECT_CALL_RING_MS = 45_000;
 
 function roomEndReason(status: string | null | undefined): ChatRoomView["endReason"] {
   return status === "declined" ||
@@ -393,7 +394,7 @@ export async function getChatRoomRest(chatId: string, userId: string): Promise<C
   };
 }
 
-export async function enterChatRoomRest(chatId: string, userId: string, micMuted: boolean) {
+export async function enterChatRoomRest(chatId: string, userId: string, micMuted: boolean, expectedStartedAt?: string) {
   const membership = await getMembership(chatId, userId);
   if (membership.type === "direct") {
     await assertCanUseDirectChatRest(chatId, userId);
@@ -403,6 +404,11 @@ export async function enterChatRoomRest(chatId: string, userId: string, micMuted
   const admin = getAdminClient();
   const now = new Date().toISOString();
   const startsNewRoom = current.status === "empty";
+
+  if (expectedStartedAt && (membership.type !== "direct" ||
+    !matchesIncomingCall(expectedStartedAt, current, userId))) {
+    throw new Error("Звонок уже завершён");
+  }
 
   if (current.status === "active" && current.accessMode === "locked" && !current.isInside) {
     throw new Error("Комната закрыта. Запрос на вход появится на следующем этапе");
@@ -429,6 +435,7 @@ export async function enterChatRoomRest(chatId: string, userId: string, micMuted
       .update({ status: "active", started_at: now, updated_at: now })
       .eq("chat_id", chatId)
       .eq("status", "ringing")
+      .eq("started_at", current.startedAt)
       .select("chat_id")
       .maybeSingle();
     if (error) throw new Error(error.message);

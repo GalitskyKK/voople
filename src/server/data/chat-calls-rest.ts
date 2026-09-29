@@ -1,7 +1,8 @@
 import "server-only";
 
 import { getAdminClient } from "@/lib/supabase/admin";
-import { DIRECT_CALL_RING_MS, insertRoomTimelineEventRest } from "@/server/data/chat-rooms-rest";
+import { DIRECT_CALL_RING_MS } from "@/lib/chat/direct-call-state";
+import { insertRoomTimelineEventRest } from "@/server/data/chat-rooms-rest";
 import { filterUnblockedUserIdsRest } from "@/server/data/user-blocks-rest";
 import {
   toProfileCustomizationView,
@@ -25,16 +26,18 @@ async function assertDirectMembership(chatId: string, userId: string) {
   }
 }
 
-export async function declineChatRoomCallRest(chatId: string, userId: string) {
+export async function declineChatRoomCallRest(chatId: string, userId: string, startedAt?: string) {
   await assertDirectMembership(chatId, userId);
   const admin = getAdminClient();
   const now = new Date().toISOString();
-  const { data, error } = await admin
+  let declineQuery = admin
     .from("chat_rooms")
     .update({ status: "declined", ended_at: now, updated_at: now })
     .eq("chat_id", chatId)
     .eq("status", "ringing")
-    .neq("started_by", userId)
+    .neq("started_by", userId);
+  if (startedAt) declineQuery = declineQuery.eq("started_at", startedAt);
+  const { data, error } = await declineQuery
     .select("chat_id, started_by, started_at")
     .maybeSingle();
   if (error) throw new Error(error.message);

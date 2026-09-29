@@ -41,6 +41,7 @@ export type VoiceSessionDescriptor = {
   chatId: string;
   chatName: string;
   chatType: "direct" | "group";
+  expectedStartedAt?: string;
   coreSession?: CoreVoiceSessionDescriptor;
 };
 
@@ -219,17 +220,15 @@ export function VoiceSessionProvider({
     onIncomingCall,
     subscribeToVoiceRooms,
     onAnswer: (call) => {
-      const existingControl =
-        activeSession?.chatId === call.chatId ? controlRef.current : null;
-      autoConnectPendingRef.current = !existingControl;
+      autoConnectPendingRef.current = true;
       setInitialCoreCredentials(null);
       setState(IDLE_VOICE_CONTROL_STATE);
       setActiveSession({
         chatId: call.chatId,
         chatName: call.chatName,
         chatType: call.chatType,
+        expectedStartedAt: call.startedAt,
       });
-      existingControl?.join();
     },
   });
 
@@ -247,7 +246,7 @@ export function VoiceSessionProvider({
           {activeSession ? (
             <Suspense fallback={null}>
               <ChatRoomControl
-                key={`${activeSession.chatId}:${activeSession.coreSession?.join.sessionId ?? "legacy"}`}
+                key={`${activeSession.chatId}:${activeSession.coreSession?.join.sessionId ?? activeSession.expectedStartedAt ?? "legacy"}`}
                 ref={handleControlRef}
                 {...activeSession}
                 initialCoreCredentials={initialCoreCredentials ?? undefined}

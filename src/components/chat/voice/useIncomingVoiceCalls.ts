@@ -5,11 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 import { playProductSound } from "@/lib/sound/sound-playback";
+import { incomingCallExpiresAt, incomingCallKey, shouldNotifyIncomingCall, visibleIncomingCall } from "@/lib/chat/direct-call-state";
 import type { IncomingCallView } from "@/types/chat";
-
-function callKey(call: IncomingCallView) {
-  return `${call.chatId}:${call.startedAt}`;
-}
 
 export function useIncomingVoiceCalls({
   busy,
@@ -23,6 +20,7 @@ export function useIncomingVoiceCalls({
   subscribeToVoiceRooms?: SubscribeToVoiceRooms;
 }) {
   const [handledKey, setHandledKey] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const { preferences } = useAppPreferences();
   const notifiedKeyRef = useRef<string | null>(null);
   const busyKeyRef = useRef<string | null>(null);
@@ -37,33 +35,42 @@ export function useIncomingVoiceCalls({
   });
 
   const firstCall = incoming.data?.[0] ?? null;
-  const firstCallKey = firstCall ? callKey(firstCall) : null;
-  const visibleCall =
-    firstCall && firstCallKey !== handledKey ? firstCall : null;
+  const firstCallKey = firstCall ? incomingCallKey(firstCall) : null;
+  const visibleCall = visibleIncomingCall(firstCall, handledKey, Math.max(now, Date.now()));
+
+  useEffect(() => {
+    if (!firstCall) return;
+    const remaining = incomingCallExpiresAt(firstCall) - Date.now();
+    const timer = window.setTimeout(() => setNow(Date.now()), Math.max(0, remaining));
+    return () => window.clearTimeout(timer);
+  }, [firstCall, firstCallKey]);
 
   useEffect(() => {
     if (!subscribeToVoiceRooms) return;
     return subscribeToVoiceRooms(
-      () => void utils.chat.incomingCalls.invalidate(),
+      () => {
+        void utils.chat.incomingCalls.invalidate();
+        void utils.chat.room.invalidate();
+      },
     );
   }, [subscribeToVoiceRooms, utils]);
 
   useEffect(() => {
     if (!visibleCall || busy) return;
-    const key = callKey(visibleCall);
-    if (notifiedKeyRef.current === key) return;
+    const key = incomingCallKey(visibleCall);
+    if (!shouldNotifyIncomingCall(key, busy, notifiedKeyRef.current)) return;
     notifiedKeyRef.current = key;
     onIncomingCall?.(visibleCall);
   }, [busy, onIncomingCall, visibleCall]);
 
   useEffect(() => {
-    if (!firstCall || !busy) return;
-    const key = callKey(firstCall);
+    if (!visibleCall || !busy) return;
+    const key = incomingCallKey(visibleCall);
     if (busyKeyRef.current === key) return;
     busyKeyRef.current = key;
     setHandledKey(key);
     decline.mutate(
-      { chatId: firstCall.chatId },
+      { chatId: visibleCall.chatId, startedAt: visibleCall.startedAt },
       {
         onError: () => {
           busyKeyRef.current = null;
@@ -71,20 +78,20 @@ export function useIncomingVoiceCalls({
         },
       },
     );
-  }, [busy, decline, firstCall]);
+  }, [busy, decline, visibleCall]);
 
   const answer = useCallback(() => {
     if (!visibleCall) return;
-    setHandledKey(callKey(visibleCall));
+    setHandledKey(incomingCallKey(visibleCall));
     onAnswer(visibleCall);
   }, [onAnswer, visibleCall]);
 
   const reject = useCallback(async () => {
     if (!visibleCall) return;
-    const key = callKey(visibleCall);
+    const key = incomingCallKey(visibleCall);
     setHandledKey(key);
     try {
-      await decline.mutateAsync({ chatId: visibleCall.chatId });
+      await decline.mutateAsync({ chatId: visibleCall.chatId, startedAt: visibleCall.startedAt });
       if (preferences.notificationSound) void playProductSound("call.declined");
     } catch {
       setHandledKey(null);

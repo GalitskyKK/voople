@@ -1,0 +1,45 @@
+name: Tag merged Desktop release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  tag:
+    if: ${{ github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/desktop-') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require tag push token
+        env:
+          TAG_TOKEN: ${{ secrets.DESKTOP_RELEASE_TAG_TOKEN }}
+        run: test -n "$TAG_TOKEN"
+
+      - name: Check out exact merged commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
+          token: ${{ secrets.DESKTOP_RELEASE_TAG_TOKEN }}
+
+      - name: Validate merged release
+        id: release
+        env:
+          RELEASE_BRANCH: ${{ github.event.pull_request.head.ref }}
+          MERGED_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          tag=$(node scripts/validate-desktop-release-tag.mjs "$RELEASE_BRANCH" "$MERGED_SHA")
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Push annotated desktop tag
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          git config user.name "voople-release-bot"
+          git config user.email "voople-release-bot@users.noreply.github.com"
+          git tag -a "$TAG" HEAD -m "Voople Desktop ${TAG#desktop-v}"
+          git push origin "refs/tags/$TAG"

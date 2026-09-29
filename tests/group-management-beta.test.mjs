@@ -44,13 +44,16 @@ test("Group Settings has one beta IA and a dedicated authorized summary read", (
 
 test("Group Info is summary-only and reaches canonical People tab", () => {
   const view = read("src/components/chat/GroupInfoDrawerView.tsx");
-  const disclosure = read("src/components/chat/GroupIdentityDisclosure.tsx");
+  const card = read("src/components/chat/GroupIdentityCard.tsx");
+  const menu = read("src/components/chat/GroupIdentityMenu.tsx");
   const controller = read("src/components/chat/GroupInfoDrawer.tsx");
   const surface = read("src/components/chat/GroupSurfaceShell.tsx");
   assert.match(view, /preview = \[\.\.\.\(members \?\? \[\]\)\][\s\S]*?slice\(0, 5\)/);
   assert.match(view, /Все люди/);
   assert.match(view, /placement="context"/);
-  assert.match(disclosure, /memberCount} участников · \{onlineCount} онлайн · \{roomCount} в голосе/);
+  assert.match(card, /memberCount} участников · \{onlineCount} онлайн · \{roomCount} в голосе/);
+  assert.match(menu, /<DropdownMenu[\s\S]*?contentRole="dialog"/);
+  assert.doesNotMatch(menu, /onOpenPeople|members\.slice|roomCount} в голосе/);
   assert.match(view, /open=\{open && !identitySlot\}/);
   assert.doesNotMatch(view, /Активные комнаты|roomAction/);
   assert.doesNotMatch(view, /Фильтр участников|onTabChange|MemberFilter/);

@@ -9,8 +9,7 @@ import type { ChatGroupMemberView } from "@/types/chat";
 import type { GroupNowView } from "@/types/group-now";
 
 import { GroupAvatar } from "./GroupAvatar";
-import { GroupIdentityDisclosure } from "./GroupIdentityDisclosure";
-import { useGroupPeopleAction } from "./GroupPeopleActionContext";
+import { GroupIdentityMenu } from "./GroupIdentityMenu";
 import { GroupTopChrome } from "./GroupTopChrome";
 import { useGroupTopChromeSlot } from "./GroupTopChromeSlotContext";
 import { useGroupSurfaceNavigation } from "./GroupSurfaceNavigationContext";
@@ -43,7 +42,6 @@ export function GroupInfoDrawerView({ open, chatName, memberCount, groupIcon, gr
 }) {
   const selectGroupTab = useGroupSurfaceNavigation();
   const identitySlot = useGroupIdentitySlot();
-  const peopleAction = useGroupPeopleAction();
   const desktopChromeSlot = useGroupTopChromeSlot();
   const activeRooms = now?.rooms.filter((room) => (room.state === "active" || room.state === "connecting") && room.participantCount > 0) ?? [];
   const roomCount = activeRooms.reduce((count, room) => count + room.participantCount, 0);
@@ -53,20 +51,18 @@ export function GroupInfoDrawerView({ open, chatName, memberCount, groupIcon, gr
 
   const openPeople = () => {
     onOpenChange(false);
-    if (identitySlot) peopleAction?.openPeople();
-    else if (onOpenPeople) onOpenPeople();
+    if (onOpenPeople) onOpenPeople();
     else selectGroupTab?.("people");
   };
 
   return (
     <>
-      {identitySlot ? createPortal(<GroupIdentityDisclosure
+      {identitySlot ? createPortal(<GroupIdentityMenu
         open={open} name={chatName} memberCount={memberCount} onlineCount={onlineCount} roomCount={roomCount}
         icon={groupIcon} avatarUrl={groupAvatarUrl} bannerUrl={groupBannerUrl} accentColor={groupAccentColor}
         tag={groupTag} tagEquipped={groupTagEquipped} tagPending={groupTagPending} canManage={canManage}
-        description={description} members={preview} infoLoading={infoLoading} membersLoading={membersLoading} error={error}
-        onOpenChange={onOpenChange} onInvite={onInvite} onOpenPeople={openPeople} onManage={onManage}
-        onOpenProfile={onOpenProfile} onToggleTag={onToggleGroupTag}
+        description={description} infoLoading={infoLoading} error={error}
+        onOpenChange={onOpenChange} onInvite={onInvite} onManage={onManage} onToggleTag={onToggleGroupTag}
       />, identitySlot) : <button type="button" onClick={() => onOpenChange(true)} className="voople-group-header-identity flex min-w-0 flex-1 items-center gap-3 text-left" aria-label={`Информация о группе ${chatName}`}>
         <span className="voople-group-header-avatar shrink-0"><GroupAvatar name={chatName} avatarUrl={groupAvatarUrl} icon={groupIcon} accentColor={groupAccentColor} size="lg" shape="square" /></span>
         <span className="min-w-0"><strong className="voople-group-header-name block truncate">{chatName}</strong><span className="voople-group-header-meta block truncate">{memberCount} участников</span></span>

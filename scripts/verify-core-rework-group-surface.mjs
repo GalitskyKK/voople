@@ -181,13 +181,35 @@ try {
       assert.equal(await page.getByRole('dialog',{name:'Информация о группе VOICEKK'}).count(),0);
     } else {
       assert.equal(await groupIdentity.getAttribute('aria-expanded'),'true');
-      assert.equal(await page.getByRole('dialog',{name:'Информация о группе VOICEKK'}).count(),0);
+      const popover=page.getByRole('dialog',{name:'Действия группы VOICEKK'});
+      await popover.waitFor();
+      await page.waitForTimeout(200);
+      await page.screenshot({path:path.join(artifacts,`group-${host}-popover-${width}-${theme}-${count}.png`)});
       assert.equal((await page.locator('.voople-group-pane-identity').boundingBox()).y,identityTop);
-      assert.ok((await page.locator('.voople-group-workspace__rooms-scroll').boundingBox()).y > roomsTop);
+      assert.equal((await page.locator('.voople-group-workspace__rooms-scroll').boundingBox()).y,roomsTop);
+      const cardBox=await groupIdentity.boundingBox();
+      const menuBox=await popover.boundingBox();
+      assert.ok(menuBox.y>=cardBox.y+cardBox.height);
+      assert.ok(menuBox.x>=0 && menuBox.x+menuBox.width<=width);
+      assert.equal(await popover.getByRole('button',{name:'Пригласить'}).count(),1);
+      assert.equal(await popover.getByRole('button',{name:'Настройки'}).count(),1);
+      assert.equal(await popover.getByRole('button',{name:'Люди'}).count(),0);
       await page.locator('.voople-group-workspace__rooms-scroll').evaluate(el=>{el.scrollTop=100});
       assert.equal((await page.locator('.voople-group-pane-identity').boundingBox()).y,identityTop);
-      await groupIdentity.click();
+      await page.keyboard.press('Escape');
       assert.equal(await groupIdentity.getAttribute('aria-expanded'),'false');
+      assert.equal(await groupIdentity.evaluate(el=>document.activeElement===el),true);
+      await groupIdentity.click();
+      await page.locator('.voople-group-workspace__chat').click({position:{x:10,y:10}});
+      assert.equal(await popover.count(),0);
+      await page.locator('.voople-group-top-chrome__name').click();
+      await popover.waitFor();
+      await page.keyboard.press('Escape');
+      assert.equal(await groupIdentity.evaluate(el=>document.activeElement===el),true);
+      await groupIdentity.click();
+      await popover.getByRole('button',{name:'Пригласить'}).click();
+      assert.equal(await popover.count(),0);
+      assert.equal(await groupIdentity.evaluate(el=>document.activeElement===el),true);
     }
     if(expectedMode==="medium" && count===8 && width===1100){
       const trigger=page.getByRole('button',{name:'Показать участников группы'});

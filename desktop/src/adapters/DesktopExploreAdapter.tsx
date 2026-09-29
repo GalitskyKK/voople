@@ -15,13 +15,15 @@ export function DesktopExploreAdapter({
   session,
   renderDestination,
   navigate,
+  initialQuery = "",
 }: {
   config: DesktopConfig;
   session: Session;
   renderDestination: NavigationDestinationRenderer;
   navigate: (href: string) => void;
+  initialQuery?: string;
 }) {
-  const { query, setQuery, debouncedQuery } = useDebouncedSearchQuery();
+  const { query, setQuery, debouncedQuery } = useDebouncedSearchQuery(300, initialQuery);
   const explore = useDesktopExplore(config, session, debouncedQuery);
 
   return (

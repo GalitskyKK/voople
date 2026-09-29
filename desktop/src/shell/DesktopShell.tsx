@@ -285,7 +285,7 @@ export function DesktopShell({
       },
       search: () => {
         revealMainWindow();
-        navigate("/search");
+        window.dispatchEvent(new Event("voople:open-search"));
       },
       messages: () => {
         revealMainWindow();

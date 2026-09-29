@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { GroupChatCreator } from "@/components/chat/GroupChatCreator";
 import { trpc } from "@/lib/trpc/client";
 import { useOnlineUsers } from "@/providers/OnlinePresenceProvider";
@@ -15,6 +16,7 @@ export function MessengerSidebar({
   pathname: string;
   renderDestination: NavigationDestinationRenderer;
 }) {
+  const router = useRouter();
   const { onlineUserIds } = useOnlineUsers();
   const { liveByGroup } = useMessengerGroupLiveStates();
   const chats = trpc.chat.list.useQuery(undefined, {
@@ -38,6 +40,7 @@ export function MessengerSidebar({
       createGroupAction={<GroupChatCreator variant="sidebar" />}
       savedMessagesEnabled={savedMessages.data?.enabled === true}
       renderDestination={renderDestination}
+      onOpenCompactSearch={() => router.push("/search")}
       onRetry={() => void chats.refetch()}
     />
   );

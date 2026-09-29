@@ -4,6 +4,7 @@ import {useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {Smile} from 'lucide-react';
 import {AppThemeProvider} from '@/components/theme/AppThemeProvider';
+import {TRPCReactProvider} from '@/lib/trpc/client';
 import {AppSidebarVisual,AppBottomNavigationVisual} from '@/components/layout/AppNavigationVisual';
 import {AppShellFrame} from '@/components/layout/AppShellFrame';
 import {MessengerSidebarView} from '@/components/layout/MessengerSidebarView';
@@ -18,6 +19,7 @@ import {GroupTopChromeSlotContext} from '@/components/chat/GroupTopChromeSlotCon
 import {DesktopTitleBar} from './desktop/src/shell/DesktopTitleBar';
 const params=new URLSearchParams(location.search);
 const desktopHost=params.get('host')==='desktop';
+const searchFixture=params.get('search')==='1';
 const count=Number(params.get('count')||8);
 const names=['Yozhik','Biba','Аня','Миша','Катя','Саша','Дима','Гость'];
 const person=(index)=>({id:'user-'+index,username:'user'+index,displayName:names[index]||'Участник '+(index+1),avatarUrl:null,isMe:index===0,guest:index===7,micMuted:true,cameraEnabled:true,screenSharing:true});
@@ -30,14 +32,16 @@ const makeRoom=(id,kind,name,participants,screen=false)=>({id,kind,name,joinTarg
 const rooms=[makeRoom('drg','pinned','DRG',foreign,true),makeRoom('temp','temporary','Поговорить',temporary),makeRoom('lobby','lobby','Лобби',lobby),makeRoom('empty','pinned','После работы',[]),makeRoom('hidden-temp','temporary','Пустая временная',[])];
 const members=[...lobby,...foreign,...temporary,...available,person(100)].filter(u=>!u.guest).map(u=>({...u,type:'user',bio:null,role:u.isMe?'owner':'member',roleColor:null,activeRoom:null}));
 const chat={id:'group-1',type:'group',name:'VOICEKK',groupIcon:'V',groupAvatarUrl:null,groupAccentColor:'#7697b2',memberCount:members.length,unreadCount:5,otherUser:null,lastMessage:null,parentChatId:null,topicsEnabled:false,topicsLayout:'tabs',topicIcon:null,groupVisibility:'private',joinPolicy:'invite_only',sectionAccessMode:'inherit',favoritePosition:1,groupBannerUrl:null,groupTag:'KK',boostCount:0,boostedByMe:false,viewerRole:'owner',channels:[]};
-const renderDestination=({href,label,className,children})=><button type="button" aria-label={label} className={className} onClick={()=>window.fixture.event='navigate:'+href}>{children}</button>;
+const direct={...chat,id:'direct-biba',type:'direct',name:null,otherUser:{id:'user-biba',displayName:'Biba',username:'biba',avatarUrl:null},groupTag:null,groupIcon:null,groupAccentColor:null};
+const sidebarChats=searchFixture?[chat,direct,...Array.from({length:24},(_,index)=>({...chat,id:'group-extra-'+index,name:'Компания '+(index+1)}))]:[chat];
+const renderDestination=({href,label,className,children,onNavigate})=><button type="button" aria-label={label} className={className} onClick={()=>{onNavigate?.();window.fixture.event='navigate:'+href}}>{children}</button>;
 function Demo(){
  const [chromeSlot,setChromeSlot]=useState(null);
  const [tab,setTab]=useState('now');const [volumes,setVolumes]=useState({});const [pending,setPending]=useState(null);const [error,setError]=useState(null);const [move,setMove]=useState(false);const [openInfo,setOpenInfo]=useState(false);const [mic,setMic]=useState(true);const [audio,setAudio]=useState(false);const [camera,setCamera]=useState(false);const [share,setShare]=useState(false);
  window.fixture={event:window.fixture?.event,setPending,setError,setTab,volumes};
  const details={sessionId:'session-lobby',participants:Object.fromEntries(lobby.map(u=>[u.id,{isMe:u.isMe,muted:u.isMe&&mic,camera:false,speaking:u.isMe?!mic:u.id==='user-1',volume:volumes[u.id]??1}])),setParticipantVolume:(id,v)=>setVolumes(old=>({...old,[id]:v}))};
  const value={groupId:'group-1',groupName:'VOICEKK',rooms,onlineOutsideRooms:available,visibleOnlineCount:count+9,currentUserRoomId:'lobby'};
- const sidebar=<AppSidebarVisual pathname="/messages/group-1" collapsed={false} renderDestination={renderDestination} primaryNavigation={<MessengerSidebarView pathname="/messages/group-1" chats={[chat]} loading={false} onlineUserIds={new Set()} liveByGroup={new Map([['group-1',{groupId:'group-1',participantCount:count+5,roomCount:3,hasScreenShare:true}]])} renderDestination={renderDestination} onRetry={()=>{}}/>} accountNavigation={<button className="flex w-full items-center gap-2 text-left"><ProfileAvatar displayName="Yozhik" size="sm"/><span className="text-xs">Yozhik</span></button>}/>;
+ const sidebar=<AppSidebarVisual pathname="/messages/group-1" collapsed={false} renderDestination={renderDestination} primaryNavigation={<MessengerSidebarView pathname="/messages/group-1" chats={sidebarChats} loading={false} onlineUserIds={new Set()} liveByGroup={new Map([['group-1',{groupId:'group-1',participantCount:count+5,roomCount:3,hasScreenShare:true}]])} renderDestination={renderDestination} onOpenCompactSearch={()=>window.fixture.event='navigate:/search'} onRetry={()=>{}}/>} accountNavigation={<button className="flex w-full items-center gap-2 text-left"><ProfileAvatar displayName="Yozhik" size="sm"/><span className="text-xs">Yozhik</span></button>}/>;
  const surface=<><AppShellFrame routeKind="messages" navigationKind="messenger" fixedViewport sidebar={sidebar}>
  <GroupWorkspaceView combineHeader activeTab={tab} onTabChange={setTab}
   header={<header className="voople-panel-header voople-chat-window__header--group"><div className="voople-panel-header__content flex h-full items-center gap-3"><GroupInfoDrawerView open={openInfo} chatName="VOICEKK" memberCount={members.length} groupIcon="V" groupAvatarUrl={null} groupBannerUrl={null} groupAccentColor="#7697b2" groupTag="KK" canManage members={members} now={value} onOpenChange={setOpenInfo} onManage={()=>{}} onInvite={()=>{}} onOpenProfile={()=>{}}/></div></header>}
@@ -52,5 +56,5 @@ function Demo(){
    ? <div className="desktop-window-frame"><DesktopTitleBar onGroupChromeSlotChange={setChromeSlot}/><div className="desktop-window-content">{surface}</div></div>
    : surface}</GroupTopChromeSlotContext.Provider>;
 }
-createRoot(document.getElementById('root')).render(<AppThemeProvider><Demo/></AppThemeProvider>);
+createRoot(document.getElementById('root')).render(<TRPCReactProvider><AppThemeProvider><Demo/></AppThemeProvider></TRPCReactProvider>);
 `;

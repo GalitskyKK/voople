@@ -54,6 +54,11 @@ const geistSans = await readFile(path.join(repo, "node_modules/geist/dist/fonts/
 const geistMono = await readFile(path.join(repo, "node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2"));
 const geistPixelSquare = await readFile(path.join(repo, "node_modules/geist/dist/fonts/geist-pixel/GeistPixel-Square.woff2"));
 const server = createServer((request, response) => {
+  if (request.url?.startsWith("/api/trpc/search.beta")) {
+    response.setHeader("Content-Type", "application/json");
+    response.end(JSON.stringify([{ result: { data: { json: { people: [{ type: "user", id: "user-biba", username: "biba", displayName: "Biba", bio: null, avatarUrl: null, online: true, commonGroups: { count: 1, groups: [{ id: "group-1", name: "VOICEKK" }] }, canMessage: true }] } } } }]));
+    return;
+  }
   if (request.url === "/favicon/android-chrome-192x192.png") { response.setHeader("Content-Type", "image/png"); response.end(logo); return; }
   if (request.url === "/fonts/geist-sans.woff2") { response.setHeader("Content-Type", "font/woff2"); response.end(geistSans); return; }
   if (request.url === "/fonts/geist-mono.woff2") { response.setHeader("Content-Type", "font/woff2"); response.end(geistMono); return; }
@@ -65,6 +70,83 @@ const server = createServer((request, response) => {
   response.end(`<!doctype html><html data-app-theme="void" data-visual-host="${host}"><head><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/style.css?host=${host}"></head><body><div id="root"></div><script src="/app.js"></script></body></html>`);
 });
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+
+async function verifySearchPalette(page, { width, theme, host, artifacts }) {
+  if (width < 1024) {
+    await page.keyboard.press("Control+k");
+    assert.equal(await page.evaluate(() => window.fixture.event), "navigate:/search");
+    assert.equal(await page.getByRole("dialog", { name: "Поиск" }).count(), 0);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    console.log(`PASS search ${host} ${width}px ${theme}: compact route`);
+    return;
+  }
+
+  const trigger = page.getByRole("button", { name: "Поиск", exact: true });
+  const before = await page.evaluate(() => Object.fromEntries(
+    [".voople-group-workspace__live", ".voople-group-workspace__chat", ".voople-group-workspace__people", ".voople-chat-composer", ".voople-group-pane-identity"]
+      .map((selector) => {
+        const rect = document.querySelector(selector)?.getBoundingClientRect();
+        return [selector, rect ? [rect.x, rect.y, rect.width, rect.height] : null];
+      }),
+  ));
+  const triggerBox = await trigger.boundingBox();
+  await trigger.click();
+  const palette = page.getByRole("dialog", { name: "Поиск" });
+  await palette.waitFor();
+  const input = palette.getByRole("searchbox", { name: "Поиск диалогов, групп и людей" });
+  assert.equal(await input.evaluate((element) => document.activeElement === element), true);
+  const paletteBox = await palette.boundingBox();
+  assert.ok(Math.abs(paletteBox.x - triggerBox.x) <= 1 && Math.abs(paletteBox.y - triggerBox.y) <= 1);
+  assert.ok(paletteBox.width >= 360 && paletteBox.width <= 420);
+  assert.equal(await palette.evaluate((element) => getComputedStyle(element).backgroundColor), theme === "light" ? "rgb(255, 255, 255)" : "rgb(31, 40, 54)");
+  assert.equal(await page.locator(".voople-sidebar-search-scrim").evaluate((element) => getComputedStyle(element).backdropFilter.includes("blur")), true);
+  assert.equal(await palette.evaluate((element) => getComputedStyle(element).animationDuration), "0.18s");
+  const after = await page.evaluate(() => Object.fromEntries(
+    [".voople-group-workspace__live", ".voople-group-workspace__chat", ".voople-group-workspace__people", ".voople-chat-composer", ".voople-group-pane-identity"]
+      .map((selector) => {
+        const rect = document.querySelector(selector)?.getBoundingClientRect();
+        return [selector, rect ? [rect.x, rect.y, rect.width, rect.height] : null];
+      }),
+  ));
+  assert.deepEqual(after, before, "opening Search cannot reflow Group workspace");
+  await page.waitForTimeout(220);
+  await page.screenshot({ path: path.join(artifacts, `search-${host}-${width}-${theme}.png`) });
+
+  await input.fill("Biba");
+  await palette.getByRole("button", { name: "Открыть диалог с Biba" }).waitFor();
+  await palette.getByRole("button", { name: "Профиль Biba" }).waitFor();
+  assert.equal(await palette.getByRole("heading", { name: "Диалоги" }).count(), 1);
+  assert.equal(await palette.getByRole("heading", { name: "Люди" }).count(), 1);
+  await palette.getByRole("button", { name: "Группы", exact: true }).click();
+  await input.fill("VOICEKK");
+  await palette.getByRole("button", { name: "Открыть группу VOICEKK" }).waitFor();
+  assert.equal(await palette.getByRole("button", { name: "Открыть диалог с Biba" }).count(), 0);
+  assert.equal(await palette.getByRole("button", { name: "Искать публичные группы" }).count(), 1);
+  await palette.getByRole("button", { name: "Все", exact: true }).click();
+  await page.keyboard.press("Control+k");
+  assert.equal(await input.evaluate((element) => document.activeElement === element && element.selectionStart === 0 && element.selectionEnd === element.value.length), true);
+  await page.keyboard.press("Escape");
+  assert.equal(await palette.count(), 0);
+  assert.equal(await trigger.evaluate((element) => document.activeElement === element), true);
+
+  await trigger.click();
+  await palette.waitFor();
+  const results = palette.locator("[data-voople-scroll]");
+  assert.equal(await results.evaluate((element) => element.scrollHeight > element.clientHeight), true);
+  assert.ok((await palette.boundingBox()).height < 600);
+  await page.mouse.click(width - 20, 400);
+  assert.equal(await palette.count(), 0);
+  assert.equal(await page.getByRole("dialog", { name: "Действия группы VOICEKK" }).count(), 0);
+
+  if (width === 1440 && theme === "void") {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await trigger.click();
+    await palette.waitFor();
+    assert.equal(await palette.evaluate((element) => getComputedStyle(element).animationName), "none");
+  }
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  console.log(`PASS search ${host} ${width}px ${theme}: anchor, opacity, grouping, focus, no reflow`);
+}
 
 let browser;
 try {
@@ -78,18 +160,27 @@ try {
     {width:360,theme:"light",host,count:8}, {width:1440,theme:"void",host,count:20},
     {width:390,theme:"light",host,count:20},
   ]);
-  const visualCases = process.argv.includes("--correction-focus")
-    ? allVisualCases.filter(({width,theme,count}) => [390,768,1100,1440].includes(width) && theme === "void" && count === 8)
-    : allVisualCases;
+  const searchFocus = process.argv.includes("--search-focus");
+  const visualCases = searchFocus
+    ? allVisualCases.filter(({width,theme,count}) => count === 8 && ([390,768,960,1100,1280,1440].includes(width) && theme === "void" || [390,1440].includes(width) && theme === "light"))
+    : process.argv.includes("--correction-focus")
+      ? allVisualCases.filter(({width,theme,count}) => [390,768,1100,1440].includes(width) && theme === "void" && count === 8)
+      : allVisualCases;
   for (const {width, theme, host, count} of visualCases) {
     const page = await browser.newPage({viewport:{width,height:900}});
     const errors=[];
     page.on("pageerror", error=>errors.push(error.message));
     page.on("console", message=>{if(message.type()==="error")errors.push(message.text())});
     await page.addInitScript(value=>localStorage.setItem("voople:app-theme",value),theme);
-    await page.goto(`http://127.0.0.1:${server.address().port}?host=${host}&count=${count}`);
+    await page.goto(`http://127.0.0.1:${server.address().port}?host=${host}&count=${count}${searchFocus ? "&search=1" : ""}`);
     await page.evaluate(()=>document.fonts.ready);
     await page.getByRole("button",{name:"Открыть текущую комнату Лобби"}).waitFor();
+    if (searchFocus) {
+      await verifySearchPalette(page, { width, theme, host, artifacts });
+      assert.deepEqual(errors, []);
+      await page.close();
+      continue;
+    }
     const groupWidth = width >= 1024 ? width - 220 : width;
     const expectedMode=groupWidth>=1120?"wide":groupWidth>=800?"medium":"compact";
     await page.locator(`.voople-group-surface[data-mode="${expectedMode}"]`).waitFor();

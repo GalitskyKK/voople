@@ -3,39 +3,58 @@ name: Production web deploy
 on:
   workflow_dispatch:
   push:
-    tags:
-      - "web-v*"
-
-permissions:
-  contents: read
-  packages: write
+    branches:
+      - master
 
 concurrency:
   group: production-web
   cancel-in-progress: false
 
 jobs:
+  gate:
+    name: Check production deploy gate
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+    outputs:
+      enabled: ${{ steps.gate.outputs.enabled }}
+    steps:
+      - id: gate
+        env:
+          AUTO_DEPLOY: ${{ vars.PRODUCTION_AUTO_DEPLOY }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [[ "$EVENT_NAME" == workflow_dispatch || "$AUTO_DEPLOY" == true ]]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+            echo 'Automatic production deployment is disabled.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   build-and-push:
     name: Build immutable web image
+    needs: gate
+    if: needs.gate.outputs.enabled == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    permissions:
+      contents: read
+      packages: write
     outputs:
       image: ${{ steps.meta.outputs.image }}
     steps:
       - name: Check out source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-
       - name: Resolve image name
         id: meta
         shell: bash
         run: |
           image="ghcr.io/${GITHUB_REPOSITORY,,}/web:${GITHUB_SHA}"
-          echo "image=${image}" >> "${GITHUB_OUTPUT}"
-
+          echo "image=${image}" >> "$GITHUB_OUTPUT"
       - name: Authenticate to GHCR
         shell: bash
         run: echo "${{ github.token }}" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
-
       - name: Build production image
         shell: bash
         run: |
@@ -47,55 +66,118 @@ jobs:
             --build-arg NEXT_PUBLIC_ASSETS_CDN_URL=https://cdn.voople.app \
             --build-arg NEXT_PUBLIC_LIVEKIT_URL=wss://rtc.voople.app \
             --build-arg NEXT_PUBLIC_APP_RELEASE="${GITHUB_SHA}" \
-            --tag "${{ steps.meta.outputs.image }}" \
-            .
-
+            --tag "${{ steps.meta.outputs.image }}" .
       - name: Push immutable image
         run: docker push "${{ steps.meta.outputs.image }}"
 
   deploy:
-    name: Deploy to Selectel
+    name: Deploy to Selectel over Tailscale
     needs: build-and-push
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     environment: production
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      DEPLOY_HOST: ${{ vars.PRODUCTION_TAILSCALE_HOST }}
+      DEPLOY_PORT: ${{ secrets.PRODUCTION_SSH_PORT }}
+      DEPLOY_USER: ${{ secrets.PRODUCTION_SSH_USER }}
+      VOOPLE_IMAGE: ${{ needs.build-and-push.outputs.image }}
     steps:
       - name: Check out deployment configuration
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-
-      - name: Configure SSH trust
+      - name: Join Tailscale with GitHub OIDC
+        id: tailscale
+        uses: tailscale/github-action@780049a30b6ff5c378a9e7b389d15ece7a204888 # v4.1.3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.TS_AUDIENCE }}
+          tags: tag:voople-ci-deploy
+      - name: Verify private production connectivity
+        id: private
         shell: bash
         run: |
+          [[ "$DEPLOY_HOST" =~ ^100\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] || { echo 'PRODUCTION_TAILSCALE_HOST must be a Tailscale IPv4 address' >&2; exit 1; }
+          [[ "$DEPLOY_PORT" =~ ^[0-9]{1,5}$ ]] || { echo 'Invalid PRODUCTION_SSH_PORT' >&2; exit 1; }
+          timeout 20s tailscale ping --until-direct=false --c=3 --timeout=5s "$DEPLOY_HOST"
+          timeout 10s bash -c 'echo > /dev/tcp/"$1"/"$2"' _ "$DEPLOY_HOST" "$DEPLOY_PORT"
+      - name: Configure and verify SSH trust
+        shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.PRODUCTION_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          [[ -n "$DEPLOY_USER" && -n "$SSH_PRIVATE_KEY" && -n "$SSH_KNOWN_HOSTS" ]] || { echo 'Production SSH configuration is incomplete' >&2; exit 1; }
           install -d -m 700 ~/.ssh
-          printf '%s\n' "${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          printf '%s\n' "${{ secrets.PRODUCTION_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
-
+          host_id="$DEPLOY_HOST"
+          [[ "$DEPLOY_PORT" == 22 ]] || host_id="[$DEPLOY_HOST]:$DEPLOY_PORT"
+          ssh-keygen -F "$host_id" -f ~/.ssh/known_hosts >/dev/null || {
+            echo "PRODUCTION_SSH_KNOWN_HOSTS has no trusted entry for $host_id" >&2
+            exit 1
+          }
+          ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile=~/.ssh/known_hosts -o ConnectTimeout=10 \
+            -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" 'true'
       - name: Upload deployment configuration
         shell: bash
-        env:
-          DEPLOY_HOST: ${{ secrets.PRODUCTION_SSH_HOST }}
-          DEPLOY_PORT: ${{ secrets.PRODUCTION_SSH_PORT }}
-          DEPLOY_USER: ${{ secrets.PRODUCTION_SSH_USER }}
         run: |
-          target="${DEPLOY_USER}@${DEPLOY_HOST}"
-          ssh -p "${DEPLOY_PORT}" "${target}" "mkdir -p /opt/voople"
-          tar -C deploy/production -czf - compose.yaml \
-            | ssh -p "${DEPLOY_PORT}" "${target}" "tar -xzf - -C /opt/voople"
-
-      - name: Start release and wait for health
+          ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile=~/.ssh/known_hosts -p "$DEPLOY_PORT" \
+            "$DEPLOY_USER@$DEPLOY_HOST" 'mkdir -p /opt/voople/bin'
+          tar -C deploy/production -czf - compose.yaml bin/deploy-release \
+            | ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes -o StrictHostKeyChecking=yes \
+                -o UserKnownHostsFile=~/.ssh/known_hosts -p "$DEPLOY_PORT" \
+                "$DEPLOY_USER@$DEPLOY_HOST" 'tar -xzf - -C /opt/voople'
+      - name: Start release and verify local health
+        id: release
+        shell: bash
+        run: |
+          set +e
+          set -uo pipefail
+          ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile=~/.ssh/known_hosts -p "$DEPLOY_PORT" \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "bash /opt/voople/bin/deploy-release '$GITHUB_SHA' '$VOOPLE_IMAGE'" \
+            | tee "$RUNNER_TEMP/production-release-status"
+          result=${PIPESTATUS[0]}
+          set -e
+          for key in previous_sha local_health rollback rollback_sha deployed_sha; do
+            value="$(sed -n "s/^DEPLOY_STATUS ${key}=//p" "$RUNNER_TEMP/production-release-status" | tail -n 1)"
+            [[ -z "$value" ]] || echo "${key}=${value}" >> "$GITHUB_OUTPUT"
+          done
+          exit "$result"
+      - name: Verify public health
+        id: public
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --max-time 10 --connect-timeout 5 \
+            --retry 6 --retry-delay 5 --retry-max-time 90 \
+            https://voople.app/api/health >/dev/null
+      - name: Summarize production deployment
+        if: always()
         shell: bash
         env:
-          DEPLOY_HOST: ${{ secrets.PRODUCTION_SSH_HOST }}
-          DEPLOY_PORT: ${{ secrets.PRODUCTION_SSH_PORT }}
-          DEPLOY_USER: ${{ secrets.PRODUCTION_SSH_USER }}
-          VOOPLE_IMAGE: ${{ needs.build-and-push.outputs.image }}
+          PRIVATE_RESULT: ${{ steps.private.outcome }}
+          LOCAL_RESULT: ${{ steps.release.outputs.local_health }}
+          PUBLIC_RESULT: ${{ steps.public.outcome }}
+          PREVIOUS_SHA: ${{ steps.release.outputs.previous_sha }}
+          ROLLBACK_RESULT: ${{ steps.release.outputs.rollback }}
+          ROLLBACK_SHA: ${{ steps.release.outputs.rollback_sha }}
         run: |
-          target="${DEPLOY_USER}@${DEPLOY_HOST}"
-          ssh -p "${DEPLOY_PORT}" "${target}" \
-            "test -s /opt/voople/.env && test -s /opt/voople/app.env && test -s /opt/voople/cron.env"
-          ssh -p "${DEPLOY_PORT}" "${target}" \
-            "export XDG_RUNTIME_DIR=/run/user/1000; export DOCKER_HOST=unix:///run/user/1000/docker.sock; cd /opt/voople && VOOPLE_IMAGE='${VOOPLE_IMAGE}' docker compose pull && VOOPLE_IMAGE='${VOOPLE_IMAGE}' docker compose up -d --remove-orphans --wait --wait-timeout 120"
-          curl --fail --show-error --silent --retry 6 --retry-delay 5 \
-            https://voople.app/api/health
+          {
+            echo '## Production web deployment'
+            echo "- Commit SHA: $GITHUB_SHA"
+            echo "- Immutable image: $VOOPLE_IMAGE"
+            echo "- Previous SHA: ${PREVIOUS_SHA:-none}"
+            echo "- Private connectivity: ${PRIVATE_RESULT:-not reached}"
+            echo "- Local health: ${LOCAL_RESULT:-not reached}"
+            echo "- Public health: ${PUBLIC_RESULT:-not reached}"
+            echo "- Rollback: ${ROLLBACK_RESULT:-no}"
+            echo "- Rollback SHA: ${ROLLBACK_SHA:-none}"
+          } >> "$GITHUB_STEP_SUMMARY"

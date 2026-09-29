@@ -25,8 +25,8 @@ test("production image is standalone, non-root and health checked", async () => 
 
 test("production cache init owns the shared volume before non-root web starts", async () => {
   const compose = await read("deploy/production/compose.yaml");
-  const init = compose.match(/^  prepare-next-cache:\n([\s\S]*?)(?=^  web:)/m)?.[1];
-  const web = compose.match(/^  web:\n([\s\S]*?)(?=^volumes:)/m)?.[1];
+  const init = compose.match(/^  prepare-next-cache:\r?\n([\s\S]*?)(?=^  web:)/m)?.[1];
+  const web = compose.match(/^  web:\r?\n([\s\S]*?)(?=^volumes:)/m)?.[1];
 
   assert.ok(init);
   assert.ok(web);
@@ -36,10 +36,10 @@ test("production cache init owns the shared volume before non-root web starts", 
   assert.match(init, /user: "0:0"/);
   assert.match(init, /entrypoint: \["\/bin\/sh", "-ec"\]/);
   assert.match(init, /command: \["mkdir -p \/app\/\.next\/cache && chown -R 1001:1001 \/app\/\.next\/cache"\]/);
-  assert.match(init, /volumes:\s*\n\s*- next-cache:\/app\/\.next\/cache/);
+  assert.match(init, /volumes:\s*\r?\n\s*- next-cache:\/app\/\.next\/cache/);
   assert.match(init, /network_mode: none/);
-  assert.match(web, /depends_on:\s*\n\s*prepare-next-cache:\s*\n\s*condition: service_completed_successfully/);
-  assert.match(web, /volumes:\s*\n\s*- next-cache:\/app\/\.next\/cache/);
+  assert.match(web, /depends_on:\s*\r?\n\s*prepare-next-cache:\s*\r?\n\s*condition: service_completed_successfully/);
+  assert.match(web, /volumes:\s*\r?\n\s*- next-cache:\/app\/\.next\/cache/);
   assert.doesNotMatch(web, /^\s*user:\s*["']?0/m);
   assert.doesNotMatch(compose, /chmod\s+777/);
 });
@@ -52,7 +52,7 @@ test("production compose binds only localhost for system Caddy and bounds contai
 
   assert.match(compose, /web:[\s\S]*ports:[\s\S]*"127\.0\.0\.1:3000:3000"/);
   assert.doesNotMatch(compose, /"(?:0\.0\.0\.0:)?3000:3000"/);
-  assert.match(compose, /env_file:\s*\n\s*- app\.env\s*\n\s*- cron\.env/);
+  assert.match(compose, /env_file:\s*\r?\n\s*- app\.env\s*\r?\n\s*- cron\.env/);
   assert.match(compose, /max-size:\s*20m/);
   assert.match(compose, /no-new-privileges:true/);
   assert.match(caddy, /voople\.app/);
@@ -97,11 +97,22 @@ test("production deploy uses immutable images and pinned SSH trust", async () =>
   ]);
 
   assert.match(deploymentDoc, /voople\.app -> Selectel VDS -> Caddy -> Next\.js standalone container/);
-  assert.match(workflow, /web-v\*/);
+  assert.match(workflow, /push:\s*\r?\n\s*branches:\s*\r?\n\s*- master/);
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.match(workflow, /PRODUCTION_AUTO_DEPLOY/);
   assert.match(workflow, /web:\$\{GITHUB_SHA\}/);
+  assert.match(workflow, /tailscale\/github-action@[0-9a-f]{40}/);
+  assert.match(workflow, /tags: tag:voople-ci-deploy/);
+  assert.match(workflow, /PRODUCTION_TAILSCALE_HOST/);
+  assert.doesNotMatch(workflow, /PRODUCTION_SSH_HOST/);
   assert.match(workflow, /PRODUCTION_SSH_KNOWN_HOSTS/);
   assert.doesNotMatch(workflow, /StrictHostKeyChecking=no/);
-  assert.match(workflow, /docker compose up -d --remove-orphans --wait/);
-  assert.match(workflow, /test -s \/opt\/voople\/cron\.env/);
+  assert.match(workflow, /deploy-release/);
+  const release = await read("deploy/production/bin/deploy-release");
+  assert.match(release, /docker compose up -d --remove-orphans --wait/);
+  assert.match(release, /http:\/\/127\.0\.0\.1:3000\/api\/health/);
+  assert.match(release, /\.deployed-sha/);
+  assert.match(release, /\.previous-sha/);
+  assert.match(release, /cron\.env/);
   assert.doesNotMatch(workflow, /tar -C deploy\/production -czf - compose\.yaml Caddyfile/);
 });

@@ -6,9 +6,11 @@ import { notificationHref, notificationText } from "@/components/notifications/n
 import type { AppPreferences } from "@/lib/app-preferences";
 import type { ChatMessageNotificationView } from "@/types/chat";
 import type { NotificationView } from "@/types/notifications";
+import { playProductSound } from "@/lib/sound/sound-playback";
 
 import { createDesktopTrpcClient } from "../api/trpc";
 import { getSupabase } from "../auth/supabase";
+import { notificationAudioPolicy } from "./audio-policy";
 import type { DesktopConfig } from "../config";
 import {
   listenForDesktopNotificationActions,
@@ -43,6 +45,7 @@ export function DesktopNotificationBridge({
   );
 
   useEffect(() => { pathnameRef.current = pathname; }, [pathname]);
+
 
   useEffect(() => {
     const appWindow = getCurrentWindow();
@@ -93,13 +96,20 @@ export function DesktopNotificationBridge({
         if (!notifyNew || item.read || !shouldNotifySocial(item.type, preferences)) continue;
         const href = notificationHref(item);
         if (!shouldShow(href)) continue;
+        const audio = notificationAudioPolicy({
+          enabled: preferences.notificationSound,
+          focused: focusedRef.current,
+          visible: document.visibilityState === "visible",
+          sound: item.type === "reply" ? "notification.mention" : "notification.social",
+        });
+        if (audio.customSound) void playProductSound(audio.customSound);
         await showDesktopNotification({
           id: notificationId(`social:${item.id}`),
           title: "Voople",
           body: notificationText(item.type, item.actor?.displayName ?? ""),
           href,
           group: "social",
-          sound: preferences.notificationSound,
+          sound: audio.nativeSound,
         });
       }
     };
@@ -117,13 +127,20 @@ export function DesktopNotificationBridge({
       if (!active || !context) return;
       const href = `/messages/${context.chatId}`;
       if (!shouldShow(href)) return;
+      const audio = notificationAudioPolicy({
+        enabled: preferences.notificationSound,
+        focused: focusedRef.current,
+        visible: document.visibilityState === "visible",
+        sound: "notification.message",
+      });
+      if (audio.customSound) void playProductSound(audio.customSound);
       await showDesktopNotification({
         id: notificationId(`message:${context.messageId}`),
         title: context.chatTitle,
         body: preferences.notificationPreview ? context.previewText : "Новое сообщение",
         href,
         group: `chat:${context.chatId}`,
-        sound: preferences.notificationSound,
+        sound: audio.nativeSound,
       });
     };
 

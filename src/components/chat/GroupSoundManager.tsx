@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import type { GroupSoundView } from "@/types/chat";
 import { reportProductEvent } from "@/lib/telemetry/client";
+import { playExternalSound } from "@/lib/sound/sound-playback";
 
 type SoundList = { items: GroupSoundView[]; limit: number };
 
@@ -22,21 +23,22 @@ export function GroupSoundManager({ canManage, load, create, remove, upload }: {
   const [rightsConfirmed, setRightsConfirmed] = useState(false);
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const previewRef = useRef<HTMLAudioElement | null>(null);
+  const previewRef = useRef<ReturnType<typeof playExternalSound> | null>(null);
 
   useEffect(() => {
     let active = true;
     void load().then((value) => { if (active) setData(value); }).catch((cause: unknown) => {
       if (active) setError(cause instanceof Error ? cause.message : "Не удалось загрузить звуки");
     });
-    return () => { active = false; previewRef.current?.pause(); };
+    return () => { active = false; previewRef.current?.stop(); };
   }, [load]);
 
   const preview = (sound: GroupSoundView) => {
-    previewRef.current?.pause();
-    const audio = new Audio(sound.url);
-    previewRef.current = audio;
-    void audio.play().catch(() => setError("Браузер заблокировал воспроизведение звука"));
+    previewRef.current?.stop();
+    const playback = playExternalSound(sound.url, { category: "soundboard" });
+    previewRef.current = playback;
+    void playback.completed.catch(() => setError("Браузер заблокировал воспроизведение звука"))
+      .finally(() => { if (previewRef.current === playback) previewRef.current = null; });
   };
 
   const submit = async () => {

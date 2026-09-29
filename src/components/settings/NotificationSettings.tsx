@@ -4,6 +4,7 @@ import { Bell } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
+import { normalizeSoundPack } from "@/lib/sound/sound-catalog";
 
 const NOTIFICATION_OPTIONS = [
   ["notifyMessages", "Новые сообщения"],
@@ -42,6 +43,18 @@ export function NotificationSettings({
             />
           </label>
         ))}
+        <label className="settings-row">
+          <span className="font-medium">Набор звуков</span>
+          <select
+            className="voople-input min-w-0 max-w-40"
+            value={preferences.soundPack}
+            onChange={(event) => updatePreferences({ soundPack: normalizeSoundPack(event.target.value) })}
+          >
+            <option value="default">Voople</option>
+            <option value="halo">Halo</option>
+            <option value="velvet">Velvet</option>
+          </select>
+        </label>
         {showDesktopCallNotifications ? (
           <>
             <label className="settings-row">

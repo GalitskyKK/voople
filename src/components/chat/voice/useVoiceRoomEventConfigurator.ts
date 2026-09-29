@@ -83,8 +83,8 @@ export function useVoiceRoomEventConfigurator(input: {
         input.setMediaStatus("connected");
         input.setMediaError(null);
       },
-      onParticipantConnected: () => input.roomSoundsEnabled() && void playVoiceRoomSound("join"),
-      onParticipantDisconnected: () => input.roomSoundsEnabled() && void playVoiceRoomSound("leave"),
+      onParticipantConnected: () => void playVoiceRoomSound("join", input.roomSoundsEnabled()),
+      onParticipantDisconnected: () => void playVoiceRoomSound("leave", input.roomSoundsEnabled()),
       onRemotePublication: input.syncRemotePublication,
       onRemotePublicationRemoved: input.removeRemotePublication,
       onDataReceived: input.onDataReceived,

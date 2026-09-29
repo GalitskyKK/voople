@@ -2,6 +2,18 @@ import type { ChatRoomView } from "@/types/chat";
 
 export type DirectCallPhase = "idle" | "dialing" | "ringing" | "connected" | "ended";
 
+/** Legacy terminal reasons are only sounded when this client observed the call. */
+export function directCallResolutionSound(
+  reason: ChatRoomView["endReason"],
+  observed: boolean,
+  connected: boolean,
+): "call.ended" | "call.declined" | null {
+  if (!observed && !connected) return null;
+  if (reason === "declined") return "call.declined";
+  if (reason === "ended" && connected) return "call.ended";
+  return null;
+}
+
 export function getDirectCallPhase({
   direct,
   room,

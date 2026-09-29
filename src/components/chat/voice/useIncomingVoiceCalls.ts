@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { trpc } from "@/lib/trpc/client";
+import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
+import { playProductSound } from "@/lib/sound/sound-playback";
 import type { IncomingCallView } from "@/types/chat";
 
 function callKey(call: IncomingCallView) {
@@ -21,6 +23,7 @@ export function useIncomingVoiceCalls({
   subscribeToVoiceRooms?: SubscribeToVoiceRooms;
 }) {
   const [handledKey, setHandledKey] = useState<string | null>(null);
+  const { preferences } = useAppPreferences();
   const notifiedKeyRef = useRef<string | null>(null);
   const busyKeyRef = useRef<string | null>(null);
   const utils = trpc.useUtils();
@@ -82,10 +85,11 @@ export function useIncomingVoiceCalls({
     setHandledKey(key);
     try {
       await decline.mutateAsync({ chatId: visibleCall.chatId });
+      if (preferences.notificationSound) void playProductSound("call.declined");
     } catch {
       setHandledKey(null);
     }
-  }, [decline, visibleCall]);
+  }, [decline, preferences.notificationSound, visibleCall]);
 
   return {
     answer,

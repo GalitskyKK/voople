@@ -6,48 +6,15 @@ import { useEffect } from "react";
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 import { resolveRingStyle } from "@/lib/customization/rings";
+import { startProductSoundLoop } from "@/lib/sound/sound-playback";
 import type { IncomingCallView } from "@/types/chat";
 
-function useRingtone(enabled: boolean) {
+function useRingtone(key: string | null, enabled: boolean, pack: string) {
   useEffect(() => {
-    if (!enabled) return;
-    const AudioContextClass =
-      window.AudioContext ??
-      (window as typeof window & { webkitAudioContext?: typeof AudioContext })
-        .webkitAudioContext;
-    if (!AudioContextClass) return;
-
-    const context = new AudioContextClass();
-    const timers: number[] = [];
-    const playTone = (delay: number, frequency: number) => {
-      timers.push(
-        window.setTimeout(() => {
-          void context.resume().then(() => {
-            const oscillator = context.createOscillator();
-            const gain = context.createGain();
-            oscillator.frequency.value = frequency;
-            gain.gain.setValueAtTime(0.0001, context.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.09, context.currentTime + 0.03);
-            gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.32);
-            oscillator.connect(gain).connect(context.destination);
-            oscillator.start();
-            oscillator.stop(context.currentTime + 0.34);
-          }).catch(() => undefined);
-        }, delay),
-      );
-    };
-    const ring = () => {
-      playTone(0, 740);
-      playTone(420, 880);
-    };
-    ring();
-    const interval = window.setInterval(ring, 3_000);
-    return () => {
-      timers.forEach((timer) => window.clearTimeout(timer));
-      window.clearInterval(interval);
-      void context.close();
-    };
-  }, [enabled]);
+    if (!key || !enabled) return;
+    const session = startProductSoundLoop("call.incoming");
+    return () => session.stop();
+  }, [enabled, key, pack]);
 }
 
 export function IncomingCallOverlay({
@@ -55,14 +22,17 @@ export function IncomingCallOverlay({
   declinePending,
   onAnswer,
   onDecline,
+  allowCustomSound = true,
 }: {
   call: IncomingCallView | null;
   declinePending: boolean;
   onAnswer: () => void;
   onDecline: () => void;
+  allowCustomSound?: boolean;
 }) {
   const { preferences } = useAppPreferences();
-  useRingtone(Boolean(call && preferences.notificationSound));
+  useRingtone(call ? `${call.chatId}:${call.startedAt}` : null,
+    Boolean(call && preferences.notificationSound && allowCustomSound), preferences.soundPack);
   if (!call) return null;
 
   return (

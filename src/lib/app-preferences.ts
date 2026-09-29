@@ -3,6 +3,7 @@ import {
   sanitizeHotkeys,
   type HotkeyBinding,
 } from "@/lib/hotkeys";
+import { normalizeSoundPack, type SoundPackId } from "@/lib/sound/sound-catalog";
 
 export type FontScale = "small" | "standard" | "large";
 export type InterfaceDensity = "comfortable" | "compact";
@@ -20,6 +21,7 @@ export type AppPreferences = {
   notifyReactions: boolean;
   notificationPreview: boolean;
   notificationSound: boolean;
+  soundPack: SoundPackId;
   closeToTray: boolean;
   minimizeToTray: boolean;
   hotkeys: HotkeyBinding[];
@@ -37,6 +39,7 @@ export const DEFAULT_APP_PREFERENCES: AppPreferences = {
   notifyReactions: true,
   notificationPreview: true,
   notificationSound: true,
+  soundPack: "default",
   closeToTray: true,
   minimizeToTray: false,
   hotkeys: DEFAULT_HOTKEY_BINDINGS,
@@ -72,6 +75,7 @@ export function readAppPreferences(): AppPreferences {
       notifyReactions: parsed.notifyReactions !== false,
       notificationPreview: parsed.notificationPreview !== false,
       notificationSound: parsed.notificationSound !== false,
+      soundPack: normalizeSoundPack(parsed.soundPack),
       closeToTray: parsed.closeToTray !== false,
       minimizeToTray: parsed.minimizeToTray === true,
       hotkeys: sanitizeHotkeys(parsed.hotkeys),

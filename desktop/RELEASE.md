@@ -29,10 +29,6 @@ The tag must match the version in `desktop/package.json` and
 
 Configure these repository secrets:
 
-- `DESKTOP_RELEASE_TAG_TOKEN`, a fine-grained GitHub personal access token with
-  Contents: write access to this repository. The tag workflow needs a token
-  other than `GITHUB_TOKEN`: GitHub suppresses push-triggered workflows for tags
-  pushed with its default workflow token. Limit this token to this repository.
 - `DESKTOP_SUPABASE_URL`
 - `DESKTOP_SUPABASE_ANON_KEY`
 - `DESKTOP_RELEASE_S3_ENDPOINT`
@@ -144,14 +140,25 @@ frontend code change.
    and pushes it, then opens a PR to `master`. If GitHub CLI is unavailable or
    unauthenticated, create the PR manually using the printed title and body.
    No Desktop artifacts are published by the preparation command or its PR.
-3. Review the release diff and normal Quality Gate. Merge the release PR.
-   `.github/workflows/desktop-release-tag.yml` checks out the exact merge commit,
-   validates its versions and changelog, and pushes `desktop-vX.Y.Z` on that
-   commit. A missing tag token, mismatch, or duplicate tag stops this step.
-4. The tag starts `.github/workflows/desktop-release.yml`. Verify the internal
+3. Review the release diff and normal Quality Gate. A release PR may change only
+   the five Desktop version files and `CHANGELOG.md`; any other changed path
+   blocks tagging. Merge the release PR.
+   `.github/workflows/desktop-release-tag.yml` checks the PR file list before
+   using code from the exact merged commit, validates its versions and changelog,
+   and pushes `desktop-vX.Y.Z` on that commit. A mismatch or duplicate tag
+   stops this step. The workflow uses the built-in, ephemeral `GITHUB_TOKEN`;
+   no additional release token or secret is needed.
+4. The tag workflow explicitly dispatches `.github/workflows/desktop-release.yml`
+   at the newly created tag. GitHub does not start a push workflow for a tag
+   pushed with `GITHUB_TOKEN`. The Desktop release workflow keeps its tag push
+   trigger for manually created recovery tags. Verify the internal
    RC artifact, browser/installer smoke results and, when a staging database
    exists, its migration rehearsal.
 5. Approve `desktop-stable` after those available checks are accepted.
 6. Verify the GitHub Release, CDN, production migration readiness, signature,
    checksum, install/uninstall, updater, release catalog and `/download/desktop` before
    announcing the release.
+
+If the tag push succeeds but dispatch fails, leave the tag in place. Manually
+run the Desktop release workflow with the existing `desktop-vX.Y.Z` tag as its
+ref. Do not recreate or move the tag.

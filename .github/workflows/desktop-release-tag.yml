@@ -7,24 +7,48 @@ on:
       - master
 
 permissions:
-  contents: read
+  contents: write
+  actions: write
 
 jobs:
   tag:
     if: ${{ github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/desktop-') }}
     runs-on: ubuntu-latest
     steps:
-      - name: Require tag push token
-        env:
-          TAG_TOKEN: ${{ secrets.DESKTOP_RELEASE_TAG_TOKEN }}
-        run: test -n "$TAG_TOKEN"
-
       - name: Check out exact merged commit
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: 0
-          token: ${{ secrets.DESKTOP_RELEASE_TAG_TOKEN }}
+          token: ${{ github.token }}
+
+      - name: Check release PR changed files
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          MERGED_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$MERGED_SHA"
+          git merge-base --is-ancestor "$BASE_SHA" "$MERGED_SHA"
+          git fetch origin "refs/pull/$PR_NUMBER/head"
+          test "$(git rev-parse FETCH_HEAD)" = "$HEAD_SHA"
+          base=$(git merge-base "$HEAD_SHA" "$MERGED_SHA^1")
+          git diff --no-renames --name-only -z "$base" "$HEAD_SHA" > "$RUNNER_TEMP/desktop-release-paths"
+          count=0
+          while IFS= read -r -d '' path; do
+            case "$path" in
+              desktop/package.json|desktop/package-lock.json|desktop/src-tauri/Cargo.toml|desktop/src-tauri/Cargo.lock|desktop/src-tauri/tauri.conf.json|CHANGELOG.md)
+                count=$((count + 1))
+                ;;
+              *)
+                echo "Release PR changed forbidden file: $path" >&2
+                exit 1
+                ;;
+            esac
+          done < "$RUNNER_TEMP/desktop-release-paths"
+          test "$count" -eq 6
 
       - name: Validate merged release
         id: release
@@ -38,8 +62,15 @@ jobs:
       - name: Push annotated desktop tag
         env:
           TAG: ${{ steps.release.outputs.tag }}
+          MERGED_SHA: ${{ github.event.pull_request.merge_commit_sha }}
         run: |
           git config user.name "voople-release-bot"
           git config user.email "voople-release-bot@users.noreply.github.com"
-          git tag -a "$TAG" HEAD -m "Voople Desktop ${TAG#desktop-v}"
+          git tag -a "$TAG" "$MERGED_SHA" -m "Voople Desktop ${TAG#desktop-v}"
           git push origin "refs/tags/$TAG"
+
+      - name: Dispatch Desktop release at new tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: gh workflow run desktop-release.yml --ref "$TAG" -f publish=false -f allow_unsigned=false

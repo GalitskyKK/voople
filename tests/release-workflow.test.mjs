@@ -17,17 +17,52 @@ test("release preparation replaces direct master and tag publication", () => {
 test("merged release tag workflow guards the existing tag pipeline", () => {
   const workflow = read(".github/workflows/desktop-release-tag.yml");
   const release = read(".github/workflows/desktop-release.yml");
+  const docs = read("desktop/RELEASE.md");
+  const removedToken = ["DESKTOP", "RELEASE", "TAG", "TOKEN"].join("_");
   assert.match(workflow, /types: \[closed\]/);
   assert.match(workflow, /pull_request\.merged == true/);
   assert.match(workflow, /startsWith\(github\.event\.pull_request\.head\.ref, 'release\/desktop-'\)/);
+  assert.match(workflow, /permissions:\s*\n\s+contents: write\s*\n\s+actions: write/);
+  assert.doesNotMatch(workflow, /secrets\.|\bPAT\b|deploy.key/i);
+  assert.ok(!workflow.includes(removedToken));
+  assert.ok(!docs.includes(removedToken));
   assert.match(workflow, /ref: \$\{\{ github\.event\.pull_request\.merge_commit_sha \}\}/);
+  assert.match(workflow, /token: \$\{\{ github\.token \}\}/);
+  assert.match(workflow, /git merge-base --is-ancestor "\$BASE_SHA" "\$MERGED_SHA"/);
+  assert.match(workflow, /test "\$\(git rev-parse FETCH_HEAD\)" = "\$HEAD_SHA"/);
+  assert.match(workflow, /git diff --no-renames --name-only -z "\$base" "\$HEAD_SHA"/);
   assert.match(workflow, /validate-desktop-release-tag\.mjs/);
-  assert.match(workflow, /git tag -a "\$TAG" HEAD/);
+  assert.ok(workflow.indexOf("Check release PR changed files") < workflow.indexOf("Validate merged release"));
+  assert.match(workflow, /git tag -a "\$TAG" "\$MERGED_SHA"/);
   assert.match(workflow, /git push origin "refs\/tags\/\$TAG"/);
-  assert.match(workflow, /DESKTOP_RELEASE_TAG_TOKEN/);
+  assert.match(workflow, /GH_TOKEN: \$\{\{ github\.token \}\}/);
+  assert.match(workflow, /gh workflow run desktop-release\.yml --ref "\$TAG" -f publish=false -f allow_unsigned=false/);
+  assert.ok(workflow.indexOf('git push origin "refs/tags/$TAG"') < workflow.indexOf("gh workflow run desktop-release.yml"));
   assert.match(release, /desktop-v\*/);
-  assert.match(release, /vars\.DESKTOP_REQUIRE_WINDOWS_SIGNING == 'true'/);
+  assert.match(release, /REQUIRE_SIGNING: \$\{\{ vars\.DESKTOP_REQUIRE_WINDOWS_SIGNING == 'true'/);
+  assert.match(release, /startsWith\(github\.ref, 'refs\/tags\/desktop-v'\) \|\| inputs\.publish == true/);
   assert.match(release, /DESKTOP_UPDATER_PRIVATE_KEY/);
+  assert.match(release, /Tauri updater signature is missing/);
+});
+
+test("release PR whitelist rejects application, script, and workflow changes", () => {
+  const workflow = read(".github/workflows/desktop-release-tag.yml");
+  const match = workflow.match(/case "\$path" in\s*([^\n]+)\)/);
+  assert.ok(match);
+  const allowed = match[1].trim().split("|");
+  assert.deepEqual(allowed.sort(), [
+    "CHANGELOG.md",
+    "desktop/package.json",
+    "desktop/package-lock.json",
+    "desktop/src-tauri/Cargo.toml",
+    "desktop/src-tauri/Cargo.lock",
+    "desktop/src-tauri/tauri.conf.json",
+  ].sort());
+  for (const path of ["src/app/page.tsx", "scripts/release.mjs", ".github/workflows/desktop-release.yml"]) {
+    assert.ok(!allowed.includes(path), `${path} must be rejected`);
+  }
+  assert.match(workflow, /\*\)\s+echo "Release PR changed forbidden file: \$path" >&2\s+exit 1/);
+  assert.match(workflow, /test "\$count" -eq 6/);
 });
 
 test("pending migration audit uses the checksum ledger without exposing secrets", () => {

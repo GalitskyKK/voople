@@ -35,7 +35,7 @@ export function ChatListSearchPanel({
 
   return (
     <>
-      <AppPanelHeader>
+      <AppPanelHeader className="voople-chat-list__panel-header">
         <h1 className="min-w-0 flex-1 truncate text-lg font-bold tracking-[-0.025em]">Чаты</h1>
         {headerAction ? (
           <span className="voople-chat-list__create">{headerAction}</span>

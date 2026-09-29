@@ -6,6 +6,7 @@ import type { ChatListItem } from "@/types/chat";
 
 import type { ChatSectionDestinationRenderer } from "./chat-section-destination";
 import { ChatSectionPicker } from "./ChatSectionPicker";
+import { useGroupPeopleAction } from "./GroupPeopleActionContext";
 
 export function ChatSectionsBarView({
   rootChat,
@@ -27,7 +28,10 @@ export function ChatSectionsBarView({
   pendingFavoriteId?: string | null;
   favoriteError?: string | null;
 }) {
-  if (!rootChat.topicsEnabled) return null;
+  const peopleAction = useGroupPeopleAction();
+  if (!rootChat.topicsEnabled) return <div className="voople-chat-sections flex min-h-11 shrink-0 items-center border-b border-[var(--app-border)] bg-[var(--app-surface)] px-3">
+    <span className="text-xs font-semibold"># Общий</span>{peopleAction?.action}
+  </div>;
   const sections = [rootChat, ...rootChat.channels];
   const activeSection = sections.find((section) => section.id === activeChatId) ?? rootChat;
 
@@ -46,6 +50,7 @@ export function ChatSectionsBarView({
         pendingFavoriteId={pendingFavoriteId}
         favoriteError={favoriteError}
       />
+      {peopleAction?.action}
     </nav>
   );
 }

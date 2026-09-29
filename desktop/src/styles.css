@@ -81,6 +81,16 @@ button { color: inherit; }
   height: auto;
 }
 
+/* Messages starts at the native title bar; its sidebar is navigation only. */
+.desktop-window-content .voople-shell[data-route-kind="messages"] .voople-sidebar__brand,
+.desktop-window-content .voople-shell[data-route-kind="messages"] .voople-chat-list__panel-header {
+  display: none;
+}
+.desktop-window-content .voople-shell[data-route-kind="messages"] .voople-group-surface[data-mode="medium"] .voople-group-surface-header--desktop,
+.desktop-window-content .voople-shell[data-route-kind="messages"] .voople-group-surface[data-mode="wide"] .voople-group-surface-header--desktop {
+  display: none;
+}
+
 .desktop-titlebar {
   z-index: 200;
   display: flex;

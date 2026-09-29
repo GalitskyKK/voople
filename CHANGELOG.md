@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.47] - 2026-09-29
+
+### Voople Desktop 0.1.47
+
+- some test fixes
+
 ## [0.1.46] - 2026-09-29
 
 ### Voople Desktop 0.1.46

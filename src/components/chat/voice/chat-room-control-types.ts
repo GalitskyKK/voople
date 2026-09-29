@@ -11,6 +11,7 @@ export type ChatRoomControlProps = {
   chatId: string;
   chatName: string;
   chatType: "direct" | "group";
+  expectedStartedAt?: string;
   renderTrigger?: boolean;
   initialOpen?: boolean;
   onStateChange?: (state: VoiceControlState) => void;

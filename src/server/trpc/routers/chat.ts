@@ -120,11 +120,11 @@ export const chatRouter = createTRPCRouter({
     }),
 
   enterRoom: protectedProcedure
-    .input(z.object({ chatId: z.string().uuid(), micMuted: z.boolean().default(true) }))
+    .input(z.object({ chatId: z.string().uuid(), micMuted: z.boolean().default(true), expectedStartedAt: z.string().min(1).max(64).optional() }))
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
       try {
-        const result = await enterChatRoom(input.chatId, ctx.user.id, input.micMuted);
+        const result = await enterChatRoom(input.chatId, ctx.user.id, input.micMuted, input.expectedStartedAt);
         await recordServerProductEvent({ name: "room_joined", actorId: ctx.user.id, route: "/trpc/chat.enterRoom", properties: { count: result.participants.length } });
         if (result.participants.length > 1) await markRoomActivation(ctx.user.id);
         return result;
@@ -191,11 +191,11 @@ export const chatRouter = createTRPCRouter({
     }),
 
   declineCall: protectedProcedure
-    .input(z.object({ chatId: z.string().uuid() }))
+    .input(z.object({ chatId: z.string().uuid(), startedAt: z.string().min(1).max(64).optional() }))
     .mutation(async ({ ctx, input }) => {
       await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
       try {
-        return await declineChatRoomCall(input.chatId, ctx.user.id);
+        return await declineChatRoomCall(input.chatId, ctx.user.id, input.startedAt);
       } catch (error) {
         throw new TRPCError({
           code: "BAD_REQUEST",

@@ -14,6 +14,7 @@ import { useVoiceRoomServerAdapter } from "./useVoiceRoomServerAdapter";
 export function useVoiceRoomRuntime({
   chatId,
   open,
+  expectedStartedAt,
   coreSession,
   initialCoreCredentials,
   roomRef,
@@ -22,6 +23,7 @@ export function useVoiceRoomRuntime({
 }: {
   chatId: string;
   open: boolean;
+  expectedStartedAt?: string;
   coreSession?: CoreVoiceSessionDescriptor;
   initialCoreCredentials?: EnabledVoiceMediaCredentials;
   roomRef: RefObject<Room | null>;
@@ -31,6 +33,7 @@ export function useVoiceRoomRuntime({
   const server = useVoiceRoomServerAdapter({
     chatId,
     open,
+    expectedStartedAt,
     coreSession,
     initialCoreCredentials,
   });

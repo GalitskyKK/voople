@@ -37,11 +37,13 @@ function optimisticCoreView(session: CoreVoiceSessionDescriptor): ChatRoomView {
 export function useVoiceRoomServerAdapter({
   chatId,
   open,
+  expectedStartedAt,
   coreSession,
   initialCoreCredentials,
 }: {
   chatId: string;
   open: boolean;
+  expectedStartedAt?: string;
   coreSession?: CoreVoiceSessionDescriptor;
   initialCoreCredentials?: EnabledVoiceMediaCredentials;
 }) {
@@ -98,7 +100,7 @@ export function useVoiceRoomServerAdapter({
       enter: {
         isPending: legacy.enter.isPending,
         error: legacy.enter.error,
-        run: (micMuted: boolean) => legacy.enter.mutateAsync({ chatId, micMuted }),
+        run: (micMuted: boolean) => legacy.enter.mutateAsync({ chatId, micMuted, expectedStartedAt }),
       },
       leave: {
         isPending: legacy.leave.isPending,

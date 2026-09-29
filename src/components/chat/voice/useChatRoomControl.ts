@@ -40,6 +40,7 @@ export function useChatRoomControl(
     chatId,
     chatName,
     chatType,
+    expectedStartedAt,
     renderTrigger = true,
     initialOpen = false,
     onStateChange,
@@ -95,6 +96,7 @@ export function useChatRoomControl(
   const runtime = useVoiceRoomRuntime({
     chatId,
     open,
+    expectedStartedAt,
     coreSession,
     initialCoreCredentials,
     roomRef: liveRoomRef,

@@ -268,8 +268,15 @@ export function DesktopShell({
 
   useEffect(() => {
     if (!initialPathname) return;
-    navigate(initialPathname);
-    onInitialPathConsumed();
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      navigate(initialPathname);
+      onInitialPathConsumed();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [initialPathname, navigate, onInitialPathConsumed]);
 
   useEffect(

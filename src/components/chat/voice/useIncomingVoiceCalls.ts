@@ -36,7 +36,7 @@ export function useIncomingVoiceCalls({
 
   const firstCall = incoming.data?.[0] ?? null;
   const firstCallKey = firstCall ? incomingCallKey(firstCall) : null;
-  const visibleCall = visibleIncomingCall(firstCall, handledKey, Math.max(now, Date.now()));
+  const visibleCall = visibleIncomingCall(firstCall, handledKey, now);
 
   useEffect(() => {
     if (!firstCall) return;

@@ -80,6 +80,7 @@ try {
   browser = await chromium.launch({ headless: true });
   for (const { width, height, theme } of [
     { width: 1440, height: 800, theme: "void" },
+    { width: 1440, height: 800, theme: "light" },
     { width: 960, height: 800, theme: "void" },
     { width: 390, height: 844, theme: "void" },
     { width: 360, height: 800, theme: "void" },
@@ -101,6 +102,20 @@ try {
     assert.ok(bounds && bounds.y < height, `Search heading is outside viewport at ${width}px: ${JSON.stringify(bounds)}`);
     assert.equal(await page.getByRole("heading", { name: "Люди" }).count(), 1);
     assert.equal(await page.getByRole("heading", { name: "Публичные группы" }).count(), 1);
+    if (width >= 1024) {
+      const trigger = page.getByRole("button", { name: "Поиск", exact: true });
+      await trigger.click();
+      const palette = page.getByRole("dialog", { name: "Поиск" });
+      await palette.waitFor();
+      assert.equal(await palette.getByRole("searchbox", { name: "Поиск диалогов, групп и людей" }).evaluate((element) => document.activeElement === element), true);
+      assert.equal(await page.getByText("DRG", { exact: true }).count() > 0, true);
+      await page.keyboard.press("Escape");
+      assert.equal(await palette.count(), 0);
+      assert.equal(await trigger.evaluate((element) => document.activeElement === element), true);
+      await page.keyboard.press("Control+k");
+      await palette.waitFor();
+      assert.equal(await palette.getByRole("button", { name: "Диалоги" }).count(), 1);
+    }
     if (width < 900) {
       assert.equal(await page.getByRole("link", { name: "Войс" }).getAttribute("href"), "/messages");
       assert.equal(await page.getByRole("link", { name: "Поиск" }).getAttribute("href"), "/search");

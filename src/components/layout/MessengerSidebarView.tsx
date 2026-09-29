@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, MessageCircle, MessageSquarePlus, Search, UsersRound } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { activeMessagesChatId } from "@/lib/layout/messages-path";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 
 import type { NavigationDestinationRenderer } from "./AppNavigationVisual";
 import { MessengerDirectRow, MessengerGroupRow } from "./MessengerSidebarRows";
+import { MessengerSearchPalette } from "./MessengerSearchPalette";
 
 type MessengerSidebarViewProps = {
   pathname: string;
@@ -23,24 +24,52 @@ type MessengerSidebarViewProps = {
   createGroupAction?: ReactNode;
   savedMessagesEnabled?: boolean;
   renderDestination: NavigationDestinationRenderer;
+  onOpenCompactSearch: () => void;
   onRetry: () => void;
 };
 
-export function MessengerSidebarView({ pathname, chats, loading, error, onlineUserIds, liveByGroup = new Map(), createGroupAction, savedMessagesEnabled = false, renderDestination, onRetry }: MessengerSidebarViewProps) {
+export function MessengerSidebarView({ pathname, chats, loading, error, onlineUserIds, liveByGroup = new Map(), createGroupAction, savedMessagesEnabled = false, renderDestination, onOpenCompactSearch, onRetry }: MessengerSidebarViewProps) {
+  const [searchState, setSearchState] = useState({ pathname, open: false });
+  const searchOpen = searchState.pathname === pathname && searchState.open;
+  const searchTriggerRef = useRef<HTMLButtonElement>(null);
+  const openSearch = useCallback(() => {
+    if (!window.matchMedia("(min-width: 1024px)").matches) {
+      onOpenCompactSearch();
+    } else if (searchOpen) {
+      window.dispatchEvent(new Event("voople:focus-search"));
+    } else {
+      setSearchState({ pathname, open: true });
+    }
+  }, [onOpenCompactSearch, pathname, searchOpen]);
+  const closeSearch = useCallback((restoreFocus = false) => {
+    setSearchState({ pathname, open: false });
+    if (restoreFocus) searchTriggerRef.current?.focus();
+  }, [pathname]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || !(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "k") return;
+      event.preventDefault();
+      openSearch();
+    };
+    const onOpenSearch = () => openSearch();
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("voople:open-search", onOpenSearch);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("voople:open-search", onOpenSearch);
+    };
+  }, [openSearch]);
+
   const activeChatId = activeMessagesChatId(pathname);
   const groups = chats.filter((chat) => chat.type === "group" && !chat.parentChatId);
   const directs = chats.filter((chat) => chat.type === "direct");
 
   return (
     <nav className="voople-messenger-sidebar flex min-h-0 flex-1 flex-col px-3 pb-3" aria-label="Группы и личные сообщения">
-      <div className="voople-messenger-sidebar__search-wrap shrink-0 pb-3">
-        {renderDestination({
-          href: "/search",
-          label: "Поиск",
-          active: pathname === "/search",
-          className: cn("voople-messenger-sidebar__search flex h-10 items-center gap-2.5 rounded-[var(--app-radius-md)] px-2.5 text-xs font-medium transition-colors", pathname === "/search" ? "bg-[var(--app-accent-soft)] text-[var(--foreground)]" : "text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"),
-          children: <><Search className="h-4 w-4 shrink-0" aria-hidden="true" /><span className="min-w-0 flex-1 truncate text-left">Поиск</span><kbd className="voople-messenger-sidebar__kbd hidden text-[10px] sm:inline">Ctrl K</kbd></>,
-        })}
+      <div className="voople-messenger-sidebar__search-wrap relative shrink-0 pb-3">
+        <button ref={searchTriggerRef} type="button" onClick={openSearch} aria-label="Поиск" aria-expanded={searchOpen} aria-haspopup="dialog" className={cn("voople-messenger-sidebar__search flex h-10 w-full items-center gap-2.5 rounded-[var(--app-radius-md)] px-2.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-[var(--theme-accent)]", searchOpen || pathname === "/search" ? "bg-[var(--app-accent-soft)] text-[var(--foreground)]" : "text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]")}><Search className="h-4 w-4 shrink-0" aria-hidden="true" /><span className="min-w-0 flex-1 truncate text-left">Поиск</span><kbd className="voople-messenger-sidebar__kbd hidden text-[10px] sm:inline">Ctrl K</kbd></button>
+        {searchOpen ? <MessengerSearchPalette chats={chats} renderDestination={renderDestination} onClose={closeSearch} /> : null}
       </div>
       <div data-voople-scroll="" className="voople-scroll min-h-0 flex-1 overflow-y-auto">
         {loading ? <SidebarSkeleton /> : error ? <SidebarError onRetry={onRetry} /> : (

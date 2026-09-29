@@ -52,6 +52,7 @@ export function DesktopMessengerSidebarAdapter({
       }
       savedMessagesEnabled={savedMessages.data?.enabled === true}
       renderDestination={renderDestination}
+      onOpenCompactSearch={() => navigate("/search")}
       onRetry={() => void retry()}
     />
   );

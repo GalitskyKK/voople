@@ -25,7 +25,9 @@ test("search is canonical while explore remains a query-preserving web alias", (
   const view = read("src/components/explore/ExploreView.tsx");
   assert.match(search, /<UserSearch initialQuery=/);
   assert.match(alias, /redirect\(query \? `\/search\?q=\$\{encodeURIComponent\(query\)\}` : "\/search"\)/);
-  assert.equal((sidebar.match(/href: "\/search"/g) ?? []).length, 2);
+  assert.equal((sidebar.match(/href: "\/search"/g) ?? []).length, 1);
+  assert.match(sidebar, /<MessengerSearchPalette/);
+  assert.match(sidebar, /aria-expanded=\{searchOpen\}/);
   assert.doesNotMatch(view, /SectionPageHeader|SectionHeaderGlow|ExploreSearchResults/);
   assert.match(view, /type="search"/);
   assert.match(view, /aria-label="Раздел поиска"/);

@@ -15,7 +15,7 @@ test.describe("authenticated critical surface", () => {
 
     const messengerRail = page.locator(".voople-messenger-sidebar");
     await expect(messengerRail).toBeVisible();
-    const searchTrigger = messengerRail.getByRole("button", { name: "Поиск" });
+    const searchTrigger = messengerRail.getByRole("button", { name: "Поиск", exact: true });
     await expect(searchTrigger).toBeVisible();
     await expect(searchTrigger).toHaveAttribute("aria-expanded", "false");
     await searchTrigger.click();
@@ -54,7 +54,7 @@ test.describe("authenticated critical surface", () => {
 
     const messengerRail = page.locator(".voople-messenger-sidebar");
     await expect(messengerRail).toBeVisible();
-    const searchTrigger = messengerRail.getByRole("button", { name: "Поиск" });
+    const searchTrigger = messengerRail.getByRole("button", { name: "Поиск", exact: true });
     await expect(searchTrigger).toBeVisible();
     await expect(searchTrigger).toHaveAttribute("aria-expanded", "false");
     await searchTrigger.click();

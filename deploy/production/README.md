@@ -15,9 +15,59 @@
    mode `600`. The deploy workflow uploads only `compose.yaml`; it does not
    update these secrets or system Caddy.
 6. If GHCR is private, log in once using a read-only package token.
-7. Point `voople.app` and `www.voople.app` to this host and allow 80/443.
-8. Configure the protected GitHub `production` environment and run
-   `Production web deploy` manually for the first release.
+7. Point `voople.app` and `www.voople.app` to this host and allow public
+   80/443. CI SSH uses Tailscale, not a public runner IP.
+8. The protected GitHub `production` environment and Tailscale setup are
+   already configured. Follow the post-merge commissioning checklist below.
+
+## Private deployment network and commissioning
+
+The existing server is `voople-prod` at Tailscale IPv4 `100.77.197.84`,
+tagged `tag:voople-prod`. GitHub Actions joins as an ephemeral
+`tag:voople-ci-deploy` node through OIDC workload identity federation. The
+tailnet policy permits CI -> production only on TCP 22. SSH is ordinary
+OpenSSH with the existing deploy user, key, port, and pinned host key;
+Tailscale SSH is not used. Public users still reach Internet -> 80/443 ->
+system Caddy -> the Next.js standalone container.
+
+1. Merge this PR while `PRODUCTION_AUTO_DEPLOY` is absent or false. No
+   automatic Docker build or deploy should run on that merge.
+2. Verify the GitHub `production` environment has secrets
+   `TS_OAUTH_CLIENT_ID`, `TS_AUDIENCE`, `PRODUCTION_SSH_USER`,
+   `PRODUCTION_SSH_PORT`, `PRODUCTION_SSH_PRIVATE_KEY`, and
+   `PRODUCTION_SSH_KNOWN_HOSTS`, plus variable
+   `PRODUCTION_TAILSCALE_HOST=100.77.197.84`.
+3. Ensure `PRODUCTION_SSH_KNOWN_HOSTS` trusts the Tailscale host identifier.
+   Use the exact trusted-key copying and fingerprint commands in
+   [the deployment guide](../../docs/deploy.md#trust-the-tailscale-ssh-host-identifier).
+   A public-IP-only entry will fail the workflow.
+4. Manually run **Production web deploy** with `workflow_dispatch`.
+5. Confirm the runner joins Tailscale, reaches `voople-prod` privately,
+   verifies its SSH host key, deploys the image tagged with the exact commit
+   SHA, passes host-local and public health checks, and populates
+   `/opt/voople/.deployed-sha`.
+6. Remove the temporary public CI SSH rule in Selectel manually. Keep normal
+   public web 80/443.
+7. Manually run **Production web deploy** again and confirm success with
+   public SSH unavailable.
+8. Set repository or production environment variable
+   `PRODUCTION_AUTO_DEPLOY=true`. Subsequent pushes to `master` build and
+   deploy automatically.
+
+Administrator emergency SSH access is a separate, restricted route to
+`voople-prod`, using administrator credentials and independently trusted
+host keys. Keep that path available for recovery. Do not grant CI broader
+tailnet access or automate Selectel firewall changes in the workflow.
+
+After a successful local health check, the release script writes
+`.deployed-sha` and retains the prior SHA in `.previous-sha`. If the new
+container fails local health, it attempts one rollback to the prior immutable
+GHCR SHA and fails the workflow even when recovery succeeds. A first
+deployment has no prior candidate. The runner checks public
+`https://voople.app/api/health` afterward; public failure fails the workflow
+but does not roll back a locally healthy container. The workflow summary
+records the SHA, image, connectivity and health results, and rollback status
+without secrets.
 
 ## Room grace maintenance on this VDS
 

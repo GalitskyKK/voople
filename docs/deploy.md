@@ -20,9 +20,14 @@ Recommended initial Selectel VM: Ubuntu 24.04 LTS, 4 vCPU, 8 GB RAM,
 so a 2 vCPU / 4 GB / 50 GB VM is a viable low-cost start; 4/8 avoids memory
 pressure during image optimization, overlapping deploys and incident analysis.
 
-Open inbound TCP 22 from trusted administrator IPs and TCP 80/443 plus UDP 443
-from the Internet. Docker publishes Next.js only on host `127.0.0.1:3000`;
-system Caddy proxies that local port.
+Keep administrator SSH access separately. The CI SSH path is GitHub Actions
+ephemeral `tag:voople-ci-deploy` -> Tailscale -> `voople-prod`
+(`tag:voople-prod`, currently `100.77.197.84`) -> TCP 22 -> normal OpenSSH
+as the deploy user. Tailnet policy allows this tag pair only on TCP 22.
+Tailscale SSH is not used. After private commissioning, remove the temporary
+public CI SSH rule in Selectel; do not change public web TCP 80/443.
+Internet -> TCP 80/443 -> system Caddy -> Next.js remains public. Docker
+publishes Next.js only on host `127.0.0.1:3000`.
 
 The deployment uses Caddy rather than nginx because the current topology is one
 web node and Caddy owns automatic TLS renewal, HTTP/2/3 and WebSocket proxying
@@ -61,19 +66,81 @@ and restart the web container before enabling the timer.
 
 ## GitHub environment
 
-Create the protected `production` environment. Configure:
+The protected `production` environment already exists. It contains:
 
 - repository variable `NEXT_PUBLIC_SUPABASE_URL`;
 - secret `NEXT_PUBLIC_SUPABASE_ANON_KEY` (public at runtime, protected here to
   avoid accidental edits);
-- secrets `PRODUCTION_SSH_HOST`, `PRODUCTION_SSH_PORT`,
-  `PRODUCTION_SSH_USER`, `PRODUCTION_SSH_PRIVATE_KEY`;
-- `PRODUCTION_SSH_KNOWN_HOSTS` captured out of band from the new VM.
+- environment secrets `TS_OAUTH_CLIENT_ID`, `TS_AUDIENCE`,
+  `PRODUCTION_SSH_PORT`, `PRODUCTION_SSH_USER`,
+  `PRODUCTION_SSH_PRIVATE_KEY`, and `PRODUCTION_SSH_KNOWN_HOSTS`;
+- environment variable `PRODUCTION_TAILSCALE_HOST=100.77.197.84`.
 
-Production deploy is deliberate: push a `web-v*` tag or start the workflow
-manually. Every release is an immutable `ghcr.io/.../web:<git sha>` image.
-Rollback is changing `VOOPLE_IMAGE` to a previous SHA and running
-`docker compose up -d --wait` in `/opt/voople`.
+The official Tailscale action uses GitHub OIDC workload identity federation,
+the two Tailscale secrets above, and only `tag:voople-ci-deploy`. Its runner
+node is ephemeral. The deploy job has `contents: read` and `id-token: write`;
+the build job has `contents: read` and `packages: write`.
+`PRODUCTION_SSH_HOST`, if still present, is ignored.
+
+`workflow_dispatch` runs regardless of `PRODUCTION_AUTO_DEPLOY`. A push to
+`master` builds and deploys only when that repository or production environment
+variable is exactly `true`. With it absent or false, the gate skips the Docker
+build. Keep it false through commissioning. Every release is
+`ghcr.io/<repository>/web:<git sha>`; no mutable production tag is deployed.
+
+The host script reads `/opt/voople/.deployed-sha` before changing the release.
+After `docker compose up --wait` and a bounded local check of
+`http://127.0.0.1:3000/api/health`, it atomically writes the new SHA to
+`.deployed-sha` and the old SHA, when available, to `.previous-sha`.
+An unhealthy new container triggers one attempt to restore the previous
+immutable image and recheck local health. The workflow fails even if rollback
+succeeds. On the first deployment there is no rollback candidate, so local
+failure leaves no invented state.
+
+Only after local health succeeds does the GitHub runner check
+`https://voople.app/api/health`. A failed public check fails the workflow and
+appears in its summary, but leaves a locally healthy release running; a
+transient public DNS, CDN, or network failure alone does not trigger rollback.
+
+### Trust the Tailscale SSH host identifier
+
+OpenSSH matches the address and port used for the connection. The server host
+key is unchanged, but an existing public-IP known-hosts entry does not match
+`100.77.197.84`. On an administrator machine with an already trusted entry
+for the server's public host, run the following. Replace `PUBLIC_HOST` with
+that exact existing known-hosts identifier and `PORT` with the configured
+SSH port. For port 22, the identifier is the bare address; for another port
+use `[address]:port`.
+
+```bash
+PUBLIC_HOST='your-already-trusted-public-host'
+PORT=22
+PUBLIC_ID="$PUBLIC_HOST"
+PRIVATE_ID='100.77.197.84'
+if [ "$PORT" != 22 ]; then
+  PUBLIC_ID="[$PUBLIC_HOST]:$PORT"
+  PRIVATE_ID="[100.77.197.84]:$PORT"
+fi
+tmp="$(mktemp)"
+chmod 600 "$tmp"
+cp "$HOME/.ssh/known_hosts" "$tmp"
+ssh-keygen -F "$PUBLIC_ID" -f "$HOME/.ssh/known_hosts" |
+  awk -v host="$PRIVATE_ID" '!/^#/ && $2 ~ /^(ssh-|ecdsa-|sk-)/ { print host, $2, $3 }' >> "$tmp"
+ssh-keygen -F "$PRIVATE_ID" -f "$tmp" >/dev/null ||
+  { echo 'No trusted key was copied for the private host' >&2; exit 1; }
+# Compare the private entry fingerprint with the already trusted public entry.
+ssh-keygen -F "$PUBLIC_ID" -f "$tmp" |
+  awk '!/^#/ { print $2, $3 }' | ssh-keygen -lf -
+ssh-keygen -F "$PRIVATE_ID" -f "$tmp" |
+  awk '!/^#/ { print $2, $3 }' | ssh-keygen -lf -
+gh secret set PRODUCTION_SSH_KNOWN_HOSTS --env production --repo GalitskyKK/voople < "$tmp"
+rm -f "$tmp"
+```
+
+The copied key comes from an already trusted entry, not from an unauthenticated
+`ssh-keyscan`. The workflow checks that the private identifier exists and then
+uses `StrictHostKeyChecking=yes`; a missing or mismatched key stops deployment.
+Keep the trusted administrator access path separate from CI.
 
 ## DNS cutover
 

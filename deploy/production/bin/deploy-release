@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+sha="${1:?Pass the release SHA}"
+image="${2:?Pass the immutable image reference}"
+[[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo 'Invalid release SHA' >&2; exit 2; }
+[[ "$image" =~ ^ghcr\.io/[a-z0-9._/-]+/web:${sha}$ ]] || { echo 'Image must use the exact release SHA' >&2; exit 2; }
+
+deploy_dir="${DEPLOY_DIR:-/opt/voople}"
+cd "$deploy_dir"
+export XDG_RUNTIME_DIR=/run/user/1000
+export DOCKER_HOST=unix:///run/user/1000/docker.sock
+
+for file in .env app.env cron.env; do
+  [[ -s "$file" ]] || { echo "Missing production file: $file" >&2; exit 1; }
+done
+
+previous=''
+if [[ -e .deployed-sha ]]; then
+  previous="$(cat .deployed-sha)"
+  [[ "$previous" =~ ^[0-9a-f]{40}$ ]] || { echo 'Invalid .deployed-sha' >&2; exit 1; }
+fi
+echo "DEPLOY_STATUS previous_sha=$previous"
+
+health() {
+  local attempt
+  for attempt in {1..12}; do
+    if curl --fail --silent --show-error --max-time 5 --connect-timeout 2 \
+      http://127.0.0.1:3000/api/health >/dev/null; then
+      return 0
+    fi
+    (( attempt == 12 )) || sleep 5
+  done
+  return 1
+}
+
+rollback() {
+  echo 'DEPLOY_STATUS local_health=failed'
+  if [[ -z "$previous" ]]; then
+    echo 'DEPLOY_STATUS rollback=not-available'
+    echo 'No previous deployed SHA is available for rollback' >&2
+    return 1
+  fi
+  echo "DEPLOY_STATUS rollback_sha=$previous"
+  local previous_image="${image%:*}:$previous"
+  if VOOPLE_IMAGE="$previous_image" docker compose pull && \
+     VOOPLE_IMAGE="$previous_image" docker compose up -d --remove-orphans --wait --wait-timeout 120 && \
+     health; then
+    echo 'DEPLOY_STATUS rollback=success'
+    echo "Rolled back to $previous after release $sha failed local health" >&2
+  else
+    echo 'DEPLOY_STATUS rollback=failed'
+    echo "Rollback to $previous failed local health" >&2
+  fi
+  return 1
+}
+
+VOOPLE_IMAGE="$image" docker compose pull
+if ! VOOPLE_IMAGE="$image" docker compose up -d --remove-orphans --wait --wait-timeout 120; then
+  rollback
+  exit 1
+fi
+if ! health; then
+  rollback
+  exit 1
+fi
+echo 'DEPLOY_STATUS local_health=success'
+
+write_state() {
+  local target="$1" value="$2" temp
+  temp="$(mktemp "$deploy_dir/.${target}.XXXXXXXX")"
+  chmod 600 "$temp"
+  printf '%s\n' "$value" > "$temp"
+  mv -f "$temp" "$deploy_dir/$target"
+}
+
+if [[ -n "$previous" && "$previous" != "$sha" ]]; then
+  write_state .previous-sha "$previous"
+fi
+write_state .deployed-sha "$sha"
+echo "DEPLOY_STATUS deployed_sha=$sha"

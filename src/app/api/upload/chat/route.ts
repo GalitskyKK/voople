@@ -13,6 +13,7 @@ import { rateLimits } from "@/lib/ratelimit";
 import { checkRateLimit } from "@/lib/ratelimit-guard";
 import { createClient } from "@/lib/supabase/server";
 import { getChatUploadByteLimit } from "@/server/services/upload.service";
+import { authenticatedDesktopUpdateResponse } from "@/server/services/desktop-compatibility.service";
 
 export const runtime = "nodejs";
 
@@ -34,6 +35,8 @@ export async function POST(request: Request) {
     if (authError || !user) {
       return json({ error: "Не авторизован" }, { status: 401 });
     }
+    const updateRequired = authenticatedDesktopUpdateResponse(request);
+    if (updateRequired) return withDesktopCors(request, updateRequired);
 
     if (!(await checkRateLimit(rateLimits.uploadChat, `chat-upload:${user.id}`))) {
       return json({ error: "Слишком много загрузок" }, { status: 429 });

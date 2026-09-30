@@ -345,6 +345,9 @@ fn start_voice_heartbeat(
             interval.tick().await;
             match client
                 .post(endpoint.clone())
+                .header("Origin", if local_development { "http://127.0.0.1:1420" } else { "http://tauri.localhost" })
+                .header("X-Voople-Desktop-Version", env!("CARGO_PKG_VERSION"))
+                .header("X-Voople-Voice-Protocol", "core-direct-v1")
                 .bearer_auth(&access_token)
                 .json(&body)
                 .timeout(Duration::from_secs(15))
@@ -352,7 +355,7 @@ fn start_voice_heartbeat(
                 .await
             {
                 Ok(response) if response.status().is_success() => {}
-                Ok(response) if matches!(response.status().as_u16(), 401 | 409) => break,
+                Ok(response) if matches!(response.status().as_u16(), 401 | 409 | 426) => break,
                 Ok(response) => {
                     eprintln!("voice heartbeat returned status {}", response.status());
                 }

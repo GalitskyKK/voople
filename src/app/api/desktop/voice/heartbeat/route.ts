@@ -4,6 +4,7 @@ import { z } from "zod";
 import { desktopCorsPreflight, withDesktopCors } from "@/lib/http/desktop-cors";
 import { createClient } from "@/lib/supabase/server";
 import { heartbeatChatRoomRest } from "@/server/data/chat-rooms-rest";
+import { authenticatedDesktopUpdateResponse } from "@/server/services/desktop-compatibility.service";
 
 const bodySchema = z.object({
   chatId: z.string().uuid(),
@@ -34,6 +35,8 @@ export async function POST(request: Request) {
   if (error || !user) {
     return respond(NextResponse.json({ error: "Не авторизован" }, { status: 401 }));
   }
+  const updateRequired = authenticatedDesktopUpdateResponse(request);
+  if (updateRequired) return respond(updateRequired);
 
   try {
     await heartbeatChatRoomRest(parsed.data.chatId, user.id, parsed.data.micMuted);

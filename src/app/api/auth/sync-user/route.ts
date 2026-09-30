@@ -5,6 +5,7 @@ import { desktopCorsPreflight, withDesktopCors } from "@/lib/http/desktop-cors"
 import { createClient } from "@/lib/supabase/server"
 import { usernameSchema } from "@/lib/validation/username"
 import { ensurePublicUser } from "@/server/services/user-sync.service"
+import { authenticatedDesktopUpdateResponse } from "@/server/services/desktop-compatibility.service"
 import {
   recordServerProductEvent,
   registerAnalyticsActor,
@@ -31,6 +32,8 @@ export async function POST(request: Request) {
     if (error || !user) {
       return respond(NextResponse.json({ error: "Не авторизован" }, { status: 401 }))
     }
+    const updateRequired = authenticatedDesktopUpdateResponse(request)
+    if (updateRequired) return respond(updateRequired)
 
     let preferredUsername: string | undefined
     try {

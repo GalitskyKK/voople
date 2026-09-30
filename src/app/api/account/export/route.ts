@@ -5,6 +5,7 @@ import { rateLimits } from "@/lib/ratelimit";
 import { checkRateLimit } from "@/lib/ratelimit-guard";
 import { createClient } from "@/lib/supabase/server";
 import { buildAccountDataExport } from "@/server/data/account-export-rest";
+import { authenticatedDesktopUpdateResponse } from "@/server/services/desktop-compatibility.service";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,8 @@ export async function GET(request: Request) {
   if (error || !user) {
     return respond(jsonError("Не авторизован", 401));
   }
+  const updateRequired = authenticatedDesktopUpdateResponse(request);
+  if (updateRequired) return respond(updateRequired);
   if (!(await checkRateLimit(rateLimits.accountExport, `account-export:${user.id}`))) {
     return respond(jsonError("Экспорт можно запрашивать не более трёх раз в сутки", 429));
   }

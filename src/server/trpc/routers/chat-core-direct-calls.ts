@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { assertRateLimit } from "@/lib/ratelimit-guard";
+import { coreDirectCallerEligible } from "@/lib/http/desktop-compatibility";
 import { rateLimits } from "@/lib/ratelimit";
 import {
   answerCoreDirectCall,
@@ -37,7 +38,7 @@ function callError(error: unknown) {
 export const chatCoreDirectCallProcedures = {
   coreDirectCallCapability: protectedProcedure.query(async ({ ctx }) => {
     const startEnabled = getServerFeatureAccess("core_direct_calls", ctx.user.id).enabled;
-    if (startEnabled) return { enabled: true, startEnabled: true };
+    if (startEnabled && coreDirectCallerEligible(ctx.client)) return { enabled: true, startEnabled: true };
     try {
       const active = await getActiveCoreDirectCall(ctx.user.id);
       return { enabled: Boolean(active), startEnabled: false };
@@ -68,6 +69,9 @@ export const chatCoreDirectCallProcedures = {
     conversationId: z.string().uuid(), requestId: z.string().uuid(),
   })).mutation(async ({ ctx, input }) => {
     access(ctx.user.id);
+    if (!coreDirectCallerEligible(ctx.client)) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Клиент не поддерживает Core Direct Call" });
+    }
     await assertRateLimit(rateLimits.enterChatRoom, ctx.user.id);
     try { return await startCoreDirectCall({ ...input, callerId: ctx.user.id }); }
     catch (error) { throw callError(error); }

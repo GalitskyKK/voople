@@ -4,9 +4,11 @@ import { AccountDataControls } from "@/components/settings/AccountDataControls";
 import { downloadAccountExport } from "@/lib/account-export-client";
 
 import type { DesktopConfig } from "../config";
+import { desktopApiFetch, desktopRequestHeaders } from "../api/desktop-request";
 
 export function DesktopAccountDataSettings({ config, session }: { config: DesktopConfig; session: Session }) {
-  return <AccountDataControls exportAccountData={() => downloadAccountExport(
+  return <AccountDataControls exportAccountData={async () => downloadAccountExport(
     new URL("/api/account/export", config.apiUrl).toString(), session.access_token,
+    await desktopRequestHeaders(), desktopApiFetch,
   )} />;
 }

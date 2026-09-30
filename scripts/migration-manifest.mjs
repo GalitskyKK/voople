@@ -35,6 +35,7 @@ export const REQUIRED_MIGRATIONS = Object.freeze([
   "75-group-room-grace-maintenance.sql",
   "76-live-move-consent.sql",
   "77-friendships.sql",
+  "78-core-direct-call-foundation.sql",
 ]);
 
 // The ledger must exist before the feature migrations are replayed so every
@@ -76,4 +77,5 @@ export const RELEASE_APPLY_ORDER = Object.freeze([
   "75-group-room-grace-maintenance.sql",
   "76-live-move-consent.sql",
   "77-friendships.sql",
+  "78-core-direct-call-foundation.sql",
 ]);

@@ -9,11 +9,6 @@ export async function startCoreDirectCall(input: {
   conversationId: string; callerId: string; requestId: string;
 }) {
   const recipientId = await getDirectRecipientForPreviewRest(input.conversationId, input.callerId);
-  const previewUsers = new Set((process.env.VOOPLE_INTERNAL_USER_IDS ?? "")
-    .split(",").map((id) => id.trim().toLowerCase()).filter(Boolean));
-  if (!previewUsers.has(input.callerId.toLowerCase()) || !previewUsers.has(recipientId.toLowerCase())) {
-    throw new Error("Личный звонок пока недоступен собеседнику");
-  }
   return startCoreDirectCallRest({ ...input, expectedRecipientId: recipientId });
 }
 

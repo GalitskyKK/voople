@@ -133,7 +133,7 @@ export const FEATURE_AVAILABILITY = Object.freeze({
   core_direct_calls: {
     exposure: "hidden",
     platforms: CURRENT_PLATFORMS,
-    channels: ["internal"],
+    channels: ALL_CHANNELS,
     serverCapability: "core_direct_calls",
     fallbackHref: "/messages",
   },

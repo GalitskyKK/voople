@@ -38,19 +38,47 @@ test("only trusted Tauri Origins expose Desktop version and protocol", async () 
 });
 
 test("minimum Desktop version is disabled by default and applies only to production Tauri", async () => {
-  const { desktopRequestIdentity, desktopUpdateRequired, DESKTOP_VERSION_HEADER } = await loadContract();
+  const { desktopRequestIdentity, desktopUpdateRequired, coreDirectCallerEligible, DESKTOP_VERSION_HEADER, VOICE_PROTOCOL_HEADER } = await loadContract();
   const headers = new Headers({ Origin: "tauri://localhost" });
   const old = desktopRequestIdentity(headers);
   assert.equal(desktopUpdateRequired(old, undefined), false);
   assert.equal(desktopUpdateRequired(old, "0.1.50"), true);
   headers.set(DESKTOP_VERSION_HEADER, "0.1.49");
+  headers.set(VOICE_PROTOCOL_HEADER, "core-direct-v1");
+  assert.equal(coreDirectCallerEligible(desktopRequestIdentity(headers)), true);
   assert.equal(desktopUpdateRequired(desktopRequestIdentity(headers), "0.1.50"), true);
   headers.set(DESKTOP_VERSION_HEADER, "0.1.50");
   assert.equal(desktopUpdateRequired(desktopRequestIdentity(headers), "0.1.50"), false);
   headers.set("Origin", "https://voople.app");
   assert.equal(desktopUpdateRequired(desktopRequestIdentity(headers), "0.1.50"), false);
+  assert.equal(coreDirectCallerEligible(desktopRequestIdentity(headers)), true);
   headers.set("Origin", "http://127.0.0.1:1420");
   assert.equal(desktopUpdateRequired(desktopRequestIdentity(headers, true), "0.1.50"), false);
+});
+
+test("Core start passes an ordinary DM pair to the session-bound data boundary", async () => {
+  const source = await readFile(new URL("../src/server/services/chat-core-direct-calls.service.ts", import.meta.url), "utf8");
+  const service = source.match(/export async function startCoreDirectCall\([\s\S]*?\n}\r?\n/)?.[0];
+  assert.ok(service);
+  assert.doesNotMatch(service, /VOOPLE_INTERNAL_USER_IDS/);
+  const code = ts.transpileModule(service.replace("export ", ""), {
+    compilerOptions: { module: ts.ModuleKind.None, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  const callerId = "00000000-0000-4000-8000-000000000001";
+  const recipientId = "00000000-0000-4000-8000-000000000002";
+  const conversationId = "00000000-0000-4000-8000-000000000003";
+  const requestId = "00000000-0000-4000-8000-000000000004";
+  let started;
+  const start = new Function("getDirectRecipientForPreviewRest", "startCoreDirectCallRest", `${code}\nreturn startCoreDirectCall;`)(
+    async (conversation, caller) => {
+      assert.equal(conversation, conversationId);
+      assert.equal(caller, callerId);
+      return recipientId;
+    },
+    async (input) => { started = input; return { sessionId: "session" }; },
+  );
+  assert.deepEqual(await start({ conversationId, callerId, requestId }), { sessionId: "session" });
+  assert.deepEqual(started, { conversationId, callerId, requestId, expectedRecipientId: recipientId });
 });
 
 test("legacy chatId procedures remain separate from session-bound Core procedures", async () => {

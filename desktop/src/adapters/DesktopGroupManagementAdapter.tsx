@@ -4,7 +4,6 @@ import { useCallback, useMemo } from "react";
 import { GroupManagementSheetView } from "@/components/chat/GroupManagementSheetView";
 import type { ChatGroupAuditEntryView, ChatGroupMemberView, GroupCommunityView, GroupEmojiView, GroupJoinPolicy, GroupJoinRequestView, GroupSoundView, GroupVisibility } from "@/types/chat";
 import type { UserSearchHit } from "@/types/search";
-import type { GroupDiscoveryProfileView, InterestCatalogView } from "@/types/social";
 import { uploadPresignedFile } from "@/lib/uploads/presigned-upload";
 
 import { createDesktopTrpcClient } from "../api/trpc";
@@ -164,14 +163,6 @@ export function DesktopGroupManagementAdapter({
     () => client.query("chat.groupJoinRequests", { chatId }) as Promise<GroupJoinRequestView[]>,
     [chatId, client],
   );
-  const loadInterestCatalog = useCallback(
-    () => client.query("social.interestCatalog") as Promise<InterestCatalogView>,
-    [client],
-  );
-  const loadDiscoveryProfile = useCallback(
-    () => client.query("social.groupDiscoveryProfile", { chatId }) as Promise<GroupDiscoveryProfileView>,
-    [chatId, client],
-  );
   const uploadSound = useCallback(async (file: File) => {
     const contentType = file.type.split(";")[0]?.trim().toLowerCase() ?? "";
     if (file.size <= 0 || file.size > 1024 * 1024) throw new Error("Звук должен быть не больше 1 МБ");
@@ -224,9 +215,6 @@ export function DesktopGroupManagementAdapter({
         onMembersChanged();
         return result;
       }}
-      loadInterestCatalog={loadInterestCatalog}
-      loadDiscoveryProfile={loadDiscoveryProfile}
-      updateDiscoveryProfile={(value) => client.mutation("social.setGroupDiscoveryProfile", { chatId, ...value }) as Promise<GroupDiscoveryProfileView>}
       updateName={async (name) => {
         const result = await client.mutation("chat.setGroupName", { chatId, name }) as { name: string };
         onMembersChanged();

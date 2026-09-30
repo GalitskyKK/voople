@@ -57,7 +57,6 @@ export function GroupInviteSheet({
   const setTopics = trpc.chat.setGroupTopics.useMutation();
   const setVisibility = trpc.chat.setGroupVisibility.useMutation();
   const resolveJoinRequestMutation = trpc.chat.resolveGroupJoinRequest.useMutation();
-  const setDiscoveryProfile = trpc.social.setGroupDiscoveryProfile.useMutation();
   const setGroupName = trpc.chat.setGroupName.useMutation();
   const updateCustomization = trpc.chat.updateGroupCustomization.useMutation();
   const setBoost = trpc.chat.setGroupBoost.useMutation();
@@ -97,14 +96,6 @@ export function GroupInviteSheet({
   );
   const loadJoinRequests = useCallback(
     () => utils.client.chat.groupJoinRequests.query({ chatId }),
-    [chatId, utils.client],
-  );
-  const loadInterestCatalog = useCallback(
-    () => utils.client.social.interestCatalog.query(),
-    [utils.client],
-  );
-  const loadDiscoveryProfile = useCallback(
-    () => utils.client.social.groupDiscoveryProfile.query({ chatId }),
     [chatId, utils.client],
   );
   const searchContacts = useCallback(
@@ -153,9 +144,6 @@ export function GroupInviteSheet({
         ]);
         return result;
       }}
-      loadInterestCatalog={loadInterestCatalog}
-      loadDiscoveryProfile={loadDiscoveryProfile}
-      updateDiscoveryProfile={(value) => setDiscoveryProfile.mutateAsync({ chatId, ...value })}
       updateName={async (name) => {
         const result = await setGroupName.mutateAsync({ chatId, name });
         await refreshGroup();

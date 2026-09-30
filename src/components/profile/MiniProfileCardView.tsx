@@ -90,19 +90,6 @@ export function MiniProfileCardView({
             </p>
           ) : null}
 
-          {profile.interests?.length ? (
-            <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Интересы">
-              {profile.interests.slice(0, 6).map((interest) => (
-                <span
-                  key={interest.slug}
-                  className="rounded-full border border-[color-mix(in_srgb,var(--theme-accent)_24%,var(--app-border))] bg-[color-mix(in_srgb,var(--theme-accent)_9%,var(--app-surface-soft))] px-2 py-1 text-[11px] text-[var(--foreground)]"
-                >
-                  {interest.name}
-                </span>
-              ))}
-            </div>
-          ) : null}
-
           {PROFILE_STATUS_VISIBLE && (status.moodValue || status.thought || status.trackTitle || status.trackArtist) ? (
             <div className="mt-3 space-y-2 rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] p-3 text-xs">
               {status.moodValue ? (

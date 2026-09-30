@@ -142,9 +142,8 @@ per call. `CRON_SECRET` must be
 configured on the deployment for that route to execute maintenance. During
 the compatibility window, the legacy entry path rejects users who already
 have a new active LiveSession, and the new switch transaction accounts for
-legacy presence. The
-contract stays internal until real database concurrency, old-client and
-two-client media gates pass.
+legacy presence. The initial rollout kept the contract internal pending real
+database concurrency, old-client and two-client media gates.
 
 Release migration 61 adds the UI-facing create-and-join transaction. A client
 request UUID is persisted as a unique creation key, so a lost response can be
@@ -155,11 +154,12 @@ remains service-role-only and preserves the authorization checks in migrations
 59–60.
 
 Core Room transport is fail-closed. `chat.core*` procedures require an
-authenticated user, `VOOPLE_RELEASE_CHANNEL=internal` or `beta`, and the
-`multi_room_groups` server capability. The internal channel additionally
-requires the user's UUID in its allowlist. Missing or invalid configuration
-resolves to stable/disabled and is
-reported as a hidden surface, not as an open experimental endpoint. Inputs are
+authenticated user and the `multi_room_groups` server capability on web and
+Windows, including the stable channel. On an internal deployment, the user
+allowlist still applies to pre-stable features, but not to features whose
+availability includes stable. Missing or invalid channel configuration
+resolves to stable; a missing capability keeps Group Rooms disabled. Disabled
+features are reported as hidden surfaces. Inputs are
 validated at the tRPC boundary, create/manage/join operations retain the shared
 rate limits, and telemetry records only action state rather than Room or user
 identifiers. The UI feature registry remains a second presentation gate; it
@@ -178,6 +178,8 @@ The rollout order is:
 Each transition is `off -> internal -> beta -> stable`. Rollback disables the
 new surface without deleting Room, LiveSession or message-context data. The
 server accepts the previous supported desktop contract throughout the rollout.
+`multi_room_groups` has reached stable on web and Windows; other feature gates
+retain their own rollout rules.
 
 ## Deferred surfaces
 

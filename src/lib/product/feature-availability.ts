@@ -125,7 +125,7 @@ export const FEATURE_AVAILABILITY = Object.freeze({
   multi_room_groups: {
     exposure: "primary",
     platforms: CURRENT_PLATFORMS,
-    channels: ["internal", "beta"],
+    channels: ALL_CHANNELS,
     serverCapability: "multi_room_groups",
     fallbackHref: "/messages",
   },

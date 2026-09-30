@@ -6,29 +6,32 @@ import { resolveServerFeatureAccess } from "../src/lib/product/server-feature-ac
 
 const userId = "00000000-0000-4000-8000-000000000001";
 
-test("server rollout config defaults to disabled stable", () => {
+test("server rollout config defaults to stable with capabilities disabled", () => {
   assert.deepEqual(resolveServerFeatureAccess("multi_room_groups", userId, {}), {
     enabled: false,
-    reason: "channel",
+    reason: "server",
   });
 });
 
-test("internal transport needs capability and the exact user", () => {
+test("stable Group Rooms ignores the internal allowlist but still needs its capability", () => {
   const base = {
     VOOPLE_RELEASE_CHANNEL: "internal",
     VOOPLE_SERVER_CAPABILITIES: "multi_room_groups",
   };
   assert.deepEqual(resolveServerFeatureAccess("multi_room_groups", userId, base), {
-    enabled: false,
-    reason: "user",
+    enabled: true,
+    reason: "available",
   });
   assert.deepEqual(resolveServerFeatureAccess("multi_room_groups", userId, {
     ...base,
-    VOOPLE_INTERNAL_USER_IDS: userId,
+    VOOPLE_INTERNAL_USER_IDS: "00000000-0000-4000-8000-000000000002",
   }), {
     enabled: true,
     reason: "available",
   });
+  assert.deepEqual(resolveServerFeatureAccess("multi_room_groups", userId, {
+    VOOPLE_RELEASE_CHANNEL: "internal",
+  }), { enabled: false, reason: "server" });
 });
 
 test("beta transport requires capability but not the internal user allowlist", () => {
@@ -48,12 +51,44 @@ test("beta transport requires capability but not the internal user allowlist", (
     VOOPLE_RELEASE_CHANNEL: "stable",
     VOOPLE_SERVER_CAPABILITIES: "multi_room_groups",
   }), {
-    enabled: false,
-    reason: "channel",
+    enabled: true,
+    reason: "available",
   });
 });
 
-test("core rework transport is fail-closed and user allowlisted", async () => {
+test("pre-stable features keep the internal allowlist and their channel rules", () => {
+  const internal = {
+    VOOPLE_RELEASE_CHANNEL: "internal",
+    VOOPLE_SERVER_CAPABILITIES: "saved_messages,core_rework_shell",
+  };
+  for (const feature of ["saved_messages", "core_rework_shell"]) {
+    assert.deepEqual(resolveServerFeatureAccess(feature, userId, internal), {
+      enabled: false, reason: "user",
+    });
+    assert.deepEqual(resolveServerFeatureAccess(feature, userId, {
+      ...internal, VOOPLE_INTERNAL_USER_IDS: userId,
+    }), { enabled: true, reason: "available" });
+    assert.deepEqual(resolveServerFeatureAccess(feature, userId, {
+      ...internal, VOOPLE_SERVER_CAPABILITIES: "",
+      VOOPLE_INTERNAL_USER_IDS: userId,
+    }), { enabled: false, reason: "server" });
+    assert.deepEqual(resolveServerFeatureAccess(feature, userId, {
+      VOOPLE_RELEASE_CHANNEL: "stable",
+      VOOPLE_SERVER_CAPABILITIES: feature,
+      VOOPLE_INTERNAL_USER_IDS: userId,
+    }), { enabled: false, reason: "channel" });
+  }
+  assert.deepEqual(resolveServerFeatureAccess("saved_messages", userId, {
+    VOOPLE_RELEASE_CHANNEL: "beta",
+    VOOPLE_SERVER_CAPABILITIES: "saved_messages",
+  }), { enabled: false, reason: "channel" });
+  assert.deepEqual(resolveServerFeatureAccess("core_rework_shell", userId, {
+    VOOPLE_RELEASE_CHANNEL: "beta",
+    VOOPLE_SERVER_CAPABILITIES: "core_rework_shell",
+  }), { enabled: true, reason: "available" });
+});
+
+test("core rework transport is fail-closed and pre-stable features are user allowlisted", async () => {
   const [access, service, env] = await Promise.all([
     readFile(new URL("../src/lib/product/server-feature-access.ts", import.meta.url), "utf8"),
     readFile(new URL("../src/server/services/product-feature-access.service.ts", import.meta.url), "utf8"),
@@ -71,7 +106,7 @@ test("core rework transport is fail-closed and user allowlisted", async () => {
   assert.match(env, /VOOPLE_INTERNAL_USER_IDS=/);
 });
 
-test("every internal Room procedure enforces capability access", async () => {
+test("every core Room procedure enforces capability access", async () => {
   const [router, rootRouter] = await Promise.all([
     readFile(new URL("../src/server/trpc/routers/chat-core-rework.ts", import.meta.url), "utf8"),
     readFile(new URL("../src/server/trpc/routers/chat.ts", import.meta.url), "utf8"),

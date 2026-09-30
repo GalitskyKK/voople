@@ -1,3 +1,4 @@
+import { parseDatabaseDate } from "@/lib/format/database-date";
 import { dayKeyFromIso, formatMessageDateLabel } from "@/lib/format/message-time";
 import { messageRoomContextKey } from "@/lib/chat/message-room-context";
 import { summarizeGroupRoomActivity } from "@/lib/chat/room-activity";
@@ -25,14 +26,13 @@ function messagesBelongTogether(
     return false;
   }
   return (
-    Math.abs(Date.parse(second.createdAt) - Date.parse(first.createdAt)) <=
+    Math.abs(parseDatabaseDate(second.createdAt).getTime() - parseDatabaseDate(first.createdAt).getTime()) <=
     MESSAGE_GROUP_WINDOW_MS
   );
 }
 
 export function buildChatTimeline(messages: ChatMessageView[]): ChatTimelineItem[] {
   const items: ChatTimelineItem[] = [];
-  let lastDayKey = "";
   const roomSummaries = summarizeGroupRoomActivity(messages.flatMap((message) => {
     const event = message.content?.find((node) => node.type === "roomEvent");
     return event && event.type === "roomEvent"
@@ -43,40 +43,39 @@ export function buildChatTimeline(messages: ChatMessageView[]): ChatTimelineItem
     const event = message.content?.find((node) => node.type === "roomEvent");
     if (!event || event.type !== "roomEvent" || event.roomKind !== "group") return true;
     return false;
-  });
+  }).sort((a, b) => parseDatabaseDate(a.createdAt).getTime() - parseDatabaseDate(b.createdAt).getTime());
 
-  for (const [index, message] of visibleMessages.entries()) {
+  const days = new Map<string, { source: ChatMessageView; messages: ChatMessageView[] }>();
+  for (const message of messages) {
     const dayKey = dayKeyFromIso(message.createdAt);
-    if (dayKey !== lastDayKey) {
-      items.push({
-        type: "date",
-        key: `date-${dayKey}`,
-        label: formatMessageDateLabel(message.createdAt),
-      });
-      lastDayKey = dayKey;
-      const roomSummary = roomSummaries.get(dayKey);
-      if (roomSummary?.sessions) {
-        items.push({ type: "roomSummary", key: `room-summary-${dayKey}`, dayLabel: formatMessageDateLabel(message.createdAt), ...roomSummary });
-      }
-    }
-    const joinsPrevious = messagesBelongTogether(visibleMessages[index - 1], message);
-    const joinsNext = messagesBelongTogether(message, visibleMessages[index + 1]);
-    const groupPosition = joinsPrevious
-      ? joinsNext
-        ? "middle"
-        : "end"
-      : joinsNext
-        ? "start"
-        : "only";
-    items.push({ type: "message", message, groupPosition });
+    if (!days.has(dayKey)) days.set(dayKey, { source: message, messages: [] });
+  }
+  for (const message of visibleMessages) {
+    days.get(dayKeyFromIso(message.createdAt))?.messages.push(message);
   }
 
-  for (const [dayKey, roomSummary] of roomSummaries) {
-    if (items.some((item) => item.type === "roomSummary" && item.key === `room-summary-${dayKey}`)) continue;
-    const source = messages.find((message) => dayKeyFromIso(message.createdAt) === dayKey);
-    if (!source) continue;
-    items.push({ type: "date", key: `date-${dayKey}`, label: formatMessageDateLabel(source.createdAt) });
-    items.push({ type: "roomSummary", key: `room-summary-${dayKey}`, dayLabel: formatMessageDateLabel(source.createdAt), ...roomSummary });
+  const orderedDays = [...days].sort(([left], [right]) => {
+    const a = left.split("-").map(Number);
+    const b = right.split("-").map(Number);
+    return (a[0] - b[0]) || (a[1] - b[1]) || (a[2] - b[2]);
+  });
+
+  for (const [dayKey, day] of orderedDays) {
+    const roomSummary = roomSummaries.get(dayKey);
+    if (!day.messages.length && !roomSummary?.sessions) continue;
+    const label = formatMessageDateLabel(day.source.createdAt);
+    items.push({ type: "date", key: `date-${dayKey}`, label });
+    if (roomSummary?.sessions) {
+      items.push({ type: "roomSummary", key: `room-summary-${dayKey}`, dayLabel: label, ...roomSummary });
+    }
+    for (const [index, message] of day.messages.entries()) {
+      const joinsPrevious = messagesBelongTogether(day.messages[index - 1], message);
+      const joinsNext = messagesBelongTogether(message, day.messages[index + 1]);
+      const groupPosition = joinsPrevious
+        ? joinsNext ? "middle" : "end"
+        : joinsNext ? "start" : "only";
+      items.push({ type: "message", message, groupPosition });
+    }
   }
 
   return items;

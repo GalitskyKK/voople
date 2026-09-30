@@ -196,6 +196,36 @@ test("disabled preferences suppress custom sounds and desktop never double plays
   delete globalThis.__testPlay;
 });
 
+test("local Group cues follow successful connection and confirmed leave once", async () => {
+  let code = transpile(await read("src/components/chat/voice/voice-room-sounds.ts"));
+  code = code.replace(/import \{ playProductSound \} from "@\/lib\/sound\/sound-playback";/,
+    "const playProductSound = globalThis.__testPlay;");
+  const calls = [];
+  globalThis.__testPlay = async (id) => { calls.push(id); };
+  try {
+    const { advanceLocalRoomSound, playVoiceRoomSound } =
+      await import(`data:text/javascript,${encodeURIComponent(code)}#local-room-cues`);
+    let joined = false;
+    const transition = async (event, enabled = true) => {
+      const next = advanceLocalRoomSound(joined, event);
+      joined = next.joined;
+      if (next.cue) await playVoiceRoomSound(next.cue, enabled);
+    };
+    // A failed attempt never reaches the connected transition.
+    assert.deepEqual(calls, []);
+    await transition("connected");
+    await transition("connected"); // duplicate observation / reconnect
+    await transition("left");
+    await transition("left");
+    assert.deepEqual(calls, ["room.join", "room.leave"]);
+    await transition("connected", false);
+    await transition("left", false);
+    assert.deepEqual(calls, ["room.join", "room.leave"]);
+  } finally {
+    delete globalThis.__testPlay;
+  }
+});
+
 test("invalid stored packs fall back and later playback uses the selected pack", async () => {
   const catalog = await loadCatalog();
   assert.equal(catalog.normalizeSoundPack("unknown"), "default");

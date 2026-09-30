@@ -81,8 +81,11 @@ button { color: inherit; }
   height: auto;
 }
 
-/* Messages starts at the native title bar; its sidebar is navigation only. */
-.desktop-window-content .voople-shell[data-route-kind="messages"] .voople-sidebar__brand,
+/* Authenticated Desktop uses the native titlebar for branding on every route. */
+.desktop-window-content .voople-shell[data-navigation-kind="messenger"] .voople-sidebar__brand {
+  display: none;
+}
+
 .desktop-window-content .voople-shell[data-route-kind="messages"] .voople-chat-list__panel-header {
   display: none;
 }

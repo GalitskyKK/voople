@@ -59,12 +59,46 @@ test("core rework surfaces require beta-or-internal channel and server capabilit
     channel: "beta",
     serverCapabilities: new Set(["core_rework_shell"]),
   }).enabled, true);
+});
 
+test("Group Rooms is stable on web and Windows only with its server capability", () => {
+  for (const platform of ["web", "windows"]) {
+    for (const channel of ["internal", "beta", "stable"]) {
+      assert.equal(resolveFeatureAvailability("multi_room_groups", {
+        platform, channel,
+        serverCapabilities: new Set(["multi_room_groups"]),
+      }).enabled, true);
+      assert.equal(resolveFeatureAvailability("multi_room_groups", {
+        platform, channel,
+      }).reason, "server");
+    }
+  }
   assert.equal(resolveFeatureAvailability("multi_room_groups", {
-    platform: "web",
-    channel: "beta",
+    platform: "linux", channel: "stable",
     serverCapabilities: new Set(["multi_room_groups"]),
+  }).reason, "platform");
+});
+
+test("other gated features retain their channels and platforms", () => {
+  for (const feature of ["public_groups", "feed_recommendations", "core_rework_shell", "saved_messages"]) {
+    assert.equal(resolveFeatureAvailability(feature, {
+      platform: "web", channel: "stable",
+      serverCapabilities: new Set([feature]),
+    }).reason, "channel");
+  }
+  assert.equal(resolveFeatureAvailability("public_groups", {
+    platform: "windows", channel: "beta",
   }).enabled, true);
+  assert.equal(resolveFeatureAvailability("feed_recommendations", {
+    platform: "windows", channel: "beta",
+  }).reason, "platform");
+  assert.equal(resolveFeatureAvailability("feed_recommendations", {
+    platform: "web", channel: "beta",
+  }).enabled, true);
+  assert.equal(resolveFeatureAvailability("saved_messages", {
+    platform: "web", channel: "beta",
+    serverCapabilities: new Set(["saved_messages"]),
+  }).reason, "channel");
 });
 
 test("Saved Messages stays hidden until its internal migration capability is ready", () => {

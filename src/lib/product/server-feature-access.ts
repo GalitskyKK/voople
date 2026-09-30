@@ -1,4 +1,5 @@
 import {
+  FEATURE_AVAILABILITY,
   PRODUCT_FEATURES,
   resolveFeatureAvailability,
   type ProductFeature,
@@ -78,8 +79,10 @@ export function resolveServerFeatureAccess(
     };
   }
 
+  const allowedChannels: readonly ProductReleaseChannel[] = FEATURE_AVAILABILITY[feature].channels;
   if (
     channel === "internal"
+    && !allowedChannels.includes("stable")
     && !csvSet(environment.VOOPLE_INTERNAL_USER_IDS).has(userId.toLowerCase())
   ) {
     return { enabled: false, reason: "user" };

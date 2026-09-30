@@ -37,7 +37,6 @@ export type ProfileViewModel = {
   hasVooplePlus?: boolean;
   customization: ProfileCustomizationView;
   status: ProfileStatus;
-  interests?: Array<{ slug: string; name: string }>;
   groupTag?: {
     chatId: string;
     tag: string;

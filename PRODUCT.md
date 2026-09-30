@@ -84,6 +84,8 @@ invite-only; an unlisted Group needs a direct link or exact slug; a public
 Group can appear in search. Feed, Posts, Questions, hashtags, trending and
 the old broad social discovery are preserved in code/data but deferred from
 beta navigation. Deferred exposure does not authorize deletion.
+The former Interests / Categories / Group Topics taxonomy is retired from
+application UI and APIs; its historical database tables remain.
 
 ## Beta profile
 

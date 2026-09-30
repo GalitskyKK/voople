@@ -14,7 +14,6 @@ import { Sheet } from "@/components/ui/Sheet";
 import { useGroupManagementSheet } from "@/hooks/useGroupManagementSheet";
 import type { ChatGroupAuditEntryView, ChatGroupMemberView, GroupCommunityView, GroupCustomizationInput, GroupEmojiView, GroupJoinPolicy, GroupJoinRequestView, GroupSoundView, GroupVisibility } from "@/types/chat";
 import type { UserSearchHit } from "@/types/search";
-import type { GroupDiscoveryProfileView, InterestCatalogView } from "@/types/social";
 
 import { GroupChatMemberPicker } from "./GroupChatMemberPicker";
 import { GroupAuditLog } from "./GroupAuditLog";
@@ -28,7 +27,6 @@ import { GroupManagementTrigger } from "./GroupManagementTrigger";
 import { GroupSoundManager } from "./GroupSoundManager";
 import { GroupNameEditor } from "./GroupNameEditor";
 import { GroupJoinRequestsPanel } from "./GroupJoinRequestsPanel";
-import { GroupDiscoverySettingsPanel } from "@/components/social/GroupDiscoverySettingsPanel";
 import {
   GroupSettingsNavigation,
   type GroupSettingsSection,
@@ -60,9 +58,6 @@ export type GroupManagementProps = {
   updateVisibility: (visibility: GroupVisibility, joinPolicy: GroupJoinPolicy) => Promise<unknown>;
   loadJoinRequests: () => Promise<GroupJoinRequestView[]>;
   resolveJoinRequest: (requestId: string, approve: boolean) => Promise<unknown>;
-  loadInterestCatalog: () => Promise<InterestCatalogView>;
-  loadDiscoveryProfile: () => Promise<GroupDiscoveryProfileView>;
-  updateDiscoveryProfile: (value: Omit<GroupDiscoveryProfileView, "topicLimit">) => Promise<GroupDiscoveryProfileView>;
   updateName: (name: string) => Promise<{ name: string }>;
   loadCommunity: () => Promise<GroupCommunityView>;
   updateCustomization: (input: GroupCustomizationInput) => Promise<GroupCommunityView>;
@@ -197,7 +192,6 @@ export function GroupManagementSheetView(props: GroupManagementProps) {
             ) : null}
 
             {section === "advanced" && props.canManage ? <>
-              {props.groupVisibility === "public" ? <GroupDiscoverySettingsPanel canManage={props.canManage} loadCatalog={props.loadInterestCatalog} load={props.loadDiscoveryProfile} save={props.updateDiscoveryProfile} /> : null}
               <GroupEmojiManager
                 canManage={props.canManage}
                 load={props.loadEmojis}

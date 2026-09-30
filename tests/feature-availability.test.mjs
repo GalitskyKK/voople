@@ -79,6 +79,21 @@ test("Group Rooms is stable on web and Windows only with its server capability",
   }).reason, "platform");
 });
 
+test("Core Direct Calls is available on stable web and Windows only with its capability", () => {
+  assert.equal(FEATURE_AVAILABILITY.core_direct_calls.serverCapability, "core_direct_calls");
+  for (const platform of ["web", "windows"]) {
+    assert.deepEqual(resolveFeatureAvailability("core_direct_calls", {
+      platform, channel: "stable",
+      serverCapabilities: new Set(["core_direct_calls"]),
+    }), {
+      enabled: true, exposure: "hidden", fallbackHref: "/messages", reason: "available",
+    });
+    assert.equal(resolveFeatureAvailability("core_direct_calls", {
+      platform, channel: "stable",
+    }).reason, "server");
+  }
+});
+
 test("other gated features retain their channels and platforms", () => {
   for (const feature of ["public_groups", "feed_recommendations", "core_rework_shell", "saved_messages"]) {
     assert.equal(resolveFeatureAvailability(feature, {

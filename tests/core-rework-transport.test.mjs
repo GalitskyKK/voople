@@ -34,6 +34,19 @@ test("stable Group Rooms ignores the internal allowlist but still needs its capa
   }), { enabled: false, reason: "server" });
 });
 
+test("stable Core Direct Calls admits ordinary users only with its capability", () => {
+  const stable = { VOOPLE_RELEASE_CHANNEL: "stable", VOOPLE_SERVER_CAPABILITIES: "core_direct_calls" };
+  assert.deepEqual(resolveServerFeatureAccess("core_direct_calls", userId, stable), {
+    enabled: true, reason: "available",
+  });
+  assert.deepEqual(resolveServerFeatureAccess("core_direct_calls", userId, {
+    ...stable, VOOPLE_INTERNAL_USER_IDS: "00000000-0000-4000-8000-000000000002",
+  }), { enabled: true, reason: "available" });
+  assert.deepEqual(resolveServerFeatureAccess("core_direct_calls", userId, {
+    VOOPLE_RELEASE_CHANNEL: "stable",
+  }), { enabled: false, reason: "server" });
+});
+
 test("beta transport requires capability but not the internal user allowlist", () => {
   const beta = { VOOPLE_RELEASE_CHANNEL: "beta" };
   assert.deepEqual(resolveServerFeatureAccess("multi_room_groups", userId, beta), {

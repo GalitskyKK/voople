@@ -10,6 +10,7 @@ import {
 } from "react"
 
 import { reportProductEvent } from "@/lib/telemetry/client"
+import { advanceLocalRoomSound, playVoiceRoomSound } from "./voice-room-sounds"
 
 import {
   VOICE_MEDIA_SURFACE_TIMEOUT_MS,
@@ -31,6 +32,7 @@ type SurfaceSessionOptions = {
   mediaConnection: Pick<ReturnType<typeof useVoiceMediaConnection>, "connect" | "disconnect">
   sessionOperation: ReturnType<typeof useVoiceSessionOperation>
   setMediaError: Dispatch<SetStateAction<string | null>>
+  roomSoundsEnabled: () => boolean
 }
 
 /** Owns the optimistic Room surface phases and their server-confirmed recovery actions. */
@@ -43,11 +45,13 @@ export function useVoiceRoomSurfaceSession({
   server,
   mediaConnection,
   sessionOperation,
-  setMediaError
+  setMediaError,
+  roomSoundsEnabled
 }: SurfaceSessionOptions) {
   const [transition, setTransition] = useState<VoiceRoomSessionTransition>(null)
   const [failedOperation, setFailedOperation] = useState<"connect" | "leave" | null>(null)
   const leavePendingRef = useRef(false)
+  const localJoinedRef = useRef(false)
 
   const resetSurface = useCallback(() => {
     setTransition(null)
@@ -91,6 +95,11 @@ export function useVoiceRoomSurfaceSession({
 
           return
         }
+        if (chatType === "group") {
+          const sound = advanceLocalRoomSound(localJoinedRef.current, "connected")
+          localJoinedRef.current = sound.joined
+          if (sound.cue) void playVoiceRoomSound(sound.cue, roomSoundsEnabled())
+        }
         reportProductEvent("room_joined", { kind: chatType })
       } catch (error) {
         if (!isCurrent()) return
@@ -116,6 +125,11 @@ export function useVoiceRoomSurfaceSession({
     mediaConnection.disconnect()
     try {
       await runConfirmedVoiceLeave(server.leave.run, server.room.refetch)
+      if (chatType === "group") {
+        const sound = advanceLocalRoomSound(localJoinedRef.current, "left")
+        localJoinedRef.current = sound.joined
+        if (sound.cue) void playVoiceRoomSound(sound.cue, roomSoundsEnabled())
+      }
       reportProductEvent("room_left", {
         durationSeconds: startedAt
           ? Math.max(0, Math.round((Date.now() - new Date(startedAt).getTime()) / 1_000))

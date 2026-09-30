@@ -237,6 +237,7 @@ export function useChatRoomControl(
     mediaConnection,
     sessionOperation,
     setMediaError,
+    roomSoundsEnabled: () => preferencesRef.current.roomSounds,
   });
   const {
     transition: sessionTransition,

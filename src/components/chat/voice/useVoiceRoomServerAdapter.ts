@@ -12,6 +12,7 @@ import type {
 } from "@/types/voice";
 
 import { useVoiceRoomServerSession } from "./useVoiceRoomServerSession";
+import { useCoreDirectCallServerAdapter, type CoreDirectCallTarget } from "./useCoreDirectCallServerAdapter";
 
 function optimisticCoreView(session: CoreVoiceSessionDescriptor): ChatRoomView {
   return {
@@ -39,16 +40,20 @@ export function useVoiceRoomServerAdapter({
   open,
   expectedStartedAt,
   coreSession,
+  coreDirectCall,
   initialCoreCredentials,
 }: {
   chatId: string;
   open: boolean;
   expectedStartedAt?: string;
   coreSession?: CoreVoiceSessionDescriptor;
+  coreDirectCall?: CoreDirectCallTarget;
   initialCoreCredentials?: EnabledVoiceMediaCredentials;
 }) {
   const core = Boolean(coreSession);
-  const legacy = useVoiceRoomServerSession(chatId, open, !core);
+  const direct = Boolean(coreDirectCall);
+  const legacy = useVoiceRoomServerSession(chatId, open, !core && !direct);
+  const coreDirect = useCoreDirectCallServerAdapter(chatId, open, coreDirectCall);
   const utils = trpc.useUtils();
   const coreQuery = trpc.chat.coreGroupNow.useQuery(
     { groupId: coreSession?.groupId ?? chatId },
@@ -88,6 +93,8 @@ export function useVoiceRoomServerAdapter({
       };
     }
   }, [coreQuery.data, coreSession]);
+
+  if (coreDirectCall) return coreDirect;
 
   if (!coreSession) {
     return {

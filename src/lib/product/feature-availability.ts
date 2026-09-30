@@ -26,6 +26,7 @@ export const PRODUCT_FEATURES = [
   "feed_recommendations",
   "core_rework_shell",
   "multi_room_groups",
+  "core_direct_calls",
   "saved_messages",
 ] as const;
 
@@ -127,6 +128,13 @@ export const FEATURE_AVAILABILITY = Object.freeze({
     platforms: CURRENT_PLATFORMS,
     channels: ALL_CHANNELS,
     serverCapability: "multi_room_groups",
+    fallbackHref: "/messages",
+  },
+  core_direct_calls: {
+    exposure: "hidden",
+    platforms: CURRENT_PLATFORMS,
+    channels: ["internal"],
+    serverCapability: "core_direct_calls",
     fallbackHref: "/messages",
   },
   saved_messages: {

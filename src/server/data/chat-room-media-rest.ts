@@ -161,6 +161,64 @@ export async function createGroupRoomMediaTokenRest(
   });
 }
 
+async function resolveCoreDirectCallMediaContext(sessionId: string, userId: string) {
+  const admin = getAdminClient();
+  const [{ data: session, error: sessionError }, { data: participant, error: participantError },
+    { data: user, error: userError }] = await Promise.all([
+    admin.from("live_sessions")
+      .select("conversation_id, provider_session_id, started_by, direct_recipient_id, status, ended_at")
+      .eq("id", sessionId).eq("kind", "direct_call").is("ended_at", null).maybeSingle(),
+    admin.from("live_session_participants").select("user_id")
+      .eq("session_id", sessionId).eq("user_id", userId).is("left_at", null).maybeSingle(),
+    admin.from("users").select("display_name").eq("id", userId).maybeSingle(),
+  ]);
+  if (sessionError) throw new Error(sessionError.message);
+  if (participantError) throw new Error(participantError.message);
+  if (userError) throw new Error(userError.message);
+  if (!session || !participant || ![session.started_by, session.direct_recipient_id].includes(userId)
+    || !["ringing", "active"].includes(session.status)) {
+    throw new Error("Медиасессия звонка недоступна");
+  }
+  const { data: membership, error: membershipError } = await admin.from("chat_members")
+    .select("user_id").eq("chat_id", session.conversation_id).eq("user_id", userId).maybeSingle();
+  if (membershipError) throw new Error(membershipError.message);
+  if (!membership) throw new Error("Медиасессия звонка недоступна");
+  const peerId = userId === session.started_by ? session.direct_recipient_id : session.started_by;
+  const { data: blocked, error: blockError } = await admin.from("user_blocks")
+    .select("blocker_id")
+    .or(`and(blocker_id.eq.${userId},blocked_id.eq.${peerId}),and(blocker_id.eq.${peerId},blocked_id.eq.${userId})`)
+    .limit(1);
+  if (blockError) throw new Error(blockError.message);
+  if (blocked?.length) throw new Error("Медиасессия звонка недоступна");
+  return {
+    roomName: `live-${session.provider_session_id}`,
+    displayName: user?.display_name ?? "Участник",
+  };
+}
+
+export async function createCoreDirectCallMediaTokenRest(sessionId: string, userId: string) {
+  const context = await resolveCoreDirectCallMediaContext(sessionId, userId);
+  return issueParticipantMediaToken({
+    ...context,
+    userId,
+    screenShareQuality: "standard",
+    tokenTtl: "10m",
+    leaseMs: CORE_MEDIA_LEASE_MS,
+    refreshAfterMs: CORE_MEDIA_REFRESH_AFTER_MS,
+  });
+}
+
+export async function createCoreDirectCallScreenAudioTokenRest(
+  sessionId: string, userId: string, screenSessionId: string,
+) {
+  const context = await resolveCoreDirectCallMediaContext(sessionId, userId);
+  return issueScreenAudioToken({
+    ...context, userId, screenSessionId,
+    tokenTtl: "10m", leaseMs: CORE_MEDIA_LEASE_MS,
+    refreshAfterMs: CORE_MEDIA_REFRESH_AFTER_MS,
+  });
+}
+
 export async function issueRoomGuestMediaTokenRest(input: {
   guestId: string;
   providerSessionId: string;

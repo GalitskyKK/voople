@@ -7,7 +7,7 @@ import { reportProductEvent } from "@/lib/telemetry/client";
 import type { MediaStatus } from "./voice-room-config";
 
 type RecoveryOptions = {
-  sessionKind: "legacy" | "core";
+  sessionKind: "legacy" | "core" | "core-direct";
   inside: boolean;
   roomRef: RefObject<Room | null>;
   clearAttachedMedia: () => void;

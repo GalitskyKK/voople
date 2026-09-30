@@ -315,6 +315,7 @@ export type ChatRoomParticipantView = {
 };
 
 export type ChatRoomView = {
+  sessionId?: string;
   status: "empty" | "ringing" | "active";
   accessMode: "open" | "locked";
   startedBy: string | null;
@@ -326,6 +327,7 @@ export type ChatRoomView = {
 
 export type IncomingCallView = {
   chatId: string;
+  coreSessionId?: string;
   chatName: string;
   chatType: "direct";
   startedAt: string;

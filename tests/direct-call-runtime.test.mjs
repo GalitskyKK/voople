@@ -93,3 +93,13 @@ test("incoming identity suppresses duplicate notices and expires stale ringing",
   assert.equal(matchesIncomingCall(call.startedAt, { ...ringing, status: "active" }, "callee"), false);
   assert.equal(matchesIncomingCall(call.startedAt, ringing, "caller"), false);
 });
+
+test("Core session identity stays distinct across repeated calls and replaces its legacy projection", async () => {
+  const { incomingCallKey, mergeIncomingCalls } = await load("src/lib/chat/direct-call-state.ts");
+  const first = { chatId: "dm", startedAt: "2026-09-29T10:00:00", coreSessionId: "session-1" };
+  const second = { ...first, coreSessionId: "session-2", startedAt: "2026-09-29T10:02:00" };
+  const legacyProjection = { chatId: first.chatId, startedAt: first.startedAt };
+  assert.notEqual(incomingCallKey(first), incomingCallKey(second));
+  assert.deepEqual(mergeIncomingCalls([first], [legacyProjection]), [first]);
+  assert.deepEqual(mergeIncomingCalls([first, second], [legacyProjection]), [second, first]);
+});

@@ -12,6 +12,7 @@ export function useVoiceRoomTermination(
   endReason: ChatRoomView["endReason"],
   disconnect: () => void,
   setError: Dispatch<SetStateAction<string | null>>,
+  onTerminal?: () => void,
 ) {
   const joinedRef = useRef(false);
 
@@ -24,5 +25,6 @@ export function useVoiceRoomTermination(
     joinedRef.current = false;
     disconnect();
     setError(getCallEndMessage(endReason));
-  }, [disconnect, endReason, fetching, inside, setError]);
+    onTerminal?.();
+  }, [disconnect, endReason, fetching, inside, onTerminal, setError]);
 }

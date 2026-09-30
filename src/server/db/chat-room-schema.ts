@@ -15,7 +15,8 @@ import { chats, messages, users } from "./schema";
 
 export type GroupRoomKind = "lobby" | "temporary" | "pinned";
 export type LiveSessionKind = "direct_call" | "group_room";
-export type LiveSessionStatus = "connecting" | "active" | "grace" | "ended";
+export type LiveSessionStatus = "connecting" | "ringing" | "active" | "grace" | "ended";
+export type DirectCallTerminalReason = "ended" | "declined" | "cancelled" | "missed";
 
 export const chatInvites = pgTable(
   "chat_invites",
@@ -142,6 +143,11 @@ export const liveSessions = pgTable(
     kind: varchar("kind", { length: 20 }).$type<LiveSessionKind>().notNull(),
     status: varchar("status", { length: 20 }).$type<LiveSessionStatus>().notNull().default("connecting"),
     startedBy: uuid("started_by").notNull().references(() => users.id, { onDelete: "restrict" }),
+    directRecipientId: uuid("direct_recipient_id").references(() => users.id, { onDelete: "restrict" }),
+    directRequestId: uuid("direct_request_id"),
+    ringExpiresAt: timestamp("ring_expires_at"),
+    acceptedAt: timestamp("accepted_at"),
+    terminalReason: varchar("terminal_reason", { length: 20 }).$type<DirectCallTerminalReason>(),
     startedAt: timestamp("started_at").notNull().defaultNow(),
     emptySince: timestamp("empty_since"),
     endedAt: timestamp("ended_at"),
@@ -156,6 +162,12 @@ export const liveSessions = pgTable(
       .where(sql`${t.roomId} IS NOT NULL AND ${t.endedAt} IS NULL`),
     activeDirectUnique: uniqueIndex("live_sessions_active_direct_unique")
       .on(t.conversationId)
+      .where(sql`${t.kind} = 'direct_call' AND ${t.endedAt} IS NULL`),
+    directRequestUnique: uniqueIndex("live_sessions_direct_request_unique")
+      .on(t.startedBy, t.directRequestId)
+      .where(sql`${t.kind} = 'direct_call'`),
+    directRecipientStateIdx: index("live_sessions_direct_recipient_state_idx")
+      .on(t.directRecipientId, t.ringExpiresAt)
       .where(sql`${t.kind} = 'direct_call' AND ${t.endedAt} IS NULL`),
   }),
 );

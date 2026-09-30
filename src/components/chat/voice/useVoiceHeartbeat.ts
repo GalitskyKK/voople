@@ -11,7 +11,7 @@ import { getMicrophoneMuted } from "./voice-room-config";
 export type VoiceHeartbeatTarget =
   | { kind: "legacy"; chatId: string }
   | {
-      kind: "core";
+      kind: "core" | "core-direct";
       sessionId: string;
       cameraEnabled: boolean;
       screenSharing: boolean;
@@ -24,14 +24,15 @@ export function useVoiceHeartbeat(
 ) {
   const { mutateAsync: sendLegacyHeartbeat } = trpc.chat.heartbeatRoom.useMutation();
   const { mutateAsync: sendCoreHeartbeat } = trpc.chat.coreHeartbeatRoom.useMutation();
+  const { mutateAsync: sendCoreDirectHeartbeat } = trpc.chat.coreDirectCallHeartbeat.useMutation();
   const pendingRef = useRef(false);
   const consecutiveFailuresRef = useRef(0);
   const [activeHealth, setActiveHealth] = useState<"healthy" | "degraded">("healthy");
   const targetKind = target.kind;
   const chatId = target.kind === "legacy" ? target.chatId : null;
-  const sessionId = target.kind === "core" ? target.sessionId : null;
-  const cameraEnabled = target.kind === "core" ? target.cameraEnabled : false;
-  const screenSharing = target.kind === "core" ? target.screenSharing : false;
+  const sessionId = target.kind !== "legacy" ? target.sessionId : null;
+  const cameraEnabled = target.kind !== "legacy" ? target.cameraEnabled : false;
+  const screenSharing = target.kind !== "legacy" ? target.screenSharing : false;
 
   const sendHeartbeat = useCallback(async () => {
     if (!inside || pendingRef.current) return;
@@ -39,8 +40,9 @@ export function useVoiceHeartbeat(
     try {
       const micMuted = getMicrophoneMuted(roomRef.current);
       traceVoiceMic("heartbeat.send", { micMuted, roomState: roomRef.current?.state ?? null, targetKind });
-      if (targetKind === "core" && sessionId) {
-        await sendCoreHeartbeat({
+      if ((targetKind === "core" || targetKind === "core-direct") && sessionId) {
+        const send = targetKind === "core" ? sendCoreHeartbeat : sendCoreDirectHeartbeat;
+        await send({
           sessionId,
           micMuted,
           cameraEnabled,
@@ -59,7 +61,7 @@ export function useVoiceHeartbeat(
     } finally {
       pendingRef.current = false;
     }
-  }, [cameraEnabled, chatId, inside, roomRef, screenSharing, sendCoreHeartbeat, sendLegacyHeartbeat, sessionId, targetKind]);
+  }, [cameraEnabled, chatId, inside, roomRef, screenSharing, sendCoreHeartbeat, sendCoreDirectHeartbeat, sendLegacyHeartbeat, sessionId, targetKind]);
 
   useEffect(() => {
     if (!inside) {

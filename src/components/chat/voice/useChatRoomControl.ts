@@ -46,6 +46,7 @@ export function useChatRoomControl(
     onStateChange,
     onLeaveConfirmed,
     coreSession,
+    coreDirectCall,
     initialCoreCredentials,
     onCoreRoomSwitch,
   }: ChatRoomControlProps,
@@ -86,24 +87,22 @@ export function useChatRoomControl(
     setLocalAvailable: video.setLocalScreenAvailable,
     setWatching: video.setWatchingScreenShare,
   });
-  const desktopAudio = useDesktopScreenAudioPublisher(
-    coreSession
-      ? { kind: "core", sessionId: coreSession.join.sessionId }
-      : { kind: "legacy", chatId },
-    screenSubscription.setExpectedLocalSessionId,
-  );
   const soundboard = useGroupSoundboard(chatId, chatType === "group", liveRoomRef);
   const runtime = useVoiceRoomRuntime({
     chatId,
     open,
     expectedStartedAt,
     coreSession,
+    coreDirectCall,
     initialCoreCredentials,
     roomRef: liveRoomRef,
     cameraEnabled: video.cameraEnabled,
     screenSharing: video.screenSharing,
   });
   const { server, value, active, inside, participants, participantCount, heartbeat } = runtime;
+  const desktopAudio = useDesktopScreenAudioPublisher(
+    runtime.screenAudioTarget, screenSubscription.setExpectedLocalSessionId,
+  );
   useEffect(() => {
     if (inside) joined();
     else if (!server.room.isLoading && !server.room.isFetching && !server.room.error) exited();
@@ -223,6 +222,7 @@ export function useChatRoomControl(
     value?.endReason ?? null,
     mediaConnection.disconnect,
     setMediaError,
+    coreDirectCall && value?.endReason ? () => onLeaveConfirmed?.(chatId, coreDirectCall.sessionId ?? null) : undefined,
   );
   useEffect(() => {
     setRecoveryConnectMedia(mediaConnection.connect);
@@ -254,7 +254,7 @@ export function useChatRoomControl(
   const { openRoom, closeRoom, leaveRoom, minimizePanel } = useVoiceRoomPresentationActions({
     dock: dockPresentation, inside, leavePending: sessionTransition === "leaving" || server.leave.isPending,
     chatId, chatType,
-    sessionId: coreSession?.join.sessionId ?? null,
+    sessionId: coreSession?.join.sessionId ?? coreDirectCall?.sessionId ?? null,
     resetSurface: resetSessionSurface, setMediaError,
     stopMicTest: devices.micTest.stop,
     parkMedia: video.parkVisibleMedia,

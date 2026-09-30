@@ -6,6 +6,7 @@ import type { GroupNowRoomTarget } from "@/types/group-now";
 
 import type { VoiceControlState } from "./voice-room-config";
 import type { VoiceSessionParticipants } from "@/types/voice-session-participants";
+import type { CoreDirectCallTarget } from "./useCoreDirectCallServerAdapter";
 
 export type ChatRoomControlProps = {
   chatId: string;
@@ -18,6 +19,7 @@ export type ChatRoomControlProps = {
   onParticipantsChange?: (value: VoiceSessionParticipants | null) => void;
   onLeaveConfirmed?: (chatId: string, sessionId: string | null) => void;
   coreSession?: CoreVoiceSessionDescriptor;
+  coreDirectCall?: CoreDirectCallTarget;
   initialCoreCredentials?: EnabledVoiceMediaCredentials;
   onCoreRoomSwitch?: (target: GroupNowRoomTarget) => void | Promise<void>;
 };

@@ -23,13 +23,14 @@ export function useDirectCallSounds(input: {
   const direct = input.chatType === "direct";
   const phase = getDirectCallPhase({ direct, room: input.room, starter: input.starter });
   const startedAt = input.room?.startedAt ?? null;
+  const sessionId = input.room?.sessionId ?? null;
   const endReason = input.room?.endReason ?? null;
   const progress = useRef<DirectCallSoundProgress>({ key: "", connected: false, resolved: false, observed: false });
 
   useEffect(() => {
     if (!direct) return;
     const next = advanceDirectCallSound(progress.current, {
-      key: startedAt ? `${input.chatId}:${startedAt}` : null,
+      key: sessionId ?? (startedAt ? `${input.chatId}:${startedAt}` : null),
       phase,
       mediaReady: input.inside && input.mediaConnected && input.participantCount >= 2,
       endReason,
@@ -37,7 +38,7 @@ export function useDirectCallSounds(input: {
     progress.current = next.progress;
     if (preferences.notificationSound && next.cue) void playProductSound(next.cue);
   }, [direct, endReason, input.chatId, input.inside, input.mediaConnected,
-    input.participantCount, phase, preferences.notificationSound, startedAt]);
+    input.participantCount, phase, preferences.notificationSound, sessionId, startedAt]);
 
   useEffect(() => {
     if (!direct || !preferences.notificationSound || !hasOutgoingCallLoop(phase)) return;

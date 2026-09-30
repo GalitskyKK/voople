@@ -1,4 +1,5 @@
 import type { IncomingCallView } from "@/types/chat";
+import { incomingCallKey } from "@/lib/chat/direct-call-state";
 
 import {
   notificationId,
@@ -12,7 +13,7 @@ export async function notifyIncomingCall(
   sound = true,
 ) {
   await showDesktopNotification({
-    id: notificationId(`call:${call.chatId}:${call.startedAt}`),
+    id: notificationId(`call:${incomingCallKey(call)}`),
     title: "Входящий звонок",
     body: `${call.caller.displayName} звонит вам в Voople`,
     href: `/messages/${call.chatId}`,

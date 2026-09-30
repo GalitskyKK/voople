@@ -25,6 +25,11 @@ export function WebVoiceSessionProvider({
           },
           onChange,
         )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "direct_call_signals" },
+          onChange,
+        )
         .subscribe((status) => {
           if (status === "SUBSCRIBED") onChange();
         });

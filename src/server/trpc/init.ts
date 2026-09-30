@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import superjson from "superjson"
 
 import { getVerifiedAuthIdentity, isTemporaryAuthError } from "@/lib/supabase/auth-claims"
+import { desktopRequestIdentity, desktopUpdateRequired, DESKTOP_UPDATE_REQUIRED, type DesktopRequestIdentity } from "@/lib/http/desktop-compatibility"
 import { createClient } from "@/lib/supabase/server"
 import type { Database } from "@/server/db"
 import { db } from "@/server/db"
@@ -16,6 +17,7 @@ export type TRPCContext = {
   db: Database | null
   supabase: SupabaseClient
   user: SessionUser | null
+  client: DesktopRequestIdentity
   getVerifiedUser: () => Promise<SessionUser | null>
 }
 
@@ -55,6 +57,7 @@ export const createTRPCContext = async (options?: {
     db,
     supabase,
     user: null,
+    client: desktopRequestIdentity(options?.request?.headers ?? new Headers(), process.env.NODE_ENV !== "production"),
     getVerifiedUser: () => {
       verifiedUserPromise ??= getVerifiedUser(supabase, accessToken)
       return verifiedUserPromise
@@ -87,6 +90,9 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   const user = await ctx.getVerifiedUser()
   if (!user) {
     throw new TRPCError({ code: "UNAUTHORIZED" })
+  }
+  if (desktopUpdateRequired(ctx.client, process.env.VOOPLE_MIN_DESKTOP_VERSION)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: DESKTOP_UPDATE_REQUIRED })
   }
   return next({
     ctx: {

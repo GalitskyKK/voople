@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 import { playProductSound } from "@/lib/sound/sound-playback";
-import { incomingCallExpiresAt, incomingCallKey, shouldNotifyIncomingCall, visibleIncomingCall } from "@/lib/chat/direct-call-state";
+import { incomingCallExpiresAt, incomingCallKey, mergeIncomingCalls, shouldNotifyIncomingCall, visibleIncomingCall } from "@/lib/chat/direct-call-state";
 import type { IncomingCallView } from "@/types/chat";
 
 export function useIncomingVoiceCalls({
@@ -13,11 +13,13 @@ export function useIncomingVoiceCalls({
   onAnswer,
   onIncomingCall,
   subscribeToVoiceRooms,
+  coreEnabled = false,
 }: {
   busy: boolean;
   onAnswer: (call: IncomingCallView) => void;
   onIncomingCall?: (call: IncomingCallView) => void;
   subscribeToVoiceRooms?: SubscribeToVoiceRooms;
+  coreEnabled?: boolean;
 }) {
   const [handledKey, setHandledKey] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -30,11 +32,20 @@ export function useIncomingVoiceCalls({
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
   });
+  const coreIncoming = trpc.chat.coreIncomingCalls.useQuery(undefined, {
+    enabled: coreEnabled,
+    refetchInterval: coreEnabled ? 10_000 : false,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+  });
   const decline = trpc.chat.declineCall.useMutation({
     onSuccess: () => void utils.chat.incomingCalls.invalidate(),
   });
+  const coreDecline = trpc.chat.coreFinishDirectCall.useMutation({
+    onSuccess: () => void utils.chat.coreIncomingCalls.invalidate(),
+  });
 
-  const firstCall = incoming.data?.[0] ?? null;
+  const firstCall = mergeIncomingCalls(coreIncoming.data ?? [], incoming.data ?? [])[0] ?? null;
   const firstCallKey = firstCall ? incomingCallKey(firstCall) : null;
   const visibleCall = visibleIncomingCall(firstCall, handledKey, now);
 
@@ -51,9 +62,14 @@ export function useIncomingVoiceCalls({
       () => {
         void utils.chat.incomingCalls.invalidate();
         void utils.chat.room.invalidate();
+        if (coreEnabled) {
+          void utils.chat.coreIncomingCalls.invalidate();
+          void utils.chat.coreDirectCallRoom.invalidate();
+          void utils.chat.coreMyDirectCall.invalidate();
+        }
       },
     );
-  }, [subscribeToVoiceRooms, utils]);
+  }, [coreEnabled, subscribeToVoiceRooms, utils]);
 
   useEffect(() => {
     if (!visibleCall || busy) return;
@@ -69,16 +85,13 @@ export function useIncomingVoiceCalls({
     if (busyKeyRef.current === key) return;
     busyKeyRef.current = key;
     setHandledKey(key);
-    decline.mutate(
-      { chatId: visibleCall.chatId, startedAt: visibleCall.startedAt },
-      {
-        onError: () => {
-          busyKeyRef.current = null;
-          setHandledKey(null);
-        },
-      },
-    );
-  }, [busy, decline, visibleCall]);
+    const onError = () => { busyKeyRef.current = null; setHandledKey(null); };
+    if (visibleCall.coreSessionId) {
+      coreDecline.mutate({ sessionId: visibleCall.coreSessionId }, { onError });
+    } else {
+      decline.mutate({ chatId: visibleCall.chatId, startedAt: visibleCall.startedAt }, { onError });
+    }
+  }, [busy, coreDecline, decline, visibleCall]);
 
   const answer = useCallback(() => {
     if (!visibleCall) return;
@@ -91,18 +104,19 @@ export function useIncomingVoiceCalls({
     const key = incomingCallKey(visibleCall);
     setHandledKey(key);
     try {
-      await decline.mutateAsync({ chatId: visibleCall.chatId, startedAt: visibleCall.startedAt });
+      if (visibleCall.coreSessionId) await coreDecline.mutateAsync({ sessionId: visibleCall.coreSessionId });
+      else await decline.mutateAsync({ chatId: visibleCall.chatId, startedAt: visibleCall.startedAt });
       if (preferences.notificationSound) void playProductSound("call.declined");
     } catch {
       setHandledKey(null);
     }
-  }, [decline, preferences.notificationSound, visibleCall]);
+  }, [coreDecline, decline, preferences.notificationSound, visibleCall]);
 
   return {
     answer,
     call: busy ? null : visibleCall,
     decline: reject,
-    declinePending: decline.isPending,
+    declinePending: decline.isPending || coreDecline.isPending,
   };
 }
 

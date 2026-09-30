@@ -1,8 +1,8 @@
-export async function downloadAccountExport(url: string, accessToken?: string) {
-  const response = await fetch(url, {
+export async function downloadAccountExport(url: string, accessToken?: string, extraHeaders: Record<string, string> = {}, request: typeof fetch = fetch) {
+  const response = await request(url, {
     method: "GET",
     credentials: "include",
-    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+    headers: { ...extraHeaders, ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => null) as { error?: string } | null;

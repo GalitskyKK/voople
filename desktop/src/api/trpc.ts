@@ -3,6 +3,7 @@ import type { AnyRouter } from "@trpc/server/unstable-core-do-not-import";
 import superjson from "superjson";
 
 import type { DesktopConfig } from "../config";
+import { desktopApiFetch, desktopRequestHeaders } from "./desktop-request";
 
 export function createDesktopTrpcClient(
   config: DesktopConfig,
@@ -13,10 +14,11 @@ export function createDesktopTrpcClient(
       httpBatchLink({
         url: `${config.apiUrl}/api/trpc`,
         transformer: superjson,
-        headers: () => {
+        headers: async () => {
           const accessToken = getAccessToken();
-          return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+          return { ...(await desktopRequestHeaders()), ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) };
         },
+        fetch: desktopApiFetch,
       }),
     ],
   });

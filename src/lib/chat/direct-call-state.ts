@@ -7,7 +7,15 @@ export function callStartedAtMs(startedAt: string): number {
 }
 
 export function incomingCallKey(call: IncomingCallView): string {
-  return `${call.chatId}:${call.startedAt}`;
+  return call.coreSessionId ?? `${call.chatId}:${call.startedAt}`;
+}
+
+export function mergeIncomingCalls(
+  core: IncomingCallView[], legacy: IncomingCallView[],
+): IncomingCallView[] {
+  const coreInstances = new Set(core.map((call) => `${call.chatId}:${call.startedAt}`));
+  return [...core, ...legacy.filter((call) => !coreInstances.has(`${call.chatId}:${call.startedAt}`))]
+    .sort((a, b) => incomingCallExpiresAt(b) - incomingCallExpiresAt(a));
 }
 
 export function incomingCallExpiresAt(call: IncomingCallView): number {

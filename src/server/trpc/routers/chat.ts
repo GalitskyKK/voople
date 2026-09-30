@@ -45,10 +45,12 @@ import {
 } from "@/server/services/client-telemetry.service";
 import { chatMessageProcedures } from "./chat-messages";
 import { chatCoreReworkProcedures } from "./chat-core-rework";
+import { chatCoreDirectCallProcedures } from "./chat-core-direct-calls";
 
 export const chatRouter = createTRPCRouter({
   ...chatMessageProcedures,
   ...chatCoreReworkProcedures,
+  ...chatCoreDirectCallProcedures,
   ...chatModerationProcedures,
   ...chatCommunityProcedures,
   ...chatGroupRoleProcedures,

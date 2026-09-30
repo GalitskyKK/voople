@@ -2,6 +2,7 @@ import type { Session } from "@supabase/supabase-js";
 
 import type { DesktopConfig } from "../config";
 import { readJsonResponse } from "@/lib/http/json-response";
+import { desktopApiFetch, desktopRequestHeaders } from "./desktop-request";
 
 type SyncUserResult = {
   created?: boolean;
@@ -14,9 +15,10 @@ export async function syncDesktopUser(
   config: DesktopConfig,
   session: Session,
 ): Promise<SyncUserResult> {
-  const response = await fetch(`${config.apiUrl}/api/auth/sync-user`, {
+  const response = await desktopApiFetch(`${config.apiUrl}/api/auth/sync-user`, {
     method: "POST",
     headers: {
+      ...(await desktopRequestHeaders()),
       Authorization: `Bearer ${session.access_token}`,
       "Content-Type": "application/json",
     },

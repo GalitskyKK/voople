@@ -8,6 +8,7 @@ import { assertJsonResponse } from "@/lib/http/json-response";
 import { trpc } from "@/lib/trpc/client";
 
 import type { DesktopConfig } from "../config";
+import { desktopApiFetch, desktopRequestHeaders } from "./desktop-request";
 
 function getHttpStatus(error: unknown) {
   if (!error || typeof error !== "object") return null;
@@ -52,11 +53,12 @@ export function DesktopTRPCProvider({
           httpBatchLink({
             url: `${config.apiUrl}/api/trpc`,
             transformer: superjson,
-            headers: () => ({
+            headers: async () => ({
+              ...(await desktopRequestHeaders()),
               Authorization: `Bearer ${session.access_token}`,
             }),
             fetch: async (url, options) =>
-              assertJsonResponse(await fetch(url, options)),
+              assertJsonResponse(await desktopApiFetch(url, options)),
           }),
         ],
       }),

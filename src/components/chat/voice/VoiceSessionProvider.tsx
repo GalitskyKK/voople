@@ -23,12 +23,14 @@ import type { ChatRoomControlHandle, VoiceControlState } from "../ChatRoomContro
 import { cn } from "@/lib/utils";
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 import { preloadProductSounds } from "@/lib/sound/sound-playback";
+import { trpc } from "@/lib/trpc/client";
 import { IncomingCallOverlay } from "./IncomingCallOverlay";
 import { LiveMoveHandoffBridge } from "./LiveMoveHandoffBridge";
 import { useIncomingVoiceCalls, type SubscribeToVoiceRooms } from "./useIncomingVoiceCalls";
 import { resolveVoiceConversationId } from "./voice-conversation-context";
 import { IDLE_VOICE_CONTROL_STATE } from "./voice-session-state";
 import { useVoiceParticipantSnapshot } from "./useVoiceParticipantSnapshot";
+import type { CoreDirectCallTarget } from "./useCoreDirectCallServerAdapter";
 const ChatRoomControl = lazy(() =>
   import("../ChatRoomControl").then((module) => ({
     default: module.ChatRoomControl,
@@ -43,6 +45,7 @@ export type VoiceSessionDescriptor = {
   chatType: "direct" | "group";
   expectedStartedAt?: string;
   coreSession?: CoreVoiceSessionDescriptor;
+  coreDirectCall?: CoreDirectCallTarget;
 };
 
 export type VoiceSessionContextValue = {
@@ -72,6 +75,12 @@ export function VoiceSessionProvider({
   allowCustomIncomingSound?: boolean;
 }) {
   const { preferences } = useAppPreferences();
+  const coreCapability = trpc.chat.coreDirectCallCapability.useQuery(undefined, { retry: false, staleTime: 60_000 });
+  const coreEnabled = coreCapability.data?.enabled === true;
+  const coreStartEnabled = coreCapability.data?.startEnabled === true;
+  const activeCoreCall = trpc.chat.coreMyDirectCall.useQuery(undefined, {
+    enabled: coreEnabled, retry: false, refetchInterval: coreEnabled ? 15_000 : false,
+  });
   useEffect(() => {
     const timer = window.setTimeout(() => { void preloadProductSounds(preferences.soundPack); }, 0);
     return () => window.clearTimeout(timer);
@@ -83,6 +92,20 @@ export function VoiceSessionProvider({
   const { participantDetails, handleParticipantsChange } = useVoiceParticipantSnapshot();
   const controlRef = useRef<ChatRoomControlHandle>(null);
   const autoConnectPendingRef = useRef(false);
+  useEffect(() => {
+    const call = activeCoreCall.data;
+    if (!coreEnabled || !call || activeSession) return;
+    if (call.status === "ringing" && !call.isCaller) return;
+    const timer = window.setTimeout(() => {
+      autoConnectPendingRef.current = true;
+      setState(IDLE_VOICE_CONTROL_STATE);
+      setActiveSession({
+        chatId: call.conversation_id, chatName: "Личный звонок", chatType: "direct",
+        coreDirectCall: { requestId: crypto.randomUUID(), sessionId: call.id },
+      });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [activeCoreCall.data, activeSession, coreEnabled]);
   const [initialCoreCredentials, setInitialCoreCredentials] = useState<EnabledVoiceMediaCredentials | null>(null);
   const handleControlRef = useCallback((control: ChatRoomControlHandle | null) => {
     controlRef.current = control;
@@ -101,25 +124,30 @@ export function VoiceSessionProvider({
 
   const openRoom = useCallback(
     (session: VoiceSessionDescriptor) => {
+      const target = session.chatType === "direct" && coreStartEnabled && !session.expectedStartedAt
+        ? { ...session, coreDirectCall: activeSession?.chatId === session.chatId
+          ? activeSession.coreDirectCall ?? { requestId: crypto.randomUUID() }
+          : { requestId: crypto.randomUUID() } }
+        : session;
       autoConnectPendingRef.current = false;
       setInitialCoreCredentials(null);
-      if (state.inside && activeSession?.coreSession) {
+      if (state.inside && (activeSession?.coreSession || activeSession?.coreDirectCall)) {
         controlRef.current?.open();
         return;
       }
-      if (state.inside && activeSession && activeSession.chatId !== session.chatId) {
+      if (state.inside && activeSession && activeSession.chatId !== target.chatId) {
         controlRef.current?.open();
         return;
       }
-      if (activeSession?.chatId !== session.chatId) {
+      if (activeSession?.chatId !== target.chatId) {
         setState(IDLE_VOICE_CONTROL_STATE);
-        setActiveSession(session);
+        setActiveSession(target);
       } else {
-        setActiveSession(session);
+        setActiveSession(target);
         controlRef.current?.open();
       }
     },
-    [activeSession, state.inside],
+    [activeSession, coreStartEnabled, state.inside],
   );
 
   const openCoreRoom = useCallback(
@@ -156,20 +184,25 @@ export function VoiceSessionProvider({
   });
 
   const joinRoom = useCallback((session: VoiceSessionDescriptor) => {
+    const target = session.chatType === "direct" && coreStartEnabled && !session.expectedStartedAt
+      ? { ...session, coreDirectCall: activeSession?.chatId === session.chatId
+        ? activeSession.coreDirectCall ?? { requestId: crypto.randomUUID() }
+        : { requestId: crypto.randomUUID() } }
+      : session;
     if (state.inside) {
       controlRef.current?.open();
-      return activeSession?.chatId === session.chatId;
+      return activeSession?.chatId === target.chatId;
     }
-    const existingControl = activeSession?.chatId === session.chatId
+    const existingControl = activeSession?.chatId === target.chatId
       ? controlRef.current
       : null;
     setInitialCoreCredentials(null);
     autoConnectPendingRef.current = !existingControl;
     if (!existingControl) setState(IDLE_VOICE_CONTROL_STATE);
-    setActiveSession(session);
+    setActiveSession(target);
     existingControl?.join();
     return true;
-  }, [activeSession?.chatId, state.inside]);
+  }, [activeSession, coreStartEnabled, state.inside]);
 
   const handleStateChange = useCallback((next: VoiceControlState) => {
     setState((current) =>
@@ -184,7 +217,7 @@ export function VoiceSessionProvider({
   }, []);
   const handleLeaveConfirmed = useCallback((chatId: string, sessionId: string | null) => {
     const current = activeSessionRef.current;
-    if (current?.chatId !== chatId || (current.coreSession?.join.sessionId ?? null) !== sessionId) return;
+    if (current?.chatId !== chatId || (current.coreSession?.join.sessionId ?? current.coreDirectCall?.sessionId ?? null) !== sessionId) return;
     activeSessionRef.current = null;
     autoConnectPendingRef.current = false;
     setInitialCoreCredentials(null);
@@ -217,6 +250,7 @@ export function VoiceSessionProvider({
   );
   const incoming = useIncomingVoiceCalls({
     busy: state.inside,
+    coreEnabled,
     onIncomingCall,
     subscribeToVoiceRooms,
     onAnswer: (call) => {
@@ -228,6 +262,9 @@ export function VoiceSessionProvider({
         chatName: call.chatName,
         chatType: call.chatType,
         expectedStartedAt: call.startedAt,
+        coreDirectCall: call.coreSessionId
+          ? { sessionId: call.coreSessionId, requestId: crypto.randomUUID() }
+          : undefined,
       });
     },
   });
@@ -246,7 +283,7 @@ export function VoiceSessionProvider({
           {activeSession ? (
             <Suspense fallback={null}>
               <ChatRoomControl
-                key={`${activeSession.chatId}:${activeSession.coreSession?.join.sessionId ?? activeSession.expectedStartedAt ?? "legacy"}`}
+                key={`${activeSession.chatId}:${activeSession.coreSession?.join.sessionId ?? activeSession.coreDirectCall?.sessionId ?? activeSession.expectedStartedAt ?? "legacy"}`}
                 ref={handleControlRef}
                 {...activeSession}
                 initialCoreCredentials={initialCoreCredentials ?? undefined}

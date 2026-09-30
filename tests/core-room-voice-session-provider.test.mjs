@@ -21,13 +21,13 @@ test("core Room launch enters the existing VoiceSessionProvider without persisti
   assert.doesNotMatch(provider, /initialCoreCredentialsRef/);
   assert.match(provider, /coreSession: \{/);
   assert.match(provider, /coreSession\?\.join\.sessionId/);
-  assert.match(provider, /state\.inside && activeSession\?\.coreSession/);
+  assert.match(provider, /state\.inside && \(activeSession\?\.coreSession \|\| activeSession\?\.coreDirectCall\)/);
   assert.match(provider, /useGroupNowRoomJoin/);
   assert.match(provider, /onCoreRoomSwitch=\{roomSwitch\.requestJoin\}/);
   assert.match(provider, /<GroupNowRoomSwitchDialog/);
   assert.doesNotMatch(provider, /setActiveSession\([^)]*credentials/s);
 
-  assert.match(adapter, /useVoiceRoomServerSession\(chatId, open, !core\)/);
+  assert.match(adapter, /useVoiceRoomServerSession\(chatId, open, !core && !direct\)/);
   assert.match(adapter, /buildCoreRoomVoiceView/);
   assert.match(adapter, /directory: \{[\s\S]*rooms: coreQuery\.data\?\.rooms \?\? \[coreSession\.room\]/);
   assert.match(adapter, /initialCredentialsRef\.current = null/);
@@ -40,5 +40,5 @@ test("core Room launch enters the existing VoiceSessionProvider without persisti
   assert.match(desktopAudio, /useScreenAudioToken\(target\)/);
   assert.match(screenAudioToken, /coreRoomScreenAudioToken\.useMutation/);
   assert.match(screenAudioToken, /targetKind === "core"/);
-  assert.match(controller, /kind: "core", sessionId: coreSession\.join\.sessionId/);
+  assert.match(runtime, /kind: "core" as const, sessionId: coreSession\.join\.sessionId/);
 });

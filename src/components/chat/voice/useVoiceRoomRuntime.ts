@@ -10,12 +10,14 @@ import type {
 
 import { useVoiceHeartbeat } from "./useVoiceHeartbeat";
 import { useVoiceRoomServerAdapter } from "./useVoiceRoomServerAdapter";
+import type { CoreDirectCallTarget } from "./useCoreDirectCallServerAdapter";
 
 export function useVoiceRoomRuntime({
   chatId,
   open,
   expectedStartedAt,
   coreSession,
+  coreDirectCall,
   initialCoreCredentials,
   roomRef,
   cameraEnabled,
@@ -25,6 +27,7 @@ export function useVoiceRoomRuntime({
   open: boolean;
   expectedStartedAt?: string;
   coreSession?: CoreVoiceSessionDescriptor;
+  coreDirectCall?: CoreDirectCallTarget;
   initialCoreCredentials?: EnabledVoiceMediaCredentials;
   roomRef: RefObject<Room | null>;
   cameraEnabled: boolean;
@@ -35,6 +38,7 @@ export function useVoiceRoomRuntime({
     open,
     expectedStartedAt,
     coreSession,
+    coreDirectCall,
     initialCoreCredentials,
   });
   const value = server.room.data;
@@ -43,7 +47,7 @@ export function useVoiceRoomRuntime({
   const heartbeat = useVoiceHeartbeat(
     server.heartbeatSessionId
       ? {
-          kind: "core",
+          kind: coreDirectCall ? "core-direct" : "core",
           sessionId: server.heartbeatSessionId,
           cameraEnabled,
           screenSharing,
@@ -55,6 +59,11 @@ export function useVoiceRoomRuntime({
 
   return {
     server,
+    screenAudioTarget: coreSession
+      ? { kind: "core" as const, sessionId: coreSession.join.sessionId }
+      : coreDirectCall
+        ? { kind: "core-direct" as const, sessionId: server.heartbeatSessionId ?? "" }
+        : { kind: "legacy" as const, chatId },
     value,
     inside,
     participants,

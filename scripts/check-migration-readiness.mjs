@@ -114,6 +114,15 @@ try {
     throw new Error("Friendship schema or RPCs are unavailable; apply 77-friendships.sql");
   }
 
+  const [{ charges, chargeResolver, rootGuard }] = await sql`
+    select to_regclass('public.group_charges')::text as "charges",
+      to_regprocedure('public.load_active_group_charges(uuid,timestamptz)')::text as "chargeResolver",
+      to_regprocedure('public.validate_group_charge_root()')::text as "rootGuard"
+  `;
+  if (!charges || !chargeResolver || !rootGuard) {
+    throw new Error("Group Grade foundation is unavailable; apply 79-group-grade-foundation.sql");
+  }
+
   console.log(`Migration readiness passed (${REQUIRED_MIGRATIONS.length} required migrations).`);
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));

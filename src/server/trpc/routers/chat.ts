@@ -37,6 +37,7 @@ import {
 } from "@/server/services/chat.service";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../init";
 import { chatCommunityProcedures } from "./chat-community";
+import { chatGroupGradeProcedures } from "./chat-group-grade";
 import { chatGroupRoleProcedures } from "./chat-group-roles";
 import { chatModerationProcedures } from "./chat-moderation";
 import {
@@ -53,6 +54,7 @@ export const chatRouter = createTRPCRouter({
   ...chatCoreDirectCallProcedures,
   ...chatModerationProcedures,
   ...chatCommunityProcedures,
+  ...chatGroupGradeProcedures,
   ...chatGroupRoleProcedures,
   invitePreview: publicProcedure
     .input(z.object({ token: z.string().min(5).max(100) }))

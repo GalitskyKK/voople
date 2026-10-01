@@ -472,15 +472,12 @@ Current **legacy runtime** group-boost semantics (technical migration context,
 not the accepted future charge-derived Grade contract in
 `docs/product-monetization.md`):
 
-- one active Voople+ account can allocate one boost to one root group;
-- allocating it elsewhere moves the existing assignment;
-- an expired subscription makes the assignment inactive immediately without
-  deleting historical configuration;
+- one active legacy Voople+ account can allocate three Boost slots;
+- slot reassignment has a seven-day cooldown; subscription expiry and capacity
+  loss can retain effective legacy perks through a 72-hour grace window;
 - effective perks are derived on read from active allocations;
-- owners/admins may save the group icon and description; the first active boost
-  unlocks the effective custom accent colour;
-- a stored group banner becomes effective at level 6 and a stored 2–5 character
-  tag at level 12. Losing the level hides the perk without deleting its value;
+- owners/admins may save baseline identity, accent colour, static banner and tag
+  without Boosts. Optional animated treatments use selected legacy perks;
 - avatar and banner keys are accepted only after ownership, object size, MIME
   and signature validation in the upload service. Data modules never trust a
   client-provided storage URL.
@@ -495,6 +492,38 @@ Changes to this legacy runtime must keep effective boosts derived from active
 allocations; do not add `is_boosted` or persist a level that can drift from
 subscriptions. Future Group Grades require a separate charge model and must
 not reuse the 1/3/6/12/24 boost ladder as their product contract.
+
+### Group Grade foundation
+
+`group_charges` (migration `79-group-grade-foundation.sql`) is independent of
+legacy Boosts. Persist grants and assignments, never Grade. The canonical
+`group-grade.service.ts` authorizes membership with `getChatMembershipRest`,
+including restricted-section access, then normalizes section context to the root
+Group. `group-charges-rest.ts` reads active grants through one SQL snapshot at
+one injected timestamp. Validity is `[valid_from, valid_until)` and revoked or
+unassigned charges do not contribute. Read/schema failures are errors, not Basic.
+
+`chat.groupGrade({ chatId })` returns only rootGroupId, activeChargeCount, grade,
+evaluatedAt, policyVersion and typed capability decisions. The derivation is
+0 → basic, 1–2 → grade_i, 3–4 → grade_ii, 5+ → grade_iii. Source references,
+contributors and payment details remain server-side. Group visibility is not a
+substitute for membership authorization.
+
+The schema permits at most one non-revoked included full-Voople+ charge per
+owner and separately permits standalone charges. It enforces unique source
+references, finite validity windows and root-Group-only assignments. Clients
+cannot read or write charge rows directly. There is no issuance/assignment API,
+billing adapter, subscription trigger, legacy conversion or Grade enforcement
+in this foundation. A future full-plan lifecycle adapter must revoke/expire
+included grants with their entitlement and enforce reassignment cooldowns;
+Voople+ Style must never issue an included charge. Existing subscription rows
+are not proof of this new full-plan grant.
+
+The versioned capability contract marks free core active and premium benefits
+unconfigured. It does not infer premium limits from legacy perks or alter
+governance authorization. Existing Groups with no charge records resolve to
+Basic. Legacy enforcement stays unchanged until a reviewed consumer migration;
+saved Group configuration/assets must survive all future Grade downgrades.
 
 ## 14. Database changes
 

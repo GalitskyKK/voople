@@ -37,4 +37,9 @@ Downgrade never deletes Group assets, identity, Room presets, vanity preference 
 
 The former `Group+ Day` and `Group+ Month` offers and 1/3/6/12/24 boost ladder are **legacy/deprecated product proposals**, not the accepted sales or Grade contract. Existing runtime boosts and entitlements remain technical migration context only; do not infer the new Grades from those legacy levels. `MONETIZATION.md` records historical strategy. Neither the trial nor the hypothetical prices should be hardcoded into domain logic.
 
-This PR changes documentation only. Billing, YooKassa, recurring payments, charges, Grade runtime, migrations, Group Night runtime and paywalls require separate implementation and review.
+The Group Grade runtime foundation stores independent charges and derives Grade
+through a protected member-only read API. It does not issue charges from existing
+subscriptions or convert legacy Boosts. Billing, YooKassa, recurring payments,
+charge issuance/reassignment, Group Night runtime and paywalls still require
+separate implementation and review. Premium Grade capabilities remain explicitly
+unconfigured until an accepted benefit matrix exists.

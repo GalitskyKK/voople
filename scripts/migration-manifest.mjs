@@ -38,6 +38,7 @@ export const REQUIRED_MIGRATIONS = Object.freeze([
   "78-core-direct-call-foundation.sql",
   "79-group-grade-foundation.sql",
   "80-personal-plan-grant-foundation.sql",
+  "81-legacy-commerce-rpc-privileges.sql",
 ]);
 
 // The ledger must exist before the feature migrations are replayed so every
@@ -82,4 +83,5 @@ export const RELEASE_APPLY_ORDER = Object.freeze([
   "78-core-direct-call-foundation.sql",
   "79-group-grade-foundation.sql",
   "80-personal-plan-grant-foundation.sql",
+  "81-legacy-commerce-rpc-privileges.sql",
 ]);

@@ -62,21 +62,23 @@ test("personal grants enforce uniqueness, actual privileges/RLS and exact bounda
         has_function_privilege($1, $3, 'EXECUTE') AS execute`, [role, `${schema}.personal_plan_grants`, `${schema}.load_active_personal_plan_grants(uuid,timestamptz)`]);
       assert.equal(tableAccess, kind === "service_role");
       assert.equal(execute, kind === "service_role");
-      await sql.begin(async (tx) => {
-        await tx.unsafe(`SET LOCAL ROLE "${role}"`);
-        if (kind === "service_role") {
+      if (kind === "service_role") {
+        await sql.begin(async (tx) => {
+          await tx.unsafe(`SET LOCAL ROLE "${role}"`);
           const [{ grants: trusted }] = await tx.unsafe(`SELECT "${schema}".load_active_personal_plan_grants($1, $2) AS grants`, [user, now]);
           assert.equal(trusted.length, 3);
           assert.equal((await tx.unsafe(`SELECT * FROM "${schema}".personal_plan_grants`)).length, 7);
-        } else {
-          await assert.rejects(tx.unsafe(`SELECT * FROM "${schema}".personal_plan_grants`), { code: "42501" });
-        }
-      });
-      if (kind !== "service_role") {
-        await sql.begin(async (tx) => {
-          await tx.unsafe(`SET LOCAL ROLE "${role}"`);
-          await assert.rejects(tx.unsafe(`SELECT "${schema}".load_active_personal_plan_grants($1, $2)`, [user, now]), { code: "42501" });
         });
+      } else {
+        // A denied statement aborts its transaction; assert the whole rejection.
+        await assert.rejects(sql.begin(async (tx) => {
+          await tx.unsafe(`SET LOCAL ROLE "${role}"`);
+          await tx.unsafe(`SELECT * FROM "${schema}".personal_plan_grants`);
+        }), { code: "42501" });
+        await assert.rejects(sql.begin(async (tx) => {
+          await tx.unsafe(`SET LOCAL ROLE "${role}"`);
+          await tx.unsafe(`SELECT "${schema}".load_active_personal_plan_grants($1, $2)`, [user, now]);
+        }), { code: "42501" });
       }
     }
     // Even an accidental SELECT grant cannot bypass RLS in a browser role.

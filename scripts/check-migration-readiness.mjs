@@ -123,6 +123,14 @@ try {
     throw new Error("Group Grade foundation is unavailable; apply 79-group-grade-foundation.sql");
   }
 
+  const [{ personalGrants, personalResolver }] = await sql`
+    select to_regclass('public.personal_plan_grants')::text as "personalGrants",
+      to_regprocedure('public.load_active_personal_plan_grants(uuid,timestamptz)')::text as "personalResolver"
+  `;
+  if (!personalGrants || !personalResolver) {
+    throw new Error("Personal-plan foundation is unavailable; apply 80-personal-plan-grant-foundation.sql");
+  }
+
   console.log(`Migration readiness passed (${REQUIRED_MIGRATIONS.length} required migrations).`);
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));

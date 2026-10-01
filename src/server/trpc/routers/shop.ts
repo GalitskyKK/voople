@@ -14,8 +14,10 @@ import {
 } from "@/server/services/shop.service";
 import { createTRPCRouter, protectedProcedure } from "../init";
 import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
+import { shopPersonalPlanProcedures } from "./shop-personal-plan";
 
 export const shopRouter = createTRPCRouter({
+  ...shopPersonalPlanProcedures,
   subscriptionStatus: protectedProcedure.query(async ({ ctx }) => {
     try {
       return await getSubscriptionStatus(ctx.user.id);

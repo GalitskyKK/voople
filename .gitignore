@@ -47,6 +47,7 @@
 !/docs/readme-assets/.gitkeep
 !/docs/readme-assets/*.webp
 /drizzle/*
+!/drizzle/80-personal-plan-grant-foundation.sql
 !/drizzle/79-group-grade-foundation.sql
 !/drizzle/77-friendships.sql
 !/drizzle/38-group-emojis.sql

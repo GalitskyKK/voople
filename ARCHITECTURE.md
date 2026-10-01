@@ -525,6 +525,28 @@ governance authorization. Existing Groups with no charge records resolve to
 Basic. Legacy enforcement stays unchanged until a reviewed consumer migration;
 saved Group configuration/assets must survive all future Grade downgrades.
 
+### Dormant personal-plan foundation
+
+`personal_plan_grants` (migration `80-personal-plan-grant-foundation.sql`)
+stores provider-neutral `style` / `full` grant facts independently of legacy
+`subscriptions`. The server-only adapter validates one SQL snapshot at one
+evaluation timestamp with `[valid_from, valid_until)` validity and no revoked
+grants. Database/schema failures propagate as errors. RLS and explicit grants
+restrict the table and snapshot function to trusted service-role access.
+
+`shop.personalPlanStatus()` is an authenticated self-only read with no input.
+It returns `coverage: { style, full }`, `simultaneousCoverage`, `evaluatedAt`
+and `policyVersion`. Both kinds may be covered at once; no effective selected
+plan, precedence, stacking or capability matrix is defined. Multiple grants
+of one kind resolve to a boolean coverage fact.
+
+There is no issuer, billing adapter, subscriber migration or entitlement
+consumer. Full coverage does not yet issue its included Group charge; Style
+must never issue that charge. Legacy Store/subscription behavior, YooKassa,
+payment fulfillment and Boosts remain active and unchanged. Plan overlap,
+upgrades/downgrades, carryover/proration, renewal, cancellation/refund/reversal,
+legacy migration and personal capabilities still require accepted contracts.
+
 ## 14. Database changes
 
 1. Update `src/server/db/schema.ts` or the owning `src/server/db/*-schema.ts`.

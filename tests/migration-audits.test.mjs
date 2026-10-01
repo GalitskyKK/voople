@@ -17,6 +17,7 @@ function audit(command, rows) {
       if (query.includes('to_regclass')) return [{registry:'ledger',requestsTable:'requests',friendshipsTable:'friendships',sendRequest:'send',respondRequest:'respond',blockCleanup:'cleanup',charges:'charges',chargeResolver:'resolver',rootGuard:'guard',personalGrants:'grants',personalResolver:'resolver'}];
       if (query.includes('relreplident')) return [{replicaIdentity:'f'}];
       if (query.includes('pg_get_functiondef')) return [{directChatDefinition:'connection_request_scope privacy_scope_allows'}];
+      if (query.includes('has_function_privilege')) return [];
       throw new Error('Unexpected query');
     };
     sql.end = async () => {};

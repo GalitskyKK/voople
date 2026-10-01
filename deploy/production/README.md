@@ -52,6 +52,14 @@ updates records. These gates still do not certify the missing commerce foundatio
 
 ### Transaction compatibility audit at PR #67
 
+Migration `81-legacy-commerce-rpc-privileges.sql` changes only EXECUTE privileges
+on six exact attested legacy RPC signatures. Missing functions are skipped, not
+created or adopted. It removes PUBLIC/anon/authenticated execution and grants
+service_role execution; function owners retain their normal owner privileges.
+Release readiness checks effective browser/service privileges and PUBLIC ACLs
+for any of these signatures that exist, including inherited browser access.
+It does not certify legacy function bodies or complete commerce reproducibility.
+
 All 39 tracked required migrations (38, 39, 43 and 45–80) support one transaction
 per file on PostgreSQL 12 or newer. None uses concurrent index operations, VACUUM,
 database creation, ALTER SYSTEM, or explicit transaction control. Function-body

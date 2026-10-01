@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import postgres from "postgres";
 
 import { REQUIRED_MIGRATIONS } from "./migration-manifest.mjs";
+import { assertLegacyCommerceRpcPrivileges } from "./legacy-commerce-rpc-privileges.mjs";
 import {
   acceptedMigrationChecksums,
   migrationChecksum,
@@ -130,6 +131,8 @@ try {
   if (!personalGrants || !personalResolver) {
     throw new Error("Personal-plan foundation is unavailable; apply 80-personal-plan-grant-foundation.sql");
   }
+
+  await assertLegacyCommerceRpcPrivileges(sql);
 
   console.log(`Migration readiness passed (${REQUIRED_MIGRATIONS.length} required migrations).`);
 } catch (error) {

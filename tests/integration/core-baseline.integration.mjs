@@ -1,11 +1,16 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import test from "node:test";
 import postgres from "postgres";
 import { applyMigration } from "../../scripts/migration-runner.mjs";
 import { migrationChecksum } from "../../scripts/migration-checksum.mjs";
 import { RELEASE_APPLY_ORDER } from "../../scripts/migration-manifest.mjs";
 import { assertCoreBaselineReadiness, coreBaselineValidationSql } from "../../scripts/core-baseline-readiness.mjs";
+import { assertCommercePrerequisiteReadiness } from "../../scripts/commerce-prerequisite-readiness.mjs";
+import { assertLegacyCommerceRpcPrivileges } from "../../scripts/legacy-commerce-rpc-privileges.mjs";
+import { ensureTestRoles } from "./helpers/test-roles.mjs";
 
 const databaseUrl = process.env.VOOPLE_TEST_DATABASE_URL?.trim();
 if (process.env.CI === "true" && !databaseUrl) throw new Error("CI requires VOOPLE_TEST_DATABASE_URL; no production fallback");
@@ -24,9 +29,7 @@ async function disposable(run) {
   const admin = postgres(databaseUrl, { max: 1, prepare: false, connect_timeout: 5 });
   let sql;
   try {
-    for (const role of ["anon", "authenticated", "service_role"]) {
-      await admin.unsafe(`DO $$ BEGIN CREATE ROLE ${role} NOLOGIN ${role === "service_role" ? "BYPASSRLS" : "NOBYPASSRLS"}; EXCEPTION WHEN duplicate_object THEN NULL; END $$`);
-    }
+    await ensureTestRoles(admin);
     await admin.unsafe(`CREATE DATABASE ${name} TEMPLATE template0`);
     url.pathname = `/${name}`;
     sql = postgres(url.toString(), { max: 1, prepare: false, connect_timeout: 5,
@@ -38,7 +41,7 @@ async function disposable(run) {
       GRANT USAGE ON SCHEMA auth, public TO anon, authenticated, service_role;
       GRANT EXECUTE ON FUNCTION auth.uid() TO anon, authenticated, service_role;`);
     const apply = file => applyMigration(sql, { file, source: sources.get(file), releaseVersion: "core-baseline-test" });
-    await run(sql, apply);
+    await run(sql, apply, url.toString());
   } finally {
     if (sql) await sql.end({ timeout: 5 });
     await admin.unsafe(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
@@ -72,7 +75,7 @@ async function installEvolved(sql) {
 }
 
 const options = { skip: databaseUrl ? false : "VOOPLE_TEST_DATABASE_URL absent; no production fallback", timeout: 120_000 };
-test("fresh 45 -> 82 -> unchanged 38..50; exact commerce boundary; immutable ledger", options, () => disposable(async (sql, apply) => {
+test("fresh entire 45 -> 82 -> 83 -> unchanged 38..81; readiness; immutable ledger", options, () => disposable(async (sql, apply, testUrl) => {
   await apply("45-app-schema-migrations.sql");
   await apply(baseline);
   assert.equal((await sql`select count(*)::integer as n from pg_class where relnamespace='public'::regnamespace and relkind='r'`)[0].n, 16);
@@ -86,11 +89,26 @@ test("fresh 45 -> 82 -> unchanged 38..50; exact commerce boundary; immutable led
   assert.deepEqual(await sql`select * from app_schema_migrations order by id`, ledger);
   assert.equal(ledger.find(r => r.id === baseline).checksum, migrationChecksum(sources.get(baseline)));
   await assert.rejects(applyMigration(sql, {file: baseline, source: sources.get(baseline) + "\n-- drift",releaseVersion:"changed"}), /checksum mismatch/);
-  for (const file of RELEASE_APPLY_ORDER.slice(2,10)) assert.equal((await apply(file)).status, "applied");
-  await assert.rejects(apply("51-group-perk-allocations.sql"), error => error.code === "42P01" && /group_boosts/.test(error.message));
-  assert.equal((await sql`select to_regclass('public.group_perk_allocations') as object`)[0].object, null);
-  assert.equal((await sql`select count(*)::integer as n from app_schema_migrations where id='51-group-perk-allocations.sql'`)[0].n, 0);
-  for (const name of ["subscriptions", "group_boosts", "group_customization", "payment_intents", "group_charges", "personal_plan_grants"]) {
+  for (const file of RELEASE_APPLY_ORDER.slice(2)) assert.equal((await apply(file)).status, "applied", file);
+  await assertCoreBaselineReadiness(sql);
+  await assertCommercePrerequisiteReadiness(sql);
+  await assertLegacyCommerceRpcPrivileges(sql);
+  // Local/CI test TLS is optional. All catalog readiness contracts run above;
+  // when TLS is available also exercise the unchanged operational CLI end-to-end.
+  const [{ tlsAvailable }] = await sql`select current_setting('ssl')='on' as "tlsAvailable"`;
+  if (tlsAvailable) {
+    const { stdout } = await promisify(execFile)(process.execPath, ["scripts/check-migration-readiness.mjs"], {
+      env: { ...process.env, DIRECT_URL: testUrl, DATABASE_URL: testUrl }, timeout: 80_000,
+    });
+    assert.match(stdout,/Migration readiness passed/);
+  }
+  assert.equal((await sql`select count(*)::integer as n from app_schema_migrations`)[0].n, RELEASE_APPLY_ORDER.length);
+  const completeLedger = await sql`select * from app_schema_migrations order by id`;
+  for (const file of RELEASE_APPLY_ORDER) assert.equal((await apply(file)).status, "already-applied", file);
+  assert.deepEqual(await sql`select * from app_schema_migrations order by id`, completeLedger);
+  assert.equal((await sql`select group_effective_boost_capacity('00000000-0000-0000-0000-000000000002') as n`)[0].n, 0);
+  assert.equal((await sql`select group_perk_is_active('00000000-0000-0000-0000-000000000002','hd'::varchar) as active`)[0].active, false);
+  for (const name of ["shop_items", "user_inventory", "profile_customization", "user_wallets", "wallet_transactions", "payment_intents", "subscription_fulfillments", "promo_codes", "promo_redemptions"]) {
     assert.equal((await sql`select to_regclass(${`public.${name}`}) as object`)[0].object, null);
   }
 }));

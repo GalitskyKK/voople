@@ -2,12 +2,16 @@
 
 ## Migration execution contract
 
-The core baseline is ordered **45 -> 82 -> 38**, with a future separate commerce
-prerequisite still needed before 51. Do not replay historical bootstrap SQL or
-claim full fresh-chain reproducibility yet. 82 creates pre-38 core objects only
-when absent and validates evolved installations without repairs/data rewrites.
+The prerequisite order is **45 -> 82 -> 83 -> 38 -> 39 -> 43 -> 46..81**.
+Do not replay historical bootstrap SQL. 82 creates pre-38 core objects only
+when absent; 83 supplies the attested legacy commerce prerequisite. Both validate
+existing installations without repairs/data rewrites. The complete tracked chain
+is proven from empty on disposable PostgreSQL 16 with the minimal Supabase shim.
 See [core baseline contracts](../../docs/core-baseline-compatibility.md) for
 platform prerequisites, read-only readiness, provenance and PostgreSQL proof.
+See [commerce prerequisite contracts](../../docs/commerce-prerequisite-compatibility.md)
+for the exact evolved schema and legacy access contract. Ledger adoption remains
+a separate operational prerequisite for installations with legacy-detected rows.
 
 Release migrations are the tracked SQL allowlisted in
 `scripts/migration-manifest.mjs`. Apply one explicitly:

@@ -1,0 +1,586 @@
+{
+  "evidenceCapturedAt": "2026-10-01T11:09:53.405Z",
+  "evidenceLfSha256": "240022b707ec3e9a6473733e26a5c31cbe775bacbe66957795959c9b567a71db",
+  "labels": [
+    "plus",
+    "pro"
+  ],
+  "tables": [
+    {
+      "name": "subscriptions",
+      "columns": [
+        [
+          "user_id",
+          "uuid",
+          false,
+          null
+        ],
+        [
+          "tier",
+          "public.subscription_tier",
+          false,
+          null
+        ],
+        [
+          "started_at",
+          "timestamp without time zone",
+          false,
+          "now()"
+        ],
+        [
+          "expires_at",
+          "timestamp without time zone",
+          false,
+          null
+        ],
+        [
+          "payment_provider",
+          "character varying(50)",
+          false,
+          null
+        ],
+        [
+          "external_id",
+          "character varying(200)",
+          false,
+          null
+        ]
+      ],
+      "constraints": [
+        [
+          "subscriptions_pkey",
+          "PRIMARY KEY (user_id)",
+          "p"
+        ],
+        [
+          "subscriptions_user_id_users_id_fk",
+          "FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE",
+          "f"
+        ]
+      ],
+      "indexes": [
+        [
+          "subscriptions_pkey",
+          "CREATE UNIQUE INDEX subscriptions_pkey ON public.subscriptions USING btree (user_id)",
+          true,
+          true,
+          null
+        ]
+      ],
+      "policies": [
+        {
+          "name": "subscriptions_select_own",
+          "command": "r",
+          "permissive": true,
+          "roles": [
+            "PUBLIC"
+          ],
+          "using_expression": "(auth.uid() = user_id)",
+          "check_expression": null
+        }
+      ],
+      "grants": [
+        [
+          "anon",
+          "INSERT"
+        ],
+        [
+          "anon",
+          "SELECT"
+        ],
+        [
+          "anon",
+          "UPDATE"
+        ],
+        [
+          "anon",
+          "DELETE"
+        ],
+        [
+          "anon",
+          "TRUNCATE"
+        ],
+        [
+          "anon",
+          "REFERENCES"
+        ],
+        [
+          "anon",
+          "TRIGGER"
+        ],
+        [
+          "authenticated",
+          "INSERT"
+        ],
+        [
+          "authenticated",
+          "SELECT"
+        ],
+        [
+          "authenticated",
+          "UPDATE"
+        ],
+        [
+          "authenticated",
+          "DELETE"
+        ],
+        [
+          "authenticated",
+          "TRUNCATE"
+        ],
+        [
+          "authenticated",
+          "REFERENCES"
+        ],
+        [
+          "authenticated",
+          "TRIGGER"
+        ],
+        [
+          "service_role",
+          "INSERT"
+        ],
+        [
+          "service_role",
+          "SELECT"
+        ],
+        [
+          "service_role",
+          "UPDATE"
+        ],
+        [
+          "service_role",
+          "DELETE"
+        ],
+        [
+          "service_role",
+          "TRUNCATE"
+        ],
+        [
+          "service_role",
+          "REFERENCES"
+        ],
+        [
+          "service_role",
+          "TRIGGER"
+        ]
+      ]
+    },
+    {
+      "name": "group_boosts",
+      "columns": [
+        [
+          "user_id",
+          "uuid",
+          false,
+          null
+        ],
+        [
+          "chat_id",
+          "uuid",
+          true,
+          null
+        ],
+        [
+          "created_at",
+          "timestamp with time zone",
+          false,
+          "now()"
+        ],
+        [
+          "slot",
+          "smallint",
+          false,
+          null
+        ],
+        [
+          "assigned_at",
+          "timestamp with time zone",
+          false,
+          null
+        ],
+        [
+          "moved_at",
+          "timestamp with time zone",
+          false,
+          null
+        ],
+        [
+          "idempotency_key",
+          "uuid",
+          false,
+          null
+        ]
+      ],
+      "constraints": [
+        [
+          "group_boosts_chat_id_fkey",
+          "FOREIGN KEY (chat_id) REFERENCES public.chats(id) ON DELETE CASCADE",
+          "f"
+        ],
+        [
+          "group_boosts_slot_check",
+          "CHECK (slot >= 1 AND slot <= 3)",
+          "c"
+        ],
+        [
+          "group_boosts_user_id_fkey",
+          "FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE",
+          "f"
+        ]
+      ],
+      "indexes": [
+        [
+          "group_boosts_chat_idx",
+          "CREATE INDEX group_boosts_chat_idx ON public.group_boosts USING btree (chat_id)",
+          false,
+          false,
+          null
+        ],
+        [
+          "group_boosts_idempotency_unique",
+          "CREATE UNIQUE INDEX group_boosts_idempotency_unique ON public.group_boosts USING btree (user_id, idempotency_key)",
+          false,
+          true,
+          null
+        ],
+        [
+          "group_boosts_user_slot_unique",
+          "CREATE UNIQUE INDEX group_boosts_user_slot_unique ON public.group_boosts USING btree (user_id, slot)",
+          false,
+          true,
+          null
+        ]
+      ],
+      "policies": [],
+      "grants": [
+        [
+          "anon",
+          "INSERT"
+        ],
+        [
+          "anon",
+          "SELECT"
+        ],
+        [
+          "anon",
+          "UPDATE"
+        ],
+        [
+          "anon",
+          "DELETE"
+        ],
+        [
+          "anon",
+          "TRUNCATE"
+        ],
+        [
+          "anon",
+          "REFERENCES"
+        ],
+        [
+          "anon",
+          "TRIGGER"
+        ],
+        [
+          "authenticated",
+          "INSERT"
+        ],
+        [
+          "authenticated",
+          "SELECT"
+        ],
+        [
+          "authenticated",
+          "UPDATE"
+        ],
+        [
+          "authenticated",
+          "DELETE"
+        ],
+        [
+          "authenticated",
+          "TRUNCATE"
+        ],
+        [
+          "authenticated",
+          "REFERENCES"
+        ],
+        [
+          "authenticated",
+          "TRIGGER"
+        ],
+        [
+          "service_role",
+          "INSERT"
+        ],
+        [
+          "service_role",
+          "SELECT"
+        ],
+        [
+          "service_role",
+          "UPDATE"
+        ],
+        [
+          "service_role",
+          "DELETE"
+        ],
+        [
+          "service_role",
+          "TRUNCATE"
+        ],
+        [
+          "service_role",
+          "REFERENCES"
+        ],
+        [
+          "service_role",
+          "TRIGGER"
+        ]
+      ]
+    },
+    {
+      "name": "group_customization",
+      "columns": [
+        [
+          "chat_id",
+          "uuid",
+          false,
+          null
+        ],
+        [
+          "description",
+          "character varying(160)",
+          true,
+          null
+        ],
+        [
+          "icon",
+          "character varying(16)",
+          true,
+          null
+        ],
+        [
+          "accent_color",
+          "character varying(7)",
+          true,
+          null
+        ],
+        [
+          "updated_at",
+          "timestamp with time zone",
+          false,
+          "now()"
+        ],
+        [
+          "public_slug",
+          "character varying(32)",
+          true,
+          null
+        ],
+        [
+          "avatar_key",
+          "character varying(512)",
+          true,
+          null
+        ],
+        [
+          "boost_grace_until",
+          "timestamp with time zone",
+          true,
+          null
+        ],
+        [
+          "boost_grace_level",
+          "smallint",
+          true,
+          null
+        ],
+        [
+          "banner_key",
+          "character varying(512)",
+          true,
+          null
+        ],
+        [
+          "tag",
+          "character varying(5)",
+          true,
+          null
+        ],
+        [
+          "vanity_invite_slug",
+          "character varying(32)",
+          true,
+          null
+        ],
+        [
+          "owner_role_color",
+          "character varying(7)",
+          true,
+          null
+        ],
+        [
+          "admin_role_color",
+          "character varying(7)",
+          true,
+          null
+        ],
+        [
+          "member_role_color",
+          "character varying(7)",
+          true,
+          null
+        ]
+      ],
+      "constraints": [
+        [
+          "group_customization_accent_check",
+          "CHECK (accent_color IS NULL OR accent_color::text ~ '^#[0-9A-Fa-f]{6}$'::text)",
+          "c"
+        ],
+        [
+          "group_customization_chat_id_fkey",
+          "FOREIGN KEY (chat_id) REFERENCES public.chats(id) ON DELETE CASCADE",
+          "f"
+        ],
+        [
+          "group_customization_pkey",
+          "PRIMARY KEY (chat_id)",
+          "p"
+        ],
+        [
+          "group_customization_public_slug_check",
+          "CHECK (public_slug IS NULL OR public_slug::text ~ '^[a-z0-9_]{5,32}$'::text)",
+          "c"
+        ],
+        [
+          "group_customization_role_colors_check",
+          "CHECK ((owner_role_color IS NULL OR owner_role_color::text ~ '^#[0-9a-fA-F]{6}$'::text) AND (admin_role_color IS NULL OR admin_role_color::text ~ '^#[0-9a-fA-F]{6}$'::text) AND (member_role_color IS NULL OR member_role_color::text ~ '^#[0-9a-fA-F]{6}$'::text))",
+          "c"
+        ],
+        [
+          "group_customization_tag_format_check",
+          "CHECK (tag IS NULL OR tag::text ~ '^[[:alnum:]]{2,5}$'::text)",
+          "c"
+        ],
+        [
+          "group_customization_vanity_invite_slug_format_check",
+          "CHECK (vanity_invite_slug IS NULL OR vanity_invite_slug::text ~ '^[a-z0-9_]{5,32}$'::text)",
+          "c"
+        ]
+      ],
+      "indexes": [
+        [
+          "group_customization_pkey",
+          "CREATE UNIQUE INDEX group_customization_pkey ON public.group_customization USING btree (chat_id)",
+          true,
+          true,
+          null
+        ],
+        [
+          "group_customization_public_slug_unique",
+          "CREATE UNIQUE INDEX group_customization_public_slug_unique ON public.group_customization USING btree (public_slug) WHERE (public_slug IS NOT NULL)",
+          false,
+          true,
+          "(public_slug IS NOT NULL)"
+        ],
+        [
+          "group_customization_vanity_invite_slug_unique",
+          "CREATE UNIQUE INDEX group_customization_vanity_invite_slug_unique ON public.group_customization USING btree (vanity_invite_slug) WHERE (vanity_invite_slug IS NOT NULL)",
+          false,
+          true,
+          "(vanity_invite_slug IS NOT NULL)"
+        ]
+      ],
+      "policies": [],
+      "grants": [
+        [
+          "anon",
+          "INSERT"
+        ],
+        [
+          "anon",
+          "SELECT"
+        ],
+        [
+          "anon",
+          "UPDATE"
+        ],
+        [
+          "anon",
+          "DELETE"
+        ],
+        [
+          "anon",
+          "TRUNCATE"
+        ],
+        [
+          "anon",
+          "REFERENCES"
+        ],
+        [
+          "anon",
+          "TRIGGER"
+        ],
+        [
+          "authenticated",
+          "INSERT"
+        ],
+        [
+          "authenticated",
+          "SELECT"
+        ],
+        [
+          "authenticated",
+          "UPDATE"
+        ],
+        [
+          "authenticated",
+          "DELETE"
+        ],
+        [
+          "authenticated",
+          "TRUNCATE"
+        ],
+        [
+          "authenticated",
+          "REFERENCES"
+        ],
+        [
+          "authenticated",
+          "TRIGGER"
+        ],
+        [
+          "service_role",
+          "INSERT"
+        ],
+        [
+          "service_role",
+          "SELECT"
+        ],
+        [
+          "service_role",
+          "UPDATE"
+        ],
+        [
+          "service_role",
+          "DELETE"
+        ],
+        [
+          "service_role",
+          "TRUNCATE"
+        ],
+        [
+          "service_role",
+          "REFERENCES"
+        ],
+        [
+          "service_role",
+          "TRIGGER"
+        ]
+      ]
+    }
+  ]
+}

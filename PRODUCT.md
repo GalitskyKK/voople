@@ -124,6 +124,12 @@ convert legacy Boost assignments, or implement billing. Existing Groups without
 new charges resolve to Basic. Premium Grade benefits remain unconfigured until
 their capability matrix is accepted; free-core access and governance stay unchanged.
 
+The personal-plan foundation stores independent Style/full grant facts and
+exposes only an authenticated self read. Simultaneous coverage is representable
+without selecting an effective plan. No issuer, billing adapter, subscriber
+migration, included Group charge issuance or entitlement consumer is connected.
+Current Store/subscription behavior and free-core access remain unchanged.
+
 ## Beta evidence and quality
 
 Primary evidence is a second useful session by the same Group, weekly

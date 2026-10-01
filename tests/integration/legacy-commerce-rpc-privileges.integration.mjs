@@ -83,7 +83,8 @@ test("legacy commerce privilege migration preserves bodies, removes browser/PUBL
           }
         }
         const after = await snapshot();
-        assert.deepEqual(after.map(({ acl: _acl, ...row }) => row), before.map(({ acl: _acl, ...row }) => row));
+        const withoutAcl = ({ signature, definition, proowner, proconfig }) => ({ signature, definition, proowner, proconfig });
+        assert.deepEqual(after.map(withoutAcl), before.map(withoutAcl));
         assert.equal(after.filter(r => canonicalUntouched.includes(r.signature)).length, untouched.length);
         assert.deepEqual(after.filter(r => canonicalUntouched.includes(r.signature)), before.filter(r => canonicalUntouched.includes(r.signature)));
         const records = await sql.unsafe(`SELECT * FROM "${schema}".app_schema_migrations ORDER BY id`);

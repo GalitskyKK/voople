@@ -5,6 +5,7 @@ import postgres from "postgres";
 import { applyMigration } from "../../scripts/migration-runner.mjs";
 import { migrationChecksum } from "../../scripts/migration-checksum.mjs";
 import { assertCommercePrerequisiteReadiness } from "../../scripts/commerce-prerequisite-readiness.mjs";
+import { ensureTestRoles } from "./helpers/test-roles.mjs";
 
 const databaseUrl = process.env.VOOPLE_TEST_DATABASE_URL?.trim();
 if (process.env.CI === "true" && !databaseUrl) throw new Error("CI requires VOOPLE_TEST_DATABASE_URL; no production fallback");
@@ -22,9 +23,7 @@ async function disposable(run) {
   const admin = postgres(databaseUrl, { max: 1, prepare: false, connect_timeout: 5 });
   let sql;
   try {
-    for (const role of ["anon", "authenticated", "service_role"]) {
-      await admin.unsafe(`DO $$ BEGIN CREATE ROLE ${role} NOLOGIN ${role === "service_role" ? "BYPASSRLS" : "NOBYPASSRLS"}; EXCEPTION WHEN duplicate_object THEN NULL; END $$`);
-    }
+    await ensureTestRoles(admin);
     await admin.unsafe(`CREATE DATABASE ${name} TEMPLATE template0`);
     url.pathname = `/${name}`;
     sql = postgres(url.toString(), { max: 1, prepare: false, connect_timeout: 5,

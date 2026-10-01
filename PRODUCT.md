@@ -117,6 +117,13 @@ one Group charge, additional charges contribute to a Group's Grade, and Group
 Night is a temporary acquisition trial. These are not beta billing entitlements.
 The former Group+ Day/Month and boost ladder proposals are deprecated.
 
+The Group Grade foundation persists independent charge grants and derives
+Basic / Grade I / Grade II / Grade III from 0 / 1–2 / 3–4 / 5+ active charges.
+Its member-only read API does not issue charges from existing subscriptions,
+convert legacy Boost assignments, or implement billing. Existing Groups without
+new charges resolve to Basic. Premium Grade benefits remain unconfigured until
+their capability matrix is accepted; free-core access and governance stay unchanged.
+
 ## Beta evidence and quality
 
 Primary evidence is a second useful session by the same Group, weekly

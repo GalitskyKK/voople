@@ -559,6 +559,16 @@ legacy migration and personal capabilities still require accepted contracts.
 Migrations are intentionally deployed separately. A successful TypeScript build
 does not mean production has the required database objects.
 
+Release SQL is allowlisted by `scripts/migration-manifest.mjs`. Manual application
+requires one explicit filename: `npm run db:apply -- <migration-file.sql>`.
+Directory contents are not migration authority; ignored historical/reset/seed
+SQL is never implicitly replayed. Matching ledger records are skipped only after
+checksum verification; drift and unverified `legacy-detected` records fail closed.
+Normal application never rewrites recorded checksums, versions or timestamps.
+Each pending migration and its ledger insert commit in one transaction, including
+migration 45's bootstrap. See `deploy/production/README.md` for operational details
+and the transaction compatibility audit.
+
 ## 15. Component checklist
 
 Before adding a component:

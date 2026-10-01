@@ -31,7 +31,7 @@ if (!supabaseUrl || !serviceRoleKey) {
 }
 
 const response = await fetch(
-  `${supabaseUrl}/rest/v1/app_schema_migrations?select=id,checksum`,
+  `${supabaseUrl}/rest/v1/app_schema_migrations?select=id,checksum&id=${encodeURIComponent(`in.(${REQUIRED_MIGRATIONS.join(",")})`)}`,
   {
     headers: {
       apikey: serviceRoleKey,
@@ -50,13 +50,13 @@ const applied = new Map(rows.map((row) => [row.id, row.checksum]));
 const pending = REQUIRED_MIGRATIONS.filter((id) => !applied.has(id));
 const mismatched = REQUIRED_MIGRATIONS.filter((id) => {
   const checksum = applied.get(id);
-  if (!checksum) return false;
+  if (!applied.has(id)) return false;
   const source = readFileSync(resolve("drizzle", id), "utf8");
   return !acceptedMigrationChecksums(source).has(checksum);
 });
 
 if (mismatched.length) {
-  throw new Error(`Migration checksum mismatch: ${mismatched.join(", ")}`);
+  throw new Error(`Migration checksum mismatch (legacy-detected entries require separately verified adoption): ${mismatched.join(", ")}`);
 }
 
 if (pending.length) {

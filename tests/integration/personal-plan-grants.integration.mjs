@@ -22,7 +22,7 @@ test("personal grants enforce uniqueness, actual privileges/RLS and exact bounda
   const now = "2026-10-01T12:00:00Z";
   const insert = (source, kind = "style", from = now, until = "2026-11-01T00:00:00Z", owner = user) => sql.unsafe(`
     INSERT INTO "${schema}".personal_plan_grants (user_id, plan_kind, source_reference, valid_from, valid_until)
-    VALUES ($1, $2, $3, $4, $5)`, [owner, kind, source, from, until]);
+    VALUES ($1, $2, $3, $4::text::timestamptz, $5::text::timestamptz)`, [owner, kind, source, from, until]);
   try {
     // Unique test roles preserve all migration grants/revokes without changing real roles.
     // The dedicated DB connection must be able to create roles including BYPASSRLS.

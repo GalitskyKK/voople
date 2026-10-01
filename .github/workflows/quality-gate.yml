@@ -18,6 +18,46 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  database-integration:
+    name: Disposable PostgreSQL integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: voople_test
+          POSTGRES_PASSWORD: ci-only-disposable
+          POSTGRES_DB: voople_test
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd "pg_isready -U voople_test -d voople_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run isolated database contracts
+        env:
+          CI: "true"
+          VOOPLE_TEST_DATABASE_URL: postgresql://voople_test:ci-only-disposable@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/voople_test
+        run: |
+          test -n "$VOOPLE_TEST_DATABASE_URL"
+          node --test tests/integration/migration-runner.integration.mjs tests/integration/group-charge-concurrency.integration.mjs tests/integration/personal-plan-grants.integration.mjs
+
   verify:
     name: Verify repository
     runs-on: ubuntu-latest

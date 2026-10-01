@@ -5,6 +5,9 @@ import postgres from "postgres";
 import { applyMigration, LEDGER_BOOTSTRAP } from "../../scripts/migration-runner.mjs";
 
 const databaseUrl = process.env.VOOPLE_TEST_DATABASE_URL?.trim();
+if (process.env.CI === "true" && !databaseUrl) {
+  throw new Error("CI requires VOOPLE_TEST_DATABASE_URL; database integration must not skip or use production credentials");
+}
 test("migration runner proves atomic DDL/ledger, bootstrap, concurrency and enum installation", {
   skip: databaseUrl ? false : "VOOPLE_TEST_DATABASE_URL absent; no production fallback",
   timeout: 60_000,

@@ -39,12 +39,14 @@ export const REQUIRED_MIGRATIONS = Object.freeze([
   "79-group-grade-foundation.sql",
   "80-personal-plan-grant-foundation.sql",
   "81-legacy-commerce-rpc-privileges.sql",
+  "82-core-baseline-compatibility.sql",
 ]);
 
 // The ledger must exist before the feature migrations are replayed so every
 // successful application receives a real checksum, including legacy installs.
 export const RELEASE_APPLY_ORDER = Object.freeze([
   "45-app-schema-migrations.sql",
+  "82-core-baseline-compatibility.sql",
   "38-group-emojis.sql",
   "39-structured-chat-content.sql",
   "43-group-sounds.sql",

@@ -452,7 +452,7 @@ export const messages = pgTable(
     mediaTitle: varchar("media_title", { length: 100 }),
     mediaArtist: varchar("media_artist", { length: 100 }),
     sharedPostId: uuid("shared_post_id").references(() => posts.id, { onDelete: "set null" }),
-    sharedTrackId: uuid("shared_track_id").references(() => playlistTracks.id),
+    sharedTrackId: uuid("shared_track_id").references(() => playlistTracks.id, { onDelete: "set null" }),
     replyToMessageId: uuid("reply_to_message_id").references((): AnyPgColumn => messages.id, {
       onDelete: "set null",
     }),
@@ -517,8 +517,8 @@ export const messageReactions = pgTable(
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => ({
-    nativeUnique: uniqueIndex("message_reactions_native_unique").on(t.messageId, t.userId, t.emoji),
-    customUnique: uniqueIndex("message_reactions_custom_unique").on(t.messageId, t.userId, t.emojiId),
+    nativeUnique: uniqueIndex("message_reactions_native_unique").on(t.messageId, t.userId, t.emoji).where(sql`${t.emoji} IS NOT NULL`),
+    customUnique: uniqueIndex("message_reactions_custom_unique").on(t.messageId, t.userId, t.emojiId).where(sql`${t.emojiId} IS NOT NULL`),
     chatIdx: index("message_reactions_chat_idx").on(t.chatId),
     messageIdx: index("message_reactions_message_idx").on(t.messageId),
   }),

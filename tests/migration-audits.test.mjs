@@ -21,6 +21,13 @@ function audit(command, rows) {
       throw new Error('Unexpected query');
     };
     sql.end = async () => {};
+    sql.begin = async (mode, run) => {
+      if (mode !== 'read only') throw new Error('Core readiness requires read only');
+      return run({unsafe: async source => {
+        if (!source.startsWith('-- BEGIN CORE BASELINE READ-ONLY VALIDATION')) throw new Error('Unexpected validation block');
+        if (/\\b(CREATE|ALTER|DROP|GRANT|REVOKE|INSERT|UPDATE|DELETE)\\s+(TABLE|TYPE|FUNCTION|POLICY|INTO|FROM|ON)\\b/i.test(source)) throw new Error('Audit attempted mutation');
+      }});
+    };
     return sql;
   }`);
   const preload = moduleUrl(`import {registerHooks} from 'node:module';

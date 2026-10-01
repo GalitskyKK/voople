@@ -569,6 +569,12 @@ Each pending migration and its ledger insert commit in one transaction, includin
 migration 45's bootstrap. See `deploy/production/README.md` for operational details
 and the transaction compatibility audit.
 
+The synthesized core baseline is ordered 45 -> 82 -> 38, with a separate
+commerce prerequisite still required before 51 for a complete fresh chain.
+Fresh 82 creates pre-38 objects; evolved adoption and read-only readiness
+preserve later tracked contracts. Historical SQL remains provenance only.
+See `docs/core-baseline-compatibility.md`.
+
 ## 15. Component checklist
 
 Before adding a component:

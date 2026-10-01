@@ -40,6 +40,7 @@
 !/docs/platform-roadmap.md
 !/docs/readme-shot-list.md
 !/docs/core-rework-architecture.md
+!/docs/core-baseline-compatibility.md
 !/docs/rework-integration-plan.md
 !/docs/product-metrics.md
 !/docs/product-monetization.md
@@ -47,6 +48,7 @@
 !/docs/readme-assets/.gitkeep
 !/docs/readme-assets/*.webp
 /drizzle/*
+!/drizzle/82-core-baseline-compatibility.sql
 !/drizzle/81-legacy-commerce-rpc-privileges.sql
 !/drizzle/80-personal-plan-grant-foundation.sql
 !/drizzle/79-group-grade-foundation.sql

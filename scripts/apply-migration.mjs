@@ -1,149 +1,51 @@
-import { existsSync, readFileSync, readdirSync } from "fs";
-import { resolve } from "path";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import postgres from "postgres";
-import { migrationChecksum } from "./migration-checksum.mjs";
 
-const migrationDeadline = setTimeout(() => {
-  console.error("Migration application exceeded the 120 second safety deadline.");
-  process.exit(1);
-}, 120_000);
+import { applyMigration, validateMigrationFilename } from "./migration-runner.mjs";
 
 function loadEnvFile(filename) {
   const path = resolve(process.cwd(), filename);
   if (!existsSync(path)) return;
-  for (const line of readFileSync(path, "utf8").split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim();
-    if (!process.env[key]) process.env[key] = value;
+  for (const source of readFileSync(path, "utf8").split(/\r?\n/)) {
+    const line = source.trim();
+    if (!line || line.startsWith("#")) continue;
+    const separator = line.indexOf("=");
+    if (separator < 1) continue;
+    const key = line.slice(0, separator).trim();
+    if (!process.env[key]) process.env[key] = line.slice(separator + 1).trim();
   }
-}
-
-function createClient(url) {
-  return postgres(url, {
-    max: 1,
-    prepare: false,
-    connect_timeout: 60,
-    idle_timeout: 10,
-    ssl: "require",
-  });
-}
-
-const skipCodes = new Set(["42P06", "42710", "42P07", "42701"]);
-const releaseVersion = process.env.RELEASE_VERSION?.trim()
-  || JSON.parse(readFileSync(resolve(process.cwd(), "desktop/package.json"), "utf8")).version;
-
-async function recordMigration(sql, file, source) {
-  const [{ registry }] = await sql`
-    select to_regclass('public.app_schema_migrations')::text as registry
-  `;
-  if (!registry) return;
-  const checksum = migrationChecksum(source);
-  await sql`
-    insert into public.app_schema_migrations (id, checksum, release_version, applied_at)
-    values (${file}, ${checksum}, ${releaseVersion}, now())
-    on conflict (id) do update
-      set checksum = excluded.checksum,
-          release_version = excluded.release_version,
-          applied_at = excluded.applied_at
-  `;
-}
-
-async function runStatement(url, client, statement, index, total) {
-  const maxAttempts = 3;
-  let sql = client;
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      await sql.unsafe(statement);
-      return sql;
-    } catch (err) {
-      if (skipCodes.has(err.code)) {
-        console.log(`  ⏭ ${index}/${total} уже есть (${err.code})`);
-        return sql;
-      }
-      const retryable =
-        err.message?.includes("ECONNRESET") ||
-        err.message?.includes("ECONNREFUSED") ||
-        err.message?.includes("ETIMEDOUT") ||
-        err.message?.includes("CONNECTION_CLOSED") ||
-        err.code === "CONNECTION_CLOSED";
-      if (retryable && attempt < maxAttempts) {
-        console.log(`  ↻ ${index}/${total} повтор ${attempt + 1}/${maxAttempts}…`);
-        await sql.end({ timeout: 1 }).catch(() => {});
-        await new Promise((r) => setTimeout(r, 1500));
-        sql = createClient(url);
-        continue;
-      }
-      throw err;
-    }
-  }
-  return sql;
 }
 
 async function main() {
+  // Reject directory replay and non-release SQL before loading credentials or connecting.
+  const file = validateMigrationFilename(process.argv.slice(2));
+  const source = readFileSync(resolve("drizzle", file), "utf8");
   loadEnvFile(".env.local");
   loadEnvFile(".env");
-
   const url = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
-  if (!url) {
-    console.error("Нет DIRECT_URL в .env.local");
+  if (!url) throw new Error("Migration application requires DIRECT_URL or DATABASE_URL.");
+  const releaseVersion = process.env.RELEASE_VERSION?.trim()
+    || JSON.parse(readFileSync(resolve("desktop/package.json"), "utf8")).version;
+  const sql = postgres(url, {
+    max: 1, prepare: false, connect_timeout: 30, idle_timeout: 5, ssl: "require",
+    connection: { application_name: "voople_migration_apply", statement_timeout: 60_000, lock_timeout: 5_000 },
+  });
+  const deadline = setTimeout(() => {
+    console.error("Migration deadline exceeded; commit state may be unknown. Verify the ledger before retrying; no automatic replay.");
     process.exit(1);
+  }, 120_000);
+  try {
+    const result = await applyMigration(sql, { file, source, releaseVersion });
+    console.log(`${file}: ${result.status === "already-applied" ? "already applied (checksum verified; no SQL replay)" : "applied and recorded atomically"}.`);
+  } finally {
+    clearTimeout(deadline);
+    await sql.end({ timeout: 5 });
   }
-
-  const drizzleDir = resolve(process.cwd(), "drizzle");
-  const requestedFile = process.argv[2];
-  if (
-    requestedFile &&
-    (!/^[a-zA-Z0-9._-]+\.sql$/.test(requestedFile) ||
-      !existsSync(resolve(drizzleDir, requestedFile)))
-  ) {
-    console.error(`Migration not found: ${requestedFile}`);
-    process.exit(1);
-  }
-
-  const sqlFiles = readdirSync(drizzleDir)
-    .filter((f) => f.endsWith(".sql") && !f.includes("dashboard"))
-    .filter((f) => !requestedFile || f === requestedFile)
-    .sort();
-
-  if (sqlFiles.length === 0) {
-    console.error("Нет SQL в drizzle/. Сначала: npm run db:generate");
-    process.exit(1);
-  }
-
-  let sql = createClient(url);
-
-  for (const file of sqlFiles) {
-    const raw = readFileSync(resolve(drizzleDir, file), "utf8");
-    const statements = raw
-      .split(/--> statement-breakpoint\n?/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-    console.log(`\n📄 ${file} (${statements.length} statements)`);
-
-    for (let i = 0; i < statements.length; i++) {
-      try {
-        sql = await runStatement(url, sql, statements[i], i + 1, statements.length);
-      } catch (err) {
-        console.error(`\n❌ ${file}, statement ${i + 1}:`, err.message);
-        console.error(
-          "\n→ Надёжнее: Supabase → SQL Editor → drizzle/apply-in-supabase-dashboard.sql → Run\n",
-        );
-        await sql.end({ timeout: 1 }).catch(() => {});
-        process.exit(1);
-      }
-    }
-    await recordMigration(sql, file, raw);
-    console.log(`✅ ${file} применён`);
-  }
-
-  await sql.end({ timeout: 5 });
-  console.log("\nГотово. Table Editor → public → users, posts, …");
 }
 
-main().finally(() => clearTimeout(migrationDeadline));
+main().catch((error) => {
+  console.error(`Migration application failed: ${error.message}`);
+  console.error("No automatic DDL retry. For connection/commit failures, verify the ledger on a healthy connection before retrying.");
+  process.exitCode = 1;
+});

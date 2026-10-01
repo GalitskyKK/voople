@@ -80,7 +80,7 @@ try {
       const actual = String(row.checksum).slice(0, 12);
       return `${row.id} (${actual} -> ${expected}, recorded ${row.release_version})`;
     });
-    throw new Error(`Migration checksum mismatch: ${details.join(", ")}`);
+    throw new Error(`Migration checksum mismatch (legacy-detected entries require separately verified adoption): ${details.join(", ")}`);
   }
 
   const [{ replicaIdentity }] = await sql`

@@ -1,5 +1,85 @@
 # Selectel bootstrap
 
+## Migration execution contract
+
+Release migrations are the tracked SQL allowlisted in
+`scripts/migration-manifest.mjs`. Apply one explicitly:
+
+```sh
+npm run db:apply -- 45-app-schema-migrations.sql
+npm run db:apply -- <registered-migration-file.sql>
+```
+
+For a future registered `81-example.sql`, the command remains
+`npm run db:apply -- 81-example.sql`. No filename, multiple filenames, paths and
+non-manifest SQL fail before credentials are loaded or a database is contacted.
+Files under `drizzle/` do not authorize execution. Historical, reset, seed and
+test-promo files are never implicitly replayed.
+
+The runner takes a database-wide transaction advisory lock, then reads the ledger.
+A matching accepted checksum means already applied: no migration SQL and no
+metadata update. Both canonical LF and historical CRLF checksums are accepted.
+Checksum drift is fatal. Recorded checksum, release version and application time
+are immutable in normal operation. A pending migration executes all breakpoint
+chunks and inserts its ledger record in the same transaction; any statement or
+ledger-insert error rolls back everything. Duplicate-object errors are failures,
+not proof that an unregistered migration has been applied. Existing `IF NOT EXISTS`
+statements inside reviewed SQL retain their original semantics.
+
+Only migration 45 can run without a ledger. Its unchanged SQL creates the ledger,
+performs its existing legacy detection, and receives its own checksum record in
+that transaction. If a ledger exists but 45 is unregistered, 45 can run without
+overwriting other records. Already registered 45 follows the same checksum/no-op
+rules as other migrations. `legacy-detected` / `pre-ledger` entries are evidence
+of partial detection, not verified application. Application, pending audit and
+readiness reject these entries until a separate verified adoption process exists
+for that exact migration. This runner does not implement adoption or broaden
+detection. Do not replace sentinel checksums by hand to bypass the gate.
+
+There is no automatic DDL retry. A connection failure or deadline during commit
+can leave its outcome unknown. Restore connectivity and inspect the ledger before
+retrying: a matching record will skip; an absent record allows an atomic attempt;
+a conflicting or legacy record blocks. Never reset tables or rewrite checksums
+to recover from an uncertain response. The lock serializes cooperating runners,
+not manual SQL or older tooling.
+
+Release promotion iterates the explicit `RELEASE_APPLY_ORDER`, beginning with 45.
+The hardened runner verifies/skips matching migrations and applies only pending
+ones. Any failure stops promotion. The existing bounded legacy emoji backfill
+still follows migration application, then release readiness runs. Pending and
+readiness checks only read the ledger/schema; neither applies migrations nor
+updates records. These gates still do not certify the missing commerce foundation.
+
+### Transaction compatibility audit at PR #67
+
+All 39 tracked required migrations (38, 39, 43 and 45–80) support one transaction
+per file on PostgreSQL 12 or newer. None uses concurrent index operations, VACUUM,
+database creation, ALTER SYSTEM, or explicit transaction control. Function-body
+`BEGIN` blocks are PL/pgSQL, not commit boundaries. SQL backfills, ordinary indexes,
+policies, triggers, grants and replica-identity changes remain transactional.
+
+The only enum additions are:
+
+- `58-room-invitations.sql:3`: `notif_type` adds `room_invite`. Installation does
+  not use the label; later migrations/functions run after its commit.
+- `77-friendships.sql:2,4`: adds `friend_request` and `friend_accept`. References
+  occur in PL/pgSQL bodies that are not invoked during installation. The top-level
+  pin cleanup does not use the labels.
+
+No partial-commit exception is needed. The disposable database test installs
+these exact bodies against isolated prerequisites and verifies labels after
+commit. New migrations must undergo the same audit before registration; enum
+labels cannot be added and used by executed statements in the same transaction.
+
+Run the tooling integration test with
+`node --test tests/integration/migration-runner.integration.mjs`. It reads only
+`VOOPLE_TEST_DATABASE_URL`, skips when absent, and never falls back to operational
+database URLs. It requires a disposable local PostgreSQL database with schema/role
+creation privileges, or an explicitly approved remote test database. Test objects
+and roles use unique names and are removed afterward.
+
+## Host bootstrap
+
 1. Provision Ubuntu 24.04 LTS and attach a reserved public IP.
 2. Install Docker Engine, the rootless extras and the Compose plugin from
    Docker's official apt repository. Do not use the unattended convenience

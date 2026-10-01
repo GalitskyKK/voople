@@ -22,7 +22,7 @@ test("personal grants enforce uniqueness, actual privileges/RLS and exact bounda
   const now = "2026-10-01T12:00:00Z";
   const insert = (source, kind = "style", from = now, until = "2026-11-01T00:00:00Z", owner = user) => sql.unsafe(`
     INSERT INTO "${schema}".personal_plan_grants (user_id, plan_kind, source_reference, valid_from, valid_until)
-    VALUES ($1, $2, $3, $4, $5)`, [owner, kind, source, from, until]);
+    VALUES ($1, $2, $3, $4::text::timestamptz, $5::text::timestamptz)`, [owner, kind, source, from, until]);
   try {
     // Unique test roles preserve all migration grants/revokes without changing real roles.
     // The dedicated DB connection must be able to create roles including BYPASSRLS.
@@ -62,21 +62,23 @@ test("personal grants enforce uniqueness, actual privileges/RLS and exact bounda
         has_function_privilege($1, $3, 'EXECUTE') AS execute`, [role, `${schema}.personal_plan_grants`, `${schema}.load_active_personal_plan_grants(uuid,timestamptz)`]);
       assert.equal(tableAccess, kind === "service_role");
       assert.equal(execute, kind === "service_role");
-      await sql.begin(async (tx) => {
-        await tx.unsafe(`SET LOCAL ROLE "${role}"`);
-        if (kind === "service_role") {
+      if (kind === "service_role") {
+        await sql.begin(async (tx) => {
+          await tx.unsafe(`SET LOCAL ROLE "${role}"`);
           const [{ grants: trusted }] = await tx.unsafe(`SELECT "${schema}".load_active_personal_plan_grants($1, $2) AS grants`, [user, now]);
           assert.equal(trusted.length, 3);
           assert.equal((await tx.unsafe(`SELECT * FROM "${schema}".personal_plan_grants`)).length, 7);
-        } else {
-          await assert.rejects(tx.unsafe(`SELECT * FROM "${schema}".personal_plan_grants`), { code: "42501" });
-        }
-      });
-      if (kind !== "service_role") {
-        await sql.begin(async (tx) => {
-          await tx.unsafe(`SET LOCAL ROLE "${role}"`);
-          await assert.rejects(tx.unsafe(`SELECT "${schema}".load_active_personal_plan_grants($1, $2)`, [user, now]), { code: "42501" });
         });
+      } else {
+        // A denied statement aborts its transaction; assert the whole rejection.
+        await assert.rejects(sql.begin(async (tx) => {
+          await tx.unsafe(`SET LOCAL ROLE "${role}"`);
+          await tx.unsafe(`SELECT * FROM "${schema}".personal_plan_grants`);
+        }), { code: "42501" });
+        await assert.rejects(sql.begin(async (tx) => {
+          await tx.unsafe(`SET LOCAL ROLE "${role}"`);
+          await tx.unsafe(`SELECT "${schema}".load_active_personal_plan_grants($1, $2)`, [user, now]);
+        }), { code: "42501" });
       }
     }
     // Even an accidental SELECT grant cannot bypass RLS in a browser role.

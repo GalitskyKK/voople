@@ -1,0 +1,742 @@
+{
+  "evidence": "voople-core-baseline-attestation-v1, 2026-10-01T12:56:26.098Z, master 10dc5b5902b5804970b6fd570ab364392fffa073; metadata only, no data/identities/counts",
+  "enums": [
+    [
+      "chat_type",
+      ["direct","group"]
+    ],
+    [
+      "notif_type",
+      ["like","card_reaction","follow","reply","repost","match","mystery_drop","profile_canvas_draw","question","room_invite","friend_request","friend_accept"]
+    ],
+    [
+      "post_media_type",
+      ["image","gif","meme","video","circle"]
+    ],
+    [
+      "track_source",
+      ["upload","chat","post"]
+    ]
+  ],
+  "helper": "CREATE OR REPLACE FUNCTION public.is_chat_member(p_chat_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  SELECT EXISTS (\n    SELECT 1\n    FROM public.chats requested_chat\n    JOIN public.chat_members member\n      ON member.chat_id = COALESCE(requested_chat.parent_chat_id, requested_chat.id)\n    WHERE requested_chat.id = p_chat_id\n      AND member.user_id = auth.uid()\n  );\n$function$\n",
+  "tables": [
+    {
+      "name": "users",
+      "replica": "d",
+      "columns": [
+        ["id","uuid",false,"gen_random_uuid()"],
+        ["username","character varying(30)",false,null],
+        ["display_name","character varying(50)",false,null],
+        ["bio","character varying(100)",true,null],
+        ["pinned_thought","character varying(100)",true,null],
+        ["created_at","timestamp without time zone",false,"now()"],
+        ["updated_at","timestamp without time zone",false,"now()"],
+        ["last_seen_at","timestamp without time zone",false,"now()"],
+        ["show_online_status","boolean",false,"true"]
+      ],
+      "constraints": [
+        ["users_pkey","PRIMARY KEY (id)"],
+        ["users_username_unique","UNIQUE (username)"]
+      ],
+      "indexes": ["CREATE INDEX username_idx ON public.users USING btree (username)","CREATE INDEX users_display_name_search_idx ON public.users USING btree (lower((display_name)::text))","CREATE INDEX users_username_search_idx ON public.users USING btree (lower((username)::text))"],
+      "policies": [
+        {
+          "name": "users_insert_own",
+          "command": "a",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": null,
+          "check_expression": "(auth.uid() = id)"
+        },
+        {
+          "name": "users_select_public",
+          "command": "r",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "true",
+          "check_expression": null
+        },
+        {
+          "name": "users_update_own",
+          "command": "w",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "(auth.uid() = id)",
+          "check_expression": "(auth.uid() = id)"
+        }
+      ],
+      "grants": [
+        ["anon","DELETE"],
+        ["anon","INSERT"],
+        ["anon","SELECT"],
+        ["anon","UPDATE"],
+        ["authenticated","DELETE"],
+        ["authenticated","INSERT"],
+        ["authenticated","SELECT"],
+        ["authenticated","UPDATE"],
+        ["service_role","DELETE"],
+        ["service_role","INSERT"],
+        ["service_role","SELECT"],
+        ["service_role","UPDATE"]
+      ]
+    },
+    {
+      "name": "chats",
+      "replica": "d",
+      "columns": [
+        ["id","uuid",false,"gen_random_uuid()"],
+        ["type","public.chat_type",false,null],
+        ["name","character varying(50)",true,null],
+        ["created_at","timestamp without time zone",false,"now()"],
+        ["parent_chat_id","uuid",true,null],
+        ["topics_enabled","boolean",false,"false"],
+        ["topics_layout","character varying(20)",false,"'list'::character varying"],
+        ["topic_icon","character varying(16)",true,null],
+        ["group_visibility","character varying(20)",false,"'private'::character varying"],
+        ["section_access_mode","character varying(20)",false,"'inherit'::character varying"],
+        ["join_policy","character varying(20)",false,"'invite_only'::character varying"]
+      ],
+      "constraints": [
+        ["chats_group_visibility_check","CHECK (group_visibility::text = ANY (ARRAY['private'::character varying, 'unlisted'::character varying, 'public'::character varying]::text[]))"],
+        ["chats_join_policy_check","CHECK (join_policy::text = ANY (ARRAY['open'::character varying, 'request'::character varying, 'invite_only'::character varying]::text[]))"],
+        ["chats_parent_chat_id_fkey","FOREIGN KEY (parent_chat_id) REFERENCES public.chats(id) ON DELETE CASCADE"],
+        ["chats_pkey","PRIMARY KEY (id)"],
+        ["chats_section_access_mode_check","CHECK (section_access_mode::text = ANY (ARRAY['inherit'::character varying, 'restricted'::character varying]::text[]))"],
+        ["chats_subchat_type_check","CHECK (parent_chat_id IS NULL OR type = 'group'::public.chat_type)"],
+        ["chats_topics_layout_check","CHECK (topics_layout::text = ANY (ARRAY['tabs'::character varying, 'list'::character varying]::text[]))"]
+      ],
+      "indexes": ["CREATE INDEX chats_parent_chat_idx ON public.chats USING btree (parent_chat_id, created_at)"],
+      "policies": [
+        {
+          "name": "chats_insert_authenticated",
+          "command": "a",
+          "permissive": true,
+          "roles": ["authenticated"],
+          "using_expression": null,
+          "check_expression": "true"
+        },
+        {
+          "name": "chats_select_member",
+          "command": "r",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "public.is_chat_member(id)",
+          "check_expression": null
+        }
+      ],
+      "grants": [
+        ["anon","DELETE"],
+        ["anon","INSERT"],
+        ["anon","SELECT"],
+        ["anon","UPDATE"],
+        ["authenticated","DELETE"],
+        ["authenticated","INSERT"],
+        ["authenticated","SELECT"],
+        ["authenticated","UPDATE"],
+        ["service_role","DELETE"],
+        ["service_role","INSERT"],
+        ["service_role","SELECT"],
+        ["service_role","UPDATE"]
+      ]
+    },
+    {
+      "name": "chat_members",
+      "replica": "d",
+      "columns": [
+        ["chat_id","uuid",false,null],
+        ["user_id","uuid",false,null],
+        ["joined_at","timestamp without time zone",false,"now()"],
+        ["role","character varying(20)",false,"'member'::character varying"]
+      ],
+      "constraints": [
+        ["chat_members_chat_id_chats_id_fk","FOREIGN KEY (chat_id) REFERENCES public.chats(id) ON DELETE CASCADE"],
+        ["chat_members_chat_id_user_id_pk","PRIMARY KEY (chat_id, user_id)"],
+        ["chat_members_role_check","CHECK (role::text = ANY (ARRAY['owner'::character varying, 'admin'::character varying, 'member'::character varying]::text[]))"],
+        ["chat_members_user_id_users_id_fk","FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE"]
+      ],
+      "indexes": [],
+      "policies": [
+        {
+          "name": "chat_members_delete_self",
+          "command": "d",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "(auth.uid() = user_id)",
+          "check_expression": null
+        },
+        {
+          "name": "chat_members_select_member",
+          "command": "r",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "public.is_chat_member(chat_id)",
+          "check_expression": null
+        }
+      ],
+      "grants": [
+        ["anon","DELETE"],
+        ["anon","INSERT"],
+        ["anon","SELECT"],
+        ["anon","UPDATE"],
+        ["authenticated","DELETE"],
+        ["authenticated","INSERT"],
+        ["authenticated","SELECT"],
+        ["authenticated","UPDATE"],
+        ["service_role","DELETE"],
+        ["service_role","INSERT"],
+        ["service_role","SELECT"],
+        ["service_role","UPDATE"]
+      ]
+    },
+    {
+      "name": "messages",
+      "replica": "f",
+      "columns": [
+        ["id","uuid",false,"gen_random_uuid()"],
+        ["chat_id","uuid",false,null],
+        ["sender_id","uuid",false,null],
+        ["text","character varying(1000)",true,null],
+        ["media_url","character varying(500)",true,null],
+        ["shared_post_id","uuid",true,null],
+        ["shared_track_id","uuid",true,null],
+        ["created_at","timestamp without time zone",false,"now()"],
+        ["read_at","timestamp without time zone",true,null],
+        ["reply_to_message_id","uuid",true,null],
+        ["media_title","character varying(100)",true,null],
+        ["media_artist","character varying(100)",true,null],
+        ["content","jsonb",true,null]
+      ],
+      "constraints": [
+        ["messages_chat_id_chats_id_fk","FOREIGN KEY (chat_id) REFERENCES public.chats(id) ON DELETE CASCADE"],
+        ["messages_content_shape_check","CHECK (content IS NULL OR jsonb_typeof(content) = 'array'::text)"],
+        ["messages_pkey","PRIMARY KEY (id)"],
+        ["messages_reply_to_message_id_fkey","FOREIGN KEY (reply_to_message_id) REFERENCES public.messages(id) ON DELETE SET NULL"],
+        ["messages_sender_id_users_id_fk","FOREIGN KEY (sender_id) REFERENCES public.users(id) ON DELETE CASCADE"],
+        ["messages_shared_post_id_posts_id_fk","FOREIGN KEY (shared_post_id) REFERENCES public.posts(id) ON DELETE SET NULL"],
+        ["messages_shared_track_id_playlist_tracks_id_fk","FOREIGN KEY (shared_track_id) REFERENCES public.playlist_tracks(id) ON DELETE SET NULL"]
+      ],
+      "indexes": ["CREATE INDEX messages_chat_idx ON public.messages USING btree (chat_id)","CREATE INDEX messages_chat_time_idx ON public.messages USING btree (chat_id, created_at)","CREATE INDEX messages_reply_to_idx ON public.messages USING btree (reply_to_message_id) WHERE (reply_to_message_id IS NOT NULL)","CREATE INDEX messages_time_idx ON public.messages USING btree (created_at)"],
+      "policies": [
+        {
+          "name": "messages_insert_member",
+          "command": "a",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": null,
+          "check_expression": "((auth.uid() = sender_id) AND public.is_chat_member(chat_id))"
+        },
+        {
+          "name": "messages_select_member",
+          "command": "r",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "public.is_chat_member(chat_id)",
+          "check_expression": null
+        },
+        {
+          "name": "messages_update_sender",
+          "command": "w",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "(auth.uid() = sender_id)",
+          "check_expression": "(auth.uid() = sender_id)"
+        }
+      ],
+      "grants": [
+        ["anon","DELETE"],
+        ["anon","INSERT"],
+        ["anon","SELECT"],
+        ["anon","UPDATE"],
+        ["authenticated","DELETE"],
+        ["authenticated","INSERT"],
+        ["authenticated","SELECT"],
+        ["authenticated","UPDATE"],
+        ["service_role","DELETE"],
+        ["service_role","INSERT"],
+        ["service_role","SELECT"],
+        ["service_role","UPDATE"]
+      ]
+    },
+    {
+      "name": "message_reactions",
+      "replica": "f",
+      "columns": [
+        ["message_id","uuid",false,null],
+        ["chat_id","uuid",false,null],
+        ["user_id","uuid",false,null],
+        ["emoji","character varying(10)",true,null],
+        ["created_at","timestamp without time zone",false,"now()"],
+        ["emoji_id","uuid",true,null]
+      ],
+      "constraints": [
+        ["message_reactions_chat_id_fkey","FOREIGN KEY (chat_id) REFERENCES public.chats(id) ON DELETE CASCADE"],
+        ["message_reactions_emoji_id_fkey","FOREIGN KEY (emoji_id) REFERENCES public.group_emojis(id) ON DELETE SET NULL"],
+        ["message_reactions_emoji_source_check","CHECK (emoji IS NOT NULL AND emoji_id IS NULL OR emoji IS NULL AND emoji_id IS NOT NULL)"],
+        ["message_reactions_message_id_fkey","FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE"],
+        ["message_reactions_user_id_fkey","FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE"]
+      ],
+      "indexes": ["CREATE INDEX message_reactions_chat_idx ON public.message_reactions USING btree (chat_id)","CREATE UNIQUE INDEX message_reactions_custom_unique ON public.message_reactions USING btree (message_id, user_id, emoji_id) WHERE (emoji_id IS NOT NULL)","CREATE INDEX message_reactions_message_idx ON public.message_reactions USING btree (message_id)","CREATE UNIQUE INDEX message_reactions_native_unique ON public.message_reactions USING btree (message_id, user_id, emoji) WHERE (emoji IS NOT NULL)"],
+      "policies": [],
+      "grants": [
+        ["anon","DELETE"],
+        ["anon","INSERT"],
+        ["anon","SELECT"],
+        ["anon","UPDATE"],
+        ["authenticated","DELETE"],
+        ["authenticated","INSERT"],
+        ["authenticated","SELECT"],
+        ["authenticated","UPDATE"],
+        ["service_role","DELETE"],
+        ["service_role","INSERT"],
+        ["service_role","SELECT"],
+        ["service_role","UPDATE"]
+      ]
+    },
+    {
+      "name": "chat_invites",
+      "replica": "d",
+      "columns": [
+        ["id","uuid",false,"gen_random_uuid()"],
+        ["chat_id","uuid",false,null],
+        ["created_by","uuid",false,null],
+        ["token_hash","character varying(64)",false,null],
+        ["expires_at","timestamp without time zone",true,null],
+        ["max_uses","integer",true,"20"],
+        ["use_count","integer",false,"0"],
+        ["revoked_at","timestamp without time zone",true,null],
+        ["created_at","timestamp without time zone",false,"now()"]
+      ],
+      "constraints": [
+        ["chat_invites_chat_id_fkey","FOREIGN KEY (chat_id) REFERENCES public.chats(id) ON DELETE CASCADE"],
+        ["chat_invites_created_by_fkey","FOREIGN KEY (created_by) REFERENCES public.users(id) ON DELETE CASCADE"],
+        ["chat_invites_max_uses_check","CHECK (max_uses >= 1 AND max_uses <= 100)"],
+        ["chat_invites_pkey","PRIMARY KEY (id)"],
+        ["chat_invites_token_hash_unique","UNIQUE (token_hash)"],
+        ["chat_invites_use_count_check","CHECK (use_count >= 0)"]
+      ],
+      "indexes": ["CREATE INDEX chat_invites_chat_idx ON public.chat_invites USING btree (chat_id, created_at DESC)"],
+      "policies": [],
+      "grants": [
+        ["service_role","DELETE"],
+        ["service_role","INSERT"],
+        ["service_role","SELECT"],
+        ["service_role","UPDATE"]
+      ]
+    },
+    {
+      "name": "chat_audit_log",
+      "replica": "d",
+      "columns": [
+        ["id","uuid",false,"gen_random_uuid()"],
+        ["chat_id","uuid",false,null],
+        ["actor_id","uuid",true,null],
+        ["target_user_id","uuid",true,null],
+        ["action","character varying(40)",false,null],
+        ["details","jsonb",false,"'{}'::jsonb"],
+        ["created_at","timestamp with time zone",false,"now()"]
+      ],
+      "constraints": [
+        ["chat_audit_log_action_check","CHECK (action::text = ANY (ARRAY['member_added'::character varying, 'member_removed'::character varying, 'member_left'::character varying, 'role_changed'::character varying, 'ownership_transferred'::character varying, 'topics_changed'::character varying, 'visibility_changed'::character varying, 'group_name_changed'::character varying]::text[]))"],
+        ["chat_audit_log_actor_id_fkey","FOREIGN KEY (actor_id) REFERENCES public.users(id) ON DELETE SET NULL"],
+        ["chat_audit_log_chat_id_fkey","FOREIGN KEY (chat_id) REFERENCES public.chats(id) ON DELETE CASCADE"],
+        ["chat_audit_log_pkey","PRIMARY KEY (id)"],
+        ["chat_audit_log_target_user_id_fkey","FOREIGN KEY (target_user_id) REFERENCES public.users(id) ON DELETE SET NULL"]
+      ],
+      "indexes": ["CREATE INDEX chat_audit_log_chat_created_idx ON public.chat_audit_log USING btree (chat_id, created_at DESC)"],
+      "policies": [],
+      "grants": [
+        ["service_role","DELETE"],
+        ["service_role","INSERT"],
+        ["service_role","SELECT"],
+        ["service_role","UPDATE"]
+      ]
+    },
+    {
+      "name": "direct_chat_pairs",
+      "replica": "d",
+      "columns": [
+        ["chat_id","uuid",false,null],
+        ["user_low_id","uuid",false,null],
+        ["user_high_id","uuid",false,null],
+        ["created_at","timestamp without time zone",false,"now()"]
+      ],
+      "constraints": [
+        ["direct_chat_pairs_chat_id_fkey","FOREIGN KEY (chat_id) REFERENCES public.chats(id) ON DELETE CASCADE"],
+        ["direct_chat_pairs_order_check","CHECK (user_low_id::text < user_high_id::text)"],
+        ["direct_chat_pairs_pkey","PRIMARY KEY (chat_id)"],
+        ["direct_chat_pairs_user_high_id_fkey","FOREIGN KEY (user_high_id) REFERENCES public.users(id) ON DELETE CASCADE"],
+        ["direct_chat_pairs_user_low_id_fkey","FOREIGN KEY (user_low_id) REFERENCES public.users(id) ON DELETE CASCADE"],
+        ["direct_chat_pairs_users_unique","UNIQUE (user_low_id, user_high_id)"]
+      ],
+      "indexes": [],
+      "policies": [],
+      "grants": [
+        ["anon","DELETE"],
+        ["anon","INSERT"],
+        ["anon","SELECT"],
+        ["anon","UPDATE"],
+        ["authenticated","DELETE"],
+        ["authenticated","INSERT"],
+        ["authenticated","SELECT"],
+        ["authenticated","UPDATE"],
+        ["service_role","DELETE"],
+        ["service_role","INSERT"],
+        ["service_role","SELECT"],
+        ["service_role","UPDATE"]
+      ]
+    },
+    {
+      "name": "follows",
+      "replica": "d",
+      "columns": [
+        ["follower_id","uuid",false,null],
+        ["following_id","uuid",false,null],
+        ["created_at","timestamp without time zone",false,"now()"]
+      ],
+      "constraints": [
+        ["follows_follower_id_following_id_pk","PRIMARY KEY (follower_id, following_id)"],
+        ["follows_follower_id_users_id_fk","FOREIGN KEY (follower_id) REFERENCES public.users(id) ON DELETE CASCADE"],
+        ["follows_following_id_users_id_fk","FOREIGN KEY (following_id) REFERENCES public.users(id) ON DELETE CASCADE"]
+      ],
+      "indexes": ["CREATE INDEX follows_follower_idx ON public.follows USING btree (follower_id)","CREATE INDEX follows_following_idx ON public.follows USING btree (following_id)"],
+      "policies": [
+        {
+          "name": "follows_delete_own",
+          "command": "d",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "(auth.uid() = follower_id)",
+          "check_expression": null
+        },
+        {
+          "name": "follows_insert_own",
+          "command": "a",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": null,
+          "check_expression": "(auth.uid() = follower_id)"
+        },
+        {
+          "name": "follows_select_public",
+          "command": "r",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "true",
+          "check_expression": null
+        }
+      ],
+      "grants": [
+        ["anon","DELETE"],
+        ["anon","INSERT"],
+        ["anon","SELECT"],
+        ["anon","UPDATE"],
+        ["authenticated","DELETE"],
+        ["authenticated","INSERT"],
+        ["authenticated","SELECT"],
+        ["authenticated","UPDATE"],
+        ["service_role","DELETE"],
+        ["service_role","INSERT"],
+        ["service_role","SELECT"],
+        ["service_role","UPDATE"]
+      ]
+    },
+    {
+      "name": "chat_rooms",
+      "replica": "d",
+      "columns": [
+        ["chat_id","uuid",false,null],
+        ["status","character varying(20)",false,"'active'::character varying"],
+        ["access_mode","character varying(20)",false,"'open'::character varying"],
+        ["started_by","uuid",false,null],
+        ["started_at","timestamp without time zone",false,"now()"],
+        ["ended_at","timestamp without time zone",true,null],
+        ["updated_at","timestamp without time zone",false,"now()"],
+        ["session_id","uuid",false,"gen_random_uuid()"]
+      ],
+      "constraints": [
+        ["chat_rooms_access_mode_check","CHECK (access_mode::text = ANY (ARRAY['open'::character varying, 'locked'::character varying]::text[]))"],
+        ["chat_rooms_chat_id_fkey","FOREIGN KEY (chat_id) REFERENCES public.chats(id) ON DELETE CASCADE"],
+        ["chat_rooms_pkey","PRIMARY KEY (chat_id)"],
+        ["chat_rooms_started_by_fkey","FOREIGN KEY (started_by) REFERENCES public.users(id) ON DELETE CASCADE"],
+        ["chat_rooms_status_check","CHECK (status::text = ANY (ARRAY['ringing'::character varying, 'active'::character varying, 'ended'::character varying, 'declined'::character varying, 'cancelled'::character varying, 'missed'::character varying]::text[]))"]
+      ],
+      "indexes": [],
+      "policies": [
+        {
+          "name": "chat_rooms_select_member",
+          "command": "r",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "public.is_chat_member(chat_id)",
+          "check_expression": null
+        }
+      ],
+      "grants": [
+        ["anon","SELECT"],
+        ["authenticated","SELECT"],
+        ["service_role","DELETE"],
+        ["service_role","INSERT"],
+        ["service_role","SELECT"],
+        ["service_role","UPDATE"]
+      ]
+    },
+    {
+      "name": "chat_room_participants",
+      "replica": "d",
+      "columns": [
+        ["chat_id","uuid",false,null],
+        ["user_id","uuid",false,null],
+        ["mic_muted","boolean",false,"true"],
+        ["joined_at","timestamp without time zone",false,"now()"],
+        ["last_seen_at","timestamp without time zone",false,"now()"]
+      ],
+      "constraints": [
+        ["chat_room_participants_chat_id_fkey","FOREIGN KEY (chat_id) REFERENCES public.chats(id) ON DELETE CASCADE"],
+        ["chat_room_participants_pk","PRIMARY KEY (chat_id, user_id)"],
+        ["chat_room_participants_user_id_fkey","FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE"]
+      ],
+      "indexes": ["CREATE INDEX chat_room_participants_heartbeat_idx ON public.chat_room_participants USING btree (chat_id, last_seen_at DESC)"],
+      "policies": [
+        {
+          "name": "chat_room_participants_select_member",
+          "command": "r",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "public.is_chat_member(chat_id)",
+          "check_expression": null
+        }
+      ],
+      "grants": [
+        ["anon","SELECT"],
+        ["authenticated","SELECT"],
+        ["service_role","DELETE"],
+        ["service_role","INSERT"],
+        ["service_role","SELECT"],
+        ["service_role","UPDATE"]
+      ]
+    },
+    {
+      "name": "chat_section_members",
+      "replica": "d",
+      "columns": [
+        ["chat_id","uuid",false,null],
+        ["user_id","uuid",false,null],
+        ["created_at","timestamp without time zone",false,"now()"]
+      ],
+      "constraints": [
+        ["chat_section_members_chat_id_fkey","FOREIGN KEY (chat_id) REFERENCES public.chats(id) ON DELETE CASCADE"],
+        ["chat_section_members_pkey","PRIMARY KEY (chat_id, user_id)"],
+        ["chat_section_members_user_id_fkey","FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE"]
+      ],
+      "indexes": ["CREATE INDEX chat_section_members_user_idx ON public.chat_section_members USING btree (user_id, chat_id)"],
+      "policies": [],
+      "grants": [
+        ["anon","DELETE"],
+        ["anon","INSERT"],
+        ["anon","SELECT"],
+        ["anon","UPDATE"],
+        ["authenticated","DELETE"],
+        ["authenticated","INSERT"],
+        ["authenticated","SELECT"],
+        ["authenticated","UPDATE"],
+        ["service_role","DELETE"],
+        ["service_role","INSERT"],
+        ["service_role","SELECT"],
+        ["service_role","UPDATE"]
+      ]
+    },
+    {
+      "name": "notifications",
+      "replica": "f",
+      "columns": [
+        ["id","uuid",false,"gen_random_uuid()"],
+        ["user_id","uuid",false,null],
+        ["type","public.notif_type",false,null],
+        ["actor_id","uuid",true,null],
+        ["reference_id","uuid",true,null],
+        ["read","boolean",false,"false"],
+        ["created_at","timestamp without time zone",false,"now()"]
+      ],
+      "constraints": [
+        ["notifications_actor_id_users_id_fk","FOREIGN KEY (actor_id) REFERENCES public.users(id) ON DELETE CASCADE"],
+        ["notifications_pkey","PRIMARY KEY (id)"],
+        ["notifications_user_id_users_id_fk","FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE"]
+      ],
+      "indexes": ["CREATE INDEX notif_user_unread_idx ON public.notifications USING btree (user_id, read)"],
+      "policies": [
+        {
+          "name": "notifications_select_own",
+          "command": "r",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "(auth.uid() = user_id)",
+          "check_expression": null
+        },
+        {
+          "name": "notifications_update_own",
+          "command": "w",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "(auth.uid() = user_id)",
+          "check_expression": "(auth.uid() = user_id)"
+        }
+      ],
+      "grants": [
+        ["anon","DELETE"],
+        ["anon","INSERT"],
+        ["anon","SELECT"],
+        ["anon","UPDATE"],
+        ["authenticated","DELETE"],
+        ["authenticated","INSERT"],
+        ["authenticated","SELECT"],
+        ["authenticated","UPDATE"],
+        ["service_role","DELETE"],
+        ["service_role","INSERT"],
+        ["service_role","SELECT"],
+        ["service_role","UPDATE"]
+      ]
+    },
+    {
+      "name": "posts",
+      "replica": "f",
+      "columns": [
+        ["id","uuid",false,"gen_random_uuid()"],
+        ["author_id","uuid",false,null],
+        ["text","character varying(280)",true,null],
+        ["state_snapshot","jsonb",true,null],
+        ["media_url","character varying(500)",true,null],
+        ["media_type","public.post_media_type",true,null],
+        ["is_repost","boolean",true,"false"],
+        ["original_post_id","uuid",true,null],
+        ["repost_comment","character varying(280)",true,null],
+        ["like_count","integer",false,"0"],
+        ["reply_count","integer",false,"0"],
+        ["created_at","timestamp without time zone",false,"now()"],
+        ["view_count","integer",false,"0"],
+        ["repost_count","integer",false,"0"]
+      ],
+      "constraints": [
+        ["posts_author_id_users_id_fk","FOREIGN KEY (author_id) REFERENCES public.users(id) ON DELETE CASCADE"],
+        ["posts_original_post_id_posts_id_fk","FOREIGN KEY (original_post_id) REFERENCES public.posts(id) ON DELETE SET NULL"],
+        ["posts_pkey","PRIMARY KEY (id)"]
+      ],
+      "indexes": ["CREATE INDEX posts_author_idx ON public.posts USING btree (author_id)","CREATE INDEX posts_created_at_idx ON public.posts USING btree (created_at)","CREATE INDEX posts_original_post_idx ON public.posts USING btree (original_post_id)","CREATE UNIQUE INDEX posts_plain_repost_unique ON public.posts USING btree (author_id, original_post_id) WHERE ((is_repost = true) AND (repost_comment IS NULL) AND (original_post_id IS NOT NULL))","CREATE INDEX posts_repost_comment_trgm_idx ON public.posts USING gin (COALESCE(repost_comment, ''::character varying) public.gin_trgm_ops)","CREATE INDEX posts_text_trgm_idx ON public.posts USING gin (COALESCE(text, ''::character varying) public.gin_trgm_ops)"],
+      "policies": [
+        {
+          "name": "posts_delete_own",
+          "command": "d",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "(auth.uid() = author_id)",
+          "check_expression": null
+        },
+        {
+          "name": "posts_insert_own",
+          "command": "a",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": null,
+          "check_expression": "(auth.uid() = author_id)"
+        },
+        {
+          "name": "posts_select_public",
+          "command": "r",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "true",
+          "check_expression": null
+        },
+        {
+          "name": "posts_update_own",
+          "command": "w",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "(auth.uid() = author_id)",
+          "check_expression": "(auth.uid() = author_id)"
+        }
+      ],
+      "grants": [
+        ["anon","DELETE"],
+        ["anon","INSERT"],
+        ["anon","SELECT"],
+        ["anon","UPDATE"],
+        ["authenticated","DELETE"],
+        ["authenticated","INSERT"],
+        ["authenticated","SELECT"],
+        ["authenticated","UPDATE"],
+        ["service_role","DELETE"],
+        ["service_role","INSERT"],
+        ["service_role","SELECT"],
+        ["service_role","UPDATE"]
+      ]
+    },
+    {
+      "name": "playlist_tracks",
+      "replica": "d",
+      "columns": [
+        ["id","uuid",false,"gen_random_uuid()"],
+        ["user_id","uuid",false,null],
+        ["title","character varying(100)",false,null],
+        ["artist","character varying(100)",false,null],
+        ["file_url","character varying(500)",false,null],
+        ["cover_url","character varying(500)",true,null],
+        ["duration_seconds","integer",true,null],
+        ["added_at","timestamp without time zone",false,"now()"],
+        ["added_from","public.track_source",false,"'upload'::public.track_source"]
+      ],
+      "constraints": [
+        ["playlist_tracks_pkey","PRIMARY KEY (id)"],
+        ["playlist_tracks_user_id_users_id_fk","FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE"]
+      ],
+      "indexes": ["CREATE INDEX playlist_user_idx ON public.playlist_tracks USING btree (user_id)"],
+      "policies": [
+        {
+          "name": "playlist_tracks_delete_own",
+          "command": "d",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "(auth.uid() = user_id)",
+          "check_expression": null
+        },
+        {
+          "name": "playlist_tracks_insert_own",
+          "command": "a",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": null,
+          "check_expression": "(auth.uid() = user_id)"
+        },
+        {
+          "name": "playlist_tracks_select_public",
+          "command": "r",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "true",
+          "check_expression": null
+        },
+        {
+          "name": "playlist_tracks_update_own",
+          "command": "w",
+          "permissive": true,
+          "roles": ["PUBLIC"],
+          "using_expression": "(auth.uid() = user_id)",
+          "check_expression": "(auth.uid() = user_id)"
+        }
+      ],
+      "grants": [
+        ["anon","DELETE"],
+        ["anon","INSERT"],
+        ["anon","SELECT"],
+        ["anon","UPDATE"],
+        ["authenticated","DELETE"],
+        ["authenticated","INSERT"],
+        ["authenticated","SELECT"],
+        ["authenticated","UPDATE"],
+        ["service_role","DELETE"],
+        ["service_role","INSERT"],
+        ["service_role","SELECT"],
+        ["service_role","UPDATE"]
+      ]
+    }
+  ]
+}

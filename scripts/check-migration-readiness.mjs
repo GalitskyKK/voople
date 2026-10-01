@@ -4,6 +4,7 @@ import postgres from "postgres";
 
 import { REQUIRED_MIGRATIONS } from "./migration-manifest.mjs";
 import { assertLegacyCommerceRpcPrivileges } from "./legacy-commerce-rpc-privileges.mjs";
+import { assertCoreBaselineReadiness } from "./core-baseline-readiness.mjs";
 import {
   acceptedMigrationChecksums,
   migrationChecksum,
@@ -133,6 +134,7 @@ try {
   }
 
   await assertLegacyCommerceRpcPrivileges(sql);
+  await assertCoreBaselineReadiness(sql);
 
   console.log(`Migration readiness passed (${REQUIRED_MIGRATIONS.length} required migrations).`);
 } catch (error) {

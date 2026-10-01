@@ -2,6 +2,13 @@
 
 ## Migration execution contract
 
+The core baseline is ordered **45 -> 82 -> 38**, with a future separate commerce
+prerequisite still needed before 51. Do not replay historical bootstrap SQL or
+claim full fresh-chain reproducibility yet. 82 creates pre-38 core objects only
+when absent and validates evolved installations without repairs/data rewrites.
+See [core baseline contracts](../../docs/core-baseline-compatibility.md) for
+platform prerequisites, read-only readiness, provenance and PostgreSQL proof.
+
 Release migrations are the tracked SQL allowlisted in
 `scripts/migration-manifest.mjs`. Apply one explicitly:
 

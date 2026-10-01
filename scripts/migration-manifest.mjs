@@ -40,13 +40,17 @@ export const REQUIRED_MIGRATIONS = Object.freeze([
   "80-personal-plan-grant-foundation.sql",
   "81-legacy-commerce-rpc-privileges.sql",
   "82-core-baseline-compatibility.sql",
+  "83-commerce-prerequisite-compatibility.sql",
 ]);
 
 // The ledger must exist before the feature migrations are replayed so every
 // successful application receives a real checksum, including legacy installs.
+// 83 supplies legacy commerce dependencies used by 38/43 RPCs and 51's SQL
+// functions; dependency order takes precedence over filename chronology.
 export const RELEASE_APPLY_ORDER = Object.freeze([
   "45-app-schema-migrations.sql",
   "82-core-baseline-compatibility.sql",
+  "83-commerce-prerequisite-compatibility.sql",
   "38-group-emojis.sql",
   "39-structured-chat-content.sql",
   "43-group-sounds.sql",

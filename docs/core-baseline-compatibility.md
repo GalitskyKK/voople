@@ -14,21 +14,20 @@ domains; 04 deletes duplicates; 27 assigns owners from membership order. Other
 files mix resets, seeds, data transformations and ad-hoc variants. They are not
 newly tracked or replayed. 82 synthesizes only the core foundation.
 
-Required order: **45 -> 82 -> future commerce prerequisite -> 38 -> 39 -> 43
--> 46..81**. The commerce prerequisite does not exist yet: 82 currently follows
-45 and precedes numerically older 38 in the manifest. 45 remains unchanged and
+Required order: **45 -> 82 -> 83 -> 38 -> 39 -> 43 -> 46..81**.
+83 supplies the separate legacy commerce prerequisite; see
+`docs/commerce-prerequisite-compatibility.md`. 45 remains unchanged and
 must inspect the installation before 82 introduces core tables. Fresh 82 omits
 `messages.content`, preventing false legacy detection of 39. Existing
 `legacy-detected` records still need separately verified operational adoption;
 82 never changes their checksum, version or timestamp.
 
-**Full fresh-chain reproducibility is not claimed.** Actual unchanged migrations
-45, 82, 38, 39, 43, 46, 47, 48, 49 and 50 can install. 51's SQL-language
-`group_effective_boost_capacity` still needs `group_boosts`, `subscriptions` and
-`group_customization` including grace fields. PostgreSQL first reports
-`42P01: relation public.group_boosts does not exist`. The runner rolls back 51
-and its ledger insert. Installation of 38/43's PL/pgSQL RPCs does not prove
-their deferred commerce-dependent bodies can execute.
+The entire tracked chain now installs from empty on PostgreSQL 16, using the
+actual runner and unchanged 38..81 sources. Before 83, 51 failed with
+`42P01: relation public.group_boosts does not exist`; 83 supplies that table,
+`subscriptions` and the full evolved `group_customization`, including grace
+fields. The proof executes 51's capacity/perk functions. It does not certify
+every deferred PL/pgSQL body or provide optional legacy payment/shop RPCs.
 
 ## Fresh creation versus evolved adoption
 
@@ -108,8 +107,8 @@ the actual runner, then removes only that generated database. The test-only
 shim supplies NOLOGIN roles (service_role bypasses RLS), minimal `auth.users`,
 and `auth.uid()` driven by a local test JWT setting. None enters migration SQL.
 
-Tests cover fresh/pre-38 creation, real tracked installation through 50, the
-exact commerce boundary, attested evolved adoption/preservation, schema/security
+Tests cover fresh/pre-38 creation, the entire tracked installation through 81,
+attested evolved adoption/preservation, schema/security
 drift rejection, checksum/ledger no-ops, transactional rollback, read-only
 readiness and section-aware RLS against members, outsiders and anonymous users.
 
@@ -119,10 +118,11 @@ payment, promo, Grade or personal-plan behavior changes.
 
 The evidence does not certify dynamic PL/pgSQL dependencies, external consumers,
 arbitrary function semantics or every partial-expression uniqueness data check.
-This foundation does not certify a complete post-81 deployment. Separate
-commerce prerequisites and operational legacy-ledger adoption remain necessary.
+A complete tracked installation is distinct from a full deployment with optional
+legacy commerce RPCs and external providers. Operational legacy-ledger adoption
+remains necessary on installations with legacy-detected records.
 
-Local verification: 452 native unit tests and all 23 PostgreSQL 16 integration
+Original 82 verification: 452 native unit tests and all 23 PostgreSQL 16 integration
 tests passed without skips. Architecture, lint, TypeScript, production web build
 and desktop renderer build passed (existing lint/chunk warnings remain). Public
 browser smoke passed 11/12 checks, including 360 px and desktop landing checks.

@@ -124,3 +124,5 @@ next-env.d.ts
 !/docs/style-app-theme.md
 !/drizzle/90-style-nickname-font-write-boundary.sql
 !/docs/style-nickname-font.md
+!/drizzle/91-style-nickname-effect-write-boundary.sql
+!/docs/style-nickname-effect.md

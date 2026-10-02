@@ -48,6 +48,7 @@ export const REQUIRED_MIGRATIONS = Object.freeze([
   "88-group-runtime-rpc-compatibility.sql",
   "89-style-app-theme-write-boundary.sql",
   "90-style-nickname-font-write-boundary.sql",
+  "91-style-nickname-effect-write-boundary.sql",
 ]);
 
 // The ledger must exist before the feature migrations are replayed so every
@@ -109,4 +110,5 @@ export const RELEASE_APPLY_ORDER = Object.freeze([
   "81-legacy-commerce-rpc-privileges.sql",
   "89-style-app-theme-write-boundary.sql",
   "90-style-nickname-font-write-boundary.sql",
+  "91-style-nickname-effect-write-boundary.sql",
 ]);

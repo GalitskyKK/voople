@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getAdminClient } from "@/lib/supabase/admin";
 import type { NicknameFontAccess } from "@/types/personal-style-access";
 
-/** One bounded aggregate per 200 subjects, regardless of overlapping grant count. */
+/** Shared Style fact for fonts and effects: one bounded aggregate per 200 subjects. */
 export async function loadNicknameFontAccessRest(userIds: string[], evaluatedAt = new Date()) {
   const ids = [...new Set(z.array(z.string().uuid()).parse(userIds))];
   const timestamp = new Date(evaluatedAt.toISOString());

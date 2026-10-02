@@ -6,7 +6,7 @@ import { commerceBaseValidationSql, assertCommerceBaseReadiness } from '../scrip
 const file='84-commerce-base-compatibility.sql';
 const source=readFileSync(new URL('../drizzle/'+file,import.meta.url),'utf8');
 test('commerce base has a single dependency-ordered release entry and exactly scoped DDL',()=>{
-  assert.equal(REQUIRED_MIGRATIONS.length,49);
+  assert.equal(REQUIRED_MIGRATIONS.length,50);
   assert.equal(REQUIRED_MIGRATIONS.filter(id=>id===file).length,1);
   assert.deepEqual(RELEASE_APPLY_ORDER.slice(0,9),['45-app-schema-migrations.sql','82-core-baseline-compatibility.sql','83-commerce-prerequisite-compatibility.sql',file,'85-wallet-ledger-compatibility.sql','86-payment-fulfillment-compatibility.sql','87-promo-compatibility.sql','88-group-runtime-rpc-compatibility.sql','38-group-emojis.sql']);
   assert.deepEqual([...source.matchAll(/CREATE TABLE public\.(\w+)/g)].map(m=>m[1]),['shop_items','user_inventory','profile_customization']);

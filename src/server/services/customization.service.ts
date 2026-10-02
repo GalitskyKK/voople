@@ -12,17 +12,21 @@ import { getPersonalStyleAccess } from "@/server/services/personal-style-access.
 import { assertAppThemeSelectionAllowed, resolveEffectiveAppThemeId, isFreeAppThemeId } from "@/lib/app-themes";
 import { SHOP_CATALOG_BY_ID } from "@/lib/shop/catalog";
 import { assertNicknameFontSelectionAllowed, resolveEffectiveNicknameFont } from "@/lib/customization/nickname-font";
+import { assertNicknameEffectSelectionAllowed, resolveEffectiveNicknameEffect } from "@/lib/customization/nickname-effect";
 import { resolveRowEquipSlot, resolveRowEquipValue } from "@/lib/shop/item-row";
 
 export async function updateCustomization(userId: string, patch: CustomizationEquipPatch) {
   assertAppThemeSelectionAllowed(patch.appThemeId, true);
   assertNicknameFontSelectionAllowed(patch.nicknameFont, true);
+  assertNicknameEffectSelectionAllowed(patch.nicknameEffect, patch.nicknameGradient, true);
   const access = (patch.appThemeId != null && !isFreeAppThemeId(patch.appThemeId))
     || (patch.nicknameFont != null && patch.nicknameFont !== "sans")
+    || (patch.nicknameEffect != null && patch.nicknameEffect !== "plain") || patch.nicknameGradient === true
     ? await getPersonalStyleAccess(userId) : null;
   return updateProfileCustomizationRest(userId, patch, {
     selectPaidAppTheme: access?.capabilities.selectPaidAppTheme ?? false,
     selectPremiumNicknameFont: access?.capabilities.selectPremiumNicknameFont ?? false,
+    selectPremiumNicknameEffect: access?.capabilities.selectPremiumNicknameEffect ?? false,
   });
 }
 
@@ -41,7 +45,10 @@ export async function getEquippedCustomization(userId: string) {
   const [equipped, access] = await Promise.all([
     getEquippedCustomizationRest(userId), getPersonalStyleAccess(userId),
   ]);
-  return { ...equipped, savedNicknameFont: equipped.nicknameFont,
+  const effectiveEffect = resolveEffectiveNicknameEffect(equipped.nicknameEffect, equipped.nicknameGradient, access.capabilities.selectPremiumNicknameEffect);
+  return { ...equipped, savedNicknameEffect: equipped.nicknameEffect, savedNicknameGradient: equipped.nicknameGradient,
+    effectiveNicknameEffect: effectiveEffect.effect, effectiveNicknameGradient: effectiveEffect.gradient,
+    selectPremiumNicknameEffect: access.capabilities.selectPremiumNicknameEffect, savedNicknameFont: equipped.nicknameFont,
     effectiveNicknameFont: resolveEffectiveNicknameFont(equipped.nicknameFont, access.capabilities.selectPremiumNicknameFont),
     selectPremiumNicknameFont: access.capabilities.selectPremiumNicknameFont,
     savedAppThemeId: equipped.appThemeId,

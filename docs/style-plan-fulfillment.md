@@ -84,4 +84,5 @@ SQL privilege checks separately prove browser roles cannot insert, update or del
 
 The Quality Gate runs the lifecycle suite concurrently with the other PostgreSQL
 contracts. The lifecycle itself requires no migration. The subsequent paid-app-theme
-consumer adds security migration 89; the current required migration count is 49 after the independent font boundary in 90.
+consumer adds security migration 89; the current required migration count is 50 after independent effect/gradient boundary 91.
+The third consumer is documented in [`style-nickname-effect.md`](./style-nickname-effect.md).

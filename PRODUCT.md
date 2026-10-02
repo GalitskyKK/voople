@@ -139,8 +139,13 @@ with Full ignored. Saved premium fonts survive entitlement loss, render as
 `sans` while denied and reactivate on restoration. Explicit `sans` replaces
 the preference. Published appearance snapshots preserve their captured font,
 including in reposts, independently of current author entitlement. PostgreSQL
-blocks direct browser premium-font writes. Other
-name styling, wallpaper and legacy premium and Store rules remain unchanged. The
+blocks direct browser premium-font writes. Premium nickname effects are the
+third Style consumer: `plain` is free; `gradient`, `neon`, `highlight`, `outline`
+and standalone gradient=true require legacy OR Style, ignoring Full. Saved
+effect/gradient facts survive access loss; live presentation becomes plain with
+gradient=false, and restoration reactivates the retained choice. Explicit plain
+replaces it and clears gradient. Historical appearance snapshots stay captured.
+Migration 91 blocks browser premium effect/gradient writes. Other name styling, wallpaper and legacy premium and Store rules remain unchanged. The
 database blocks browser theme inserts/changes; trusted server mutations recompute
 authorization. See `docs/style-app-theme.md`.
 

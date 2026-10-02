@@ -16,6 +16,7 @@ import type {
   ResolvedFrame
 } from "./types"
 import type { NicknameEffect, NicknameFont } from "./types"
+import { NICKNAME_EFFECT_IDS } from "./nickname-effect"
 import { NICKNAME_FONT_IDS } from "./nickname-font"
 
 /** Raw shape from DB / mock — optional shop-owned fields */
@@ -176,7 +177,7 @@ export function resolveCustomization(input: CustomizationInput = {}): ResolvedCu
     font: NICKNAME_FONT_IDS.includes(input.nicknameFont as NicknameFont)
       ? input.nicknameFont as NicknameFont
       : "sans",
-    effect: NICKNAME_EFFECTS.includes(input.nicknameEffect as NicknameEffect)
+    effect: NICKNAME_EFFECT_IDS.includes(input.nicknameEffect as NicknameEffect)
       ? input.nicknameEffect as NicknameEffect
       : input.nicknameGradient ? "gradient" : "plain"
   }

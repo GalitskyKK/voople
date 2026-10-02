@@ -160,7 +160,7 @@ test("real REST browser boundary and Style consumer preserve legacy field gates 
       await fulfillStylePlanGrant({ userId: user, sourceReference: "theme:style", validFrom: "2020-01-01T00:00:00Z", validUntil: "2099-01-01T00:00:00Z" });
       await updateCustomization(user, { appThemeId: "violet" });
       assert.equal((await getAccountAppTheme(user)).effectiveAppThemeId, "violet");
-      await assert.rejects(updateCustomization(user, { appThemeId: "gold", nicknameEffect: "neon" }));
+      await assert.rejects(updateCustomization(user, { appThemeId: "gold", frameColor: "#123456" }));
       await revokeStylePlanGrant({ sourceReference: "theme:style" });
       assert.equal((await getAccountAppTheme(user)).effectiveAppThemeId, "void");
       assert.equal((await getEquippedCustomization(user)).savedAppThemeId, "violet");

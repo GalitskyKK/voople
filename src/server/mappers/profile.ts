@@ -94,6 +94,7 @@ export function mapUserToAuthor(
     customization: toProfileCustomizationView(customizationRow, {
       hasActiveSubscription: hasVooplePlus,
       selectPremiumNicknameFont: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
+      selectPremiumNicknameEffect: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
     }),
   };
 }
@@ -123,6 +124,7 @@ export function mapUserToProfile(
     customization: toProfileCustomizationView(customizationRow, {
       hasActiveSubscription: hasVooplePlus,
       selectPremiumNicknameFont: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
+      selectPremiumNicknameEffect: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
     }),
     status: mapStatus(statusRow),
     stats,

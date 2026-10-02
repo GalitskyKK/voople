@@ -103,7 +103,9 @@ export function CustomizationEditor({
       feedCardStyleId: equipped.feedCardStyleId,
       animatedAvatarId: equipped.animatedAvatarId,
       nicknameColor: equipped.nicknameColor,
-      nicknameGradient: equipped.nicknameGradient,
+      nicknameGradient: equipped.effectiveNicknameGradient,
+      nicknameEffect: equipped.effectiveNicknameEffect,
+      nicknameFont: equipped.effectiveNicknameFont,
       themePrimary: equipped.themePrimary,
       themeAccent: equipped.themeAccent,
     });

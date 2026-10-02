@@ -12,7 +12,8 @@ revocation and reads never reset it. Pure `resolveEffectiveNicknameFont`
 projects an allowed premium preference to itself and otherwise to `sans`.
 Restoration reactivates the retained preference. Explicit `sans` selection
 replaces it. Only the automatic legacy-expiry font reset was removed; other
-legacy cleanup remains. Effects, color, standalone gradient policy, frames,
+legacy cleanup remains. The third consumer now governs effects and standalone gradient=true (see
+[`style-nickname-effect.md`](./style-nickname-effect.md)); color, frames,
 wallpaper, Store ownership/equip, billing and Group charges are unchanged.
 
 The trusted customization service validates the font and computes access on
@@ -26,7 +27,7 @@ a saved-preference alias for the editor, never a public rendering field.
 ## Database boundary
 
 Apply `90-style-nickname-font-write-boundary.sql` after 89 and before deploying
-the consumer. The required release chain contains 49 migrations. Migration 90
+the consumer. The required release chain contains 50 migrations. Migration 90
 does not rewrite rows or replace migration 89's function. The existing runner
 commits the migration and checksum ledger entry atomically.
 
@@ -53,7 +54,10 @@ the snapshot. This also applies to nested reposts. Live author customization
 remains independently subject to current access. Web and desktop consume the
 same views. The Drizzle adapter preserves raw storage facts before mapping.
 
-`loadNicknameFontAccessRest` deduplicates subject IDs and uses one evaluation
+The existing `accountNicknameFont` self read also returns effect facts/access
+so the editor refresh evaluates both capabilities once.
+
+`loadNicknameFontAccessRest` serves font and effect projections, deduplicates subject IDs and uses one evaluation
 timestamp for all chunks of at most 200 subjects. Migration 90's service-only
 `load_active_style_subjects` returns distinct active Style subjects in one JSON
 aggregate. A normal grant-row query could truncate when overlapping grants
@@ -84,7 +88,7 @@ preservation, restoration, effective projections and bounded batching. Real
 PostgreSQL 16/PostgREST 12.2.3 tests cover SQL roles, spoofed claims, premium
 INSERT/UPDATE/UPSERT, unrelated retained-premium updates, RPC privileges and
 overlap beyond the REST limit. The concurrent Quality Gate runs this suite and
-the fresh 49-migration chain with no CI skip or production fallback.
+the fresh 50-migration chain with no CI skip or production fallback.
 
 `npx playwright test --config playwright.theme.config.ts` runs the existing
 theme tests and focused nickname-font editor tests on web/desktop at 360px

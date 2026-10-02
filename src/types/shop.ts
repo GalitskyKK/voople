@@ -75,7 +75,13 @@ export type EquippedCustomizationView = {
   savedNicknameFont: string | null;
   effectiveNicknameFont: import("@/lib/customization/types").NicknameFont;
   selectPremiumNicknameFont: boolean;
+  /** Saved effect/gradient aliases for editor selection. */
   nicknameEffect: string | null;
+  savedNicknameEffect: string | null;
+  savedNicknameGradient: boolean;
+  effectiveNicknameEffect: import("@/lib/customization/types").NicknameEffect;
+  effectiveNicknameGradient: boolean;
+  selectPremiumNicknameEffect: boolean;
   /** Тема профиля (два цвета градиента карточки). Доступна с Voople+. */
   themePrimary: string | null;
   themeAccent: string | null;

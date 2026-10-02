@@ -57,10 +57,6 @@ export async function clearExpiredSubscriptionCustomizationRest(userId: string):
   if (row.card_base_mode && row.card_base_mode !== "mirror") update.card_base_mode = "mirror";
   if (row.theme_primary) update.theme_primary = null;
   if (row.theme_accent) update.theme_accent = null;
-  if (row.nickname_effect && row.nickname_effect !== "plain") {
-    update.nickname_effect = "plain";
-    update.nickname_gradient = false;
-  }
   const slots: Array<[keyof EquippedRow, string]> = [
     ["profile_effect_id", "profile_effect_id"], ["profile_background_id", "profile_background_id"],
     ["profile_frame_id", "profile_frame_id"], ["avatar_ring_id", "avatar_ring_id"],
@@ -79,7 +75,6 @@ export async function clearExpiredSubscriptionCustomizationRest(userId: string):
     update.banner_type = "color";
     update.banner_value = { color: "#1A0D2E" };
   }
-  if (update.nickname_color === null && row.nickname_gradient) update.nickname_gradient = false;
   if (Object.keys(update).length > 0) {
     update.updated_at = new Date().toISOString();
     const { error } = await admin.from("profile_customization").update(update).eq("user_id", userId);

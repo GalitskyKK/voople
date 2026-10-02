@@ -16,6 +16,7 @@ import { createTRPCRouter, protectedProcedure } from "../init";
 import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
 import { getAccountAppTheme } from "@/server/services/app-theme.service";
 import { getAccountNicknameFont } from "@/server/services/nickname-font.service";
+import { NICKNAME_EFFECT_IDS } from "@/lib/customization/nickname-effect";
 import { NICKNAME_FONT_IDS } from "@/lib/customization/nickname-font";
 
 export const customizationRouter = createTRPCRouter({
@@ -139,7 +140,7 @@ export const customizationRouter = createTRPCRouter({
           .optional(),
         nicknameGradient: z.boolean().nullable().optional(),
         nicknameFont: z.enum(NICKNAME_FONT_IDS).nullable().optional(),
-        nicknameEffect: z.enum(["plain", "gradient", "neon", "highlight", "outline"]).nullable().optional(),
+        nicknameEffect: z.enum(NICKNAME_EFFECT_IDS).nullable().optional(),
         themePrimary: z
           .string()
           .regex(/^#[0-9a-fA-F]{6}$/, "Ожидается HEX-цвет вида #RRGGBB")

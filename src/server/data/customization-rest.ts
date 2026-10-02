@@ -5,6 +5,7 @@ import { assertAppThemeSelectionAllowed, isFreeAppThemeId } from "@/lib/app-them
 import { getFramePreset } from "@/lib/customization/frames-registry";
 import { isFreeNicknameColor } from "@/lib/customization/nickname-options";
 import { assertNicknameFontSelectionAllowed } from "@/lib/customization/nickname-font";
+import { assertNicknameEffectSelectionAllowed } from "@/lib/customization/nickname-effect";
 import { SHOP_CATALOG_BY_ID } from "@/lib/shop/catalog";
 import { assertActiveSubscriptionRest, hasActiveSubscriptionRest } from "@/server/data/subscription-rest";
 import { getInventoryItemIdsRest, getShopItemRowRest } from "@/server/data/shop-rest";
@@ -91,8 +92,11 @@ async function resolveBannerPatch(bannerId: string | null | undefined) {
 export async function updateProfileCustomizationRest(
   userId: string,
   patch: CustomizationEquipPatch,
-  options?: { trustedItemId?: string; selectPaidAppTheme?: boolean; selectPremiumNicknameFont?: boolean },
+  options?: { trustedItemId?: string; selectPaidAppTheme?: boolean; selectPremiumNicknameFont?: boolean; selectPremiumNicknameEffect?: boolean },
 ) {
+  const effectAllowed = options?.selectPremiumNicknameEffect ?? (patch.nicknameGradient === true || (patch.nicknameEffect != null && patch.nicknameEffect !== "plain")
+    ? await hasActiveSubscriptionRest(userId) : false);
+  assertNicknameEffectSelectionAllowed(patch.nicknameEffect, patch.nicknameGradient, effectAllowed);
   const ownedIds = await getInventoryItemIdsRest(userId);
   const trustedItemId = options?.trustedItemId;
 
@@ -179,7 +183,6 @@ export async function updateProfileCustomizationRest(
     update.nickname_font = patch.nicknameFont ?? "sans";
   }
   if (patch.nicknameEffect !== undefined) {
-    if (patch.nicknameEffect && patch.nicknameEffect !== "plain") await assertActiveSubscriptionRest(userId);
     update.nickname_effect = patch.nicknameEffect ?? "plain";
     update.nickname_gradient = patch.nicknameEffect === "gradient";
   }
@@ -255,7 +258,9 @@ export async function equipShopItemRest(userId: string, itemId: string, options?
       throw new Error("Неизвестный слот экипировки");
   }
 
-  await updateProfileCustomizationRest(userId, patch, { trustedItemId: itemId, selectPaidAppTheme: options?.selectPaidAppTheme });
+  await updateProfileCustomizationRest(userId, patch, { trustedItemId: itemId, selectPaidAppTheme: options?.selectPaidAppTheme,
+    // Store nickname_style keeps its existing subscription/ownership authorization above.
+    selectPremiumNicknameEffect: slot === "nickname_style" });
   return patch;
 }
 

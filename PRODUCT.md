@@ -125,8 +125,9 @@ new charges resolve to Basic. Premium Grade benefits remain unconfigured until
 their capability matrix is accepted; free-core access and governance stay unchanged.
 
 The personal-plan foundation stores independent Style/full grant facts and
-exposes only an authenticated self read. Simultaneous coverage is representable
-without selecting an effective plan. No issuer, billing adapter, subscriber
+provides an authenticated self read. Simultaneous coverage is representable
+without selecting an effective plan. Trusted server/admin Style fulfillment and
+revocation are available; no billing adapter, subscriber
 migration, included Group charge issuance or entitlement consumer is connected.
 Current Store/subscription behavior and free-core access remain unchanged.
 

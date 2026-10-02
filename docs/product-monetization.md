@@ -44,10 +44,12 @@ charge issuance/reassignment, Group Night runtime and paywalls still require
 separate implementation and review. Premium Grade capabilities remain explicitly
 unconfigured until an accepted benefit matrix exists.
 
-The dormant personal-plan foundation persists `style` / `full` grant facts in
+The personal-plan foundation persists `style` / `full` grant facts in
 `personal_plan_grants`, independently of legacy subscriptions. Its protected
 self-only read reports both coverage booleans and simultaneous coverage; it
-does not select an effective plan or define precedence. No issuer, billing
+does not select an effective plan or define precedence. Trusted Style fulfillment
+and revocation are available through the server/admin boundary (see
+[`style-plan-fulfillment.md`](./style-plan-fulfillment.md)). No Full issuer, billing
 adapter, existing-subscriber migration or entitlement consumer uses this
 runtime yet. Full coverage does not yet issue the included Group charge, and
 Style must never issue it. Legacy Store and subscription behavior stays active

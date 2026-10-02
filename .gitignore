@@ -119,3 +119,4 @@ next-env.d.ts
 
 !/drizzle/88-group-runtime-rpc-compatibility.sql
 !/docs/group-runtime-rpc-compatibility.md
+!/docs/style-plan-fulfillment.md

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { isPersonalPlanGrantActive } from "@/lib/personal-plans/personal-plan";
 import type { PersonalPlanGrant } from "@/types/personal-plan";
+import { personalPlanInstant } from "@/lib/personal-plans/timestamp";
 
 const grantRowSchema = z.object({
   id: z.string().uuid(),
@@ -12,7 +13,7 @@ const grantRowSchema = z.object({
   valid_from: z.string().datetime({ offset: true }),
   valid_until: z.string().datetime({ offset: true }),
   revoked_at: z.string().datetime({ offset: true }).nullable(),
-}).refine((row) => Date.parse(row.valid_from) < Date.parse(row.valid_until), {
+}).refine((row) => personalPlanInstant(row.valid_from) < personalPlanInstant(row.valid_until), {
   message: "Invalid personal-plan validity window",
 });
 

@@ -27,8 +27,9 @@ test("profile cosmetics expose equip, preview and acquisition as distinct action
   assert.match(catalog, /Примерить/);
   assert.match(catalog, /Получить/);
   assert.match(catalog, /item\.owned/);
-  assert.match(namePanel, /onChange=.*previewPatch/);
-  assert.match(namePanel, /onBlur=.*commitPatch/);
+  assert.match(namePanel, /disabled=\{controller.cosmeticBusy \|\| !selectCustomNicknameColor\}/);
+  assert.match(namePanel, /onChange=.*selectCustomNicknameColor.*commitPatch/);
+  assert.doesNotMatch(namePanel, /onBlur=.*commitPatch/);
 });
 
 test("profile tag selection uses memberships and the server-owned mutation", () => {

@@ -102,7 +102,7 @@ export function CustomizationEditor({
       avatarDecorationId: equipped.avatarDecorationId,
       feedCardStyleId: equipped.feedCardStyleId,
       animatedAvatarId: equipped.animatedAvatarId,
-      nicknameColor: equipped.nicknameColor,
+      nicknameColor: equipped.effectiveNicknameColor,
       nicknameGradient: equipped.effectiveNicknameGradient,
       nicknameEffect: equipped.effectiveNicknameEffect,
       nicknameFont: equipped.effectiveNicknameFont,

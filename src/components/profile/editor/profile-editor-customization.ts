@@ -1,3 +1,4 @@
+import { resolveEffectiveNicknameColor } from "@/lib/customization/nickname-color";
 import { resolveEffectiveNicknameEffect } from "@/lib/customization/nickname-effect";
 import { resolveEffectiveNicknameFont } from "@/lib/customization/nickname-font";
 import { resolveCustomization } from "@/lib/customization/resolve";
@@ -5,10 +6,10 @@ import type { ProfileCustomizationView } from "@/types/domain";
 import type { EquippedCustomizationView, ShopItemView } from "@/types/shop";
 import type { NicknameFont } from "@/lib/customization/types";
 
-export function projectEditorDisplayName(value: ProfileCustomizationView, font: NicknameFont, effect = { effect: value.displayName.effect, gradient: value.displayName.gradient }): ProfileCustomizationView {
-  const nickname = resolveCustomization({ nicknameFont: font, nicknameColor: value.displayName.color,
+export function projectEditorDisplayName(value: ProfileCustomizationView, font: NicknameFont, effect = { effect: value.displayName.effect, gradient: value.displayName.gradient }, color = value.displayName.color): ProfileCustomizationView {
+  const nickname = resolveCustomization({ nicknameFont: font, nicknameColor: color,
     nicknameGradient: effect.gradient, nicknameEffect: effect.effect });
-  return { ...value, displayName: { ...value.displayName, font, ...effect },
+  return { ...value, displayName: { ...value.displayName, font, color, ...effect },
     flags: { ...value.flags, hasDisplayNameStyle: nickname.flags.hasDisplayNameStyle } };
 }
 
@@ -28,7 +29,7 @@ export function customizationFromEquipped(
     animatedAvatarId: equipped.animatedAvatarId,
     animatedAvatarUrl: equipped.animatedAvatarId ? null : fallback.assets.animatedAvatarUrl,
     profileBackgroundId: equipped.profileBackgroundId,
-    nicknameColor: equipped.nicknameColor,
+    nicknameColor: resolveEffectiveNicknameColor(equipped.nicknameColor, equipped.selectCustomNicknameColor),
     nicknameGradient: effectiveEffect.gradient,
     nicknameFont: resolveEffectiveNicknameFont(equipped.nicknameFont, equipped.selectPremiumNicknameFont),
     nicknameEffect: effectiveEffect.effect,

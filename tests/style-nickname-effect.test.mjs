@@ -101,7 +101,7 @@ test("null reset is free; malformed effects fail safe and are rejected at transp
   }
   assert.deepEqual(resolveEffectiveNicknameEffect(null, true, true), { effect: "gradient", gradient: true });
 });
-for (const patch of [{ nicknameColor: "#123456" }, { profileFrameId: "frame-aurora" }, { frameColor: "#123456" },
+for (const patch of [{ profileFrameId: "frame-aurora" }, { frameColor: "#123456" },
   { cardBaseMode: "theme" }, { themePrimary: "#123456" }, { themeAccent: "#123456" }, { bannerId: "not-owned" }]) {
   test(`Style effect retains independent gate: ${JSON.stringify(patch)}`, async () => {
     const state = setup({ grants: [grant()] });

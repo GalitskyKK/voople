@@ -61,7 +61,7 @@ premium-font writes are blocked. Premium nickname effects are the third
 accepted consumer with the same legacy OR Style rule; Full is ignored. Plain
 is free; premium effects and gradient=true share one explicit capability. Saved
 facts survive access loss with a plain/false live fallback. See
-[`style-nickname-effect.md`](./style-nickname-effect.md). Other name styling remains unchanged. All
+[`style-nickname-effect.md`](./style-nickname-effect.md). Custom nickname colors are the fourth accepted consumer: the seven free palette colors/reset stay free, exact custom HEX uses legacy OR Style, and Full is ignored. Saved colors survive denial with default foreground and reactivate on restoration; historical snapshots stay captured. Browser custom writes are blocked independently by migration 92. See [style-nickname-color.md](./style-nickname-color.md). All
 other premium capabilities, wallpaper and Store rules remain legacy-only.
 See [`style-nickname-font.md`](./style-nickname-font.md).
 See [`style-app-theme.md`](./style-app-theme.md). Full coverage does not yet issue the included Group charge, and

@@ -145,7 +145,7 @@ and standalone gradient=true require legacy OR Style, ignoring Full. Saved
 effect/gradient facts survive access loss; live presentation becomes plain with
 gradient=false, and restoration reactivates the retained choice. Explicit plain
 replaces it and clears gradient. Historical appearance snapshots stay captured.
-Migration 91 blocks browser premium effect/gradient writes. Other name styling, wallpaper and legacy premium and Store rules remain unchanged. The
+Migration 91 blocks browser premium effect/gradient writes. Custom nickname color is the fourth accepted Style consumer: the seven free palette colors and reset remain free; any other exact six-digit HEX requires legacy OR Style, with Full ignored. Saved custom colors survive entitlement loss, render with default/null foreground while denied and reactivate on restoration. Published appearance snapshots preserve captured effective colors. Migration 92 blocks direct browser custom-color writes. Wallpaper, other premium customization and legacy Store rules remain unchanged. The
 database blocks browser theme inserts/changes; trusted server mutations recompute
 authorization. See `docs/style-app-theme.md`.
 

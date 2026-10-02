@@ -68,7 +68,11 @@ export type EquippedCustomizationView = {
   appThemeId: string | null;
   savedAppThemeId: string | null;
   effectiveAppThemeId: import("@/lib/app-themes").AppThemeId;
+  /** Saved preference alias; live rendering uses effectiveNicknameColor. */
   nicknameColor: string | null;
+  savedNicknameColor: string | null;
+  effectiveNicknameColor: string | null;
+  selectCustomNicknameColor: boolean;
   nicknameGradient: boolean;
   /** Saved preference alias for editor selection, never public rendering. */
   nicknameFont: string | null;

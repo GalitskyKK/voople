@@ -1,4 +1,5 @@
 "use client";
+import { resolveEffectiveNicknameColor } from "@/lib/customization/nickname-color";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -186,6 +187,8 @@ export function useProfileEditorController({
   const dirty = draft.name !== savedDraft.name || draft.bio !== savedDraft.bio;
   const selectPremiumNicknameFont = !fontAccess.isError && Boolean(fontAccess.data?.selectPremiumNicknameFont);
   const selectPremiumNicknameEffect = !fontAccess.isError && Boolean(fontAccess.data?.selectPremiumNicknameEffect);
+  const selectCustomNicknameColor = !fontAccess.isError && Boolean(fontAccess.data?.selectCustomNicknameColor);
+  const effectiveColor = resolveEffectiveNicknameColor(equipped ? equipped.nicknameColor : previewCustomization.displayName.color, selectCustomNicknameColor);
   const effectiveEffect = resolveEffectiveNicknameEffect(equipped?.nicknameEffect ?? previewCustomization.displayName.effect, equipped?.nicknameGradient ?? previewCustomization.displayName.gradient, selectPremiumNicknameEffect);
   const effectiveFont = resolveEffectiveNicknameFont(equipped?.nicknameFont ?? previewCustomization.displayName.font, selectPremiumNicknameFont);
 
@@ -367,8 +370,8 @@ export function useProfileEditorController({
 
   return {
     open, discardOpen, panel, editing, draft, avatarUrl,
-    previewCustomization: projectEditorDisplayName(previewCustomization, effectiveFont, effectiveEffect),
-    equipped: equipped ? { ...equipped, selectPremiumNicknameFont, effectiveNicknameFont: effectiveFont, selectPremiumNicknameEffect, effectiveNicknameEffect: effectiveEffect.effect, effectiveNicknameGradient: effectiveEffect.gradient } : null,
+    previewCustomization: projectEditorDisplayName(previewCustomization, effectiveFont, effectiveEffect, effectiveColor),
+    equipped: equipped ? { ...equipped, selectCustomNicknameColor, effectiveNicknameColor: effectiveColor, selectPremiumNicknameFont, effectiveNicknameFont: effectiveFont, selectPremiumNicknameEffect, effectiveNicknameEffect: effectiveEffect.effect, effectiveNicknameGradient: effectiveEffect.gradient } : null,
     trialItemId, selectedGroupTag: hydratedGroupTag, groupTags, allItems, message,
     cosmeticBusy, dirty, overview, history, chats, avatarUpload, bannerUpload,
     savePending: saveMutation.isPending,

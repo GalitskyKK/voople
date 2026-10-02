@@ -190,7 +190,7 @@ test("real REST browser boundary and Style consumer preserve legacy field gates 
       await fulfillStylePlanGrant({ userId: user, sourceReference: "font:style", validFrom: "2020-01-01T00:00:00Z", validUntil: "2099-01-01T00:00:00Z" });
       await updateCustomization(user, { nicknameFont: "serif" });
       assert.equal((await getEquippedCustomization(user)).effectiveNicknameFont, "serif");
-      for (const patch of [{ nicknameColor: "#123456" }, { profileFrameId: "frame-aurora" },
+      for (const patch of [{ profileFrameId: "frame-aurora" },
         { frameColor: "#123456" }, { cardBaseMode: "theme" }, { themePrimary: "#123456" }, { themeAccent: "#123456" }]) {
         await assert.rejects(updateCustomization(user, { nicknameFont: "mono", ...patch }));
         assert.equal((await getEquippedCustomization(user)).savedNicknameFont, "serif");

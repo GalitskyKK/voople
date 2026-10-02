@@ -1,3 +1,4 @@
+import { assertNicknameColorReadiness } from "../../scripts/nickname-color-readiness.mjs";
 import { assertNicknameEffectReadiness } from "../../scripts/nickname-effect-readiness.mjs";
 import { assertNicknameFontReadiness } from '../../scripts/nickname-font-readiness.mjs';
 import { assertGroupRuntimeRpcReadiness } from '../../scripts/group-runtime-rpc-readiness.mjs';
@@ -108,6 +109,7 @@ test("fresh entire 45 -> 82 -> 83 -> 84 -> 85 -> 86 -> unchanged 38..81; readine
   await assertAppThemeReadiness(sql);
   await assertNicknameFontReadiness(sql);
   await assertNicknameEffectReadiness(sql);
+  await assertNicknameColorReadiness(sql);
   assert.equal((await assertLegacyCommerceRpcPrivileges(sql)).length, 6);
   // Local/CI test TLS is optional. All catalog readiness contracts run above;
   // when TLS is available also exercise the unchanged operational CLI end-to-end.

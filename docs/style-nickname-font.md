@@ -13,7 +13,7 @@ projects an allowed premium preference to itself and otherwise to `sans`.
 Restoration reactivates the retained preference. Explicit `sans` selection
 replaces it. Only the automatic legacy-expiry font reset was removed; other
 legacy cleanup remains. The third consumer now governs effects and standalone gradient=true (see
-[`style-nickname-effect.md`](./style-nickname-effect.md)); color, frames,
+[`style-nickname-effect.md`](./style-nickname-effect.md)); custom color separately uses its fourth capability; frames,
 wallpaper, Store ownership/equip, billing and Group charges are unchanged.
 
 The trusted customization service validates the font and computes access on
@@ -27,7 +27,7 @@ a saved-preference alias for the editor, never a public rendering field.
 ## Database boundary
 
 Apply `90-style-nickname-font-write-boundary.sql` after 89 and before deploying
-the consumer. The required release chain contains 50 migrations. Migration 90
+the consumer. The required release chain contains 51 migrations. Migration 90
 does not rewrite rows or replace migration 89's function. The existing runner
 commits the migration and checksum ledger entry atomically.
 
@@ -55,7 +55,7 @@ remains independently subject to current access. Web and desktop consume the
 same views. The Drizzle adapter preserves raw storage facts before mapping.
 
 The existing `accountNicknameFont` self read also returns effect facts/access
-so the editor refresh evaluates both capabilities once.
+so the editor refresh evaluates font, effect and color capabilities once.
 
 `loadNicknameFontAccessRest` serves font and effect projections, deduplicates subject IDs and uses one evaluation
 timestamp for all chunks of at most 200 subjects. Migration 90's service-only
@@ -88,9 +88,11 @@ preservation, restoration, effective projections and bounded batching. Real
 PostgreSQL 16/PostgREST 12.2.3 tests cover SQL roles, spoofed claims, premium
 INSERT/UPDATE/UPSERT, unrelated retained-premium updates, RPC privileges and
 overlap beyond the REST limit. The concurrent Quality Gate runs this suite and
-the fresh 50-migration chain with no CI skip or production fallback.
+the fresh 51-migration chain with no CI skip or production fallback.
 
 `npx playwright test --config playwright.theme.config.ts` runs the existing
 theme tests and focused nickname-font editor tests on web/desktop at 360px
 and 1280px in Void and Light. The browser transport is mocked; database security
 is proved separately by real REST tests.
+
+The fourth accepted consumer is custom nickname color; see [style-nickname-color.md](./style-nickname-color.md). Its explicit capability does not broaden legacy Store equip authorization. Migration 92 is independent of the existing boundaries.

@@ -1,3 +1,5 @@
+import { assertNicknameColorSelectionAllowed, resolveEffectiveNicknameColor } from "@/lib/customization/nickname-color";
+import { isFreeNicknameColor } from "@/lib/customization/nickname-options";
 export {
   clearEquipSlotRest as clearEquipSlot,
   getAvatarHistoryRest as getAvatarHistory,
@@ -16,14 +18,17 @@ import { assertNicknameEffectSelectionAllowed, resolveEffectiveNicknameEffect } 
 import { resolveRowEquipSlot, resolveRowEquipValue } from "@/lib/shop/item-row";
 
 export async function updateCustomization(userId: string, patch: CustomizationEquipPatch) {
+  assertNicknameColorSelectionAllowed(patch.nicknameColor, true);
   assertAppThemeSelectionAllowed(patch.appThemeId, true);
   assertNicknameFontSelectionAllowed(patch.nicknameFont, true);
   assertNicknameEffectSelectionAllowed(patch.nicknameEffect, patch.nicknameGradient, true);
-  const access = (patch.appThemeId != null && !isFreeAppThemeId(patch.appThemeId))
+  const access = (patch.nicknameColor != null && !isFreeNicknameColor(patch.nicknameColor))
+    || (patch.appThemeId != null && !isFreeAppThemeId(patch.appThemeId))
     || (patch.nicknameFont != null && patch.nicknameFont !== "sans")
     || (patch.nicknameEffect != null && patch.nicknameEffect !== "plain") || patch.nicknameGradient === true
     ? await getPersonalStyleAccess(userId) : null;
   return updateProfileCustomizationRest(userId, patch, {
+    selectCustomNicknameColor: access?.capabilities.selectCustomNicknameColor ?? false,
     selectPaidAppTheme: access?.capabilities.selectPaidAppTheme ?? false,
     selectPremiumNicknameFont: access?.capabilities.selectPremiumNicknameFont ?? false,
     selectPremiumNicknameEffect: access?.capabilities.selectPremiumNicknameEffect ?? false,
@@ -46,7 +51,9 @@ export async function getEquippedCustomization(userId: string) {
     getEquippedCustomizationRest(userId), getPersonalStyleAccess(userId),
   ]);
   const effectiveEffect = resolveEffectiveNicknameEffect(equipped.nicknameEffect, equipped.nicknameGradient, access.capabilities.selectPremiumNicknameEffect);
-  return { ...equipped, savedNicknameEffect: equipped.nicknameEffect, savedNicknameGradient: equipped.nicknameGradient,
+  return { ...equipped, savedNicknameColor: equipped.nicknameColor,
+    effectiveNicknameColor: resolveEffectiveNicknameColor(equipped.nicknameColor, access.capabilities.selectCustomNicknameColor),
+    selectCustomNicknameColor: access.capabilities.selectCustomNicknameColor, savedNicknameEffect: equipped.nicknameEffect, savedNicknameGradient: equipped.nicknameGradient,
     effectiveNicknameEffect: effectiveEffect.effect, effectiveNicknameGradient: effectiveEffect.gradient,
     selectPremiumNicknameEffect: access.capabilities.selectPremiumNicknameEffect, savedNicknameFont: equipped.nicknameFont,
     effectiveNicknameFont: resolveEffectiveNicknameFont(equipped.nicknameFont, access.capabilities.selectPremiumNicknameFont),

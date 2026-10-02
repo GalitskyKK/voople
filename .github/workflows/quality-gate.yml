@@ -40,7 +40,7 @@ jobs:
         image: postgrest/postgrest:v12.2.3
         env:
           PGRST_DB_URI: postgresql://voople_test:ci-only-disposable@postgres:5432/voople_test
-          PGRST_DB_SCHEMAS: style_fulfillment_test,app_theme_test,nickname_font_test,nickname_effect_test
+          PGRST_DB_SCHEMAS: style_fulfillment_test,app_theme_test,nickname_font_test,nickname_effect_test,nickname_color_test
           PGRST_JWT_SECRET: disposable-theme-test-secret-at-least-32-characters
           PGRST_DB_ANON_ROLE: style_fulfillment_service
         ports:
@@ -66,7 +66,7 @@ jobs:
           VOOPLE_TEST_POSTGREST_URL: http://127.0.0.1:${{ job.services.postgrest.ports['3000'] }}
         run: |
           test -n "$VOOPLE_TEST_DATABASE_URL"
-          node --test tests/integration/core-baseline.integration.mjs tests/integration/commerce-prerequisite.integration.mjs tests/integration/commerce-base.integration.mjs tests/integration/wallet-ledger.integration.mjs tests/integration/payment-fulfillment.integration.mjs tests/integration/promo.integration.mjs tests/integration/group-runtime-rpc.integration.mjs tests/integration/migration-runner.integration.mjs tests/integration/legacy-commerce-rpc-privileges.integration.mjs tests/integration/group-charge-concurrency.integration.mjs tests/integration/personal-plan-grants.integration.mjs tests/integration/style-plan-fulfillment.integration.mjs tests/integration/style-app-theme.integration.mjs tests/integration/style-nickname-font.integration.mjs tests/integration/style-nickname-effect.integration.mjs
+          node --test tests/integration/core-baseline.integration.mjs tests/integration/commerce-prerequisite.integration.mjs tests/integration/commerce-base.integration.mjs tests/integration/wallet-ledger.integration.mjs tests/integration/payment-fulfillment.integration.mjs tests/integration/promo.integration.mjs tests/integration/group-runtime-rpc.integration.mjs tests/integration/migration-runner.integration.mjs tests/integration/legacy-commerce-rpc-privileges.integration.mjs tests/integration/group-charge-concurrency.integration.mjs tests/integration/personal-plan-grants.integration.mjs tests/integration/style-plan-fulfillment.integration.mjs tests/integration/style-app-theme.integration.mjs tests/integration/style-nickname-font.integration.mjs tests/integration/style-nickname-effect.integration.mjs tests/integration/style-nickname-color.integration.mjs
 
   verify:
     name: Verify repository

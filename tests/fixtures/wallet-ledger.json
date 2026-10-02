@@ -1,0 +1,427 @@
+{
+  "evidenceCapturedAt": "2026-10-01T11:09:53.405Z",
+  "evidenceLfSha256": "240022b707ec3e9a6473733e26a5c31cbe775bacbe66957795959c9b567a71db",
+  "enums": [],
+  "tables": [
+    {
+      "name": "user_wallets",
+      "columns": [
+        [
+          "user_id",
+          "uuid",
+          false,
+          null,
+          null
+        ],
+        [
+          "balance_coins",
+          "integer",
+          false,
+          "0",
+          null
+        ],
+        [
+          "updated_at",
+          "timestamp with time zone",
+          false,
+          "now()",
+          null
+        ]
+      ],
+      "constraints": [
+        [
+          "user_wallets_balance_coins_check",
+          "CHECK (balance_coins >= 0)",
+          "c"
+        ],
+        [
+          "user_wallets_pkey",
+          "PRIMARY KEY (user_id)",
+          "p"
+        ],
+        [
+          "user_wallets_user_id_fkey",
+          "FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE",
+          "f"
+        ]
+      ],
+      "indexes": [
+        [
+          "user_wallets_pkey",
+          "CREATE UNIQUE INDEX user_wallets_pkey ON public.user_wallets USING btree (user_id)",
+          true,
+          true,
+          null,
+          null
+        ]
+      ],
+      "policies": [
+        {
+          "name": "user_wallets_select_own",
+          "command": "r",
+          "permissive": true,
+          "roles": [
+            "PUBLIC"
+          ],
+          "using_expression": "(auth.uid() = user_id)",
+          "check_expression": null
+        }
+      ],
+      "grants": [
+        [
+          "anon",
+          "INSERT"
+        ],
+        [
+          "anon",
+          "SELECT"
+        ],
+        [
+          "anon",
+          "UPDATE"
+        ],
+        [
+          "anon",
+          "DELETE"
+        ],
+        [
+          "anon",
+          "TRUNCATE"
+        ],
+        [
+          "anon",
+          "REFERENCES"
+        ],
+        [
+          "anon",
+          "TRIGGER"
+        ],
+        [
+          "authenticated",
+          "INSERT"
+        ],
+        [
+          "authenticated",
+          "SELECT"
+        ],
+        [
+          "authenticated",
+          "UPDATE"
+        ],
+        [
+          "authenticated",
+          "DELETE"
+        ],
+        [
+          "authenticated",
+          "TRUNCATE"
+        ],
+        [
+          "authenticated",
+          "REFERENCES"
+        ],
+        [
+          "authenticated",
+          "TRIGGER"
+        ],
+        [
+          "service_role",
+          "INSERT"
+        ],
+        [
+          "service_role",
+          "SELECT"
+        ],
+        [
+          "service_role",
+          "UPDATE"
+        ],
+        [
+          "service_role",
+          "DELETE"
+        ],
+        [
+          "service_role",
+          "TRUNCATE"
+        ],
+        [
+          "service_role",
+          "REFERENCES"
+        ],
+        [
+          "service_role",
+          "TRIGGER"
+        ]
+      ]
+    },
+    {
+      "name": "wallet_transactions",
+      "columns": [
+        [
+          "id",
+          "uuid",
+          false,
+          "gen_random_uuid()",
+          null
+        ],
+        [
+          "user_id",
+          "uuid",
+          false,
+          null,
+          null
+        ],
+        [
+          "amount",
+          "integer",
+          false,
+          null,
+          null
+        ],
+        [
+          "balance_after",
+          "integer",
+          false,
+          null,
+          null
+        ],
+        [
+          "kind",
+          "character varying(30)",
+          false,
+          null,
+          "default"
+        ],
+        [
+          "reference_type",
+          "character varying(30)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "reference_id",
+          "character varying(100)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "note",
+          "character varying(200)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "created_at",
+          "timestamp with time zone",
+          false,
+          "now()",
+          null
+        ],
+        [
+          "idempotency_key",
+          "character varying(200)",
+          true,
+          null,
+          "default"
+        ]
+      ],
+      "constraints": [
+        [
+          "wallet_transactions_balance_after_check",
+          "CHECK (balance_after >= 0)",
+          "c"
+        ],
+        [
+          "wallet_transactions_pkey",
+          "PRIMARY KEY (id)",
+          "p"
+        ],
+        [
+          "wallet_transactions_user_id_fkey",
+          "FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE",
+          "f"
+        ]
+      ],
+      "indexes": [
+        [
+          "wallet_transactions_idempotency_uidx",
+          "CREATE UNIQUE INDEX wallet_transactions_idempotency_uidx ON public.wallet_transactions USING btree (user_id, idempotency_key) WHERE (idempotency_key IS NOT NULL)",
+          false,
+          true,
+          "(idempotency_key IS NOT NULL)",
+          null
+        ],
+        [
+          "wallet_transactions_pkey",
+          "CREATE UNIQUE INDEX wallet_transactions_pkey ON public.wallet_transactions USING btree (id)",
+          true,
+          true,
+          null,
+          null
+        ],
+        [
+          "wallet_transactions_user_idx",
+          "CREATE INDEX wallet_transactions_user_idx ON public.wallet_transactions USING btree (user_id, created_at DESC)",
+          false,
+          false,
+          null,
+          null
+        ]
+      ],
+      "policies": [
+        {
+          "name": "wallet_transactions_select_own",
+          "command": "r",
+          "permissive": true,
+          "roles": [
+            "PUBLIC"
+          ],
+          "using_expression": "(auth.uid() = user_id)",
+          "check_expression": null
+        }
+      ],
+      "grants": [
+        [
+          "anon",
+          "INSERT"
+        ],
+        [
+          "anon",
+          "SELECT"
+        ],
+        [
+          "anon",
+          "UPDATE"
+        ],
+        [
+          "anon",
+          "DELETE"
+        ],
+        [
+          "anon",
+          "TRUNCATE"
+        ],
+        [
+          "anon",
+          "REFERENCES"
+        ],
+        [
+          "anon",
+          "TRIGGER"
+        ],
+        [
+          "authenticated",
+          "INSERT"
+        ],
+        [
+          "authenticated",
+          "SELECT"
+        ],
+        [
+          "authenticated",
+          "UPDATE"
+        ],
+        [
+          "authenticated",
+          "DELETE"
+        ],
+        [
+          "authenticated",
+          "TRUNCATE"
+        ],
+        [
+          "authenticated",
+          "REFERENCES"
+        ],
+        [
+          "authenticated",
+          "TRIGGER"
+        ],
+        [
+          "service_role",
+          "INSERT"
+        ],
+        [
+          "service_role",
+          "SELECT"
+        ],
+        [
+          "service_role",
+          "UPDATE"
+        ],
+        [
+          "service_role",
+          "DELETE"
+        ],
+        [
+          "service_role",
+          "TRUNCATE"
+        ],
+        [
+          "service_role",
+          "REFERENCES"
+        ],
+        [
+          "service_role",
+          "TRIGGER"
+        ]
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "ensure_user_wallet",
+      "signature": "public.ensure_user_wallet(uuid)",
+      "result": "integer",
+      "language": "plpgsql",
+      "security": "DEFINER",
+      "volatility": "v",
+      "strict": false,
+      "parallel": "u",
+      "default_argument_count": 0,
+      "config": [
+        "search_path=public"
+      ],
+      "definition_md5_lf": "1004769927d4c702131ceb1af7866ed9",
+      "definition": "CREATE OR REPLACE FUNCTION public.ensure_user_wallet(p_user_id uuid)\n RETURNS integer\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE\n  v_balance integer;\n  v_created integer;\nBEGIN\n  PERFORM pg_advisory_xact_lock(hashtextextended(p_user_id::text || ':wallet', 0));\n\n  INSERT INTO public.user_wallets (user_id, balance_coins)\n  VALUES (p_user_id, 500)\n  ON CONFLICT (user_id) DO NOTHING;\n  GET DIAGNOSTICS v_created = ROW_COUNT;\n\n  IF v_created > 0 THEN\n    INSERT INTO public.wallet_transactions (\n      user_id, amount, balance_after, kind, reference_type, note, idempotency_key\n    )\n    VALUES (\n      p_user_id, 500, 500, 'earn', 'welcome_bonus', 'Приветственный бонус',\n      'welcome:' || p_user_id::text\n    );\n  END IF;\n\n  SELECT balance_coins INTO v_balance\n  FROM public.user_wallets\n  WHERE user_id = p_user_id;\n  RETURN v_balance;\nEND;\n$function$\n",
+      "provenance": "drizzle/25-commerce-hardening.sql"
+    },
+    {
+      "name": "adjust_wallet",
+      "signature": "public.adjust_wallet(uuid,integer,character varying,character varying,character varying,character varying,character varying)",
+      "result": "integer",
+      "language": "plpgsql",
+      "security": "DEFINER",
+      "volatility": "v",
+      "strict": false,
+      "parallel": "u",
+      "default_argument_count": 0,
+      "config": [
+        "search_path=public"
+      ],
+      "definition_md5_lf": "c9b520b2129940e0bb1211b90a2b3eb6",
+      "definition": "CREATE OR REPLACE FUNCTION public.adjust_wallet(p_user_id uuid, p_amount integer, p_kind character varying, p_reference_type character varying, p_reference_id character varying, p_note character varying, p_idempotency_key character varying)\n RETURNS integer\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE\n  v_balance integer;\nBEGIN\n  IF p_amount = 0 THEN\n    RAISE EXCEPTION 'Amount must not be zero';\n  END IF;\n  IF p_idempotency_key IS NULL OR length(trim(p_idempotency_key)) = 0 THEN\n    RAISE EXCEPTION 'Idempotency key is required';\n  END IF;\n\n  PERFORM pg_advisory_xact_lock(hashtextextended(p_user_id::text || ':' || p_idempotency_key, 0));\n\n  SELECT w.balance_coins\n  INTO v_balance\n  FROM public.wallet_transactions tx\n  JOIN public.user_wallets w ON w.user_id = tx.user_id\n  WHERE tx.user_id = p_user_id\n    AND tx.idempotency_key = p_idempotency_key;\n\n  IF FOUND THEN\n    RETURN v_balance;\n  END IF;\n\n  PERFORM public.ensure_user_wallet(p_user_id);\n\n  SELECT balance_coins\n  INTO v_balance\n  FROM public.user_wallets\n  WHERE user_id = p_user_id\n  FOR UPDATE;\n\n  v_balance := v_balance + p_amount;\n  IF v_balance < 0 THEN\n    RAISE EXCEPTION 'Insufficient balance';\n  END IF;\n\n  UPDATE public.user_wallets\n  SET balance_coins = v_balance, updated_at = now()\n  WHERE user_id = p_user_id;\n\n  INSERT INTO public.wallet_transactions (\n    user_id, amount, balance_after, kind, reference_type, reference_id, note, idempotency_key\n  )\n  VALUES (\n    p_user_id, p_amount, v_balance, p_kind, p_reference_type, p_reference_id, p_note,\n    p_idempotency_key\n  );\n\n  RETURN v_balance;\nEND;\n$function$\n",
+      "provenance": "drizzle/25-commerce-hardening.sql"
+    },
+    {
+      "name": "purchase_shop_item_with_coins",
+      "signature": "public.purchase_shop_item_with_coins(uuid,character varying)",
+      "result": "integer",
+      "language": "plpgsql",
+      "security": "DEFINER",
+      "volatility": "v",
+      "strict": false,
+      "parallel": "u",
+      "default_argument_count": 0,
+      "config": [
+        "search_path=public"
+      ],
+      "definition_md5_lf": "d23d824342953c6a5ac6eb1234225ff3",
+      "definition": "CREATE OR REPLACE FUNCTION public.purchase_shop_item_with_coins(p_user_id uuid, p_item_id character varying)\n RETURNS integer\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE\n  v_price integer;\n  v_name text;\n  v_is_free boolean;\n  v_balance integer;\nBEGIN\n  PERFORM pg_advisory_xact_lock(hashtextextended(p_user_id::text || ':purchase:' || p_item_id, 0));\n\n  SELECT price_coins, name, is_free\n  INTO v_price, v_name, v_is_free\n  FROM public.shop_items\n  WHERE id = p_item_id\n  FOR SHARE;\n\n  IF NOT FOUND THEN RAISE EXCEPTION 'Item not found'; END IF;\n  IF v_is_free THEN RAISE EXCEPTION 'Item is free'; END IF;\n  IF v_price <= 0 THEN RAISE EXCEPTION 'Item is not available for coins'; END IF;\n  IF EXISTS (\n    SELECT 1 FROM public.user_inventory\n    WHERE user_id = p_user_id AND item_id = p_item_id\n  ) THEN\n    RAISE EXCEPTION 'Item already owned';\n  END IF;\n\n  v_balance := public.adjust_wallet(\n    p_user_id,\n    -v_price,\n    'spend',\n    'shop_item',\n    p_item_id,\n    'Покупка: ' || v_name,\n    'purchase:' || p_item_id\n  );\n\n  INSERT INTO public.user_inventory (user_id, item_id, acquired_via)\n  VALUES (p_user_id, p_item_id, 'purchase');\n\n  RETURN v_balance;\nEND;\n$function$\n",
+      "provenance": "drizzle/25-commerce-hardening.sql"
+    }
+  ]
+}

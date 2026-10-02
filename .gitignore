@@ -43,6 +43,7 @@
 !/docs/core-baseline-compatibility.md
 !/docs/commerce-prerequisite-compatibility.md
 !/docs/commerce-base-compatibility.md
+!/docs/wallet-ledger-compatibility.md
 !/docs/rework-integration-plan.md
 !/docs/product-metrics.md
 !/docs/product-monetization.md
@@ -53,6 +54,7 @@
 !/drizzle/82-core-baseline-compatibility.sql
 !/drizzle/83-commerce-prerequisite-compatibility.sql
 !/drizzle/84-commerce-base-compatibility.sql
+!/drizzle/85-wallet-ledger-compatibility.sql
 !/drizzle/81-legacy-commerce-rpc-privileges.sql
 !/drizzle/80-personal-plan-grant-foundation.sql
 !/drizzle/79-group-grade-foundation.sql

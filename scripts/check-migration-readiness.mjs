@@ -6,6 +6,7 @@ import { REQUIRED_MIGRATIONS } from "./migration-manifest.mjs";
 import { assertLegacyCommerceRpcPrivileges } from "./legacy-commerce-rpc-privileges.mjs";
 import { assertCoreBaselineReadiness } from "./core-baseline-readiness.mjs";
 import { assertPaymentFulfillmentReadiness } from "./payment-fulfillment-readiness.mjs";
+import { assertPromoReadiness } from "./promo-readiness.mjs";
 import { assertWalletLedgerReadiness } from "./wallet-ledger-readiness.mjs";
 import { assertCommerceBaseReadiness } from "./commerce-base-readiness.mjs";
 import { assertCommercePrerequisiteReadiness } from "./commerce-prerequisite-readiness.mjs";
@@ -143,6 +144,7 @@ try {
   await assertCommerceBaseReadiness(sql);
   await assertWalletLedgerReadiness(sql);
   await assertPaymentFulfillmentReadiness(sql);
+  await assertPromoReadiness(sql);
 
   console.log(`Migration readiness passed (${REQUIRED_MIGRATIONS.length} required migrations).`);
 } catch (error) {

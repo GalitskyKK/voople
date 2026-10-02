@@ -24,7 +24,7 @@ function audit(command, rows) {
     sql.begin = async (mode, run) => {
       if (mode !== 'read only') throw new Error('Core readiness requires read only');
       return run({unsafe: async source => {
-        if (!/^-- BEGIN (CORE BASELINE|COMMERCE PREREQUISITE|COMMERCE BASE|WALLET LEDGER|PAYMENT FULFILLMENT) READ-ONLY VALIDATION/.test(source)) throw new Error('Unexpected validation block');
+        if (!/^-- BEGIN (CORE BASELINE|COMMERCE PREREQUISITE|COMMERCE BASE|WALLET LEDGER|PAYMENT FULFILLMENT|PROMO) READ-ONLY VALIDATION/.test(source)) throw new Error('Unexpected validation block');
         if (/\\b(CREATE|ALTER|DROP|GRANT|REVOKE|INSERT|UPDATE|DELETE)\\s+(TABLE|TYPE|FUNCTION|POLICY|INTO|FROM|ON)\\b/i.test(source)) throw new Error('Audit attempted mutation');
       }});
     };

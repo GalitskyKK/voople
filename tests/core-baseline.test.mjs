@@ -8,7 +8,7 @@ const file = "82-core-baseline-compatibility.sql";
 const source = readFileSync(new URL(`../drizzle/${file}`, import.meta.url), "utf8");
 test("core baseline is release-authoritative after ledger and before feature migrations", () => {
   assert.equal(REQUIRED_MIGRATIONS.filter(id => id === file).length,1);
-  assert.deepEqual(RELEASE_APPLY_ORDER.slice(0,7),["45-app-schema-migrations.sql",file,"83-commerce-prerequisite-compatibility.sql","84-commerce-base-compatibility.sql","85-wallet-ledger-compatibility.sql","86-payment-fulfillment-compatibility.sql","38-group-emojis.sql"]);
+  assert.deepEqual(RELEASE_APPLY_ORDER.slice(0,8),["45-app-schema-migrations.sql",file,"83-commerce-prerequisite-compatibility.sql","84-commerce-base-compatibility.sql","85-wallet-ledger-compatibility.sql","86-payment-fulfillment-compatibility.sql", "87-promo-compatibility.sql","38-group-emojis.sql"]);
   assert.doesNotMatch(source,/\bDROP\s+(TABLE|TYPE|FUNCTION|POLICY|CONSTRAINT|INDEX)\b/i);
   assert.doesNotMatch(source,/\bCREATE\s+(SCHEMA\s+auth|ROLE|TABLE\s+(?:public\.)?(subscriptions|group_boosts|group_customization|payment_intents|group_charges|personal_plan_grants))\b/i);
 });

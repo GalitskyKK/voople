@@ -42,7 +42,6 @@ export type CustomizationInput = {
 }
 
 const CARD_BASE_MODES: CardBaseMode[] = ["mirror", "theme", "plain"]
-const NICKNAME_EFFECTS: NicknameEffect[] = ["plain", "gradient", "neon", "highlight", "outline"]
 
 /**
  * Единый медиа-источник баннера. Переходная логика: video-фон (`profileBackgroundId`)

@@ -12,19 +12,21 @@ import type { ProfileEditorController } from "./useProfileEditorController";
 
 export function ProfileEditorNamePanel({ controller, hasVooplePlus }: { controller: ProfileEditorController; hasVooplePlus: boolean }) {
   const value = controller.equipped;
+  const selectPremiumNicknameFont = value?.selectPremiumNicknameFont ?? false;
   return (
     <div className="mt-5 space-y-6">
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <div><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-semibold">Шрифт</h3><VooplePlusBadge locked={!hasVooplePlus} /></div><p className="mt-1 text-xs text-[var(--app-muted)]">Варианты Вупл+ можно примерить до подписки.</p></div>
+          <div><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-semibold">Шрифт</h3><VooplePlusBadge locked={!selectPremiumNicknameFont} /></div><p className="mt-1 text-xs text-[var(--app-muted)]">Премиум-шрифты доступны с Вупл+ или Style.</p></div>
           {value && (value.nicknameColor || value.nicknameFont !== "sans" || value.nicknameEffect !== "plain") ? <button type="button" className="profile-editor-reset" onClick={() => controller.clearSlot("nickname_style")}><RotateCcw className="h-3.5 w-3.5" />Сбросить</button> : null}
         </div>
+        {value?.nicknameFont && value.nicknameFont !== "sans" && !selectPremiumNicknameFont ? <p className="text-xs text-[var(--app-muted)]">Выбранный шрифт сохранён. Пока нет доступа, имя отображается стандартным шрифтом.</p> : null}
         <div className="grid grid-cols-3 gap-2">
           {NICKNAME_FONTS.map((font) => {
             const active = (value?.nicknameFont ?? "sans") === font.id;
-            const locked = font.id !== "sans" && !hasVooplePlus;
+            const locked = font.id !== "sans" && !selectPremiumNicknameFont;
             const sample = displayNamePresentation({ color: value?.nicknameColor, gradient: false, font: font.id, effect: "plain" });
-            return <button key={font.id} type="button" disabled={controller.cosmeticBusy} aria-pressed={active} onClick={() => controller.commitPatch({ nicknameFont: font.id }, locked)} className={cn("profile-editor-name-effect", active && "profile-editor-name-effect--active")} title={font.label}><span className="text-xl font-semibold" style={sample.style}>{font.sample}</span><span className="mt-1 block text-[11px] text-[var(--app-muted)]">{font.label}</span></button>;
+            return <button key={font.id} type="button" disabled={controller.cosmeticBusy || locked} aria-pressed={active} aria-label={`${font.label}${locked ? " — нужен Вупл+ или Style" : ""}`} onClick={() => controller.commitPatch({ nicknameFont: font.id })} className={cn("profile-editor-name-effect", active && "profile-editor-name-effect--active")} title={font.label}><span className="text-xl font-semibold" style={sample.style}>{font.sample}</span><span className="mt-1 block text-[11px] text-[var(--app-muted)]">{font.label}</span></button>;
           })}
         </div>
       </section>
@@ -34,7 +36,7 @@ export function ProfileEditorNamePanel({ controller, hasVooplePlus }: { controll
           {NICKNAME_EFFECTS.map((effect) => {
             const active = (value?.nicknameEffect ?? (value?.nicknameGradient ? "gradient" : "plain")) === effect.id;
             const locked = effect.id !== "plain" && !hasVooplePlus;
-            const sample = displayNamePresentation({ color: value?.nicknameColor ?? "#a78bfa", gradient: effect.id === "gradient", font: (value?.nicknameFont as NicknameFont | undefined) ?? "sans", effect: effect.id });
+            const sample = displayNamePresentation({ color: value?.nicknameColor ?? "#a78bfa", gradient: effect.id === "gradient", font: (value?.effectiveNicknameFont as NicknameFont | undefined) ?? "sans", effect: effect.id });
             return <button key={effect.id} type="button" disabled={controller.cosmeticBusy} aria-pressed={active} onClick={() => controller.commitPatch({ nicknameEffect: effect.id, nicknameGradient: effect.id === "gradient" }, locked)} className={cn("profile-editor-name-effect", active && "profile-editor-name-effect--active")}><span className={sample.className} style={sample.style}>{effect.label}</span></button>;
           })}
         </div>

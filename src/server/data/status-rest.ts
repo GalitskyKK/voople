@@ -1,3 +1,4 @@
+import { loadNicknameFontAccessRest } from "@/server/data/nickname-font-access-rest";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { getPostSelect } from "@/server/data/post-hydration";
 import { mapPostRow, mapUserToAuthor, type PostRow, type UserRow } from "@/server/mappers/profile";
@@ -127,6 +128,7 @@ export async function publishStatusToFeedRest(
 
   if (userErr) throw new Error(userErr.message);
 
-  const author = mapUserToAuthor(user as UserRow);
+  const fontAccess = await loadNicknameFontAccessRest([userId]);
+  const author = mapUserToAuthor(user as UserRow, fontAccess.get(userId));
   return { ...mapPostRow(postRow, author, { likedByViewer: false }), tags };
 }

@@ -1,3 +1,4 @@
+import { loadNicknameFontAccessRest } from "@/server/data/nickname-font-access-rest";
 import { getAdminClient } from "@/lib/supabase/admin"
 import { clearExpiredSubscriptionCustomizationRest } from "@/server/data/subscription-rest"
 import {
@@ -86,7 +87,8 @@ async function hydrateProfileRest(
     canViewPrivateFieldRest(user.id, viewerId ?? null, privacy.musicScope),
     getProfileGroupTagRest(user.id),
   ])
-  const profile = mapUserToProfile(user, stats)
+  const fontAccess = await loadNicknameFontAccessRest([user.id])
+  const profile = mapUserToProfile(user, stats, fontAccess.get(user.id))
   return {
     ...profile,
     lastSeenAt: canSeeOnline ? profile.lastSeenAt : null,
@@ -132,7 +134,8 @@ export async function getPostsByUsernameRest(
   const user = await fetchUserRowByUsername(username)
   if (!user) return []
 
-  const author = mapUserToAuthor(user)
+  const fontAccess = await loadNicknameFontAccessRest([user.id])
+  const author = mapUserToAuthor(user, fontAccess.get(user.id))
   const postRows = await fetchPostsByAuthorId(user.id)
   return mapPostRowsWithReposts(postRows, {
     viewerId,

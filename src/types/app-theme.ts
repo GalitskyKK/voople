@@ -1,11 +1,7 @@
 import type { AppThemeId } from "@/lib/app-themes";
 
-export type PersonalStyleAccess = {
-  evaluatedAt: string;
-  policyVersion: "app-theme-legacy-or-style-v1";
-  sources: { activeLegacySubscription: boolean; activeStyleCoverage: boolean };
-  capabilities: { selectPaidAppTheme: boolean };
-};
+import type { PersonalStyleAccess } from "@/types/personal-style-access";
+export type { PersonalStyleAccess } from "@/types/personal-style-access";
 
 export type AccountAppTheme = {
   savedAppThemeId: string | null;

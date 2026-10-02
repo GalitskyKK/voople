@@ -633,3 +633,13 @@ Review a change in this order:
 
 A screenshot proves appearance only. Realtime, authorization, uploads, updater
 and calls require runtime evidence from the corresponding boundary.
+
+## Personal Style font boundary
+
+The second reviewed Style consumer is premium nickname-font selection, gated
+by active legacy subscription OR Style; Full is ignored. Saved fonts remain
+storage facts. Pure mappers project effective fonts using explicit batched
+Style coverage and joined legacy subscriptions. Migration 90 independently
+protects browser premium-font writes and adds the service-only bounded Style
+subject aggregate. The 49-migration chain retains migration 89 unchanged.
+See `docs/style-nickname-font.md` for rendering, editor and verification contracts.

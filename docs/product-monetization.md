@@ -54,7 +54,12 @@ adapter or existing-subscriber migration uses this runtime. Paid app themes
 are its first consumer: active legacy subscription OR Style coverage authorizes
 selection, with Full explicitly ignored. Saved themes survive entitlement loss;
 the effective fallback is Void and restoration reactivates the retained choice.
-All other premium capabilities, wallpaper and Store rules remain legacy-only.
+Premium nickname fonts are the second accepted consumer with the same legacy
+OR Style selection rule and Full ignored; `sans` is free. Saved premium choices
+survive loss of access, render as `sans` and reactivate on restoration. Browser
+premium-font writes are blocked; other name styling remains unchanged. All
+other premium capabilities, wallpaper and Store rules remain legacy-only.
+See [`style-nickname-font.md`](./style-nickname-font.md).
 See [`style-app-theme.md`](./style-app-theme.md). Full coverage does not yet issue the included Group charge, and
 Style must never issue it. Legacy Store and subscription behavior stays active
 and unchanged. Overlap/exclusivity, upgrades/downgrades, carryover/proration,

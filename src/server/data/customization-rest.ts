@@ -4,6 +4,7 @@ import { customizationAssetPath } from "@/lib/customization/asset-path";
 import { assertAppThemeSelectionAllowed, isFreeAppThemeId } from "@/lib/app-themes";
 import { getFramePreset } from "@/lib/customization/frames-registry";
 import { isFreeNicknameColor } from "@/lib/customization/nickname-options";
+import { assertNicknameFontSelectionAllowed } from "@/lib/customization/nickname-font";
 import { SHOP_CATALOG_BY_ID } from "@/lib/shop/catalog";
 import { assertActiveSubscriptionRest, hasActiveSubscriptionRest } from "@/server/data/subscription-rest";
 import { getInventoryItemIdsRest, getShopItemRowRest } from "@/server/data/shop-rest";
@@ -90,7 +91,7 @@ async function resolveBannerPatch(bannerId: string | null | undefined) {
 export async function updateProfileCustomizationRest(
   userId: string,
   patch: CustomizationEquipPatch,
-  options?: { trustedItemId?: string; selectPaidAppTheme?: boolean },
+  options?: { trustedItemId?: string; selectPaidAppTheme?: boolean; selectPremiumNicknameFont?: boolean },
 ) {
   const ownedIds = await getInventoryItemIdsRest(userId);
   const trustedItemId = options?.trustedItemId;
@@ -172,7 +173,9 @@ export async function updateProfileCustomizationRest(
     update.nickname_gradient = patch.nicknameGradient;
   }
   if (patch.nicknameFont !== undefined) {
-    if (patch.nicknameFont && patch.nicknameFont !== "sans") await assertActiveSubscriptionRest(userId);
+    const allowed = options?.selectPremiumNicknameFont ?? (patch.nicknameFont != null && patch.nicknameFont !== "sans"
+      ? await hasActiveSubscriptionRest(userId) : false);
+    assertNicknameFontSelectionAllowed(patch.nicknameFont, allowed);
     update.nickname_font = patch.nicknameFont ?? "sans";
   }
   if (patch.nicknameEffect !== undefined) {

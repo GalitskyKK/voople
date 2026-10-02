@@ -1,6 +1,15 @@
+import { resolveEffectiveNicknameFont } from "@/lib/customization/nickname-font";
 import { resolveCustomization } from "@/lib/customization/resolve";
 import type { ProfileCustomizationView } from "@/types/domain";
 import type { EquippedCustomizationView, ShopItemView } from "@/types/shop";
+import type { NicknameFont } from "@/lib/customization/types";
+
+export function projectEditorNicknameFont(value: ProfileCustomizationView, font: NicknameFont): ProfileCustomizationView {
+  const nickname = resolveCustomization({ nicknameFont: font, nicknameColor: value.displayName.color,
+    nicknameGradient: value.displayName.gradient, nicknameEffect: value.displayName.effect });
+  return { ...value, displayName: { ...value.displayName, font },
+    flags: { ...value.flags, hasDisplayNameStyle: nickname.flags.hasDisplayNameStyle } };
+}
 
 export function customizationFromEquipped(
   equipped: EquippedCustomizationView,
@@ -19,7 +28,7 @@ export function customizationFromEquipped(
     profileBackgroundId: equipped.profileBackgroundId,
     nicknameColor: equipped.nicknameColor,
     nicknameGradient: equipped.nicknameGradient,
-    nicknameFont: equipped.nicknameFont,
+    nicknameFont: resolveEffectiveNicknameFont(equipped.nicknameFont, equipped.selectPremiumNicknameFont),
     nicknameEffect: equipped.nicknameEffect,
     themePrimary: equipped.themePrimary,
     themeAccent: equipped.themeAccent,

@@ -133,7 +133,14 @@ first Style capability consumer: selection requires active legacy subscription O
 Style coverage; Full is explicitly ignored. Void, Light and clear remain free.
 Saved paid themes survive expiry/revocation, render as Void while denied, and
 reactivate when access returns. Explicit free selection replaces that preference.
-Wallpaper and all other legacy premium and Store rules remain unchanged. The
+Premium nickname fonts are the second Style consumer: `sans` is free; selection
+of `serif`, `rounded`, `mono`, `display` and `soft` requires legacy OR Style,
+with Full ignored. Saved premium fonts survive entitlement loss, render as
+`sans` while denied and reactivate on restoration. Explicit `sans` replaces
+the preference. Published appearance snapshots preserve their captured font,
+including in reposts, independently of current author entitlement. PostgreSQL
+blocks direct browser premium-font writes. Other
+name styling, wallpaper and legacy premium and Store rules remain unchanged. The
 database blocks browser theme inserts/changes; trusted server mutations recompute
 authorization. See `docs/style-app-theme.md`.
 

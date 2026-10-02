@@ -1,3 +1,4 @@
+import { loadNicknameFontAccessRest } from "@/server/data/nickname-font-access-rest";
 import { getAdminClient } from "@/lib/supabase/admin"
 import { toProfileCustomizationView } from "@/server/mappers/customization"
 import { mapPostRow, mapUserToAuthor, type PostRow, type UserRow } from "@/server/mappers/profile"
@@ -23,7 +24,8 @@ async function loadAuthors(authorIds: string[]) {
 
   if (error) throw new Error(error.message)
 
-  return new Map((data ?? []).map((user) => [user.id as string, mapUserToAuthor(user as UserRow)]))
+  const fontAccess = await loadNicknameFontAccessRest((data ?? []).map(user => String(user.id)))
+  return new Map((data ?? []).map((user) => [user.id as string, mapUserToAuthor(user as UserRow, fontAccess.get(String(user.id)))]))
 }
 
 async function loadTags(postIds: string[]) {

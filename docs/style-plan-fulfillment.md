@@ -67,7 +67,8 @@ Legacy subscriptions remain independent: there is no mapping, backfill or dual
 write. This slice adds no Full issuance, Group charge issuance, Store/YooKassa
 integration or billing lifecycle. The first consumer, paid app themes, is
 documented in [`style-app-theme.md`](./style-app-theme.md); it does not change
-this lifecycle or its write boundary. Overlap, upgrades,
+this lifecycle or its write boundary. The second accepted consumer, premium
+nickname fonts, is documented in [`style-nickname-font.md`](./style-nickname-font.md). Overlap, upgrades,
 downgrades and proration still need accepted product contracts.
 
 ## Verification
@@ -83,4 +84,4 @@ SQL privilege checks separately prove browser roles cannot insert, update or del
 
 The Quality Gate runs the lifecycle suite concurrently with the other PostgreSQL
 contracts. The lifecycle itself requires no migration. The subsequent paid-app-theme
-consumer adds security migration 89; the current required migration count is 48.
+consumer adds security migration 89; the current required migration count is 49 after the independent font boundary in 90.

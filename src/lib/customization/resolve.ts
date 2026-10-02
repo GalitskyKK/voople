@@ -16,6 +16,7 @@ import type {
   ResolvedFrame
 } from "./types"
 import type { NicknameEffect, NicknameFont } from "./types"
+import { NICKNAME_FONT_IDS } from "./nickname-font"
 
 /** Raw shape from DB / mock — optional shop-owned fields */
 export type CustomizationInput = {
@@ -40,7 +41,6 @@ export type CustomizationInput = {
 }
 
 const CARD_BASE_MODES: CardBaseMode[] = ["mirror", "theme", "plain"]
-const NICKNAME_FONTS: NicknameFont[] = ["sans", "serif", "rounded", "mono", "display", "soft"]
 const NICKNAME_EFFECTS: NicknameEffect[] = ["plain", "gradient", "neon", "highlight", "outline"]
 
 /**
@@ -173,7 +173,7 @@ export function resolveCustomization(input: CustomizationInput = {}): ResolvedCu
   const displayName: DisplayNameStyle = {
     color: flags.hasDisplayNameStyle ? input.nicknameColor : null,
     gradient: flags.hasDisplayNameStyle ? Boolean(input.nicknameGradient) : false,
-    font: NICKNAME_FONTS.includes(input.nicknameFont as NicknameFont)
+    font: NICKNAME_FONT_IDS.includes(input.nicknameFont as NicknameFont)
       ? input.nicknameFont as NicknameFont
       : "sans",
     effect: NICKNAME_EFFECTS.includes(input.nicknameEffect as NicknameEffect)

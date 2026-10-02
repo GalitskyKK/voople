@@ -1,5 +1,6 @@
 import { toProfileCustomizationView, type CustomizationRow } from "@/server/mappers/customization";
 import { publicAssetUrl } from "@/lib/object-storage";
+import type { NicknameFontAccess } from "@/types/personal-style-access";
 import type {
   PostAuthorView,
   PostViewModel,
@@ -24,12 +25,13 @@ export type UserRow = {
 
 export function mapSubscriptionFields(
   subscription: { started_at: string; expires_at: string } | null | undefined,
+  evaluatedAt = new Date(),
 ): { subscriptionStartedAt: string | null; hasVooplePlus: boolean } {
   if (!subscription) {
     return { subscriptionStartedAt: null, hasVooplePlus: false };
   }
   const expiresAt = new Date(subscription.expires_at);
-  const active = expiresAt > new Date();
+  const active = expiresAt > evaluatedAt;
   return {
     subscriptionStartedAt: active ? subscription.started_at : null,
     hasVooplePlus: active,
@@ -80,26 +82,31 @@ function mapStatus(row: StatusRow | null): ProfileStatus {
 
 export function mapUserToAuthor(
   user: Pick<UserRow, "username" | "display_name" | "profile_customization" | "subscriptions"> & Partial<Pick<UserRow, "id">>,
+  fontAccess?: NicknameFontAccess,
 ): PostAuthorView {
   const customizationRow = first(user.profile_customization);
-  const { hasVooplePlus } = mapSubscriptionFields(first(user.subscriptions));
+  const { hasVooplePlus } = mapSubscriptionFields(first(user.subscriptions), fontAccess?.evaluatedAt);
   return {
     id: user.id,
     username: user.username,
     displayName: user.display_name,
     hasVooplePlus,
-    customization: toProfileCustomizationView(customizationRow, { hasActiveSubscription: hasVooplePlus }),
+    customization: toProfileCustomizationView(customizationRow, {
+      hasActiveSubscription: hasVooplePlus,
+      selectPremiumNicknameFont: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
+    }),
   };
 }
 
 export function mapUserToProfile(
   user: UserRow,
   stats: ProfileViewModel["stats"],
+  fontAccess?: NicknameFontAccess,
 ): ProfileViewModel {
   const customizationRow = first(user.profile_customization);
   const statusRow = first(user.user_status);
   const subscription = first(user.subscriptions);
-  const { subscriptionStartedAt, hasVooplePlus } = mapSubscriptionFields(subscription);
+  const { subscriptionStartedAt, hasVooplePlus } = mapSubscriptionFields(subscription, fontAccess?.evaluatedAt);
   const subscriptionExpiresAt =
     hasVooplePlus && subscription?.expires_at ? subscription.expires_at : null;
 
@@ -113,7 +120,10 @@ export function mapUserToProfile(
     subscriptionStartedAt,
     subscriptionExpiresAt,
     hasVooplePlus,
-    customization: toProfileCustomizationView(customizationRow, { hasActiveSubscription: hasVooplePlus }),
+    customization: toProfileCustomizationView(customizationRow, {
+      hasActiveSubscription: hasVooplePlus,
+      selectPremiumNicknameFont: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
+    }),
     status: mapStatus(statusRow),
     stats,
   };
@@ -155,6 +165,7 @@ export function mapPostRow(
 ): PostViewModel {
   const status = snapshotToStatus(post.state_snapshot);
   const appearance = snapshotToAppearance(post.state_snapshot);
+  // Published appearance is historical presentation data, independent of live author access.
   const hasStatus = status && (status.thought || status.moodValue != null);
 
   return {

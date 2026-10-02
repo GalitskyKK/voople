@@ -8,6 +8,7 @@ import { TRPCReactProvider, trpc } from "@/lib/trpc/client";
 import "@/app/globals.css";
 import { DesktopTRPCProvider } from "../../desktop/src/api/DesktopTRPCProvider";
 import type { Session } from "@supabase/supabase-js";
+import { NicknameFontHarness } from "./NicknameFontHarness";
 
 function Settings() {
   const utils = trpc.useUtils();
@@ -21,7 +22,8 @@ function Settings() {
   </>;
 }
 
-const content = <AppThemeProvider><AppThemeSync /><AppPreferencesProvider><Settings /></AppPreferencesProvider></AppThemeProvider>;
+const fontHarness = new URLSearchParams(location.search).has("font");
+const content = <AppThemeProvider>{fontHarness ? <NicknameFontHarness /> : <><AppThemeSync /><AppPreferencesProvider><Settings /></AppPreferencesProvider></>}</AppThemeProvider>;
 const desktop = new URLSearchParams(location.search).has("desktop");
 const session = { access_token: "disposable-ui-fixture", user: { id: "10000000-0000-4000-8000-000000000001" } } as Session;
 createRoot(document.getElementById("root")!).render(desktop

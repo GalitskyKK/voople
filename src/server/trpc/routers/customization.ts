@@ -15,8 +15,14 @@ import {
 import { createTRPCRouter, protectedProcedure } from "../init";
 import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
 import { getAccountAppTheme } from "@/server/services/app-theme.service";
+import { getAccountNicknameFont } from "@/server/services/nickname-font.service";
+import { NICKNAME_FONT_IDS } from "@/lib/customization/nickname-font";
 
 export const customizationRouter = createTRPCRouter({
+  accountNicknameFont: protectedProcedure.input(z.void()).query(async ({ ctx }) => {
+    try { return await getAccountNicknameFont(ctx.user.id); }
+    catch { throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Не удалось загрузить шрифт имени" }); }
+  }),
   accountTheme: protectedProcedure.input(z.void()).query(async ({ ctx }) => {
     try { return await getAccountAppTheme(ctx.user.id); }
     catch { throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Не удалось загрузить тему аккаунта" }); }
@@ -132,7 +138,7 @@ export const customizationRouter = createTRPCRouter({
           .nullable()
           .optional(),
         nicknameGradient: z.boolean().nullable().optional(),
-        nicknameFont: z.enum(["sans", "serif", "rounded", "mono", "display", "soft"]).nullable().optional(),
+        nicknameFont: z.enum(NICKNAME_FONT_IDS).nullable().optional(),
         nicknameEffect: z.enum(["plain", "gradient", "neon", "highlight", "outline"]).nullable().optional(),
         themePrimary: z
           .string()

@@ -57,7 +57,6 @@ export async function clearExpiredSubscriptionCustomizationRest(userId: string):
   if (row.card_base_mode && row.card_base_mode !== "mirror") update.card_base_mode = "mirror";
   if (row.theme_primary) update.theme_primary = null;
   if (row.theme_accent) update.theme_accent = null;
-  if (row.nickname_font && row.nickname_font !== "sans") update.nickname_font = "sans";
   if (row.nickname_effect && row.nickname_effect !== "plain") {
     update.nickname_effect = "plain";
     update.nickname_gradient = false;

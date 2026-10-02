@@ -70,7 +70,11 @@ export type EquippedCustomizationView = {
   effectiveAppThemeId: import("@/lib/app-themes").AppThemeId;
   nicknameColor: string | null;
   nicknameGradient: boolean;
+  /** Saved preference alias for editor selection, never public rendering. */
   nicknameFont: string | null;
+  savedNicknameFont: string | null;
+  effectiveNicknameFont: import("@/lib/customization/types").NicknameFont;
+  selectPremiumNicknameFont: boolean;
   nicknameEffect: string | null;
   /** Тема профиля (два цвета градиента карточки). Доступна с Voople+. */
   themePrimary: string | null;

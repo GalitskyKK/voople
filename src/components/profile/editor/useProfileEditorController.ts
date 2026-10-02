@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { trpc } from "@/lib/trpc/client";
 import { reportProductEvent } from "@/lib/telemetry/client";
+import { resolveEffectiveNicknameFont } from "@/lib/customization/nickname-font";
 import type { ProfileCustomizationView, ProfileViewModel } from "@/types/domain";
 import type { EquippedCustomizationView, ShopItemView } from "@/types/shop";
 
@@ -12,6 +13,7 @@ import {
   clearProfileSlot,
   customizationFromEquipped,
   equipProfileItem,
+  projectEditorNicknameFont,
 } from "./profile-editor-customization";
 import type {
   EditorCustomizationPatch,
@@ -65,6 +67,9 @@ export function useProfileEditorController({
   const utils = trpc.useUtils();
 
   const overview = trpc.shop.overview.useQuery(undefined, { enabled: open });
+  const fontAccess = trpc.customization.accountNicknameFont.useQuery(undefined, {
+    enabled: open, refetchInterval: 30_000, refetchOnWindowFocus: true, refetchOnReconnect: true, retry: false,
+  });
   const history = trpc.customization.avatarHistory.useQuery(undefined, { enabled: open });
   const chats = trpc.chat.list.useQuery(undefined, { enabled: open, staleTime: 5_000 });
   const avatarUpload = useMediaUpload("avatar");
@@ -85,6 +90,7 @@ export function useProfileEditorController({
       utils.profile.getBetaByUsername.invalidate({ username: profile.username }),
       utils.shop.overview.invalidate(),
       utils.customization.getEquipped.invalidate(),
+      utils.customization.accountNicknameFont.invalidate(),
     ]);
     onUpdated?.();
   }, [onUpdated, profile.username, utils]);
@@ -177,6 +183,8 @@ export function useProfileEditorController({
     ? customizationFromEquipped(overview.data.equipped, customization)
     : customization;
   const dirty = draft.name !== savedDraft.name || draft.bio !== savedDraft.bio;
+  const selectPremiumNicknameFont = !fontAccess.isError && Boolean(fontAccess.data?.selectPremiumNicknameFont);
+  const effectiveFont = resolveEffectiveNicknameFont(equipped?.nicknameFont ?? previewCustomization.displayName.font, selectPremiumNicknameFont);
 
   const openEditor = useCallback(() => {
     const nextDraft = initialDraft(profile);
@@ -355,8 +363,10 @@ export function useProfileEditorController({
   }, [onUpdated, profile.username, selectedGroupTag, setGroupTagMutation, utils.profile.getByUsername, utils.profile.getBetaByUsername]);
 
   return {
-    open, discardOpen, panel, editing, draft, avatarUrl, previewCustomization,
-    equipped, trialItemId, selectedGroupTag: hydratedGroupTag, groupTags, allItems, message,
+    open, discardOpen, panel, editing, draft, avatarUrl,
+    previewCustomization: projectEditorNicknameFont(previewCustomization, effectiveFont),
+    equipped: equipped ? { ...equipped, selectPremiumNicknameFont, effectiveNicknameFont: effectiveFont } : null,
+    trialItemId, selectedGroupTag: hydratedGroupTag, groupTags, allItems, message,
     cosmeticBusy, dirty, overview, history, chats, avatarUpload, bannerUpload,
     savePending: saveMutation.isPending,
     avatarPending: setAvatarMutation.isPending || selectAvatarMutation.isPending,

@@ -1,3 +1,4 @@
+import { assertNicknameFontReadiness } from './nickname-font-readiness.mjs';
 import { assertGroupRuntimeRpcReadiness } from './group-runtime-rpc-readiness.mjs';
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -149,6 +150,7 @@ try {
   await assertPromoReadiness(sql);
   await assertGroupRuntimeRpcReadiness(sql);
   await assertAppThemeReadiness(sql);
+  await assertNicknameFontReadiness(sql);
 
   console.log(`Migration readiness passed (${REQUIRED_MIGRATIONS.length} required migrations).`);
 } catch (error) {

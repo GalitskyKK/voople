@@ -11,13 +11,19 @@ import { getEquippedCustomizationRest, getShopItemRowRest } from "@/server/data/
 import { getPersonalStyleAccess } from "@/server/services/personal-style-access.service";
 import { assertAppThemeSelectionAllowed, resolveEffectiveAppThemeId, isFreeAppThemeId } from "@/lib/app-themes";
 import { SHOP_CATALOG_BY_ID } from "@/lib/shop/catalog";
+import { assertNicknameFontSelectionAllowed, resolveEffectiveNicknameFont } from "@/lib/customization/nickname-font";
 import { resolveRowEquipSlot, resolveRowEquipValue } from "@/lib/shop/item-row";
 
 export async function updateCustomization(userId: string, patch: CustomizationEquipPatch) {
   assertAppThemeSelectionAllowed(patch.appThemeId, true);
-  const selectPaidAppTheme = patch.appThemeId != null && !isFreeAppThemeId(patch.appThemeId)
-    ? (await getPersonalStyleAccess(userId)).capabilities.selectPaidAppTheme : false;
-  return updateProfileCustomizationRest(userId, patch, { selectPaidAppTheme });
+  assertNicknameFontSelectionAllowed(patch.nicknameFont, true);
+  const access = (patch.appThemeId != null && !isFreeAppThemeId(patch.appThemeId))
+    || (patch.nicknameFont != null && patch.nicknameFont !== "sans")
+    ? await getPersonalStyleAccess(userId) : null;
+  return updateProfileCustomizationRest(userId, patch, {
+    selectPaidAppTheme: access?.capabilities.selectPaidAppTheme ?? false,
+    selectPremiumNicknameFont: access?.capabilities.selectPremiumNicknameFont ?? false,
+  });
 }
 
 export async function equipShopItem(userId: string, itemId: string) {
@@ -35,6 +41,9 @@ export async function getEquippedCustomization(userId: string) {
   const [equipped, access] = await Promise.all([
     getEquippedCustomizationRest(userId), getPersonalStyleAccess(userId),
   ]);
-  return { ...equipped, savedAppThemeId: equipped.appThemeId,
+  return { ...equipped, savedNicknameFont: equipped.nicknameFont,
+    effectiveNicknameFont: resolveEffectiveNicknameFont(equipped.nicknameFont, access.capabilities.selectPremiumNicknameFont),
+    selectPremiumNicknameFont: access.capabilities.selectPremiumNicknameFont,
+    savedAppThemeId: equipped.appThemeId,
     effectiveAppThemeId: resolveEffectiveAppThemeId(equipped.appThemeId, access.capabilities.selectPaidAppTheme) };
 }

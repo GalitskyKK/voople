@@ -2,7 +2,7 @@ import "server-only";
 
 import { getPersonalPlanStatus } from "@/server/services/personal-plan.service";
 import { getSubscriptionRest, isSubscriptionActive } from "@/server/data/subscription-rest";
-import type { PersonalStyleAccess } from "@/types/app-theme";
+import type { PersonalStyleAccess } from "@/types/personal-style-access";
 
 /** Two independent reads evaluated at one instant, not an atomic DB snapshot. */
 export async function getPersonalStyleAccess(userId: string, evaluatedAt = new Date()): Promise<PersonalStyleAccess> {
@@ -17,6 +17,9 @@ export async function getPersonalStyleAccess(userId: string, evaluatedAt = new D
     evaluatedAt: timestamp.toISOString(),
     policyVersion: "app-theme-legacy-or-style-v1",
     sources: { activeLegacySubscription, activeStyleCoverage },
-    capabilities: { selectPaidAppTheme: activeLegacySubscription || activeStyleCoverage },
+    capabilities: {
+      selectPaidAppTheme: activeLegacySubscription || activeStyleCoverage,
+      selectPremiumNicknameFont: activeLegacySubscription || activeStyleCoverage,
+    },
   };
 }

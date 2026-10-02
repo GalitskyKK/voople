@@ -1,3 +1,4 @@
+import { loadNicknameFontAccessRest } from "@/server/data/nickname-font-access-rest";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { getPostSelect } from "@/server/data/post-hydration";
 import { mapPostRow, mapUserToAuthor, type PostRow, type UserRow } from "@/server/mappers/profile";
@@ -123,13 +124,14 @@ export async function createPost(
 
   const { data: user, error: userErr } = await admin
     .from("users")
-    .select("id, username, display_name, profile_customization (*)")
+    .select("id, username, display_name, profile_customization (*), subscriptions (started_at, expires_at)")
     .eq("id", authorId)
     .single();
 
   if (userErr) throw new Error(userErr.message);
 
-  const author = mapUserToAuthor(user as UserRow);
+  const fontAccess = await loadNicknameFontAccessRest([authorId]);
+  const author = mapUserToAuthor(user as UserRow, fontAccess.get(authorId));
   return {
     ...mapPostRow(postRow, author),
     media: resolvedMedia.map((item, position) => ({

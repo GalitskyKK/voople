@@ -2,7 +2,7 @@
 
 `getPersonalStyleAccess(userId, evaluatedAt)` is server-only and returns
 `evaluatedAt`, `policyVersion: app-theme-legacy-or-style-v1`, the two source
-booleans `activeLegacySubscription` / `activeStyleCoverage`, and the single
+booleans `activeLegacySubscription` / `activeStyleCoverage`, and the
 capability `selectPaidAppTheme`. Selection requires legacy OR Style. Full
 coverage is never consulted. Legacy semantics remain `expires_at > evaluatedAt`,
 without checking `started_at` or tier; Style uses its existing half-open,
@@ -11,7 +11,9 @@ reads, not one atomic snapshot. Read failures throw rather than returning denial
 
 Void, Light and explicit null clear remain free. Unknown IDs are rejected.
 Each other field in a mixed patch keeps its legacy subscription/ownership rule;
-Style cannot unlock fonts, effects, frames, banners or profile palette colors.
+The second reviewed consumer separately unlocks premium nickname fonts (see
+[`style-nickname-font.md`](./style-nickname-font.md)); Style cannot unlock effects,
+frames, banners or profile palette colors.
 Store requires_subscription metadata, purchase/claim/gifting and ownership
 rules are unchanged. Wallpaper/Aurora, avatar history and badge identity remain
 on their existing legacy rules.
@@ -37,9 +39,10 @@ browser writer was found, but unrelated direct writes remain compatible.
 The tracked SQL contains no browser-callable theme-writing RPC.
 
 Apply `89-style-app-theme-write-boundary.sql` before deploying this consumer.
-It is last in the 48-migration release chain, after migration 81 and the
+It follows migration 81 and the
 customization foundation in 84. Historical migration 84 is unchanged.
-The migration runner applies its SQL and checksum ledger insert atomically.
+The current 49-migration chain ends with independent migration 90, which leaves
+this guard unchanged. The migration runner applies SQL and checksum ledger inserts atomically.
 It performs no row UPDATE, DELETE or preference backfill.
 
 An ALWAYS, BEFORE ROW INSERT/UPDATE trigger calls a SECURITY INVOKER function

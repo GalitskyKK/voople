@@ -1,3 +1,5 @@
+import { loadNicknameFontAccessRest } from "@/server/data/nickname-font-access-rest";
+import type { NicknameFontAccess } from "@/types/personal-style-access";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { publicAssetUrl } from "@/lib/object-storage";
 import { createNotification } from "@/server/services/notifications.service";
@@ -26,10 +28,10 @@ function readCommentId(result: RpcCommentResult) {
   return typeof result === "string" ? result : result?.create_post_comment;
 }
 
-function mapComment(row: CommentRow, viewerId?: string | null): CommentViewModel {
+function mapComment(row: CommentRow, viewerId?: string | null, fontAccess?: NicknameFontAccess): CommentViewModel {
   const user = Array.isArray(row.users) ? row.users[0] : row.users;
   const author = user
-    ? mapUserToAuthor(user)
+    ? mapUserToAuthor(user, fontAccess)
     : {
         username: "unknown",
         displayName: "Unknown",
@@ -63,7 +65,9 @@ export async function listCommentsRest(
     .limit(100);
 
   if (error) throw new Error(error.message);
-  return ((data ?? []) as unknown as CommentRow[]).map((row) => mapComment(row, viewerId));
+  const rows = (data ?? []) as unknown as CommentRow[];
+  const fontAccess = await loadNicknameFontAccessRest(rows.map(row => row.author_id));
+  return rows.map(row => mapComment(row, viewerId, fontAccess.get(row.author_id)));
 }
 
 export async function createCommentRest(
@@ -121,7 +125,8 @@ export async function createCommentRest(
     }).catch(() => {});
   }
 
-  return mapComment(row as unknown as CommentRow, authorId);
+  const fontAccess = await loadNicknameFontAccessRest([authorId]);
+  return mapComment(row as unknown as CommentRow, authorId, fontAccess.get(authorId));
 }
 
 export async function deleteCommentRest(commentId: string, actorId: string) {

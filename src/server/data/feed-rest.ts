@@ -1,3 +1,4 @@
+import { loadNicknameFontAccessRest } from "@/server/data/nickname-font-access-rest";
 import { getAdminClient } from "@/lib/supabase/admin"
 import { mapUserToAuthor, type PostRow, type UserRow } from "@/server/mappers/profile"
 import { getPostSelect, mapPostRowsWithReposts } from "@/server/data/post-hydration"
@@ -67,8 +68,9 @@ export async function getFeedPageRest(options?: {
 
   if (usersErr) throw new Error(usersErr.message)
 
+  const fontAccess = await loadNicknameFontAccessRest((users ?? []).map(user => String(user.id)))
   const authorById = new Map(
-    (users ?? []).map((u) => [u.id as string, mapUserToAuthor(u as UserRow)])
+    (users ?? []).map((u) => [u.id as string, mapUserToAuthor(u as UserRow, fontAccess.get(String(u.id)))])
   )
 
   const items = await mapPostRowsWithReposts(slice, { viewerId: options?.viewerId, authorById })
@@ -140,8 +142,9 @@ export async function getHashtagFeedPageRest(options: {
 
   if (usersErr) throw new Error(usersErr.message)
 
+  const fontAccess = await loadNicknameFontAccessRest((users ?? []).map(user => String(user.id)))
   const authorById = new Map(
-    (users ?? []).map((user) => [user.id as string, mapUserToAuthor(user as UserRow)])
+    (users ?? []).map((user) => [user.id as string, mapUserToAuthor(user as UserRow, fontAccess.get(String(user.id)))])
   )
   const items = await mapPostRowsWithReposts(slice, { viewerId: options.viewerId, authorById })
 

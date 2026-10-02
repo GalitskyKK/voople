@@ -1,13 +1,11 @@
 import { DEFAULT_APP_THEME_ID, isAppThemeId, type AppThemeId } from "@/lib/app-themes";
 
-/** Применить shop-тему shell после equip (только если в БД есть `app_theme_id`). */
+/** Apply only the API's effective theme, never its saved preference. */
 export function applyEquippedAppTheme(
   setThemeId: (themeId: AppThemeId) => void,
   appThemeId: string | null | undefined,
 ) {
-  if (appThemeId && isAppThemeId(appThemeId)) {
-    setThemeId(appThemeId);
-  }
+  setThemeId(appThemeId && isAppThemeId(appThemeId) ? appThemeId : DEFAULT_APP_THEME_ID);
 }
 
 /** Сброс shop-темы после clear слота `app_theme_id`. */

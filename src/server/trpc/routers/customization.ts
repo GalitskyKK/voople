@@ -14,8 +14,13 @@ import {
 
 import { createTRPCRouter, protectedProcedure } from "../init";
 import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
+import { getAccountAppTheme } from "@/server/services/app-theme.service";
 
 export const customizationRouter = createTRPCRouter({
+  accountTheme: protectedProcedure.input(z.void()).query(async ({ ctx }) => {
+    try { return await getAccountAppTheme(ctx.user.id); }
+    catch { throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Не удалось загрузить тему аккаунта" }); }
+  }),
   getEquipped: protectedProcedure.query(async ({ ctx }) => {
     try {
       return getEquippedCustomization(ctx.user.id);

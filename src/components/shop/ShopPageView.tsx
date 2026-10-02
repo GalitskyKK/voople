@@ -51,7 +51,7 @@ export function ShopPageView({
   const [catalogSearch, setCatalogSearch] = useState("");
   const [catalogSort, setCatalogSort] = useState<"featured" | "new" | "name" | "price">("featured");
   const utils = trpc.useUtils();
-  const { setThemeId } = useAppTheme();
+  const { setAccountThemeId: setThemeId } = useAppTheme();
   useShopPageTelemetry(tab);
 
   const overviewQuery = trpc.shop.overview.useQuery(undefined, {
@@ -140,9 +140,10 @@ export function ShopPageView({
   const equip = trpc.customization.equip.useMutation({
     onSuccess: async (equipped) => {
       setEquipMessage(null);
-      applyEquippedAppTheme(setThemeId, equipped.appThemeId);
+      applyEquippedAppTheme(setThemeId, equipped.effectiveAppThemeId);
       await utils.shop.overview.invalidate();
       await utils.customization.getEquipped.invalidate();
+      await utils.customization.accountTheme.invalidate();
       reportProductEvent("cosmetic_equipped", { surface: "store" });
     },
     onError: (error) => {
@@ -157,6 +158,7 @@ export function ShopPageView({
       }
       await utils.shop.overview.invalidate();
       await utils.customization.getEquipped.invalidate();
+      await utils.customization.accountTheme.invalidate();
     },
   });
 

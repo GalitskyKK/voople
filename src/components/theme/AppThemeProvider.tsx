@@ -13,6 +13,7 @@ import {
 import {
   DEFAULT_APP_THEME_ID,
   getAppTheme,
+  resolveEffectiveAppThemeId,
   type AppTheme,
   type AppThemeId,
 } from "@/lib/app-themes";
@@ -28,6 +29,7 @@ type AppThemeContextValue = {
   themeId: AppThemeId;
   theme: AppTheme;
   setThemeId: (themeId: AppThemeId) => void;
+  setAccountThemeId: (themeId: AppThemeId | null) => void;
 };
 
 const AppThemeContext = createContext<AppThemeContextValue | null>(null);
@@ -53,8 +55,10 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
     () => DEFAULT_APP_THEME_ID,
   );
   const [override, setOverride] = useState<AppThemeId | null>(null);
+  const [accountThemeId, setAccountThemeId] = useState<AppThemeId | null>(null);
 
-  const themeId: AppThemeId = override ?? storedThemeId;
+  // Paid local preferences never authorize rendering, including before the first account read.
+  const themeId: AppThemeId = accountThemeId ?? resolveEffectiveAppThemeId(override ?? storedThemeId, false);
   const theme = useMemo(() => getAppTheme(themeId), [themeId]);
 
   useEffect(() => {
@@ -67,7 +71,7 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<AppThemeContextValue>(
-    () => ({ themeId, theme, setThemeId }),
+    () => ({ themeId, theme, setThemeId, setAccountThemeId }),
     [theme, themeId, setThemeId],
   );
 

@@ -6,6 +6,7 @@ import { StreakPing } from "@/providers/StreakPing";
 import { WebVoiceSessionProvider } from "@/components/chat/voice/WebVoiceSessionProvider";
 import { WebLegalConsentBoundary } from "@/components/legal/WebLegalConsentBoundary";
 import { getServerAuthBootstrap } from "@/server/services/auth-session.service";
+import { AppThemeSync } from "@/components/theme/AppThemeSync";
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
   const bootstrap = await getServerAuthBootstrap();
@@ -27,6 +28,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
 
   return (
     <AuthGateProvider authenticated>
+      <AppThemeSync key={user!.id} />
       <WebLegalConsentBoundary>
         <OnlinePresenceProvider>
           <StreakPing />

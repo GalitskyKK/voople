@@ -13,6 +13,7 @@ import { trpc } from "@/lib/trpc/client";
 
 export function AppSettingsPage() {
   const subscription = trpc.shop.subscriptionStatus.useQuery(undefined, { retry: false });
+  const theme = trpc.customization.accountTheme.useQuery(undefined, { retry: false, refetchInterval: 30_000 });
   const renderDestination: SettingsDestinationRenderer = ({
     href,
     className,
@@ -30,6 +31,7 @@ export function AppSettingsPage() {
       accountDataSettings={<WebAccountDataSettings />}
       privacySettings={<WebPrivacySettings />}
       subscriptionActive={subscription.data?.active}
+      selectPaidAppTheme={theme.isError ? false : theme.data?.access.capabilities.selectPaidAppTheme}
     />
   );
 }

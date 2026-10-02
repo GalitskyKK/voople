@@ -543,12 +543,14 @@ of one kind resolve to a boolean coverage fact.
 Trusted Style fulfillment and revocation use the existing source uniqueness
 and a conditional revocation update. See `docs/style-plan-fulfillment.md` for
 the server/admin contract. There is no Full issuer, billing adapter, subscriber
-migration or entitlement
-consumer. Full coverage does not yet issue its included Group charge; Style
+migration. Paid app themes are the first narrow Style consumer (see
+`docs/style-app-theme.md`): active legacy OR Style; Full is unconsulted. Saved
+preferences are retained, with a separate effective projection. Migration 89
+blocks browser theme inserts/changes without changing other customization ACLs. Full coverage does not yet issue its included Group charge; Style
 must never issue that charge. Legacy Store/subscription behavior, YooKassa,
 payment fulfillment and Boosts remain active and unchanged. Plan overlap,
 upgrades/downgrades, carryover/proration, renewal, cancellation/refund/reversal,
-legacy migration and personal capabilities still require accepted contracts.
+legacy migration and the remaining personal capabilities still require accepted contracts.
 
 ## 14. Database changes
 

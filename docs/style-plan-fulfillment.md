@@ -65,7 +65,9 @@ the existing `simultaneousCoverage` policy. There is no selected plan or precede
 
 Legacy subscriptions remain independent: there is no mapping, backfill or dual
 write. This slice adds no Full issuance, Group charge issuance, Store/YooKassa
-integration, billing lifecycle or premium consumer cutover. Overlap, upgrades,
+integration or billing lifecycle. The first consumer, paid app themes, is
+documented in [`style-app-theme.md`](./style-app-theme.md); it does not change
+this lifecycle or its write boundary. Overlap, upgrades,
 downgrades and proration still need accepted product contracts.
 
 ## Verification
@@ -80,5 +82,5 @@ prefix and the placeholder Authorization header; database operations are real.
 SQL privilege checks separately prove browser roles cannot insert, update or delete.
 
 The Quality Gate runs the lifecycle suite concurrently with the other PostgreSQL
-contracts. No migration or readiness-manifest change is required; the required
-migration count remains 47.
+contracts. The lifecycle itself requires no migration. The subsequent paid-app-theme
+consumer adds security migration 89; the current required migration count is 48.

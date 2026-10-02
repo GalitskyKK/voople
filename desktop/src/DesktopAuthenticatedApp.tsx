@@ -10,6 +10,7 @@ import { stopProductSoundLoop } from "@/lib/sound/sound-playback";
 import type { IncomingCallView } from "@/types/chat";
 
 import { DesktopTRPCProvider } from "./api/DesktopTRPCProvider";
+import { AppThemeSync } from "@/components/theme/AppThemeSync";
 import { getSupabase } from "./auth/supabase";
 import type { DesktopConfig } from "./config";
 import {
@@ -110,7 +111,8 @@ export function DesktopAuthenticatedApp({
   );
 
   return (
-    <DesktopTRPCProvider config={config} session={session}>
+    <DesktopTRPCProvider key={session.user.id} config={config} session={session}>
+      <AppThemeSync key={session.user.id} />
       <LegalConsentGate
         documentBaseUrl={config.apiUrl}
         source="desktop_reconsent"

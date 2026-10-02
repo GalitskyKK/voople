@@ -10,6 +10,7 @@ import { assertPaymentFulfillmentReadiness } from "./payment-fulfillment-readine
 import { assertPromoReadiness } from "./promo-readiness.mjs";
 import { assertWalletLedgerReadiness } from "./wallet-ledger-readiness.mjs";
 import { assertCommerceBaseReadiness } from "./commerce-base-readiness.mjs";
+import { assertAppThemeReadiness } from "./app-theme-readiness.mjs";
 import { assertCommercePrerequisiteReadiness } from "./commerce-prerequisite-readiness.mjs";
 import {
   acceptedMigrationChecksums,
@@ -147,6 +148,7 @@ try {
   await assertPaymentFulfillmentReadiness(sql);
   await assertPromoReadiness(sql);
   await assertGroupRuntimeRpcReadiness(sql);
+  await assertAppThemeReadiness(sql);
 
   console.log(`Migration readiness passed (${REQUIRED_MIGRATIONS.length} required migrations).`);
 } catch (error) {

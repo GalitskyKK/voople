@@ -1,5 +1,4 @@
 import { getAdminClient } from "@/lib/supabase/admin";
-import { isFreeAppThemeId } from "@/lib/app-themes";
 import { VOOPLUS_PERIOD_DAYS } from "@/lib/constants/subscription";
 import type { SubscriptionStatusView } from "@/types/subscription";
 
@@ -63,14 +62,11 @@ export async function clearExpiredSubscriptionCustomizationRest(userId: string):
     update.nickname_effect = "plain";
     update.nickname_gradient = false;
   }
-  if (row.app_theme_id && !isFreeAppThemeId(row.app_theme_id)) {
-    update.app_theme_id = null;
-  }
   const slots: Array<[keyof EquippedRow, string]> = [
     ["profile_effect_id", "profile_effect_id"], ["profile_background_id", "profile_background_id"],
     ["profile_frame_id", "profile_frame_id"], ["avatar_ring_id", "avatar_ring_id"],
     ["avatar_decoration_id", "avatar_decoration_id"], ["feed_card_style_id", "feed_card_style_id"],
-    ["animated_avatar_id", "animated_avatar_id"], ["app_theme_id", "app_theme_id"],
+    ["animated_avatar_id", "animated_avatar_id"],
     ["nickname_color", "nickname_style"],
   ];
   for (const [field, slot] of slots) {

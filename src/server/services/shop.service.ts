@@ -6,7 +6,6 @@ import {
 import { isYooKassaConfigured } from "@/lib/payments/yookassa-config";
 import {
   createPaymentIntentRest,
-  getEquippedCustomizationRest,
   getInventoryItemIdsRest,
   getOrCreateWalletRest,
   getPaymentIntentRest,
@@ -33,13 +32,14 @@ import type {
   WalletView,
 } from "@/types/shop";
 import { recordServerProductEvent } from "@/server/services/client-telemetry.service";
+import { getEquippedCustomization } from "@/server/services/customization.service";
 
 export async function getShopOverview(userId: string): Promise<ShopOverviewView> {
   const [wallet, rows, ownedIds, equipped] = await Promise.all([
     getOrCreateWalletRest(userId),
     listShopItemsRest(),
     getInventoryItemIdsRest(userId),
-    getEquippedCustomizationRest(userId),
+    getEquippedCustomization(userId),
   ]);
 
   return {

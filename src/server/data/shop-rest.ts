@@ -94,7 +94,7 @@ export async function getInventoryItemIdsRest(userId: string): Promise<Set<strin
   return new Set((data ?? []).map((row: InventoryRow) => row.item_id));
 }
 
-export async function getEquippedCustomizationRest(userId: string): Promise<EquippedCustomizationView> {
+export async function getEquippedCustomizationRest(userId: string): Promise<Omit<EquippedCustomizationView, "savedAppThemeId" | "effectiveAppThemeId">> {
   await clearExpiredSubscriptionCustomizationRest(userId);
   const admin = getAdminClient();
   const { data, error } = await admin
@@ -129,7 +129,7 @@ export async function getEquippedCustomizationRest(userId: string): Promise<Equi
   };
 }
 
-function isEquipped(row: ShopItemRow, equipped: EquippedCustomizationView): boolean {
+function isEquipped(row: ShopItemRow, equipped: Omit<EquippedCustomizationView, "savedAppThemeId" | "effectiveAppThemeId">): boolean {
   const catalog = SHOP_CATALOG_BY_ID.get(row.id);
   const slot = resolveRowEquipSlot(row, catalog);
   const value = resolveRowEquipValue(row, catalog);

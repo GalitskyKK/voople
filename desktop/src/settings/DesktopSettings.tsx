@@ -14,6 +14,7 @@ import { DesktopAccountDataSettings } from "./DesktopAccountDataSettings";
 import { DesktopNotificationSettings } from "./DesktopNotificationSettings";
 import { DesktopPrivacySettings } from "./DesktopPrivacySettings";
 import { createDesktopTrpcClient } from "../api/trpc";
+import { trpc } from "@/lib/trpc/client";
 
 export function DesktopSettings({
   config,
@@ -25,6 +26,7 @@ export function DesktopSettings({
   navigate: (href: string) => void;
 }) {
   const hotkeyRuntimeStatus = useGlobalHotkeyStatus();
+  const theme = trpc.customization.accountTheme.useQuery(undefined, { retry: false, refetchInterval: 30_000 });
   const client = useMemo(
     () => createDesktopTrpcClient(config, () => session.access_token),
     [config, session.access_token],
@@ -77,6 +79,7 @@ export function DesktopSettings({
       desktopNotificationSettings={<DesktopNotificationSettings />}
       privacySettings={<DesktopPrivacySettings config={config} session={session} />}
       subscriptionActive={subscriptionActive}
+      selectPaidAppTheme={theme.isError ? false : theme.data?.access.capabilities.selectPaidAppTheme}
       accountSecuritySettings={
         <DesktopAccountSecuritySettings config={config} session={session} />
       }

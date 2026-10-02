@@ -5,7 +5,7 @@ import { REQUIRED_MIGRATIONS, RELEASE_APPLY_ORDER } from '../scripts/migration-m
 import { paymentFulfillmentValidationSql, assertPaymentFulfillmentReadiness } from '../scripts/payment-fulfillment-readiness.mjs';
 const fixture=JSON.parse(readFileSync(new URL('./fixtures/payment-fulfillment.json',import.meta.url),'utf8'));
 test('payment foundation release order, exact scope and hash-proven fulfillment definition',()=>{
- assert.equal(REQUIRED_MIGRATIONS.length,47);
+ assert.equal(REQUIRED_MIGRATIONS.length,48);
  assert.deepEqual(RELEASE_APPLY_ORDER.slice(0,9),['45-app-schema-migrations.sql','82-core-baseline-compatibility.sql','83-commerce-prerequisite-compatibility.sql','84-commerce-base-compatibility.sql','85-wallet-ledger-compatibility.sql','86-payment-fulfillment-compatibility.sql','87-promo-compatibility.sql','88-group-runtime-rpc-compatibility.sql','38-group-emojis.sql']);
  assert.deepEqual(fixture.tables.map(t=>t.name),['payment_intents','subscription_fulfillments']);
  assert.deepEqual(fixture.functions.map(f=>[f.name,f.definition_md5_lf]),[['extend_voople_plus_once','ef7d9439bb76b3837aa549bae16d8c62']]);

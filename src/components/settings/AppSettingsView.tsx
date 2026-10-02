@@ -35,6 +35,7 @@ export function AppSettingsView({
   accountDataSettings,
   privacySettings,
   subscriptionActive,
+  selectPaidAppTheme,
 }: {
   renderDestination: SettingsDestinationRenderer;
   hotkeyRuntimeStatus?: HotkeyRuntimeStatus;
@@ -45,11 +46,12 @@ export function AppSettingsView({
   accountDataSettings?: ReactNode;
   privacySettings?: ReactNode;
   subscriptionActive?: boolean;
+  selectPaidAppTheme?: boolean;
 }) {
   const { preferences, updatePreferences, resetPreferences } = useAppPreferences();
   const [activeSection, setActiveSection] = useState<SettingsSectionId>("account");
   const showsDevicePreferences = ["appearance", "advanced"].includes(activeSection);
-  const unlockedThemeIds: AppThemeId[] = subscriptionActive
+  const unlockedThemeIds: AppThemeId[] = selectPaidAppTheme
     ? APP_THEMES.filter((theme) => theme.paid).map((theme) => theme.id)
     : [];
 
@@ -96,7 +98,7 @@ export function AppSettingsView({
       {activeSection === "appearance" ? (
         <><AppearanceSettings
           unlockedThemeIds={unlockedThemeIds}
-          subscriptionAction={subscriptionActive === false ? renderDestination({
+          subscriptionAction={selectPaidAppTheme === false ? renderDestination({
             href: "/shop?tab=plus",
             className: "settings-subscription-link",
             children: "Открыть набор тем Вупл+",

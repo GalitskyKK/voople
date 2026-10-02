@@ -6,9 +6,9 @@ import { commerceBaseValidationSql, assertCommerceBaseReadiness } from '../scrip
 const file='84-commerce-base-compatibility.sql';
 const source=readFileSync(new URL('../drizzle/'+file,import.meta.url),'utf8');
 test('commerce base has a single dependency-ordered release entry and exactly scoped DDL',()=>{
-  assert.equal(REQUIRED_MIGRATIONS.length,44);
+  assert.equal(REQUIRED_MIGRATIONS.length,45);
   assert.equal(REQUIRED_MIGRATIONS.filter(id=>id===file).length,1);
-  assert.deepEqual(RELEASE_APPLY_ORDER.slice(0,6),['45-app-schema-migrations.sql','82-core-baseline-compatibility.sql','83-commerce-prerequisite-compatibility.sql',file,'85-wallet-ledger-compatibility.sql','38-group-emojis.sql']);
+  assert.deepEqual(RELEASE_APPLY_ORDER.slice(0,7),['45-app-schema-migrations.sql','82-core-baseline-compatibility.sql','83-commerce-prerequisite-compatibility.sql',file,'85-wallet-ledger-compatibility.sql','86-payment-fulfillment-compatibility.sql','38-group-emojis.sql']);
   assert.deepEqual([...source.matchAll(/CREATE TABLE public\.(\w+)/g)].map(m=>m[1]),['shop_items','user_inventory','profile_customization']);
   assert.doesNotMatch(source,/\bDROP\b|\bINSERT\s+INTO\b|CREATE (?:OR REPLACE )?FUNCTION|user_wallets|payment_intents|promo_codes/);
 });

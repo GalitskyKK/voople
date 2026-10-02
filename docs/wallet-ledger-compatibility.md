@@ -114,12 +114,12 @@ semantics, descending index and partial uniqueness and is registered in
 
 ## Remaining work
 
-Payment intents, subscription fulfillments, promo codes/redemptions,
-extend_voople_plus_once and claim_promo_redemption remain unreproducible.
-Their runtime paths are preserved. The next compatibility slice should attest
-payment-intent and subscription-fulfillment schema and its RPC definition,
-without changing provider/billing behavior. Future wallet redesign, refunds,
-new prices and entitlement writers remain separate product work.
+The subsequent [payment fulfillment foundation](payment-fulfillment-compatibility.md)
+tracks payment intents, subscription fulfillments and extend_voople_plus_once
+in migration 86 without changing provider/billing behavior. Promo codes,
+promo redemptions and claim_promo_redemption remain unreproducible. Future
+wallet redesign, refunds, new prices and entitlement writers remain separate
+product work.
 
 Local verification passed from remote master
 `1546f1b03c3b73b81fc4461d7ee0e948c0f087db` on

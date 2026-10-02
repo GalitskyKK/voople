@@ -43,6 +43,7 @@ export const REQUIRED_MIGRATIONS = Object.freeze([
   "83-commerce-prerequisite-compatibility.sql",
   "84-commerce-base-compatibility.sql",
   "85-wallet-ledger-compatibility.sql",
+  "86-payment-fulfillment-compatibility.sql",
 ]);
 
 // The ledger must exist before the feature migrations are replayed so every
@@ -51,13 +52,15 @@ export const REQUIRED_MIGRATIONS = Object.freeze([
 // functions; 84 supplies the attested catalog/inventory/profile base. These
 // foundations precede older feature migrations; dependency order takes
 // precedence over filename chronology. 85 supplies the wallet ledger and
-// creates service-only RPCs; 81 later re-asserts their hardened privileges.
+// creates service-only RPCs; 86 supplies payment/fulfillment and its verified
+// service-only RPC. 81 later re-asserts their hardened privileges.
 export const RELEASE_APPLY_ORDER = Object.freeze([
   "45-app-schema-migrations.sql",
   "82-core-baseline-compatibility.sql",
   "83-commerce-prerequisite-compatibility.sql",
   "84-commerce-base-compatibility.sql",
   "85-wallet-ledger-compatibility.sql",
+  "86-payment-fulfillment-compatibility.sql",
   "38-group-emojis.sql",
   "39-structured-chat-content.sql",
   "43-group-sounds.sql",

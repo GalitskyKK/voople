@@ -4,19 +4,19 @@ import {
   primaryKey, text, timestamp, uniqueIndex, uuid, varchar,
 } from "drizzle-orm/pg-core";
 
-export const avatarTypeEnum = pgEnum("avatar_type", ["constructor", "photo"]);
-export const bannerTypeEnum = pgEnum("banner_type", ["color", "pattern", "animated"]);
+import { profileCustomization } from "./profile-customization-schema";
+export { profileCustomization, avatarTypeEnum, bannerTypeEnum } from "./profile-customization-schema";
 export const postMediaTypeEnum = pgEnum("post_media_type", ["image", "gif", "meme", "video", "circle"]);
 export const itemTypeEnum = pgEnum("item_type", [
   "effect", "ring", "banner", "nameplate", "badge", "reaction_pack", "decoration",
-  "feed_card", "app_theme", "profile_background"]);
+  "feed_card", "app_theme", "profile_background", "frame"]);
 export const chatTypeEnum = pgEnum("chat_type", ["direct", "group"]);
 export const notifTypeEnum = pgEnum("notif_type", [
   "like", "card_reaction", "follow", "reply", "repost", "match",
   "mystery_drop", "profile_canvas_draw", "question", "room_invite", "friend_request", "friend_accept",
 ]);
 export const acquiredViaEnum = pgEnum("acquired_via", [
-  "purchase", "earned", "gifted", "seasonal_reward",
+  "purchase", "earned", "gifted", "seasonal_reward", "free_claim",
 ]);
 export const subscriptionTierEnum = pgEnum("subscription_tier", ["plus", "pro"]);
 export const trackSourceEnum = pgEnum("track_source", ["upload", "chat", "post"]);
@@ -38,34 +38,6 @@ export const users = pgTable(
     usernameIdx: index("username_idx").on(t.username),
   }),
 );
-
-export const profileCustomization = pgTable("profile_customization", {
-  userId: uuid("user_id")
-    .primaryKey()
-    .references(() => users.id, { onDelete: "cascade" }),
-  bannerType: bannerTypeEnum("banner_type").notNull().default("color"),
-  bannerValue: jsonb("banner_value").notNull().default({ color: "#1A0D2E" }),
-  avatarType: avatarTypeEnum("avatar_type").notNull().default("constructor"),
-  avatarData: jsonb("avatar_data").notNull().default({}),
-  avatarRingId: varchar("avatar_ring_id", { length: 100 }),
-  /** @deprecated Эффекты профиля заменены рамкой (profile_frame_id). Данные не удаляются. */
-  profileEffectId: varchar("profile_effect_id", { length: 100 }),
-  profileBackgroundId: varchar("profile_background_id", { length: 100 }),
-  /** Рамка вокруг всей карточки (баннер+основа). Id пресета из frames-registry. */
-  profileFrameId: varchar("profile_frame_id", { length: 100 }),
-  /** Кастомный цвет рамки (Voople+), HEX. Аналог nickname_color. */
-  frameColor: varchar("frame_color", { length: 20 }),
-  /** Режим основы карточки: mirror (дефолт) · theme (градиент) · plain (не дублировать баннер). */
-  cardBaseMode: varchar("card_base_mode", { length: 20 }),
-  nameplateId: varchar("nameplate_id", { length: 100 }),
-  nicknameColor: varchar("nickname_color", { length: 20 }),
-  nicknameGradient: boolean("nickname_gradient").default(false),
-  nicknameFont: varchar("nickname_font", { length: 20 }).notNull().default("sans"),
-  nicknameEffect: varchar("nickname_effect", { length: 20 }).notNull().default("plain"),
-  themePrimary: varchar("theme_primary", { length: 7 }).default("#0A0A0F"),
-  themeAccent: varchar("theme_accent", { length: 7 }).default("#7B3AED"),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
 
 export const userStatus = pgTable("user_status", {
   userId: uuid("user_id")
@@ -530,22 +502,22 @@ export const shopItems = pgTable("shop_items", {
   type: itemTypeEnum("type").notNull(),
   kind: varchar("kind", { length: 50 }),
   name: varchar("name", { length: 100 }).notNull(),
-  description: text("description"),
-  priceRub: integer("price_rub").notNull().default(0),
+  description: varchar("description", { length: 300 }),
+  priceRub: integer("price_rub").notNull(),
   priceCoins: integer("price_coins").notNull().default(0),
   isFree: boolean("is_free").notNull().default(false),
   previewUrl: varchar("preview_url", { length: 500 }),
   sortOrder: integer("sort_order").notNull().default(0),
-  assetFolder: varchar("asset_folder", { length: 100 }),
-  assetId: varchar("asset_id", { length: 200 }),
-  equipSlot: varchar("equip_slot", { length: 50 }),
-  equipValue: varchar("equip_value", { length: 200 }),
+  assetFolder: varchar("asset_folder", { length: 50 }),
+  assetId: varchar("asset_id", { length: 100 }),
+  equipSlot: varchar("equip_slot", { length: 40 }),
+  equipValue: varchar("equip_value", { length: 100 }),
   apngUrl: varchar("apng_url", { length: 500 }),
   isLimited: boolean("is_limited").default(false),
   stock: integer("stock"),
   soldCount: integer("sold_count").notNull().default(0),
   requiresSubscription: subscriptionTierEnum("requires_subscription"),
-});
+}, t => [index("shop_items_kind_idx").on(t.kind), index("shop_items_sort_idx").on(t.sortOrder)]);
 
 export const userInventory = pgTable(
   "user_inventory",

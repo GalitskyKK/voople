@@ -128,3 +128,8 @@ and desktop renderer build passed (existing lint/chunk warnings remain). Public
 browser smoke passed 11/12 checks, including 360 px and desktop landing checks.
 The feed geometry check timed out against the placeholder Supabase backend;
 its complete responsive flow remains unverified. No production target was used.
+
+For the subsequent catalog, inventory and profile customization foundation, see
+[commerce base compatibility](commerce-base-compatibility.md). Migration 84 is
+now required immediately after 83; it adds those three tables without changing
+wallet/payment/promo reproducibility or replaying historical SQL.

@@ -8,6 +8,7 @@ import { applyMigration } from "../../scripts/migration-runner.mjs";
 import { migrationChecksum } from "../../scripts/migration-checksum.mjs";
 import { RELEASE_APPLY_ORDER } from "../../scripts/migration-manifest.mjs";
 import { assertCoreBaselineReadiness, coreBaselineValidationSql } from "../../scripts/core-baseline-readiness.mjs";
+import { assertCommerceBaseReadiness } from "../../scripts/commerce-base-readiness.mjs";
 import { assertCommercePrerequisiteReadiness } from "../../scripts/commerce-prerequisite-readiness.mjs";
 import { assertLegacyCommerceRpcPrivileges } from "../../scripts/legacy-commerce-rpc-privileges.mjs";
 import { ensureTestRoles } from "./helpers/test-roles.mjs";
@@ -75,7 +76,7 @@ async function installEvolved(sql) {
 }
 
 const options = { skip: databaseUrl ? false : "VOOPLE_TEST_DATABASE_URL absent; no production fallback", timeout: 120_000 };
-test("fresh entire 45 -> 82 -> 83 -> unchanged 38..81; readiness; immutable ledger", options, () => disposable(async (sql, apply, testUrl) => {
+test("fresh entire 45 -> 82 -> 83 -> 84 -> unchanged 38..81; readiness; immutable ledger", options, () => disposable(async (sql, apply, testUrl) => {
   await apply("45-app-schema-migrations.sql");
   await apply(baseline);
   assert.equal((await sql`select count(*)::integer as n from pg_class where relnamespace='public'::regnamespace and relkind='r'`)[0].n, 16);
@@ -92,6 +93,7 @@ test("fresh entire 45 -> 82 -> 83 -> unchanged 38..81; readiness; immutable ledg
   for (const file of RELEASE_APPLY_ORDER.slice(2)) assert.equal((await apply(file)).status, "applied", file);
   await assertCoreBaselineReadiness(sql);
   await assertCommercePrerequisiteReadiness(sql);
+  await assertCommerceBaseReadiness(sql);
   await assertLegacyCommerceRpcPrivileges(sql);
   // Local/CI test TLS is optional. All catalog readiness contracts run above;
   // when TLS is available also exercise the unchanged operational CLI end-to-end.
@@ -108,7 +110,7 @@ test("fresh entire 45 -> 82 -> 83 -> unchanged 38..81; readiness; immutable ledg
   assert.deepEqual(await sql`select * from app_schema_migrations order by id`, completeLedger);
   assert.equal((await sql`select group_effective_boost_capacity('00000000-0000-0000-0000-000000000002') as n`)[0].n, 0);
   assert.equal((await sql`select group_perk_is_active('00000000-0000-0000-0000-000000000002','hd'::varchar) as active`)[0].active, false);
-  for (const name of ["shop_items", "user_inventory", "profile_customization", "user_wallets", "wallet_transactions", "payment_intents", "subscription_fulfillments", "promo_codes", "promo_redemptions"]) {
+  for (const name of ["user_wallets", "wallet_transactions", "payment_intents", "subscription_fulfillments", "promo_codes", "promo_redemptions"]) {
     assert.equal((await sql`select to_regclass(${`public.${name}`}) as object`)[0].object, null);
   }
 }));

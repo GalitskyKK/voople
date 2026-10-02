@@ -5,7 +5,7 @@ import { REQUIRED_MIGRATIONS, RELEASE_APPLY_ORDER } from '../scripts/migration-m
 import { promoValidationSql, assertPromoReadiness } from '../scripts/promo-readiness.mjs';
 const fixture=JSON.parse(readFileSync(new URL('./fixtures/promo.json',import.meta.url),'utf8'));
 test('promo foundation release order, exact scope and proven claim definition',()=>{
- assert.equal(REQUIRED_MIGRATIONS.length,50);
+ assert.equal(REQUIRED_MIGRATIONS.length,51);
  assert.deepEqual(RELEASE_APPLY_ORDER.slice(0,9),['45-app-schema-migrations.sql','82-core-baseline-compatibility.sql','83-commerce-prerequisite-compatibility.sql','84-commerce-base-compatibility.sql','85-wallet-ledger-compatibility.sql','86-payment-fulfillment-compatibility.sql','87-promo-compatibility.sql','88-group-runtime-rpc-compatibility.sql','38-group-emojis.sql']);
  assert.deepEqual(fixture.tables.map(t=>t.name),['promo_codes','promo_redemptions']);
  assert.deepEqual(fixture.functions.map(f=>[f.name,f.definition_md5_lf]),[['claim_promo_redemption','cda399bc55d01e4ed51b653a15fb52ff']]);

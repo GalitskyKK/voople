@@ -653,3 +653,7 @@ selection retains its gradient coupling. Migration 91 independently guards both
 columns using the actual browser SQL role; migrations 89/90 stay unchanged.
 The existing bounded Style-subject batch serves fonts and effects together;
 historical appearance snapshots remain captured. See `docs/style-nickname-effect.md`.
+
+## Personal Style color boundary
+
+The fourth reviewed consumer is `selectCustomNicknameColor`: active legacy OR Style, ignoring Full. The seven free palette colors (case-insensitive) and null/reset remain free. Saved custom HEX is preserved on expiry/revocation; explicit mapper options project default/null foreground while denied and restore the retained color when access returns. Malformed saved values fail closed. Font/effect/color share the existing bounded Style fact at one evaluation instant; no new RPC or per-author reads. Published appearance snapshots preserve their captured effective color. Migration 92 independently guards browser nickname_color changes with the actual SQL role, without row rewrites or unrelated ACL changes; the required chain is 51 migrations. Legacy Store ownership, requires_subscription, purchases/gifts and custom-color equip authorization remain unchanged. See `docs/style-nickname-color.md`.

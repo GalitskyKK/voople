@@ -18,6 +18,7 @@ export async function getPersonalStyleAccess(userId: string, evaluatedAt = new D
     policyVersion: "app-theme-legacy-or-style-v1",
     sources: { activeLegacySubscription, activeStyleCoverage },
     capabilities: {
+      selectCustomNicknameColor: activeLegacySubscription || activeStyleCoverage,
       selectPaidAppTheme: activeLegacySubscription || activeStyleCoverage,
       selectPremiumNicknameFont: activeLegacySubscription || activeStyleCoverage,
       selectPremiumNicknameEffect: activeLegacySubscription || activeStyleCoverage,

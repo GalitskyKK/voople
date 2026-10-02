@@ -90,7 +90,7 @@ test("Style-only paid mutation; mixed legacy fields reject atomically before per
   assert.equal(state.row.app_theme_id, "rose");
   for (const patch of [{ frameColor: "#123456" },
     { cardBaseMode: "theme" }, { themePrimary: "#123456" }, { themeAccent: "#123456" },
-    { nicknameColor: "#123456" }, { bannerId: "not-owned" }]) {
+    { bannerId: "not-owned" }]) {
     state = setup({ grants: [grant()] });
     await assert.rejects(updateCustomization(user, { appThemeId: "rose", ...patch }));
     assert.deepEqual(state.writes, []); assert.equal(state.row.app_theme_id, "violet");

@@ -41,7 +41,7 @@ The tracked SQL contains no browser-callable theme-writing RPC.
 Apply `89-style-app-theme-write-boundary.sql` before deploying this consumer.
 It follows migration 81 and the
 customization foundation in 84. Historical migration 84 is unchanged.
-The current 50-migration chain ends with independent migration 91, which leaves
+The current 51-migration chain ends with independent migration 91, which leaves
 this guard unchanged. The migration runner applies SQL and checksum ledger inserts atomically.
 It performs no row UPDATE, DELETE or preference backfill.
 
@@ -93,3 +93,5 @@ transport. It covers stale storage, reload preservation, restoration, failed
 mutation, free replacement, read-error fallback and wallpaper isolation.
 This browser fixture proves client behavior; real DB/REST tests prove security.
 No production credentials or production fallback are used.
+
+The fourth accepted consumer is custom nickname color; see [style-nickname-color.md](./style-nickname-color.md). Its explicit capability does not broaden legacy Store equip authorization. Migration 92 is independent of the existing boundaries.

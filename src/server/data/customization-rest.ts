@@ -1,3 +1,4 @@
+import { assertNicknameColorSelectionAllowed } from "@/lib/customization/nickname-color";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { publicAssetUrl } from "@/lib/object-storage";
 import { customizationAssetPath } from "@/lib/customization/asset-path";
@@ -92,7 +93,7 @@ async function resolveBannerPatch(bannerId: string | null | undefined) {
 export async function updateProfileCustomizationRest(
   userId: string,
   patch: CustomizationEquipPatch,
-  options?: { trustedItemId?: string; selectPaidAppTheme?: boolean; selectPremiumNicknameFont?: boolean; selectPremiumNicknameEffect?: boolean },
+  options?: { trustedItemId?: string; selectPaidAppTheme?: boolean; selectPremiumNicknameFont?: boolean; selectPremiumNicknameEffect?: boolean; selectCustomNicknameColor?: boolean },
 ) {
   const effectAllowed = options?.selectPremiumNicknameEffect ?? (patch.nicknameGradient === true || (patch.nicknameEffect != null && patch.nicknameEffect !== "plain")
     ? await hasActiveSubscriptionRest(userId) : false);
@@ -116,12 +117,10 @@ export async function updateProfileCustomizationRest(
   await assertOwnsEquipValue(ownedIds, patch.animatedAvatarId, trustedItemId);
   await assertAppThemeAllowed(userId, patch.appThemeId, options?.selectPaidAppTheme);
 
-  // Base palette is part of the editor and never requires a shop purchase.
-  // Voople+ unlocks an exact custom HEX color; legacy shop colors remain
-  // readable in existing profiles but are no longer the source of ownership.
-  if (patch.nicknameColor && !isFreeNicknameColor(patch.nicknameColor)) {
-    await assertActiveSubscriptionRest(userId);
-  }
+  // Ordinary selection receives explicit Style access; Store fallback stays legacy-only.
+  const colorAllowed = options?.selectCustomNicknameColor ?? (patch.nicknameColor != null && !isFreeNicknameColor(patch.nicknameColor)
+    ? await hasActiveSubscriptionRest(userId) : false);
+  assertNicknameColorSelectionAllowed(patch.nicknameColor, colorAllowed);
 
   const update: Record<string, unknown> = {
     updated_at: new Date().toISOString(),

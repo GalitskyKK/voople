@@ -1,3 +1,4 @@
+import { resolveEffectiveNicknameColor } from "@/lib/customization/nickname-color";
 import { resolveCustomization, type CustomizationInput } from "@/lib/customization/resolve";
 import { resolveEffectiveNicknameEffect } from "@/lib/customization/nickname-effect";
 import { DEFAULT_THEME } from "@/lib/constants/theme";
@@ -65,9 +66,10 @@ function rowToInput(row: CustomizationRow | null | undefined): CustomizationInpu
 
 export function toProfileCustomizationView(
   row: CustomizationRow | null | undefined,
-  options?: { hasActiveSubscription?: boolean; selectPremiumNicknameFont?: boolean; selectPremiumNicknameEffect?: boolean },
+  options?: { hasActiveSubscription?: boolean; selectPremiumNicknameFont?: boolean; selectPremiumNicknameEffect?: boolean; selectCustomNicknameColor?: boolean },
 ): ProfileCustomizationView {
   const raw = rowToInput(row);
+  raw.nicknameColor = resolveEffectiveNicknameColor(row?.nickname_color, options?.selectCustomNicknameColor ?? false);
   raw.nicknameFont = resolveEffectiveNicknameFont(row?.nickname_font, options?.selectPremiumNicknameFont ?? false);
   const effectiveEffect = resolveEffectiveNicknameEffect(row?.nickname_effect, row?.nickname_gradient, options?.selectPremiumNicknameEffect ?? false);
   raw.nicknameEffect = effectiveEffect.effect;

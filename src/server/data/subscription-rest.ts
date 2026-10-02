@@ -62,7 +62,7 @@ export async function clearExpiredSubscriptionCustomizationRest(userId: string):
     ["profile_frame_id", "profile_frame_id"], ["avatar_ring_id", "avatar_ring_id"],
     ["avatar_decoration_id", "avatar_decoration_id"], ["feed_card_style_id", "feed_card_style_id"],
     ["animated_avatar_id", "animated_avatar_id"],
-    ["nickname_color", "nickname_style"],
+    // Saved nickname color survives entitlement loss, including historical Store colors.
   ];
   for (const [field, slot] of slots) {
     const value = row[field];

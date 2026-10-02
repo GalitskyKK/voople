@@ -7,6 +7,7 @@ import { migrationChecksum } from "../scripts/migration-checksum.mjs";
 
 const records = REQUIRED_MIGRATIONS.map((id) => ({ id, checksum: migrationChecksum(readFileSync(new URL(`../drizzle/${id}`, import.meta.url), "utf8")) }));
 const themeGuardBody = readFileSync(new URL("../drizzle/89-style-app-theme-write-boundary.sql", import.meta.url), "utf8").match(/AS \$\$([\s\S]*?)\$\$;/)[1];
+const colorGuardBody = readFileSync(new URL("../drizzle/92-style-nickname-color-write-boundary.sql", import.meta.url), "utf8").match(/AS \$\$([\s\S]*?)\$\$;/)[1];
 const effectGuardBody = readFileSync(new URL("../drizzle/91-style-nickname-effect-write-boundary.sql", import.meta.url), "utf8").match(/AS \$\$([\s\S]*?)\$\$;/)[1];
 const fontBodies = [...readFileSync(new URL("../drizzle/90-style-nickname-font-write-boundary.sql", import.meta.url), "utf8").matchAll(/AS \$\$([\s\S]*?)\$\$;/g)].map(match => match[1]);
 const moduleUrl = (source) => `data:text/javascript,${encodeURIComponent(source)}`;
@@ -21,7 +22,7 @@ function audit(command, rows) {
       if (query.includes('relreplident')) return [{replicaIdentity:'f'}];
       if (query.includes('pg_get_functiondef')) return [{directChatDefinition:'connection_request_scope privacy_scope_allows'}];
       if (query.includes('has_function_privilege')) return [];
-      if (query.includes('select proname, prosrc')) return [{proname:'guard_nickname_effect_browser_write',prosrc:${JSON.stringify(effectGuardBody)}},{proname:'guard_nickname_font_browser_write',prosrc:${JSON.stringify(fontBodies[0])}},{proname:'load_active_style_subjects',prosrc:${JSON.stringify(fontBodies[1])}}];
+      if (query.includes('select proname, prosrc')) return [{proname:'guard_nickname_color_browser_write',prosrc:${JSON.stringify(colorGuardBody)}},{proname:'guard_nickname_effect_browser_write',prosrc:${JSON.stringify(effectGuardBody)}},{proname:'guard_nickname_font_browser_write',prosrc:${JSON.stringify(fontBodies[0])}},{proname:'load_active_style_subjects',prosrc:${JSON.stringify(fontBodies[1])}}];
       if (query.includes('select prosrc')) return [{prosrc:${JSON.stringify(themeGuardBody)}}];
       throw new Error('Unexpected query');
     };
@@ -29,7 +30,7 @@ function audit(command, rows) {
     sql.begin = async (mode, run) => {
       if (mode !== 'read only') throw new Error('Core readiness requires read only');
       sql.unsafe = async source => {
-        if (!/^-- BEGIN (CORE BASELINE|COMMERCE PREREQUISITE|COMMERCE BASE|WALLET LEDGER|PAYMENT FULFILLMENT|PROMO|GROUP RUNTIME RPC|APP THEME|NICKNAME FONT|NICKNAME EFFECT) READ-ONLY VALIDATION/.test(source)) throw new Error('Unexpected validation block');
+        if (!/^-- BEGIN (CORE BASELINE|COMMERCE PREREQUISITE|COMMERCE BASE|WALLET LEDGER|PAYMENT FULFILLMENT|PROMO|GROUP RUNTIME RPC|APP THEME|NICKNAME FONT|NICKNAME EFFECT|NICKNAME COLOR) READ-ONLY VALIDATION/.test(source)) throw new Error('Unexpected validation block');
         if (/\\b(CREATE|ALTER|DROP|GRANT|REVOKE|INSERT|UPDATE|DELETE)\\s+(TABLE|TYPE|FUNCTION|POLICY|INTO|FROM|ON)\\b/i.test(source)) throw new Error('Audit attempted mutation');
       };
       return run(sql);

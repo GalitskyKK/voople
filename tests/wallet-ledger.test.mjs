@@ -5,7 +5,7 @@ import { REQUIRED_MIGRATIONS, RELEASE_APPLY_ORDER } from '../scripts/migration-m
 import { walletLedgerValidationSql, assertWalletLedgerReadiness } from '../scripts/wallet-ledger-readiness.mjs';
 const fixture=JSON.parse(readFileSync(new URL('./fixtures/wallet-ledger.json',import.meta.url),'utf8'));
 test('wallet ledger release order and verified historical fingerprints',()=>{
- assert.equal(REQUIRED_MIGRATIONS.length,49);
+ assert.equal(REQUIRED_MIGRATIONS.length,50);
  assert.deepEqual(RELEASE_APPLY_ORDER.slice(0,9),['45-app-schema-migrations.sql','82-core-baseline-compatibility.sql','83-commerce-prerequisite-compatibility.sql','84-commerce-base-compatibility.sql','85-wallet-ledger-compatibility.sql','86-payment-fulfillment-compatibility.sql','87-promo-compatibility.sql','88-group-runtime-rpc-compatibility.sql','38-group-emojis.sql']);
  assert.deepEqual(fixture.tables.map(t=>t.name),['user_wallets','wallet_transactions']);
  assert.deepEqual(fixture.functions.map(f=>[f.name,f.definition_md5_lf]),[['ensure_user_wallet','1004769927d4c702131ceb1af7866ed9'],['adjust_wallet','c9b520b2129940e0bb1211b90a2b3eb6'],['purchase_shop_item_with_coins','d23d824342953c6a5ac6eb1234225ff3']]);

@@ -643,3 +643,13 @@ Style coverage and joined legacy subscriptions. Migration 90 independently
 protects browser premium-font writes and adds the service-only bounded Style
 subject aggregate. The 49-migration chain retains migration 89 unchanged.
 See `docs/style-nickname-font.md` for rendering, editor and verification contracts.
+
+## Personal Style effect boundary
+
+The third reviewed consumer is `selectPremiumNicknameEffect`, using active legacy
+OR Style and ignoring Full. Saved effect/gradient facts are never cleaned on expiry.
+Pure effective projection falls back to plain/false without access. Explicit effect
+selection retains its gradient coupling. Migration 91 independently guards both
+columns using the actual browser SQL role; migrations 89/90 stay unchanged.
+The existing bounded Style-subject batch serves fonts and effects together;
+historical appearance snapshots remain captured. See `docs/style-nickname-effect.md`.

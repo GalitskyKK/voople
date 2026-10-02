@@ -1,13 +1,14 @@
+import { resolveEffectiveNicknameEffect } from "@/lib/customization/nickname-effect";
 import { resolveEffectiveNicknameFont } from "@/lib/customization/nickname-font";
 import { resolveCustomization } from "@/lib/customization/resolve";
 import type { ProfileCustomizationView } from "@/types/domain";
 import type { EquippedCustomizationView, ShopItemView } from "@/types/shop";
 import type { NicknameFont } from "@/lib/customization/types";
 
-export function projectEditorNicknameFont(value: ProfileCustomizationView, font: NicknameFont): ProfileCustomizationView {
+export function projectEditorDisplayName(value: ProfileCustomizationView, font: NicknameFont, effect = { effect: value.displayName.effect, gradient: value.displayName.gradient }): ProfileCustomizationView {
   const nickname = resolveCustomization({ nicknameFont: font, nicknameColor: value.displayName.color,
-    nicknameGradient: value.displayName.gradient, nicknameEffect: value.displayName.effect });
-  return { ...value, displayName: { ...value.displayName, font },
+    nicknameGradient: effect.gradient, nicknameEffect: effect.effect });
+  return { ...value, displayName: { ...value.displayName, font, ...effect },
     flags: { ...value.flags, hasDisplayNameStyle: nickname.flags.hasDisplayNameStyle } };
 }
 
@@ -15,6 +16,7 @@ export function customizationFromEquipped(
   equipped: EquippedCustomizationView,
   fallback: ProfileCustomizationView,
 ): ProfileCustomizationView {
+  const effectiveEffect = resolveEffectiveNicknameEffect(equipped.nicknameEffect, equipped.nicknameGradient, equipped.selectPremiumNicknameEffect);
   const value = resolveCustomization({
     bannerId: equipped.bannerId,
     avatarRingId: equipped.avatarRingId,
@@ -27,9 +29,9 @@ export function customizationFromEquipped(
     animatedAvatarUrl: equipped.animatedAvatarId ? null : fallback.assets.animatedAvatarUrl,
     profileBackgroundId: equipped.profileBackgroundId,
     nicknameColor: equipped.nicknameColor,
-    nicknameGradient: equipped.nicknameGradient,
+    nicknameGradient: effectiveEffect.gradient,
     nicknameFont: resolveEffectiveNicknameFont(equipped.nicknameFont, equipped.selectPremiumNicknameFont),
-    nicknameEffect: equipped.nicknameEffect,
+    nicknameEffect: effectiveEffect.effect,
     themePrimary: equipped.themePrimary,
     themeAccent: equipped.themeAccent,
   });

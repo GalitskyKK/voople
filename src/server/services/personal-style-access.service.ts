@@ -20,6 +20,7 @@ export async function getPersonalStyleAccess(userId: string, evaluatedAt = new D
     capabilities: {
       selectPaidAppTheme: activeLegacySubscription || activeStyleCoverage,
       selectPremiumNicknameFont: activeLegacySubscription || activeStyleCoverage,
+      selectPremiumNicknameEffect: activeLegacySubscription || activeStyleCoverage,
     },
   };
 }

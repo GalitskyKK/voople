@@ -12,8 +12,8 @@ reads, not one atomic snapshot. Read failures throw rather than returning denial
 Void, Light and explicit null clear remain free. Unknown IDs are rejected.
 Each other field in a mixed patch keeps its legacy subscription/ownership rule;
 The second reviewed consumer separately unlocks premium nickname fonts (see
-[`style-nickname-font.md`](./style-nickname-font.md)); Style cannot unlock effects,
-frames, banners or profile palette colors.
+[`style-nickname-font.md`](./style-nickname-font.md)); Style also unlocks premium effects through its third capability (see
+[`style-nickname-effect.md`](./style-nickname-effect.md)); it cannot unlock frames, banners or profile palette colors.
 Store requires_subscription metadata, purchase/claim/gifting and ownership
 rules are unchanged. Wallpaper/Aurora, avatar history and badge identity remain
 on their existing legacy rules.
@@ -41,7 +41,7 @@ The tracked SQL contains no browser-callable theme-writing RPC.
 Apply `89-style-app-theme-write-boundary.sql` before deploying this consumer.
 It follows migration 81 and the
 customization foundation in 84. Historical migration 84 is unchanged.
-The current 49-migration chain ends with independent migration 90, which leaves
+The current 50-migration chain ends with independent migration 91, which leaves
 this guard unchanged. The migration runner applies SQL and checksum ledger inserts atomically.
 It performs no row UPDATE, DELETE or preference backfill.
 

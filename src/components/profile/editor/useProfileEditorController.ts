@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMediaUpload } from "@/hooks/useMediaUpload";
 import { trpc } from "@/lib/trpc/client";
 import { reportProductEvent } from "@/lib/telemetry/client";
+import { resolveEffectiveNicknameEffect } from "@/lib/customization/nickname-effect";
 import { resolveEffectiveNicknameFont } from "@/lib/customization/nickname-font";
 import type { ProfileCustomizationView, ProfileViewModel } from "@/types/domain";
 import type { EquippedCustomizationView, ShopItemView } from "@/types/shop";
@@ -13,7 +14,7 @@ import {
   clearProfileSlot,
   customizationFromEquipped,
   equipProfileItem,
-  projectEditorNicknameFont,
+  projectEditorDisplayName,
 } from "./profile-editor-customization";
 import type {
   EditorCustomizationPatch,
@@ -184,6 +185,8 @@ export function useProfileEditorController({
     : customization;
   const dirty = draft.name !== savedDraft.name || draft.bio !== savedDraft.bio;
   const selectPremiumNicknameFont = !fontAccess.isError && Boolean(fontAccess.data?.selectPremiumNicknameFont);
+  const selectPremiumNicknameEffect = !fontAccess.isError && Boolean(fontAccess.data?.selectPremiumNicknameEffect);
+  const effectiveEffect = resolveEffectiveNicknameEffect(equipped?.nicknameEffect ?? previewCustomization.displayName.effect, equipped?.nicknameGradient ?? previewCustomization.displayName.gradient, selectPremiumNicknameEffect);
   const effectiveFont = resolveEffectiveNicknameFont(equipped?.nicknameFont ?? previewCustomization.displayName.font, selectPremiumNicknameFont);
 
   const openEditor = useCallback(() => {
@@ -364,8 +367,8 @@ export function useProfileEditorController({
 
   return {
     open, discardOpen, panel, editing, draft, avatarUrl,
-    previewCustomization: projectEditorNicknameFont(previewCustomization, effectiveFont),
-    equipped: equipped ? { ...equipped, selectPremiumNicknameFont, effectiveNicknameFont: effectiveFont } : null,
+    previewCustomization: projectEditorDisplayName(previewCustomization, effectiveFont, effectiveEffect),
+    equipped: equipped ? { ...equipped, selectPremiumNicknameFont, effectiveNicknameFont: effectiveFont, selectPremiumNicknameEffect, effectiveNicknameEffect: effectiveEffect.effect, effectiveNicknameGradient: effectiveEffect.gradient } : null,
     trialItemId, selectedGroupTag: hydratedGroupTag, groupTags, allItems, message,
     cosmeticBusy, dirty, overview, history, chats, avatarUpload, bannerUpload,
     savePending: saveMutation.isPending,

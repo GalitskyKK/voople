@@ -57,7 +57,11 @@ the effective fallback is Void and restoration reactivates the retained choice.
 Premium nickname fonts are the second accepted consumer with the same legacy
 OR Style selection rule and Full ignored; `sans` is free. Saved premium choices
 survive loss of access, render as `sans` and reactivate on restoration. Browser
-premium-font writes are blocked; other name styling remains unchanged. All
+premium-font writes are blocked. Premium nickname effects are the third
+accepted consumer with the same legacy OR Style rule; Full is ignored. Plain
+is free; premium effects and gradient=true share one explicit capability. Saved
+facts survive access loss with a plain/false live fallback. See
+[`style-nickname-effect.md`](./style-nickname-effect.md). Other name styling remains unchanged. All
 other premium capabilities, wallpaper and Store rules remain legacy-only.
 See [`style-nickname-font.md`](./style-nickname-font.md).
 See [`style-app-theme.md`](./style-app-theme.md). Full coverage does not yet issue the included Group charge, and

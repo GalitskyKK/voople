@@ -49,8 +49,8 @@ for (const platform of ["web", "desktop"]) for (const width of [360, 1280]) for 
     expect(saved).toBe("serif"); await expect(preview).toHaveCSS("font-family", /Georgia/);
     failure = false; await mono.click(); await expect.poll(() => saved).toBe("mono");
     await expect(mono).toBeEnabled(); await expect(preview).toHaveCSS("font-family", /monospace/);
-    await dialog.getByRole("button", { name: "Неон", exact: true }).click();
-    expect(saved).toBe("mono"); // Effect remains a legacy-only trial; no font replacement.
+    await expect(dialog.getByRole("button", { name: /^Неон/ })).toBeDisabled();
+    expect(saved).toBe("mono"); // This font-only mock does not provide the separate effect capability.
     style = false; await refresh(); await expect(serif).toBeDisabled(); await expect(preview).toHaveCount(0); expect(saved).toBe("mono");
     style = true; await refresh(); await expect(mono).toBeEnabled(); await expect(preview).toHaveCSS("font-family", /monospace/);
     failRead = true; await refresh(); await expect(serif).toBeDisabled(); await expect(preview).toHaveCount(0); expect(saved).toBe("mono");

@@ -1,4 +1,5 @@
 import { resolveCustomization, type CustomizationInput } from "@/lib/customization/resolve";
+import { resolveEffectiveNicknameEffect } from "@/lib/customization/nickname-effect";
 import { DEFAULT_THEME } from "@/lib/constants/theme";
 import type { ProfileCustomizationView } from "@/types/domain";
 import { resolveEffectiveNicknameFont } from "@/lib/customization/nickname-font";
@@ -64,10 +65,13 @@ function rowToInput(row: CustomizationRow | null | undefined): CustomizationInpu
 
 export function toProfileCustomizationView(
   row: CustomizationRow | null | undefined,
-  options?: { hasActiveSubscription?: boolean; selectPremiumNicknameFont?: boolean },
+  options?: { hasActiveSubscription?: boolean; selectPremiumNicknameFont?: boolean; selectPremiumNicknameEffect?: boolean },
 ): ProfileCustomizationView {
   const raw = rowToInput(row);
   raw.nicknameFont = resolveEffectiveNicknameFont(row?.nickname_font, options?.selectPremiumNicknameFont ?? false);
+  const effectiveEffect = resolveEffectiveNicknameEffect(row?.nickname_effect, row?.nickname_gradient, options?.selectPremiumNicknameEffect ?? false);
+  raw.nicknameEffect = effectiveEffect.effect;
+  raw.nicknameGradient = effectiveEffect.gradient;
   // The server still cleans expired premium selections (see subscription-rest),
   // but profile reads must be safe even before that maintenance pass happens.
   // These fields are subscriber-only and therefore immediately fall back.

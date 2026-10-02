@@ -13,6 +13,7 @@ import type { ProfileEditorController } from "./useProfileEditorController";
 export function ProfileEditorNamePanel({ controller, hasVooplePlus }: { controller: ProfileEditorController; hasVooplePlus: boolean }) {
   const value = controller.equipped;
   const selectPremiumNicknameFont = value?.selectPremiumNicknameFont ?? false;
+  const selectPremiumNicknameEffect = value?.selectPremiumNicknameEffect ?? false;
   return (
     <div className="mt-5 space-y-6">
       <section className="space-y-3">
@@ -31,13 +32,14 @@ export function ProfileEditorNamePanel({ controller, hasVooplePlus }: { controll
         </div>
       </section>
       <section className="space-y-3">
-        <div><h3 className="text-sm font-semibold">Эффект</h3><p className="mt-1 text-xs text-[var(--app-muted)]">Результат сразу виден на карточке слева.</p></div>
+        <div><h3 className="text-sm font-semibold">Эффект</h3><p className="mt-1 text-xs text-[var(--app-muted)]">Премиум-эффекты доступны с Вупл+ или Style.</p></div>
+        {(value?.nicknameEffect && value.nicknameEffect !== "plain" || value?.nicknameGradient) && !selectPremiumNicknameEffect ? <p className="text-xs text-[var(--app-muted)]">Выбранный эффект сохранён. Пока нет доступа, имя отображается без эффекта.</p> : null}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {NICKNAME_EFFECTS.map((effect) => {
             const active = (value?.nicknameEffect ?? (value?.nicknameGradient ? "gradient" : "plain")) === effect.id;
-            const locked = effect.id !== "plain" && !hasVooplePlus;
-            const sample = displayNamePresentation({ color: value?.nicknameColor ?? "#a78bfa", gradient: effect.id === "gradient", font: (value?.effectiveNicknameFont as NicknameFont | undefined) ?? "sans", effect: effect.id });
-            return <button key={effect.id} type="button" disabled={controller.cosmeticBusy} aria-pressed={active} onClick={() => controller.commitPatch({ nicknameEffect: effect.id, nicknameGradient: effect.id === "gradient" }, locked)} className={cn("profile-editor-name-effect", active && "profile-editor-name-effect--active")}><span className={sample.className} style={sample.style}>{effect.label}</span></button>;
+            const locked = effect.id !== "plain" && !selectPremiumNicknameEffect;
+            const sample = displayNamePresentation({ color: value?.nicknameColor ?? "var(--theme-accent)", gradient: effect.id === "gradient", font: (value?.effectiveNicknameFont as NicknameFont | undefined) ?? "sans", effect: effect.id });
+            return <button key={effect.id} type="button" disabled={controller.cosmeticBusy || locked} aria-pressed={active} aria-label={`${effect.label}${locked ? " — нужен Вупл+ или Style" : ""}`} onClick={() => controller.commitPatch({ nicknameEffect: effect.id })} className={cn("profile-editor-name-effect", active && "profile-editor-name-effect--active")}><span className={sample.className} style={sample.style}>{effect.label}</span></button>;
           })}
         </div>
       </section>

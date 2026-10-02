@@ -1,4 +1,3 @@
-import { resolveEffectiveNicknameFont } from "@/lib/customization/nickname-font";
 import { toProfileCustomizationView, type CustomizationRow } from "@/server/mappers/customization";
 import { publicAssetUrl } from "@/lib/object-storage";
 import type { NicknameFontAccess } from "@/types/personal-style-access";
@@ -88,7 +87,6 @@ export function mapUserToAuthor(
   const customizationRow = first(user.profile_customization);
   const { hasVooplePlus } = mapSubscriptionFields(first(user.subscriptions), fontAccess?.evaluatedAt);
   return {
-    selectPremiumNicknameFont: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
     id: user.id,
     username: user.username,
     displayName: user.display_name,
@@ -167,12 +165,7 @@ export function mapPostRow(
 ): PostViewModel {
   const status = snapshotToStatus(post.state_snapshot);
   const appearance = snapshotToAppearance(post.state_snapshot);
-  if (appearance?.customization) {
-    appearance.customization = { ...appearance.customization, displayName: {
-      ...appearance.customization.displayName,
-      font: resolveEffectiveNicknameFont(appearance.customization.displayName?.font, author.selectPremiumNicknameFont ?? false),
-    } };
-  }
+  // Published appearance is historical presentation data, independent of live author access.
   const hasStatus = status && (status.thought || status.moodValue != null);
 
   return {

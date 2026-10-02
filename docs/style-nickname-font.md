@@ -47,8 +47,10 @@ function privileges. Migration 89's readiness contract stays unchanged.
 Profile and mini-profile share `mapUserToProfile`; feed, hashtags, posts,
 status posts, comments and nested reposts share `mapUserToAuthor`. These paths
 pass explicit batch Style coverage and a shared evaluation instant into pure
-mappers. Historical appearance snapshots also project their font using current
-subject access without modifying the snapshot. Web and desktop consume the
+mappers. Historical appearance snapshots render their captured customization,
+including nickname font, without evaluating current entitlement or modifying
+the snapshot. This also applies to nested reposts. Live author customization
+remains independently subject to current access. Web and desktop consume the
 same views. The Drizzle adapter preserves raw storage facts before mapping.
 
 `loadNicknameFontAccessRest` deduplicates subject IDs and uses one evaluation

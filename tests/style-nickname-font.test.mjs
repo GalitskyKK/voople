@@ -13,6 +13,7 @@ const { clearExpiredSubscriptionCustomizationRest } = await import("../src/serve
 const { assertNicknameFontSelectionAllowed, resolveEffectiveNicknameFont, NICKNAME_FONT_IDS } = await import("../src/lib/customization/nickname-font.ts");
 const { loadNicknameFontAccessRest } = await import("../src/server/data/nickname-font-access-rest.ts");
 const { mapUserToAuthor, mapUserToProfile, mapPostRow } = await import("../src/server/mappers/profile.ts");
+const { mapPostRowsWithReposts } = await import("../src/server/data/post-hydration.ts");
 const { customizationFromEquipped } = await import("../src/components/profile/editor/profile-editor-customization.ts");
 const { createTRPCRouter } = await import("../src/server/trpc/init.ts");
 const { customizationRouter } = await import("../src/server/trpc/routers/customization.ts");
@@ -107,15 +108,70 @@ test("cleanup preserves saved font, restoration and explicit sans replacement", 
   const replaced = setup(); await updateCustomization(user, { nicknameFont: "sans" });
   assert.equal((await getEquippedCustomization(user)).savedNicknameFont, "sans"); assert.equal(replaced.row.nickname_font, "sans");
 });
-test("historical appearance font uses current subject access without modifying its snapshot", () => {
-  const snapshot = { kind: "appearance", scene: "midnight", customization: mapUserToAuthor({ username: "u", display_name: "U",
-    subscriptions: activeLegacy, profile_customization: { nickname_font: "serif" } }).customization };
-  for (const allowed of [false, true]) {
-    const author = mapUserToAuthor({ username: "u", display_name: "U" }, { evaluatedAt: now, activeStyleCoverage: allowed });
-    const view = mapPostRow({ state_snapshot: snapshot }, author);
-    assert.equal(view.appearance.customization.displayName.font, allowed ? "serif" : "sans");
-    assert.equal(snapshot.customization.displayName.font, "serif");
+const historicalUser = { id: user, username: "u", display_name: "U", created_at: now.toISOString(),
+  profile_customization: { nickname_font: "serif" } };
+function appearanceSnapshot() {
+  return { kind: "appearance", scene: "midnight", customization: mapUserToAuthor(historicalUser,
+    { evaluatedAt: now, activeStyleCoverage: true }).customization };
+}
+for (const allowed of [false, true]) test(`historical serif remains captured with current access ${allowed}`, () => {
+  const snapshot = appearanceSnapshot();
+  const access = { evaluatedAt: now, activeStyleCoverage: allowed };
+  const author = mapUserToAuthor(historicalUser, access);
+  const view = mapPostRow({ state_snapshot: snapshot }, author);
+  assert.equal(view.appearance.customization.displayName.font, "serif");
+  assert.equal(view.author.customization.displayName.font, allowed ? "serif" : "sans");
+  assert.equal(mapUserToProfile(historicalUser, {}, access).customization.displayName.font, allowed ? "serif" : "sans");
+  assert.equal("selectPremiumNicknameFont" in author, false);
+});
+test("mapping historical appearance never mutates the snapshot", () => {
+  const snapshot = appearanceSnapshot(); const before = structuredClone(snapshot);
+  Object.freeze(snapshot.customization.displayName); Object.freeze(snapshot.customization); Object.freeze(snapshot);
+  mapPostRow({ state_snapshot: snapshot }, mapUserToAuthor(historicalUser));
+  assert.deepEqual(snapshot, before);
+});
+test("normal text and status authors continue to use current effective font", () => {
+  for (const activeStyleCoverage of [false, true]) {
+    const author = mapUserToAuthor(historicalUser, { evaluatedAt: now, activeStyleCoverage });
+    for (const [state_snapshot, kind] of [[null, "text"], [{ thought: "A moment" }, "status"]]) {
+      const view = mapPostRow({ text: "Hello", state_snapshot }, author);
+      assert.equal(view.kind, kind);
+      assert.equal(view.author.customization.displayName.font, activeStyleCoverage ? "serif" : "sans");
+    }
   }
+});
+test("reposted appearance keeps historical font independently of current author", async () => {
+  const snapshot = appearanceSnapshot(); const before = structuredClone(snapshot);
+  const original = { id: "original", author_id: user, state_snapshot: snapshot };
+  const repost = { id: "repost", author_id: user, is_repost: true, original_post_id: original.id };
+  const writes = [];
+  globalThis.styleTestAdmin = { from(table) {
+    assert.ok(["posts", "post_hashtags", "post_media"].includes(table));
+    const query = { select() { return query; }, in() { return query; }, order() { return query; },
+      update(patch) { writes.push(patch); return query; },
+      then(resolve) { resolve({ data: table === "posts" ? [original] : [], error: null }); } };
+    return query;
+  } };
+  for (const activeStyleCoverage of [false, true]) {
+    const author = mapUserToAuthor(historicalUser, { evaluatedAt: now, activeStyleCoverage });
+    const [view] = await mapPostRowsWithReposts([repost], { authorById: new Map([[user, author]]) });
+    assert.equal(view.repost.target.appearance.customization.displayName.font, "serif");
+    assert.equal(view.repost.target.author.customization.displayName.font, activeStyleCoverage ? "serif" : "sans");
+  }
+  assert.deepEqual(snapshot, before); assert.deepEqual(writes, []);
+});
+for (const loss of ["expiry", "revocation"]) test(`Style ${loss} changes live author but never historical appearance`, async () => {
+  const snapshot = appearanceSnapshot(); const before = structuredClone(snapshot);
+  const lostGrant = loss === "expiry" ? grant({ valid_until: now.toISOString() }) : grant({ revoked_at: now.toISOString() });
+  for (const [grants, font] of [[[grant()], "serif"], [[lostGrant], "sans"], [[grant()], "serif"]]) {
+    const state = setup({ grants });
+    const access = (await loadNicknameFontAccessRest([user], now)).get(user);
+    const view = mapPostRow({ state_snapshot: snapshot }, mapUserToAuthor(historicalUser, access));
+    assert.equal(view.author.customization.displayName.font, font);
+    assert.equal(view.appearance.customization.displayName.font, "serif");
+    assert.deepEqual(state.writes, []); assert.equal(state.row.nickname_font, "serif");
+  }
+  assert.deepEqual(snapshot, before);
 });
 test("bounded batches deduplicate subjects, use one timestamp and never issue per-row reads", async () => {
   const state = setup({ grants: [grant()] });

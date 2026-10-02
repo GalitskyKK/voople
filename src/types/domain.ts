@@ -47,8 +47,6 @@ export type ProfileViewModel = {
 };
 
 export type PostAuthorView = {
-  /** Subject capability used to project historical appearance snapshots. */
-  selectPremiumNicknameFont?: boolean;
   id?: string;
   username: string;
   displayName: string;

@@ -8,7 +8,7 @@ const file = "83-commerce-prerequisite-compatibility.sql";
 const source = readFileSync(new URL(`../drizzle/${file}`,import.meta.url),"utf8");
 test("commerce prerequisite is allowlisted once and precedes dependent 38/43/51", () => {
   assert.equal(REQUIRED_MIGRATIONS.filter(id => id === file).length,1);
-  assert.deepEqual(RELEASE_APPLY_ORDER.slice(0,4),["45-app-schema-migrations.sql","82-core-baseline-compatibility.sql",file,"38-group-emojis.sql"]);
+  assert.deepEqual(RELEASE_APPLY_ORDER.slice(0,5),["45-app-schema-migrations.sql","82-core-baseline-compatibility.sql",file,"84-commerce-base-compatibility.sql","38-group-emojis.sql"]);
   assert.doesNotMatch(source,/\bDROP\b|\bINSERT\s+INTO\b|\bUPDATE\s+public\./i);
   assert.deepEqual([...source.matchAll(/CREATE TABLE public\.(\w+)/g)].map(m => m[1]),["subscriptions","group_boosts","group_customization"]);
   assert.doesNotMatch(source,/CREATE (?:OR REPLACE )?FUNCTION|personal_plan_grants|group_charges|shop_items|user_wallets|payment_intents/);

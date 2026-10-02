@@ -105,3 +105,8 @@ Architecture, lint, `npx tsc --noEmit`, `npm run build` and
 the desktop build retains its large-chunk warning. This schema-only change has
 no viewport-dependent UI flow. No development server was started, and the
 dedicated test container was removed after verification.
+
+For the subsequent catalog, inventory and profile customization foundation, see
+[commerce base compatibility](commerce-base-compatibility.md). Migration 84 is
+now required immediately after 83; it adds those three tables without changing
+wallet/payment/promo reproducibility or replaying historical SQL.

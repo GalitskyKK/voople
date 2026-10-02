@@ -1,0 +1,826 @@
+{
+  "evidenceCapturedAt": "2026-10-01T11:09:53.405Z",
+  "evidenceLfSha256": "240022b707ec3e9a6473733e26a5c31cbe775bacbe66957795959c9b567a71db",
+  "replicaEvidenceLfSha256": "4037091b4d7a4b3efa6e110e86b9bbdea1bc8e7a80b952749c1ae8941dc13462",
+  "enums": [
+    [
+      "item_type",
+      [
+        "effect",
+        "ring",
+        "banner",
+        "nameplate",
+        "badge",
+        "reaction_pack",
+        "decoration",
+        "feed_card",
+        "app_theme",
+        "profile_background",
+        "frame"
+      ]
+    ],
+    [
+      "acquired_via",
+      [
+        "purchase",
+        "earned",
+        "gifted",
+        "seasonal_reward",
+        "free_claim"
+      ]
+    ],
+    [
+      "avatar_type",
+      [
+        "constructor",
+        "photo"
+      ]
+    ],
+    [
+      "banner_type",
+      [
+        "color",
+        "pattern",
+        "animated"
+      ]
+    ]
+  ],
+  "tables": [
+    {
+      "name": "shop_items",
+      "replica": "d",
+      "columns": [
+        [
+          "id",
+          "character varying(100)",
+          false,
+          null,
+          "default"
+        ],
+        [
+          "season_id",
+          "character varying(50)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "type",
+          "public.item_type",
+          false,
+          null,
+          null
+        ],
+        [
+          "name",
+          "character varying(100)",
+          false,
+          null,
+          "default"
+        ],
+        [
+          "price_rub",
+          "integer",
+          false,
+          null,
+          null
+        ],
+        [
+          "apng_url",
+          "character varying(500)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "preview_url",
+          "character varying(500)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "is_limited",
+          "boolean",
+          true,
+          "false",
+          null
+        ],
+        [
+          "stock",
+          "integer",
+          true,
+          null,
+          null
+        ],
+        [
+          "sold_count",
+          "integer",
+          false,
+          "0",
+          null
+        ],
+        [
+          "requires_subscription",
+          "public.subscription_tier",
+          true,
+          null,
+          null
+        ],
+        [
+          "price_coins",
+          "integer",
+          false,
+          "0",
+          null
+        ],
+        [
+          "is_free",
+          "boolean",
+          false,
+          "false",
+          null
+        ],
+        [
+          "description",
+          "character varying(300)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "sort_order",
+          "integer",
+          false,
+          "0",
+          null
+        ],
+        [
+          "asset_folder",
+          "character varying(50)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "asset_id",
+          "character varying(100)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "equip_slot",
+          "character varying(40)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "equip_value",
+          "character varying(100)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "kind",
+          "character varying(50)",
+          true,
+          null,
+          "default"
+        ]
+      ],
+      "constraints": [
+        [
+          "shop_items_pkey",
+          "PRIMARY KEY (id)",
+          "p"
+        ]
+      ],
+      "indexes": [
+        [
+          "shop_items_kind_idx",
+          "CREATE INDEX shop_items_kind_idx ON public.shop_items USING btree (kind)",
+          false,
+          false,
+          null,
+          null
+        ],
+        [
+          "shop_items_pkey",
+          "CREATE UNIQUE INDEX shop_items_pkey ON public.shop_items USING btree (id)",
+          true,
+          true,
+          null,
+          null
+        ],
+        [
+          "shop_items_sort_idx",
+          "CREATE INDEX shop_items_sort_idx ON public.shop_items USING btree (sort_order)",
+          false,
+          false,
+          null,
+          null
+        ]
+      ],
+      "policies": [
+        {
+          "name": "shop_items_select_public",
+          "command": "r",
+          "permissive": true,
+          "roles": [
+            "PUBLIC"
+          ],
+          "using_expression": "true",
+          "check_expression": null
+        }
+      ],
+      "grants": [
+        [
+          "anon",
+          "INSERT"
+        ],
+        [
+          "anon",
+          "SELECT"
+        ],
+        [
+          "anon",
+          "UPDATE"
+        ],
+        [
+          "anon",
+          "DELETE"
+        ],
+        [
+          "anon",
+          "TRUNCATE"
+        ],
+        [
+          "anon",
+          "REFERENCES"
+        ],
+        [
+          "anon",
+          "TRIGGER"
+        ],
+        [
+          "authenticated",
+          "INSERT"
+        ],
+        [
+          "authenticated",
+          "SELECT"
+        ],
+        [
+          "authenticated",
+          "UPDATE"
+        ],
+        [
+          "authenticated",
+          "DELETE"
+        ],
+        [
+          "authenticated",
+          "TRUNCATE"
+        ],
+        [
+          "authenticated",
+          "REFERENCES"
+        ],
+        [
+          "authenticated",
+          "TRIGGER"
+        ],
+        [
+          "service_role",
+          "INSERT"
+        ],
+        [
+          "service_role",
+          "SELECT"
+        ],
+        [
+          "service_role",
+          "UPDATE"
+        ],
+        [
+          "service_role",
+          "DELETE"
+        ],
+        [
+          "service_role",
+          "TRUNCATE"
+        ],
+        [
+          "service_role",
+          "REFERENCES"
+        ],
+        [
+          "service_role",
+          "TRIGGER"
+        ]
+      ]
+    },
+    {
+      "name": "user_inventory",
+      "replica": "d",
+      "columns": [
+        [
+          "id",
+          "uuid",
+          false,
+          "gen_random_uuid()",
+          null
+        ],
+        [
+          "user_id",
+          "uuid",
+          false,
+          null,
+          null
+        ],
+        [
+          "item_id",
+          "character varying(100)",
+          false,
+          null,
+          "default"
+        ],
+        [
+          "acquired_at",
+          "timestamp without time zone",
+          false,
+          "now()",
+          null
+        ],
+        [
+          "acquired_via",
+          "public.acquired_via",
+          false,
+          null,
+          null
+        ]
+      ],
+      "constraints": [
+        [
+          "user_inventory_item_id_shop_items_id_fk",
+          "FOREIGN KEY (item_id) REFERENCES public.shop_items(id)",
+          "f"
+        ],
+        [
+          "user_inventory_pkey",
+          "PRIMARY KEY (id)",
+          "p"
+        ],
+        [
+          "user_inventory_user_id_users_id_fk",
+          "FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE",
+          "f"
+        ]
+      ],
+      "indexes": [
+        [
+          "inventory_unique",
+          "CREATE UNIQUE INDEX inventory_unique ON public.user_inventory USING btree (user_id, item_id)",
+          false,
+          true,
+          null,
+          null
+        ],
+        [
+          "inventory_user_idx",
+          "CREATE INDEX inventory_user_idx ON public.user_inventory USING btree (user_id)",
+          false,
+          false,
+          null,
+          null
+        ],
+        [
+          "user_inventory_pkey",
+          "CREATE UNIQUE INDEX user_inventory_pkey ON public.user_inventory USING btree (id)",
+          true,
+          true,
+          null,
+          null
+        ]
+      ],
+      "policies": [
+        {
+          "name": "user_inventory_select_own",
+          "command": "r",
+          "permissive": true,
+          "roles": [
+            "PUBLIC"
+          ],
+          "using_expression": "(auth.uid() = user_id)",
+          "check_expression": null
+        }
+      ],
+      "grants": [
+        [
+          "anon",
+          "INSERT"
+        ],
+        [
+          "anon",
+          "SELECT"
+        ],
+        [
+          "anon",
+          "UPDATE"
+        ],
+        [
+          "anon",
+          "DELETE"
+        ],
+        [
+          "anon",
+          "TRUNCATE"
+        ],
+        [
+          "anon",
+          "REFERENCES"
+        ],
+        [
+          "anon",
+          "TRIGGER"
+        ],
+        [
+          "authenticated",
+          "INSERT"
+        ],
+        [
+          "authenticated",
+          "SELECT"
+        ],
+        [
+          "authenticated",
+          "UPDATE"
+        ],
+        [
+          "authenticated",
+          "DELETE"
+        ],
+        [
+          "authenticated",
+          "TRUNCATE"
+        ],
+        [
+          "authenticated",
+          "REFERENCES"
+        ],
+        [
+          "authenticated",
+          "TRIGGER"
+        ],
+        [
+          "service_role",
+          "INSERT"
+        ],
+        [
+          "service_role",
+          "SELECT"
+        ],
+        [
+          "service_role",
+          "UPDATE"
+        ],
+        [
+          "service_role",
+          "DELETE"
+        ],
+        [
+          "service_role",
+          "TRUNCATE"
+        ],
+        [
+          "service_role",
+          "REFERENCES"
+        ],
+        [
+          "service_role",
+          "TRIGGER"
+        ]
+      ]
+    },
+    {
+      "name": "profile_customization",
+      "replica": "d",
+      "columns": [
+        [
+          "user_id",
+          "uuid",
+          false,
+          null,
+          null
+        ],
+        [
+          "banner_type",
+          "public.banner_type",
+          false,
+          "'color'::public.banner_type",
+          null
+        ],
+        [
+          "banner_value",
+          "jsonb",
+          false,
+          "'{\"color\": \"#1A0D2E\"}'::jsonb",
+          null
+        ],
+        [
+          "avatar_type",
+          "public.avatar_type",
+          false,
+          "'constructor'::public.avatar_type",
+          null
+        ],
+        [
+          "avatar_data",
+          "jsonb",
+          false,
+          "'{}'::jsonb",
+          null
+        ],
+        [
+          "avatar_ring_id",
+          "character varying(100)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "profile_effect_id",
+          "character varying(100)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "nameplate_id",
+          "character varying(100)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "nickname_color",
+          "character varying(20)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "nickname_gradient",
+          "boolean",
+          true,
+          "false",
+          null
+        ],
+        [
+          "theme_primary",
+          "character varying(7)",
+          true,
+          "'#0A0A0F'::character varying",
+          "default"
+        ],
+        [
+          "theme_accent",
+          "character varying(7)",
+          true,
+          "'#7B3AED'::character varying",
+          "default"
+        ],
+        [
+          "updated_at",
+          "timestamp without time zone",
+          false,
+          "now()",
+          null
+        ],
+        [
+          "avatar_decoration_id",
+          "character varying(100)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "feed_card_style_id",
+          "character varying(100)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "animated_avatar_id",
+          "character varying(100)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "app_theme_id",
+          "character varying(30)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "profile_background_id",
+          "character varying(100)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "profile_frame_id",
+          "character varying(100)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "frame_color",
+          "character varying(20)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "card_base_mode",
+          "character varying(20)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "nickname_font",
+          "character varying(20)",
+          false,
+          "'sans'::character varying",
+          "default"
+        ],
+        [
+          "nickname_effect",
+          "character varying(20)",
+          false,
+          "'plain'::character varying",
+          "default"
+        ]
+      ],
+      "constraints": [
+        [
+          "profile_customization_pkey",
+          "PRIMARY KEY (user_id)",
+          "p"
+        ],
+        [
+          "profile_customization_user_id_users_id_fk",
+          "FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE",
+          "f"
+        ]
+      ],
+      "indexes": [
+        [
+          "profile_customization_pkey",
+          "CREATE UNIQUE INDEX profile_customization_pkey ON public.profile_customization USING btree (user_id)",
+          true,
+          true,
+          null,
+          null
+        ]
+      ],
+      "policies": [
+        {
+          "name": "profile_customization_delete_own",
+          "command": "d",
+          "permissive": true,
+          "roles": [
+            "PUBLIC"
+          ],
+          "using_expression": "(auth.uid() = user_id)",
+          "check_expression": null
+        },
+        {
+          "name": "profile_customization_insert_own",
+          "command": "a",
+          "permissive": true,
+          "roles": [
+            "PUBLIC"
+          ],
+          "using_expression": null,
+          "check_expression": "(auth.uid() = user_id)"
+        },
+        {
+          "name": "profile_customization_select_public",
+          "command": "r",
+          "permissive": true,
+          "roles": [
+            "PUBLIC"
+          ],
+          "using_expression": "true",
+          "check_expression": null
+        },
+        {
+          "name": "profile_customization_update_own",
+          "command": "w",
+          "permissive": true,
+          "roles": [
+            "PUBLIC"
+          ],
+          "using_expression": "(auth.uid() = user_id)",
+          "check_expression": "(auth.uid() = user_id)"
+        }
+      ],
+      "grants": [
+        [
+          "anon",
+          "INSERT"
+        ],
+        [
+          "anon",
+          "SELECT"
+        ],
+        [
+          "anon",
+          "UPDATE"
+        ],
+        [
+          "anon",
+          "DELETE"
+        ],
+        [
+          "anon",
+          "TRUNCATE"
+        ],
+        [
+          "anon",
+          "REFERENCES"
+        ],
+        [
+          "anon",
+          "TRIGGER"
+        ],
+        [
+          "authenticated",
+          "INSERT"
+        ],
+        [
+          "authenticated",
+          "SELECT"
+        ],
+        [
+          "authenticated",
+          "UPDATE"
+        ],
+        [
+          "authenticated",
+          "DELETE"
+        ],
+        [
+          "authenticated",
+          "TRUNCATE"
+        ],
+        [
+          "authenticated",
+          "REFERENCES"
+        ],
+        [
+          "authenticated",
+          "TRIGGER"
+        ],
+        [
+          "service_role",
+          "INSERT"
+        ],
+        [
+          "service_role",
+          "SELECT"
+        ],
+        [
+          "service_role",
+          "UPDATE"
+        ],
+        [
+          "service_role",
+          "DELETE"
+        ],
+        [
+          "service_role",
+          "TRUNCATE"
+        ],
+        [
+          "service_role",
+          "REFERENCES"
+        ],
+        [
+          "service_role",
+          "TRIGGER"
+        ]
+      ]
+    }
+  ]
+}

@@ -9,6 +9,7 @@ import { migrationChecksum } from "../../scripts/migration-checksum.mjs";
 import { RELEASE_APPLY_ORDER } from "../../scripts/migration-manifest.mjs";
 import { assertCoreBaselineReadiness, coreBaselineValidationSql } from "../../scripts/core-baseline-readiness.mjs";
 import { assertPaymentFulfillmentReadiness } from "../../scripts/payment-fulfillment-readiness.mjs";
+import { assertPromoReadiness } from "../../scripts/promo-readiness.mjs";
 import { assertWalletLedgerReadiness } from "../../scripts/wallet-ledger-readiness.mjs";
 import { assertCommerceBaseReadiness } from "../../scripts/commerce-base-readiness.mjs";
 import { assertCommercePrerequisiteReadiness } from "../../scripts/commerce-prerequisite-readiness.mjs";
@@ -98,7 +99,8 @@ test("fresh entire 45 -> 82 -> 83 -> 84 -> 85 -> 86 -> unchanged 38..81; readine
   await assertCommerceBaseReadiness(sql);
   await assertWalletLedgerReadiness(sql);
   await assertPaymentFulfillmentReadiness(sql);
-  assert.equal((await assertLegacyCommerceRpcPrivileges(sql)).length, 4);
+  await assertPromoReadiness(sql);
+  assert.equal((await assertLegacyCommerceRpcPrivileges(sql)).length, 5);
   // Local/CI test TLS is optional. All catalog readiness contracts run above;
   // when TLS is available also exercise the unchanged operational CLI end-to-end.
   const [{ tlsAvailable }] = await sql`select current_setting('ssl')='on' as "tlsAvailable"`;
@@ -114,8 +116,8 @@ test("fresh entire 45 -> 82 -> 83 -> 84 -> 85 -> 86 -> unchanged 38..81; readine
   assert.deepEqual(await sql`select * from app_schema_migrations order by id`, completeLedger);
   assert.equal((await sql`select group_effective_boost_capacity('00000000-0000-0000-0000-000000000002') as n`)[0].n, 0);
   assert.equal((await sql`select group_perk_is_active('00000000-0000-0000-0000-000000000002','hd'::varchar) as active`)[0].active, false);
-  for (const name of ["promo_codes", "promo_redemptions"]) {
-    assert.equal((await sql`select to_regclass(${`public.${name}`}) as object`)[0].object, null);
+  for (const name of ['promo_codes','promo_redemptions']) {
+    assert.equal((await sql.unsafe(`select count(*)::integer as n from public.${name}`))[0].n, 0);
   }
 }));
 

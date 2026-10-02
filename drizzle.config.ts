@@ -33,6 +33,7 @@ export default defineConfig({
     "./src/server/db/personal-plan-schema.ts",
     "./src/server/db/wallet-ledger-schema.ts",
     "./src/server/db/payment-fulfillment-schema.ts",
+    "./src/server/db/promo-schema.ts",
   ],
   out: "./drizzle",
   dialect: "postgresql",

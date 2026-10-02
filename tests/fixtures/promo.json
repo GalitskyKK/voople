@@ -1,0 +1,426 @@
+{
+  "evidenceCapturedAt": "2026-10-01T11:09:53.405Z",
+  "evidenceLfSha256": "240022b707ec3e9a6473733e26a5c31cbe775bacbe66957795959c9b567a71db",
+  "tables": [
+    {
+      "name": "promo_codes",
+      "columns": [
+        [
+          "id",
+          "uuid",
+          false,
+          "gen_random_uuid()",
+          null
+        ],
+        [
+          "code",
+          "character varying(50)",
+          false,
+          null,
+          "default"
+        ],
+        [
+          "kind",
+          "character varying(40)",
+          false,
+          null,
+          "default"
+        ],
+        [
+          "payload",
+          "jsonb",
+          false,
+          "'{}'::jsonb",
+          null
+        ],
+        [
+          "max_redemptions",
+          "integer",
+          true,
+          null,
+          null
+        ],
+        [
+          "redemption_count",
+          "integer",
+          false,
+          "0",
+          null
+        ],
+        [
+          "max_per_user",
+          "integer",
+          false,
+          "1",
+          null
+        ],
+        [
+          "valid_from",
+          "timestamp with time zone",
+          true,
+          null,
+          null
+        ],
+        [
+          "valid_until",
+          "timestamp with time zone",
+          true,
+          null,
+          null
+        ],
+        [
+          "is_active",
+          "boolean",
+          false,
+          "true",
+          null
+        ],
+        [
+          "note",
+          "character varying(200)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "created_at",
+          "timestamp with time zone",
+          false,
+          "now()",
+          null
+        ]
+      ],
+      "constraints": [
+        [
+          "promo_codes_code_unique",
+          "UNIQUE (code)",
+          "u"
+        ],
+        [
+          "promo_codes_max_per_user_check",
+          "CHECK (max_per_user >= 1)",
+          "c"
+        ],
+        [
+          "promo_codes_pkey",
+          "PRIMARY KEY (id)",
+          "p"
+        ],
+        [
+          "promo_codes_redemption_count_check",
+          "CHECK (redemption_count >= 0)",
+          "c"
+        ]
+      ],
+      "indexes": [
+        [
+          "promo_codes_active_idx",
+          "CREATE INDEX promo_codes_active_idx ON public.promo_codes USING btree (is_active, code)",
+          false,
+          false,
+          null,
+          null
+        ],
+        [
+          "promo_codes_code_unique",
+          "CREATE UNIQUE INDEX promo_codes_code_unique ON public.promo_codes USING btree (code)",
+          false,
+          true,
+          null,
+          null
+        ],
+        [
+          "promo_codes_pkey",
+          "CREATE UNIQUE INDEX promo_codes_pkey ON public.promo_codes USING btree (id)",
+          true,
+          true,
+          null,
+          null
+        ]
+      ],
+      "policies": [],
+      "grants": [
+        [
+          "anon",
+          "INSERT"
+        ],
+        [
+          "anon",
+          "SELECT"
+        ],
+        [
+          "anon",
+          "UPDATE"
+        ],
+        [
+          "anon",
+          "DELETE"
+        ],
+        [
+          "anon",
+          "TRUNCATE"
+        ],
+        [
+          "anon",
+          "REFERENCES"
+        ],
+        [
+          "anon",
+          "TRIGGER"
+        ],
+        [
+          "authenticated",
+          "INSERT"
+        ],
+        [
+          "authenticated",
+          "SELECT"
+        ],
+        [
+          "authenticated",
+          "UPDATE"
+        ],
+        [
+          "authenticated",
+          "DELETE"
+        ],
+        [
+          "authenticated",
+          "TRUNCATE"
+        ],
+        [
+          "authenticated",
+          "REFERENCES"
+        ],
+        [
+          "authenticated",
+          "TRIGGER"
+        ],
+        [
+          "service_role",
+          "INSERT"
+        ],
+        [
+          "service_role",
+          "SELECT"
+        ],
+        [
+          "service_role",
+          "UPDATE"
+        ],
+        [
+          "service_role",
+          "DELETE"
+        ],
+        [
+          "service_role",
+          "TRUNCATE"
+        ],
+        [
+          "service_role",
+          "REFERENCES"
+        ],
+        [
+          "service_role",
+          "TRIGGER"
+        ]
+      ]
+    },
+    {
+      "name": "promo_redemptions",
+      "columns": [
+        [
+          "id",
+          "uuid",
+          false,
+          "gen_random_uuid()",
+          null
+        ],
+        [
+          "promo_code_id",
+          "uuid",
+          false,
+          null,
+          null
+        ],
+        [
+          "user_id",
+          "uuid",
+          false,
+          null,
+          null
+        ],
+        [
+          "reference_type",
+          "character varying(40)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "reference_id",
+          "character varying(100)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "redeemed_at",
+          "timestamp with time zone",
+          false,
+          "now()",
+          null
+        ]
+      ],
+      "constraints": [
+        [
+          "promo_redemptions_pkey",
+          "PRIMARY KEY (id)",
+          "p"
+        ],
+        [
+          "promo_redemptions_promo_code_id_fkey",
+          "FOREIGN KEY (promo_code_id) REFERENCES public.promo_codes(id) ON DELETE CASCADE",
+          "f"
+        ],
+        [
+          "promo_redemptions_user_id_fkey",
+          "FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE",
+          "f"
+        ]
+      ],
+      "indexes": [
+        [
+          "promo_redemptions_pkey",
+          "CREATE UNIQUE INDEX promo_redemptions_pkey ON public.promo_redemptions USING btree (id)",
+          true,
+          true,
+          null,
+          null
+        ],
+        [
+          "promo_redemptions_promo_user_idx",
+          "CREATE INDEX promo_redemptions_promo_user_idx ON public.promo_redemptions USING btree (promo_code_id, user_id)",
+          false,
+          false,
+          null,
+          null
+        ],
+        [
+          "promo_redemptions_user_idx",
+          "CREATE INDEX promo_redemptions_user_idx ON public.promo_redemptions USING btree (user_id, redeemed_at DESC)",
+          false,
+          false,
+          null,
+          null
+        ]
+      ],
+      "policies": [],
+      "grants": [
+        [
+          "anon",
+          "INSERT"
+        ],
+        [
+          "anon",
+          "SELECT"
+        ],
+        [
+          "anon",
+          "UPDATE"
+        ],
+        [
+          "anon",
+          "DELETE"
+        ],
+        [
+          "anon",
+          "TRUNCATE"
+        ],
+        [
+          "anon",
+          "REFERENCES"
+        ],
+        [
+          "anon",
+          "TRIGGER"
+        ],
+        [
+          "authenticated",
+          "INSERT"
+        ],
+        [
+          "authenticated",
+          "SELECT"
+        ],
+        [
+          "authenticated",
+          "UPDATE"
+        ],
+        [
+          "authenticated",
+          "DELETE"
+        ],
+        [
+          "authenticated",
+          "TRUNCATE"
+        ],
+        [
+          "authenticated",
+          "REFERENCES"
+        ],
+        [
+          "authenticated",
+          "TRIGGER"
+        ],
+        [
+          "service_role",
+          "INSERT"
+        ],
+        [
+          "service_role",
+          "SELECT"
+        ],
+        [
+          "service_role",
+          "UPDATE"
+        ],
+        [
+          "service_role",
+          "DELETE"
+        ],
+        [
+          "service_role",
+          "TRUNCATE"
+        ],
+        [
+          "service_role",
+          "REFERENCES"
+        ],
+        [
+          "service_role",
+          "TRIGGER"
+        ]
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "claim_promo_redemption",
+      "signature": "public.claim_promo_redemption(uuid,uuid,character varying,character varying)",
+      "result": "uuid",
+      "language": "plpgsql",
+      "security": "DEFINER",
+      "volatility": "v",
+      "strict": false,
+      "parallel": "u",
+      "default_argument_count": 0,
+      "config": [
+        "search_path=public"
+      ],
+      "definition_md5_lf": "cda399bc55d01e4ed51b653a15fb52ff",
+      "definition": "CREATE OR REPLACE FUNCTION public.claim_promo_redemption(p_promo_code_id uuid, p_user_id uuid, p_reference_type character varying, p_reference_id character varying)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE\n  v_promo public.promo_codes%ROWTYPE;\n  v_user_count integer;\n  v_redemption_id uuid;\nBEGIN\n  SELECT * INTO v_promo\n  FROM public.promo_codes\n  WHERE id = p_promo_code_id\n  FOR UPDATE;\n\n  IF NOT FOUND OR NOT v_promo.is_active THEN RAISE EXCEPTION 'Promo is inactive'; END IF;\n  IF v_promo.valid_from IS NOT NULL AND v_promo.valid_from > now() THEN\n    RAISE EXCEPTION 'Promo is not active yet';\n  END IF;\n  IF v_promo.valid_until IS NOT NULL AND v_promo.valid_until < now() THEN\n    RAISE EXCEPTION 'Promo has expired';\n  END IF;\n  IF v_promo.max_redemptions IS NOT NULL\n    AND v_promo.redemption_count >= v_promo.max_redemptions THEN\n    RAISE EXCEPTION 'Promo limit reached';\n  END IF;\n\n  SELECT count(*)::integer INTO v_user_count\n  FROM public.promo_redemptions\n  WHERE promo_code_id = p_promo_code_id AND user_id = p_user_id;\n  IF v_user_count >= v_promo.max_per_user THEN\n    RAISE EXCEPTION 'Promo already used';\n  END IF;\n\n  INSERT INTO public.promo_redemptions (\n    promo_code_id, user_id, reference_type, reference_id\n  )\n  VALUES (p_promo_code_id, p_user_id, p_reference_type, p_reference_id)\n  RETURNING id INTO v_redemption_id;\n\n  UPDATE public.promo_codes\n  SET redemption_count = redemption_count + 1\n  WHERE id = p_promo_code_id;\n\n  RETURN v_redemption_id;\nEND;\n$function$\n",
+      "provenance": "drizzle/25-commerce-hardening.sql"
+    }
+  ]
+}

@@ -109,7 +109,7 @@ lock, then verifies results `[true, false]`, one fulfillment and one extension.
 Migration 86 canonical LF SHA-256:
 `519942d13587c153ee2ba36bb75a9a2eeb1f36c6d9c761d09a6afe6c2071bbeb`.
 
-Promo codes, promo redemptions and claim_promo_redemption remain unreproducible.
-The next slice should independently attest those objects and prove the RPC body
-before adding a promo compatibility migration. New monetization or entitlement
-design remains separate product work.
+The subsequent [promo compatibility foundation](promo-compatibility.md) tracks
+promo codes, promo redemptions and the fingerprint-proven claim_promo_redemption
+in migration 87. New monetization or entitlement design remains separate
+product work.

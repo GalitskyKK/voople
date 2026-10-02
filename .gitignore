@@ -113,3 +113,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+!/drizzle/87-promo-compatibility.sql
+!/docs/promo-compatibility.md

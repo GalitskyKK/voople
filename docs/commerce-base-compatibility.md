@@ -107,3 +107,7 @@ release chain and catalog readiness. Architecture, lint, TypeScript, web build
 and desktop build passed. Lint retains three existing warnings and the desktop
 build retains its chunk-size warning. No UI flow changed and no development
 server was started. Production was not accessed or modified.
+
+The subsequent [wallet-ledger compatibility foundation](wallet-ledger-compatibility.md)
+adds user_wallets, wallet_transactions and the three verified wallet RPCs as
+migration 85, immediately after 84. Payment/promo compatibility remains separate.

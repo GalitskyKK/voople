@@ -46,6 +46,7 @@ export const REQUIRED_MIGRATIONS = Object.freeze([
   "86-payment-fulfillment-compatibility.sql",
   "87-promo-compatibility.sql",
   "88-group-runtime-rpc-compatibility.sql",
+  "89-style-app-theme-write-boundary.sql",
 ]);
 
 // The ledger must exist before the feature migrations are replayed so every
@@ -105,4 +106,5 @@ export const RELEASE_APPLY_ORDER = Object.freeze([
   "79-group-grade-foundation.sql",
   "80-personal-plan-grant-foundation.sql",
   "81-legacy-commerce-rpc-privileges.sql",
+  "89-style-app-theme-write-boundary.sql",
 ]);

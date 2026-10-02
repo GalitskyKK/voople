@@ -50,8 +50,12 @@ self-only read reports both coverage booleans and simultaneous coverage; it
 does not select an effective plan or define precedence. Trusted Style fulfillment
 and revocation are available through the server/admin boundary (see
 [`style-plan-fulfillment.md`](./style-plan-fulfillment.md)). No Full issuer, billing
-adapter, existing-subscriber migration or entitlement consumer uses this
-runtime yet. Full coverage does not yet issue the included Group charge, and
+adapter or existing-subscriber migration uses this runtime. Paid app themes
+are its first consumer: active legacy subscription OR Style coverage authorizes
+selection, with Full explicitly ignored. Saved themes survive entitlement loss;
+the effective fallback is Void and restoration reactivates the retained choice.
+All other premium capabilities, wallpaper and Store rules remain legacy-only.
+See [`style-app-theme.md`](./style-app-theme.md). Full coverage does not yet issue the included Group charge, and
 Style must never issue it. Legacy Store and subscription behavior stays active
 and unchanged. Overlap/exclusivity, upgrades/downgrades, carryover/proration,
 renewal, cancellation/refund/reversal, legacy migration, standalone charge

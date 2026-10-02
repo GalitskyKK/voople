@@ -13,6 +13,7 @@ import { assertPaymentFulfillmentReadiness } from "../../scripts/payment-fulfill
 import { assertPromoReadiness } from "../../scripts/promo-readiness.mjs";
 import { assertWalletLedgerReadiness } from "../../scripts/wallet-ledger-readiness.mjs";
 import { assertCommerceBaseReadiness } from "../../scripts/commerce-base-readiness.mjs";
+import { assertAppThemeReadiness } from "../../scripts/app-theme-readiness.mjs";
 import { assertCommercePrerequisiteReadiness } from "../../scripts/commerce-prerequisite-readiness.mjs";
 import { assertLegacyCommerceRpcPrivileges } from "../../scripts/legacy-commerce-rpc-privileges.mjs";
 import { ensureTestRoles } from "./helpers/test-roles.mjs";
@@ -102,6 +103,7 @@ test("fresh entire 45 -> 82 -> 83 -> 84 -> 85 -> 86 -> unchanged 38..81; readine
   await assertPaymentFulfillmentReadiness(sql);
   await assertPromoReadiness(sql);
   await assertGroupRuntimeRpcReadiness(sql);
+  await assertAppThemeReadiness(sql);
   assert.equal((await assertLegacyCommerceRpcPrivileges(sql)).length, 6);
   // Local/CI test TLS is optional. All catalog readiness contracts run above;
   // when TLS is available also exercise the unchanged operational CLI end-to-end.

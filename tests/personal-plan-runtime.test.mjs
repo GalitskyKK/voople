@@ -90,12 +90,13 @@ test("production router composition preserves the legacy subscription query", ()
   assert.match(source, /subscriptionStatus: protectedProcedure\.query\(async \(\{ ctx \}\) => \{\s*try \{\s*return await getSubscriptionStatus\(ctx\.user\.id\);/);
 });
 
-test("only self read and trusted admin lifecycle use the independent personal-plan runtime", () => {
+test("only self read, trusted lifecycle and paid-app-theme consumer use the personal-plan runtime", () => {
   const allowed = new Set(["src/types/personal-plan.ts", "src/lib/personal-plans/personal-plan.ts",
     "src/server/data/personal-plan-grants-rest.ts", "src/server/services/personal-plan.service.ts",
     "src/server/trpc/routers/shop-personal-plan.ts", "src/server/trpc/routers/shop.ts",
     "src/server/contracts/style-plan-contract.ts", "src/server/data/style-plan-grants-rest.ts",
     "src/server/services/style-plan.service.ts", "src/server/trpc/routers/admin-style-plan.ts",
+    "src/server/services/personal-style-access.service.ts",
     "src/server/trpc/routers/admin.ts"]);
   function walk(directory, relative) {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {

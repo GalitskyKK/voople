@@ -127,3 +127,16 @@ export function isFreeAppThemeId(value: string): value is AppThemeId {
 export function getAppTheme(themeId: string | null | undefined): AppTheme {
   return APP_THEMES.find((theme) => theme.id === themeId) ?? APP_THEMES[0]!;
 }
+
+export function resolveEffectiveAppThemeId(saved: string | null | undefined, selectPaidAppTheme: boolean): AppThemeId {
+  if (!saved || !isAppThemeId(saved)) return DEFAULT_APP_THEME_ID;
+  return isFreeAppThemeId(saved) || selectPaidAppTheme ? saved : DEFAULT_APP_THEME_ID;
+}
+
+export function assertAppThemeSelectionAllowed(themeId: string | null | undefined, selectPaidAppTheme: boolean): void {
+  if (themeId === null || themeId === undefined) return;
+  if (!isAppThemeId(themeId)) throw new Error("Неизвестная тема приложения");
+  if (!isFreeAppThemeId(themeId) && !selectPaidAppTheme) {
+    throw new Error("Цветовые темы доступны с Style или действующей подпиской Voople+");
+  }
+}

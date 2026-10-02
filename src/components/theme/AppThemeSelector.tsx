@@ -20,28 +20,31 @@ export function AppThemeSelector({
   persistToAccount = true,
   premiumAction,
 }: AppThemeSelectorProps) {
-  const { themeId, setThemeId } = useAppTheme();
+  const { themeId, setThemeId, setAccountThemeId } = useAppTheme();
   const unlocked = new Set<AppThemeId>(unlockedThemeIds);
   const utils = trpc.useUtils();
+  const account = trpc.customization.accountTheme.useQuery(undefined, { retry: false, enabled: persistToAccount });
   const updateTheme = trpc.customization.update.useMutation({
-    onSuccess: () => {
+    onSuccess: (equipped) => {
+      setAccountThemeId(equipped.effectiveAppThemeId);
+      void utils.customization.accountTheme.invalidate();
       void utils.customization.getEquipped.invalidate();
     },
   });
 
   const handleSelect = (nextThemeId: AppThemeId) => {
-    const previousThemeId = themeId;
-    setThemeId(nextThemeId);
     if (persistToAccount) {
-      updateTheme.mutate(
-        { appThemeId: nextThemeId },
-        { onError: () => setThemeId(previousThemeId) },
-      );
-    }
+      // Render only after server confirmation: failure leaves the previous theme intact.
+      updateTheme.mutate({ appThemeId: nextThemeId });
+    } else setThemeId(nextThemeId);
   };
 
   return (
     <div className="settings-theme-picker">
+      {persistToAccount && account.isPending ? <p role="status" className="text-xs text-[var(--app-muted)]">Загружаем доступ к темам…</p> : null}
+      {account.isError ? <p role="alert" className="text-xs text-[var(--app-muted)]">
+        Не удалось загрузить доступ к темам. <button type="button" onClick={() => { void account.refetch(); }} className="underline">Повторить</button>
+      </p> : null}
       {([false, true] as const).map((paid) => {
         const options = (
           <div className={cn("settings-theme-picker__options", paid && "settings-theme-picker__options--colors")}>

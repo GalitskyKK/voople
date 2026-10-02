@@ -64,7 +64,10 @@ export type EquippedCustomizationView = {
   avatarDecorationId: string | null;
   feedCardStyleId: string | null;
   animatedAvatarId: string | null;
+  /** Saved preference, retained on expiry; never use this alias to render the shell. */
   appThemeId: string | null;
+  savedAppThemeId: string | null;
+  effectiveAppThemeId: import("@/lib/app-themes").AppThemeId;
   nicknameColor: string | null;
   nicknameGradient: boolean;
   nicknameFont: string | null;

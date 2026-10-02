@@ -2,15 +2,12 @@
 
 import { useMemo } from "react";
 
-import { isAppThemeId } from "@/lib/app-themes";
 import { CUSTOMIZE_SLOT_SECTIONS, SHOP_DISPLAY_SECTIONS } from "@/lib/shop/categories";
-import { clearEquippedAppTheme } from "@/lib/shop/app-theme-client";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { FRAME_PRESETS, type FramePreset } from "@/lib/customization/frames-registry";
 import type { CardBaseMode } from "@/lib/customization/types";
 import type { EquippedCustomizationView, ShopItemView } from "@/types/shop";
-import { useAppTheme } from "@/components/theme/AppThemeProvider";
 import { Button } from "@/components/ui/Button";
 import { ProfileThemePicker } from "@/components/customization/ProfileThemePicker";
 import { ShopCatalogPreview } from "@/components/shop/ShopCatalogPreview";
@@ -79,7 +76,6 @@ export function CustomizationEditor({
   onEquip,
   onClearSlot,
 }: CustomizationEditorProps) {
-  const { setThemeId } = useAppTheme();
   const utils = trpc.useUtils();
 
   const update = trpc.customization.update.useMutation({
@@ -126,9 +122,6 @@ export function CustomizationEditor({
   const handleEquip = (item: ShopItemView) => {
     if (item.requiresSubscription && !isPlus) return;
     onEquip(item.id);
-    if (item.kind === "app_theme" && item.equipValue && isAppThemeId(item.equipValue)) {
-      setThemeId(item.equipValue);
-    }
   };
 
   return (
@@ -266,7 +259,6 @@ export function CustomizationEditor({
                     disabled={busy}
                     onClick={() => {
                       onClearSlot(slot);
-                      if (slot === "app_theme_id") clearEquippedAppTheme(setThemeId);
                     }}
                   >
                     Снять

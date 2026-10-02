@@ -17,6 +17,7 @@ registerHooks({
     const candidate = specifier.startsWith("@/") ? resolve(root, "src", specifier.slice(2))
       : specifier.startsWith(".") && context.parentURL?.startsWith("file:") ? fileURLToPath(new URL(specifier, context.parentURL)) : null;
     if (candidate && existsSync(`${candidate}.ts`)) return { url: pathToFileURL(`${candidate}.ts`).href, shortCircuit: true };
+    if (candidate && existsSync(`${candidate}/index.ts`)) return { url: pathToFileURL(`${candidate}/index.ts`).href, shortCircuit: true };
     return nextResolve(specifier, context);
   },
 });

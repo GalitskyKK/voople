@@ -1,32 +1,26 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 import { trpc } from "@/lib/trpc/client";
-import { applyEquippedAppTheme } from "@/lib/shop/app-theme-client";
+import { DEFAULT_APP_THEME_ID } from "@/lib/app-themes";
 
 import { useAppTheme } from "./AppThemeProvider";
 
 /**
- * Для авторизованных: `app_theme_id` из БД — источник правды после reload.
+ * Client projection, refreshed on focus/reconnect and every 30s; never writes saved preference.
  */
 export function AppThemeSync() {
-  const { setThemeId } = useAppTheme();
-  const syncedRef = useRef<string | null>(null);
-  const equippedQuery = trpc.customization.getEquipped.useQuery(undefined, {
-    retry: false,
-    staleTime: 30_000,
+  const { setAccountThemeId } = useAppTheme();
+  const query = trpc.customization.accountTheme.useQuery(undefined, {
+    retry: false, staleTime: 0, refetchInterval: 30_000,
+    refetchOnWindowFocus: "always", refetchOnReconnect: "always",
   });
-  const equippedThemeId = equippedQuery.data?.appThemeId;
 
   useEffect(() => {
-    if (!equippedQuery.isSuccess || !equippedQuery.data) return;
-    const dbTheme = equippedThemeId;
-    const syncKey = dbTheme ?? "__none__";
-    if (syncedRef.current === syncKey) return;
-    syncedRef.current = syncKey;
-    applyEquippedAppTheme(setThemeId, dbTheme);
-  }, [equippedQuery.data, equippedQuery.isSuccess, equippedThemeId, setThemeId]);
+    setAccountThemeId(query.isError || !query.isFetchedAfterMount ? DEFAULT_APP_THEME_ID : query.data?.effectiveAppThemeId ?? DEFAULT_APP_THEME_ID);
+  }, [query.data, query.isError, query.isFetchedAfterMount, setAccountThemeId]);
+  useEffect(() => () => setAccountThemeId(null), [setAccountThemeId]);
 
   return null;
 }

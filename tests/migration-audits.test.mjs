@@ -6,6 +6,7 @@ import { REQUIRED_MIGRATIONS } from "../scripts/migration-manifest.mjs";
 import { migrationChecksum } from "../scripts/migration-checksum.mjs";
 
 const records = REQUIRED_MIGRATIONS.map((id) => ({ id, checksum: migrationChecksum(readFileSync(new URL(`../drizzle/${id}`, import.meta.url), "utf8")) }));
+const themeGuardBody = readFileSync(new URL("../drizzle/89-style-app-theme-write-boundary.sql", import.meta.url), "utf8").match(/AS \$\$([\s\S]*?)\$\$;/)[1];
 const moduleUrl = (source) => `data:text/javascript,${encodeURIComponent(source)}`;
 function audit(command, rows) {
   const postgresStub = moduleUrl(`export default function () {
@@ -18,15 +19,17 @@ function audit(command, rows) {
       if (query.includes('relreplident')) return [{replicaIdentity:'f'}];
       if (query.includes('pg_get_functiondef')) return [{directChatDefinition:'connection_request_scope privacy_scope_allows'}];
       if (query.includes('has_function_privilege')) return [];
+      if (query.includes('select prosrc')) return [{prosrc:${JSON.stringify(themeGuardBody)}}];
       throw new Error('Unexpected query');
     };
     sql.end = async () => {};
     sql.begin = async (mode, run) => {
       if (mode !== 'read only') throw new Error('Core readiness requires read only');
-      return run({unsafe: async source => {
-        if (!/^-- BEGIN (CORE BASELINE|COMMERCE PREREQUISITE|COMMERCE BASE|WALLET LEDGER|PAYMENT FULFILLMENT|PROMO|GROUP RUNTIME RPC) READ-ONLY VALIDATION/.test(source)) throw new Error('Unexpected validation block');
+      sql.unsafe = async source => {
+        if (!/^-- BEGIN (CORE BASELINE|COMMERCE PREREQUISITE|COMMERCE BASE|WALLET LEDGER|PAYMENT FULFILLMENT|PROMO|GROUP RUNTIME RPC|APP THEME) READ-ONLY VALIDATION/.test(source)) throw new Error('Unexpected validation block');
         if (/\\b(CREATE|ALTER|DROP|GRANT|REVOKE|INSERT|UPDATE|DELETE)\\s+(TABLE|TYPE|FUNCTION|POLICY|INTO|FROM|ON)\\b/i.test(source)) throw new Error('Audit attempted mutation');
-      }});
+      };
+      return run(sql);
     };
     return sql;
   }`);

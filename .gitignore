@@ -120,3 +120,5 @@ next-env.d.ts
 !/drizzle/88-group-runtime-rpc-compatibility.sql
 !/docs/group-runtime-rpc-compatibility.md
 !/docs/style-plan-fulfillment.md
+!/drizzle/89-style-app-theme-write-boundary.sql
+!/docs/style-app-theme.md

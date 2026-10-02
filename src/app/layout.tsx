@@ -6,7 +6,6 @@ import { WebsiteJsonLd } from "@/components/seo/WebsiteJsonLd";
 import { TRPCReactProvider } from "@/lib/trpc/client";
 import { createRootMetadata } from "@/lib/seo/metadata";
 import { AppThemeProvider } from "@/components/theme/AppThemeProvider";
-import { AppThemeSync } from "@/components/theme/AppThemeSync";
 import { AppPreferencesProvider } from "@/components/settings/AppPreferencesProvider";
 import { WebVitalsReporter } from "@/components/telemetry/WebVitalsReporter";
 
@@ -31,7 +30,6 @@ export default function RootLayout({
           <AppThemeProvider>
             <AppPreferencesProvider>
               <div aria-hidden className="voople-grain fixed inset-0 -z-[5]" />
-              <AppThemeSync />
               <WebVitalsReporter />
               {children}
             </AppPreferencesProvider>

@@ -1,12 +1,14 @@
 import Link from "next/link";
 
 import { requireAdminSession } from "@/lib/admin/require-admin";
+import { AppThemeSync } from "@/components/theme/AppThemeSync";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await requireAdminSession();
 
   return (
     <div className="min-h-dvh bg-[var(--background)] text-[var(--foreground)]">
+      <AppThemeSync />
       <header className="border-b border-[var(--app-border)] bg-[var(--app-surface-soft)]">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div>

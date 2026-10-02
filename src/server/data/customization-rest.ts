@@ -1,7 +1,7 @@
 import { getAdminClient } from "@/lib/supabase/admin";
 import { publicAssetUrl } from "@/lib/object-storage";
 import { customizationAssetPath } from "@/lib/customization/asset-path";
-import { isAppThemeId, isFreeAppThemeId } from "@/lib/app-themes";
+import { assertAppThemeSelectionAllowed, isFreeAppThemeId } from "@/lib/app-themes";
 import { getFramePreset } from "@/lib/customization/frames-registry";
 import { isFreeNicknameColor } from "@/lib/customization/nickname-options";
 import { SHOP_CATALOG_BY_ID } from "@/lib/shop/catalog";
@@ -65,11 +65,11 @@ async function assertOwnsEquipValue(
 async function assertAppThemeAllowed(
   userId: string,
   appThemeId: string | null | undefined,
+  selectPaidAppTheme?: boolean,
 ) {
-  if (!appThemeId) return;
-  if (!isAppThemeId(appThemeId)) throw new Error("Неизвестная тема приложения");
-  if (isFreeAppThemeId(appThemeId)) return;
-  await assertActiveSubscriptionRest(userId);
+  const allowed = selectPaidAppTheme ?? (appThemeId != null && !isFreeAppThemeId(appThemeId)
+    ? await hasActiveSubscriptionRest(userId) : false);
+  assertAppThemeSelectionAllowed(appThemeId, allowed);
 }
 
 async function resolveBannerPatch(bannerId: string | null | undefined) {
@@ -90,7 +90,7 @@ async function resolveBannerPatch(bannerId: string | null | undefined) {
 export async function updateProfileCustomizationRest(
   userId: string,
   patch: CustomizationEquipPatch,
-  options?: { trustedItemId?: string },
+  options?: { trustedItemId?: string; selectPaidAppTheme?: boolean },
 ) {
   const ownedIds = await getInventoryItemIdsRest(userId);
   const trustedItemId = options?.trustedItemId;
@@ -109,7 +109,7 @@ export async function updateProfileCustomizationRest(
   await assertOwnsEquipValue(ownedIds, patch.avatarDecorationId, trustedItemId);
   await assertOwnsEquipValue(ownedIds, patch.feedCardStyleId, trustedItemId);
   await assertOwnsEquipValue(ownedIds, patch.animatedAvatarId, trustedItemId);
-  await assertAppThemeAllowed(userId, patch.appThemeId);
+  await assertAppThemeAllowed(userId, patch.appThemeId, options?.selectPaidAppTheme);
 
   // Base palette is part of the editor and never requires a shop purchase.
   // Voople+ unlocks an exact custom HEX color; legacy shop colors remain
@@ -200,7 +200,7 @@ export async function updateProfileCustomizationRest(
   if (error) throw new Error(error.message);
 }
 
-export async function equipShopItemRest(userId: string, itemId: string) {
+export async function equipShopItemRest(userId: string, itemId: string, options?: { selectPaidAppTheme?: boolean }) {
   const row = await getShopItemRowRest(itemId);
   if (!row) throw new Error("Предмет не найден");
   if (row.requires_subscription) await assertActiveSubscriptionRest(userId);
@@ -252,7 +252,7 @@ export async function equipShopItemRest(userId: string, itemId: string) {
       throw new Error("Неизвестный слот экипировки");
   }
 
-  await updateProfileCustomizationRest(userId, patch, { trustedItemId: itemId });
+  await updateProfileCustomizationRest(userId, patch, { trustedItemId: itemId, selectPaidAppTheme: options?.selectPaidAppTheme });
   return patch;
 }
 

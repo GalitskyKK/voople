@@ -31,7 +31,8 @@ The release prefix is `45 → 82 → 83 → 84 → 85 → 86 → 87 → 88`, fol
 existing feature migrations, ending at 81. Migration 83 already supplies
 subscriptions, group_boosts and group_customization; 82 supplies users, chats and
 chat_members. Migrations 38/43/51 neither require these two functions nor change
-their required columns. The required count is 47. Migration 81 remains unchanged
+their required columns. The current required count is 48, including the subsequent
+app-theme security migration 89. Migration 81 remains unchanged
 and reasserts vanity privileges after creation.
 
 Mandatory `group-runtime-rpc-readiness.mjs` extracts the migration's authoritative

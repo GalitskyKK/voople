@@ -128,8 +128,14 @@ The personal-plan foundation stores independent Style/full grant facts and
 provides an authenticated self read. Simultaneous coverage is representable
 without selecting an effective plan. Trusted server/admin Style fulfillment and
 revocation are available; no billing adapter, subscriber
-migration, included Group charge issuance or entitlement consumer is connected.
-Current Store/subscription behavior and free-core access remain unchanged.
+migration or included Group charge issuance is connected. Paid app themes are the
+first Style capability consumer: selection requires active legacy subscription OR
+Style coverage; Full is explicitly ignored. Void, Light and clear remain free.
+Saved paid themes survive expiry/revocation, render as Void while denied, and
+reactivate when access returns. Explicit free selection replaces that preference.
+Wallpaper and all other legacy premium and Store rules remain unchanged. The
+database blocks browser theme inserts/changes; trusted server mutations recompute
+authorization. See `docs/style-app-theme.md`.
 
 ## Beta evidence and quality
 

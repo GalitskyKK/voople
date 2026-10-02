@@ -1,3 +1,4 @@
+import { assertGroupRuntimeRpcReadiness } from './group-runtime-rpc-readiness.mjs';
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import postgres from "postgres";
@@ -145,6 +146,7 @@ try {
   await assertWalletLedgerReadiness(sql);
   await assertPaymentFulfillmentReadiness(sql);
   await assertPromoReadiness(sql);
+  await assertGroupRuntimeRpcReadiness(sql);
 
   console.log(`Migration readiness passed (${REQUIRED_MIGRATIONS.length} required migrations).`);
 } catch (error) {

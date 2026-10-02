@@ -1,3 +1,4 @@
+import { assertGroupRuntimeRpcReadiness } from '../../scripts/group-runtime-rpc-readiness.mjs';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
@@ -100,7 +101,8 @@ test("fresh entire 45 -> 82 -> 83 -> 84 -> 85 -> 86 -> unchanged 38..81; readine
   await assertWalletLedgerReadiness(sql);
   await assertPaymentFulfillmentReadiness(sql);
   await assertPromoReadiness(sql);
-  assert.equal((await assertLegacyCommerceRpcPrivileges(sql)).length, 5);
+  await assertGroupRuntimeRpcReadiness(sql);
+  assert.equal((await assertLegacyCommerceRpcPrivileges(sql)).length, 6);
   // Local/CI test TLS is optional. All catalog readiness contracts run above;
   // when TLS is available also exercise the unchanged operational CLI end-to-end.
   const [{ tlsAvailable }] = await sql`select current_setting('ssl')='on' as "tlsAvailable"`;

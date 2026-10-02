@@ -45,6 +45,7 @@ export const REQUIRED_MIGRATIONS = Object.freeze([
   "85-wallet-ledger-compatibility.sql",
   "86-payment-fulfillment-compatibility.sql",
   "87-promo-compatibility.sql",
+  "88-group-runtime-rpc-compatibility.sql",
 ]);
 
 // The ledger must exist before the feature migrations are replayed so every
@@ -54,7 +55,8 @@ export const REQUIRED_MIGRATIONS = Object.freeze([
 // foundations precede older feature migrations; dependency order takes
 // precedence over filename chronology. 85 supplies the wallet ledger and
 // creates service-only RPCs; 86 supplies payment/fulfillment and its verified
-// service-only RPC; 87 supplies promos and its verified claim RPC. 81 later re-asserts their hardened privileges.
+// service-only RPC; 87 supplies promos and its verified claim RPC.
+// 88 tracks the verified Group runtime RPCs. 81 later re-asserts hardened privileges.
 export const RELEASE_APPLY_ORDER = Object.freeze([
   "45-app-schema-migrations.sql",
   "82-core-baseline-compatibility.sql",
@@ -63,6 +65,7 @@ export const RELEASE_APPLY_ORDER = Object.freeze([
   "85-wallet-ledger-compatibility.sql",
   "86-payment-fulfillment-compatibility.sql",
   "87-promo-compatibility.sql",
+  "88-group-runtime-rpc-compatibility.sql",
   "38-group-emojis.sql",
   "39-structured-chat-content.sql",
   "43-group-sounds.sql",

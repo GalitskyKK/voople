@@ -1,0 +1,38 @@
+{
+  "functions": [
+    {
+      "name": "accept_group_vanity_invite",
+      "signature": "public.accept_group_vanity_invite(character varying,uuid)",
+      "result": "uuid",
+      "language": "plpgsql",
+      "security": "DEFINER",
+      "volatility": "v",
+      "strict": false,
+      "parallel": "u",
+      "default_argument_count": 0,
+      "config": [
+        "search_path=public"
+      ],
+      "definition_md5_lf": "762d06821531d44069f819d2588da65b",
+      "definition": "CREATE OR REPLACE FUNCTION public.accept_group_vanity_invite(p_slug character varying, p_user_id uuid)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  v_chat_id uuid;\n  v_boost_count integer;\n  v_grace_level integer;\n  v_member_count integer;\nbegin\n  select gc.chat_id\n  into v_chat_id\n  from public.group_customization gc\n  join public.chats c on c.id = gc.chat_id and c.type = 'group'\n  where gc.vanity_invite_slug = p_slug\n  for update of gc;\n\n  if v_chat_id is null then\n    raise exception 'Invite is unavailable';\n  end if;\n\n  select count(*)\n  into v_boost_count\n  from public.group_boosts gb\n  join public.subscriptions s on s.user_id = gb.user_id\n  where gb.chat_id = v_chat_id\n    and s.expires_at > now() - interval '72 hours';\n\n  select case when boost_grace_until > now()\n    then coalesce(boost_grace_level, 0) else 0 end\n  into v_grace_level\n  from public.group_customization\n  where chat_id = v_chat_id;\n\n  if greatest(v_boost_count, v_grace_level) < 24 then\n    raise exception 'Invite is unavailable';\n  end if;\n\n  if exists (\n    select 1 from public.chat_members\n    where chat_id = v_chat_id and user_id = p_user_id\n  ) then\n    return v_chat_id;\n  end if;\n\n  select count(*) into v_member_count\n  from public.chat_members\n  where chat_id = v_chat_id;\n\n  if v_member_count >= 20 then\n    raise exception 'Group is full';\n  end if;\n\n  insert into public.chat_members (chat_id, user_id, role)\n  values (v_chat_id, p_user_id, 'member');\n\n  return v_chat_id;\nend;\n$function$\n",
+      "provenance": "drizzle/44-group-vanity-invite.sql"
+    },
+    {
+      "name": "assign_group_boost_slot",
+      "signature": "public.assign_group_boost_slot(uuid,smallint,uuid,uuid)",
+      "result": "void",
+      "language": "plpgsql",
+      "security": "DEFINER",
+      "volatility": "v",
+      "strict": false,
+      "parallel": "u",
+      "default_argument_count": 0,
+      "config": [
+        "search_path=public"
+      ],
+      "definition_md5_lf": "399ba680326626907d579c3c3619becc",
+      "definition": "CREATE OR REPLACE FUNCTION public.assign_group_boost_slot(p_user_id uuid, p_slot smallint, p_chat_id uuid, p_idempotency_key uuid)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE current_slot public.group_boosts%ROWTYPE; previous_count integer;\nBEGIN\n  IF p_slot < 1 OR p_slot > 3 THEN RAISE EXCEPTION 'invalid_boost_slot'; END IF;\n  IF NOT EXISTS (SELECT 1 FROM public.subscriptions WHERE user_id = p_user_id AND expires_at > now())\n    THEN RAISE EXCEPTION 'active_subscription_required'; END IF;\n  IF p_chat_id IS NOT NULL AND NOT EXISTS (\n    SELECT 1 FROM public.chat_members member JOIN public.chats chat ON chat.id = member.chat_id\n    WHERE member.user_id = p_user_id AND member.chat_id = p_chat_id\n      AND chat.type = 'group' AND chat.parent_chat_id IS NULL\n  ) THEN RAISE EXCEPTION 'group_membership_required'; END IF;\n\n  SELECT * INTO current_slot FROM public.group_boosts\n  WHERE user_id = p_user_id AND slot = p_slot FOR UPDATE;\n  IF current_slot.idempotency_key = p_idempotency_key THEN RETURN; END IF;\n  IF current_slot.user_id IS NOT NULL AND current_slot.chat_id IS DISTINCT FROM p_chat_id\n     AND current_slot.moved_at > now() - interval '7 days'\n  THEN RAISE EXCEPTION 'boost_slot_cooldown'; END IF;\n\n  IF current_slot.chat_id IS NOT NULL AND current_slot.chat_id IS DISTINCT FROM p_chat_id THEN\n    SELECT count(*) INTO previous_count FROM public.group_boosts boost\n    JOIN public.subscriptions subscription ON subscription.user_id = boost.user_id\n    WHERE boost.chat_id = current_slot.chat_id AND subscription.expires_at > now();\n    INSERT INTO public.group_customization(chat_id, boost_grace_until, boost_grace_level, updated_at)\n    VALUES (current_slot.chat_id, now() + interval '72 hours', previous_count, now())\n    ON CONFLICT (chat_id) DO UPDATE SET boost_grace_until = EXCLUDED.boost_grace_until,\n      boost_grace_level = EXCLUDED.boost_grace_level, updated_at = now();\n  END IF;\n\n  INSERT INTO public.group_boosts(user_id, slot, chat_id, assigned_at, moved_at, idempotency_key, created_at)\n  VALUES (p_user_id, p_slot, p_chat_id, now(), now(), p_idempotency_key, now())\n  ON CONFLICT (user_id, slot) DO UPDATE SET chat_id = EXCLUDED.chat_id,\n    assigned_at = EXCLUDED.assigned_at, moved_at = EXCLUDED.moved_at,\n    idempotency_key = EXCLUDED.idempotency_key;\nEND;\n$function$\n",
+      "provenance": "drizzle/37-group-boost-slots.sql"
+    }
+  ]
+}

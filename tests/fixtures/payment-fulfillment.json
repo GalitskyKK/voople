@@ -1,0 +1,395 @@
+{
+  "evidenceCapturedAt": "2026-10-01T11:09:53.405Z",
+  "evidenceLfSha256": "240022b707ec3e9a6473733e26a5c31cbe775bacbe66957795959c9b567a71db",
+  "tables": [
+    {
+      "name": "payment_intents",
+      "columns": [
+        [
+          "id",
+          "uuid",
+          false,
+          "gen_random_uuid()",
+          null
+        ],
+        [
+          "user_id",
+          "uuid",
+          false,
+          null,
+          null
+        ],
+        [
+          "kind",
+          "character varying(30)",
+          false,
+          null,
+          "default"
+        ],
+        [
+          "amount_rub",
+          "integer",
+          false,
+          null,
+          null
+        ],
+        [
+          "status",
+          "character varying(20)",
+          false,
+          "'pending'::character varying",
+          "default"
+        ],
+        [
+          "provider",
+          "character varying(30)",
+          false,
+          "'yookassa'::character varying",
+          "default"
+        ],
+        [
+          "external_id",
+          "character varying(200)",
+          true,
+          null,
+          "default"
+        ],
+        [
+          "metadata",
+          "jsonb",
+          false,
+          "'{}'::jsonb",
+          null
+        ],
+        [
+          "created_at",
+          "timestamp with time zone",
+          false,
+          "now()",
+          null
+        ],
+        [
+          "updated_at",
+          "timestamp with time zone",
+          false,
+          "now()",
+          null
+        ]
+      ],
+      "constraints": [
+        [
+          "payment_intents_amount_rub_check",
+          "CHECK (amount_rub > 0)",
+          "c"
+        ],
+        [
+          "payment_intents_pkey",
+          "PRIMARY KEY (id)",
+          "p"
+        ],
+        [
+          "payment_intents_user_id_fkey",
+          "FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE",
+          "f"
+        ]
+      ],
+      "indexes": [
+        [
+          "payment_intents_external_uidx",
+          "CREATE UNIQUE INDEX payment_intents_external_uidx ON public.payment_intents USING btree (provider, external_id) WHERE (external_id IS NOT NULL)",
+          false,
+          true,
+          "(external_id IS NOT NULL)",
+          null
+        ],
+        [
+          "payment_intents_pkey",
+          "CREATE UNIQUE INDEX payment_intents_pkey ON public.payment_intents USING btree (id)",
+          true,
+          true,
+          null,
+          null
+        ],
+        [
+          "payment_intents_user_idx",
+          "CREATE INDEX payment_intents_user_idx ON public.payment_intents USING btree (user_id, created_at DESC)",
+          false,
+          false,
+          null,
+          null
+        ]
+      ],
+      "policies": [
+        {
+          "name": "payment_intents_select_own",
+          "command": "r",
+          "permissive": true,
+          "roles": [
+            "PUBLIC"
+          ],
+          "using_expression": "(auth.uid() = user_id)",
+          "check_expression": null
+        }
+      ],
+      "grants": [
+        [
+          "anon",
+          "INSERT"
+        ],
+        [
+          "anon",
+          "SELECT"
+        ],
+        [
+          "anon",
+          "UPDATE"
+        ],
+        [
+          "anon",
+          "DELETE"
+        ],
+        [
+          "anon",
+          "TRUNCATE"
+        ],
+        [
+          "anon",
+          "REFERENCES"
+        ],
+        [
+          "anon",
+          "TRIGGER"
+        ],
+        [
+          "authenticated",
+          "INSERT"
+        ],
+        [
+          "authenticated",
+          "SELECT"
+        ],
+        [
+          "authenticated",
+          "UPDATE"
+        ],
+        [
+          "authenticated",
+          "DELETE"
+        ],
+        [
+          "authenticated",
+          "TRUNCATE"
+        ],
+        [
+          "authenticated",
+          "REFERENCES"
+        ],
+        [
+          "authenticated",
+          "TRIGGER"
+        ],
+        [
+          "service_role",
+          "INSERT"
+        ],
+        [
+          "service_role",
+          "SELECT"
+        ],
+        [
+          "service_role",
+          "UPDATE"
+        ],
+        [
+          "service_role",
+          "DELETE"
+        ],
+        [
+          "service_role",
+          "TRUNCATE"
+        ],
+        [
+          "service_role",
+          "REFERENCES"
+        ],
+        [
+          "service_role",
+          "TRIGGER"
+        ]
+      ]
+    },
+    {
+      "name": "subscription_fulfillments",
+      "columns": [
+        [
+          "external_id",
+          "character varying(200)",
+          false,
+          null,
+          "default"
+        ],
+        [
+          "user_id",
+          "uuid",
+          false,
+          null,
+          null
+        ],
+        [
+          "provider",
+          "character varying(40)",
+          false,
+          null,
+          "default"
+        ],
+        [
+          "period_days",
+          "integer",
+          false,
+          null,
+          null
+        ],
+        [
+          "created_at",
+          "timestamp with time zone",
+          false,
+          "now()",
+          null
+        ]
+      ],
+      "constraints": [
+        [
+          "subscription_fulfillments_period_days_check",
+          "CHECK (period_days > 0 AND period_days <= 3650)",
+          "c"
+        ],
+        [
+          "subscription_fulfillments_pkey",
+          "PRIMARY KEY (external_id)",
+          "p"
+        ],
+        [
+          "subscription_fulfillments_user_id_fkey",
+          "FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE",
+          "f"
+        ]
+      ],
+      "indexes": [
+        [
+          "subscription_fulfillments_pkey",
+          "CREATE UNIQUE INDEX subscription_fulfillments_pkey ON public.subscription_fulfillments USING btree (external_id)",
+          true,
+          true,
+          null,
+          null
+        ]
+      ],
+      "policies": [],
+      "grants": [
+        [
+          "anon",
+          "INSERT"
+        ],
+        [
+          "anon",
+          "SELECT"
+        ],
+        [
+          "anon",
+          "UPDATE"
+        ],
+        [
+          "anon",
+          "DELETE"
+        ],
+        [
+          "anon",
+          "TRUNCATE"
+        ],
+        [
+          "anon",
+          "REFERENCES"
+        ],
+        [
+          "anon",
+          "TRIGGER"
+        ],
+        [
+          "authenticated",
+          "INSERT"
+        ],
+        [
+          "authenticated",
+          "SELECT"
+        ],
+        [
+          "authenticated",
+          "UPDATE"
+        ],
+        [
+          "authenticated",
+          "DELETE"
+        ],
+        [
+          "authenticated",
+          "TRUNCATE"
+        ],
+        [
+          "authenticated",
+          "REFERENCES"
+        ],
+        [
+          "authenticated",
+          "TRIGGER"
+        ],
+        [
+          "service_role",
+          "INSERT"
+        ],
+        [
+          "service_role",
+          "SELECT"
+        ],
+        [
+          "service_role",
+          "UPDATE"
+        ],
+        [
+          "service_role",
+          "DELETE"
+        ],
+        [
+          "service_role",
+          "TRUNCATE"
+        ],
+        [
+          "service_role",
+          "REFERENCES"
+        ],
+        [
+          "service_role",
+          "TRIGGER"
+        ]
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "extend_voople_plus_once",
+      "signature": "public.extend_voople_plus_once(uuid,character varying,integer,character varying)",
+      "result": "boolean",
+      "language": "plpgsql",
+      "security": "DEFINER",
+      "volatility": "v",
+      "strict": false,
+      "parallel": "u",
+      "default_argument_count": 0,
+      "config": [
+        "search_path=public"
+      ],
+      "definition_md5_lf": "ef7d9439bb76b3837aa549bae16d8c62",
+      "definition": "CREATE OR REPLACE FUNCTION public.extend_voople_plus_once(p_user_id uuid, p_external_id character varying, p_period_days integer, p_provider character varying)\n RETURNS boolean\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE\n  v_inserted integer;\n  v_now timestamptz := now();\nBEGIN\n  IF p_period_days < 1 OR p_period_days > 3650 THEN\n    RAISE EXCEPTION 'Invalid subscription period';\n  END IF;\n\n  INSERT INTO public.subscription_fulfillments (external_id, user_id, provider, period_days)\n  VALUES (p_external_id, p_user_id, p_provider, p_period_days)\n  ON CONFLICT (external_id) DO NOTHING;\n  GET DIAGNOSTICS v_inserted = ROW_COUNT;\n  IF v_inserted = 0 THEN RETURN false; END IF;\n\n  INSERT INTO public.subscriptions (\n    user_id, tier, started_at, expires_at, payment_provider, external_id\n  )\n  VALUES (\n    p_user_id, 'plus'::subscription_tier, v_now,\n    v_now + make_interval(days => p_period_days), p_provider, p_external_id\n  )\n  ON CONFLICT (user_id) DO UPDATE SET\n    tier = 'plus'::subscription_tier,\n    started_at = CASE\n      WHEN public.subscriptions.expires_at > v_now\n        THEN public.subscriptions.started_at\n      ELSE v_now\n    END,\n    expires_at = greatest(public.subscriptions.expires_at, v_now)\n      + make_interval(days => p_period_days),\n    payment_provider = p_provider,\n    external_id = p_external_id;\n\n  RETURN true;\nEND;\n$function$\n",
+      "provenance": "drizzle/25-commerce-hardening.sql"
+    }
+  ]
+}

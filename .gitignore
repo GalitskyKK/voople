@@ -116,3 +116,6 @@ next-env.d.ts
 
 !/drizzle/87-promo-compatibility.sql
 !/docs/promo-compatibility.md
+
+!/drizzle/88-group-runtime-rpc-compatibility.sql
+!/docs/group-runtime-rpc-compatibility.md

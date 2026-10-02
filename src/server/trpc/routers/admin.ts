@@ -24,6 +24,7 @@ import {
   updateAdminShopItem,
 } from "@/server/services/admin-shop.service";
 import { adminProcedure, createTRPCRouter } from "../init";
+import { adminStylePlanProcedures } from "./admin-style-plan";
 
 const shopKindSchema = z.enum([
   "effect",
@@ -80,6 +81,7 @@ function toTrpcError(e: unknown): TRPCError {
 }
 
 export const adminRouter = createTRPCRouter({
+  ...adminStylePlanProcedures,
   overview: adminProcedure.query(async () => {
     try {
       return await getAdminOverviewRest();

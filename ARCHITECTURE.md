@@ -525,7 +525,7 @@ governance authorization. Existing Groups with no charge records resolve to
 Basic. Legacy enforcement stays unchanged until a reviewed consumer migration;
 saved Group configuration/assets must survive all future Grade downgrades.
 
-### Dormant personal-plan foundation
+### Personal-plan foundation and trusted Style lifecycle
 
 `personal_plan_grants` (migration `80-personal-plan-grant-foundation.sql`)
 stores provider-neutral `style` / `full` grant facts independently of legacy
@@ -540,7 +540,10 @@ and `policyVersion`. Both kinds may be covered at once; no effective selected
 plan, precedence, stacking or capability matrix is defined. Multiple grants
 of one kind resolve to a boolean coverage fact.
 
-There is no issuer, billing adapter, subscriber migration or entitlement
+Trusted Style fulfillment and revocation use the existing source uniqueness
+and a conditional revocation update. See `docs/style-plan-fulfillment.md` for
+the server/admin contract. There is no Full issuer, billing adapter, subscriber
+migration or entitlement
 consumer. Full coverage does not yet issue its included Group charge; Style
 must never issue that charge. Legacy Store/subscription behavior, YooKassa,
 payment fulfillment and Boosts remain active and unchanged. Plan overlap,

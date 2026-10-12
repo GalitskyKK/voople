@@ -1,3 +1,5 @@
+import { assertProfileCardSelectionAllowed, needsProfileCardAccess, type ProfileCardCapabilities } from "@/lib/customization/profile-card-access";
+import { assertOwnsStoreFrame } from "@/server/data/store-frame-access-rest";
 import { assertNicknameColorSelectionAllowed } from "@/lib/customization/nickname-color";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { publicAssetUrl } from "@/lib/object-storage";
@@ -93,8 +95,11 @@ async function resolveBannerPatch(bannerId: string | null | undefined) {
 export async function updateProfileCustomizationRest(
   userId: string,
   patch: CustomizationEquipPatch,
-  options?: { trustedItemId?: string; selectPaidAppTheme?: boolean; selectPremiumNicknameFont?: boolean; selectPremiumNicknameEffect?: boolean; selectCustomNicknameColor?: boolean },
+  options?: Partial<ProfileCardCapabilities> & { trustedItemId?: string; selectPaidAppTheme?: boolean; selectPremiumNicknameFont?: boolean; selectPremiumNicknameEffect?: boolean; selectCustomNicknameColor?: boolean },
 ) {
+  const legacyCardAccess = needsProfileCardAccess(patch) && (options?.selectPremiumProfileFramePreset === undefined || options?.selectCustomFrameColor === undefined || options?.selectPremiumCardBaseMode === undefined || options?.selectProfilePalette === undefined)
+    ? await hasActiveSubscriptionRest(userId) : false;
+  assertProfileCardSelectionAllowed(patch, { selectPremiumProfileFramePreset: options?.selectPremiumProfileFramePreset ?? legacyCardAccess, selectCustomFrameColor: options?.selectCustomFrameColor ?? legacyCardAccess, selectPremiumCardBaseMode: options?.selectPremiumCardBaseMode ?? legacyCardAccess, selectProfilePalette: options?.selectProfilePalette ?? legacyCardAccess });
   const effectAllowed = options?.selectPremiumNicknameEffect ?? (patch.nicknameGradient === true || (patch.nicknameEffect != null && patch.nicknameEffect !== "plain")
     ? await hasActiveSubscriptionRest(userId) : false);
   assertNicknameEffectSelectionAllowed(patch.nicknameEffect, patch.nicknameGradient, effectAllowed);
@@ -105,11 +110,9 @@ export async function updateProfileCustomizationRest(
   await assertOwnsEquipValue(ownedIds, patch.profileBackgroundId, trustedItemId);
   const framePreset = getFramePreset(patch.profileFrameId);
   if (patch.profileFrameId && !framePreset) {
-    await assertOwnsEquipValue(ownedIds, patch.profileFrameId, trustedItemId);
+    await assertOwnsStoreFrame(userId, ownedIds, patch.profileFrameId);
   }
-  if (framePreset?.isPremium || framePreset?.usesCustomColor) {
-    await assertActiveSubscriptionRest(userId);
-  }
+
   await assertOwnsEquipValue(ownedIds, patch.avatarRingId, trustedItemId);
   await assertOwnsEquipValue(ownedIds, patch.bannerId, trustedItemId);
   await assertOwnsEquipValue(ownedIds, patch.avatarDecorationId, trustedItemId);
@@ -137,16 +140,12 @@ export async function updateProfileCustomizationRest(
   if (patch.profileFrameId !== undefined) {
     update.profile_frame_id = patch.profileFrameId;
   }
-  if (patch.frameColor) {
-    await assertActiveSubscriptionRest(userId);
-  }
+
   if (patch.frameColor !== undefined) {
     update.frame_color = patch.frameColor;
   }
   // Основа карточки: mirror — дефолт (бесплатно); theme/plain (оверрайд) требуют Voople+.
-  if (patch.cardBaseMode && patch.cardBaseMode !== "mirror") {
-    await assertActiveSubscriptionRest(userId);
-  }
+
   if (patch.cardBaseMode !== undefined) {
     update.card_base_mode = patch.cardBaseMode;
   }
@@ -188,9 +187,7 @@ export async function updateProfileCustomizationRest(
   // Тема профиля (градиент карточки) — премиум-фича: установка цветов требует Voople+.
   // Сброс (null) разрешён всегда.
   if (patch.themePrimary !== undefined || patch.themeAccent !== undefined) {
-    if (patch.themePrimary || patch.themeAccent) {
-      await assertActiveSubscriptionRest(userId);
-    }
+
     if (patch.themePrimary !== undefined) update.theme_primary = patch.themePrimary;
     if (patch.themeAccent !== undefined) update.theme_accent = patch.themeAccent;
   }

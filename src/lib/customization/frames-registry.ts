@@ -87,11 +87,11 @@ const PRESETS: Record<string, FramePreset> = {
 
 export function getFramePreset(id: string | null | undefined): FramePreset | null {
   if (!id) return null;
-  return PRESETS[id] ?? null;
+  return Object.hasOwn(PRESETS, id) ? PRESETS[id] : null;
 }
 
 export function isFramePresetId(id: string | null | undefined): boolean {
-  return Boolean(id && id in PRESETS);
+  return Boolean(id && Object.hasOwn(PRESETS, id));
 }
 
 export const FRAME_PRESETS = PRESETS;

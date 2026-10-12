@@ -208,8 +208,7 @@ test("real REST browser boundary and Style consumer preserve legacy field gates 
       assert.equal((await getEquippedCustomization(user)).savedNicknameGradient, true);
       await updateCustomization(user, { nicknameGradient: true, nicknameFont: "serif" });
       assert.equal((await getEquippedCustomization(user)).effectiveNicknameFont, "serif");
-      for (const patch of [{ profileFrameId: "frame-aurora" },
-        { frameColor: "#123456" }, { cardBaseMode: "theme" }, { themePrimary: "#123456" }, { themeAccent: "#123456" }]) {
+      for (const patch of [{ bannerId: "not-owned" }]) {
         await assert.rejects(updateCustomization(user, { nicknameEffect: "neon", ...patch }));
         assert.equal((await getEquippedCustomization(user)).savedNicknameEffect, "gradient");
       }

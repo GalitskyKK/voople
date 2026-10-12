@@ -13,8 +13,9 @@ type ProfileThemePickerProps = {
   /** Текущие цвета из equipped (null → тема профиля не задана). */
   themePrimary: string | null;
   themeAccent: string | null;
-  /** Активна ли подписка Voople+ (фича премиальная). */
-  isPlus: boolean;
+  savedPalette: boolean;
+  /** Focused Style palette capability. */
+  selectProfilePalette: boolean;
   /** Обновить превью/equipped после сохранения. */
   onSaved: () => void;
 };
@@ -25,22 +26,24 @@ const FALLBACK_ACCENT = DEFAULT_THEME.themeAccent;
 export function ProfileThemePicker({
   themePrimary,
   themeAccent,
-  isPlus,
+  selectProfilePalette,
+  savedPalette,
   onSaved,
 }: ProfileThemePickerProps) {
-  const active = Boolean(themePrimary || themeAccent);
+  const active = savedPalette;
   const [primary, setPrimary] = useState(themePrimary ?? FALLBACK_PRIMARY);
   const [accent, setAccent] = useState(themeAccent ?? FALLBACK_ACCENT);
 
-  const update = trpc.customization.update.useMutation({ onSuccess: onSaved });
+  const update = trpc.customization.update.useMutation({ onSuccess: onSaved, onError: () => { setPrimary(themePrimary ?? FALLBACK_PRIMARY); setAccent(themeAccent ?? FALLBACK_ACCENT); } });
 
   const apply = (nextPrimary: string | null, nextAccent: string | null) =>
     update.mutate({ themePrimary: nextPrimary, themeAccent: nextAccent });
 
-  const gradient = `linear-gradient(135deg, ${primary} 0%, ${accent} 100%)`;
+  const gradient = `linear-gradient(135deg, ${selectProfilePalette ? primary : FALLBACK_PRIMARY} 0%, ${selectProfilePalette ? accent : FALLBACK_ACCENT} 100%)`;
 
   const content = (
     <>
+      {savedPalette && !selectProfilePalette ? <p className="text-xs text-[var(--app-muted)]">Цвета сохранены. Пока нет доступа, используется стандартная палитра.</p> : null}
       <div className="flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-[var(--theme-accent)]" />
         <span className="text-sm font-semibold text-[var(--foreground)]">Предпросмотр цветов</span>
@@ -59,20 +62,20 @@ export function ProfileThemePicker({
         <ColorField
           label="Основной"
           value={primary}
-          disabled={!isPlus || update.isPending}
+          disabled={!selectProfilePalette || update.isPending}
           onChange={setPrimary}
         />
         <ColorField
           label="Дополнительный"
           value={accent}
-          disabled={!isPlus || update.isPending}
+          disabled={!selectProfilePalette || update.isPending}
           onChange={setAccent}
         />
         <div className="flex items-center gap-2">
           <Button
             type="button"
             size="sm"
-            disabled={!isPlus || update.isPending}
+            disabled={!selectProfilePalette || update.isPending}
             onClick={() => apply(primary, accent)}
           >
             {update.isPending ? "Сохранение…" : active ? "Обновить" : "Применить"}
@@ -102,8 +105,8 @@ export function ProfileThemePicker({
   return (
     <VooplePlusFeatureSurface
       title="Точные цвета профиля"
-      description="Соберите собственный градиент карточки. До подписки цвета можно посмотреть в полноценном превью."
-      locked={!isPlus}
+      description="Соберите собственный градиент карточки. Своя палитра доступна с Вупл+ или Style."
+      locked={!selectProfilePalette}
     >
       {content}
     </VooplePlusFeatureSurface>

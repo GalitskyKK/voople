@@ -1,3 +1,4 @@
+import { resolveEffectiveProfileFrameId, resolveEffectiveFrameColor, resolveEffectiveCardBaseMode, resolveEffectiveProfilePalette, type ProfileCardCapabilities } from "@/lib/customization/profile-card-access";
 import { resolveEffectiveNicknameColor } from "@/lib/customization/nickname-color";
 import { resolveCustomization, type CustomizationInput } from "@/lib/customization/resolve";
 import { resolveEffectiveNicknameEffect } from "@/lib/customization/nickname-effect";
@@ -66,7 +67,7 @@ function rowToInput(row: CustomizationRow | null | undefined): CustomizationInpu
 
 export function toProfileCustomizationView(
   row: CustomizationRow | null | undefined,
-  options?: { hasActiveSubscription?: boolean; selectPremiumNicknameFont?: boolean; selectPremiumNicknameEffect?: boolean; selectCustomNicknameColor?: boolean },
+  options?: Partial<ProfileCardCapabilities> & { hasActiveSubscription?: boolean; selectPremiumNicknameFont?: boolean; selectPremiumNicknameEffect?: boolean; selectCustomNicknameColor?: boolean },
 ): ProfileCustomizationView {
   const raw = rowToInput(row);
   raw.nicknameColor = resolveEffectiveNicknameColor(row?.nickname_color, options?.selectCustomNicknameColor ?? false);
@@ -74,19 +75,14 @@ export function toProfileCustomizationView(
   const effectiveEffect = resolveEffectiveNicknameEffect(row?.nickname_effect, row?.nickname_gradient, options?.selectPremiumNicknameEffect ?? false);
   raw.nicknameEffect = effectiveEffect.effect;
   raw.nicknameGradient = effectiveEffect.gradient;
-  // The server still cleans expired premium selections (see subscription-rest),
-  // but profile reads must be safe even before that maintenance pass happens.
-  // These fields are subscriber-only and therefore immediately fall back.
+  raw.profileFrameId = resolveEffectiveProfileFrameId(row?.profile_frame_id, options?.selectPremiumProfileFramePreset ?? options?.hasActiveSubscription ?? false);
+  raw.frameColor = resolveEffectiveFrameColor(row?.frame_color, options?.selectCustomFrameColor ?? options?.hasActiveSubscription ?? false);
+  raw.cardBaseMode = resolveEffectiveCardBaseMode(row?.card_base_mode, options?.selectPremiumCardBaseMode ?? options?.hasActiveSubscription ?? false);
+  Object.assign(raw, resolveEffectiveProfilePalette(row?.theme_primary, row?.theme_accent, options?.selectProfilePalette ?? options?.hasActiveSubscription ?? false));
+  // Uploaded banners retain their legacy subscription fallback.
   const input = options?.hasActiveSubscription === false
     ? {
         ...raw,
-        // Slate and Glass are free presets. They must not disappear merely
-        // because the account has no active subscription.
-        profileFrameId: raw.profileFrameId,
-        frameColor: null,
-        cardBaseMode: "mirror",
-        themePrimary: null,
-        themeAccent: null,
         bannerValue: raw.bannerValue?.id ? raw.bannerValue : undefined,
       }
     : raw;

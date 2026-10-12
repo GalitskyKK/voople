@@ -88,9 +88,7 @@ test("null/reset is free, invalid font rejected at service and transport", async
   const caller = router.createCaller({ client: {}, getVerifiedUser: async () => ({ id: user }) });
   await assert.rejects(caller.customization.update({ nicknameFont: "invalid" }), { code: "BAD_REQUEST" });
 });
-for (const patch of [{ profileFrameId: "frame-aurora" },
-  { frameColor: "#123456" }, { cardBaseMode: "theme" }, { themePrimary: "#123456" }, { themeAccent: "#123456" },
-  { bannerId: "not-owned" }]) test(`Style font does not unlock mixed patch ${JSON.stringify(patch)}`, async () => {
+for (const patch of [{ bannerId: "not-owned" }]) test(`Style font does not unlock mixed patch ${JSON.stringify(patch)}`, async () => {
   const state = setup({ grants: [grant()] });
   await assert.rejects(updateCustomization(user, { nicknameFont: "mono", ...patch }));
   assert.deepEqual(state.writes, []); assert.equal(state.row.nickname_font, "serif");

@@ -1,3 +1,4 @@
+import { assertProfileCardSelectionAllowed, needsProfileCardAccess, projectProfileCardFacts } from "@/lib/customization/profile-card-access";
 import { assertNicknameColorSelectionAllowed, resolveEffectiveNicknameColor } from "@/lib/customization/nickname-color";
 import { isFreeNicknameColor } from "@/lib/customization/nickname-options";
 export {
@@ -22,12 +23,17 @@ export async function updateCustomization(userId: string, patch: CustomizationEq
   assertAppThemeSelectionAllowed(patch.appThemeId, true);
   assertNicknameFontSelectionAllowed(patch.nicknameFont, true);
   assertNicknameEffectSelectionAllowed(patch.nicknameEffect, patch.nicknameGradient, true);
-  const access = (patch.nicknameColor != null && !isFreeNicknameColor(patch.nicknameColor))
+  assertProfileCardSelectionAllowed(patch, { selectPremiumProfileFramePreset: true, selectCustomFrameColor: true, selectPremiumCardBaseMode: true, selectProfilePalette: true });
+  const access = needsProfileCardAccess(patch) || (patch.nicknameColor != null && !isFreeNicknameColor(patch.nicknameColor))
     || (patch.appThemeId != null && !isFreeAppThemeId(patch.appThemeId))
     || (patch.nicknameFont != null && patch.nicknameFont !== "sans")
     || (patch.nicknameEffect != null && patch.nicknameEffect !== "plain") || patch.nicknameGradient === true
     ? await getPersonalStyleAccess(userId) : null;
   return updateProfileCustomizationRest(userId, patch, {
+    selectPremiumProfileFramePreset: access?.capabilities.selectPremiumProfileFramePreset ?? false,
+    selectCustomFrameColor: access?.capabilities.selectCustomFrameColor ?? false,
+    selectPremiumCardBaseMode: access?.capabilities.selectPremiumCardBaseMode ?? false,
+    selectProfilePalette: access?.capabilities.selectProfilePalette ?? false,
     selectCustomNicknameColor: access?.capabilities.selectCustomNicknameColor ?? false,
     selectPaidAppTheme: access?.capabilities.selectPaidAppTheme ?? false,
     selectPremiumNicknameFont: access?.capabilities.selectPremiumNicknameFont ?? false,
@@ -51,7 +57,7 @@ export async function getEquippedCustomization(userId: string) {
     getEquippedCustomizationRest(userId), getPersonalStyleAccess(userId),
   ]);
   const effectiveEffect = resolveEffectiveNicknameEffect(equipped.nicknameEffect, equipped.nicknameGradient, access.capabilities.selectPremiumNicknameEffect);
-  return { ...equipped, savedNicknameColor: equipped.nicknameColor,
+  return { ...equipped, ...projectProfileCardFacts(equipped, access.capabilities), savedNicknameColor: equipped.nicknameColor,
     effectiveNicknameColor: resolveEffectiveNicknameColor(equipped.nicknameColor, access.capabilities.selectCustomNicknameColor),
     selectCustomNicknameColor: access.capabilities.selectCustomNicknameColor, savedNicknameEffect: equipped.nicknameEffect, savedNicknameGradient: equipped.nicknameGradient,
     effectiveNicknameEffect: effectiveEffect.effect, effectiveNicknameGradient: effectiveEffect.gradient,

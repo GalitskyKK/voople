@@ -1,4 +1,5 @@
 "use client";
+import { projectProfileCardFacts } from "@/lib/customization/profile-card-access";
 import { resolveEffectiveNicknameColor } from "@/lib/customization/nickname-color";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -188,6 +189,11 @@ export function useProfileEditorController({
   const selectPremiumNicknameFont = !fontAccess.isError && Boolean(fontAccess.data?.selectPremiumNicknameFont);
   const selectPremiumNicknameEffect = !fontAccess.isError && Boolean(fontAccess.data?.selectPremiumNicknameEffect);
   const selectCustomNicknameColor = !fontAccess.isError && Boolean(fontAccess.data?.selectCustomNicknameColor);
+  const cardAccess = { selectPremiumProfileFramePreset: !fontAccess.isError && Boolean(fontAccess.data?.selectPremiumProfileFramePreset),
+    selectCustomFrameColor: !fontAccess.isError && Boolean(fontAccess.data?.selectCustomFrameColor),
+    selectPremiumCardBaseMode: !fontAccess.isError && Boolean(fontAccess.data?.selectPremiumCardBaseMode),
+    selectProfilePalette: !fontAccess.isError && Boolean(fontAccess.data?.selectProfilePalette) };
+  const effectiveCard = equipped ? customizationFromEquipped({ ...equipped, ...cardAccess }, previewCustomization) : previewCustomization;
   const effectiveColor = resolveEffectiveNicknameColor(equipped ? equipped.nicknameColor : previewCustomization.displayName.color, selectCustomNicknameColor);
   const effectiveEffect = resolveEffectiveNicknameEffect(equipped?.nicknameEffect ?? previewCustomization.displayName.effect, equipped?.nicknameGradient ?? previewCustomization.displayName.gradient, selectPremiumNicknameEffect);
   const effectiveFont = resolveEffectiveNicknameFont(equipped?.nicknameFont ?? previewCustomization.displayName.font, selectPremiumNicknameFont);
@@ -370,8 +376,8 @@ export function useProfileEditorController({
 
   return {
     open, discardOpen, panel, editing, draft, avatarUrl,
-    previewCustomization: projectEditorDisplayName(previewCustomization, effectiveFont, effectiveEffect, effectiveColor),
-    equipped: equipped ? { ...equipped, selectCustomNicknameColor, effectiveNicknameColor: effectiveColor, selectPremiumNicknameFont, effectiveNicknameFont: effectiveFont, selectPremiumNicknameEffect, effectiveNicknameEffect: effectiveEffect.effect, effectiveNicknameGradient: effectiveEffect.gradient } : null,
+    previewCustomization: projectEditorDisplayName(effectiveCard, effectiveFont, effectiveEffect, effectiveColor),
+    equipped: equipped ? { ...equipped, ...projectProfileCardFacts(equipped, cardAccess), selectCustomNicknameColor, effectiveNicknameColor: effectiveColor, selectPremiumNicknameFont, effectiveNicknameFont: effectiveFont, selectPremiumNicknameEffect, effectiveNicknameEffect: effectiveEffect.effect, effectiveNicknameGradient: effectiveEffect.gradient } : null,
     trialItemId, selectedGroupTag: hydratedGroupTag, groupTags, allItems, message,
     cosmeticBusy, dirty, overview, history, chats, avatarUpload, bannerUpload,
     savePending: saveMutation.isPending,

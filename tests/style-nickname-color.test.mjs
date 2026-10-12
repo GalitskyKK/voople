@@ -86,11 +86,11 @@ for(const color of ['#123456','#ABCDEF']) test('exact custom authorization and i
   const state=setup({grants:[grant()]}); await updateCustomization(user,{nicknameColor:color,nicknameFont:'mono',nicknameEffect:'gradient'});
   assert.equal(state.row.nickname_color,color); assert.equal(state.row.nickname_font,'mono'); assert.equal(state.row.nickname_gradient,true);
   assert.equal(state.calls.length,1); const self=await getAccountNicknameFont(user); assert.equal(self.effectiveNicknameColor,color);
-  for(const patch of [{frameColor:'#123456'},{profileFrameId:'frame-aurora'},{cardBaseMode:'theme'},{themePrimary:'#123456'},{themeAccent:'#123456'},{bannerId:'not-owned'}]) await assert.rejects(updateCustomization(user,{nicknameColor:color,...patch}));
+  for(const patch of [{bannerId:'not-owned'}]) await assert.rejects(updateCustomization(user,{nicknameColor:color,...patch}));
 });
 for(const grants of [[],[grant({valid_until:now.toISOString()})],[grant({revoked_at:now.toISOString()})]]) test('cleanup, self, editor and reads preserve retained color: '+JSON.stringify(grants),async()=>{
   const state=setup({grants}); await clearExpiredSubscriptionCustomizationRest(user);
-  assert.equal(state.row.nickname_color,'#123456'); assert.equal(state.row.frame_color,null);
+  assert.equal(state.row.nickname_color,'#123456'); assert.equal(state.row.frame_color,'#123456');
   const equipped=await getEquippedCustomization(user); assert.equal(equipped.savedNicknameColor,'#123456'); assert.equal(equipped.effectiveNicknameColor,null);
   assert.equal((await getAccountNicknameFont(user)).effectiveNicknameColor,null);
   assert.equal(customizationFromEquipped(equipped,mapUserToAuthor({username:'c',display_name:'C'}).customization).displayName.color,null);

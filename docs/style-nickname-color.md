@@ -20,8 +20,7 @@ explicit free selection or null replaces it. Projection never writes storage.
 ## Boundaries and rendering
 
 Ordinary customization patches validate color, font and effect separately.
-Style can select all three in one patch; it does not unlock premium frames,
-frameColor, card base, profile colors, banners or avatar history. Gradient stays
+Style can select all three in one patch. Profile/card styling uses the fifth consumer’s four independent capabilities; see [style-profile-card.md](./style-profile-card.md). Banners and avatar history retain their existing rules. Gradient stays
 under `selectPremiumNicknameEffect`, independent of custom color.
 
 The legacy Store `nickname_style` equip path still checks ownership and

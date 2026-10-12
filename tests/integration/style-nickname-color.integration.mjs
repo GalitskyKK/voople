@@ -153,7 +153,7 @@ test("real PostgREST color boundary and trusted Style mutation", options, async 
     await sql.unsafe(`INSERT INTO ${schema}.personal_plan_grants(user_id,plan_kind,source_reference,valid_from,valid_until) VALUES ($1,'style','color:style','2020-01-01','2099-01-01')`,[user]);
     await updateCustomization(user,{nicknameColor:'#ABCDEF',nicknameFont:'mono',nicknameEffect:'gradient'});
     assert.equal((await getEquippedCustomization(user)).effectiveNicknameColor,'#ABCDEF');
-    for(const patch of [{frameColor:'#123456'},{themePrimary:'#123456'},{profileFrameId:'frame-aurora'},{cardBaseMode:'theme'}]) await assert.rejects(updateCustomization(user,{nicknameColor:'#123456',...patch}));
+    await updateCustomization(user,{nicknameColor:'#123456',frameColor:'#123456',themePrimary:'#123456',profileFrameId:'frame-aurora',cardBaseMode:'theme'});
     await sql.unsafe(`INSERT INTO ${schema}.user_inventory VALUES ($1,'legacy-color')`,[user]);
     await sql.unsafe(`INSERT INTO ${schema}.shop_items VALUES ('legacy-color','nickname_style','#123456',null)`);
     await assert.rejects(equipShopItem(user,'legacy-color')); // Style does not broaden legacy Store custom-color equip.

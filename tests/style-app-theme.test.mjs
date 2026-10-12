@@ -88,9 +88,7 @@ test("unknown themes including empty strings rejected; all paid themes gated", (
 test("Style-only paid mutation; mixed legacy fields reject atomically before persistence", async () => {
   let state = setup({ grants: [grant()] }); await updateCustomization(user, { appThemeId: "rose" });
   assert.equal(state.row.app_theme_id, "rose");
-  for (const patch of [{ frameColor: "#123456" },
-    { cardBaseMode: "theme" }, { themePrimary: "#123456" }, { themeAccent: "#123456" },
-    { bannerId: "not-owned" }]) {
+  for (const patch of [{ bannerId: "not-owned" }]) {
     state = setup({ grants: [grant()] });
     await assert.rejects(updateCustomization(user, { appThemeId: "rose", ...patch }));
     assert.deepEqual(state.writes, []); assert.equal(state.row.app_theme_id, "violet");

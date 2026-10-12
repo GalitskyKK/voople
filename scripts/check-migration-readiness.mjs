@@ -1,3 +1,4 @@
+import { assertProfileCardReadiness } from "./profile-card-readiness.mjs";
 import { assertNicknameColorReadiness } from "./nickname-color-readiness.mjs";
 import { assertNicknameEffectReadiness } from "./nickname-effect-readiness.mjs";
 import { assertNicknameFontReadiness } from './nickname-font-readiness.mjs';
@@ -155,6 +156,7 @@ try {
   await assertNicknameFontReadiness(sql);
   await assertNicknameEffectReadiness(sql);
   await assertNicknameColorReadiness(sql);
+  await assertProfileCardReadiness(sql);
 
   console.log(`Migration readiness passed (${REQUIRED_MIGRATIONS.length} required migrations).`);
 } catch (error) {

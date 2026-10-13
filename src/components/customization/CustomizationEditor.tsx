@@ -11,9 +11,8 @@ import type { EquippedCustomizationView, ShopItemView } from "@/types/shop";
 import { Button } from "@/components/ui/Button";
 import { ProfileThemePicker } from "@/components/customization/ProfileThemePicker";
 import { ShopCatalogPreview } from "@/components/shop/ShopCatalogPreview";
-import {
-  ProfileCardHeader,
-} from "@/components/profile/ProfileCardHeader";
+import { ProfileCardIdentityVisual } from "@/components/profile/ProfileCardIdentityVisual";
+import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
 import { profileCardThemeStyle } from "@/components/profile/profile-card-style";
 import { ProfileCardVideoSections } from "@/components/profile/ProfileCardVideoSections";
 import {
@@ -86,7 +85,7 @@ export function CustomizationEditor({
   });
 
   const frameId = equipped.profileFrameId;
-  const frameColor = equipped.frameColor ?? "#7B3AED";
+  const frameColor = equipped.effectiveFrameColor ?? "#7B3AED";
   const baseMode = (equipped.cardBaseMode as CardBaseMode | null) ?? "mirror";
   const editBusy = busy || update.isPending;
 
@@ -95,9 +94,9 @@ export function CustomizationEditor({
       bannerId: equipped.bannerId,
       profileEffectId: equipped.profileEffectId,
       profileBackgroundId: equipped.profileBackgroundId,
-      profileFrameId: equipped.profileFrameId,
-      frameColor: equipped.frameColor,
-      cardBaseMode: equipped.cardBaseMode,
+      profileFrameId: equipped.effectiveProfileFrameId,
+      frameColor: equipped.effectiveFrameColor,
+      cardBaseMode: equipped.effectiveCardBaseMode,
       avatarRingId: equipped.avatarRingId,
       avatarDecorationId: equipped.avatarDecorationId,
       feedCardStyleId: equipped.feedCardStyleId,
@@ -106,8 +105,8 @@ export function CustomizationEditor({
       nicknameGradient: equipped.effectiveNicknameGradient,
       nicknameEffect: equipped.effectiveNicknameEffect,
       nicknameFont: equipped.effectiveNicknameFont,
-      themePrimary: equipped.themePrimary,
-      themeAccent: equipped.themeAccent,
+      themePrimary: equipped.effectiveThemePrimary,
+      themeAccent: equipped.effectiveThemeAccent,
     });
 
     return {
@@ -129,10 +128,11 @@ export function CustomizationEditor({
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="space-y-6">
+        {update.error ? <p role="alert" className="text-sm text-[var(--app-muted)]">{update.error.message}</p> : null}
         <VooplePlusFeatureSurface
           title="Премиум-рамки и свой цвет"
-          description="Бесплатные рамки остаются доступны всем. Voople+ открывает светящиеся варианты и точный цвет."
-          locked={!isPlus}
+          description="Бесплатные рамки остаются доступны всем. Вупл+ или Style открывает светящиеся варианты и точный цвет."
+          locked={!equipped.selectPremiumProfileFramePreset}
         >
           <div className="flex items-center justify-between gap-2">
             <div>
@@ -153,9 +153,10 @@ export function CustomizationEditor({
               </Button>
             ) : null}
           </div>
+          {frameId && frameId !== equipped.effectiveProfileFrameId ? <p className="text-xs text-[var(--app-muted)]">Рамка сохранена. Пока нет доступа, карточка отображается без неё.</p> : null}
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
             {Object.values(FRAME_PRESETS).map((preset) => {
-              const locked = (preset.isPremium || preset.usesCustomColor) && !isPlus;
+              const locked = (preset.isPremium || preset.usesCustomColor) && !equipped.selectPremiumProfileFramePreset;
               const selected = frameId === preset.id;
               return (
                 <button
@@ -180,13 +181,14 @@ export function CustomizationEditor({
               );
             })}
           </div>
+          {equipped.frameColor && !equipped.selectCustomFrameColor ? <p className="text-xs text-[var(--app-muted)]">Цвет рамки сохранён. Пока нет доступа, используется стандартный цвет.</p> : null}
           {frameId === "frame-custom" ? (
             <label className="flex items-center gap-3 text-sm text-[var(--foreground)]">
               Цвет рамки
               <input
                 type="color"
                 value={frameColor}
-                disabled={editBusy || !isPlus}
+                disabled={editBusy || !equipped.selectCustomFrameColor}
                 onChange={(e) =>
                   update.mutate({ profileFrameId: "frame-custom", frameColor: e.target.value })
                 }
@@ -198,8 +200,8 @@ export function CustomizationEditor({
 
         <VooplePlusFeatureSurface
           title="Расширенная основа карточки"
-          description="Зеркало баннера бесплатно. Voople+ добавляет градиент темы и спокойный ровный фон."
-          locked={!isPlus}
+          description="Зеркало баннера бесплатно. Вупл+ или Style добавляет градиент темы и спокойный ровный фон."
+          locked={!equipped.selectPremiumCardBaseMode}
         >
           <div>
             <h3 className="text-sm font-semibold text-[var(--foreground)]">Основа карточки</h3>
@@ -207,9 +209,10 @@ export function CustomizationEditor({
               Что под контентом: зеркало баннера (по умолчанию) или свой фон.
             </p>
           </div>
+          {baseMode !== "mirror" && !equipped.selectPremiumCardBaseMode ? <p className="text-xs text-[var(--app-muted)]">Основа сохранена. Пока нет доступа, используется зеркало баннера.</p> : null}
           <div className="flex flex-wrap gap-2">
             {BASE_MODE_OPTIONS.map((opt) => {
-              const locked = opt.premium && !isPlus;
+              const locked = opt.premium && !equipped.selectPremiumCardBaseMode;
               const selected = baseMode === opt.id;
               return (
                 <Button
@@ -318,12 +321,12 @@ export function CustomizationEditor({
               baseMode={previewCustomization.cardBaseMode}
               frame={previewCustomization.assets.frame}
               header={
-                <ProfileCardHeader
+                <ProfileCardIdentityVisual
                   customization={previewCustomization}
                   displayName="Твоё имя"
                   username="username"
                   compact
-                  showBanner={false}
+                  avatar={<ProfileAvatar displayName="Твоё имя" size="lg" ring={previewCustomization.flags.hasAvatarRing} ringId={previewCustomization.avatarRingId} decorationUrl={previewCustomization.assets.avatarDecorationUrl} animatedAvatarUrl={previewCustomization.assets.animatedAvatarUrl} />}
                 />
               }
             />
@@ -334,12 +337,12 @@ export function CustomizationEditor({
               </div>
               <div className="profile-card__body relative z-10">
                 <ProfileCardFrameDivider frame={previewCustomization.assets.frame} />
-                <ProfileCardHeader
+                <ProfileCardIdentityVisual
                   customization={previewCustomization}
                   displayName="Твоё имя"
                   username="username"
                   compact
-                  showBanner={false}
+                  avatar={<ProfileAvatar displayName="Твоё имя" size="lg" ring={previewCustomization.flags.hasAvatarRing} ringId={previewCustomization.avatarRingId} decorationUrl={previewCustomization.assets.avatarDecorationUrl} animatedAvatarUrl={previewCustomization.assets.animatedAvatarUrl} />}
                 />
               </div>
             </>
@@ -349,9 +352,11 @@ export function CustomizationEditor({
 
         <div>
           <ProfileThemePicker
-            themePrimary={equipped.themePrimary}
-            themeAccent={equipped.themeAccent}
-            isPlus={isPlus}
+            themePrimary={equipped.effectiveThemePrimary}
+            themeAccent={equipped.effectiveThemeAccent}
+            selectProfilePalette={equipped.selectProfilePalette}
+            savedPalette={Boolean(equipped.themePrimary || equipped.themeAccent)}
+            key={`${equipped.effectiveThemePrimary}:${equipped.effectiveThemeAccent}:${equipped.selectProfilePalette}`}
             onSaved={() => {
               void utils.customization.getEquipped.invalidate();
               void utils.shop.overview.invalidate();

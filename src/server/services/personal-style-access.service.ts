@@ -18,6 +18,10 @@ export async function getPersonalStyleAccess(userId: string, evaluatedAt = new D
     policyVersion: "app-theme-legacy-or-style-v1",
     sources: { activeLegacySubscription, activeStyleCoverage },
     capabilities: {
+      selectPremiumProfileFramePreset: activeLegacySubscription || activeStyleCoverage,
+      selectCustomFrameColor: activeLegacySubscription || activeStyleCoverage,
+      selectPremiumCardBaseMode: activeLegacySubscription || activeStyleCoverage,
+      selectProfilePalette: activeLegacySubscription || activeStyleCoverage,
       selectCustomNicknameColor: activeLegacySubscription || activeStyleCoverage,
       selectPaidAppTheme: activeLegacySubscription || activeStyleCoverage,
       selectPremiumNicknameFont: activeLegacySubscription || activeStyleCoverage,

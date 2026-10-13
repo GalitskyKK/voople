@@ -21,8 +21,7 @@ Only automatic effect/gradient cleanup is removed. Other legacy cleanup remains,
 while saved nickname color is also retained by the fourth consumer. Store `nickname_style`, subscription metadata,
 purchase/equip/gift and ownership rules remain unchanged: its trusted equip path
 keeps the prior Store authorization before writing its gradient flag. Ordinary
-customization updates always use the effect capability. Custom color separately uses its fourth explicit Style capability. Frames,
-profile colors, banners, card base, wallpaper and avatar history remain legacy-only.
+customization updates always use the effect capability. Custom color separately uses its fourth explicit Style capability. Profile/card styling now uses four independent capabilities in the fifth consumer; see [style-profile-card.md](./style-profile-card.md). Banners, wallpaper and avatar history retain their existing rules.
 Payments, Full issuance and Group charges are unchanged.
 
 ## Database boundary

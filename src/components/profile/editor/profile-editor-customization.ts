@@ -1,3 +1,4 @@
+import { projectProfileCardFacts } from "@/lib/customization/profile-card-access";
 import { resolveEffectiveNicknameColor } from "@/lib/customization/nickname-color";
 import { resolveEffectiveNicknameEffect } from "@/lib/customization/nickname-effect";
 import { resolveEffectiveNicknameFont } from "@/lib/customization/nickname-font";
@@ -18,12 +19,13 @@ export function customizationFromEquipped(
   fallback: ProfileCustomizationView,
 ): ProfileCustomizationView {
   const effectiveEffect = resolveEffectiveNicknameEffect(equipped.nicknameEffect, equipped.nicknameGradient, equipped.selectPremiumNicknameEffect);
+  const card = projectProfileCardFacts(equipped, equipped);
   const value = resolveCustomization({
     bannerId: equipped.bannerId,
     avatarRingId: equipped.avatarRingId,
-    profileFrameId: equipped.profileFrameId,
-    frameColor: equipped.frameColor,
-    cardBaseMode: equipped.cardBaseMode,
+    profileFrameId: card.effectiveProfileFrameId,
+    frameColor: card.effectiveFrameColor,
+    cardBaseMode: card.effectiveCardBaseMode,
     avatarDecorationId: equipped.avatarDecorationId,
     feedCardStyleId: equipped.feedCardStyleId,
     animatedAvatarId: equipped.animatedAvatarId,
@@ -33,8 +35,8 @@ export function customizationFromEquipped(
     nicknameGradient: effectiveEffect.gradient,
     nicknameFont: resolveEffectiveNicknameFont(equipped.nicknameFont, equipped.selectPremiumNicknameFont),
     nicknameEffect: effectiveEffect.effect,
-    themePrimary: equipped.themePrimary,
-    themeAccent: equipped.themeAccent,
+    themePrimary: card.effectiveThemePrimary,
+    themeAccent: card.effectiveThemeAccent,
   });
 
   return {

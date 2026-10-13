@@ -1,3 +1,4 @@
+import { ProfileCardStoreHarness } from "./ProfileCardStoreHarness";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { AppThemeProvider } from "@/components/theme/AppThemeProvider";
@@ -23,7 +24,7 @@ function Settings() {
 }
 
 const fontHarness = new URLSearchParams(location.search).has("font");
-const content = <AppThemeProvider>{fontHarness ? <NicknameFontHarness /> : <><AppThemeSync /><AppPreferencesProvider><Settings /></AppPreferencesProvider></>}</AppThemeProvider>;
+const content = <AppThemeProvider>{new URLSearchParams(location.search).has("card-store") ? <ProfileCardStoreHarness /> : fontHarness ? <NicknameFontHarness /> : <><AppThemeSync /><AppPreferencesProvider><Settings /></AppPreferencesProvider></>}</AppThemeProvider>;
 const desktop = new URLSearchParams(location.search).has("desktop");
 const session = { access_token: "disposable-ui-fixture", user: { id: "10000000-0000-4000-8000-000000000001" } } as Session;
 createRoot(document.getElementById("root")!).render(desktop

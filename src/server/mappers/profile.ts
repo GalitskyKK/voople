@@ -93,6 +93,10 @@ export function mapUserToAuthor(
     hasVooplePlus,
     customization: toProfileCustomizationView(customizationRow, {
       hasActiveSubscription: hasVooplePlus,
+      selectPremiumProfileFramePreset: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
+      selectCustomFrameColor: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
+      selectPremiumCardBaseMode: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
+      selectProfilePalette: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
       selectPremiumNicknameFont: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
       selectCustomNicknameColor: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
       selectPremiumNicknameEffect: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
@@ -124,6 +128,10 @@ export function mapUserToProfile(
     hasVooplePlus,
     customization: toProfileCustomizationView(customizationRow, {
       hasActiveSubscription: hasVooplePlus,
+      selectPremiumProfileFramePreset: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
+      selectCustomFrameColor: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
+      selectPremiumCardBaseMode: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
+      selectProfilePalette: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
       selectPremiumNicknameFont: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
       selectCustomNicknameColor: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),
       selectPremiumNicknameEffect: hasVooplePlus || Boolean(fontAccess?.activeStyleCoverage),

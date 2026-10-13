@@ -1,3 +1,5 @@
+import type { ProfileCardCapabilities, projectProfileCardFacts } from "@/lib/customization/profile-card-access";
+export type ProfileCardSelfView = ReturnType<typeof projectProfileCardFacts> & ProfileCardCapabilities;
 import type { ShopPreviewFields } from "@/lib/shop/catalog-delivery";
 import type { ShopEquipSlot, ShopItemKind } from "@/lib/shop/catalog";
 
@@ -50,7 +52,7 @@ export type PaymentIntentView = {
   message: string | null;
 };
 
-export type EquippedCustomizationView = {
+export type EquippedCustomizationView = ProfileCardSelfView & {
   profileEffectId: string | null;
   profileBackgroundId: string | null;
   /** Рамка карточки (id пресета frames-registry / картиночной рамки). */

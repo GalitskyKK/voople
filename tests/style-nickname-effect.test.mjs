@@ -101,8 +101,7 @@ test("null reset is free; malformed effects fail safe and are rejected at transp
   }
   assert.deepEqual(resolveEffectiveNicknameEffect(null, true, true), { effect: "gradient", gradient: true });
 });
-for (const patch of [{ profileFrameId: "frame-aurora" }, { frameColor: "#123456" },
-  { cardBaseMode: "theme" }, { themePrimary: "#123456" }, { themeAccent: "#123456" }, { bannerId: "not-owned" }]) {
+for (const patch of [{ bannerId: "not-owned" }]) {
   test(`Style effect retains independent gate: ${JSON.stringify(patch)}`, async () => {
     const state = setup({ grants: [grant()] });
     await assert.rejects(updateCustomization(user, { nicknameEffect: "gradient", nicknameFont: "mono", ...patch }));
@@ -139,7 +138,7 @@ for (const loss of [[], [grant({ valid_until: now.toISOString() })], [grant({ re
     const equipped = await getEquippedCustomization(user);
     assert.equal(equipped.savedNicknameEffect, "gradient"); assert.equal(equipped.savedNicknameGradient, true);
     assert.equal(equipped.effectiveNicknameEffect, "plain"); assert.equal(equipped.effectiveNicknameGradient, false);
-    assert.equal(state.row.frame_color, null);
+    assert.equal(state.row.frame_color, "#123456");
     assert.ok(state.writes.every(patch => !("nickname_effect" in patch) && !("nickname_gradient" in patch)));
     assert.equal(customizationFromEquipped(equipped, mapUserToAuthor({ username: "e", display_name: "E" }).customization).displayName.effect, "plain");
     globalThis.styleTestAdmin.rpc = async () => ({ data: [grant()], error: null });

@@ -52,11 +52,12 @@ export function ProfileEditorBannerPanel(props: CommonProps) {
           <h3 className="text-sm font-semibold">Основа карточки</h3>
           {controller.equipped?.cardBaseMode && controller.equipped.cardBaseMode !== "mirror" ? <button type="button" className="profile-editor-reset" onClick={() => controller.clearSlot("card_base_mode")}><RotateCcw className="h-3.5 w-3.5" />Сбросить</button> : null}
         </div>
+        {controller.equipped?.cardBaseMode && controller.equipped.cardBaseMode !== "mirror" && !controller.equipped.selectPremiumCardBaseMode ? <p className="text-xs text-[var(--app-muted)]">Основа сохранена. Пока нет доступа, используется зеркало баннера.</p> : null}
         <div className="grid gap-2 sm:grid-cols-3">
           {PROFILE_BASE_MODES.map((mode) => {
             const active = (controller.equipped?.cardBaseMode ?? "mirror") === mode.id;
-            const locked = mode.premium && !hasVooplePlus;
-            return <button key={mode.id} type="button" disabled={controller.cosmeticBusy} aria-pressed={active} onClick={() => controller.commitPatch({ cardBaseMode: mode.id }, locked)} className={cn("profile-editor-choice", active && "profile-editor-choice--active")}>{mode.label}{locked ? " · Вупл+" : ""}</button>;
+            const locked = mode.premium && !controller.equipped?.selectPremiumCardBaseMode;
+            return <button key={mode.id} type="button" disabled={controller.cosmeticBusy || locked} aria-pressed={active} onClick={() => controller.commitPatch({ cardBaseMode: mode.id }, locked)} className={cn("profile-editor-choice", active && "profile-editor-choice--active")}>{mode.label}{locked ? " · Вупл+" : ""}</button>;
           })}
         </div>
       </section>
@@ -66,21 +67,22 @@ export function ProfileEditorBannerPanel(props: CommonProps) {
 }
 
 export function ProfileEditorFramePanel(props: CommonProps) {
-  const { controller, hasVooplePlus } = props;
+  const { controller } = props;
   const items = controller.allItems.filter((item) => item.kind === "profile_frame");
   return (
     <div className="mt-5 space-y-6">
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <div><h3 className="text-sm font-semibold">Базовые рамки</h3><p className="mt-1 text-xs text-[var(--app-muted)]">Базовые варианты доступны без покупки; премиальные можно примерить.</p></div>
+          <div><h3 className="text-sm font-semibold">Базовые рамки</h3><p className="mt-1 text-xs text-[var(--app-muted)]">Базовые варианты бесплатны; премиальные доступны с Вупл+ или Style.</p></div>
           {controller.equipped?.profileFrameId ? <button type="button" className="profile-editor-reset" onClick={() => controller.clearSlot("profile_frame_id")}><RotateCcw className="h-3.5 w-3.5" />Без рамки</button> : null}
         </div>
+        {controller.equipped?.profileFrameId && controller.equipped.profileFrameId !== controller.equipped.effectiveProfileFrameId ? <p className="text-xs text-[var(--app-muted)]">Рамка сохранена. Пока нет доступа, карточка отображается без неё.</p> : null}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {Object.values(FRAME_PRESETS).map((preset) => {
             const active = controller.equipped?.profileFrameId === preset.id;
-            const locked = Boolean((preset.isPremium || preset.usesCustomColor) && !hasVooplePlus);
+            const locked = Boolean((preset.isPremium || preset.usesCustomColor) && !controller.equipped?.selectPremiumProfileFramePreset);
             return (
-              <button key={preset.id} type="button" disabled={controller.cosmeticBusy} aria-pressed={active} onClick={() => controller.commitPatch({ profileFrameId: preset.id }, locked)} className={cn("profile-editor-frame-choice", active && "profile-editor-frame-choice--active")}>
+              <button key={preset.id} type="button" disabled={controller.cosmeticBusy || locked} aria-pressed={active} onClick={() => controller.commitPatch({ profileFrameId: preset.id }, locked)} className={cn("profile-editor-frame-choice", active && "profile-editor-frame-choice--active")}>
                 <span className="profile-editor-frame-choice__swatch" style={{ background: preset.kind === "gradient" ? `linear-gradient(135deg, ${preset.colors.join(", ")})` : preset.colors[0], boxShadow: preset.kind === "glow" ? `0 0 16px ${preset.colors[1] ?? preset.colors[0]}` : undefined }} />
                 <span className="mt-2 block text-sm font-medium">{preset.name}</span>
                 <span className="mt-0.5 flex items-center gap-1 text-xs text-[var(--app-muted)]">{locked ? <VooplePlusBadge locked /> : active ? "Используется" : "Применить"}</span>

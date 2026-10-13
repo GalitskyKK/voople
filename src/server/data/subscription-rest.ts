@@ -1,3 +1,4 @@
+import { getFramePreset } from "@/lib/customization/frames-registry";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { VOOPLUS_PERIOD_DAYS } from "@/lib/constants/subscription";
 import type { SubscriptionStatusView } from "@/types/subscription";
@@ -53,10 +54,6 @@ export async function clearExpiredSubscriptionCustomizationRest(userId: string):
 
   const gated = new Set((gatedItems ?? []).map((item) => `${item.equip_slot}:${item.equip_value}`));
   const update: Record<string, unknown> = {};
-  if (row.frame_color) update.frame_color = null;
-  if (row.card_base_mode && row.card_base_mode !== "mirror") update.card_base_mode = "mirror";
-  if (row.theme_primary) update.theme_primary = null;
-  if (row.theme_accent) update.theme_accent = null;
   const slots: Array<[keyof EquippedRow, string]> = [
     ["profile_effect_id", "profile_effect_id"], ["profile_background_id", "profile_background_id"],
     ["profile_frame_id", "profile_frame_id"], ["avatar_ring_id", "avatar_ring_id"],
@@ -66,6 +63,7 @@ export async function clearExpiredSubscriptionCustomizationRest(userId: string):
   ];
   for (const [field, slot] of slots) {
     const value = row[field];
+    if (field === "profile_frame_id" && getFramePreset(typeof value === "string" ? value : null)) continue;
     if (typeof value === "string" && gated.has(`${slot}:${value}`)) update[field] = null;
   }
   if (row.banner_value?.id && gated.has(`banner:${row.banner_value.id}`)) {

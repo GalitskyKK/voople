@@ -3,8 +3,10 @@ set -Eeuo pipefail
 
 sha="${1:?Pass the release SHA}"
 image="${2:?Pass the immutable image reference}"
+image_source="${3:-registry}"
 [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo 'Invalid release SHA' >&2; exit 2; }
 [[ "$image" =~ ^ghcr\.io/[a-z0-9._/-]+/web:${sha}$ ]] || { echo 'Image must use the exact release SHA' >&2; exit 2; }
+[[ "$image_source" == registry || "$image_source" == preloaded ]] || { echo 'Invalid image source' >&2; exit 2; }
 
 deploy_dir="${DEPLOY_DIR:-/opt/voople}"
 cd "$deploy_dir"
@@ -21,6 +23,14 @@ if [[ -e .deployed-sha ]]; then
   [[ "$previous" =~ ^[0-9a-f]{40}$ ]] || { echo 'Invalid .deployed-sha' >&2; exit 1; }
 fi
 echo "DEPLOY_STATUS previous_sha=$previous"
+
+ensure_image() {
+  if [[ "$image_source" == preloaded ]]; then
+    docker image inspect "$1" >/dev/null
+  else
+    VOOPLE_IMAGE="$1" docker compose pull
+  fi
+}
 
 health() {
   local attempt
@@ -43,8 +53,8 @@ rollback() {
   fi
   echo "DEPLOY_STATUS rollback_sha=$previous"
   local previous_image="${image%:*}:$previous"
-  if VOOPLE_IMAGE="$previous_image" docker compose pull && \
-     VOOPLE_IMAGE="$previous_image" docker compose up -d --remove-orphans --wait --wait-timeout 120 && \
+  if ensure_image "$previous_image" && \
+     VOOPLE_IMAGE="$previous_image" docker compose up -d --remove-orphans --wait --wait-timeout 120 --pull never && \
      health; then
     echo 'DEPLOY_STATUS rollback=success'
     echo "Rolled back to $previous after release $sha failed local health" >&2
@@ -55,8 +65,8 @@ rollback() {
   return 1
 }
 
-VOOPLE_IMAGE="$image" docker compose pull
-if ! VOOPLE_IMAGE="$image" docker compose up -d --remove-orphans --wait --wait-timeout 120; then
+ensure_image "$image"
+if ! VOOPLE_IMAGE="$image" docker compose up -d --remove-orphans --wait --wait-timeout 120 --pull never; then
   rollback
   exit 1
 fi

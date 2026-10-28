@@ -23,7 +23,12 @@ async function fixture(run) {
       await writeFile(join(dir, name), "fixture=1\n");
     }
     await writeFile(join(dir, "bin", "docker"), `#!/usr/bin/env bash
+if [[ "$1 $2" == "image inspect" ]]; then
+  if [[ "$FAIL_MISSING_IMAGE" == 1 && "$3" == *"$NEW_SHA" ]]; then exit 1; fi
+  exit 0
+fi
 if [[ "$1 $2" == "compose pull" ]]; then
+  printf '%s\\n' "$VOOPLE_IMAGE" >> "$DEPLOY_DIR/pull-attempts"
   if [[ "$FAIL_NEW_PULL" == 1 && "$VOOPLE_IMAGE" == *"$NEW_SHA" ]]; then exit 1; fi
   exit 0
 fi
@@ -49,14 +54,15 @@ exit 0
   }
 }
 
-function deploy(dir, sha, failure = "") {
-  return spawnSync(bash, ["-c", 'PATH="$PWD/bin:$PATH" DEPLOY_DIR="$PWD" bash ./deploy-release "$1" "$2"', "_", sha, image(sha)], {
+function deploy(dir, sha, failure = "", imageSource = "registry") {
+  return spawnSync(bash, ["-c", 'PATH="$PWD/bin:$PATH" DEPLOY_DIR="$PWD" bash ./deploy-release "$1" "$2" "$3"', "_", sha, image(sha), imageSource], {
     cwd: dir,
     env: {
       ...process.env,
       FAIL_NEW_HEALTH: failure === "health" ? "1" : "0",
       FAIL_NEW_PULL: failure === "pull" ? "1" : "0",
       FAIL_NEW_UP: failure === "up" ? "1" : "0",
+      FAIL_MISSING_IMAGE: failure === "missing" ? "1" : "0",
       NEW_SHA: newSha,
     },
     encoding: "utf8",
@@ -107,5 +113,28 @@ test("pull failure leaves the old release untouched; startup failure rolls back"
     assert.match(up.stdout, /DEPLOY_STATUS rollback=success/);
     assert.equal((await readFile(join(dir, ".deployed-sha"), "utf8")).trim(), oldSha);
     assert.equal((await readFile(join(dir, "current-image"), "utf8")).trim(), image(oldSha));
+  });
+});
+
+test("preloaded releases and rollback use cached images without registry credentials", async () => {
+  await fixture(async (dir) => {
+    assert.equal(deploy(dir, oldSha).status, 0);
+    await writeFile(join(dir, "pull-attempts"), "");
+    for (const failure of ["missing", "health", "pull"]) {
+      const result = deploy(dir, newSha, failure, "preloaded");
+      assert.equal(result.status === 0, failure === "pull", result.stderr);
+      if (failure === "health") assert.match(result.stdout, /DEPLOY_STATUS rollback=success/);
+      assert.equal(await readFile(join(dir, "pull-attempts"), "utf8"), "");
+      assert.equal((await readFile(join(dir, ".deployed-sha"), "utf8")).trim(), failure === "pull" ? newSha : oldSha);
+    }
+  });
+});
+
+test("unrecognized image delivery modes fail before replacing the running release", async () => {
+  await fixture(async (dir) => {
+    const result = deploy(dir, newSha, "", "unknown");
+    assert.notEqual(result.status, 0);
+    assert.equal(existsSync(join(dir, "current-image")), false);
+    assert.equal(existsSync(join(dir, ".deployed-sha")), false);
   });
 });

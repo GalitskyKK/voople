@@ -49,7 +49,11 @@ The deployment workflow uploads only `compose.yaml`; it never overwrites
 runtime secrets, systemd units or system Caddy. `Caddyfile` is installed during
 host bootstrap and changed only by a separate, deliberate host maintenance
 operation, followed by Caddy validation/reload. Authenticate Docker on the
-server once with a read-only GitHub token if the GHCR package is private.
+server with a read-only GitHub token for manual deployments if the GHCR package
+is private. CI keeps its short-lived package-read credential on the runner,
+pulls the immutable SHA image there, and transfers the compressed image over
+SSH into rootless Docker. The host receives the image without registry
+credentials; release and rollback use local images with `--pull never`.
 
 ## Room grace maintenance
 
@@ -83,7 +87,7 @@ The protected `production` environment already exists. It contains:
 
 The official Tailscale action uses GitHub OIDC workload identity federation,
 the two Tailscale secrets above, and only `tag:voople-ci-deploy`. Its runner
-node is ephemeral. The deploy job has `contents: read` and `id-token: write`;
+node is ephemeral. The deploy job has `contents: read`, `packages: read` and `id-token: write`;
 the build job has `contents: read` and `packages: write`.
 `PRODUCTION_SSH_HOST`, if still present, is ignored.
 

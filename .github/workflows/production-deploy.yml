@@ -37,6 +37,7 @@ jobs:
     needs: gate
     if: needs.gate.outputs.enabled == 'true'
     runs-on: ubuntu-latest
+    environment: production
     timeout-minutes: 35
     permissions:
       contents: read
@@ -57,12 +58,16 @@ jobs:
         run: echo "${{ github.token }}" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
       - name: Build production image
         shell: bash
+        env:
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY || vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
         run: |
+          [[ -n "${NEXT_PUBLIC_TURNSTILE_SITE_KEY//[[:space:]]/}" ]] || { echo 'Set NEXT_PUBLIC_TURNSTILE_SITE_KEY in the production environment before building' >&2; exit 1; }
           docker build \
             --file Dockerfile \
             --build-arg NEXT_PUBLIC_APP_URL=https://voople.app \
             --build-arg NEXT_PUBLIC_SUPABASE_URL="${{ vars.NEXT_PUBLIC_SUPABASE_URL }}" \
             --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
+            --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY="$NEXT_PUBLIC_TURNSTILE_SITE_KEY" \
             --build-arg NEXT_PUBLIC_ASSETS_CDN_URL=https://cdn.voople.app \
             --build-arg NEXT_PUBLIC_LIVEKIT_URL=wss://rtc.voople.app \
             --build-arg NEXT_PUBLIC_APP_RELEASE="${GITHUB_SHA}" \

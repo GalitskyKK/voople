@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getPasswordLoginFailure } from "@/lib/auth/login-error";
 import { desktopCorsPreflight, withDesktopCors } from "@/lib/http/desktop-cors";
 import { rateLimits } from "@/lib/ratelimit";
 import { checkRateLimit } from "@/lib/ratelimit-guard";
@@ -44,9 +45,11 @@ export async function POST(request: Request) {
       password: parsed.data.password,
       options: { captchaToken: parsed.data.captchaToken },
     });
-    if (error || !data.user || !data.session) {
-      return respond(NextResponse.json({ error: "Неверный email или пароль" }, { status: 401 }));
+    if (error) {
+      const failure = getPasswordLoginFailure(error);
+      return respond(NextResponse.json({ error: failure.error }, { status: failure.status }));
     }
+    if (!data.user || !data.session) throw new Error("Auth returned an incomplete session");
 
     const hash = deviceHash(parsed.data.deviceId);
     const admin = getAdminClient();

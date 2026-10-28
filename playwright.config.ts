@@ -30,7 +30,7 @@ if (process.env.CI && hasAuthTarget && !hasCaptchaSafeAuth) {
 const projects: Project[] = [
   {
     name: "public",
-    testMatch: /public\.smoke\.spec\.ts/,
+    testMatch: /(?:public|auth-captcha)\.smoke\.spec\.ts/,
     use: { ...devices["Desktop Chrome"] },
   },
 ];

@@ -1,3 +1,5 @@
+import { getCaptchaErrorMessage } from "./login-error.ts";
+
 type AuthErrorLike = {
   code?: string;
   message?: string;
@@ -5,6 +7,8 @@ type AuthErrorLike = {
 };
 
 export function getEmailDeliveryErrorMessage(error: AuthErrorLike) {
+  const captchaMessage = getCaptchaErrorMessage(error);
+  if (captchaMessage) return captchaMessage;
   const code = error.code?.toLowerCase() ?? "";
   const message = error.message?.toLowerCase() ?? "";
 

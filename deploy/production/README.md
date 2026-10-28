@@ -121,6 +121,25 @@ and roles use unique names and are removed afterward.
 
 ## Private deployment network and commissioning
 
+### Authentication CAPTCHA build configuration
+
+Set the public `NEXT_PUBLIC_TURNSTILE_SITE_KEY` secret or variable in the GitHub
+`production` environment before building a release. The build job reads that
+environment and passes the key through Docker to `next build`; missing keys
+stop the build. A secret takes precedence over a variable when both exist.
+The key is public and is embedded in browser JavaScript even if stored as a
+GitHub secret. For manual Docker builds, pass
+`--build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY=<public-site-key>` as well.
+Use the Turnstile widget whose matching secret is configured in Supabase Auth
+and allow `voople.app` in its hostname list. The secret stays in Supabase.
+
+`NEXT_PUBLIC_*` values are embedded into browser JavaScript at build time.
+Setting this key only in `/opt/voople/app.env` cannot repair an existing image:
+rebuild and deploy it after configuring the GitHub secret or variable. Verify password
+login, code delivery and code resend in a fresh browser session after release.
+
+### Private network commissioning
+
 The existing server is `voople-prod` at Tailscale IPv4 `100.77.197.84`,
 tagged `tag:voople-prod`. GitHub Actions joins as an ephemeral
 `tag:voople-ci-deploy` node through OIDC workload identity federation. The

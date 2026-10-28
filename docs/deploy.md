@@ -69,6 +69,11 @@ and restart the web container before enabling the timer.
 The protected `production` environment already exists. It contains:
 
 - repository variable `NEXT_PUBLIC_SUPABASE_URL`;
+- production environment secret or variable `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (the public
+  site key for the Turnstile widget configured in Supabase Auth; required by
+  the Docker build). Allow `voople.app` on the widget and keep its matching
+  secret in Supabase. Changing the host environment alone does not update
+  browser JavaScript: rebuild and deploy the image;
 - secret `NEXT_PUBLIC_SUPABASE_ANON_KEY` (public at runtime, protected here to
   avoid accidental edits);
 - environment secrets `TS_OAUTH_CLIENT_ID`, `TS_AUDIENCE`,

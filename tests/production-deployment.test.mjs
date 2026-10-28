@@ -5,6 +5,20 @@ import { parseSystemdUnit } from "./helpers/parse-systemd-unit.mjs";
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
+test("production auth embeds the CAPTCHA key during build and rejects missing configuration", async () => {
+  const [dockerfile, workflow] = await Promise.all([
+    read("Dockerfile"),
+    read(".github/workflows/production-deploy.yml"),
+  ]);
+  assert.match(dockerfile, /ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY/);
+  assert.match(dockerfile, /NEXT_PUBLIC_TURNSTILE_SITE_KEY=\$NEXT_PUBLIC_TURNSTILE_SITE_KEY/);
+  assert.match(dockerfile, /test -n "\$NEXT_PUBLIC_TURNSTILE_SITE_KEY"/);
+  assert.match(workflow, /build-and-push:[\s\S]*?environment: production/);
+  assert.match(workflow, /NEXT_PUBLIC_TURNSTILE_SITE_KEY: \$\{\{ secrets\.NEXT_PUBLIC_TURNSTILE_SITE_KEY \|\| vars\.NEXT_PUBLIC_TURNSTILE_SITE_KEY \}\}/);
+  assert.match(workflow, /--build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY="\$NEXT_PUBLIC_TURNSTILE_SITE_KEY"/);
+  assert.match(workflow, /Set NEXT_PUBLIC_TURNSTILE_SITE_KEY in the production environment before building/);
+});
+
 test("production image is standalone, non-root and health checked", async () => {
   const [dockerfile, nextConfig, route] = await Promise.all([
     read("Dockerfile"),

@@ -78,6 +78,7 @@ jobs:
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
       VITE_SUPABASE_URL: https://example.supabase.co
       VITE_SUPABASE_ANON_KEY: ci-placeholder-anon-key
 
@@ -119,3 +120,5 @@ jobs:
         run: |
           npx playwright install --with-deps chromium
           npx playwright test --config playwright.theme.config.ts
+      - name: Verify CAPTCHA login and code resend
+        run: npx playwright test --project=public --grep "CAPTCHA login"

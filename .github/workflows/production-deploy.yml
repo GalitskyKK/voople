@@ -84,6 +84,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      packages: read
     env:
       DEPLOY_HOST: ${{ vars.PRODUCTION_TAILSCALE_HOST }}
       DEPLOY_PORT: ${{ secrets.PRODUCTION_SSH_PORT }}
@@ -139,6 +140,20 @@ jobs:
             | ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes -o StrictHostKeyChecking=yes \
                 -o UserKnownHostsFile=~/.ssh/known_hosts -p "$DEPLOY_PORT" \
                 "$DEPLOY_USER@$DEPLOY_HOST" 'tar -xzf - -C /opt/voople'
+      - name: Deliver immutable image over SSH
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          docker pull "$VOOPLE_IMAGE"
+          docker save "$VOOPLE_IMAGE" \
+            | gzip \
+            | ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes -o StrictHostKeyChecking=yes \
+                -o UserKnownHostsFile=~/.ssh/known_hosts -p "$DEPLOY_PORT" \
+                "$DEPLOY_USER@$DEPLOY_HOST" \
+                'gzip -d | XDG_RUNTIME_DIR=/run/user/1000 DOCKER_HOST=unix:///run/user/1000/docker.sock docker load'
       - name: Start release and verify local health
         id: release
         shell: bash
@@ -148,7 +163,7 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 -o BatchMode=yes -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile=~/.ssh/known_hosts -p "$DEPLOY_PORT" \
             "$DEPLOY_USER@$DEPLOY_HOST" \
-            "bash /opt/voople/bin/deploy-release '$GITHUB_SHA' '$VOOPLE_IMAGE'" \
+            "bash /opt/voople/bin/deploy-release '$GITHUB_SHA' '$VOOPLE_IMAGE' preloaded" \
             | tee "$RUNNER_TEMP/production-release-status"
           result=${PIPESTATUS[0]}
           set -e

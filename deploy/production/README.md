@@ -113,7 +113,9 @@ and roles use unique names and are removed afterward.
 5. Put `.env` and `app.env` in `/opt/voople` from the tracked examples and set
    mode `600`. The deploy workflow uploads only `compose.yaml`; it does not
    update these secrets or system Caddy.
-6. If GHCR is private, log in once using a read-only package token.
+6. CI downloads private GHCR images on its runner and transfers the image over
+   SSH to rootless Docker. For manual registry-based deployments, log in on the
+   host with a read-only package token.
 7. Point `voople.app` and `www.voople.app` to this host and allow public
    80/443. CI SSH uses Tailscale, not a public runner IP.
 8. The protected GitHub `production` environment and Tailscale setup are
@@ -186,6 +188,14 @@ deployment has no prior candidate. The runner checks public
 but does not roll back a locally healthy container. The workflow summary
 records the SHA, image, connectivity and health results, and rollback status
 without secrets.
+
+CI keeps its short-lived `GITHUB_TOKEN` with `packages: read` on the runner.
+It pulls the exact SHA image there and streams `docker save` through gzip and
+SSH into the host's rootless `docker load`. No registry credential is sent to
+the host. `deploy-release <sha> <image> preloaded` verifies the local image and
+starts Compose with `--pull never`; rollback uses the prior local image. A
+missing image stops the release before replacing containers. Omitting the
+third argument retains registry pulls for manual deployments.
 
 ## Room grace maintenance on this VDS
 

@@ -122,7 +122,14 @@ test("production deploy uses immutable images and pinned SSH trust", async () =>
   assert.match(workflow, /PRODUCTION_SSH_KNOWN_HOSTS/);
   assert.doesNotMatch(workflow, /StrictHostKeyChecking=no/);
   assert.match(workflow, /deploy-release/);
+  assert.match(workflow, /deploy:[\s\S]*?packages: read/);
+  assert.match(workflow, /docker save "\$VOOPLE_IMAGE"/);
+  assert.match(workflow, /GHCR_TOKEN: \$\{\{ github\.token \}\}/);
+  assert.match(workflow, /\$VOOPLE_IMAGE' preloaded/);
+  assert.doesNotMatch(workflow, /<<< "\$GHCR_TOKEN"/);
   const release = await read("deploy/production/bin/deploy-release");
+  assert.match(release, /docker image inspect "\$1"/);
+  assert.match(release, /--pull never/);
   assert.match(release, /docker compose up -d --remove-orphans --wait/);
   assert.match(release, /http:\/\/127\.0\.0\.1:3000\/api\/health/);
   assert.match(release, /\.deployed-sha/);

@@ -113,7 +113,7 @@ test("native screen share worker stops gracefully and preserves source aspect ra
   );
 });
 
-test("local preview is opt-in, race-safe and pauses outside the focused window", () => {
+test("local preview remains race-safe and pauses outside the focused window", () => {
   const subscription = read("src/components/chat/voice/useScreenShareSubscription.ts");
   const videoStage = read("src/components/chat/voice/useVoiceVideoStage.ts");
   const previewDom = read("src/components/chat/voice/screen-preview-dom.ts");
@@ -134,8 +134,8 @@ test("local preview is opt-in, race-safe and pauses outside the focused window",
   assert.match(previewDom, /video\?\.pause\(\)/);
   assert.match(previewDom, /dataset\.livekitLocalScreenKind = kind/);
   assert.match(videoStage, /useLocalScreenPreviewVisibility/);
-  assert.match(roomStage, /screenShareOwner && screenShareIsLocal \? "grid" : "focus"/);
-  assert.match(roomStage, /selection\?\.screenTrackId === screenShareTrackId/);
+  assert.match(roomStage, /useVoiceStageLayout/);
+  assert.match(read("src/lib/livekit/voice-stage-layout.ts"), /selection\?\.screenKey === screenKey/);
 });
 
 test("concurrent screen shares keep focus until the active publication ends", () => {

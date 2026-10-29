@@ -38,9 +38,10 @@ export function VoiceParticipantCard({
   focused?: boolean;
   onFocus?: () => void;
   className?: string;
-  presentation?: "standard" | "orbit";
+  presentation?: "standard" | "orbit" | "orbit-media";
 }) {
-  const orbit = presentation === "orbit";
+  const orbit = presentation !== "standard";
+  const orbitGrid = presentation === "orbit";
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [menuPoint, setMenuPoint] = useState<{ x: number; y: number; bounds?: { left: number; top: number; right: number; bottom: number } } | null>(null);
   const openActions = (point?: { x: number; y: number }) => {
@@ -72,6 +73,8 @@ export function VoiceParticipantCard({
         data-call-participant={participant.id}
         data-actions-open={Boolean(menuPoint)}
         data-speaking={speaking}
+        data-camera={hasCamera}
+        data-focused={focused}
         data-decorated={Boolean(participant.avatarDecorationUrl)}
         role={participant.isMe ? undefined : "group"}
         tabIndex={participant.isMe ? undefined : 0}
@@ -87,13 +90,15 @@ export function VoiceParticipantCard({
             ? "border-[var(--theme-accent)]"
             : "border-[color-mix(in_srgb,var(--app-border)_65%,var(--app-muted))]",
           className,
-          orbit && "voople-orbit-call-tile",
+          orbitGrid && "voople-orbit-call-tile",
+          presentation === "orbit-media" && "voople-orbit-media-participant",
         )}
       >
-      {orbit && !participant.isMe ? <button type="button" className="voople-orbit-call-tile__target" aria-label={`Действия участника ${participant.displayName}`} aria-haspopup="menu" aria-expanded={Boolean(menuPoint)} onClick={() => openActions()}><span className="voople-orbit-call-tile__more" aria-hidden="true"><MoreHorizontal className="h-4 w-4" /></span></button> : null}
+      {orbit && !hasCamera && !participant.isMe ? <button type="button" className="voople-orbit-call-tile__target" aria-label={`Действия участника ${participant.displayName}`} aria-haspopup="menu" aria-expanded={Boolean(menuPoint)} onClick={() => openActions()}><span className="voople-orbit-call-tile__more" aria-hidden="true"><MoreHorizontal className="h-4 w-4" /></span></button> : null}
+      {orbit && hasCamera && !participant.isMe ? <button type="button" className="voople-orbit-media-participant__more" aria-label={`Действия участника ${participant.displayName}`} aria-haspopup="menu" aria-expanded={Boolean(menuPoint)} onClick={() => openActions()}><MoreHorizontal className="h-4 w-4" /></button> : null}
       <div
         ref={bindCameraContainer}
-        className="absolute inset-0"
+        className="voople-camera-container absolute inset-0 overflow-hidden rounded-[inherit]"
         aria-hidden={!hasCamera}
       />
       {hasCamera && onFocus ? (
@@ -104,7 +109,7 @@ export function VoiceParticipantCard({
           aria-label={`Показать камеру ${participant.displayName} крупно`}
         />
       ) : null}
-      {hasCamera ? (
+      {hasCamera && !orbit ? (
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/15" />
       ) : null}
 
@@ -141,7 +146,7 @@ export function VoiceParticipantCard({
         </div>
       ) : null}
 
-      <div className={cn("relative z-10 min-w-0 max-w-full", hasCamera && "text-white", orbit && "voople-orbit-call-tile__caption")}>
+      <div className={cn("relative z-10 min-w-0 max-w-full", hasCamera && !orbit && "text-white", orbit && "voople-orbit-call-tile__caption")}>
         {!participant.guest && !participant.isMe ? (
           <GroupPersonPreview id={participant.id} username={participant.username} displayName={participant.displayName} previewOnClick>
             <button type="button" className="max-w-full truncate rounded text-sm font-medium focus-visible:outline-2 focus-visible:outline-[var(--material-focus-ring)]" aria-label={`Просмотреть профиль ${participant.displayName}`}>{participant.displayName}</button>

@@ -1,6 +1,8 @@
 "use client";
 
-import { ArrowLeft, Search } from "lucide-react";
+import { useInterfaceDesign } from "@/hooks/useInterfaceDesign";
+import { IconButton } from "@/components/ui/IconButton";
+import { ArrowLeft, MessageSquarePlus, Search } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { AppPanelHeader } from "@/components/layout/AppPanelHeader";
@@ -27,6 +29,7 @@ export function ChatListSearchPanel({
   onSearchActiveChange: (value: boolean) => void;
   onSearchScopeChange: (value: ChatSearchScope) => void;
 }) {
+  const orbit = useInterfaceDesign() === "orbit";
   const closeSearch = () => {
     onQueryChange("");
     onSearchActiveChange(false);
@@ -37,6 +40,7 @@ export function ChatListSearchPanel({
     <>
       <AppPanelHeader className="voople-chat-list__panel-header">
         <h1 className="min-w-0 flex-1 truncate text-lg font-bold tracking-[-0.025em]">Чаты</h1>
+        {orbit ? <IconButton label="Новый диалог" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl hover:bg-[var(--material-row-hover)]" onClick={() => window.dispatchEvent(new Event("voople:open-new-direct"))}><MessageSquarePlus className="h-4 w-4" /></IconButton> : null}
         {headerAction ? (
           <span className="voople-chat-list__create">{headerAction}</span>
         ) : null}

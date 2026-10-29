@@ -305,3 +305,11 @@ The final control-layout pass covers ten desktop/mobile host/theme cases,
 including shared media/action fills, the absence of an inherited dark footer,
 Room chat/composer bounds, retained drafts, and native fullscreen without the
 legacy Room directory. Menu and tooltip portals follow fullscreen transitions.
+
+Orbit's mobile inbox uses the canonical combined chat list so Groups and DMs
+remain available when the desktop rail is hidden. Room roster rows use the
+same width. Cameras and screen share retain Orbit's square participant identity
+and shared action surfaces. A newly visible local or remote screen starts in
+focus; the always-visible grid action or Escape leaves focus without closing
+the Room. Explicit grid choice persists for that screen. Profile keeps the
+canonical customizable card inside the common workspace header/frame.

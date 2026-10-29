@@ -1,7 +1,8 @@
 "use client";
 
-import { LayoutGrid, Rows3 } from "lucide-react";
-import { useState } from "react";
+import { useRef } from "react";
+import { useVoiceStageLayout } from "./useVoiceStageLayout";
+import { VoiceMediaLayoutControls } from "./VoiceMediaLayoutControls";
 
 import { cn } from "@/lib/utils";
 import type { ChatRoomParticipantView } from "@/types/chat";
@@ -52,36 +53,9 @@ export function VoiceRoomStage({
   onParticipantVolumeChange,
 }: VoiceRoomStageProps) {
   const orbit = useInterfaceDesign() === "orbit";
-  const [selection, setSelection] = useState<{
-    screenTrackId: string | null;
-    focusedMediaId: string | null;
-    layout: "focus" | "grid";
-  } | null>(null);
-  const selectionApplies = selection?.screenTrackId === screenShareTrackId;
-  const focusedMediaId = selectionApplies
-    ? selection.focusedMediaId
-    : screenShareOwner && !screenShareIsLocal ? "screen" : null;
-  const layout = selectionApplies
-    ? selection.layout
-    : screenShareOwner && screenShareIsLocal ? "grid" : "focus";
+  const stageRef = useRef<HTMLDivElement>(null);
+  const { activeFocusId, layout, focusMedia, selectLayout } = useVoiceStageLayout(screenShareTrackId, screenShareOwner, cameraParticipantIds, stageRef);
   const hasVisualMedia = Boolean(screenShareOwner) || cameraParticipantIds.size > 0;
-  const activeFocusId =
-    (focusedMediaId === "screen" && screenShareOwner) ||
-    (focusedMediaId !== "screen" &&
-      focusedMediaId !== null &&
-      cameraParticipantIds.has(focusedMediaId))
-      ? focusedMediaId
-      : screenShareOwner
-        ? "screen"
-        : [...cameraParticipantIds][0] ?? null;
-  const focusMedia = (mediaId: string) => {
-    setSelection({ screenTrackId: screenShareTrackId, focusedMediaId: mediaId, layout: "focus" });
-  };
-  const selectLayout = (nextLayout: "focus" | "grid") => setSelection({
-    screenTrackId: screenShareTrackId,
-    focusedMediaId,
-    layout: nextLayout,
-  });
 
   const renderParticipant = (
     participant: ChatRoomParticipantView,
@@ -93,7 +67,7 @@ export function VoiceRoomStage({
       <VoiceParticipantCard
         key={participant.id}
         participant={participant}
-        presentation={orbit && !hasVisualMedia ? "orbit" : "standard"}
+        presentation={orbit ? hasVisualMedia ? "orbit-media" : "orbit" : "standard"}
         muted={participant.isMe
           ? micMuted
           : (remoteMicMutedById[participant.id] ?? participant.micMuted)}
@@ -118,42 +92,12 @@ export function VoiceRoomStage({
     );
 
     return (
-      <div className="voople-full-room__stage flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="voople-full-room__stage-toolbar mb-2 flex items-center justify-between gap-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--app-muted)]">
-            {layout === "focus" ? "Фокус" : "Сетка"}
-          </p>
-          <div className="voople-full-room__layout-switch flex rounded-[var(--app-radius-sm)] border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-1">
-            <button
-              type="button"
-              onClick={() => selectLayout("focus")}
-              className={cn(
-                "grid h-8 w-9 place-items-center rounded-[var(--app-radius-sm)] transition",
-                layout === "focus" && "bg-[var(--app-surface)] text-(--theme-accent) shadow-sm",
-              )}
-              aria-label="Показывать выбранное видео крупно"
-              aria-pressed={layout === "focus"}
-            >
-              <Rows3 className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => selectLayout("grid")}
-              className={cn(
-                "grid h-8 w-9 place-items-center rounded-[var(--app-radius-sm)] transition",
-                layout === "grid" && "bg-[var(--app-surface)] text-(--theme-accent) shadow-sm",
-              )}
-              aria-label="Показывать все видео сеткой"
-              aria-pressed={layout === "grid"}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+      <div ref={stageRef} data-media-layout={layout} className={cn(orbit && "voople-orbit-media-stage", "voople-full-room__stage flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden")}>
+        <VoiceMediaLayoutControls layout={layout} onChange={selectLayout} />
 
         {layout === "focus" ? (
-          <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_5rem] gap-2">
-            <div className="min-h-0 min-w-0">
+          <div className="voople-media-focus-layout grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_5rem] gap-2">
+            <div className="voople-media-focus-main min-h-0 min-w-0">
               {activeFocusId === "screen" && screenShareOwner ? (
                 <VoiceMediaStage
                   screenContainerRef={screenContainerRef}
@@ -168,7 +112,7 @@ export function VoiceRoomStage({
                 renderParticipant(focusedParticipant, "focused")
               ) : null}
             </div>
-            <div className="grid min-h-0 grid-flow-col auto-cols-[minmax(7rem,10rem)] gap-2 overflow-x-auto overflow-y-hidden">
+            <div className="voople-media-filmstrip grid min-h-0 grid-flow-col auto-cols-[minmax(7rem,10rem)] gap-2 overflow-x-auto overflow-y-hidden">
               {screenShareOwner && activeFocusId !== "screen" ? (
                 <VoiceMediaStage
                   screenContainerRef={screenContainerRef}
@@ -184,7 +128,7 @@ export function VoiceRoomStage({
             </div>
           </div>
         ) : (
-          <div className="grid min-h-0 flex-1 grid-cols-2 content-start gap-2 overflow-y-auto lg:grid-cols-3">
+          <div className="voople-media-grid grid min-h-0 flex-1 grid-cols-2 content-start gap-2 overflow-y-auto lg:grid-cols-3">
             {screenShareOwner ? (
               <VoiceMediaStage
                 screenContainerRef={screenContainerRef}

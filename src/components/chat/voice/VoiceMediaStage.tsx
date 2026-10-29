@@ -3,6 +3,7 @@
 import { useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 import { MoreHorizontal } from "lucide-react";
 
+import { useInterfaceDesign } from "@/hooks/useInterfaceDesign";
 import { cn } from "@/lib/utils";
 import { VoiceScreenShareMenu } from "./VoiceScreenShareMenu";
 
@@ -27,6 +28,7 @@ export function VoiceMediaStage({
   onStopWatching,
   className,
 }: VoiceMediaStageProps) {
+  const orbit = useInterfaceDesign() === "orbit";
   const stageRef = useRef<HTMLElement | null>(null);
   const [menuPoint, setMenuPoint] = useState<{ x: number; y: number } | null>(null);
   const showMenu = volume !== undefined && Boolean(onVolumeChange) && Boolean(onStopWatching);
@@ -44,6 +46,7 @@ export function VoiceMediaStage({
   return (
     <section
       ref={stageRef}
+      data-media-focused={focused}
       tabIndex={showMenu ? 0 : undefined}
       onContextMenu={showMenu ? openContextMenu : undefined}
       onKeyDown={showMenu ? openFromKeyboard : undefined}
@@ -55,6 +58,7 @@ export function VoiceMediaStage({
           ? "col-span-2 min-h-64 border-(--theme-accent) lg:col-span-4"
           : "min-h-20 border-[var(--app-border)]",
         className,
+        orbit && "voople-orbit-screen-media",
       )}
       aria-label={screenShareOwner ? `Демонстрация экрана: ${screenShareOwner}` : undefined}
     >

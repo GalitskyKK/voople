@@ -241,3 +241,11 @@ fullscreen in the lower-right with an enter/exit icon, and one consistent set
 of media/secondary controls at the bottom centre. Native fullscreen omits the
 Room directory. The participant destination uses an icon and Участники tooltip.
 The Group conversation drawer keeps its composer above mobile call controls.
+
+Orbit's mobile inbox uses the canonical combined chat list so Groups and DMs
+remain available when the desktop rail is hidden. Room roster rows use the
+same width. Cameras and screen share retain Orbit's square participant identity
+and shared action surfaces. A newly visible local or remote screen starts in
+focus; the always-visible grid action or Escape leaves focus without closing
+the Room. Explicit grid choice persists for that screen. Profile keeps the
+canonical customizable card inside the common workspace header/frame.

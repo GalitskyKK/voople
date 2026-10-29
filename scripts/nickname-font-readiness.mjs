@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
+import { normalizeMigrationSource } from "./migration-checksum.mjs";
 
-const source = () => readFileSync(new URL("../drizzle/90-style-nickname-font-write-boundary.sql", import.meta.url), "utf8");
+const source = () => normalizeMigrationSource(readFileSync(new URL("../drizzle/90-style-nickname-font-write-boundary.sql", import.meta.url), "utf8"));
 export function nicknameFontValidationSql() {
   const sql = source();
   const start = sql.indexOf("-- BEGIN NICKNAME FONT READ-ONLY VALIDATION");
@@ -17,7 +18,7 @@ export async function assertNicknameFontReadiness(sql) {
       'public.guard_nickname_font_browser_write()'::regprocedure,
       'public.load_active_style_subjects(uuid[],timestamptz)'::regprocedure)`;
     for (const [index, name] of ["guard_nickname_font_browser_write", "load_active_style_subjects"].entries()) {
-      if (rows.find(row => row.proname === name)?.prosrc !== bodies[index]) {
+      if (normalizeMigrationSource(rows.find(row => row.proname === name)?.prosrc ?? "") !== bodies[index]) {
         throw new Error(`Nickname font ${name} body differs from the release contract`);
       }
     }

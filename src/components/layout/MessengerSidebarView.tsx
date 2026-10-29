@@ -59,13 +59,16 @@ export function MessengerSidebarView({ pathname, chats, loading, error, onlineUs
       openSearch();
     };
     const onOpenSearch = () => openSearch();
+    const onNewDirect = () => setSearchState({ pathname, open: true, variant: "new-direct" });
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("voople:open-search", onOpenSearch);
+    window.addEventListener("voople:open-new-direct", onNewDirect);
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("voople:open-search", onOpenSearch);
+      window.removeEventListener("voople:open-new-direct", onNewDirect);
     };
-  }, [openSearch]);
+  }, [openSearch, pathname]);
 
   const activeChatId = activeMessagesChatId(pathname);
   const groups = chats.filter((chat) => chat.type === "group" && !chat.parentChatId);

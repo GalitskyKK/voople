@@ -90,6 +90,8 @@ button { color: inherit; }
 .desktop-window-content .voople-shell[data-route-kind="messages"] .voople-chat-list__panel-header {
   display: none;
 }
+html[data-interface-design="orbit"] .desktop-window-content .voople-mobile-inbox .voople-chat-list__panel-header { display: block; }
+
 .desktop-window-content .voople-shell[data-route-kind="messages"] .voople-group-surface[data-mode="medium"] .voople-group-surface-header--desktop,
 .desktop-window-content .voople-shell[data-route-kind="messages"] .voople-group-surface[data-mode="wide"] .voople-group-surface-header--desktop {
   display: none;

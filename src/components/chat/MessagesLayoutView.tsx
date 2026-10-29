@@ -1,5 +1,6 @@
 "use client";
 import type { ReactNode } from "react";
+import { useIsLgViewport } from "@/hooks/useIsLgViewport";
 import { useInterfaceDesign } from "@/hooks/useInterfaceDesign";
 import { DirectWorkspaceView } from "./DirectWorkspaceView";
 
@@ -19,6 +20,8 @@ export function MessagesLayoutView({
   wallpaper = "doodles",
 }: MessagesLayoutViewProps) {
   const orbit = useInterfaceDesign() === "orbit";
+  const large = useIsLgViewport();
+  if (orbit && !isThread && !large) return <section className="voople-mobile-inbox flex min-h-0 flex-1 flex-col" aria-label="Группы и личные сообщения">{list}</section>;
   if (orbit && !isThread) return <div className="voople-messages-layout flex min-h-0 flex-1 flex-col" data-thread="false" data-chat-wallpaper={wallpaper}><DirectWorkspaceView inbox><p className="m-auto px-6 text-sm text-[var(--app-muted)]">Выберите диалог</p></DirectWorkspaceView></div>;
   return (
     <div

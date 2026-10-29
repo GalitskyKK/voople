@@ -101,6 +101,19 @@ test.describe("authenticated critical surface", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   });
 
+  test("Orbit mobile Voice exposes the combined inbox and contact creation", async ({page}) => {
+    await page.setViewportSize({width:360,height:800});
+    await page.addInitScript(()=>localStorage.removeItem("voople:app-preferences"));
+    await page.goto("/messages",{waitUntil:"domcontentloaded"});
+    const inbox=page.getByRole("region",{name:"Группы и личные сообщения",exact:true});
+    await expect(inbox.getByRole("heading",{name:"Чаты",exact:true})).toBeVisible();
+    await expect(inbox.getByRole("searchbox",{name:"Найти чат, группу или контакт"})).toBeVisible();
+    await inbox.getByRole("button",{name:"Новый диалог",exact:true}).click();
+    await expect(page.getByRole("dialog",{name:"Новый диалог",exact:true})).toBeVisible();
+    await page.keyboard.press("Escape");
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth)).toBe(true);
+  });
+
   test("settings are separated into navigable sections", async ({ page }) => {
     test.setTimeout(60_000);
     await page.goto("/settings", { waitUntil: "domcontentloaded" });

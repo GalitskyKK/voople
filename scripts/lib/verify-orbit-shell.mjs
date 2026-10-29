@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import path from "node:path";
+import { verifyOrbitMedia } from "./verify-orbit-media.mjs";
 
 async function openFixture(browser, baseUrl, host, theme, width, height, suffix = "") {
   const page = await browser.newPage({ viewport: { width, height }, hasTouch: width < 1024 });
@@ -85,6 +86,7 @@ async function verifyEmbeddedRoom(page, artifacts, host, width, theme) {
     await page.getByRole('region', {name:'Компактный голосовой разговор',exact:true}).getByText('Отличная').waitFor();
   }
   await verifyCallActions(page, surface, mobile, artifacts, host, width, theme);
+  await verifyOrbitMedia(page,surface,{artifacts,host,width,theme});
   const topActions = channel.locator('[data-action-placement="corner-top"]');
   await topActions.getByRole('button', {name:'Открыть чат группы',exact:true}).click();
   const roomChat = surface.getByRole('complementary', {name:'Чат группы: Общий',exact:true});
@@ -253,7 +255,11 @@ export async function verifyOrbitShell({ browser, baseUrl, artifacts }) {
     await page.evaluate(() => window.fixture.setCallVisible(true));await tile.waitFor();
     assert.deepEqual(await frame.boundingBox(), initial);
     await page.evaluate(() => { window.fixture.setCallVisible(false); window.fixture.navigate("/messages"); });
-    await page.getByRole('button', {name:'Новый диалог',exact:true}).click();
+    const mobileInbox=page.getByRole('region',{name:'Группы и личные сообщения',exact:true});
+    await mobileInbox.getByRole('button',{name:/VOICEKK/}).first().click();
+    await page.locator('.voople-group-workspace').waitFor();
+    await page.evaluate(()=>window.fixture.navigate('/messages'));
+    await page.getByRole('button',{name:'Новый диалог',exact:true}).click();
     const picker = page.getByRole('dialog', {name:'Новый диалог',exact:true});await picker.waitFor();
     await picker.getByRole('searchbox', {name:'Найти собеседника'}).fill('biba');
     await picker.getByRole('button', {name:/Biba/}).click();await picker.waitFor({state:'detached'});
@@ -268,6 +274,8 @@ export async function verifyOrbitShell({ browser, baseUrl, artifacts }) {
     assert.equal(Math.round((await tile.boundingBox()).x), 12, "default Voice placement keeps the Room gear side clear");
     const otherRoom = page.locator('[data-orbit-room-id="drg"]');
     await otherRoom.locator(".voople-orbit-room__cover").tap();await page.waitForTimeout(650);
+    const rowWidths=await otherRoom.locator('.voople-orbit-roster__person .voople-group-now-participant').evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().width));
+    assert.ok(rowWidths.length>1 && Math.max(...rowWidths)-Math.min(...rowWidths)<1,'participant rows share one width');
     await otherRoom.getByRole("button", {name:"Действия комнаты DRG",exact:true}).click();
     await page.getByRole("menu", {name:"Действия комнаты DRG",exact:true}).waitFor();
     await page.keyboard.press("Escape");

@@ -230,3 +230,9 @@ shell portals its existing DM rows, creation action and privacy-filtered peer
 profile into those slots. No duplicate inbox poller, profile schema or media
 runtime is introduced. Embedded Room-message frames explicitly retain ordinary
 conversation layout, so they never mount the DM workspace.
+
+Style readiness compares canonical LF function bodies using the migration
+checksum normalizer on both the checkout and PostgreSQL prosrc. Only CRLF/CR
+line endings normalize; all other content, SQL security checks and read-only
+transactions remain strict. Historical migration sources and ledger records
+are not rewritten for a platform-specific checkout.

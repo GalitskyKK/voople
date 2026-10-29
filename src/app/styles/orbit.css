@@ -320,3 +320,7 @@ html[data-reduce-motion="true"] .voople-orbit-room__entry { transform: none !imp
 @keyframes voople-orbit-aura-enter { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .voople-orbit-room-menu__item, .voople-orbit-room-menu::before { animation: none; } }
 @media (prefers-reduced-transparency: reduce) { .voople-orbit-room-menu::before { -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* Profile popover anchors must not size roster rows to each nickname. */
+.voople-orbit-roster__person > :first-child { display: block; width: 100%; }
+.voople-mobile-inbox { margin: 4px 8px 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--material-ice) 55%, var(--material-border)); border-radius: var(--material-radius); background: var(--material-stage); }

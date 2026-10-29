@@ -3,7 +3,8 @@ import { expect, test } from "@playwright/test";
 const AUTHENTICATED_ROUTE_TIMEOUT = 30_000;
 
 test.describe("authenticated critical surface", () => {
-  test("authenticated messenger rail stays expanded and keeps utility actions available", async ({ page }) => {
+  test("Classic messenger rail stays expanded and keeps utility actions available", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("voople:app-preferences", JSON.stringify({ interfaceDesign: "classic" })));
     await page.setViewportSize({ width: 1024, height: 720 });
     await page.goto("/messages", { waitUntil: "domcontentloaded" });
 
@@ -22,7 +23,7 @@ test.describe("authenticated critical surface", () => {
     await expect(searchTrigger).toHaveAttribute("aria-expanded", "true");
     await expect(page.getByRole("dialog", { name: "Поиск" })).toBeVisible();
     await expect(
-      page.getByRole("searchbox", { name: "Поиск диалогов, групп и людей" }),
+      page.getByRole("searchbox", { name: "Поиск диалогов, групп и участников" }),
     ).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog", { name: "Поиск" })).toHaveCount(0);
@@ -49,7 +50,8 @@ test.describe("authenticated critical surface", () => {
     expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
   });
 
-  test("messenger opens with global search and a clean wide empty state", async ({ page }) => {
+  test("Classic messenger opens with global search and a clean wide empty state", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("voople:app-preferences", JSON.stringify({ interfaceDesign: "classic" })));
     await page.goto("/messages", { waitUntil: "domcontentloaded" });
 
     const messengerRail = page.locator(".voople-messenger-sidebar");
@@ -61,7 +63,7 @@ test.describe("authenticated critical surface", () => {
     await expect(searchTrigger).toHaveAttribute("aria-expanded", "true");
     await expect(page.getByRole("dialog", { name: "Поиск" })).toBeVisible();
     await expect(
-      page.getByRole("searchbox", { name: "Поиск диалогов, групп и людей" }),
+      page.getByRole("searchbox", { name: "Поиск диалогов, групп и участников" }),
     ).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog", { name: "Поиск" })).toHaveCount(0);
@@ -71,6 +73,32 @@ test.describe("authenticated critical surface", () => {
       page.getByText("Выберите чат слева или начните новый", { exact: true }),
     ).toBeVisible();
     await expect(page.locator(".voople-messages-layout aside")).toBeHidden();
+  });
+
+  test("Orbit is the default and keeps named DMs aligned with the account dock", async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 720 });
+    await page.addInitScript(() => localStorage.removeItem("voople:app-preferences"));
+    await page.goto("/messages", { waitUntil: "domcontentloaded" });
+    await expect(page.locator("html")).toHaveAttribute("data-interface-design", "orbit");
+    const sidebar = page.locator(".voople-sidebar");
+    await expect(sidebar).toHaveAttribute("data-collapsed", "true");
+    await expect(sidebar).toHaveCSS("width", "72px");
+    const workspace = page.locator(".voople-direct-workspace");
+    await expect(workspace.locator(".voople-direct-workspace__context-title")).toContainText("Личные сообщения");
+    await expect(workspace.getByRole("button", { name: "Новый диалог", exact: true })).toBeVisible();
+    const dock = page.locator('[data-account-dock="true"]');
+    await expect(dock.getByRole("button", { name: "Настройки", exact: true })).toBeVisible();
+    await expect(dock.getByRole("button", { name: "Помощь", exact: true })).toBeVisible();
+    await expect.poll(async () => {
+      const list = await workspace.locator(".voople-direct-workspace__list").boundingBox();
+      const account = await dock.boundingBox();
+      return list && account ? Math.abs(list.x + list.width - account.x - account.width) : Infinity;
+    }).toBeLessThan(2);
+    await page.locator(".voople-orbit-rail").getByRole("button", { name: "Поиск", exact: true }).click();
+    await expect(page.getByRole("searchbox", { name: "Поиск диалогов, групп и участников" })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog", { name: "Поиск" })).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   });
 
   test("settings are separated into navigable sections", async ({ page }) => {

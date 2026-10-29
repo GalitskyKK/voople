@@ -9,6 +9,9 @@ import type { ChatListItem } from "@/types/chat";
 import type { MessengerGroupLiveState } from "@/types/messenger-live";
 import { SavedMessagesShortcut } from "@/components/chat/SavedMessagesShortcut";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { useInterfaceDesign } from "@/hooks/useInterfaceDesign";
+import { useSidebarPreference } from "@/hooks/useSidebarPreference";
+import { MessengerRailView } from "./MessengerRailView";
 
 import type { NavigationDestinationRenderer } from "./AppNavigationVisual";
 import { MessengerDirectRow, MessengerGroupRow } from "./MessengerSidebarRows";
@@ -25,11 +28,14 @@ type MessengerSidebarViewProps = {
   savedMessagesEnabled?: boolean;
   renderDestination: NavigationDestinationRenderer;
   onOpenCompactSearch: () => void;
+  onNavigate: (href: string) => void;
   onRetry: () => void;
 };
 
-export function MessengerSidebarView({ pathname, chats, loading, error, onlineUserIds, liveByGroup = new Map(), createGroupAction, savedMessagesEnabled = false, renderDestination, onOpenCompactSearch, onRetry }: MessengerSidebarViewProps) {
-  const [searchState, setSearchState] = useState({ pathname, open: false });
+export function MessengerSidebarView({ pathname, chats, loading, error, onlineUserIds, liveByGroup = new Map(), createGroupAction, savedMessagesEnabled = false, renderDestination, onOpenCompactSearch, onNavigate, onRetry }: MessengerSidebarViewProps) {
+  const orbit = useInterfaceDesign() === "orbit";
+  const { collapsed } = useSidebarPreference({ forceExpanded: !orbit });
+  const [searchState, setSearchState] = useState<{ pathname: string; open: boolean; variant: "search" | "new-direct" }>({ pathname, open: false, variant: "search" });
   const searchOpen = searchState.pathname === pathname && searchState.open;
   const searchTriggerRef = useRef<HTMLButtonElement>(null);
   const openSearch = useCallback(() => {
@@ -38,11 +44,11 @@ export function MessengerSidebarView({ pathname, chats, loading, error, onlineUs
     } else if (searchOpen) {
       window.dispatchEvent(new Event("voople:focus-search"));
     } else {
-      setSearchState({ pathname, open: true });
+      setSearchState({ pathname, open: true, variant: "search" });
     }
   }, [onOpenCompactSearch, pathname, searchOpen]);
   const closeSearch = useCallback((restoreFocus = false) => {
-    setSearchState({ pathname, open: false });
+    setSearchState((state) => ({ ...state, pathname, open: false }));
     if (restoreFocus) searchTriggerRef.current?.focus();
   }, [pathname]);
 
@@ -64,6 +70,11 @@ export function MessengerSidebarView({ pathname, chats, loading, error, onlineUs
   const activeChatId = activeMessagesChatId(pathname);
   const groups = chats.filter((chat) => chat.type === "group" && !chat.parentChatId);
   const directs = chats.filter((chat) => chat.type === "direct");
+
+  if (orbit) return <>
+    <MessengerRailView {...{ pathname, chats, loading, error, onlineUserIds, liveByGroup, renderDestination, onRetry, savedMessagesEnabled, createGroupAction }} expanded={!collapsed} onSearch={openSearch} onNewDirect={() => setSearchState({ pathname, open: true, variant: "new-direct" })} />
+    {searchOpen ? <MessengerSearchPalette key={searchState.variant} variant={searchState.variant} onNavigate={onNavigate} chats={chats} renderDestination={renderDestination} onClose={(restore) => { closeSearch(false); if (restore) document.querySelector<HTMLButtonElement>(searchState.variant === "new-direct" ? '[data-voople-slot="direct-create"] button, .voople-orbit-rail button[aria-label="Новый диалог"]' : '.voople-orbit-rail button[aria-label="Поиск"]')?.focus(); }} /> : null}
+  </>;
 
   return (
     <nav className="voople-messenger-sidebar flex min-h-0 flex-1 flex-col px-3 pb-3" aria-label="Группы и личные сообщения">

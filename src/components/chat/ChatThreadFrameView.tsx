@@ -5,9 +5,11 @@ import type { ChatTimelineItem } from "@/lib/chat/group-messages";
 import { ChatDateDivider } from "./ChatDateDivider";
 import { ChatRoomActivitySummary } from "./ChatRoomActivitySummary";
 import { GroupSurfaceShell, type GroupSurfaceConfig } from "./GroupSurfaceShell";
+import { DirectWorkspaceView } from "./DirectWorkspaceView";
 
 export function ChatThreadFrameView({
   accentColor,
+  workspace = "conversation",
   header,
   groupSurface,
   sections,
@@ -23,6 +25,7 @@ export function ChatThreadFrameView({
   overlays,
 }: {
   accentColor?: string | null;
+  workspace?: "conversation" | "direct";
   header: ReactNode;
   groupSurface?: GroupSurfaceConfig;
   sections?: ReactNode;
@@ -74,13 +77,14 @@ export function ChatThreadFrameView({
         {afterMessages}
       </div>
       {connectionState}
-      {composer}
+      <div className="voople-chat-window__composer-slot min-w-0 shrink-0">{composer}</div>
     </>
   );
 
   return (
     <div
       className="voople-chat-window flex min-h-0 flex-1 flex-col"
+      data-layout={groupSurface ? "group" : "conversation"}
       style={
         accentColor
           ? ({
@@ -96,12 +100,9 @@ export function ChatThreadFrameView({
           header={header}
           chatContent={chatContent}
         />
-      ) : (
-        <>
-          {header}
-          <div className="voople-stage flex min-h-0 flex-1 flex-col">{chatContent}</div>
-        </>
-      )}
+      ) : workspace === "direct" ? (
+        <DirectWorkspaceView header={header}>{chatContent}</DirectWorkspaceView>
+      ) : <>{header}<div className="voople-stage flex min-h-0 flex-1 flex-col">{chatContent}</div></>}
       {overlays}
     </div>
   );

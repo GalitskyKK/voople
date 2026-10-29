@@ -41,6 +41,7 @@ export function MessengerSidebar({
       savedMessagesEnabled={savedMessages.data?.enabled === true}
       renderDestination={renderDestination}
       onOpenCompactSearch={() => router.push("/search")}
+      onNavigate={(href) => router.push(href)}
       onRetry={() => void chats.refetch()}
     />
   );

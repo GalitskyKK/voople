@@ -124,6 +124,7 @@ export function DesktopChatThreadAdapter({
 
   return (
     <ChatThreadFrameView
+      workspace={isGroup ? "conversation" : "direct"}
       accentColor={isGroup ? data.chat.groupAccentColor : null}
       groupSurface={isGroup ? {
         groupId: rootChat?.id ?? data.chat.parentChatId ?? chatId,

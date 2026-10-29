@@ -16,6 +16,7 @@ export const uploadRouter = createTRPCRouter({
           "comment",
           "avatar",
           "group-avatar",
+          "room-cover",
           "group-emoji",
           "group-sound",
           "banner",

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useImperativeHandle, useRef, useState, type ForwardedRef } from "react";
 import { ConnectionQuality, Room } from "livekit-client";
 
-import { resolveVoiceDockActiveSpeaker } from "@/lib/livekit/voice-dock-state";
+import { resolveVoiceDockActiveSpeaker, resolveVoiceDockSpeakerParticipant } from "@/lib/livekit/voice-dock-state";
 
 import { buildVoiceRoomRenameModel } from "./buildVoiceRoomRenameModel";
 import { buildVoiceRoomSwitcherModel } from "./buildVoiceRoomSwitcherModel";
@@ -110,6 +110,7 @@ export function useChatRoomControl(
   const currentCoreRoom = coreSession
     ? server.directory?.rooms.find((room) => room.id === coreSession.room.id) ?? coreSession.room
     : null;
+  const roomLabel = currentCoreRoom && server.directory?.groupName ? `${server.directory.groupName} / ${currentCoreRoom.name}` : chatName;
   const sessionOperation = useVoiceSessionOperation();
   const durationLabel = useCallDuration(
     value?.startedAt ?? null,
@@ -313,12 +314,13 @@ export function useChatRoomControl(
     trigger: renderTrigger ? {
       active, isDirect, mediaStatus, participantCount, onOpen: openRoom,
     } : null,
-    dock: inside && dockVisible ? {
+    dock: inside && (dockVisible || open) ? {
       mode: dockMode,
       onModeChange: dockPresentation.changeMode,
-      chatName: currentCoreRoom && server.directory?.groupName ? `${server.directory.groupName} / ${currentCoreRoom.name}` : chatName,
+      chatName: roomLabel,
       participantCount, durationLabel, mediaStatus, connectionLabel, errorMessage,
       activeSpeakerName: resolveVoiceDockActiveSpeaker(participants, activeSpeakerIds),
+      speaker: resolveVoiceDockSpeakerParticipant(participants, activeSpeakerIds),
       connectionQuality, micMuted, localSpeaking, outputMuted: output.outputMuted,
       cameraEnabled: video.cameraEnabled,
       screenSharing: video.screenSharing,
@@ -376,11 +378,11 @@ export function useChatRoomControl(
       invite: coreSession && inside ? { sessionId: coreSession.join.sessionId } : null,
       messages: buildVoiceRoomMessagesModel(coreSession, inside),
       identity: {
+        groupId: coreSession?.groupId,
+        roomName: currentCoreRoom?.name,
         isDirect,
         callPhase: directCall.phase,
-        chatName: currentCoreRoom && server.directory?.groupName
-          ? `${server.directory.groupName} / ${currentCoreRoom.name}`
-          : chatName,
+        chatName: roomLabel,
         active,
         durationLabel,
       },

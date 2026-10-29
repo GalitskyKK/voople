@@ -70,7 +70,7 @@ export function ChatList({
           href="/search"
           className="voople-link mt-3 inline-flex text-sm font-medium"
         >
-          Найти людей
+          Найти собеседника
         </Link>
       }
       renderDestination={({ chat, className, children }) => (

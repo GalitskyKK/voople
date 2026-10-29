@@ -78,7 +78,9 @@ test("shared Group Now view keeps accessible voice actions for both hosts", asyn
   assert.match(roomSource, /Отделиться во временную комнату/);
   assert.match(roomSource, /Открыть текущую комнату/);
   assert.match(roomSource, /voople-group-now-room__header/);
-  assert.match(viewSource, /Создать постоянную комнату/);
+  assert.match(viewSource, /GroupRoomCreateAction/);
+  const creation = await readFile(new URL("../src/components/chat/GroupRoomCreateAction.tsx", import.meta.url), "utf8");
+  assert.match(creation, /Создать постоянную комнату/);
   assert.doesNotMatch(viewSource, /GroupNowCreateCard/);
   assert.match(roomSource, /room.participants.map/);
   assert.match(roomSource, /Войти в комнату/);

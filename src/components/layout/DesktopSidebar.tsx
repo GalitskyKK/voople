@@ -9,13 +9,15 @@ import { AppSidebarVisual } from "./AppNavigationVisual";
 import { AppAccountMenu } from "./AppAccountMenu";
 import { MessengerSidebar } from "./MessengerSidebar";
 import { useSidebarPreference } from "@/hooks/useSidebarPreference";
+import { useInterfaceDesign } from "@/hooks/useInterfaceDesign";
 import { isMessagesThreadPath } from "@/lib/layout/messages-path";
 
 export function DesktopSidebar({ authenticated }: { authenticated: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
+  const orbit = useInterfaceDesign() === "orbit" && authenticated;
   const { collapsed, setCollapsed } = useSidebarPreference({
-    forceExpanded: !authenticated,
+    forceExpanded: !orbit,
   });
   // The messenger rail is the authenticated application's stable social
   // context. Keep it mounted while people inspect profiles, settings or
@@ -25,15 +27,16 @@ export function DesktopSidebar({ authenticated }: { authenticated: boolean }) {
   return (
     <AppSidebarVisual
       pathname={pathname}
-      collapsed={messengerShell ? false : collapsed}
+      collapsed={collapsed}
       onCollapsedChange={
-        authenticated && !messengerShell ? setCollapsed : undefined
+        orbit ? setCollapsed : undefined
       }
       mode={authenticated ? "authenticated" : "public"}
+      accountPlacement={orbit ? "dock" : "sidebar"}
       notificationBadge={authenticated ? <NotificationNavBadge /> : undefined}
       accountNavigation={
         authenticated ? (
-          <AppAccountMenu compact={messengerShell ? false : collapsed} />
+          <AppAccountMenu compact={collapsed && !orbit} variant={orbit ? "dock" : "menu"} />
         ) : undefined
       }
       primaryNavigation={

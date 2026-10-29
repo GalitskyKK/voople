@@ -1,4 +1,6 @@
 import "server-only";
+import type { RoomCoverDraft } from "@/lib/chat/room-cover";
+import { resolveRoomCover } from "./room-covers.service";
 
 import { getChatMembershipRest } from "@/server/data/chat-access-rest";
 import {
@@ -50,6 +52,7 @@ export async function createAndJoinGroupRoom(input: {
   kind: "temporary" | "pinned";
   name: string;
   requestId: string;
+  cover?: RoomCoverDraft;
   micMuted?: boolean;
   allowCrossContext?: boolean;
 }) {
@@ -64,6 +67,7 @@ export async function createAndJoinGroupRoom(input: {
     name,
     micMuted: input.micMuted ?? true,
     allowCrossContext: input.allowCrossContext ?? false,
+    resolvedCover: input.cover ? await resolveRoomCover(input.cover, input.userId) : undefined,
   });
 }
 

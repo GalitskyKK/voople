@@ -45,15 +45,15 @@ export function GroupPeoplePanelView({
       <div className="mr-auto w-full max-w-[960px] space-y-6">
         {actionError ? <p className="rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-red-300" role="alert">{actionError}</p> : null}
 
-        <section aria-label={`В голосе: ${sections.live.length}`}>
-          <h2 className="px-1 text-sm font-semibold text-[var(--foreground)]">В голосе <span className="ml-1 text-xs font-normal text-[var(--app-muted)]">{sections.live.length}</span></h2>
+        <section aria-label={`Активность: ${sections.live.length}`}>
+          <h2 className="px-1 text-sm font-semibold text-[var(--foreground)]">Активность <span className="ml-1 text-xs font-normal text-[var(--app-muted)]">{sections.live.length}</span></h2>
           {sections.liveRooms.length ? (
             <div className="mt-3 space-y-4">
               {sections.liveRooms.map((room) => (
                 <GroupPeopleSection key={room.id} title={room.name} members={room.members} onlineUserIds={onlineUserIds} variant="live" onVoop={onVoop} {...shared} />
               ))}
             </div>
-          ) : <p className="mt-2 px-1 text-xs text-[var(--app-muted)]">Сейчас в голосе никого нет.</p>}
+          ) : null}
         </section>
 
         <GroupPeopleSection title="Доступны" members={sections.available} onlineUserIds={onlineUserIds} variant="available" {...shared} />

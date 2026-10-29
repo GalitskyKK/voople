@@ -8,6 +8,8 @@ import type { VoiceRoomSurfacePhase } from "./voice-room-surface";
 import type { MediaStatus } from "./voice-room-config";
 
 export type VoiceRoomIdentityModel = {
+  groupId?: string;
+  roomName?: string;
   isDirect: boolean;
   callPhase: "idle" | "dialing" | "ringing" | "connected" | "ended" | null;
   chatName: string;

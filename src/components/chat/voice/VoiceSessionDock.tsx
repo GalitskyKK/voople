@@ -24,6 +24,9 @@ import { VoiceDockResizeHandles } from "./VoiceDockResizeHandles";
 import { VoiceMinimalSessionDock } from "./VoiceMinimalSessionDock";
 import type { VoiceSessionDockProps } from "./voice-session-dock-types";
 import { useVoiceDockGeometry } from "./useVoiceDockGeometry";
+import { useInterfaceDesign } from "@/hooks/useInterfaceDesign";
+import { useIsLgViewport } from "@/hooks/useIsLgViewport";
+import { OrbitMobileVoiceDock } from "./OrbitMobileVoiceDock";
 
 export function VoiceSessionDock({
   mode,
@@ -31,6 +34,7 @@ export function VoiceSessionDock({
   chatName,
   participantCount,
   activeSpeakerName,
+  speaker,
   durationLabel,
   mediaStatus,
   connectionLabel,
@@ -50,6 +54,8 @@ export function VoiceSessionDock({
   onLeave,
 }: VoiceSessionDockProps) {
   const sidebarRoot = useVoiceSidebarRoot();
+  const orbit = useInterfaceDesign() === "orbit";
+  const large = useIsLgViewport();
   const dockRef = useRef<HTMLDivElement | null>(null);
   const geometry = useVoiceDockGeometry(dockRef);
   const weakConnection =
@@ -75,8 +81,9 @@ export function VoiceSessionDock({
   }
 
   if (mode === "compact") {
-    const compact = <VoiceCompactSessionDock
-      {...{ chatName, participantCount, activeSpeakerName, durationLabel, mediaStatus, connectionLabel,
+    const Compact = orbit && !large ? OrbitMobileVoiceDock : VoiceCompactSessionDock;
+    const compact = <Compact
+      {...{ chatName, participantCount, activeSpeakerName, speaker, durationLabel, mediaStatus, connectionLabel, connectionQuality,
         micMuted, localSpeaking, outputMuted, cameraEnabled, screenSharing, mediaActionPending, leavePending,
         onToggleMic, onToggleOutput, onToggleCamera, onToggleScreenShare, cameraPending, screenSharePending,
         onLeave, errorMessage }}

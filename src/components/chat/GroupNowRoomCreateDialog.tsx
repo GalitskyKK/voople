@@ -6,6 +6,9 @@ import { ArrowRightLeft, LoaderCircle, Radio } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import type { GroupNowRoomCreateDraft } from "@/hooks/useGroupNowRoomCreate";
+import { useInterfaceDesign } from "@/hooks/useInterfaceDesign";
+import type { RoomCoverDraft } from "@/lib/chat/room-cover";
+import { RoomCoverPicker } from "./RoomCoverPicker";
 
 type GroupNowRoomCreateDialogProps = {
   open: boolean;
@@ -22,17 +25,22 @@ export function GroupNowRoomCreateDialog(props: GroupNowRoomCreateDialogProps) {
 
 function RoomCreateSession({ open, confirmation, pending, error, onClose, onBack, onConfirm, onSubmit }: GroupNowRoomCreateDialogProps) {
   const [name, setName] = useState("");
-  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const trimmedName = name.trim(); if (!trimmedName || pending) return; onSubmit({ name: trimmedName }); };
+  const orbit = useInterfaceDesign() === "orbit";
+  const [cover, setCover] = useState<RoomCoverDraft>();
+  const [uploading, setUploading] = useState(false);
+  const busy = pending || uploading;
+  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const trimmedName = name.trim(); if (!trimmedName || busy) return; onSubmit({ name: trimmedName, cover }); };
 
   return (
-    <Sheet open={open} onClose={onClose} closeOnEscape={!pending} ariaLabel={confirmation ? "Подтверждение создания комнаты" : "Новая комната"} className="voople-room-create-dialog max-w-md">
+    <Sheet open={open} onClose={() => { if (!busy) onClose(); }} closeOnEscape={!busy} ariaLabel={confirmation ? "Подтверждение создания комнаты" : "Новая комната"} className="voople-room-create-dialog max-w-md">
       {confirmation ? <Confirmation name={confirmation.name} pending={pending} error={error} onBack={onBack} onConfirm={onConfirm} /> : (
         <form onSubmit={submit}>
           <div className="pr-10"><DialogIcon icon="radio" /><h2 className="mt-4 text-xl font-semibold">Новая комната</h2><p className="mt-2 text-sm leading-6 text-[var(--app-muted)]">Постоянное пространство с названием: останется в группе и будет доступно после разговора.</p></div>
           <label className="mt-5 block text-sm font-medium" htmlFor="group-now-room-name">Название</label>
           <input id="group-now-room-name" value={name} onChange={(event) => setName(event.target.value)} maxLength={80} required disabled={pending} placeholder="Например, смотрим финал" className="mt-2 min-h-11 w-full rounded-xl border border-[var(--app-border)] bg-black/10 px-3 text-sm outline-none transition focus:border-[var(--theme-accent)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--theme-accent)_18%,transparent)]" />
+          {orbit ? <RoomCoverPicker value={cover} onChange={setCover} disabled={pending} onUploadingChange={setUploading} /> : null}
           {error ? <ErrorMessage message={error} /> : null}
-          <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button type="button" variant="ghost" disabled={pending} onClick={onClose}>Отмена</Button><Button type="submit" disabled={pending || !name.trim()}>{pending ? <Spinner /> : null}{pending ? "Создаём" : "Создать и зайти"}</Button></div>
+          <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button type="button" variant="ghost" disabled={busy} onClick={onClose}>Отмена</Button><Button type="submit" disabled={busy || !name.trim()}>{pending ? <Spinner /> : null}{pending ? "Создаём" : "Создать и зайти"}</Button></div>
         </form>
       )}
     </Sheet>

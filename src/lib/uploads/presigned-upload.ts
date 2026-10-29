@@ -22,6 +22,7 @@ export async function uploadPresignedFile(input: PresignedUploadInput) {
   await new Promise<void>((resolve, reject) => {
     const request = new XMLHttpRequest();
     request.open("PUT", input.url);
+    request.timeout = 120_000;
     request.setRequestHeader("Content-Type", input.contentType);
     request.upload.onprogress = (event) => {
       if (event.lengthComputable) input.onProgress?.(Math.round((event.loaded / event.total) * 100));
@@ -30,6 +31,7 @@ export async function uploadPresignedFile(input: PresignedUploadInput) {
       ? resolve()
       : reject(new Error("Не удалось загрузить файл"));
     request.onerror = () => reject(new Error("Не удалось загрузить файл"));
+    request.ontimeout = () => reject(new Error("Загрузка заняла слишком много времени. Попробуйте ещё раз."));
     request.onabort = () => reject(new Error("Загрузка отменена"));
     request.send(input.file);
   });

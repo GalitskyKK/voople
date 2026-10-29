@@ -37,13 +37,14 @@
 * { box-sizing: border-box; }
 html, body, #root { width: 100%; height: 100%; min-height: 100%; margin: 0; scrollbar-gutter: auto; }
 body { min-width: 320px; }
-button, input, select, textarea { font: inherit; }
+button, input, select, textarea { font-family: inherit; }
 button { color: inherit; }
 .desktop-window-frame {
   width: 100%;
   height: 100dvh;
   display: grid;
   grid-template-rows: 2rem minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   overflow: hidden;
   background: var(--background);
 }
@@ -92,6 +93,9 @@ button { color: inherit; }
 .desktop-window-content .voople-shell[data-route-kind="messages"] .voople-group-surface[data-mode="medium"] .voople-group-surface-header--desktop,
 .desktop-window-content .voople-shell[data-route-kind="messages"] .voople-group-surface[data-mode="wide"] .voople-group-surface-header--desktop {
   display: none;
+}
+html[data-interface-design="orbit"] .desktop-window-content .voople-shell[data-route-kind="messages"] .voople-group-surface .voople-group-surface-header--orbit {
+  display: grid;
 }
 
 .desktop-titlebar {
@@ -537,4 +541,11 @@ button:focus-visible, input:focus-visible {
   .desktop-placeholder {
     margin-inline: 1rem;
   }
+}
+
+/* Narrow native windows retain Group identity and window controls without overlapping app text. */
+@media (max-width: 600px) {
+  .desktop-titlebar__name { display: none; }
+  .desktop-titlebar__drag { flex: 0 0 34px; min-width: 34px; gap: 0; padding-inline: 8px; }
+  .desktop-titlebar__group-slot { flex: 1; min-width: 0; justify-content: flex-end; overflow: hidden; }
 }

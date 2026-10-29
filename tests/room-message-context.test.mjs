@@ -64,7 +64,7 @@ test("messages from different Room sessions never merge into one visual group", 
 test("the Room surface opens the ordinary selected Group or Section conversation", () => {
   const panel = read("src/components/chat/voice/RoomMessagesPanel.tsx");
   const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
-  const header = read("src/components/chat/voice/VoiceRoomHeader.tsx");
+  const header = read("src/components/chat/voice/VoiceRoomHeader.tsx") + read("src/components/chat/voice/VoiceRoomHeaderActions.tsx");
   const control = read("src/components/chat/voice/useChatRoomControl.ts");
   const launcher = read("src/hooks/useGroupNowVoiceLauncher.ts");
   const provider = read("src/components/chat/voice/VoiceSessionProvider.tsx");

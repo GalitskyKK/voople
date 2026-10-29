@@ -91,7 +91,7 @@ export function DesktopMessagesAdapter({
               className="voople-link mt-3 inline-flex text-sm font-medium"
               onClick={() => navigate("/search")}
             >
-              Найти людей
+              Найти собеседника
             </button>
           }
           renderDestination={({ chat, className, children }) => (

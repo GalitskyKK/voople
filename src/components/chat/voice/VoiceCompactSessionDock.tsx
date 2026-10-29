@@ -1,39 +1,46 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Mic, MicOff, PhoneOff, Volume2, VolumeX, Video, VideoOff, MonitorUp } from "lucide-react";
+import { Mic, MicOff, PhoneOff, Volume2, VolumeX, Video, VideoOff, MonitorUp, Wifi, WifiOff } from "lucide-react";
+import { ConnectionQuality } from "livekit-client";
+import { getQualityLabel } from "./voice-room-config";
 import { IconButton } from "@/components/ui/IconButton";
 import { cn } from "@/lib/utils";
 import type { VoiceSessionDockProps } from "./voice-session-dock-types";
+import { useInterfaceDesign } from "@/hooks/useInterfaceDesign";
 
-type Props = Omit<VoiceSessionDockProps, "mode" | "onModeChange" | "connectionQuality" | "mediaPreview"> & { inSidebar?: boolean };
+export type VoiceCompactSessionDockProps = Omit<VoiceSessionDockProps, "mode" | "onModeChange" | "connectionQuality" | "mediaPreview"> & { connectionQuality?: ConnectionQuality; inSidebar?: boolean; surface?: "dock" | "sheet" };
 
 export function VoiceCompactSessionDock({ chatName, participantCount, mediaStatus, connectionLabel,
   micMuted, outputMuted, cameraEnabled, screenSharing, mediaActionPending, leavePending,
   onOpen, onToggleMic, onToggleOutput, onToggleCamera, onToggleScreenShare, onLeave,
-  cameraPending, screenSharePending, errorMessage, inSidebar = false,
-}: Props) {
+  cameraPending, screenSharePending, errorMessage, inSidebar = false, surface = "dock",
+  connectionQuality = ConnectionQuality.Unknown,
+}: VoiceCompactSessionDockProps) {
   const root = useRef<HTMLDivElement>(null);
+  const orbit = useInterfaceDesign() === "orbit";
   useEffect(() => {
-    if (inSidebar || !root.current) return;
-    const element = root.current;
+    if (surface === "sheet" || inSidebar && !orbit || !root.current) return;
+    const element = inSidebar && orbit
+      ? root.current.closest<HTMLElement>('[data-account-dock="true"]') ?? root.current
+      : root.current;
     const update = () => document.documentElement.style.setProperty("--voople-compact-height", `${element.getBoundingClientRect().height}px`);
     const observer = new ResizeObserver(update);
     observer.observe(element);
     update();
     return () => { observer.disconnect(); document.documentElement.style.removeProperty("--voople-compact-height"); };
-  }, [inSidebar]);
+  }, [inSidebar, orbit, surface]);
   const connected = mediaStatus === "connected";
   const controlClass = "voople-voice-compact__control";
   return (
-    <div ref={root} className={cn("voople-voice-dock--compact", inSidebar && "voople-voice-dock--sidebar")}
+    <div ref={root} className={surface === "sheet" ? "voople-voice-compact-sheet" : cn("voople-voice-dock--compact", inSidebar && "voople-voice-dock--sidebar")}
       role="region" aria-label="Компактный голосовой разговор">
       <button type="button" onClick={onOpen} className="voople-voice-compact__identity" aria-label={`Открыть разговор ${chatName}`}>
         <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", connected ? "bg-[var(--material-ice)]" : "bg-[var(--material-presence)]")} />
         <span className="min-w-0">
           <span className="block truncate text-xs font-semibold">{chatName}</span>
           <span className="block truncate text-xs text-[var(--app-muted)]" role="status">
-            {connected ? `${participantCount} в разговоре` : connectionLabel ?? "Подключаемся…"}
+            {connected ? <>{participantCount} в разговоре{orbit ? <span className="voople-voice-compact__quality">{connectionQuality === ConnectionQuality.Lost || connectionQuality === ConnectionQuality.Poor ? <WifiOff className="h-3 w-3" /> : <Wifi className="h-3 w-3" />}{getQualityLabel(connectionQuality)}</span> : null}</> : connectionLabel ?? "Подключаемся…"}
           </span>
         </span>
       </button>

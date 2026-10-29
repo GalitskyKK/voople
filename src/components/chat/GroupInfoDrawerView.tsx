@@ -14,6 +14,9 @@ import { GroupTopChrome } from "./GroupTopChrome";
 import { useGroupTopChromeSlot } from "./GroupTopChromeSlotContext";
 import { useGroupSurfaceNavigation } from "./GroupSurfaceNavigationContext";
 import { useGroupIdentitySlot } from "./GroupIdentitySlotContext";
+import { useGroupBannerSlot } from "./GroupBannerSlotContext";
+import { GroupBanner } from "./GroupBanner";
+import { useInterfaceDesign } from "@/hooks/useInterfaceDesign";
 
 export function GroupInfoDrawerView({ open, chatName, memberCount, groupIcon, groupAvatarUrl, groupBannerUrl, groupAccentColor, groupTag, groupTagEquipped = false, groupTagPending = false, canManage, description, members, now, infoLoading, membersLoading, error, onOpenChange, onManage, onInvite, onOpenPeople, onOpenProfile, onToggleGroupTag }: {
   open: boolean;
@@ -42,6 +45,8 @@ export function GroupInfoDrawerView({ open, chatName, memberCount, groupIcon, gr
 }) {
   const selectGroupTab = useGroupSurfaceNavigation();
   const identitySlot = useGroupIdentitySlot();
+  const bannerSlot = useGroupBannerSlot();
+  const orbit = useInterfaceDesign() === "orbit";
   const desktopChromeSlot = useGroupTopChromeSlot();
   const activeRooms = now?.rooms.filter((room) => (room.state === "active" || room.state === "connecting") && room.participantCount > 0) ?? [];
   const roomCount = activeRooms.reduce((count, room) => count + room.participantCount, 0);
@@ -57,6 +62,7 @@ export function GroupInfoDrawerView({ open, chatName, memberCount, groupIcon, gr
 
   return (
     <>
+      {orbit && bannerSlot && groupBannerUrl ? createPortal(<GroupBanner name={chatName} icon={groupIcon} url={groupBannerUrl} />, bannerSlot) : null}
       {identitySlot ? createPortal(<GroupIdentityMenu
         open={open} name={chatName} memberCount={memberCount} onlineCount={onlineCount} roomCount={roomCount}
         icon={groupIcon} avatarUrl={groupAvatarUrl} bannerUrl={groupBannerUrl} accentColor={groupAccentColor}
@@ -67,7 +73,7 @@ export function GroupInfoDrawerView({ open, chatName, memberCount, groupIcon, gr
         <span className="voople-group-header-avatar shrink-0"><GroupAvatar name={chatName} avatarUrl={groupAvatarUrl} icon={groupIcon} accentColor={groupAccentColor} size="lg" shape="square" /></span>
         <span className="min-w-0"><strong className="voople-group-header-name block truncate">{chatName}</strong><span className="voople-group-header-meta block truncate">{memberCount} участников</span></span>
       </button>}
-      {desktopChromeSlot
+      {desktopChromeSlot && !orbit
         ? createPortal(<GroupTopChrome name={chatName} canManage={canManage} onOpenInfo={() => onOpenChange(true)} onManage={onManage} onInvite={onInvite} />, desktopChromeSlot)
         : <GroupTopChrome name={chatName} canManage={canManage} onOpenInfo={() => onOpenChange(true)} onManage={onManage} onInvite={onInvite} />}
 

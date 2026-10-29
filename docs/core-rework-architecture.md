@@ -183,6 +183,24 @@ retain their own rollout rules.
 
 ## Deferred surfaces
 
+### Interface presentation
+
+Classic and Orbit share all Group, Room, Conversation and LiveSession models,
+providers and server authorization. The device-local interface preference changes
+shared views and scoped CSS only; it must not key/remount the voice provider.
+Desktop Compact continues using its existing portal root. Orbit sizes that
+dock from the shared rail/context geometry. Mobile Orbit uses a floating tile
+and a controls sheet over the same authoritative call callbacks, without adding
+a second runtime or reserving variable page height. Room-cover persistence is additive and uses the
+existing upload boundary; see [Orbit](orbit-interface.md). Orbit is the default
+for absent/older interface preferences; explicit Classic remains unchanged.
+Group joins keep Compact. Explicit Orbit expansion opens the existing Room
+stage within the Group working area and publishes presentation state to its
+channel header; this is UI state and never a second media/session authority. Its
+portal and media runtime stay mounted across embedded/fullscreen bounds changes;
+there is no duplicate Rooms switcher in embedded mode. Leaving the Group surface
+returns to Compact without leaving the LiveSession.
+
 Posts, Events, Store, Voople+, public discovery and recommendations keep their
 data and domain code but do not define the primary messenger navigation. They
 may remain secondary or web-beta surfaces. Account security, privacy, legal,
@@ -206,3 +224,9 @@ capabilities and do not interrupt this sequence.
 No schema-only slice is called product-complete. The delivery matrix remains the
 gate for authorization, states, web/desktop parity, responsive behaviour and
 automated/visual evidence.
+
+Personal-message workspace slots are owned by the selected route. The persistent
+shell portals its existing DM rows, creation action and privacy-filtered peer
+profile into those slots. No duplicate inbox poller, profile schema or media
+runtime is introduced. Embedded Room-message frames explicitly retain ordinary
+conversation layout, so they never mount the DM workspace.

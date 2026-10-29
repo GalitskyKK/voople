@@ -56,13 +56,13 @@ export function ExploreView({
             type="search"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="Люди и публичные группы"
+            placeholder="Участники и публичные группы"
             className="voople-input min-h-11 w-full min-w-0 py-2.5 pl-10 pr-3 text-sm"
           />
         </label>
 
         <div className="voople-scroll flex gap-1 overflow-x-auto p-1" aria-label="Раздел поиска">
-          {([ ["all", "Все"], ["people", "Люди"], ["groups", "Группы"] ] as const).map(([id, label]) => (
+          {([ ["all", "Все"], ["people", "Участники"], ["groups", "Группы"] ] as const).map(([id, label]) => (
             <button key={id} type="button" onClick={() => setScope(id)} aria-pressed={scope === id} className={scope === id ? "min-h-10 min-w-24 flex-1 rounded-[var(--material-control-radius)] bg-[var(--material-control-fill)] px-3 text-sm font-medium" : "min-h-10 min-w-24 flex-1 rounded-[var(--material-control-radius)] px-3 text-sm text-[var(--material-secondary-text)] hover:text-[var(--foreground)]"}>{label}</button>
           ))}
         </div>

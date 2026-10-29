@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { VoiceSessionParticipants } from "@/types/voice-session-participants";
-import { Plus, RefreshCw, WifiOff } from "lucide-react";
+import { RefreshCw, WifiOff } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -9,6 +9,9 @@ import type { GroupNowRoom, GroupNowUser, GroupNowView } from "@/types/group-now
 import { GroupNowParticipant } from "./GroupNowParticipant";
 import { GroupNowRoomSection } from "./GroupNowRoomSection";
 import { GroupLiveShelfView } from "./GroupLiveShelfView";
+import { OrbitRoomFocus } from "./OrbitRoomFocus";
+import { OrbitRoomMap } from "./OrbitRoomMap";
+import { GroupRoomCreateAction } from "./GroupRoomCreateAction";
 
 type PassiveStateProps = {
   mode: "loading" | "offline" | "error";
@@ -76,6 +79,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
   const onlineCount = props.value.onlineOutsideRooms.length;
 
   return (
+    <OrbitRoomFocus key={props.value.groupId} currentRoomId={props.value.currentUserRoomId}>
     <section className="voople-group-now min-h-full w-full min-w-0 px-5 py-6 text-[var(--foreground)] md:px-6 xl:px-7" aria-label="Голосовые комнаты группы">
       {surfaceError ? (
         <p className="mb-4 rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-red-300" role="alert">
@@ -84,21 +88,18 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
       ) : null}
 
       <section aria-label="Комнаты">
-        <header className="voople-group-now__section-header flex items-center justify-between gap-3">
-          <h2 className="font-semibold">Комнаты</h2>
-          {props.onCreateRoom ? <button type="button" className="voople-group-now__create"
-            aria-label="Создать постоянную комнату" disabled={props.createPending} onClick={props.onCreateRoom}>
-            <Plus className="h-4 w-4" aria-hidden="true" />{props.createPending ? "Создаём…" : "Комната"}
-          </button> : null}
+        <header className="voople-group-now__section-header voople-group-now__room-toolbar flex items-center justify-between gap-3">
+          <h2 className="voople-group-now__title font-semibold">Комнаты</h2>
+          {props.onCreateRoom ? <GroupRoomCreateAction pending={props.createPending} onCreate={props.onCreateRoom} /> : null}
         </header>
-        <div className="voople-group-now__rooms">{persistentRooms.map(renderRoom)}</div>
+        <OrbitRoomMap rooms={persistentRooms} renderRoom={renderRoom} />
       </section>
       {temporaryRooms.length ? <section className="mt-6" aria-label="Временные комнаты">
         <h2 className="voople-group-now__section-header text-sm font-semibold text-[var(--app-muted)]">Временные · {temporaryRooms.length}</h2>
-        <div className="voople-group-now__rooms">{temporaryRooms.map(renderRoom)}</div>
+        <OrbitRoomMap rooms={temporaryRooms} renderRoom={renderRoom} />
       </section> : null}
 
-      <section className="voople-group-now__online mt-8" aria-labelledby="group-now-online-title">
+      <section className="voople-group-now__online mt-8" data-empty={!onlineCount} aria-labelledby="group-now-online-title">
         <header className="voople-group-now__section-header mb-3 flex items-center gap-2">
           <h3 id="group-now-online-title" className="text-[17px] font-semibold tracking-[-0.02em] text-[var(--foreground)]">Доступны</h3>
           <span className="voople-group-now__section-count rounded-md px-2.5 py-0.5 text-xs leading-4 text-[var(--app-muted)]">· {onlineCount}</span>
@@ -114,6 +115,7 @@ export function GroupNowPanelView(props: GroupNowPanelViewProps) {
         )}
       </section>
     </section>
+    </OrbitRoomFocus>
   );
 }
 

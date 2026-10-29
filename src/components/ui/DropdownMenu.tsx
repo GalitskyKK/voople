@@ -32,6 +32,8 @@ type DropdownMenuProps = {
   ariaLabel?: string;
   menuClassName?: string;
   className?: string;
+  focusOwnerId?: string;
+  minWidth?: number;
 };
 
 type MenuPosition = { top: number; left: number; minWidth: number };
@@ -50,6 +52,8 @@ export function DropdownMenu({
   ariaLabel,
   menuClassName,
   className,
+  focusOwnerId,
+  minWidth = 200,
 }: DropdownMenuProps) {
   const triggerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -73,12 +77,13 @@ export function DropdownMenu({
     const anchorRight = anchorPoint?.x ?? rect?.right ?? 0;
     const anchorTop = anchorPoint?.y ?? rect?.top ?? 0;
     const anchorBottom = anchorPoint?.y ?? rect?.bottom ?? 0;
-    const menuWidth = menuRef.current?.offsetWidth ?? Math.max(200, anchorWidth);
+    const menuWidth = menuRef.current?.offsetWidth ?? Math.max(minWidth, anchorWidth);
     const menuHeight = menuRef.current?.offsetHeight ?? 160;
     if (contextAnchor) {
       const resolved = resolveContextMenuPosition({
         anchor: contextAnchor, menuWidth, menuHeight,
         viewportWidth: window.innerWidth, viewportHeight: window.innerHeight,
+        side: side === "right" ? "right" : "bottom",
       });
       setPosition({ ...resolved, minWidth: Math.min(menuWidth, Math.max(0, window.innerWidth - 16)) });
       return;
@@ -106,7 +111,7 @@ export function DropdownMenu({
     left = Math.max(8, Math.min(left, window.innerWidth - menuWidth - 8));
 
     setPosition({ top, left, minWidth: menuWidth });
-  }, [align, anchorPoint, contextAnchor, restoreFocusElement, side]);
+  }, [align, anchorPoint, contextAnchor, minWidth, restoreFocusElement, side]);
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -140,12 +145,14 @@ export function DropdownMenu({
 
     window.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("keydown", onKeyDown);
+    document.addEventListener("fullscreenchange", updatePosition);
     window.addEventListener("resize", updatePosition);
     window.addEventListener("scroll", updatePosition, true);
 
     return () => {
       window.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("fullscreenchange", updatePosition);
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
@@ -183,6 +190,7 @@ export function DropdownMenu({
           <div
             ref={menuRef}
             data-voople-dropdown-menu="true"
+            data-focus-owner={focusOwnerId}
             data-route-kind={routeKind ?? undefined}
             role={contentRole}
             aria-label={ariaLabel}
@@ -199,7 +207,7 @@ export function DropdownMenu({
           >
             {children}
           </div>,
-          document.body,
+          document.fullscreenElement ?? document.body,
         )
       : null;
 

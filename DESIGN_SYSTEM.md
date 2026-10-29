@@ -68,6 +68,85 @@ for deferred surfaces; glass is not a required brand primitive.
 
 ### Authenticated Group Voice
 
+The following Room-section geometry describes **Классический**. The default
+**Орбита** variant inherits these material, identity, accessibility and media
+contracts with the explicit presentation changes in [Orbit](docs/orbit-interface.md):
+a compact expandable left rail, two dense columns of large square Room covers,
+always-visible names, lower-edge avatar satellites (four plus a +N badge) and a floating Compact dock.
+One thin Ice-tinted frame with the shared material radius encloses the main
+Voice/Chat/People content below the contextual header and tabs, which remain
+outside the frame. Column dividers use a quieter mix of the same Ice token in
+both themes. Individual Rooms retain their borderless composition.
+Orbit omits the visible Rooms heading and creation label. One canonical 44px
+plus target keeps its tooltip, accessible name and pending indicator, portalled
+to the existing Group identity area on desktop or the compact tab bar. It adds
+no extra Rooms toolbar row. The duplicate contextual Group avatar is hidden;
+Group banners appear only when a custom banner exists. Compact workspaces use
+symmetric 8px side margins. Mobile Messenger and its Rooms scroller use
+automatic scrollbar gutters while keeping internal scrolling, centring the
+frame and two-column Room grid against the viewport.
+Orbit's Group rail stays 72px wide, with explicit 220px expansion. Its personal
+message destination navigates to /messages and a persistent 320px conversation
+column using canonical named rows. The same column stays when a DM is selected;
+the header plus opens contact selection and creates/opens a DM through the
+existing contract. Search and contact selection layer above the conversation
+column. There is no small preview, close control or alternate popup styling. Group
+avatars stay in their separate rail and retain stable targets/magnification.
+The local Voice/Chat/People workspace owns its 52px desktop header, within
+`.voople-group-workspace-shell` alongside the body. It uses the same matte Stage
+and aligns Group identity/menu on the left with the actual selected chat and
+canonical section picker on the same row; action buttons sit at the right. A real
+banner extends from the title block through the existing 104px banner area,
+keeping its former bottom edge. A theme-aware scrim protects title contrast;
+hover, focus and an open Group menu add an 8px blur only within the title block,
+using the shared 500ms curve. Touch keeps that block readable without hover.
+The artwork below stays sharp; an absent custom banner reserves no blank space. This header belongs to the Group workspace, rather
+than the app-global top bar. Native Orbit renders it below the unchanged OS
+titlebar, without duplicate native Group chrome.
+On desktop, one account/call dock spans from an 8px left inset through the right
+edge of the 320px context column. Shared sidebar/context tokens determine its
+width on every route. The canonical account row persists without a call, with
+Settings/Help shortcuts. Profile and Settings use the same full outer workspace
+as Messenger; their left columns scroll above the dock, while main content keeps
+readable widths. Other scroll surfaces reserve bottom space for persistent controls.
+Mobile Orbit uses a draggable 64px tile with canonical active-speaker identity,
+speaking signal and microphone state. Tapping opens a bottom sheet reusing the
+existing voice controls. The tile and sheet never set --voople-compact-height;
+call start/end and sheet visibility cannot change chat height. Movement is
+bounded away from the composer, navigation and the visual viewport keyboard.
+The existing mobile Profile destination is retained.
+The Group participant summary heading is Activity (Активность).
+Orbit opens a Group Room only after explicit expansion; joining shows Compact.
+The expanded view leaves Rooms in place, hides Group People behind a toggle,
+and replaces the text-channel heading with the Room name. Secondary controls
+live at the bottom and reveal on hover/keyboard focus; touch keeps them available.
+Connection quality stays in the persistent desktop call dock or mobile controls. The existing media stage keeps its portal while its bounds follow that
+pane; explicit fullscreen expands it to the viewport. Compact mobile uses the
+chat tab for this presentation and returns to the tile on switching tabs.
+The current Room rests slightly larger with avatar circles. Its cover carries a
+thin Ice outline and a restrained soft blue shadow, visible at rest and expanded.
+This is an Orbit-only current-session signal; other covers have no outline.
+Orbit has no outer Room border or card fill. Its entry glyph appears only on hover/focus; a top-right
+gear reveals separate floating action rows to the right, across pane boundaries
+when needed, bounded only by the viewport. The focus aura extends up to 112px beyond
+either side of the expanded tile, bounded by the Room map. Its upper edge starts
+below the section controls and fades in over 40px, keeping headings and the
+add-Room button sharp without a visible cutoff. A 32px horizontal fade removes
+side boundaries through neighbouring art. A radially fading 3px backdrop blur softens
+neighbouring covers and titles. The selected content stays sharp; the
+separate action aura retains a weaker 2px blur. Orbit layout
+transitions share a 500ms decelerating curve; control feedback uses 240ms.
+Resting covers use 38% of the map width (40% for current), with a 44% preview.
+Covers grow slightly about fixed centres while neighbours shrink by at most 8%;
+never repack them into different slots or displace their anchors.
+On a coarse pointer, tap previews and a separate explicit button enters/switches; outside tap dismisses. Participant rows float below the expanded cover over the lower Room row, as
+explicitly selected by the user. Only Orbit may use a bounded avatar preview
+and a scrollable participant popover; opening it renders every
+participant through the canonical participant component. Classic stays unchanged.
+Expanded participant pills are 36px high on a 40px pitch, with 24px avatars and
+a 176px minimum popover width. Coarse pointers retain 44px targets/pitch around
+36px visual pills. Names remain 12px and all participants stay available by scroll.
+
 Group Voice is one vertical flow of Room sections. Lobby is first, followed by
 pinned Rooms in server order. Temporary Rooms follow in their own section in
 server order; empty temporary Rooms are hidden. Pending Split/Voop never adds
@@ -95,7 +174,7 @@ Rooms expose identity/presence only, never per-person media state or volume.
 Current media details come exclusively from the existing ChatRoomControl and
 must match the active core LiveSession ID. No extra media subscription/store.
 
-Desktop Compact lives above the account footer in the shared 220px sidebar;
+Classic desktop Compact lives above the account footer in the shared 220px sidebar;
 identity opens Full Room and compact controls operate mic, output, camera,
 share and leave. Mobile Compact lives above bottom navigation, respects safe
 areas and reserves content space; mic/output/leave remain visible with 44px
@@ -108,7 +187,7 @@ and Settings, without a participant avatar stack. A wide desktop Group has one
 matte Stage with Live / Chat / People columns and quiet dividers. At medium
 desktop width, Live and Chat remain side by side while People opens in an
 on-demand right panel. Below the desktop composition threshold, **Войс / Чат /
-Люди** tabs show one surface at a time. Direct Chat has no Live or People
+Участники** tabs show one surface at a time. Direct Chat has no Live or People
 columns. Live, Chat timeline and People scroll independently; Chat remains the
 dominant column and its composer stays pinned. People keeps its existing
 Room / available / offline grouping. Custom Profile Cards stay expressive.
@@ -201,6 +280,12 @@ all-caps text. Headlines should wrap by meaning, not by arbitrary `<br>` tags.
 
 ## Shared UI contract
 
+- Do not narrate facts already evident from the interface: redundant “0 в
+  комнате”, “Пока пусто”, repeated entry labels and similar copy add noise.
+  Empty states should provide a useful next action when one is needed. Keep
+  accessible names for icon controls and explicit loading, failure and recovery
+  feedback; visual simplicity must not hide action or network state.
+
 - Authenticated pages use the canonical app shell; compact contextual headers
   share Chrome with navigation. Ordinary page headings sit directly on Stage,
   without an enclosing header card or generic decorative glow.
@@ -258,3 +343,33 @@ more expressive than the app, but it must retain:
 4. Do web and Tauri render the same domain view?
 5. Are loading, empty, error, offline and focus states covered?
 6. Has reduced motion and keyboard navigation been checked?
+
+### Orbit call identities
+
+Audio-only calls use the canonical participant/avatar components in a fitted
+square grid. Names sit above each square, microphone state stays on its lower
+edge and speaking adds a quiet Ice outline. Mobile uses two columns; tile size
+adapts to available height with an 80px preferred minimum before internal scroll.
+Hover/focus/open actions scale the selected tile to 1.08 and neighbours to 0.97
+about fixed centres with the shared 500ms curve. Speech does not reorder or
+resize tiles. Reduced motion removes transforms. Pointer context click, keyboard
+Shift+F10 and a 44px touch target open separate action surfaces beside the tile,
+using the existing viewport collision and volume controls. Video/screen focus
+remains available in the shared media stage.
+
+### Unified personal-message workspace
+
+Orbit DMs share Group geometry: a 52px header with a 320px context title/plus and
+peer header, followed by one Ice-tinted frame around the list, conversation and
+optional info pane. The list extends to the common bottom boundary and scrolls
+above the persistent dock without creating a separate floating border. Wide
+workspaces show a 280px canonical peer-profile pane; medium/compact layouts use
+an explicit info toggle. Compact inbox/list and selected conversation occupy
+the same body. Search and contact selection portal outside the hidden mobile
+sidebar and retain focus restoration.
+
+Expanded Orbit calls keep minimize/close and Group chat in the upper-right,
+fullscreen in the lower-right with an enter/exit icon, and one consistent set
+of media/secondary controls at the bottom centre. Native fullscreen omits the
+Room directory. The participant destination uses an icon and Участники tooltip.
+The Group conversation drawer keeps its composer above mobile call controls.

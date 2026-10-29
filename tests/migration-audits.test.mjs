@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmdirSync, unlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import test from "node:test";
 import { REQUIRED_MIGRATIONS } from "../scripts/migration-manifest.mjs";
 import { migrationChecksum } from "../scripts/migration-checksum.mjs";
@@ -45,11 +48,20 @@ function audit(command, rows) {
       if (!String(url).includes('id=in.')) throw new Error('Ledger query must filter the manifest');
       return {ok:true,json:async()=>${JSON.stringify(rows)}};
     };`);
-  return spawnSync(process.execPath, ["--import", preload, `scripts/${command}.mjs`], {
+  // Keep growing SQL fixtures out of Windows' bounded process command line.
+  const auditDirectory = mkdtempSync(join(tmpdir(), "voople-migration-audit-"));
+  const preloadFile = join(auditDirectory, "preload.mjs");
+  try {
+    writeFileSync(preloadFile, `import ${JSON.stringify(preload)};`);
+    return spawnSync(process.execPath, ["--import", pathToFileURL(preloadFile).href, `scripts/${command}.mjs`], {
     encoding: "utf8", timeout: 5_000,
     env: { ...process.env, DIRECT_URL: "postgres://invalid.invalid/never", DATABASE_URL: "postgres://invalid.invalid/never",
       NEXT_PUBLIC_SUPABASE_URL: "http://invalid.invalid", SUPABASE_SERVICE_ROLE_KEY: "fixture" },
   });
+  } finally {
+    unlinkSync(preloadFile);
+    rmdirSync(auditDirectory);
+  }
 }
 
 test("pending and readiness audits accept matching immutable records and execute no mutations", () => {

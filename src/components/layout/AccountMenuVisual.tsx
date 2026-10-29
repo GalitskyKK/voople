@@ -4,6 +4,7 @@ import { CircleHelp, LogOut, Settings, UserRound } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
+import { IconButton } from "@/components/ui/IconButton";
 import { cn } from "@/lib/utils";
 import { AccountChipVisual } from "./AccountChipVisual";
 
@@ -13,6 +14,7 @@ type AccountMenuVisualProps = {
   avatar: ReactNode;
   compact?: boolean;
   fill?: boolean;
+  variant?: "menu" | "dock";
   onOpenProfile: () => void;
   onOpenHelp: () => void;
   onOpenSettings: () => void;
@@ -28,6 +30,7 @@ export function AccountMenuVisual({
   avatar,
   compact = false,
   fill = true,
+  variant = "menu",
   onOpenProfile,
   onOpenHelp,
   onOpenSettings,
@@ -40,7 +43,7 @@ export function AccountMenuVisual({
     void action();
   };
 
-  return (
+  const menu = (
     <DropdownMenu
       open={open}
       onOpenChange={setOpen}
@@ -93,4 +96,9 @@ export function AccountMenuVisual({
       </button>
     </DropdownMenu>
   );
+  return variant === "dock" ? <div className="voople-account-dock-controls">
+    <div className="voople-account-dock-controls__identity">{menu}</div>
+    <IconButton label="Настройки" tooltipSide="top" onClick={() => run(onOpenSettings)} className="voople-account-dock-controls__action"><Settings className="h-4 w-4" aria-hidden="true" /></IconButton>
+    <IconButton label="Помощь" tooltipSide="top" onClick={() => run(onOpenHelp)} className="voople-account-dock-controls__action"><CircleHelp className="h-4 w-4" aria-hidden="true" /></IconButton>
+  </div> : menu;
 }

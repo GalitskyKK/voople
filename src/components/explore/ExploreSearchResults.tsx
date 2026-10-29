@@ -65,7 +65,7 @@ export function ExploreSearchResults({
         </ResultSection>
       )}
       {(scope === "all" || scope === "people") && result.users.length > 0 && (
-        <ResultSection title="Люди" icon={<UserRound />}>
+        <ResultSection title="Участники" icon={<UserRound />}>
           <ul className="space-y-2">
             {result.users.map((item) => (
               <li key={item.id}>

@@ -9,7 +9,7 @@ import path from "node:path";
  * the source under test. Compiling just CSS is substantially lighter than a
  * renderer build and keeps screenshots tied to the current checkout.
  */
-export async function loadCurrentVisualCss(repo, { host = "web" } = {}) {
+export async function loadCurrentVisualCss(repo, { host = "web", sharedCss = null } = {}) {
   const require = createRequire(path.join(repo, "package.json"));
   const postcss = require("postcss");
   const tailwindcss = require("@tailwindcss/postcss");
@@ -21,7 +21,7 @@ export async function loadCurrentVisualCss(repo, { host = "web" } = {}) {
     readFile(messengerPath, "utf8"),
     readFile(desktopPath, "utf8"),
   ]);
-  const compiled = await postcss([
+  const compiled = sharedCss ? null : await postcss([
     tailwindcss({ base: repo, optimize: false }),
   ]).process(globals, { from: globalsPath });
 
@@ -37,5 +37,5 @@ body { font-family: var(--font-geist-sans), system-ui, sans-serif; }
     .replaceAll("../../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2", "/fonts/geist-mono.woff2")
     .replaceAll("../../node_modules/geist/dist/fonts/geist-pixel/GeistPixel-Square.woff2", "/fonts/geist-pixel-square.woff2");
 
-  return `${compiled.css}\n${messenger}\n${fontPrelude}\n${host === "desktop" ? desktopCss : ""}`;
+  return `${sharedCss ?? `${compiled.css}\n${messenger}\n${fontPrelude}`}\n${host === "desktop" ? desktopCss : ""}`;
 }

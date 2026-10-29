@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 
 import { getAdminClient } from "@/lib/supabase/admin";
+import type { StoredRoomCover } from "./room-covers-rest";
 import type {
   GroupRoomCreateAndJoinResult,
   GroupRoomJoinResult,
@@ -113,7 +114,14 @@ export function createAndJoinGroupRoomRest(input: {
   requestId: string;
   micMuted: boolean;
   allowCrossContext: boolean;
+  resolvedCover?: StoredRoomCover;
 }): Promise<GroupRoomCreateAndJoinResult> {
+  if (input.resolvedCover) return roomRpc("create_and_join_group_room_with_cover", {
+    p_group_chat_id: input.groupId, p_user_id: input.userId, p_kind: input.kind,
+    p_name: input.name, p_request_id: input.requestId, p_mic_muted: input.micMuted,
+    p_allow_cross_context: input.allowCrossContext,
+    p_cover_preset: input.resolvedCover.preset, p_cover_media_key: input.resolvedCover.mediaKey,
+  }, createAndJoinSchema);
   return roomRpc("create_and_join_group_room", {
     p_group_chat_id: input.groupId,
     p_user_id: input.userId,

@@ -1,7 +1,6 @@
 "use client";
 
-import { GripVertical, MessageSquareText, X } from "lucide-react";
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { useChatComposerSession } from "@/components/chat/ChatComposerSessionProvider";
@@ -9,7 +8,7 @@ import { ChatConversationState } from "@/components/chat/ChatConversationState";
 import { ChatMediaLightbox } from "@/components/chat/ChatMediaLightbox";
 import { ChatMessageBubble } from "@/components/chat/ChatMessageBubble";
 import { ChatThreadFrameView } from "@/components/chat/ChatThreadFrameView";
-import { IconButton } from "@/components/ui/IconButton";
+import { RoomMessagesPanelFrame } from "./RoomMessagesPanelFrame";
 import { Toast } from "@/components/ui/Toast";
 import { useBrowserOnline } from "@/hooks/useBrowserOnline";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
@@ -148,37 +147,9 @@ export function RoomMessagesPanel({
   );
 
   return (
-    <aside
-      className="voople-room-chat-panel flex min-h-0 flex-col bg-[var(--background)]"
-      style={{ "--room-chat-panel-width": `${panelWidth.width}px` } as CSSProperties}
-      aria-label={`Чат группы: ${audienceLabel}`}
-    >
-      <button
-        type="button"
-        className="voople-room-chat-panel__resize"
-        aria-label="Изменить ширину чата группы"
-        title="Ширина чата: стрелки, Shift — крупный шаг"
-        onPointerDown={panelWidth.onPointerDown}
-        onPointerMove={panelWidth.onPointerMove}
-        onPointerUp={panelWidth.onPointerEnd}
-        onPointerCancel={panelWidth.onPointerEnd}
-        onKeyDown={panelWidth.onKeyDown}
-      >
-        <GripVertical className="h-4 w-4" aria-hidden="true" />
-      </button>
+    <RoomMessagesPanelFrame audienceLabel={audienceLabel} resize={panelWidth} onClose={onClose}>
       <ChatThreadFrameView
-        header={(
-          <header className="flex min-h-16 shrink-0 items-center gap-3 border-b border-[var(--app-border)] px-4">
-            <MessageSquareText className="h-4 w-4 shrink-0 text-[var(--theme-accent)]" aria-hidden="true" />
-            <div className="min-w-0 flex-1">
-              <h3 className="truncate text-sm font-semibold">Чат группы</h3>
-              <p className="truncate text-[11px] text-[var(--app-muted)]">{audienceLabel}</p>
-            </div>
-            <IconButton label="Закрыть чат группы" onClick={onClose} className="h-9 w-9">
-              <X className="h-4 w-4" aria-hidden="true" />
-            </IconButton>
-          </header>
-        )}
+        header={null}
         timeline={timeline}
         emptyState={initialState}
         messagesRef={containerRef}
@@ -244,6 +215,6 @@ export function RoomMessagesPanel({
           </>
         )}
       />
-    </aside>
+    </RoomMessagesPanelFrame>
   );
 }

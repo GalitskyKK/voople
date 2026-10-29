@@ -7,9 +7,13 @@ import { VoiceRoomMainSurface } from "./VoiceRoomMainSurface";
 import { VoiceRoomTrigger } from "./VoiceRoomTrigger";
 import { VoiceSessionDock } from "./VoiceSessionDock";
 import { VoiceSettingsPanel } from "./VoiceSettingsPanel";
+import { useInterfaceDesign } from "@/hooks/useInterfaceDesign";
+import { useIsLgViewport } from "@/hooks/useIsLgViewport";
 
 /** Shared web/desktop presentation. All state and platform effects live in the controller. */
 export function ChatRoomControlView({ controller }: { controller: ChatRoomController }) {
+  const orbit = useInterfaceDesign() === "orbit";
+  const large = useIsLgViewport();
   const {
     roots: { audioContainerRef, screenParkingRef, cameraParkingRef },
     trigger,
@@ -35,9 +39,10 @@ export function ChatRoomControlView({ controller }: { controller: ChatRoomContro
         aria-hidden="true"
       />
 
-      {dock && !sheet.overlay.open ? (
+      {dock && (!sheet.overlay.open || orbit && large && sheet.identity.groupId) ? (
         <VoiceSessionDock
           {...dock}
+          mode={sheet.overlay.open ? "compact" : dock.mode}
           mediaPreview={
             dock.preview ? <VoiceMiniStage {...dock.preview} /> : undefined
           }

@@ -32,7 +32,7 @@ export function BetaSearchResults({ people, groups, scope, renderDestination, re
 
   return <div className="space-y-6">
     {(scope === "all" || scope === "people") && people.length > 0 ? <section aria-labelledby="search-people-title">
-      <h2 id="search-people-title" className="mb-2 text-sm font-semibold">Люди</h2>
+      <h2 id="search-people-title" className="mb-2 text-sm font-semibold">Участники</h2>
       <ul className="divide-y divide-[var(--material-border)]">{people.map((person) => <li key={person.id} className={`${rowClass} flex-wrap`}>
         {renderAvatar(person)}
         <div className="min-w-0 flex-1">

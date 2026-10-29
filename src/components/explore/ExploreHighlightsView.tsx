@@ -28,7 +28,7 @@ export function ExploreHighlightsView({
     <div className="grid gap-6 xl:grid-cols-2">
       {(scope === "all" || scope === "people") && highlights.users.length ? (
         <section className="min-w-0 xl:col-span-2" aria-labelledby="popular-people-title">
-          <SectionTitle id="popular-people-title" icon={<UserRound />} title="Люди" />
+          <SectionTitle id="popular-people-title" icon={<UserRound />} title="Участники" />
           <ul className="voople-scroll mt-3 flex gap-2 overflow-x-auto pb-1">
             {highlights.users.map((user) => (
               <li key={user.id} className="min-w-[7.5rem] flex-1">

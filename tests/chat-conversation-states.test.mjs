@@ -14,7 +14,7 @@ test("web and desktop preserve the conversation while surfacing network state", 
   assert.match(state, /"loading" \| "offline" \| "error"/);
   assert.match(state, /Черновик останется на месте/);
   assert.match(state, /variant\?: "panel" \| "inline"/);
-  assert.match(frame, /\{connectionState\}\s+\{composer\}/);
+  assert.match(frame, /\{connectionState\}\s+<div className="voople-chat-window__composer-slot[^\"]*">\{composer\}<\/div>/);
   assert.match(web, /useBrowserOnline/);
   assert.match(web, /data\)[\s\S]*ChatConversationState/);
   assert.match(web, /mode="offline" variant="inline"/);

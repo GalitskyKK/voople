@@ -8,8 +8,9 @@ import type { GroupRoomCreateAndJoinResult } from "@/types/group-room-mutations"
 import type { EnabledVoiceMediaCredentials } from "@/types/voice";
 import { useGroupLiveMove } from "./useGroupLiveMove";
 import { useGroupNowMediaHandoff } from "./useGroupNowMediaHandoff";
+import type { RoomCoverDraft } from "@/lib/chat/room-cover";
 
-export type GroupNowRoomCreateDraft = { name: string };
+export type GroupNowRoomCreateDraft = { name: string; cover?: RoomCoverDraft };
 type PendingCreation = GroupNowRoomCreateDraft & { requestId: string };
 
 function toCreatedRoom(result: GroupRoomCreateAndJoinResult): GroupNowRoom {
@@ -39,7 +40,7 @@ export function useGroupNowRoomCreate({ groupId, currentSessionId, onJoined }: {
 
   const finishCreate = useCallback(async (draft: PendingCreation, confirmedCrossContext: boolean) => {
     const result = await createMutation.mutateAsync({
-      groupId, name: draft.name, requestId: draft.requestId, micMuted: true, confirmedCrossContext,
+      groupId, name: draft.name, cover: draft.cover, requestId: draft.requestId, micMuted: true, confirmedCrossContext,
     });
     await mediaHandoff.connect({ groupId, room: toCreatedRoom(result) }, result.join);
   }, [createMutation, groupId, mediaHandoff]);
@@ -51,7 +52,7 @@ export function useGroupNowRoomCreate({ groupId, currentSessionId, onJoined }: {
 
   const submit = useCallback(async (draft: GroupNowRoomCreateDraft) => {
     if (pending) return;
-    const creation = retryCreation?.name === draft.name
+    const creation = retryCreation?.name === draft.name && JSON.stringify(retryCreation.cover) === JSON.stringify(draft.cover)
       ? retryCreation : { ...draft, requestId: crypto.randomUUID() };
     setRetryCreation(creation); setError(null);
     try {

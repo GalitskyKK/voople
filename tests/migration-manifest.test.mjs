@@ -18,9 +18,9 @@ test("migration 78 is required and applied after 77", () => {
   assert.equal(RELEASE_APPLY_ORDER.indexOf(migration), RELEASE_APPLY_ORDER.indexOf(previous) + 1);
 });
 
-test("every tracked numbered SQL migration is required and in release apply order", () => {
+test("every non-ignored numbered SQL migration is required and in release apply order", () => {
   const root = fileURLToPath(new URL("../", import.meta.url));
-  const files = execFileSync("git", ["ls-files", "-z", "--", "drizzle/*.sql"], { cwd: root, encoding: "utf8" }).split("\0");
+  const files = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z", "--", "drizzle/*.sql"], { cwd: root, encoding: "utf8" }).split("\0");
   const numberedMigrations = files.filter((file) => /^drizzle\/\d+-.*\.sql$/.test(file)).map((file) => file.slice(8)).sort();
 
   assert.deepEqual([...REQUIRED_MIGRATIONS].sort(), numberedMigrations);

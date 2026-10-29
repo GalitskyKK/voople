@@ -1,5 +1,7 @@
 "use client";
 
+import { UsersRound } from "lucide-react";
+import { IconButton } from "@/components/ui/IconButton";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -9,7 +11,7 @@ export type GroupSurfaceTab = "chat" | "now" | "people";
 const tabs = [
   ["now", "Войс"],
   ["chat", "Чат"],
-  ["people", "Люди"],
+  ["people", "Участники"],
 ] as const;
 
 export function GroupSurfaceTabs({
@@ -24,7 +26,13 @@ export function GroupSurfaceTabs({
   return (
     <div className="voople-group-surface-tabs flex min-h-10 shrink-0 items-stretch px-6">
       <div className="flex min-w-0 flex-1 items-stretch" role="tablist" aria-label="Раздел группы">
-        {tabs.map(([id, label]) => (
+        {tabs.map(([id, label]) => id === "people" ? (
+          <IconButton key={id} label={label} role="tab" aria-selected={activeTab === id}
+            onClick={() => onTabChange(id)}
+            className="voople-group-surface-tabs__tab voople-group-surface-tabs__participants">
+            <UsersRound className="h-4 w-4" aria-hidden="true" />
+          </IconButton>
+        ) : (
           <button
             key={id}
             type="button"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { AudioLines, MicOff, Video } from "lucide-react";
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import type { GroupNowUser } from "@/types/group-now";
@@ -17,6 +17,7 @@ export function GroupNowParticipant({ user, onOpenProfile, detail, onVolumeChang
   voopPending?: boolean;
 }) {
   const trigger = useRef<HTMLButtonElement>(null);
+  const focusOwnerId = useId();
   const [point, setPoint] = useState<{ x: number; y: number } | null>(null);
   const volumeAvailable = Boolean(detail && !detail.isMe && onVolumeChange);
   const menuAvailable = volumeAvailable || Boolean(onVoop);
@@ -39,7 +40,7 @@ export function GroupNowParticipant({ user, onOpenProfile, detail, onVolumeChang
     {detail?.muted ? <MicOff className="h-3.5 w-3.5 shrink-0 text-[var(--app-muted)]" aria-label="Микрофон выключен" /> : null}
     {detail?.camera ? <Video className="h-3.5 w-3.5 shrink-0 text-[var(--app-muted)]" aria-label="Камера включена" /> : null}
   </>;
-  const identity = <button ref={trigger} type="button" className="voople-group-now-participant" data-participant-id={user.id}
+  const identity = <button id={focusOwnerId} ref={trigger} type="button" className="voople-group-now-participant" data-participant-id={user.id}
     aria-label={`${menuAvailable ? "Действия участника" : "Просмотреть профиль"} ${user.displayName}`}
     aria-haspopup={menuAvailable ? "menu" : undefined} aria-expanded={menuAvailable ? Boolean(point) : undefined}
     onClick={menuAvailable ? openMenu : undefined}
@@ -55,7 +56,7 @@ export function GroupNowParticipant({ user, onOpenProfile, detail, onVolumeChang
         onOpenProfile={onOpenProfile ? () => onOpenProfile(user) : undefined} previewOnClick={!menuAvailable} focusPreview={!menuAvailable}>
         {identity}
       </GroupPersonPreview> : menuAvailable ? identity : <div className="voople-group-now-participant" data-participant-id={user.id}>{content}</div>}
-    {menuAvailable ? <VoiceParticipantContextMenu participant={user} open={Boolean(point)} anchorPoint={point}
+    {menuAvailable ? <VoiceParticipantContextMenu participant={user} open={Boolean(point)} anchorPoint={point} focusOwnerId={focusOwnerId}
       volume={detail?.volume ?? 1} onVolumeChange={volumeAvailable ? onVolumeChange : undefined}
       onOpenProfile={!user.guest && onOpenProfile ? () => onOpenProfile(user) : undefined}
       onVoop={onVoop ? () => onVoop(user) : undefined} voopPending={voopPending}

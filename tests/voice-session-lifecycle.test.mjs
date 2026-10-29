@@ -35,7 +35,7 @@ test("join uses microphone intent and compensates a cancelled server enter", () 
 test("ChatRoomControl is only a shared controller-to-view boundary", () => {
   const control = read("src/components/chat/ChatRoomControl.tsx");
   const view = read("src/components/chat/voice/ChatRoomControlView.tsx");
-  const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
+  const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx") + read("src/components/chat/voice/VoiceRoomPanels.tsx");
   const surfaceModels = read("src/components/chat/voice/voice-room-sheet-models.ts");
   const baseline = read(".architecture-baseline.json");
 
@@ -56,7 +56,7 @@ test("ChatRoomControl is only a shared controller-to-view boundary", () => {
 });
 
 test("room main surface owns one secondary panel and cancels stale fullscreen requests", () => {
-  const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
+  const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx") + read("src/components/chat/voice/VoiceRoomPanels.tsx");
   const fullscreen = read("src/components/chat/voice/useVoiceRoomFullscreen.ts");
 
   assert.match(surface, /type SecondaryPanel = "settings" \| "soundboard" \| "invite" \| "messages" \| null/);

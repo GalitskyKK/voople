@@ -1,4 +1,7 @@
+"use client";
 import type { ReactNode } from "react";
+import { useInterfaceDesign } from "@/hooks/useInterfaceDesign";
+import { DirectWorkspaceView } from "./DirectWorkspaceView";
 
 import { cn } from "@/lib/utils";
 
@@ -15,6 +18,8 @@ export function MessagesLayoutView({
   thread,
   wallpaper = "doodles",
 }: MessagesLayoutViewProps) {
+  const orbit = useInterfaceDesign() === "orbit";
+  if (orbit && !isThread) return <div className="voople-messages-layout flex min-h-0 flex-1 flex-col" data-thread="false" data-chat-wallpaper={wallpaper}><DirectWorkspaceView inbox><p className="m-auto px-6 text-sm text-[var(--app-muted)]">Выберите диалог</p></DirectWorkspaceView></div>;
   return (
     <div
       className="voople-messages-layout flex min-h-0 flex-1 flex-col"

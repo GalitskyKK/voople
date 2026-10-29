@@ -74,11 +74,13 @@ test("message menu uses one action tree for RMB, keyboard and the existing trigg
 test("sidebar search and new-dialog navigation stay inside beta People/Groups search", () => {
   const sidebar = source("src/components/layout/MessengerSidebarView.tsx");
   const navigation = source("src/components/layout/AppNavigationVisual.tsx");
+  const header = source("src/components/layout/SidebarHeaderVisual.tsx");
   const search = source("src/components/explore/ExploreView.tsx");
   assert.ok(sidebar.indexOf("voople-messenger-sidebar__search-wrap") < sidebar.indexOf('data-voople-scroll=""'));
   assert.match(sidebar, /label: "Новый диалог"/);
   assert.doesNotMatch(sidebar, /from=messages/);
-  assert.match(navigation, /mode === "authenticated" \? "\/messages" : "\/feed"/);
-  assert.match(search, /Люди и публичные группы/);
+  assert.match(navigation, /<SidebarHeaderVisual/);
+  assert.match(header, /mode === "authenticated" \? "\/messages" : "\/feed"/);
+  assert.match(search, /Участники и публичные группы/);
   assert.doesNotMatch(search, /\["posts", "Посты"\]/);
 });

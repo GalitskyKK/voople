@@ -18,6 +18,7 @@ export function Sheet({
   ariaLabel,
   containerClassName,
   closeOnEscape = true,
+  focusOwnerId,
 }: {
   open: boolean;
   onClose: () => void;
@@ -27,6 +28,7 @@ export function Sheet({
   ariaLabel?: string;
   containerClassName?: string;
   closeOnEscape?: boolean;
+  focusOwnerId?: string;
 }) {
   const mounted = useIsClient();
   const isBottom = placement === "bottom";
@@ -37,7 +39,7 @@ export function Sheet({
   useEffect(() => {
     if (!open) return;
 
-    const activeElement = document.activeElement;
+    const activeElement = focusOwnerId ? document.getElementById(focusOwnerId) : document.activeElement;
     returnFocusRef.current =
       activeElement instanceof HTMLElement && activeElement !== document.body
         ? activeElement
@@ -52,7 +54,7 @@ export function Sheet({
         if (returnTarget.isConnected) returnTarget.focus({ preventScroll: true });
       });
     };
-  }, [open]);
+  }, [focusOwnerId, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -105,6 +107,7 @@ export function Sheet({
       />
       <div
         role="dialog"
+        data-focus-owner={focusOwnerId}
         aria-modal={isContext ? undefined : "true"}
         aria-label={ariaLabel}
         className={cn(

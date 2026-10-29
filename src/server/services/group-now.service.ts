@@ -12,6 +12,7 @@ import {
   listVisibleOnlineUserIdsRest,
 } from "@/server/data/privacy-rest";
 import type { GroupNowView } from "@/types/group-now";
+import { loadRoomCoversRest } from "@/server/data/room-covers-rest";
 
 export async function getGroupNow(
   groupId: string,
@@ -46,7 +47,8 @@ export async function getGroupNow(
     ...onlineMemberIds,
   ]);
 
-  return buildGroupNowView({
+  const covers = await loadRoomCoversRest(snapshot.rooms.map((room) => room.id));
+  const view = buildGroupNowView({
     groupId,
     groupName: membership.name?.trim() || "Группа",
     viewerId,
@@ -93,4 +95,5 @@ export async function getGroupNow(
       return user ? [user] : [];
     }),
   });
+  return { ...view, rooms: view.rooms.map((room) => ({ ...room, cover: covers.get(room.id) })) };
 }

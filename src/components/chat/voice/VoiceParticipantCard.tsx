@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
-import { Mic, MicOff } from "lucide-react";
+import { Mic, MicOff, MoreHorizontal } from "lucide-react";
 
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { resolveRingStyle } from "@/lib/customization/rings";
@@ -22,6 +22,7 @@ export function VoiceParticipantCard({
   focused = false,
   onFocus,
   className,
+  presentation = "standard",
 }: {
   participant: ChatRoomParticipantView;
   muted: boolean;
@@ -37,9 +38,16 @@ export function VoiceParticipantCard({
   focused?: boolean;
   onFocus?: () => void;
   className?: string;
+  presentation?: "standard" | "orbit";
 }) {
+  const orbit = presentation === "orbit";
   const cardRef = useRef<HTMLDivElement | null>(null);
-  const [menuPoint, setMenuPoint] = useState<{ x: number; y: number } | null>(null);
+  const [menuPoint, setMenuPoint] = useState<{ x: number; y: number; bounds?: { left: number; top: number; right: number; bottom: number } } | null>(null);
+  const openActions = (point?: { x: number; y: number }) => {
+    if (participant.isMe) return;
+    const rect = cardRef.current?.getBoundingClientRect();
+    if (rect) setMenuPoint(orbit ? { x: rect.right, y: rect.top, bounds: { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom } } : point ?? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+  };
   const bindCameraContainer = useCallback(
     (element: HTMLDivElement | null) => {
       onCameraContainerChange(participant.id, element);
@@ -49,19 +57,22 @@ export function VoiceParticipantCard({
   const openContextMenu = (event: MouseEvent<HTMLDivElement>) => {
     if (participant.isMe) return;
     event.preventDefault();
-    setMenuPoint({ x: event.clientX, y: event.clientY });
+    openActions({ x: event.clientX, y: event.clientY });
   };
   const openContextMenuFromKeyboard = (event: KeyboardEvent<HTMLDivElement>) => {
     if (participant.isMe || (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10"))) return;
     event.preventDefault();
-    const rect = cardRef.current?.getBoundingClientRect();
-    if (rect) setMenuPoint({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+    openActions();
   };
 
   return (
     <>
       <div
         ref={cardRef}
+        data-call-participant={participant.id}
+        data-actions-open={Boolean(menuPoint)}
+        data-speaking={speaking}
+        data-decorated={Boolean(participant.avatarDecorationUrl)}
         role={participant.isMe ? undefined : "group"}
         tabIndex={participant.isMe ? undefined : 0}
         aria-haspopup={participant.isMe ? undefined : "menu"}
@@ -76,8 +87,10 @@ export function VoiceParticipantCard({
             ? "border-[var(--theme-accent)]"
             : "border-[color-mix(in_srgb,var(--app-border)_65%,var(--app-muted))]",
           className,
+          orbit && "voople-orbit-call-tile",
         )}
       >
+      {orbit && !participant.isMe ? <button type="button" className="voople-orbit-call-tile__target" aria-label={`Действия участника ${participant.displayName}`} aria-haspopup="menu" aria-expanded={Boolean(menuPoint)} onClick={() => openActions()}><span className="voople-orbit-call-tile__more" aria-hidden="true"><MoreHorizontal className="h-4 w-4" /></span></button> : null}
       <div
         ref={bindCameraContainer}
         className="absolute inset-0"
@@ -96,12 +109,13 @@ export function VoiceParticipantCard({
       ) : null}
 
       {!hasCamera ? (
-        <div className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center">
+        <div className={orbit ? "voople-orbit-call-tile__portrait" : "absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center"}>
           <ProfileAvatarVisual
             displayName={participant.displayName}
-            size={compact ? "sm" : "lg"}
-            className={speaking ? "voople-avatar-speaking rounded-full" : undefined}
-            isOnline
+            size={orbit || compact ? "sm" : "lg"}
+            shape={orbit && !participant.avatarRingId ? "square" : "round"}
+            className={cn(!orbit && speaking && "voople-avatar-speaking rounded-full", orbit && "voople-orbit-call-tile__identity")}
+            isOnline={!orbit}
             ringClassName={resolveRingStyle(participant.avatarRingId)?.className}
             avatarImage={
               participant.avatarUrl ? (
@@ -127,7 +141,7 @@ export function VoiceParticipantCard({
         </div>
       ) : null}
 
-      <div className={cn("relative z-10 min-w-0 max-w-full", hasCamera && "text-white")}>
+      <div className={cn("relative z-10 min-w-0 max-w-full", hasCamera && "text-white", orbit && "voople-orbit-call-tile__caption")}>
         {!participant.guest && !participant.isMe ? (
           <GroupPersonPreview id={participant.id} username={participant.username} displayName={participant.displayName} previewOnClick>
             <button type="button" className="max-w-full truncate rounded text-sm font-medium focus-visible:outline-2 focus-visible:outline-[var(--material-focus-ring)]" aria-label={`Просмотреть профиль ${participant.displayName}`}>{participant.displayName}</button>
@@ -153,6 +167,8 @@ export function VoiceParticipantCard({
           participant={participant}
           open={Boolean(menuPoint)}
           anchorPoint={menuPoint}
+          anchorRect={menuPoint?.bounds}
+          presentation={orbit ? "satellites" : "menu"}
           volume={volume}
           onOpenChange={(open) => {
             if (!open) {

@@ -1,7 +1,5 @@
 import type { ReactNode } from "react";
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
-import { COPY } from "@/lib/constants/copy";
 import {
   MAIN_NAV_ITEMS,
   MOBILE_NAV_ITEMS,
@@ -10,9 +8,8 @@ import {
   PUBLIC_SIDEBAR_FOOTER_ITEMS,
 } from "@/lib/constants/nav";
 import { cn } from "@/lib/utils";
-import { VoopleMark } from "@/components/brand/VoopleMark";
-import { IconButton } from "@/components/ui/IconButton";
 import { SidebarItemTooltip } from "./SidebarItemTooltip";
+import { SidebarHeaderVisual } from "./SidebarHeaderVisual";
 
 export type NavigationDestinationRenderProps = {
   href: string;
@@ -36,6 +33,7 @@ type NavigationVisualProps = {
 
 type AppSidebarVisualProps = NavigationVisualProps & {
   accountNavigation?: ReactNode;
+  accountPlacement?: "sidebar" | "dock";
   primaryNavigation?: ReactNode;
   navAfter?: ReactNode;
   footerAfter?: ReactNode;
@@ -49,6 +47,7 @@ export function AppSidebarVisual({
   renderDestination,
   notificationBadge,
   accountNavigation,
+  accountPlacement = "sidebar",
   primaryNavigation,
   navAfter,
   footerAfter,
@@ -59,34 +58,17 @@ export function AppSidebarVisual({
 }: AppSidebarVisualProps) {
   const navigationItems = mode === "public" ? PUBLIC_NAV_ITEMS : MAIN_NAV_ITEMS;
   const footerItems = mode === "public" ? PUBLIC_SIDEBAR_FOOTER_ITEMS : [];
+  const accountInDock = accountPlacement === "dock";
 
   return (
     <aside
       data-nosnippet
       data-collapsed={collapsed ? "true" : "false"}
       data-sidebar-kind={primaryNavigation ? "messenger" : "navigation"}
+      data-account-placement={accountPlacement}
       className="voople-sidebar fixed left-0 top-0 hidden h-full shrink-0 flex-col lg:flex"
     >
-      <div className="voople-sidebar__brand flex shrink-0 items-center justify-between gap-2 px-4 pb-7 pt-7">
-        {renderDestination({
-          href: mode === "authenticated" ? "/messages" : "/feed",
-          label: COPY.appName,
-          active: pathname === (mode === "authenticated" ? "/messages" : "/feed"),
-          className:
-            "inline-flex items-center gap-2.5 text-[1.125rem] font-semibold tracking-[-0.02em] text-[var(--foreground)] transition-opacity hover:opacity-85",
-          children: <><VoopleMark className="h-8 w-8" /><span className="voople-sidebar__label voople-wordmark">{COPY.wordmark}</span></>,
-        })}
-        {onCollapsedChange ? (
-          <IconButton
-            label={collapsed ? "Развернуть боковую панель" : "Свернуть боковую панель"}
-            tooltipSide="right"
-            onClick={() => onCollapsedChange(!collapsed)}
-            className="voople-sidebar__collapse grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"
-          >
-            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </IconButton>
-        ) : null}
-      </div>
+      <SidebarHeaderVisual {...{ pathname, mode, collapsed, onCollapsedChange, renderDestination }} />
 
       {primaryNavigation ?? (
         <nav
@@ -139,9 +121,12 @@ export function AppSidebarVisual({
 
       {!primaryNavigation && !collapsed ? navAfter : null}
 
-      {mode === "authenticated" ? <div id="voople-sidebar-session-root" className="voople-sidebar__session shrink-0">{sessionDock}</div> : null}
+      {mode === "authenticated" ? <div id="voople-sidebar-session-root" data-account-dock={accountInDock ? "true" : undefined} className="voople-sidebar__session shrink-0">
+        {sessionDock}
+        {accountInDock && accountNavigation ? <div className="voople-sidebar__dock-account">{accountNavigation}</div> : null}
+      </div> : null}
 
-      <div className="voople-sidebar__footer shrink-0 border-t border-[var(--app-border)] px-3 pb-7 pt-5">
+      {!accountInDock || footerItems.length || footerAfter ? <div className="voople-sidebar__footer shrink-0 border-t border-[var(--app-border)] px-3 pb-7 pt-5">
         {footerItems.map(({ href, label, icon: Icon }) => {
           const active = pathname.startsWith(href);
           return (
@@ -172,7 +157,7 @@ export function AppSidebarVisual({
           );
         })}
         {!collapsed ? footerAfter : null}
-        {accountNavigation ? (
+        {!accountInDock && accountNavigation ? (
           <SidebarItemTooltip
             label="Аккаунт"
             enabled={collapsed}
@@ -181,7 +166,7 @@ export function AppSidebarVisual({
             {accountNavigation}
           </SidebarItemTooltip>
         ) : null}
-      </div>
+      </div> : null}
     </aside>
   );
 }

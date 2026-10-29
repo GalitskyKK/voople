@@ -99,4 +99,4 @@ test('new effective snapshots, historical and nested reposts remain captured wit
     for(const appearance of [mapPostRow(original,author).appearance,nested.repost.target.appearance]){assert.equal(appearance.customization.assets.frame.id,'frame-custom');assert.equal(appearance.customization.cardBaseMode,'theme');assert.equal(appearance.customization.themePrimary,'#123456')}
   }assert.deepEqual(snapshot,before);
 });
-test('required migration count and apply order are 52',()=>{assert.equal(REQUIRED_MIGRATIONS.length,52);assert.equal(RELEASE_APPLY_ORDER.length,52);assert.equal(REQUIRED_MIGRATIONS.at(-1),'93-style-profile-card-write-boundary.sql')});
+test('release migrations include profile styling and additive room covers',()=>{assert.equal(REQUIRED_MIGRATIONS.length,53);assert.equal(RELEASE_APPLY_ORDER.length,53);assert.ok(REQUIRED_MIGRATIONS.includes('93-style-profile-card-write-boundary.sql'));assert.equal(REQUIRED_MIGRATIONS.at(-1),'94-room-covers.sql')});

@@ -2,6 +2,8 @@
 
 import { ArrowLeft, Search, UsersRound } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useIsClient } from "@/hooks/useIsClient";
 
 import { GroupAvatar } from "@/components/chat/GroupAvatar";
 import { ProfileAvatar } from "@/components/profile/ProfileAvatar";
@@ -11,6 +13,7 @@ import type { ChatListItem } from "@/types/chat";
 import type { BetaSearchPerson } from "@/types/search";
 
 import type { NavigationDestinationRenderer } from "./AppNavigationVisual";
+import { MessengerDirectSearch } from "./MessengerDirectSearch";
 
 type Scope = "all" | "conversations" | "groups" | "people";
 
@@ -18,14 +21,18 @@ const scopes: readonly [Scope, string][] = [
   ["all", "Все"],
   ["conversations", "Диалоги"],
   ["groups", "Группы"],
-  ["people", "Люди"],
+  ["people", "Участники"],
 ];
 
-export function MessengerSearchPalette({ chats, renderDestination, onClose }: {
+export function MessengerSearchPalette({ chats, renderDestination, onClose, variant = "search", onNavigate }: {
   chats: ChatListItem[];
   renderDestination: NavigationDestinationRenderer;
   onClose: (restoreFocus?: boolean) => void;
+  variant?: "search" | "new-direct";
+  onNavigate?: (href: string) => void;
 }) {
+  const mounted = useIsClient();
+  const newDirect = variant === "new-direct";
   const { query, setQuery, debouncedQuery } = useDebouncedSearchQuery(220);
   const [scope, setScope] = useState<Scope>("all");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -33,7 +40,7 @@ export function MessengerSearchPalette({ chats, renderDestination, onClose }: {
   const normalized = query.trim().toLocaleLowerCase("ru-RU");
   const people = trpc.search.beta.useQuery(
     { q: debouncedQuery },
-    { enabled: debouncedQuery.length > 0 && (scope === "all" || scope === "people"), staleTime: 10_000 },
+    { enabled: !newDirect && debouncedQuery.length > 0 && (scope === "all" || scope === "people"), staleTime: 10_000 },
   );
   const matchingChats = useMemo(() => chats.filter((chat) => {
     if (chat.parentChatId) return false;
@@ -51,7 +58,7 @@ export function MessengerSearchPalette({ chats, renderDestination, onClose }: {
   const visiblePeople = people.data?.people ?? [];
   const showPeople = normalized.length > 0 && (scope === "all" || scope === "people");
 
-  useLayoutEffect(() => inputRef.current?.focus(), []);
+  useLayoutEffect(() => inputRef.current?.focus(), [mounted]);
   useEffect(() => {
     const focusInput = () => {
       inputRef.current?.focus();
@@ -76,28 +83,32 @@ export function MessengerSearchPalette({ chats, renderDestination, onClose }: {
     };
   }, [onClose]);
 
-  return (
+  if (!mounted) return null;
+  return createPortal(
     <>
       <div className="voople-sidebar-search-scrim fixed inset-0" aria-hidden="true" />
-      <div ref={rootRef} className="voople-sidebar-search-palette absolute left-0 top-0 w-[min(400px,calc(100vw-24px))] overflow-hidden rounded-[var(--app-radius-md)] border border-[var(--app-border-strong)] bg-[var(--material-overlay-fill)] shadow-[var(--material-overlay-shadow)]" role="dialog" aria-label="Поиск" aria-modal="false">
+      <div ref={rootRef} className="voople-sidebar-search-palette absolute left-0 top-0 w-[min(400px,calc(100vw-24px))] overflow-hidden rounded-[var(--app-radius-md)] border border-[var(--app-border-strong)] bg-[var(--material-overlay-fill)] shadow-[var(--material-overlay-shadow)]" role="dialog" aria-label={newDirect ? "Новый диалог" : "Поиск"} aria-modal="false">
+      {newDirect ? <h2 className="px-3 pt-3 pb-1 text-sm font-semibold">Новый диалог</h2> : null}
       <div className="flex h-11 items-center gap-2 border-b border-[var(--app-border)] px-2 focus-within:shadow-[inset_0_0_0_2px_var(--theme-accent)]">
         <Search className="ml-1 h-4 w-4 shrink-0 text-[var(--app-muted)]" aria-hidden="true" />
-        <input ref={inputRef} type="search" value={query} onChange={(event) => setQuery(event.target.value.slice(0, 50))} placeholder="Диалоги, группы и люди" aria-label="Поиск диалогов, групп и людей" className="min-w-0 flex-1 bg-transparent text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--app-muted)]" />
+        <input ref={inputRef} type="search" value={query} onChange={(event) => setQuery(event.target.value.slice(0, 50))} placeholder={newDirect ? "Имя или ник" : "Диалоги, группы и участники"} aria-label={newDirect ? "Найти собеседника" : "Поиск диалогов, групп и участников"} className="min-w-0 flex-1 bg-transparent text-sm text-[var(--foreground)] outline-none placeholder:text-[var(--app-muted)]" />
         <button type="button" onClick={() => onClose(true)} aria-label="Закрыть поиск" className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-[var(--theme-accent)]"><ArrowLeft className="h-4 w-4" /></button>
       </div>
-      <div className="voople-scroll flex gap-1 overflow-x-auto border-b border-[var(--app-border)] p-2" aria-label="Область поиска">
+      {!newDirect ? <div className="voople-scroll flex gap-1 overflow-x-auto border-b border-[var(--app-border)] p-2" aria-label="Область поиска">
         {scopes.map(([id, label]) => <button key={id} type="button" aria-pressed={scope === id} onClick={() => setScope(id)} className={`min-h-9 shrink-0 rounded-lg px-3 text-xs font-medium focus-visible:outline-2 focus-visible:outline-[var(--theme-accent)] ${scope === id ? "bg-[var(--app-accent-soft)] text-[var(--foreground)]" : "text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)]"}`}>{label}</button>)}
-      </div>
+      </div> : null}
       <div data-voople-scroll="" className="voople-scroll max-h-[min(60vh,480px)] overflow-y-auto p-2">
+        {newDirect && onNavigate ? <MessengerDirectSearch query={debouncedQuery} pendingQuery={debouncedQuery !== query.trim()} onNavigate={onNavigate} onClose={() => onClose(false)} /> : <>
         <ChatResults title="Диалоги" chats={conversations} renderDestination={renderDestination} onClose={onClose} />
         <ChatResults title="Группы" chats={groups} renderDestination={renderDestination} onClose={onClose} />
         {showPeople ? <PeopleResults people={visiblePeople} pending={people.isFetching || debouncedQuery !== query.trim()} error={Boolean(people.error)} renderDestination={renderDestination} onClose={onClose} /> : null}
         {normalized && !matchingChats.length && (!showPeople || (!people.isFetching && !people.error && debouncedQuery === query.trim() && !visiblePeople.length)) ? <p className="px-2 py-3 text-sm text-[var(--app-muted)]">Ничего не найдено</p> : null}
         {!normalized && !matchingChats.length ? <p className="px-2 py-3 text-sm text-[var(--app-muted)]">{scope === "people" ? "Введите имя или ник, чтобы найти человека." : scope === "groups" ? "Здесь появятся ваши группы." : scope === "conversations" ? "Здесь появятся ваши диалоги." : "Здесь появятся ваши диалоги и группы."}</p> : null}
         {(scope === "all" || scope === "groups") && normalized ? <div className="mt-2 border-t border-[var(--app-border)] pt-2">{renderDestination({ href: `/search?q=${encodeURIComponent(query.trim())}`, label: "Искать публичные группы", active: false, onNavigate: () => onClose(false), className: "flex min-h-10 items-center gap-2 rounded-lg px-2 text-xs text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-[var(--theme-accent)]", children: <><UsersRound className="h-4 w-4" aria-hidden="true" />Искать публичные группы</> })}</div> : null}
+        </>}
       </div>
       </div>
-    </>
+    </>, document.fullscreenElement ?? document.body,
   );
 }
 
@@ -109,10 +120,10 @@ function PeopleResults({ people, pending, error, renderDestination, onClose }: {
   onClose: (restoreFocus?: boolean) => void;
 }) {
   return (
-    <section aria-label="Люди" className="mt-2">
-      <h2 className="px-2 py-1 text-xs font-medium text-[var(--app-muted)]">Люди</h2>
-      {pending ? <p className="px-2 py-3 text-xs text-[var(--app-muted)]" role="status">Ищем людей…</p>
-        : error ? <p className="px-2 py-3 text-xs text-[var(--voople-danger)]" role="alert">Не удалось найти людей. Повторите поиск.</p>
+    <section aria-label="Участники" className="mt-2">
+      <h2 className="px-2 py-1 text-xs font-medium text-[var(--app-muted)]">Участники</h2>
+      {pending ? <p className="px-2 py-3 text-xs text-[var(--app-muted)]" role="status">Ищем участников…</p>
+        : error ? <p className="px-2 py-3 text-xs text-[var(--voople-danger)]" role="alert">Не удалось найти участников. Повторите поиск.</p>
           : <ul>{people.map((person) => (
             <li key={person.id}>
               {renderDestination({

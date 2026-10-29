@@ -1,0 +1,46 @@
+.voople-group-chat-header > [hidden], .voople-room-channel-slot[hidden], .voople-group-chat-header__section-slot[hidden] { display: none; }
+.voople-room-channel-slot { display: flex; min-width: 0; flex: 1; align-items: center; }
+.voople-room-channel-title { display: flex; min-width: 0; flex: 1; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+.voople-room-channel-title .voople-full-room__title { font-size: 14px; line-height: 20px; letter-spacing: 0; }
+.voople-room-channel-standalone { display: flex; min-height: 52px; flex-shrink: 0; align-items: center; padding: 8px 16px; }
+.voople-room-channel-mobile { display: flex; min-height: 44px; align-items: center; gap: 6px; padding-inline: 8px; }
+.voople-room-channel-mobile > button, .voople-group-surface[data-voice-open="true"] .voople-group-surface__people-action { display: grid; width: 44px; min-width: 44px; min-height: 44px; place-items: center; border-radius: 10px; }
+html[data-interface-design="orbit"] .voople-group-surface[data-mode="wide"][data-voice-open="true"] .voople-group-workspace { grid-template-columns: minmax(288px,320px) minmax(0,1fr); }
+html[data-interface-design="orbit"] .voople-group-workspace__people-drawer { z-index: 90; }
+html[data-interface-design="orbit"] .voople-group-surface[data-mode="compact"] .voople-group-workspace__people-drawer { width: 100%; }
+.voople-voice-compact__quality { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; vertical-align: middle; }
+.voople-full-room[data-orbit-chrome="true"] .voople-full-room__content { padding-bottom: 132px; }
+.voople-orbit-call-controls { position: absolute; z-index: 20; left: 50%; bottom: 12px; display: flex; width: max-content; max-width: calc(100% - 24px); flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; padding: 8px; border-radius: 14px; background: var(--material-overlay-fill); box-shadow: var(--app-shadow-md); opacity: 0; transform: translate(-50%,6px); pointer-events: none; transition: opacity 350ms var(--voople-ease-smooth), transform 500ms var(--voople-ease-smooth); }
+.voople-full-room[data-orbit-chrome="true"] .voople-orbit-call-controls .voople-full-room__footer { order: 0; min-height: 0; padding: 0; border: 0; background: transparent; }
+.voople-orbit-call-controls .voople-full-room__header-actions { order: 1; flex-wrap: wrap; justify-content: center; }
+.voople-full-room__primary:is(:hover,:has(:focus-visible)) > .voople-orbit-call-controls, .voople-orbit-call-controls[data-needs-attention="true"], .voople-orbit-call-controls:focus-within { opacity: 1; transform: translateX(-50%); pointer-events: auto; }
+@container (min-width: 640px) { .voople-full-room[data-orbit-chrome="true"] .voople-full-room__content { padding-bottom: 88px; } }
+@media (hover: none), (pointer: coarse) {
+  .voople-orbit-call-controls { opacity: 1; transform: translateX(-50%); pointer-events: auto; }
+  .voople-orbit-call-controls .voople-full-room__header-actions button { width: 44px; height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) { .voople-orbit-call-controls { transition: none; transform: translateX(-50%); } }
+html[data-reduce-motion="true"] .voople-orbit-call-controls { transition: none; transform: translateX(-50%); }
+
+/* Window actions have stable corners, separate from media actions. */
+.voople-full-room__header-actions[data-action-placement="corner-top"] { gap: 4px; align-self: center; }
+.voople-full-room__header-actions[data-action-placement="corner-top"] button,
+.voople-orbit-call-fullscreen button { background: transparent; border-color: transparent; }
+.voople-full-room__header-actions[data-action-placement="corner-top"] button:hover,
+.voople-orbit-call-fullscreen button:hover { background: var(--material-row-hover); }
+.voople-orbit-call-fullscreen { position: absolute; right: 12px; bottom: max(20px, env(safe-area-inset-bottom)); z-index: 21; }
+.voople-room-chat-panel__header { display: flex; min-height: 52px; flex-shrink: 0; align-items: center; gap: 8px; padding-inline: 12px 4px; border-bottom: 1px solid var(--app-border); }
+.voople-room-chat-panel .voople-chat-window > .voople-stage { margin: 0; border-radius: 0; box-shadow: none; background: transparent; }
+.voople-shell[data-route-kind="messages"] .voople-group-surface-tabs__participants[role="tab"] { display: grid; width: 44px; min-height: 44px; padding: 0; place-items: center; }
+@container (max-width: 999px) {
+  .voople-full-room[data-orbit-chrome="true"] .voople-room-chat-panel { bottom: 84px; }
+  .voople-full-room[data-orbit-chrome="true"][data-chat-open="true"] .voople-orbit-call-controls { opacity: 1; transform: translateX(-50%); pointer-events: auto; }
+  .voople-full-room[data-orbit-chrome="true"][data-chat-open="true"] [data-action-placement="toolbar"] { display: none; }
+}
+@container (max-width: 480px) {
+  .voople-orbit-call-controls { left: calc(50% - 24px); max-width: calc(100% - 72px); gap: 4px; }
+  .voople-orbit-call-controls .voople-voice-media-controls,
+  .voople-orbit-call-controls .voople-full-room__footer > div { gap: 4px; }
+  .voople-orbit-call-fullscreen { right: 4px; }
+  .voople-room-channel-standalone { padding-inline: 8px; }
+}

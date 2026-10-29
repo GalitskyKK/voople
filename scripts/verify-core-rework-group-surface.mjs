@@ -1,4 +1,5 @@
 import { groupVoiceFixture } from "./lib/visual-group-voice.mjs";
+import { verifyOrbitInterface } from "./lib/verify-orbit-interface.mjs";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { createRequire } from "node:module";
@@ -20,12 +21,39 @@ console.log(`Screenshots: ${artifacts}`);
 const require = createRequire(`${repo}/package.json`);
 const { build } = require("esbuild");
 const { chromium } = require("playwright");
+const customizationBundle = await build({ stdin: { contents: 'export { resolveCustomization } from "./src/lib/customization/resolve.ts";', resolveDir: repo }, bundle: true, platform: "node", format: "esm", write: false, alias: { "@": `${repo}/src` } });
+const { resolveCustomization } = await import(`data:text/javascript,${encodeURIComponent(customizationBundle.outputFiles[0].text)}`);
+const peerProfile = { id: "user-biba", username: "biba", displayName: "Biba", bio: "Люблю собираться с друзьями вечером.", createdAt: "2026-01-01", hasVooplePlus: false, customization: { ...resolveCustomization(), bannerValue: {} }, status: {}, stats: { posts: 0, followers: 0, following: 0, views: 0 } };
 
 const bundle = await build({
   stdin: { contents: groupVoiceFixture, resolveDir: repo, loader: "tsx" }, bundle: true, write: false,
   format: "iife", jsx: "automatic", alias: { "@": `${repo}/src` },
   define: { "process.env.NODE_ENV": '"development"' },
   plugins: [{ name: "profile-preview-fixture", setup(build) {
+    // Real drawer and composer geometry; no authenticated messaging transport.
+    build.onResolve({ filter: /^\.\/RoomMessagesPanel$/ }, () => ({ path: "room-messages", namespace: "fixture" }));
+    build.onLoad({ filter: /^room-messages$/, namespace: "fixture" }, () => ({ loader: "tsx", resolveDir: repo, contents: `
+      import {useEffect,useState} from 'react';
+      import {RoomMessagesPanelFrame} from '@/components/chat/voice/RoomMessagesPanelFrame';
+      import {useRoomChatPanelWidth} from '@/components/chat/voice/useRoomChatPanelWidth';
+      import {ChatThreadFrameView} from '@/components/chat/ChatThreadFrameView';
+      import {ChatComposerFormView} from '@/components/chat/ChatComposerFormView';
+      let draft='';
+      export function RoomMessagesPanel({onClose}) {
+        const resize=useRoomChatPanelWidth();const [text,setText]=useState(draft);
+        useEffect(()=>{const close=e=>{if(e.key==='Escape'){e.preventDefault();onClose();}};document.addEventListener('keydown',close);return()=>document.removeEventListener('keydown',close);},[onClose]);
+        return <RoomMessagesPanelFrame audienceLabel="Общий" resize={resize} onClose={onClose}>
+          <ChatThreadFrameView header={null} timeline={[]} messagesRef={()=>{}} messagesContentRef={()=>{}} renderMessage={()=>null}
+            emptyState={<p>До встречи вечером!</p>}
+            composer={<div className="px-2 pb-2"><ChatComposerFormView textLength={text.length} onSubmit={()=>{}} input={{focusKey:'room-fixture',text,canSend:!!text.trim(),sending:false,busy:false,hasAttachment:false,editing:false,onTextChange:value=>{draft=value;setText(value)},onSubmit:()=>{},onImageSelected:()=>{},onAudioSelected:()=>{},onPastedFile:()=>{},onVoiceRecorded:()=>{},onError:()=>{}}}/></div>}/>
+        </RoomMessagesPanelFrame>;
+      }
+    ` }));
+    build.onResolve({ filter: /^next\/link$/ }, () => ({ path: "link", namespace: "fixture" }));
+    build.onLoad({ filter: /^link$/, namespace: "fixture" }, () => ({ loader: "tsx", resolveDir: repo, contents: `
+      import {forwardRef} from 'react';
+      export default forwardRef(function FixtureLink({href,children,prefetch,replace,scroll,...props},ref){return <a ref={ref} href={typeof href==='string'?href:href?.pathname} {...props}>{children}</a>});
+    ` }));
     build.onResolve({ filter: /^@tauri-apps\/api\/window$/ }, () => ({ path: "tauri-window", namespace: "fixture" }));
     build.onLoad({ filter: /^tauri-window$/, namespace: "fixture" }, () => ({ loader: "js", contents: "export const getCurrentWindow=()=>({minimize(){},toggleMaximize(){},close(){}});" }));
     // This layout fixture has no authenticated tRPC provider. Keep the preview trigger contract.
@@ -41,25 +69,45 @@ const bundle = await build({
     ` }));
   } }],
 });
-const cssByHost = {
-  web: await loadCurrentVisualCss(repo, { host: "web" }),
-  desktop: await loadCurrentVisualCss(repo, { host: "desktop" }),
-};
+if (process.argv.includes("--orbit-focus")) console.log("Shared-view fixture bundled");
+const webCss = await loadCurrentVisualCss(repo, { host: "web" });
+const cssByHost = { web: webCss, desktop: await loadCurrentVisualCss(repo, { host: "desktop", sharedCss: webCss }) };
+if (process.argv.includes("--orbit-focus")) console.log("Current web and desktop CSS compiled");
 const messengerCss = await readFile(path.join(repo, "src/app/styles/messenger-glass.css"), "utf8");
 for (const host of Object.keys(cssByHost)) {
   if (!cssByHost[host].includes(".voople-group-surface-header")) cssByHost[host] += `\n${messengerCss}`;
 }
 const logo = await readFile(path.join(repo, "public/favicon/android-chrome-192x192.png"));
+const fixtureBanner = await readFile(path.join(repo, "public/customization/banners/minti.webp"));
 const geistSans = await readFile(path.join(repo, "node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2"));
 const geistMono = await readFile(path.join(repo, "node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2"));
 const geistPixelSquare = await readFile(path.join(repo, "node_modules/geist/dist/fonts/geist-pixel/GeistPixel-Square.woff2"));
-const server = createServer((request, response) => {
+const respondToFixture = (request, response) => {
+  if (request.url?.startsWith("/api/trpc/profile.getBetaByUsername")) {
+    response.setHeader("Content-Type", "application/json");
+    response.end(JSON.stringify([{ result: { data: { json: peerProfile } } }]));
+    return;
+  }
+  if (request.url?.startsWith("/api/trpc/chat.contacts") || request.url?.startsWith("/api/trpc/chat.openDirect")) {
+    response.setHeader("Content-Type", "application/json");
+    const data = request.url.startsWith("/api/trpc/chat.contacts")
+      ? [{ type: "user", id: "user-biba", username: "biba", displayName: "Biba", bio: null, avatarUrl: null }]
+      : { chatId: "direct-biba" };
+    response.end(JSON.stringify([{ result: { data: { json: data } } }]));
+    return;
+  }
+  if (request.url?.startsWith("/api/trpc/chat.coreUpdateRoomCover")) {
+    response.setHeader("Content-Type", "application/json");
+    response.end(JSON.stringify([{ result: { data: { json: { ok: true } } } }]));
+    return;
+  }
   if (request.url?.startsWith("/api/trpc/search.beta")) {
     response.setHeader("Content-Type", "application/json");
     response.end(JSON.stringify([{ result: { data: { json: { people: [{ type: "user", id: "user-biba", username: "biba", displayName: "Biba", bio: null, avatarUrl: null, online: true, commonGroups: { count: 1, groups: [{ id: "group-1", name: "VOICEKK" }] }, canMessage: true }] } } } }]));
     return;
   }
   if (request.url === "/favicon/android-chrome-192x192.png") { response.setHeader("Content-Type", "image/png"); response.end(logo); return; }
+  if (request.url === "/fixture-banner.webp") { response.setHeader("Content-Type", "image/webp"); response.end(fixtureBanner); return; }
   if (request.url === "/fonts/geist-sans.woff2") { response.setHeader("Content-Type", "font/woff2"); response.end(geistSans); return; }
   if (request.url === "/fonts/geist-mono.woff2") { response.setHeader("Content-Type", "font/woff2"); response.end(geistMono); return; }
   if (request.url === "/fonts/geist-pixel-square.woff2") { response.setHeader("Content-Type", "font/woff2"); response.end(geistPixelSquare); return; }
@@ -68,8 +116,12 @@ const server = createServer((request, response) => {
   const host = new URL(request.url ?? "/", "http://localhost").searchParams.get("host") === "desktop" ? "desktop" : "web";
   response.setHeader("Content-Type", "text/html; charset=utf-8");
   response.end(`<!doctype html><html data-app-theme="void" data-visual-host="${host}"><head><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/style.css?host=${host}"></head><body><div id="root"></div><script src="/app.js"></script></body></html>`);
-});
-await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+};
+const offline = process.argv.includes("--offline");
+const server = createServer(respondToFixture);
+if (!offline) await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+const fixtureUrl = offline ? "http://voople-fixture.test" : `http://127.0.0.1:${server.address().port}`;
+if (process.argv.includes("--orbit-focus")) console.log(`Visual fixture: ${offline ? "in-memory, no network" : fixtureUrl}`);
 
 async function verifySearchPalette(page, { width, theme, host, artifacts }) {
   if (width < 1024) {
@@ -151,6 +203,21 @@ async function verifySearchPalette(page, { width, theme, host, artifacts }) {
 let browser;
 try {
   browser = await chromium.launch({ headless: true });
+  if (offline) {
+    const newPage = browser.newPage.bind(browser);
+    browser.newPage = async (options) => {
+      const page = await newPage(options);
+      await page.route("**/*", async (route) => {
+        const url = new URL(route.request().url());
+        const headers = {};
+        let body;
+        respondToFixture({ url: `${url.pathname}${url.search}` }, { setHeader: (name, value) => { headers[name] = value; }, end: (value) => { body = value; } });
+        await route.fulfill({ status: 200, headers, body });
+      });
+      return page;
+    };
+  }
+  if (process.argv.includes("--orbit-focus")) await verifyOrbitInterface({ browser, baseUrl: fixtureUrl, artifacts });
   const allVisualCases = ["web", "desktop"].flatMap(host => [
     {width:1440,theme:"void",host,count:8}, {width:1440,theme:"light",host,count:8},
     {width:1280,theme:"void",host,count:8}, {width:1100,theme:"void",host,count:8},
@@ -161,7 +228,7 @@ try {
     {width:390,theme:"light",host,count:20},
   ]);
   const searchFocus = process.argv.includes("--search-focus");
-  const visualCases = searchFocus
+  const visualCases = process.argv.includes("--orbit-focus") ? [] : searchFocus
     ? allVisualCases.filter(({width,theme,count}) => count === 8 && ([390,768,960,1100,1280,1440].includes(width) && theme === "void" || [390,1440].includes(width) && theme === "light"))
     : process.argv.includes("--correction-focus")
       ? allVisualCases.filter(({width,theme,count}) => [390,768,1100,1440].includes(width) && theme === "void" && count === 8)
@@ -172,7 +239,7 @@ try {
     page.on("pageerror", error=>errors.push(error.message));
     page.on("console", message=>{if(message.type()==="error")errors.push(message.text())});
     await page.addInitScript(value=>localStorage.setItem("voople:app-theme",value),theme);
-    await page.goto(`http://127.0.0.1:${server.address().port}?host=${host}&count=${count}${searchFocus ? "&search=1" : ""}`);
+    await page.goto(`${fixtureUrl}?host=${host}&count=${count}${searchFocus ? "&search=1" : ""}`);
     await page.evaluate(()=>document.fonts.ready);
     await page.getByRole("button",{name:"Открыть текущую комнату Лобби"}).waitFor();
     if (searchFocus) {
@@ -380,5 +447,5 @@ try {
   }
 } finally {
   await browser?.close();
-  await new Promise(resolve=>server.close(resolve));
+  if (server.listening) await new Promise(resolve=>server.close(resolve));
 }

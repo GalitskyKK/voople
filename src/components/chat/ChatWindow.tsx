@@ -110,6 +110,7 @@ export function ChatWindow({ chatId, initialGroupTab = "now" }: ChatWindowProps)
   const otherOnline = Boolean(other?.id && onlineUserIds.has(other.id));
   return (
     <ChatThreadFrameView
+      workspace={isGroup ? "conversation" : "direct"}
       accentColor={isGroup ? data?.chat.groupAccentColor : null}
       groupSurface={isGroup ? {
         groupId: data?.chat.parentChatId ?? chatId,

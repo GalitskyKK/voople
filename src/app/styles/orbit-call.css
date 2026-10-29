@@ -1,0 +1,32 @@
+/* Shared Orbit identity geometry; video and screen focus keep their media layout. */
+.voople-orbit-call-grid { display: flex; min-height: 0; min-width: 0; flex: 1; overflow: auto; padding: 12px; scrollbar-gutter: auto; }
+.voople-orbit-call-grid__tiles { display: grid; flex: none; align-content: center; gap: var(--call-grid-gap); margin: auto; }
+.voople-orbit-call-grid__slot { display: flex; justify-content: center; padding-top: 24px; }
+.voople-full-room__participant.voople-orbit-call-tile { position: relative; isolation: isolate; width: var(--call-tile-size); height: var(--call-tile-size); min-height: 0; padding: 0; overflow: visible; border: 0; border-radius: 18%; background: var(--material-control-fill); transform: scale(1); transform-origin: center; transition: transform var(--voople-motion-room) var(--voople-ease-smooth), box-shadow var(--voople-motion-room) var(--voople-ease-smooth); }
+html[data-interface-design="orbit"] .voople-orbit-call-tile[data-speaking="true"] { box-shadow: 0 0 0 2px var(--material-ice), 0 4px 24px color-mix(in srgb, var(--material-ice) 18%, transparent); }
+.voople-orbit-call-tile__target { position: absolute; z-index: 6; inset: 0; width: 100%; height: 100%; border-radius: inherit; }
+.voople-orbit-call-tile__target:focus-visible, .voople-orbit-call-tile__more:focus-visible { outline: 2px solid var(--material-focus-ring); outline-offset: 3px; }
+.voople-orbit-call-tile__more { position: absolute; z-index: 30; top: 0; right: 0; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; color: var(--foreground); opacity: 0; transition: opacity var(--voople-motion-orbit-feedback) var(--voople-ease-smooth); }
+.voople-orbit-call-tile__more > svg { padding: 4px; box-sizing: content-box; border-radius: 50%; background: var(--material-overlay-fill); }
+.voople-orbit-call-tile__portrait { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.voople-orbit-call-tile__portrait > div { width: 100%; height: 100%; }
+.voople-orbit-call-tile[data-decorated="true"] .voople-orbit-call-tile__portrait > div { width: 70%; height: 70%; }
+.voople-orbit-call-tile__portrait > div > .relative:not(.voople-ring) { border: 0; border-radius: 18%; }
+.voople-orbit-call-tile__portrait .voople-avatar-token__glyph { font-size: clamp(28px, calc(var(--call-tile-size) * .32), 56px); }
+.voople-orbit-call-tile__caption { position: absolute; inset: auto 0 calc(100% + 5px); width: 100%; height: 19px; line-height: 19px; font-size: 12px; }
+.voople-orbit-call-tile__caption :is(button,p) { font-size: 12px; line-height: 19px; }
+.voople-orbit-call-tile__caption > p:last-child { display: none; }
+.voople-orbit-call-tile > span.absolute { top: auto; right: 6px; bottom: 6px; padding: 4px; pointer-events: none; }
+.voople-orbit-call-tile[data-actions-open="true"], .voople-orbit-call-tile:focus-within { z-index: 3; transform: scale(1.08); }
+.voople-orbit-call-tile:is(:focus-within,[data-actions-open="true"]) .voople-orbit-call-tile__more { opacity: 1; }
+.voople-orbit-call-grid__tiles:has([data-actions-open="true"],:focus-visible) .voople-orbit-call-tile:not([data-actions-open="true"]):not(:focus-within) { transform: scale(.97); }
+.voople-dropdown-menu.voople-orbit-call-menu { z-index: 220; width: 192px; }
+.voople-orbit-call-menu__volume { display: block; padding: 10px 12px 4px; border-radius: 10px; background: var(--material-overlay-fill); color: var(--app-muted); font-size: 12px; }
+@media (hover: hover) and (pointer: fine) {
+  .voople-orbit-call-tile:hover { z-index: 3; transform: scale(1.08); }
+  .voople-orbit-call-tile:hover .voople-orbit-call-tile__more { opacity: 1; }
+  .voople-orbit-call-grid__tiles:has(.voople-orbit-call-tile:hover) .voople-orbit-call-tile:not(:hover):not([data-actions-open="true"]):not(:focus-within) { transform: scale(.97); }
+}
+@media (hover: none), (pointer: coarse) { .voople-orbit-call-tile__more { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .voople-full-room__participant.voople-orbit-call-tile { transition: none; transform: none !important; } }
+html[data-reduce-motion="true"] .voople-full-room__participant.voople-orbit-call-tile { transition: none; transform: none !important; }

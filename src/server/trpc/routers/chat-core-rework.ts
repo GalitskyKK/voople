@@ -1,5 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { roomCoverDraftSchema } from "@/lib/chat/room-cover";
+import { updateRoomCover } from "@/server/services/room-covers.service";
 
 import { LIVE_MOVE_SCHEMA_UNAVAILABLE } from "@/lib/chat/live-move-readiness";
 
@@ -179,6 +181,7 @@ export const chatCoreReworkProcedures = {
       groupId: z.string().uuid(),
       name: z.string().trim().min(1).max(80),
       requestId: z.string().uuid(),
+      cover: roomCoverDraftSchema.optional(),
       micMuted: z.boolean().default(true),
       confirmedCrossContext: z.boolean().default(false),
     }))
@@ -193,6 +196,7 @@ export const chatCoreReworkProcedures = {
           kind: "pinned",
           name: input.name,
           requestId: input.requestId,
+          cover: input.cover,
           micMuted: input.micMuted,
           allowCrossContext: input.confirmedCrossContext,
         });
@@ -228,6 +232,15 @@ export const chatCoreReworkProcedures = {
       } catch (error) {
         throw toRoomError(error, "Не удалось изменить тип комнаты");
       }
+    }),
+
+  coreUpdateRoomCover: protectedProcedure
+    .input(z.strictObject({ roomId: z.string().uuid(), cover: roomCoverDraftSchema }))
+    .mutation(async ({ ctx, input }) => {
+      assertMultiRoomAccess(ctx.user.id);
+      await assertRateLimit(rateLimits.manageGroupChat, ctx.user.id);
+      try { return await updateRoomCover({ ...input, userId: ctx.user.id }); }
+      catch (error) { throw toRoomError(error, "Не удалось сохранить обложку"); }
     }),
 
   coreRenameRoom: protectedProcedure

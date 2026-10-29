@@ -5,6 +5,7 @@ export const UPLOAD_LIMITS: Record<UploadPurpose, { maxBytes: number }> = {
   comment: { maxBytes: 10 * 1024 * 1024 },
   avatar: { maxBytes: 5 * 1024 * 1024 },
   "group-avatar": { maxBytes: 5 * 1024 * 1024 },
+  "room-cover": { maxBytes: 5 * 1024 * 1024 },
   "group-emoji": { maxBytes: 256 * 1024 },
   "group-sound": { maxBytes: 1024 * 1024 },
   banner: { maxBytes: 5 * 1024 * 1024 },

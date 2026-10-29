@@ -129,3 +129,5 @@ next-env.d.ts
 
 !/drizzle/93-style-profile-card-write-boundary.sql
 !/docs/style-profile-card.md
+!/drizzle/94-room-covers.sql
+!/docs/orbit-interface.md

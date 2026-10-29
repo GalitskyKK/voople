@@ -12,6 +12,7 @@ function source(path) {
 test("group surface defaults to Voice and keeps the three product modes accessible", () => {
   const shell = source("src/components/chat/GroupSurfaceShell.tsx");
   const workspace = source("src/components/chat/GroupWorkspaceView.tsx");
+  const header = source("src/components/chat/GroupWorkspaceHeader.tsx");
   const mode = source("src/hooks/useGroupWorkspaceMode.ts");
   const tabs = source("src/components/chat/GroupSurfaceTabs.tsx");
 
@@ -21,12 +22,13 @@ test("group surface defaults to Voice and keeps the three product modes accessib
   assert.match(shell, /variant="surface"/);
   assert.match(shell, /<GroupPeoplePanel/);
   assert.match(shell, /onVoop=\{config\.onVoop\}/);
-  assert.match(workspace, /voople-group-surface-header--combined/);
-  assert.match(workspace, /!desktop \? <GroupSurfaceTabs/);
+  assert.match(workspace, /<GroupWorkspaceHeader/);
+  assert.match(header, /voople-group-surface-header--combined/);
+  assert.match(header, /!desktop \?[\s\S]*<GroupSurfaceTabs/);
   assert.match(workspace, /desktop \|\| activeTab === "now"/);
   assert.match(workspace, /desktop \|\| activeTab === "chat"/);
-  assert.match(workspace, /mode === "wide" \|\| activeTab === "people"/);
-  assert.match(workspace, /mode === "medium" && peopleOpen/);
+  assert.match(workspace, /mode === "wide" && !voiceOpen \|\| activeTab === "people"/);
+  assert.match(workspace, /\(mode === "medium" \|\| voiceOpen\) && peopleOpen/);
   assert.match(workspace, /event\.key !== "Escape"/);
   assert.match(workspace, /peopleTrigger\.current\?\.focus\(\)/);
   assert.match(mode, /ResizeObserver/);
@@ -34,7 +36,7 @@ test("group surface defaults to Voice and keeps the three product modes accessib
   assert.match(mode, /width >= 800/);
   assert.match(tabs, /\["chat", "Чат"\]/);
   assert.match(tabs, /\["now", "Войс"\]/);
-  assert.match(tabs, /\["people", "Люди"\]/);
+  assert.match(tabs, /\["people", "Участники"\]/);
   assert.match(tabs, /role="tablist"/);
   assert.match(tabs, /aria-selected=/);
 });
@@ -123,9 +125,11 @@ test("chat stream uses the wider centered canvas without stretching message copy
 test("Group Voice is an ordered Room list with complete independent rosters", () => {
   const panel = source("src/components/chat/GroupNowPanelView.tsx");
   const room = source("src/components/chat/GroupNowRoomSection.tsx");
+  const roomMap = source("src/components/chat/OrbitRoomMap.tsx");
   assert.doesNotMatch(panel, /voople-group-now__grid|GroupNowCreateCard/);
-  assert.match(panel, /persistentRooms.map\(renderRoom\)/);
-  assert.match(panel, /temporaryRooms.map\(renderRoom\)/);
+  assert.match(panel, /OrbitRoomMap rooms=\{persistentRooms\}/);
+  assert.match(panel, /OrbitRoomMap rooms=\{temporaryRooms\}/);
+  assert.match(roomMap, /if \(!orbit\) return <div className="voople-group-now__rooms">\{rooms.map\(renderRoom\)\}/);
   assert.match(panel, /room.kind === "temporary" && room.participantCount > 0/);
   assert.doesNotMatch(panel, /\.sort\(/);
   assert.match(room, /<section data-layout="room-section"/);
@@ -182,7 +186,7 @@ test("people view uses real member data and exposes room, presence and role cont
   assert.match(section, /roleLabels\[member\.role\]/);
   assert.match(section, /shape="square"/);
   assert.match(view, /max-w-\[960px\]/);
-  assert.match(view, /В голосе: \$\{sections\.live\.length\}/);
+  assert.match(view, /Активность: \$\{sections\.live\.length\}/);
   assert.match(view, /title="Доступны"/);
   assert.match(view, /title="Не в сети"/);
   assert.match(view, /<GroupPeopleSection/);

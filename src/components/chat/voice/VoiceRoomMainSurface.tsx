@@ -3,22 +3,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { Sheet } from "@/components/ui/Sheet";
 import { useIsClient } from "@/hooks/useIsClient";
 import { cn } from "@/lib/utils";
 
-import { CoreRoomInvitePanel } from "./CoreRoomInvitePanel";
 import { RoomMessagesPanel } from "./RoomMessagesPanel";
 import { useVoiceRoomFullscreen } from "./useVoiceRoomFullscreen";
+import { useVoiceRoomPlacement } from "./useVoiceRoomPlacement";
 import type { VoiceRoomMainSurfaceProps } from "./voice-room-sheet-models";
 import { VoiceRoomContent } from "./VoiceRoomContent";
 import { VoiceRoomFooter } from "./VoiceRoomFooter";
-import { VoiceRoomHeader } from "./VoiceRoomHeader";
+import { VoiceRoomHeader, type VoiceRoomHeaderProps } from "./VoiceRoomHeader";
+import { VoiceRoomHeaderActions } from "./VoiceRoomHeaderActions";
+import { VoiceRoomChannelTitle } from "./VoiceRoomChannelTitle";
 import { VoiceRoomSwitchStatus } from "./VoiceRoomSwitchStatus";
 import { VoiceRoomSwitcher } from "./VoiceRoomSwitcher";
-import { VoiceSoundboardPanel } from "./VoiceSoundboardPanel";
+import { VoiceRoomPanels, type SecondaryPanel } from "./VoiceRoomPanels";
 
-type SecondaryPanel = "settings" | "soundboard" | "invite" | "messages" | null;
 
 /** Full Room replaces route content while the global application sidebar remains mounted. */
 export function VoiceRoomMainSurface({
@@ -48,6 +48,7 @@ export function VoiceRoomMainSurface({
     toggleFullscreen,
     exitFullscreen,
   } = useVoiceRoomFullscreen();
+  const { main: mainArea, channel, orbitGroup, embedded, frame } = useVoiceRoomPlacement({ groupId: identity.groupId, open, fullscreen, onClose: onCloseToCompact });
 
   const closeSurface = useCallback((target: "mini" | "compact") => {
     if (session.leavePending) return;
@@ -92,7 +93,7 @@ export function VoiceRoomMainSurface({
   useEffect(() => {
     if (!open || fullscreen || secondaryPanel !== null) return;
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape" || event.defaultPrevented || document.querySelector('[data-voople-dropdown-menu="true"], [data-voople-group-people-drawer]')) return;
       event.preventDefault();
       event.stopPropagation();
       closeSurface("compact");
@@ -101,53 +102,43 @@ export function VoiceRoomMainSurface({
     return () => document.removeEventListener("keydown", handleEscape);
   }, [closeSurface, fullscreen, open, secondaryPanel]);
 
+  const headerModel: VoiceRoomHeaderProps = {
+    identity, connection, participantCount: stage.participants.length,
+    hasGroupSounds: stage.groupSounds.length > 0, hasRoomMessages: Boolean(messages),
+    roomMessagesOpen: secondaryPanel === "messages", roomSwitcher: embedded || fullscreen ? null : roomSwitcher,
+    roomRename, access, fullscreen, fullscreenPending, leavePending: session.leavePending,
+    canMinimizeToMini: session.inside,
+    onMinimizeToMini: () => closeSurface("mini"), onCloseToCompact: () => closeSurface("compact"),
+    onOpenSoundboard: () => setSecondaryPanel("soundboard"),
+    onToggleRoomMessages: () => secondaryPanel === "messages" ? closeRoomMessages() : setSecondaryPanel("messages"),
+    onOpenSettings: () => setSecondaryPanel("settings"), onToggleFullscreen: toggleFullscreen,
+  };
   if (!open || !mounted) return null;
-  const mainArea = document.querySelector<HTMLElement>("[data-voople-main-area]");
   if (!mainArea) return null;
 
   return createPortal(
     <section
       ref={surfaceRef}
       data-voople-room-surface="full"
+      data-room-presentation={embedded ? "embedded" : fullscreen ? "fullscreen" : "main"}
+      style={embedded ? frame ?? { visibility: "hidden" } : undefined}
       role="region"
       aria-label={`Комната ${identity.chatName}`}
       tabIndex={-1}
       className={cn(
         "bg-[var(--background)] outline-none",
-        fullscreen ? "fixed inset-0 z-[200]" : "absolute inset-0 z-[80]",
+        fullscreen ? "fixed inset-0 z-[200]" : embedded ? "absolute z-[30]" : "absolute inset-0 z-[80]",
       )}
     >
       <div
+        data-orbit-chrome={orbitGroup}
         data-chat-open={secondaryPanel === "messages" ? "true" : "false"}
         className="voople-full-room h-full min-h-0 w-full overflow-hidden border-0 shadow-none"
       >
         <div className="voople-full-room__frame relative flex h-full min-h-0 min-w-0 max-sm:flex-col">
-          {roomSwitcher ? <VoiceRoomSwitcher {...roomSwitcher} /> : null}
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <VoiceRoomHeader
-              identity={identity}
-              connection={connection}
-              participantCount={stage.participants.length}
-              hasGroupSounds={stage.groupSounds.length > 0}
-              hasRoomMessages={Boolean(messages)}
-              roomMessagesOpen={secondaryPanel === "messages"}
-              roomSwitcher={roomSwitcher}
-              roomRename={roomRename}
-              access={access}
-              fullscreen={fullscreen}
-              fullscreenPending={fullscreenPending}
-              leavePending={session.leavePending}
-              canMinimizeToMini={session.inside}
-              onMinimizeToMini={() => closeSurface("mini")}
-              onCloseToCompact={() => closeSurface("compact")}
-              onOpenSoundboard={() => setSecondaryPanel("soundboard")}
-              onToggleRoomMessages={() => {
-                if (secondaryPanel === "messages") closeRoomMessages();
-                else setSecondaryPanel("messages");
-              }}
-              onOpenSettings={() => setSecondaryPanel("settings")}
-              onToggleFullscreen={toggleFullscreen}
-            />
+          {roomSwitcher && !embedded && !fullscreen ? <VoiceRoomSwitcher {...roomSwitcher} /> : null}
+          <div className="voople-full-room__primary relative flex min-h-0 min-w-0 flex-1 flex-col">
+            {orbitGroup ? embedded && channel ? createPortal(<><VoiceRoomChannelTitle identity={identity} rename={roomRename} /><VoiceRoomHeaderActions {...headerModel} placement="corner-top" /></>, channel) : <header className="voople-room-channel-standalone"><VoiceRoomChannelTitle identity={identity} rename={roomRename} /><VoiceRoomHeaderActions {...headerModel} placement="corner-top" /></header> : <VoiceRoomHeader {...headerModel} />}
             <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
               <VoiceRoomContent
                 identity={identity}
@@ -159,12 +150,16 @@ export function VoiceRoomMainSurface({
               />
               {pendingRoom ? <VoiceRoomSwitchStatus roomName={pendingRoom.name} /> : null}
             </div>
+            <div className={orbitGroup ? "voople-orbit-call-controls" : undefined} data-needs-attention={Boolean(connection.audioBlocked || connection.errorMessage || session.leavePending)}>
+            {orbitGroup ? <VoiceRoomHeaderActions {...headerModel} placement="toolbar" /> : null}
             <VoiceRoomFooter
               connection={connection}
               controls={controls}
               access={access}
               session={session}
             />
+            </div>
+            {orbitGroup ? <div className="voople-orbit-call-fullscreen"><VoiceRoomHeaderActions {...headerModel} placement="corner-bottom" /></div> : null}
           </div>
           {messages && secondaryPanel === "messages" ? (
             <RoomMessagesPanel model={messages} onClose={closeRoomMessages} />
@@ -172,53 +167,7 @@ export function VoiceRoomMainSurface({
         </div>
       </div>
 
-      <Sheet
-        open={secondaryPanel === "settings"}
-        onClose={() => setSecondaryPanel(null)}
-        className="max-w-xl"
-        ariaLabel="Настройки звука и соединения"
-      >
-        <div className="mb-5 pr-10">
-          <h3 className="text-xl font-semibold">Звук и соединение</h3>
-          <p className="mt-1 text-sm text-[var(--app-muted)]">
-            Устройства, обработка голоса и маршрут медиасервера.
-          </p>
-        </div>
-        {settingsPanel}
-      </Sheet>
-      <Sheet
-        open={secondaryPanel === "soundboard"}
-        onClose={() => setSecondaryPanel(null)}
-        className="max-w-lg"
-        ariaLabel="Звуки группы"
-      >
-        <div className="mb-5 pr-10">
-          <h3 className="text-xl font-semibold">Звуки группы</h3>
-          <p className="mt-1 text-sm text-[var(--app-muted)]">
-            Звук услышат все участники комнаты.
-          </p>
-        </div>
-        <VoiceSoundboardPanel
-          sounds={stage.groupSounds}
-          onPlay={(sound) => {
-            stage.onGroupSoundPlay(sound);
-            setSecondaryPanel(null);
-          }}
-        />
-      </Sheet>
-      <Sheet
-        open={secondaryPanel === "invite" && Boolean(invite)}
-        onClose={() => setSecondaryPanel(null)}
-        className="max-w-lg"
-        ariaLabel="Пригласить участников в комнату"
-      >
-        {invite ? (
-          <CoreRoomInvitePanel
-            sessionId={invite.sessionId}
-            enabled={secondaryPanel === "invite"}
-          />
-        ) : null}
-      </Sheet>
+      <VoiceRoomPanels {...{ secondaryPanel, setSecondaryPanel, stage, invite, settingsPanel }} />
     </section>,
     mainArea,
   );

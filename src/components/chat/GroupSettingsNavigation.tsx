@@ -11,7 +11,7 @@ export type GroupSettingsSection =
 
 const SECTIONS = [
   ["main", "Основное", Settings2],
-  ["people", "Люди", UsersRound],
+  ["people", "Участники", UsersRound],
   ["access", "Приглашения и доступ", Link2],
   ["appearance", "Оформление", Image],
   ["advanced", "Дополнительно", SlidersHorizontal],

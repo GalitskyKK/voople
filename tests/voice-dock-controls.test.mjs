@@ -7,9 +7,17 @@ import {
   describeVoiceDockMediaState,
   formatVoiceDockParticipantCount,
   resolveVoiceDockActiveSpeaker,
+  resolveVoiceDockSpeakerParticipant,
 } from "../src/lib/livekit/voice-dock-state.ts";
 
 const read = (path) => readFileSync(path, "utf8");
+test("floating speaker identity follows active IDs and falls back locally during silence", () => {
+  const participants = [{ id: "remote", displayName: "Same", isMe: false }, { id: "local", displayName: "Same", isMe: true }];
+  assert.equal(resolveVoiceDockSpeakerParticipant(participants, new Set(["remote"])), participants[0]);
+  assert.equal(resolveVoiceDockSpeakerParticipant(participants, new Set(["local"])), participants[1]);
+  assert.equal(resolveVoiceDockSpeakerParticipant(participants, new Set(["stale"])), participants[1]);
+  assert.equal(resolveVoiceDockSpeakerParticipant([], new Set()), null);
+});
 const base = {
   rect: { left: 200, top: 120, width: 400, height: 280 },
   viewportWidth: 1000,

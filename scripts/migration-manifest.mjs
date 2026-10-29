@@ -51,6 +51,7 @@ export const REQUIRED_MIGRATIONS = Object.freeze([
   "91-style-nickname-effect-write-boundary.sql",
   "92-style-nickname-color-write-boundary.sql",
   "93-style-profile-card-write-boundary.sql",
+  "94-room-covers.sql",
 ]);
 
 // The ledger must exist before the feature migrations are replayed so every
@@ -115,4 +116,5 @@ export const RELEASE_APPLY_ORDER = Object.freeze([
   "91-style-nickname-effect-write-boundary.sql",
   "92-style-nickname-color-write-boundary.sql",
   "93-style-profile-card-write-boundary.sql",
+  "94-room-covers.sql",
 ]);

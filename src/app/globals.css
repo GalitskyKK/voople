@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "./styles/orbit.css";
+@import "./styles/orbit-call.css";
+@import "./styles/orbit-workspace.css";
+@import "./styles/orbit-direct.css";
 @source "../";
 
 :root {

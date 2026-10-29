@@ -34,7 +34,7 @@ export function GroupSurfaceShell({ chatContent, config, header }: {
 
   return (
     <GroupSurfaceNavigationContext.Provider value={setActiveTab}>
-      <GroupWorkspaceView header={header} chat={chatContent}
+      <GroupWorkspaceView groupId={config.groupId} header={header} chat={chatContent}
         activeTab={activeTab} onTabChange={setActiveTab} combineHeader={config.combineHeader}
         live={<GroupNowVoicePanel enabled groupId={config.groupId}
           conversationId={config.conversationId} groupName={config.groupName}

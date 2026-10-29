@@ -11,9 +11,11 @@ import { AccountMenuVisual } from "./AccountMenuVisual";
 export function AppAccountMenu({
   compact = false,
   fill = true,
+  variant = "menu",
 }: {
   compact?: boolean;
   fill?: boolean;
+  variant?: "menu" | "dock";
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -47,6 +49,7 @@ export function AppAccountMenu({
       username={viewer.data.username}
       compact={compact}
       fill={fill}
+      variant={variant}
       avatar={
         <ProfileAvatar
           displayName={viewer.data.displayName}

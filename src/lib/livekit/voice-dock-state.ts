@@ -14,6 +14,16 @@ export function resolveVoiceDockActiveSpeaker(
     ?.displayName ?? null;
 }
 
+/** A stable local fallback keeps the tile identifiable during silence. */
+export function resolveVoiceDockSpeakerParticipant(
+  participants: readonly ChatRoomParticipantView[],
+  activeSpeakerIds: ReadonlySet<string>,
+) {
+  return participants.find((participant) => activeSpeakerIds.has(participant.id))
+    ?? participants.find((participant) => participant.isMe)
+    ?? participants[0] ?? null;
+}
+
 export function formatVoiceDockParticipantCount(count: number) {
   const absolute = Math.abs(count);
   const lastTwo = absolute % 100;

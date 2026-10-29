@@ -8,6 +8,7 @@ import {
 } from "@/components/layout/AppNavigationVisual";
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { useSidebarPreference } from "@/hooks/useSidebarPreference";
+import { useInterfaceDesign } from "@/hooks/useInterfaceDesign";
 import { resolveRingStyle } from "@/lib/customization/rings";
 
 import type { DesktopConfig } from "../config";
@@ -38,15 +39,17 @@ export function DesktopAppSidebarAdapter({
   renderDestination: NavigationDestinationRenderer;
   navigate: (href: string) => void;
 }) {
-  const { collapsed, setCollapsed } = useSidebarPreference();
+  const orbit = useInterfaceDesign() === "orbit";
+  const { collapsed, setCollapsed } = useSidebarPreference({ forceExpanded: !orbit });
   // Keep the same social rail across every authenticated desktop route.
   const messengerShell = true;
 
   return (
     <AppSidebarVisual
       pathname={pathname}
-      collapsed={messengerShell ? false : collapsed}
-      onCollapsedChange={messengerShell ? undefined : setCollapsed}
+      collapsed={collapsed}
+      onCollapsedChange={orbit ? setCollapsed : undefined}
+      accountPlacement={orbit ? "dock" : "sidebar"}
       notificationBadge={notificationBadge}
       renderDestination={renderDestination}
       primaryNavigation={
@@ -65,7 +68,8 @@ export function DesktopAppSidebarAdapter({
           <AccountMenuVisual
             displayName={viewer.displayName}
             username={viewer.username}
-            compact={messengerShell ? false : collapsed}
+            compact={collapsed && !orbit}
+            variant={orbit ? "dock" : "menu"}
             avatar={
               <ProfileAvatarVisual
                 displayName={viewer.displayName}

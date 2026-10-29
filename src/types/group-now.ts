@@ -1,3 +1,5 @@
+import type { RoomCover } from "@/lib/chat/room-cover";
+
 export type GroupNowRoomKind = "lobby" | "temporary" | "pinned";
 export type GroupNowRoomState = "idle" | "connecting" | "active" | "grace";
 
@@ -22,6 +24,7 @@ export type GroupNowRoom = {
   name: string;
   canManage?: boolean;
   canPin?: boolean;
+  cover?: RoomCover;
   joinTarget:
     | { kind: "room"; roomId: string }
     | { kind: "legacy"; chatId: string };

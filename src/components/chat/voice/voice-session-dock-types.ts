@@ -3,6 +3,7 @@ import type { ConnectionQuality } from "livekit-client";
 
 import type { MediaStatus } from "./voice-room-config";
 import type { VoiceDockMode } from "@/lib/livekit/voice-dock-presentation";
+import type { ChatRoomParticipantView } from "@/types/chat";
 
 export type { VoiceDockMode } from "@/lib/livekit/voice-dock-presentation";
 
@@ -12,6 +13,7 @@ export type VoiceSessionDockProps = {
   chatName: string;
   participantCount: number;
   activeSpeakerName: string | null;
+  speaker?: ChatRoomParticipantView | null;
   durationLabel: string | null;
   mediaStatus: MediaStatus;
   connectionLabel: string | null;

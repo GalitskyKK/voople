@@ -7,9 +7,11 @@ import { normalizeSoundPack, type SoundPackId } from "@/lib/sound/sound-catalog"
 
 export type FontScale = "small" | "standard" | "large";
 export type InterfaceDensity = "comfortable" | "compact";
+export type InterfaceDesign = "classic" | "orbit";
 export type ChatWallpaper = "plain" | "doodles" | "grid" | "aurora";
 
 export type AppPreferences = {
+  interfaceDesign: InterfaceDesign;
   fontScale: FontScale;
   density: InterfaceDensity;
   reduceMotion: boolean;
@@ -28,6 +30,7 @@ export type AppPreferences = {
 };
 
 export const DEFAULT_APP_PREFERENCES: AppPreferences = {
+  interfaceDesign: "orbit",
   fontScale: "standard",
   density: "comfortable",
   reduceMotion: false,
@@ -49,15 +52,18 @@ const STORAGE_KEY = "voople:app-preferences";
 const CHANGE_EVENT = "voople:app-preferences-change";
 let cachedRaw: string | null | undefined;
 let cachedPreferences: AppPreferences = DEFAULT_APP_PREFERENCES;
+let memoryOnly = false;
 
 export function readAppPreferences(): AppPreferences {
   if (typeof window === "undefined") return DEFAULT_APP_PREFERENCES;
+  if (memoryOnly) return cachedPreferences;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw === cachedRaw) return cachedPreferences;
     const parsed = JSON.parse(raw ?? "{}") as Partial<AppPreferences>;
     cachedRaw = raw;
     cachedPreferences = {
+      interfaceDesign: parsed.interfaceDesign === "classic" ? "classic" : "orbit",
       fontScale: ["small", "standard", "large"].includes(parsed.fontScale ?? "")
         ? (parsed.fontScale as FontScale)
         : DEFAULT_APP_PREFERENCES.fontScale,
@@ -82,15 +88,13 @@ export function readAppPreferences(): AppPreferences {
     };
     return cachedPreferences;
   } catch {
-    cachedRaw = undefined;
-    cachedPreferences = DEFAULT_APP_PREFERENCES;
-    return DEFAULT_APP_PREFERENCES;
+    return cachedPreferences;
   }
 }
 
 export function writeAppPreferences(value: AppPreferences) {
   const raw = JSON.stringify(value);
-  window.localStorage.setItem(STORAGE_KEY, raw);
+  try { window.localStorage.setItem(STORAGE_KEY, raw); memoryOnly = false; } catch { memoryOnly = true; }
   cachedRaw = raw;
   cachedPreferences = value;
   window.dispatchEvent(new Event(CHANGE_EVENT));
@@ -98,7 +102,7 @@ export function writeAppPreferences(value: AppPreferences) {
 
 export function subscribeAppPreferences(onChange: () => void) {
   const onStorage = (event: StorageEvent) => {
-    if (event.key === STORAGE_KEY) onChange();
+    if (event.key === STORAGE_KEY || event.key === null) { memoryOnly = false; cachedRaw = undefined; onChange(); }
   };
   window.addEventListener("storage", onStorage);
   window.addEventListener(CHANGE_EVENT, onChange);

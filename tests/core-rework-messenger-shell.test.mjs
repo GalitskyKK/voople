@@ -44,6 +44,7 @@ test("messenger sidebar follows the rework information hierarchy", () => {
 test("messenger identity microtype stays restrained and host-shared", () => {
   const layout = source("src/app/layout.tsx");
   const navigation = source("src/components/layout/AppNavigationVisual.tsx");
+  const sidebarHeader = source("src/components/layout/SidebarHeaderVisual.tsx");
   const topBar = source("src/components/layout/AppTopBar.tsx");
   const profileAvatar = source("src/components/profile/ProfileAvatarVisual.tsx");
   const groupAvatar = source("src/components/chat/GroupAvatar.tsx");
@@ -52,7 +53,8 @@ test("messenger identity microtype stays restrained and host-shared", () => {
   const desktopStyles = source("desktop/src/styles.css");
 
   assert.match(layout, /GeistPixelSquare/);
-  assert.match(navigation, /COPY\.wordmark/);
+  assert.match(navigation, /<SidebarHeaderVisual/);
+  assert.match(sidebarHeader, /COPY\.wordmark/);
   assert.match(topBar, /COPY\.wordmark/);
   assert.match(profileAvatar, /voople-avatar-token__glyph/);
   assert.doesNotMatch(profileAvatar, /bg-gradient-to-br/);

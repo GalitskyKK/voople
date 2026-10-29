@@ -28,8 +28,74 @@ conversation with little coordination, and return to the same Group later.
 
 ## Group navigation
 
+**Орбита** is the default interface; Appearance settings also offer
+**Классический**. Explicit Classic choices remain selected. Selection is free, device-local and
+independent of color themes. Switching presentation never ends a LiveSession.
+Orbit keeps a stable compact Group rail. Its personal-message destination opens
+/messages: a dedicated inbox with one persistent named conversation column.
+Selecting a DM keeps that same column. Personal messages use the Group workspace
+geometry: a shared header row, one framed body containing the DM list and chat,
+and consistent dock/composer alignment. The left header is Личные сообщения
+with a plus; the right header identifies the peer. A privacy-filtered peer info
+pane appears on wide workspaces or through its header toggle. It reuses the
+canonical profile card and does not invent unsupported media counts.
+Group avatars remain available, and explicit rail expansion never changes the
+DM column into another navigation design. Its header plus opens the existing
+contact search/open-direct flow; search overlays remain above this column.
+Large Room covers stay in two columns.
+The desktop account/call dock spans the rail and full context column, aligned
+with Rooms or the DM list. Settings and Help have direct shortcuts; Profile
+and Logout remain in the canonical account menu. Profile, Settings and other
+routes use the same outer workspace width; their internal reading widths and
+left controls reserve space above the dock.
+On mobile Orbit, Compact is a draggable 64px floating call tile showing the
+active speaker's canonical avatar and microphone state. Tapping opens the
+existing call controls in a bottom sheet. Speaker changes, controls and call
+start/end never reserve variable page height or resize the chat. The tile stays
+clear of the composer and bottom navigation. Full and Mini keep their existing
+meaning and media lifecycle. Mobile retains Profile in bottom navigation.
+Room names remain visible; the current Room rests slightly larger with participant circles and a
+subtle blue cover outline/glow that persists while another Room is previewed.
+Hover, keyboard focus or an explicit touch control enlarges its cover about
+the same centre by only about 10–16%; neighbours shrink slightly with fixed
+centres and retain their slots. The shared Voice/Chat/People content area below
+the contextual header and tabs has a thin blue frame in both themes. The header
+stays outside this frame. On desktop, the Group identity/menu belongs to the
+local Voice/Chat/People workspace header, aligned with the selected chat name
+(such as # Общий) and its existing section picker; action buttons sit to the right.
+A real Group banner extends behind the Group title to its former bottom edge in
+the Rooms column. The title block gains local blur on hover/focus/open menu,
+while the lower artwork remains sharp. Touch retains a readable title scrim.
+No blank banner area is reserved when no custom banner exists. Native Orbit
+retains the local row below its unchanged OS titlebar without duplicate Group chrome.
+The Rooms section heading is visually omitted in Orbit;
+one accessible plus button opens the same persistent-Room creation flow from
+the Group identity area on desktop or the tab bar on compact layouts, without
+an extra Rooms toolbar row. Orbit omits the duplicate Group header avatar and
+shows a Group banner only when a custom one exists. Compact content uses
+symmetric margins and a centred Room grid. Room compositions remain borderless: title above, translucent
+entry glyph on the cover only on hover/focus. A top-right gear reveals separate Room action buttons
+to the right of the cover, allowed to extend over the adjacent pane. They stay
+inside the device viewport. Up to four avatars cluster on the lower edge with a +N overflow badge and become a
+bounded participant popover below the cover, over the lower Room row. Visible
+zero/empty/current narration and duplicate join labels are omitted. The same
+join/switch/expand rules apply on pointer/keyboard. On a coarse-pointer Orbit
+client, the first tap previews a Room; a separate explicit entry/switch/open
+button performs the voice action. Tapping outside dismisses the preview.
+In Orbit calls, audio-only participants use square identity tiles in a stable
+grid. Mobile keeps two columns and sizes tiles to the available height, with
+internal scrolling only when readable minimums cannot fit everyone. Pointer or
+keyboard focus enlarges a tile subtly without changing its centre or sorting
+participants by speech. Speaking uses a quiet Ice signal. Right-click, Shift+F10
+or an explicit touch action opens separate volume/action surfaces beside the
+tile, clamped to the viewport. Video and screen-share retain the shared grid/focus
+media layout and the same call runtime.
+Room owners and Group administrators can choose a built-in cover or upload an
+image during creation and change it afterward. Covers are shared Group identity;
+uploaded cover files use public asset storage, like Group avatars.
+
 The default Group tab is **Войс** on compact windows and mobile; tabs are
-**Войс / Чат / Люди**. On wide desktop, one Group workspace shows Live Rooms,
+**Войс / Чат / Участники**. On wide desktop, one Group workspace shows Live Rooms,
 the persistent Group Conversation and People together. Medium desktop shows
 Live and Chat together, with People available as an on-demand side panel.
 
@@ -37,13 +103,20 @@ Live and Chat together, with People available as an on-demand side panel.
   where available and members who can join.
 - Чат is the persistent Group Conversation. Optional legacy text Sections stay
   supported but are not the primary Group model.
-- Люди shows membership, privacy-permitted presence and relevant actions.
+- Участники shows membership, privacy-permitted presence and relevant actions.
 
 ## Core voice actions
 
-- **Join / Switch:** clicking another Room joins or switches directly. It does
-  not automatically open Full Room. The current Room has an explicit Expand
-  action; clicking it may also expand.
+- **Join / Switch:** activating another Room joins or switches directly (after
+  the explicit entry button on touch Orbit clients, as described above). It does
+  not automatically open the expanded Room in either interface. Join shows Compact;
+  the current Room or dock has an explicit Open action. In Orbit, this opens the
+  existing Room presentation in the Group working area while retaining Rooms.
+  The workspace channel title becomes the Room name, Group People hides behind
+  a top-right toggle, and secondary Room controls move to the bottom. They
+  reveal on hover/keyboard focus and remain available on touch. Connection
+  quality belongs to the persistent call dock. Only the fullscreen control
+  takes the viewport. Mobile can return to Rooms with the header back action.
 - **Split:** chooses a subset of participants in the current active LiveSession.
   The initiator stays in the source Room while consent is pending. After all
   selected people accept, one temporary Room is created and the subset moves
@@ -162,3 +235,9 @@ client. Both share product and server contracts. Mobile web remains usable at
 LiveSession eligibility and media credentials. Void and Light, keyboard
 access, reduced motion and loading/empty/error/reconnect states are part of
 beta quality, not separate features.
+
+Expanded Orbit calls keep minimize/close and Group chat in the upper-right,
+fullscreen in the lower-right with an enter/exit icon, and one consistent set
+of media/secondary controls at the bottom centre. Native fullscreen omits the
+Room directory. The participant destination uses an icon and Участники tooltip.
+The Group conversation drawer keeps its composer above mobile call controls.

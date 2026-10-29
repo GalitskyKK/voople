@@ -1,12 +1,15 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { useInterfaceDesign } from "@/hooks/useInterfaceDesign";
 
 import type { ChatListItem } from "@/types/chat";
 
 import type { ChatSectionDestinationRenderer } from "./chat-section-destination";
 import { ChatSectionPicker } from "./ChatSectionPicker";
 import { useGroupPeopleAction } from "./GroupPeopleActionContext";
+import { useGroupChatHeaderSlot } from "./GroupChatHeaderSlotContext";
 
 export function ChatSectionsBarView({
   rootChat,
@@ -29,13 +32,14 @@ export function ChatSectionsBarView({
   favoriteError?: string | null;
 }) {
   const peopleAction = useGroupPeopleAction();
-  if (!rootChat.topicsEnabled) return <div className="voople-chat-sections flex min-h-11 shrink-0 items-center border-b border-[var(--app-border)] bg-[var(--app-surface)] px-3">
-    <span className="text-xs font-semibold"># Общий</span>{peopleAction?.action}
-  </div>;
+  const headerSlot = useGroupChatHeaderSlot();
+  const orbit = useInterfaceDesign() === "orbit";
   const sections = [rootChat, ...rootChat.channels];
   const activeSection = sections.find((section) => section.id === activeChatId) ?? rootChat;
 
-  return (
+  const content = !rootChat.topicsEnabled ? <div className="voople-chat-sections flex min-h-11 shrink-0 items-center border-b border-[var(--app-border)] bg-[var(--app-surface)] px-3">
+    <span className="text-xs font-semibold"># Общий</span>{peopleAction?.action}
+  </div> : (
     <nav
       className="voople-chat-sections flex min-h-11 shrink-0 items-center gap-1 border-b border-[var(--app-border)] bg-[var(--app-surface)] px-3 lg:min-h-9"
       aria-label="Разделы группы"
@@ -53,4 +57,5 @@ export function ChatSectionsBarView({
       {peopleAction?.action}
     </nav>
   );
+  return orbit && headerSlot ? createPortal(content, headerSlot) : content;
 }

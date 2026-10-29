@@ -65,7 +65,7 @@ test("PRODUCT.md owns the current contract while historical plans and P0 results
     assert.ok(product.includes(`## ${heading}`), `PRODUCT.md is missing ${heading}`);
   }
   assert.match(product, /default Group tab is \*\*Войс\*\*/);
-  assert.match(product, /\*\*Войс \/ Чат \/ Люди\*\*/);
+  assert.match(product, /\*\*Войс \/ Чат \/ Участники\*\*/);
   assert.match(product, /without mandatory signup/);
   assert.match(product, /Server authorization and source-session\s+freshness are mandatory/);
   assert.doesNotMatch(product, /Opening a Group defaults to Chat/);

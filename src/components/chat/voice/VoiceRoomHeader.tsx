@@ -1,24 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
-import {
-  Loader2,
-  Lock,
-  LockOpen,
-  Maximize2,
-  MessageSquareText,
-  Minus,
-  Minimize2,
-  Music2,
-  Settings2,
-  Volume2,
-  Wifi,
-  WifiOff,
-  X,
-} from "lucide-react";
+import { Loader2, Volume2, Wifi, WifiOff } from "lucide-react";
 import { ConnectionQuality } from "livekit-client";
 
-import { IconButton } from "@/components/ui/IconButton";
+import { VoiceRoomHeaderActions } from "./VoiceRoomHeaderActions";
 import { getQualityLabel } from "./voice-room-config";
 import { VoiceRoomSelector } from "./VoiceRoomSelector";
 import { VoiceRoomTitle } from "./VoiceRoomTitle";
@@ -30,7 +15,7 @@ import type {
   VoiceRoomSwitcherModel,
 } from "./voice-room-sheet-models";
 
-type VoiceRoomHeaderProps = {
+export type VoiceRoomHeaderProps = {
   identity: VoiceRoomIdentityModel;
   connection: VoiceRoomConnectionModel;
   participantCount: number;
@@ -52,27 +37,8 @@ type VoiceRoomHeaderProps = {
   onToggleFullscreen: () => void | Promise<void>;
 };
 
-export function VoiceRoomHeader({
-  identity,
-  connection,
-  participantCount,
-  hasGroupSounds,
-  hasRoomMessages,
-  roomMessagesOpen,
-  roomSwitcher,
-  roomRename,
-  access,
-  fullscreen,
-  fullscreenPending,
-  leavePending,
-  canMinimizeToMini,
-  onMinimizeToMini,
-  onCloseToCompact,
-  onOpenSoundboard,
-  onToggleRoomMessages,
-  onOpenSettings,
-  onToggleFullscreen,
-}: VoiceRoomHeaderProps) {
+export function VoiceRoomHeader(props: VoiceRoomHeaderProps) {
+  const { identity, connection, participantCount, roomSwitcher, roomRename } = props;
   const weakConnection =
     connection.quality === ConnectionQuality.Poor ||
     connection.quality === ConnectionQuality.Lost;
@@ -112,69 +78,7 @@ export function VoiceRoomHeader({
         </div>
       </div>
 
-      <div className="voople-full-room__header-actions flex shrink-0 items-center gap-1">
-        <HeaderButton label="Свернуть в мини" disabled={leavePending || !canMinimizeToMini} onClick={onMinimizeToMini}>
-          <Minus className="h-4 w-4" />
-        </HeaderButton>
-        <HeaderButton label="Закрыть окно комнаты" disabled={leavePending} onClick={onCloseToCompact}>
-          <X className="h-4 w-4" />
-        </HeaderButton>
-        {!identity.isDirect && identity.active && hasRoomMessages ? (
-          <HeaderButton
-            label={roomMessagesOpen ? "Закрыть чат группы" : "Открыть чат группы"}
-            onClick={onToggleRoomMessages}
-          >
-            <MessageSquareText className="h-4 w-4" />
-          </HeaderButton>
-        ) : null}
-        {!identity.isDirect && identity.active && hasGroupSounds ? (
-          <HeaderButton label="Открыть звуки группы" onClick={onOpenSoundboard}>
-            <Music2 className="h-4 w-4" />
-          </HeaderButton>
-        ) : null}
-        {access.canManage ? (
-          <HeaderButton
-            label={access.mode === "locked" ? "Открыть свободный вход" : "Закрыть свободный вход"}
-            disabled={access.pending}
-            onClick={access.onToggle}
-          >
-            {access.mode === "locked" ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
-          </HeaderButton>
-        ) : null}
-        <HeaderButton label="Настройки звука и соединения" onClick={onOpenSettings}>
-          <Settings2 className="h-4 w-4" />
-        </HeaderButton>
-        <HeaderButton
-          label={fullscreen ? "Выйти из полноэкранного режима" : "Открыть разговор на весь экран"}
-          disabled={fullscreenPending}
-          onClick={() => void onToggleFullscreen()}
-        >
-          {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-        </HeaderButton>
-      </div>
+      <VoiceRoomHeaderActions {...props} />
     </header>
-  );
-}
-
-function HeaderButton({
-  label,
-  disabled = false,
-  onClick,
-  children,
-}: {
-  label: string;
-  disabled?: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <IconButton
-      label={label}
-      disabled={disabled}
-      onClick={onClick}
-      className="grid h-9 w-9 place-items-center rounded-[var(--app-radius-sm)] text-[var(--foreground)] opacity-70 transition hover:bg-[var(--app-surface-soft)] hover:opacity-100 disabled:cursor-wait disabled:opacity-35"
-    >
-      {children}
-    </IconButton>
   );
 }

@@ -73,7 +73,7 @@ test("sidebar account tooltip only responds to its physical trigger", () => {
 });
 
 test("room and primary messaging icon controls share one tooltip vocabulary", () => {
-  const roomHeader = read("src/components/chat/voice/VoiceRoomHeader.tsx");
+  const roomHeader = read("src/components/chat/voice/VoiceRoomHeader.tsx") + read("src/components/chat/voice/VoiceRoomHeaderActions.tsx");
   const roomTitle = read("src/components/chat/voice/VoiceRoomTitle.tsx");
   const roomMedia = read("src/components/chat/voice/VoiceMediaControls.tsx");
   const roomFooter = read("src/components/chat/voice/VoiceRoomFooter.tsx");
@@ -96,7 +96,9 @@ test("room and primary messaging icon controls share one tooltip vocabulary", ()
   assert.match(sectionCreator, /aria-label="Новый раздел"/);
   assert.match(sectionCreator, /Создать раздел/);
   assert.doesNotMatch(sectionCreator, /<Sheet/);
-  assert.match(roomMedia, /grid h-11 w-11 place-items-center rounded-full/);
+  assert.match(roomMedia, /VOICE_ROOM_CONTROL_CLASS/);
+  assert.match(read("src/components/chat/voice/VoiceRoomHeaderActions.tsx"), /VOICE_ROOM_CONTROL_CLASS/);
+  assert.match(read("src/components/chat/voice/voice-control-style.ts"), /grid h-11 w-11 shrink-0 place-items-center rounded-xl/);
   assert.doesNotMatch(roomMedia, /compact\??:/);
   assert.doesNotMatch(roomMedia, /<span/);
 });

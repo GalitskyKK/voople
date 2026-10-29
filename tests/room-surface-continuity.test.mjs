@@ -28,7 +28,7 @@ test("room surface phase keeps explicit transitions ahead of stale server state"
 
 test("prejoin, connecting and active room reuse one stable main-area geometry", () => {
   const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
-  const header = read("src/components/chat/voice/VoiceRoomHeader.tsx");
+  const header = read("src/components/chat/voice/VoiceRoomHeader.tsx") + read("src/components/chat/voice/VoiceRoomHeaderActions.tsx");
   const content = read("src/components/chat/voice/VoiceRoomContent.tsx");
   const control = read("src/components/chat/voice/useChatRoomControl.ts");
   const surfaceSession = read("src/components/chat/voice/useVoiceRoomSurfaceSession.ts");
@@ -66,7 +66,7 @@ test("full Room replaces main content and minimizes without ending its session",
   const shell = read("src/components/layout/AppShellFrame.tsx");
   const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
   const view = read("src/components/chat/voice/ChatRoomControlView.tsx");
-  const header = read("src/components/chat/voice/VoiceRoomHeader.tsx");
+  const header = read("src/components/chat/voice/VoiceRoomHeader.tsx") + read("src/components/chat/voice/VoiceRoomHeaderActions.tsx");
   const control = read("src/components/chat/voice/useChatRoomControl.ts");
   const provider = read("src/components/chat/voice/VoiceSessionProvider.tsx");
   const webShell = read("src/components/layout/MainShell.tsx");
@@ -74,13 +74,13 @@ test("full Room replaces main content and minimizes without ending its session",
 
   assert.match(shell, /data-voople-main-area=""/);
   assert.match(shell, /voople-shell__main relative/);
-  assert.match(surface, /querySelector<HTMLElement>\("\[data-voople-main-area\]"\)/);
+  assert.match(read("src/components/chat/voice/useVoiceRoomPlacement.ts"), /querySelector<HTMLElement>\("\[data-voople-main-area\]"\)/);
   assert.match(surface, /createPortal\(/);
   assert.match(surface, /data-voople-room-surface="full"/);
   assert.doesNotMatch(surface, /<Sheet\s+open=\{open\}/);
   assert.match(header, /label="Свернуть в мини"/);
   assert.match(header, /label="Закрыть окно комнаты"/);
-  assert.match(view, /dock && !sheet\.overlay\.open/);
+  assert.match(view, /dock && \(!sheet\.overlay\.open \|\| orbit && large && sheet\.identity\.groupId\)/);
   assert.match(control, /minimize: minimizePanel/);
   assert.doesNotMatch(control, /minimize:[\s\S]{0,120}leaveRoom/);
   assert.match(provider, /minimizePanel: \(showDock\?: boolean\) => void/);
@@ -89,14 +89,14 @@ test("full Room replaces main content and minimizes without ending its session",
   assert.match(desktopShell, /minimizeVoicePanel\(false\)/);
   assert.match(provider, /latestControl\.join\(\)/);
   assert.doesNotMatch(provider, /latestControl\.open\(\);\s+latestControl\.join\(\)/);
-  assert.match(control, /dock: inside && dockVisible \?/);
+  assert.match(control, /dock: inside && \(dockVisible \|\| open\) \?/);
   assert.match(control, /preview: dockMode === "mini" && !open \?/);
   assert.match(control, /overlay: \{[\s\S]*onCloseToMini:[\s\S]*onCloseToCompact:/);
 });
 
 test("full room uses one shared reference-aligned visual frame", () => {
   const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
-  const header = read("src/components/chat/voice/VoiceRoomHeader.tsx");
+  const header = read("src/components/chat/voice/VoiceRoomHeader.tsx") + read("src/components/chat/voice/VoiceRoomHeaderActions.tsx");
   const title = read("src/components/chat/voice/VoiceRoomTitle.tsx");
   const content = read("src/components/chat/voice/VoiceRoomContent.tsx");
   const stage = read("src/components/chat/voice/VoiceRoomStage.tsx");
@@ -115,7 +115,7 @@ test("full room uses one shared reference-aligned visual frame", () => {
   assert.match(title, /voople-full-room__title/);
   assert.match(header, /px-4 py-2/);
   assert.doesNotMatch(header, /pr-14/);
-  assert.match(header, /text-\[var\(--foreground\)\] opacity-70/);
+  assert.match(header, /VOICE_ROOM_CONTROL_CLASS/);
   assert.match(content, /voople-full-room__content/);
   assert.match(stage, /voople-full-room__stage/);
   assert.match(media, /voople-full-room__media/);
@@ -123,7 +123,7 @@ test("full room uses one shared reference-aligned visual frame", () => {
   assert.match(switcher, /aria-label="Комнаты группы"/);
   assert.match(switcher, /aria-current=\{current \? "true" : undefined\}/);
   assert.match(switcher, /aria-busy=\{pending \|\| undefined\}/);
-  assert.match(surface, /roomSwitcher \? <VoiceRoomSwitcher/);
+  assert.match(surface, /roomSwitcher && !embedded && !fullscreen \? <VoiceRoomSwitcher/);
   assert.match(surface, /pendingRoom \? <VoiceRoomSwitchStatus roomName=\{pendingRoom\.name\}/);
   assert.match(switchStatus, /role="status"/);
   assert.match(switchStatus, /aria-live="polite"/);
@@ -143,7 +143,7 @@ test("full room uses one shared reference-aligned visual frame", () => {
   assert.match(stage, /grid-rows-\[minmax\(0,1fr\)_5rem\]/);
   assert.match(stage, /grid-flow-col auto-cols-\[minmax\(7rem,10rem\)\]/);
   assert.match(participant, /compact \? "min-h-20 gap-1 px-2 py-2"/);
-  assert.match(participant, /size=\{compact \? "sm" : "lg"\}/);
+  assert.match(participant, /size=\{orbit \|\| compact \? "sm" : "lg"\}/);
   assert.match(media, /"min-h-20 border-\[var\(--app-border\)\]"/);
   assert.match(participant, /color-mix\(in_srgb,var\(--app-border\)_65%,var\(--app-muted\)\)/);
   assert.match(empty, /voople-full-room__solo/);
@@ -152,7 +152,7 @@ test("full room uses one shared reference-aligned visual frame", () => {
 });
 
 test("full Room gives its identity a dedicated mobile row without hiding actions", () => {
-  const header = read("src/components/chat/voice/VoiceRoomHeader.tsx");
+  const header = read("src/components/chat/voice/VoiceRoomHeader.tsx") + read("src/components/chat/voice/VoiceRoomHeaderActions.tsx");
   const styles = read("src/app/globals.css");
 
   assert.match(
@@ -187,9 +187,9 @@ test("screen-share volume stays on the stream, with pointer and keyboard access"
 
 test("Full Room adapts the Group Chat drawer without collapsing the media stage", () => {
   const surface = read("src/components/chat/voice/VoiceRoomMainSurface.tsx");
-  const header = read("src/components/chat/voice/VoiceRoomHeader.tsx");
+  const header = read("src/components/chat/voice/VoiceRoomHeader.tsx") + read("src/components/chat/voice/VoiceRoomHeaderActions.tsx");
   const selector = read("src/components/chat/voice/VoiceRoomSelector.tsx");
-  const panel = read("src/components/chat/voice/RoomMessagesPanel.tsx");
+  const panel = read("src/components/chat/voice/RoomMessagesPanel.tsx") + read("src/components/chat/voice/RoomMessagesPanelFrame.tsx");
   const width = read("src/components/chat/voice/useRoomChatPanelWidth.ts");
   const styles = read("src/app/globals.css");
   const dropdown = read("src/components/ui/DropdownMenu.tsx");

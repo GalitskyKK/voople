@@ -160,7 +160,7 @@ export function SavedMessagesView({
 
   return (
     <ChatThreadFrameView
-      header={<SavedMessagesHeader query={query} onQueryChange={onQueryChange} onBack={onBack} />}
+      workspace="direct" header={<SavedMessagesHeader query={query} onQueryChange={onQueryChange} onBack={onBack} />}
       timeline={timeline}
       messagesRef={containerRef}
       messagesContentRef={contentRef}

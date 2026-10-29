@@ -12,6 +12,13 @@ import { runConfirmedVoiceLeave } from "../src/components/chat/voice/voice-room-
 const read = (path) => readFileSync(path, "utf8");
 const full = { fullOpen: true, dockVisible: false, dockMode: "compact" };
 
+test("joining keeps Compact; only an explicit open action expands the Room", () => {
+  const state = { fullOpen: false, dockVisible: false, dockMode: "compact" };
+  const joined = reduceVoiceDockPresentation(state, { type: "joined" });
+  assert.deepEqual(joined, { fullOpen: false, dockVisible: true, dockMode: "compact" });
+  assert.deepEqual(reduceVoiceDockPresentation(joined, { type: "open-full" }), full);
+});
+
 test("Full closes to Mini or Compact without changing the active media session", () => {
   const sessionId = "same-live-session";
   for (const [action, mode] of [["close-to-mini", "mini"], ["close-to-compact", "compact"]]) {

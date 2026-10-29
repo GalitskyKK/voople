@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { ProfileAvatarVisual } from "@/components/profile/ProfileAvatarVisual";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+import { useInterfaceDesign } from "@/hooks/useInterfaceDesign";
 
 import { ScreenShareStatusBanner } from "./ScreenShareStatusBanner";
 import type {
@@ -36,6 +37,7 @@ export function VoiceRoomContent({
   errorMessage: string | null;
   onInvite?: () => void;
 }) {
+  const orbit = useInterfaceDesign() === "orbit";
   const sessionPhase = session.phase;
   const directCallState =
     identity.isDirect &&
@@ -114,7 +116,7 @@ export function VoiceRoomContent({
       ) : null}
       {sessionPhase !== "preview" &&
       !identity.isDirect &&
-      stage.participants.length <= 1 &&
+      (stage.participants.length === 0 || !orbit && stage.participants.length === 1) &&
       !stage.screenShareOwner &&
       stage.cameraParticipantIds.size === 0 ? (
         <VoiceRoomEmptyState participant={stage.participants[0]} state="inside" speaking={controls.localSpeaking} onInvite={onInvite} />
@@ -138,6 +140,7 @@ export function VoiceRoomContent({
           onParticipantVolumeChange={stage.onParticipantVolumeChange}
         />
       )}
+      {orbit && stage.participants.length === 1 && onInvite ? <Button type="button" variant="secondary" className="mt-2 shrink-0 self-center" onClick={onInvite}>Позвать</Button> : null}
     </div>
   );
 }

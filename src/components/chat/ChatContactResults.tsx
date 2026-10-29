@@ -32,7 +32,7 @@ export function ChatContactResults({
   return (
     <div className="order-1">
       <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--app-muted)]">
-        Люди
+        Участники
       </p>
       <ul className="space-y-0.5">
         {contacts.map((contact) => (

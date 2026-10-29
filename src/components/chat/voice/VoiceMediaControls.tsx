@@ -6,6 +6,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { traceVoiceMic } from "@/lib/livekit/voice-mic-debug";
 import { cn } from "@/lib/utils";
 import type { MediaStatus } from "./voice-room-config";
+import { VOICE_ROOM_CONTROL_CLASS } from "./voice-control-style";
 
 type VoiceMediaControlsProps = {
   mediaStatus: MediaStatus;
@@ -23,8 +24,7 @@ type VoiceMediaControlsProps = {
   onCameraToggle: () => void | Promise<void>;
 };
 
-const controlClass =
-  "grid h-11 w-11 place-items-center rounded-full border transition duration-200 disabled:opacity-45";
+const controlClass = VOICE_ROOM_CONTROL_CLASS;
 const liveControlClass =
   "border-[var(--material-border-hover)] bg-[var(--material-control-fill)] text-[var(--material-ice)] shadow-[inset_0_1px_0_var(--material-highlight)] hover:bg-[var(--material-interactive-fill)]";
 
@@ -46,7 +46,7 @@ export function VoiceMediaControls({
   const connected = mediaStatus === "connected";
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-2">
+    <div className="voople-voice-media-controls flex flex-wrap items-center justify-center gap-2">
       <IconButton
         label={micMuted ? "Включить микрофон" : "Выключить микрофон"}
         aria-pressed={!micMuted}
@@ -82,7 +82,7 @@ export function VoiceMediaControls({
           controlClass,
           outputMuted
             ? "border-red-500/25 bg-red-500/10"
-            : "border-[var(--app-border)] bg-[var(--app-surface-soft)]",
+            : "border-[var(--app-border)] bg-[var(--material-control-fill)]",
         )}
       >
         {outputMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
@@ -98,7 +98,7 @@ export function VoiceMediaControls({
           controlClass,
           cameraEnabled
             ? liveControlClass
-            : "border-[var(--app-border)] bg-[var(--app-surface-soft)]",
+            : "border-[var(--app-border)] bg-[var(--material-control-fill)]",
         )}
       >
         {cameraPending ? (
@@ -120,7 +120,7 @@ export function VoiceMediaControls({
           controlClass,
           screenSharing
             ? liveControlClass
-            : "border-[var(--app-border)] bg-[var(--app-surface-soft)]",
+            : "border-[var(--app-border)] bg-[var(--material-control-fill)]",
         )}
       >
         {screenSharePending ? (

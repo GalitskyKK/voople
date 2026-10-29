@@ -21,6 +21,7 @@ const AppPreferencesContext = createContext<AppPreferencesContextValue | null>(n
 function applyPreferences(preferences: AppPreferences) {
   const root = document.documentElement;
   root.dataset.fontScale = preferences.fontScale;
+  root.dataset.interfaceDesign = preferences.interfaceDesign;
   root.dataset.density = preferences.density;
   root.dataset.reduceMotion = String(preferences.reduceMotion);
   root.dataset.showPresence = String(preferences.showPresence);

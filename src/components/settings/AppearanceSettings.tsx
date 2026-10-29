@@ -4,6 +4,7 @@ import { Palette, Type } from "lucide-react";
 
 import { useAppPreferences } from "@/components/settings/AppPreferencesProvider";
 import { AppThemeSelector } from "@/components/theme/AppThemeSelector";
+import { InterfaceDesignSettings } from "./InterfaceDesignSettings";
 import type { FontScale } from "@/lib/app-preferences";
 import type { AppThemeId } from "@/lib/app-themes";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ export function AppearanceSettings({
 
   return (
     <div className="space-y-5">
+      <InterfaceDesignSettings />
       <section id="appearance" className="settings-section">
         <div className="settings-section__header">
           <Palette className="h-5 w-5" />

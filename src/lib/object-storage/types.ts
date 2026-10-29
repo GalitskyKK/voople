@@ -3,6 +3,7 @@ export type UploadPurpose =
   | "comment"
   | "avatar"
   | "group-avatar"
+  | "room-cover"
   | "group-emoji"
   | "group-sound"
   | "banner"

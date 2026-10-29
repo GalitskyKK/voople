@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react";
 import type { MouseEventHandler, RefObject } from "react";
 
 import { GroupAvatar } from "./GroupAvatar";
+import { GroupBanner } from "./GroupBanner";
 
 export function GroupIdentityCard({ name, memberCount, onlineCount, roomCount, icon, avatarUrl, bannerUrl, accentColor, tag, open, onClick, triggerRef }: {
   name: string;
@@ -20,7 +21,7 @@ export function GroupIdentityCard({ name, memberCount, onlineCount, roomCount, i
   triggerRef: RefObject<HTMLButtonElement | null>;
 }) {
   return <button ref={triggerRef} type="button" onClick={onClick} className="voople-group-header-identity" aria-label={`Информация о группе ${name}`} aria-haspopup="dialog" aria-expanded={open}>
-    <span className="voople-group-pane-banner" style={bannerUrl ? { backgroundImage: `url("${bannerUrl}")` } : undefined} aria-hidden="true">{bannerUrl ? null : <span className="voople-group-pane-banner__fallback">{icon || name.charAt(0)}</span>}</span>
+    <GroupBanner name={name} icon={icon} url={bannerUrl} />
     <span className="voople-group-identity-card__summary">
       <span className="voople-group-header-avatar shrink-0"><GroupAvatar name={name} avatarUrl={avatarUrl} icon={icon} accentColor={accentColor} size="lg" shape="square" /></span>
       <span className="min-w-0 flex-1">

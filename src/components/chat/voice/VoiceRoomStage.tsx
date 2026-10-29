@@ -8,6 +8,8 @@ import type { ChatRoomParticipantView } from "@/types/chat";
 
 import { VoiceMediaStage } from "./VoiceMediaStage";
 import { VoiceParticipantCard } from "./VoiceParticipantCard";
+import { OrbitVoiceGrid } from "./OrbitVoiceGrid";
+import { useInterfaceDesign } from "@/hooks/useInterfaceDesign";
 
 type VoiceRoomStageProps = {
   screenContainerRef: (element: HTMLDivElement | null) => void;
@@ -49,6 +51,7 @@ export function VoiceRoomStage({
   onCameraContainerChange,
   onParticipantVolumeChange,
 }: VoiceRoomStageProps) {
+  const orbit = useInterfaceDesign() === "orbit";
   const [selection, setSelection] = useState<{
     screenTrackId: string | null;
     focusedMediaId: string | null;
@@ -90,6 +93,7 @@ export function VoiceRoomStage({
       <VoiceParticipantCard
         key={participant.id}
         participant={participant}
+        presentation={orbit && !hasVisualMedia ? "orbit" : "standard"}
         muted={participant.isMe
           ? micMuted
           : (remoteMicMutedById[participant.id] ?? participant.micMuted)}
@@ -198,6 +202,7 @@ export function VoiceRoomStage({
     );
   }
 
+  if (orbit) return <OrbitVoiceGrid participants={participants} renderParticipant={renderParticipant} />;
   return (
     <div
       className={cn(

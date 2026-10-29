@@ -96,10 +96,12 @@ export function Tooltip({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") close();
     };
+    document.addEventListener("fullscreenchange", handleViewportChange);
     window.addEventListener("resize", handleViewportChange);
     window.addEventListener("scroll", handleViewportChange, true);
     window.addEventListener("keydown", handleKeyDown);
     return () => {
+      document.removeEventListener("fullscreenchange", handleViewportChange);
       window.removeEventListener("resize", handleViewportChange);
       window.removeEventListener("scroll", handleViewportChange, true);
       window.removeEventListener("keydown", handleKeyDown);
@@ -148,7 +150,7 @@ export function Tooltip({
             >
               {label}
             </span>,
-            document.body,
+            document.fullscreenElement ?? document.body,
           )
         : null}
     </span>

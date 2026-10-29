@@ -11,7 +11,7 @@ export function ChatListFilters({
 }) {
   const options = [
     ["all", "Все"],
-    ["people", "Люди"],
+    ["people", "Участники"],
     ["groups", "Группы"],
   ] as const;
 

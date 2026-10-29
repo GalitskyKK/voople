@@ -5,6 +5,7 @@ import {
   integer,
   pgTable,
   primaryKey,
+  text,
   timestamp,
   uniqueIndex,
   uuid,
@@ -132,6 +133,13 @@ export const groupRooms = pgTable(
       .where(sql`${t.creationRequestId} IS NOT NULL`),
   }),
 );
+
+export const groupRoomCovers = pgTable("group_room_covers", {
+  roomId: uuid("room_id").primaryKey().references(() => groupRooms.id, { onDelete: "cascade" }),
+  preset: varchar("preset", { length: 20 }).$type<"orbit" | "arcade" | "wave" | "dusk">().notNull().default("orbit"),
+  mediaKey: text("media_key"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const liveSessions = pgTable(
   "live_sessions",
